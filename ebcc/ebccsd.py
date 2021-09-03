@@ -375,7 +375,7 @@ class EBCCSD:
         else:
             print('Amplitude damping: {}'.format(self.options['damp']))
         print('')
-        print('Iter.    E_corr  |Delta_amps|^2')
+        print('Iter.    E_corr      |Delta_amps|^2')
         converged = False
         self.iter = 0
         while self.iter < max_iter and not converged:
@@ -480,7 +480,7 @@ class EBCCSD:
             if self.rank[1] >= 1:
                 self.S1old = vec[self.t2_bound:self.s1_bound].reshape((self.nbos))
             if self.rank[2] >= 1:
-                self.U11old = vec[self.s1_bound:self.u11_bound].reshape((self.nbos, self.no, self.nv))
+                self.U11old = vec[self.s1_bound:self.u11_bound].reshape((self.nbos, self.nv, self.no))
             if self.rank[1] == 2:
                 self.S2old = vec[self.u11_bound:self.s2_bound].reshape((self.nbos, self.nbos))
             if self.rank[2] == 2:
