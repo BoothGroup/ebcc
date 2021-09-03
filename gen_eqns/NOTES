@@ -1,0 +1,8 @@
+ NOTES:
+   o   wick will produce interaction terms which depend on ovov and ovvv, and others. However, there are only 9 distinct blocks of antisymmetrized integrals.
+       Can use permutational symmetry <ja||ib> = <aj||bi> to change to it being a vovo/vovv blocks
+       Instead, although it will require more memory, I've just added these blocks explicitly to the 'two_electron_blocks' class.
+
+   o   Does .get_connected just simplify by contracting delta functions?
+   o   How does compress=True for the 2e part of H change things? Seems as though it is giving identical residuals...
+
