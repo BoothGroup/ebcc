@@ -1,6 +1,6 @@
 import numpy as np
 import copy
-from pyscf import scf, ao2mo
+from pyscf import scf, ao2mo, lib
 from . import utils, ccsd_equations, ccsd_1_1_equations, ccsd_2_1_equations, ccsd_2_2_equations
 
 class EBCCSD:
@@ -41,8 +41,13 @@ class EBCCSD:
             self.options['tthresh'] = 1.e-7
         if 'max_iter' not in self.options:
             self.options['max_iter'] = 500
-        if 'damp' not in self.options:
+        if 'damp' not in self.options and 'diis space' not in self.options:
             self.options['damp'] = 0.4
+            self.options['diis space'] = None
+        elif 'damp' in self.options:
+            self.options['diis space'] = None
+        elif 'diis space' in self.options:
+            self.options['damp'] = 1.0
 
         if isinstance(mf, scf.rhf.RHF):
             self.mf = scf.addons.convert_to_uhf(mf)
@@ -160,9 +165,13 @@ class EBCCSD:
         # Get arrays for required ansatz, and set to initial PT2 values
         self.T1old = self.fock_mo.vo / self.D1.transpose((1,0)) # Note (virt, occ)
         self.T1 = self.T1old.copy() # Note (virt, occ)
+        self.amp_vec_size = self.T1.size
+        self.t1_bound = self.T1.size
 
         self.T2old = self.I.vvoo / self.D2.transpose((2,3,0,1)) # Note (virt, virt, occ, occ)
         self.T2 = self.T2old.copy()
+        self.amp_vec_size += self.T2.size
+        self.t2_bound = self.amp_vec_size
 
         if self.rank != (2, 0, 0):
             # Compared to epcc, g=h, since we are only ever dealing with real-valued couplings(?)
@@ -174,19 +183,12 @@ class EBCCSD:
             # Build MP2 S1 amplitudes (b terms)
             self.S1old = -H / self.omega
             self.S1 = self.S1old.copy()
+            self.amp_vec_size += self.S1.size
+            self.s1_bound = self.amp_vec_size
         else:
             self.S1old = None
             self.S1 = None
-
-        if self.rank[1] == 2:
-            self.Ds2 = -self.omega[:, None] - self.omega[None, :]
-
-            self.S2old = np.zeros((self.nbos, self.nbos))
-            self.S2 = np.zeros((self.nbos, self.nbos))
-        else:
-            self.S2old = None
-            self.S2 = None
-
+        
         if self.rank[2] >= 1:
             # Build the U terms (eb terms)
             # Form the matrix of ei - ea - omega, of dimension (nbos,no,nv)
@@ -194,9 +196,22 @@ class EBCCSD:
 
             self.U11old = h.vo / self.D1p.transpose((0, 2, 1))
             self.U11 = np.zeros_like(self.U11old)
+            self.amp_vec_size += self.U11.size
+            self.u11_bound = self.amp_vec_size
         else:
             self.U11old = None
             self.U11 = None
+
+        if self.rank[1] == 2:
+            self.Ds2 = -self.omega[:, None] - self.omega[None, :]
+
+            self.S2old = np.zeros((self.nbos, self.nbos))
+            self.S2 = np.zeros((self.nbos, self.nbos))
+            self.amp_vec_size += self.S2.size
+            self.s2_bound = self.amp_vec_size
+        else:
+            self.S2old = None
+            self.S2 = None
 
         if self.rank[2] == 2:
             # NOTE: Bug in epcc code, which is why we don't get agreement in this model.
@@ -206,9 +221,17 @@ class EBCCSD:
 
             self.U12old = np.zeros((self.nbos, self.nbos, self.nv, self.no))    # (nbos, nbos, nvir, nocc)
             self.U12 = np.zeros((self.nbos, self.nbos, self.nv, self.no))    # (nbos, nbos, nvir, nocc)
+            self.amp_vec_size += self.U12.size
         else:
             self.U12old = None
             self.U12 = None
+
+        if self.options['diis space'] != None:
+            print('Setting up DIIS object, storing {} sets of amplitudes...'.format(options['diis space']))
+            self.adiis = lib.diis.DIIS()
+            self.adiis.space = self.options['diis space']
+        else:
+            self.adiis = None
 
         self.converged_t = False
         self.converged_l = False
@@ -341,13 +364,21 @@ class EBCCSD:
         Eold = self.energy(amps='old', autogen=self.autogen)
         print('Initial CC amplitude energy: {}'.format(Eold))
 
-        print(self.options)
         ethresh = self.options['ethresh']
         tthresh = self.options['tthresh']
         max_iter = self.options['max_iter']
+        print('Energy threshold for convergence: {}'.format(ethresh))
+        print('Amplitude threshold for convergence: {}'.format(tthresh))
+        print('Maximum iterations: {}'.format(max_iter))
+        if self.adiis != None:
+            print('DIIS acceleration enabled with subspace size: {}'.format(self.adiis.space))
+        else:
+            print('Amplitude damping: {}'.format(self.options['damp']))
+        print('')
+        print('Iter.    E_corr  |Delta_amps|^2')
         converged = False
-        i = 0
-        while i < max_iter and not converged:
+        self.iter = 0
+        while self.iter < max_iter and not converged:
 
             # Update amplitudes from 'old' amplitudes to 'non-old' amps
             self.update_amps(autogen=self.autogen)
@@ -355,18 +386,17 @@ class EBCCSD:
             # Norm of update
             res = self.res_norm()
 
-            # Potentially damp the updates (TODO: DIIS), returning the amps back to 'old'
+            # Potentially damp/extrapolate the updates, returning the amps back to 'old'
             self.damp_update()
 
             # Update energy
             E = self.energy(amps='old', autogen=self.autogen)
             Ediff = abs(E - Eold)
-            print('Iter.    E_corr  |Delta_amps|^2')
-            print(' {:2d}  {:.10f}   {:.4E}'.format(i+1, E, res))
+            print(' {:2d}  {:.10f}   {:.4E}'.format(self.iter+1, E, res))
             if Ediff < ethresh and res < tthresh:
                 converged = True
             Eold = E
-            i += 1
+            self.iter += 1
         
         if not converged:
             print("WARNING: eb-CCSD did not converge!")
@@ -438,21 +468,94 @@ class EBCCSD:
 
         return
 
+    def vec_to_amps(self, vec, amps='old'):
+        ''' Take a flattened vector of all amplitudes in the ansatz
+            and distribute them back to the ebcc object amplitudes.
+            By default, they will be returned to the 'old' amplitudes,
+            unless amps is not set to 'old'. '''
+
+        if amps == 'old':
+            self.T1old = vec[:self.t1_bound].reshape((self.nv, self.no))
+            self.T2old = vec[self.t1_bound:self.t2_bound].reshape((self.nv, self.nv, self.no, self.no))
+            if self.rank[1] >= 1:
+                self.S1old = vec[self.t2_bound:self.s1_bound].reshape((self.nbos))
+            if self.rank[2] >= 1:
+                self.U11old = vec[self.s1_bound:self.u11_bound].reshape((self.nbos, self.no, self.nv))
+            if self.rank[1] == 2:
+                self.S2old = vec[self.u11_bound:self.s2_bound].reshape((self.nbos, self.nbos))
+            if self.rank[2] == 2:
+                self.U12old = vec[self.s2_bound:].reshape((self.nbos, self.nbos, self.nv, self.no))
+        else:
+            self.T1 = vec[:self.t1_bound].reshape((self.nv, self.no))
+            self.T2 = vec[self.t1_bound:self.t2_bound].reshape((self.nv, self.nv, self.no, self.no))
+            if self.rank[1] >= 1:
+                self.S1 = vec[self.t2_bound:self.s1_bound].reshape((self.nbos))
+            if self.rank[2] >= 1:
+                self.U11 = vec[self.s1_bound:self.u11_bound].reshape((self.nbos, self.no, self.nv))
+            if self.rank[1] == 2:
+                self.S2 = vec[self.u11_bound:self.s2_bound].reshape((self.nbos, self.nbos))
+            if self.rank[2] == 2:
+                self.U12 = vec[self.s2_bound:].reshape((self.nbos, self.nbos, self.nv, self.no))
+
+        return None
+
+    def amps_to_vec(self, amps='old'):
+        ''' Flatten the amplitudes of the cc ansatz to a vector.
+            Depending on whether amps='old' or 'new' as to whether
+            amplitudes are taken from the 'old' or 'new' saved amplitudes.
+
+            NOTE: No permutational symmetry of the amplitudes is being
+            taken into account, which can mean that permutational symmetry may become
+            broken...?
+        '''
+
+        vec = np.zeros((self.amp_vec_size))
+        if amps == 'old':
+            vec[:self.t1_bound] = self.T1old.ravel()
+            vec[self.t1_bound:self.t2_bound] = self.T2old.ravel()
+            if self.rank[1] >= 1:
+                vec[self.t2_bound:self.s1_bound] = self.S1old.ravel()
+            if self.rank[2] >= 1:
+                vec[self.s1_bound:self.u11_bound] = self.U11old.ravel()
+            if self.rank[1] == 2:
+                vec[self.u11_bound:self.s2_bound] = self.S2old.ravel()
+            if self.rank[2] == 2:
+                vec[self.s2_bound:] = self.U12old.ravel()
+        else:
+            vec[:self.t1_bound] = self.T1.ravel()
+            vec[self.t1_bound:self.t2_bound] = self.T2.ravel()
+            if self.rank[1] >= 1:
+                vec[self.t2_bound:self.s1_bound] = self.S1.ravel()
+            if self.rank[2] >= 1:
+                vec[self.s1_bound:self.u11_bound] = self.U11.ravel()
+            if self.rank[1] == 2:
+                vec[self.u11_bound:self.s2_bound] = self.S2.ravel()
+            if self.rank[2] == 2:
+                vec[self.s2_bound:] = self.U12.ravel()
+        return vec
+
     def damp_update(self):
         ''' Damp the updates, returning the amps back to 'old' '''
-        
-        damp = self.options["damp"]
+       
+        if self.adiis != None:
+            # Turn 'current' (non-old) amplitudes into a vector
+            vec = self.amps_to_vec(amps='new')
+            vec_extrap = self.adiis.update(vec)
+            self.vec_to_amps(vec_extrap, amps='old')
+        else:
+            # Just damp updates
+            damp = self.options["damp"]
 
-        self.T1old = damp*self.T1old + (1.0 - damp)*self.T1
-        self.T2old = damp*self.T2old + (1.0 - damp)*self.T2
-        if self.rank[1] >= 1:
-            self.S1old = damp*self.S1old + (1.0 - damp)*self.S1
-        if self.rank[1] == 2:
-            self.S2old = damp*self.S2old + (1.0 - damp)*self.S2
-        if self.rank[2] >= 1:
-            self.U11old = damp*self.U11old + (1.0 - damp)*self.U11
-        if self.rank[2] == 2:
-            self.U12old = damp*self.U12old + (1.0 - damp)*self.U12
+            self.T1old = damp*self.T1old + (1.0 - damp)*self.T1
+            self.T2old = damp*self.T2old + (1.0 - damp)*self.T2
+            if self.rank[1] >= 1:
+                self.S1old = damp*self.S1old + (1.0 - damp)*self.S1
+            if self.rank[1] == 2:
+                self.S2old = damp*self.S2old + (1.0 - damp)*self.S2
+            if self.rank[2] >= 1:
+                self.U11old = damp*self.U11old + (1.0 - damp)*self.U11
+            if self.rank[2] == 2:
+                self.U12old = damp*self.U12old + (1.0 - damp)*self.U12
 
         return None
 
