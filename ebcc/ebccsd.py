@@ -44,9 +44,9 @@ class EBCCSD:
         if 'damp' not in self.options and 'diis space' not in self.options:
             self.options['damp'] = 0.4
             self.options['diis space'] = None
-        elif 'damp' in self.options:
+        if 'damp' in self.options and 'diis space' not in self.options:
             self.options['diis space'] = None
-        elif 'diis space' in self.options:
+        if 'diis space' in self.options and 'damp' not in self.options:
             self.options['damp'] = 1.0
 
         if isinstance(mf, scf.rhf.RHF):
@@ -373,6 +373,7 @@ class EBCCSD:
         if self.adiis != None:
             print('DIIS acceleration enabled with subspace size: {}'.format(self.adiis.space))
         else:
+            print('DIIS acceleration not enabled...')
             print('Amplitude damping: {}'.format(self.options['damp']))
         print('')
         print('Iter.    E_corr      |Delta_amps|^2')

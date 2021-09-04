@@ -27,6 +27,7 @@ print('Running ebcc...')
 #eri = ao2mo.kernel(mol, myhf.mo_coeff, compact=False).reshape([nmo,]*4)
 eri = ao2mo.restore(1, myhf._eri, nmo)
 options = {"ethresh":1e-9, 'tthresh':1e-8, 'max_iter':500, 'damp':0.3}
+options_diis = {"ethresh":1e-9, 'tthresh':1e-8, 'max_iter':500, 'diis space':12}
 
 for rank in [(2,0,0), (2,1,1), (2,2,1), (2,2,2)]:
     for shift in [True, False]:
@@ -34,6 +35,12 @@ for rank in [(2,0,0), (2,1,1), (2,2,1), (2,2,2)]:
         etot, e_corr = cc.kernel()
         print('EBCCSD correlation energy for rank {} and shift {}:   {}'.format(rank,shift,cc.e_corr))
         print('EBCCSD total energy', etot)
+        
+        cc_diis = ebccsd.EBCCSD(mol, myhf, eri, options=options_diis, rank=rank, omega=omega, gmat=gmat, shift=shift, autogen_code=False)
+        etot, e_corr = cc_diis.kernel()
+        print('EBCCSD DIIS correlation energy for rank {} and shift {}:   {}'.format(rank,shift,cc_diis.e_corr))
+        print('EBCCSD DIIS total energy', etot)
+        assert(np.allclose(cc.e_corr, cc_diis.e_corr))
 
         cc_auto = ebccsd.EBCCSD(mol, myhf, eri, options=options, rank=rank, omega=omega, gmat=gmat, shift=shift, autogen_code=True)
         etot, e_corr = cc_auto.kernel()
