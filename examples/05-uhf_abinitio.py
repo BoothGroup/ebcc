@@ -26,3 +26,10 @@ cc = ebccsd.EBCCSD(mol, mf, eri, options = options, rank=(2,1,1), omega=omega, g
 etot, e_corr = cc.kernel()
 print('EBCCSD correlation energy', cc.e_corr)
 print('EBCCSD total energy', etot)
+
+options = {'diis space': 12}
+cc_diis = ebccsd.EBCCSD(mol, mf, eri, options = options, rank=(2,1,1), omega=omega, gmat=gmat, shift=True, autogen_code=False)
+etot, e_corr = cc_diis.kernel()
+print('EBCCSD correlation energy', cc_diis.e_corr)
+print('EBCCSD total energy', etot)
+assert(np.allclose(cc_diis.e_corr, cc.e_corr))

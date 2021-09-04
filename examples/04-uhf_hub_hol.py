@@ -9,7 +9,7 @@ U = 4.
 L = 4 
 w = 5.
 breaksym = True
-g = math.sqrt(0.15) 
+g = math.sqrt(0.25) 
 
 mol = gto.M()
 mol.nelectron = L   # Half filling
@@ -44,7 +44,17 @@ else:
     for i in range(L): dma[i,i] = dmb[i,i] = 0.5
 mf.kernel(dm0 = [dma, dmb])
 
-cc = ebccsd.EBCCSD(mol, mf, eri, rank=(2,2,2), omega=omega, gmat=gmat, shift=True, autogen_code=True)
+cc = ebccsd.EBCCSD(mol, mf, eri, options={'diis space': 8}, rank=(2,1,1), omega=omega, gmat=gmat, shift=True, autogen_code=True)
 etot, e_corr = cc.kernel()
-print('EBCCSD correlation energy', cc.e_corr)
+print('EBCCSD correlation energy for rank 211:', cc.e_corr)
+print('EBCCSD total energy', etot)
+
+cc = ebccsd.EBCCSD(mol, mf, eri, options={'diis space': 8}, rank=(2,2,1), omega=omega, gmat=gmat, shift=True, autogen_code=True)
+etot, e_corr = cc.kernel()
+print('EBCCSD correlation energy for rank 221:', cc.e_corr)
+print('EBCCSD total energy', etot)
+
+cc = ebccsd.EBCCSD(mol, mf, eri, options={'diis space': 8}, rank=(2,2,2), omega=omega, gmat=gmat, shift=True, autogen_code=True)
+etot, e_corr = cc.kernel()
+print('EBCCSD correlation energy for rank 222:', cc.e_corr)
 print('EBCCSD total energy', etot)
