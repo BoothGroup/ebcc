@@ -225,13 +225,20 @@ class EBCCSD:
         else:
             self.U12old = None
             self.U12 = None
-
-        if self.options['diis space'] != None:
-            print('Setting up DIIS object, storing {} sets of amplitudes...'.format(options['diis space']))
-            self.adiis = lib.diis.DIIS()
-            self.adiis.space = self.options['diis space']
-        else:
-            self.adiis = None
+        
+        # Lambda amplitudes
+        self.L1 = None 
+        self.L2 = None
+        self.LS1 = None
+        self.LU11 = None
+        self.LS2 = None
+        self.LU12 = None
+        self.L1old = None
+        self.L2old = None
+        self.LS1old = None
+        self.LU11old = None
+        self.LS2old = None
+        self.LU12old = None
 
         self.converged_t = False
         self.converged_l = False
@@ -354,7 +361,6 @@ class EBCCSD:
             return ehf + self.const
         else:
             return ehf
-
     def kernel(self):
         '''Run CCSD calculation'''
 
@@ -370,9 +376,12 @@ class EBCCSD:
         print('Energy threshold for convergence: {}'.format(ethresh))
         print('Amplitude threshold for convergence: {}'.format(tthresh))
         print('Maximum iterations: {}'.format(max_iter))
-        if self.adiis != None:
-            print('DIIS acceleration enabled with subspace size: {}'.format(self.adiis.space))
+        if self.options['diis space'] != None:
+            print('Setting up DIIS object for amplitudes, with depth {}...'.format(self.options['diis space']))
+            self.adiis_t = lib.diis.DIIS()
+            self.adiis_t.space = self.options['diis space']
         else:
+            self.adiis_t = None
             print('DIIS acceleration not enabled...')
             print('Amplitude damping: {}'.format(self.options['damp']))
         print('')
@@ -439,6 +448,37 @@ class EBCCSD:
                 raise NotImplementedError
         
         return E
+    
+    def update_l_amps(self, autogen=False):
+        '''Update lambda amplitudes'''
+
+        if self.rank == (2, 0, 0):
+            L1, L2 = ccsd_equations.lam_updates_ccsd(self, autogen=autogen)
+        elif self.rank == (2, 1, 1):
+            L1, L2, LS1, LU11 = ccsd_1_1_equations.lam_updates_ccsd_1_1(self, autogen=autogen)
+        elif self.rank == (2, 2, 1):
+            L1, L2, LS1, LS2, LU11 = ccsd_2_1_equations.lam_updates_ccsd_2_1(self, autogen=autogen)
+        elif self.rank == (2, 2, 2):
+            L1, L2, LS1, LS2, LU11, LU12 = ccsd_2_2_equations.lam_updates_ccsd_2_2(self, autogen=autogen)
+        else:
+            raise NotImplementedError
+
+        # Divide by denominators
+        #self.L1 = L1 / self.D1.transpose((1, 0))
+        #self.L2 = L2 / self.D2.transpose((2, 3, 0, 1))
+        self.L1 = L1 / self.D1
+        self.L2 = L2 / self.D2
+
+        if self.rank[1] >= 1:
+            self.LS1 = LS1 / -self.omega
+        if self.rank[1] == 2:
+            self.LS2 = LS2 / self.Ds2
+        if self.rank[2] >= 1:
+            self.LU11 = LU11 / self.D1p.transpose((0, 2, 1))
+        if self.rank[2] == 2:
+            self.LU12 = LU12 / self.D2p.transpose((0, 1, 3, 2))
+
+        return
 
     def update_amps(self, autogen=False):
         '''Update amplitudes'''
@@ -469,38 +509,77 @@ class EBCCSD:
 
         return
 
-    def vec_to_amps(self, vec, amps='old'):
+    def make_1rdm_f(self, autogen=False):
+        ''' Get fermionic 1RDM'''
+
+        if self.rank == (2, 0, 0):
+            rdm1 = ccsd_equations.one_rdm_ferm(self, autogen=autogen)
+        elif self.rank == (2, 1, 1):
+            rdm1 = ccsd_1_1_equations.one_rdm_ferm(self, autogen=autogen)
+        elif self.rank == (2, 2, 1):
+            rdm1 = ccsd_2_1_equations.one_rdm_ferm(self, autogen=autogen)
+        elif self.rank == (2, 2, 2):
+            rdm1 = ccsd_2_2_equations.one_rdm_ferm(self, autogen=autogen)
+
+        return rdm1
+
+    def vec_to_amps(self, vec, amps='old',t_or_l='t'):
         ''' Take a flattened vector of all amplitudes in the ansatz
             and distribute them back to the ebcc object amplitudes.
             By default, they will be returned to the 'old' amplitudes,
             unless amps is not set to 'old'. '''
 
-        if amps == 'old':
-            self.T1old = vec[:self.t1_bound].reshape((self.nv, self.no))
-            self.T2old = vec[self.t1_bound:self.t2_bound].reshape((self.nv, self.nv, self.no, self.no))
-            if self.rank[1] >= 1:
-                self.S1old = vec[self.t2_bound:self.s1_bound].reshape((self.nbos))
-            if self.rank[2] >= 1:
-                self.U11old = vec[self.s1_bound:self.u11_bound].reshape((self.nbos, self.nv, self.no))
-            if self.rank[1] == 2:
-                self.S2old = vec[self.u11_bound:self.s2_bound].reshape((self.nbos, self.nbos))
-            if self.rank[2] == 2:
-                self.U12old = vec[self.s2_bound:].reshape((self.nbos, self.nbos, self.nv, self.no))
+        if t_or_l.lower() == 't':
+            if amps == 'old':
+                self.T1old = vec[:self.t1_bound].reshape((self.nv, self.no))
+                self.T2old = vec[self.t1_bound:self.t2_bound].reshape((self.nv, self.nv, self.no, self.no))
+                if self.rank[1] >= 1:
+                    self.S1old = vec[self.t2_bound:self.s1_bound].reshape((self.nbos))
+                if self.rank[2] >= 1:
+                    self.U11old = vec[self.s1_bound:self.u11_bound].reshape((self.nbos, self.nv, self.no))
+                if self.rank[1] == 2:
+                    self.S2old = vec[self.u11_bound:self.s2_bound].reshape((self.nbos, self.nbos))
+                if self.rank[2] == 2:
+                    self.U12old = vec[self.s2_bound:].reshape((self.nbos, self.nbos, self.nv, self.no))
+            else:
+                self.T1 = vec[:self.t1_bound].reshape((self.nv, self.no))
+                self.T2 = vec[self.t1_bound:self.t2_bound].reshape((self.nv, self.nv, self.no, self.no))
+                if self.rank[1] >= 1:
+                    self.S1 = vec[self.t2_bound:self.s1_bound].reshape((self.nbos))
+                if self.rank[2] >= 1:
+                    self.U11 = vec[self.s1_bound:self.u11_bound].reshape((self.nbos, self.no, self.nv))
+                if self.rank[1] == 2:
+                    self.S2 = vec[self.u11_bound:self.s2_bound].reshape((self.nbos, self.nbos))
+                if self.rank[2] == 2:
+                    self.U12 = vec[self.s2_bound:].reshape((self.nbos, self.nbos, self.nv, self.no))
         else:
-            self.T1 = vec[:self.t1_bound].reshape((self.nv, self.no))
-            self.T2 = vec[self.t1_bound:self.t2_bound].reshape((self.nv, self.nv, self.no, self.no))
-            if self.rank[1] >= 1:
-                self.S1 = vec[self.t2_bound:self.s1_bound].reshape((self.nbos))
-            if self.rank[2] >= 1:
-                self.U11 = vec[self.s1_bound:self.u11_bound].reshape((self.nbos, self.no, self.nv))
-            if self.rank[1] == 2:
-                self.S2 = vec[self.u11_bound:self.s2_bound].reshape((self.nbos, self.nbos))
-            if self.rank[2] == 2:
-                self.U12 = vec[self.s2_bound:].reshape((self.nbos, self.nbos, self.nv, self.no))
+            # Do the same for the lambda amplitudes
+            if amps == 'old':
+                self.L1old = vec[:self.t1_bound].reshape((self.no, self.nv))
+                self.L2old = vec[self.t1_bound:self.t2_bound].reshape((self.no, self.no, self.nv, self.nv))
+                if self.rank[1] >= 1:
+                    self.LS1old = vec[self.t2_bound:self.s1_bound].reshape((self.nbos))
+                if self.rank[2] >= 1:
+                    self.LU11old = vec[self.s1_bound:self.u11_bound].reshape((self.no, self.nv, self.nbos))
+                if self.rank[1] == 2:
+                    self.LS2old = vec[self.u11_bound:self.s2_bound].reshape((self.nbos, self.nbos))
+                if self.rank[2] == 2:
+                    self.LU12old = vec[self.s2_bound:].reshape((self.no, self.nv, self.nbos, self.nbos))
+            else:
+                self.L1 = vec[:self.t1_bound].reshape((self.no, self.nv))
+                self.L2 = vec[self.t1_bound:self.t2_bound].reshape((self.no, self.no, self.nv, self.nv))
+                if self.rank[1] >= 1:
+                    self.LS1 = vec[self.t2_bound:self.s1_bound].reshape((self.nbos))
+                if self.rank[2] >= 1:
+                    self.LU11 = vec[self.s1_bound:self.u11_bound].reshape((self.nv, self.no, self.nbos))
+                if self.rank[1] == 2:
+                    self.LS2 = vec[self.u11_bound:self.s2_bound].reshape((self.nbos, self.nbos))
+                if self.rank[2] == 2:
+                    self.LU12 = vec[self.s2_bound:].reshape((self.no, self.nv, self.nbos, self.nbos))
 
         return None
 
-    def amps_to_vec(self, amps='old'):
+    def amps_to_vec(self, amps='old',t_or_l='t'):
         ''' Flatten the amplitudes of the cc ansatz to a vector.
             Depending on whether amps='old' or 'new' as to whether
             amplitudes are taken from the 'old' or 'new' saved amplitudes.
@@ -510,38 +589,89 @@ class EBCCSD:
             broken...?
         '''
 
-        vec = np.zeros((self.amp_vec_size))
-        if amps == 'old':
-            vec[:self.t1_bound] = self.T1old.ravel()
-            vec[self.t1_bound:self.t2_bound] = self.T2old.ravel()
-            if self.rank[1] >= 1:
-                vec[self.t2_bound:self.s1_bound] = self.S1old.ravel()
-            if self.rank[2] >= 1:
-                vec[self.s1_bound:self.u11_bound] = self.U11old.ravel()
-            if self.rank[1] == 2:
-                vec[self.u11_bound:self.s2_bound] = self.S2old.ravel()
-            if self.rank[2] == 2:
-                vec[self.s2_bound:] = self.U12old.ravel()
+        if t_or_l.lower() == 't':
+            vec = np.zeros((self.amp_vec_size))
+            if amps == 'old':
+                vec[:self.t1_bound] = self.T1old.ravel()
+                vec[self.t1_bound:self.t2_bound] = self.T2old.ravel()
+                if self.rank[1] >= 1:
+                    vec[self.t2_bound:self.s1_bound] = self.S1old.ravel()
+                if self.rank[2] >= 1:
+                    vec[self.s1_bound:self.u11_bound] = self.U11old.ravel()
+                if self.rank[1] == 2:
+                    vec[self.u11_bound:self.s2_bound] = self.S2old.ravel()
+                if self.rank[2] == 2:
+                    vec[self.s2_bound:] = self.U12old.ravel()
+            else:
+                vec[:self.t1_bound] = self.T1.ravel()
+                vec[self.t1_bound:self.t2_bound] = self.T2.ravel()
+                if self.rank[1] >= 1:
+                    vec[self.t2_bound:self.s1_bound] = self.S1.ravel()
+                if self.rank[2] >= 1:
+                    vec[self.s1_bound:self.u11_bound] = self.U11.ravel()
+                if self.rank[1] == 2:
+                    vec[self.u11_bound:self.s2_bound] = self.S2.ravel()
+                if self.rank[2] == 2:
+                    vec[self.s2_bound:] = self.U12.ravel()
         else:
-            vec[:self.t1_bound] = self.T1.ravel()
-            vec[self.t1_bound:self.t2_bound] = self.T2.ravel()
-            if self.rank[1] >= 1:
-                vec[self.t2_bound:self.s1_bound] = self.S1.ravel()
-            if self.rank[2] >= 1:
-                vec[self.s1_bound:self.u11_bound] = self.U11.ravel()
-            if self.rank[1] == 2:
-                vec[self.u11_bound:self.s2_bound] = self.S2.ravel()
-            if self.rank[2] == 2:
-                vec[self.s2_bound:] = self.U12.ravel()
+            vec = np.zeros((self.amp_vec_size))
+            if amps == 'old':
+                vec[:self.t1_bound] = self.L1old.ravel()
+                vec[self.t1_bound:self.t2_bound] = self.L2old.ravel()
+                if self.rank[1] >= 1:
+                    vec[self.t2_bound:self.s1_bound] = self.LS1old.ravel()
+                if self.rank[2] >= 1:
+                    vec[self.s1_bound:self.u11_bound] = self.LU11old.ravel()
+                if self.rank[1] == 2:
+                    vec[self.u11_bound:self.s2_bound] = self.LS2old.ravel()
+                if self.rank[2] == 2:
+                    vec[self.s2_bound:] = self.LU12old.ravel()
+            else:
+                vec[:self.t1_bound] = self.L1.ravel()
+                vec[self.t1_bound:self.t2_bound] = self.L2.ravel()
+                if self.rank[1] >= 1:
+                    vec[self.t2_bound:self.s1_bound] = self.LS1.ravel()
+                if self.rank[2] >= 1:
+                    vec[self.s1_bound:self.u11_bound] = self.LU11.ravel()
+                if self.rank[1] == 2:
+                    vec[self.u11_bound:self.s2_bound] = self.LS2.ravel()
+                if self.rank[2] == 2:
+                    vec[self.s2_bound:] = self.LU12.ravel()
         return vec
+    
+    def damp_l_update(self):
+        ''' Damp the updates, returning the amps back to 'old' '''
+       
+        if self.adiis_l != None:
+            # Turn 'current' (non-old) amplitudes into a vector
+            vec = self.amps_to_vec(amps='new', t_or_l='l')
+            vec_extrap = self.adiis_l.update(vec)
+            self.vec_to_amps(vec_extrap, amps='old', t_or_l='l')
+        else:
+            # Just damp updates
+            damp = self.options["damp"]
+
+            self.L1old = damp*self.L1old + (1.0 - damp)*self.L1
+            self.L2old = damp*self.L2old + (1.0 - damp)*self.L2
+            if self.rank[1] >= 1:
+                self.LS1old = damp*self.LS1old + (1.0 - damp)*self.LS1
+            if self.rank[1] == 2:
+                self.LS2old = damp*self.LS2old + (1.0 - damp)*self.LS2
+            if self.rank[2] >= 1:
+                self.LU11old = damp*self.LU11old + (1.0 - damp)*self.LU11
+            if self.rank[2] == 2:
+                self.LU12old = damp*self.LU12old + (1.0 - damp)*self.LU12
+
+        return None
+
 
     def damp_update(self):
         ''' Damp the updates, returning the amps back to 'old' '''
        
-        if self.adiis != None:
+        if self.adiis_t is not None:
             # Turn 'current' (non-old) amplitudes into a vector
             vec = self.amps_to_vec(amps='new')
-            vec_extrap = self.adiis.update(vec)
+            vec_extrap = self.adiis_t.update(vec)
             self.vec_to_amps(vec_extrap, amps='old')
         else:
             # Just damp updates
@@ -560,34 +690,142 @@ class EBCCSD:
 
         return None
 
-    def copy_amps(self):
+    def copy_amps(self,t_or_l='t'):
         ''' Copy amplitudes from 'old' to 'non-old' '''
 
-        self.T1 = self.T1old
-        self.T2 = self.T2old
-        if self.rank[1] >= 1:
-            self.S1 = self.S1old
-        if self.rank[1] == 2:
-            self.S2 = self.S2old
-        if self.rank[2] >= 1:
-            self.U11 = self.U11old
-        if self.rank[2] == 2:
-            self.U12 = self.U12old
+        if t_or_l.lower() == 't':
+            self.T1 = self.T1old
+            self.T2 = self.T2old
+            if self.rank[1] >= 1:
+                self.S1 = self.S1old
+            if self.rank[1] == 2:
+                self.S2 = self.S2old
+            if self.rank[2] >= 1:
+                self.U11 = self.U11old
+            if self.rank[2] == 2:
+                self.U12 = self.U12old
+        else:
+            self.L1 = self.L1old
+            self.L2 = self.L2old
+            if self.rank[1] >= 1:
+                self.LS1 = self.LS1old
+            if self.rank[1] == 2:
+                self.LS2 = self.LS2old
+            if self.rank[2] >= 1:
+                self.LU11 = self.LU11old
+            if self.rank[2] == 2:
+                self.LU12 = self.LU12old
 
         return None
 
-    def res_norm(self):
+    def res_norm(self, t_or_l='t'):
         ''' Find the norm of the difference between old and new amplitudes '''
 
-        res = np.linalg.norm(self.T1old - self.T1) / np.sqrt(self.T1.size)
-        res += np.linalg.norm(self.T2old - self.T2) / np.sqrt(self.T2.size)
-        if self.rank[1] >= 1:
-            res += np.linalg.norm(self.S1old - self.S1) / np.sqrt(self.S1.size)
-        if self.rank[1] == 2:
-            res += np.linalg.norm(self.S2old - self.S2) / np.sqrt(self.S2.size)
-        if self.rank[2] >= 1:
-            res += np.linalg.norm(self.U11old - self.U11) / np.sqrt(self.U11.size)
-        if self.rank[2] == 2:
-            res += np.linalg.norm(self.U12old - self.U12) / np.sqrt(self.U12.size)
+        if t_or_l.lower() == 't':
+            res = np.linalg.norm(self.T1old - self.T1) / np.sqrt(self.T1.size)
+            res += np.linalg.norm(self.T2old - self.T2) / np.sqrt(self.T2.size)
+            if self.rank[1] >= 1:
+                res += np.linalg.norm(self.S1old - self.S1) / np.sqrt(self.S1.size)
+            if self.rank[1] == 2:
+                res += np.linalg.norm(self.S2old - self.S2) / np.sqrt(self.S2.size)
+            if self.rank[2] >= 1:
+                res += np.linalg.norm(self.U11old - self.U11) / np.sqrt(self.U11.size)
+            if self.rank[2] == 2:
+                res += np.linalg.norm(self.U12old - self.U12) / np.sqrt(self.U12.size)
+        else:
+            res = np.linalg.norm(self.L1old - self.L1) / np.sqrt(self.T1.size)
+            res += np.linalg.norm(self.L2old - self.L2) / np.sqrt(self.T2.size)
+            if self.rank[1] >= 1:
+                res += np.linalg.norm(self.LS1old - self.LS1) / np.sqrt(self.S1.size)
+            if self.rank[1] == 2:
+                res += np.linalg.norm(self.LS2old - self.LS2) / np.sqrt(self.S2.size)
+            if self.rank[2] >= 1:
+                res += np.linalg.norm(self.LU11old - self.LU11) / np.sqrt(self.U11.size)
+            if self.rank[2] == 2:
+                res += np.linalg.norm(self.LU12old - self.LU12) / np.sqrt(self.U12.size)
 
         return res
+
+    def solve_lambda(self):
+        '''Solve lambda equations'''
+
+        # Initialize to the T-amplitudes
+        # Note that lambda amplitudes are the transpose of the T amplitudes
+        self.init_lam()
+
+        tthresh = self.options['tthresh']
+        max_iter = self.options['max_iter']
+        print('Amplitude threshold for lambda convergence: {}'.format(tthresh))
+        print('Maximum iterations: {}'.format(max_iter))
+        if self.options['diis space'] != None:
+            print('Setting up DIIS object for lambda amplitudes, with depth {}...'.format(self.options['diis space']))
+            self.adiis_l = lib.diis.DIIS()
+            self.adiis_l.space = self.options['diis space']
+        else:
+            self.adiis_l = None
+            print('DIIS acceleration not enabled...')
+            print('Lambda amplitude damping: {}'.format(self.options['damp']))
+        print('')
+        print('Iter.  |Delta_Lam|^2')
+        converged = False
+        self.iter_l = 0
+        while self.iter_l < max_iter and not converged:
+
+            # Update amplitudes from 'old' amplitudes to 'non-old' amps
+            self.update_l_amps(autogen=self.autogen)
+
+            # Norm of update
+            res = self.res_norm(t_or_l='l')
+
+            # Potentially damp/extrapolate the updates, returning the amps back to 'old'
+            self.damp_l_update()
+            
+            # Norm of residual
+            res_norm = ccsd_equations.calc_lam_resid(self.fock_mo, self.I, self.T1old, self.L1old, self.T2old, self.L2old)
+            # Calculate <Lambda x Hbar>
+            lam_hbar = ccsd_equations.calc_lam_hbar(self.fock_mo, self.I, self.T1old, self.L1old, self.T2old, self.L2old)
+        
+            print(' {:2d}    {:.4E}   {:.4E}   {:.4E}'.format(self.iter_l+1, res, res_norm, lam_hbar))
+            if res < tthresh:
+                converged = True
+            self.iter_l += 1
+        
+        if not converged:
+            print("WARNING: eb-CCSD lambda equations did not converge!")
+        else:
+            print("CC lambda iterations converged!")
+
+        # Point final values in 'old' to 'non-old'
+        self.copy_amps(t_or_l='l')
+
+        self.converged_l = converged
+
+        return None 
+
+    def init_lam(self):
+        self.L1 = self.T1.copy().T
+        self.L2 = self.T2.T.copy().T
+        self.L1old = self.T1.copy().T
+        self.L2old = self.T2.copy().T
+        self.LS1 = copy.copy(self.S1)
+        self.LS1old = copy.copy(self.S1)
+        self.LU11 = copy.copy(self.U11)
+        self.LU11old = copy.copy(self.U11)
+        self.LS2 = copy.copy(self.S2)
+        self.LS2old = copy.copy(self.S2)
+        self.LU12 = copy.copy(self.U12)
+        self.LU12old = copy.copy(self.U12)
+        if self.LS1 != None:
+            self.LS1 = self.LS1.T
+            self.LS1old = self.LS1old.T
+        if self.LU11 != None:
+            self.LU11 = self.LU11.T
+            self.LU11old = self.LU11old.T
+        if self.LS2 != None:
+            self.LS2 = self.LS2.T
+            self.LS2old = self.LS2old.T
+        if self.LU12 != None:
+            self.LU12 = self.LU12.T
+            self.LU12old = self.LU12old.T
+
+        return None
