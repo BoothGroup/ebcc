@@ -4,11 +4,7 @@ from wick.wick import apply_wick
 from wick.convenience import one_e, two_e, two_p, one_p, ep11, E1, E2, P1, EPS1, braE1, braE2, braP1, braP1E1, commute
 
 # Define hamiltonian
-#H1 = one_e("F", ["occ", "vir"], norder=True)
-#H2 = two_e("I", ["occ", "vir"], norder=True)
-#H = H1 + H2
 H1 = one_e("F", ["occ", "vir"], norder=True)
-#H2 = two_e("I", ["occ", "vir"], norder=True, compress=True)
 H2 = two_e("I", ["occ", "vir"], norder=True)
 Hp = two_p("w") + one_p("G")
 Hep = ep11("g", ["occ", "vir"], ["nm"], norder=True)

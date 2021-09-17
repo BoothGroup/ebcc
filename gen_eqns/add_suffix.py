@@ -9,10 +9,12 @@ def add_H_suffix_blocks(einsum_str):
         Limitations:
             Fock matrices must be labelled with a 'F'
             Interaction kernel must be labelled with an 'I'
-            Must only be max one F or I term in the contraction
-            Quantity you are computing, as well as other matrices in the contraction cannot have an 'F' or 'I' in it
+            Electon-boson coupling tensor must be labelled with a 'g'
+            Must only be max one F, I or g term in the contraction
+            Quantity you are computing, as well as other matrices in the contraction cannot have an 'F', 'I', or 'g' in it
             Occupied indices i -> o
             Virtual indices a -> f
+            Boson indices capital
     '''
     new_str = ''
     for f in einsum_str.splitlines():
@@ -48,6 +50,22 @@ def add_H_suffix_blocks(einsum_str):
                     else:
                         raise Exception
                 g = f.replace(' I',' I'+suffix)
+            elif tensors[i] == 'g':
+                if found_ham:
+                    # Should only find one term to replace
+                    raise Exception
+                found_ham = True
+                assert(len(contractions[i])==3)
+                suffix = '.'
+                for char in contractions[i]:
+                    if char in ['a', 'b', 'c', 'd', 'e', 'f']:
+                        suffix += 'v'
+                    elif char in ['i', 'j', 'k', 'l', 'm', 'n', 'o']:
+                        suffix += 'o'
+                    elif not char.isupper():
+                        # We can have capital letters denoting boson indices.
+                        raise Exception
+                g = f.replace(' g',' g'+suffix)
             elif tensors[i] == 'F':
                 #print('found F',i)
                 if found_ham:
@@ -65,6 +83,8 @@ def add_H_suffix_blocks(einsum_str):
                         raise Exception
                 # Replace the term in the original string
                 g = f.replace(' F',' F'+suffix)
+        if not found_ham:
+            g = f
         #print(g)
         new_str = new_str + g + '\n'
     #print(new_str)
