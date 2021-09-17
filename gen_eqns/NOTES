@@ -3,6 +3,15 @@
        Can use permutational symmetry <ja||ib> = <aj||bi> to change to it being a vovo/vovv blocks
        Instead, although it will require more memory, I've just added these blocks explicitly to the 'two_electron_blocks' class.
 
-   o   Does .get_connected just simplify by contracting delta functions?
    o   How does compress=True for the 2e part of H change things? Seems as though it is giving identical residuals...
+   o   RDM expressions do not want to just take the connected part (otherwise, 1RDM contributions need to be included).
+   o   Note also that the RDM expressions are not hermitian (obviously), so have to be explicitly symmetrized.
+
+   LAMBDA equations:
+   PHQ + P(L,H)_cQ + PHQLQ = 0 
+   where the first two terms are connected, and the last (with a projector onto the Q-space) is not connected.
+   o Note that there are also terms which sum to zero in the second term. We don't necessarily need to isolate these, but
+     If we don't remove these terms, then remember that the *update* may have to be modified slightly, to make sure that things
+    that involve the fock matrix contracted more than linearly with (e.g.) L1 will have to include the full fock matrix.
+    See p. 371 of Shavitt and Bartlett for more details on this.
 
