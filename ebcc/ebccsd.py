@@ -398,7 +398,7 @@ class EBCCSD:
             self.update_amps()
 
             # Norm of update
-            res = self.res_norm()
+            res = self.update_norm()
 
             # Potentially damp/extrapolate the updates, returning the amps back to 'old'
             self.damp_update()
@@ -465,7 +465,7 @@ class EBCCSD:
         if self.rank == (2, 0, 0):
             L1, L2 = ccsd_equations.lam_updates_ccsd(self, autogen=autogen)
         elif self.rank == (2, 1, 1):
-            L1, L2, LS1, LU11 = ccsd_1_1_equations.lam_updates_ccsd_1_1(self, autogen=autogen)
+            L1, L2, LS1, LU11 = ccsd_1_1_equations.lam_updates_ccsd_1_1(self)
         elif self.rank == (2, 2, 1):
             L1, L2, LS1, LS2, LU11 = ccsd_2_1_equations.lam_updates_ccsd_2_1(self, autogen=autogen)
         elif self.rank == (2, 2, 2):
@@ -474,17 +474,16 @@ class EBCCSD:
             raise NotImplementedError
 
         # Divide by denominators
-        #self.L1 = L1 / self.D1.transpose((1, 0))
-        #self.L2 = L2 / self.D2.transpose((2, 3, 0, 1))
         self.L1 = L1 / self.D1
         self.L2 = L2 / self.D2
 
+        # NOTE: Check transposes here 
         if self.rank[1] >= 1:
             self.LS1 = LS1 / -self.omega
         if self.rank[1] == 2:
             self.LS2 = LS2 / self.Ds2
         if self.rank[2] >= 1:
-            self.LU11 = LU11 / self.D1p.transpose((0, 2, 1))
+            self.LU11 = LU11 / self.D1p
         if self.rank[2] == 2:
             self.LU12 = LU12 / self.D2p.transpose((0, 1, 3, 2))
 
@@ -751,7 +750,7 @@ class EBCCSD:
 
         return None
 
-    def res_norm(self, t_or_l='t'):
+    def update_norm(self, t_or_l='t'):
         ''' Find the norm of the difference between old and new amplitudes '''
 
         if t_or_l.lower() == 't':
@@ -779,6 +778,19 @@ class EBCCSD:
 
         return res
 
+    def lam_res_norm(self):
+        ''' Get the norm of the lambda residual equations (debugging) '''
+        
+        if self.rank == (2,0,0):
+            res_norm = ccsd_equations.calc_lam_resid(self.fock_mo, self.I, self.T1old, self.L1old, self.T2old, self.L2old)
+        elif self.rank == (2,1,1):
+            res_norm = ccsd_1_1_equations.calc_lam_resid_1_1(self.fock_mo, self.I, self.T1old, self.L1old, 
+                self.T2old, self.L2old, self.S1old, self.LS1old, self.U11old, self.LU11old)
+        else:
+            raise NotImplementedError
+
+        return res_norm
+
     def solve_lambda(self):
         '''Solve lambda equations'''
 
@@ -799,9 +811,12 @@ class EBCCSD:
             print('DIIS acceleration not enabled...')
             print('Lambda amplitude damping: {}'.format(self.options['damp']))
         print('')
-        print('Iter.  |Delta_Lam|^2')
+        debug = True 
+        if debug:
+            print('Iter.  |Delta_Lam|^2  |Lam_Resid|^2')
+        else:
+            print('Iter.  |Delta_Lam|^2')
         converged = False
-        debug = False
         self.iter_l = 0
         while self.iter_l < max_iter and not converged:
 
@@ -809,24 +824,17 @@ class EBCCSD:
             self.update_l_amps()
 
             # Norm of update
-            res = self.res_norm(t_or_l='l')
+            res = self.update_norm(t_or_l='l')
 
             # Potentially damp/extrapolate the updates, returning the amps back to 'old'
             self.damp_l_update()
             
             if debug:
-                # If debug options on, compute the full residual at each step (rather than the update to the amplitudes) as
-                # convergence measure, as well as <Lambda x Hbar>, which should always be zero.
-                # However, computing these is as expensive as the update step...
-                # NOTE: These are hard-coded for just the normal ccsd
-                assert(self.rank == (2,0,0))
-
-                # Norm of residual
-                res_norm = ccsd_equations.calc_lam_resid(self.fock_mo, self.I, self.T1old, self.L1old, self.T2old, self.L2old)
-                # Calculate <Lambda x Hbar>
-                lam_hbar = ccsd_equations.calc_lam_hbar(self.fock_mo, self.I, self.T1old, self.L1old, self.T2old, self.L2old)
-        
-                print(' {:2d}    {:.4E}   {:.4E}   {:.4E}'.format(self.iter_l+1, res, res_norm, lam_hbar))
+                # Compute Norm of full lambda residual
+                lam_res_norm = self.lam_res_norm()
+                ## Calculate <Lambda x Hbar> (Note this should always be zero for optimized T amplitudes)
+                #lam_hbar = ccsd_equations.calc_lam_hbar(self.fock_mo, self.I, self.T1old, self.L1old, self.T2old, self.L2old)
+                print(' {:2d}    {:.4E}   {:.4E}  '.format(self.iter_l+1, res, lam_res_norm))
             else:
                 print(' {:2d}    {:.4E} '.format(self.iter_l+1, res))
 
@@ -847,24 +855,25 @@ class EBCCSD:
         return None 
 
     def init_lam(self):
+        ''' Initialize lambda amplitudes to L=T^+ '''
+
         self.L1 = self.T1.copy().T
         self.L2 = self.T2.copy().T
         self.L1old = self.T1.copy().T
         self.L2old = self.T2.copy().T
         self.LS1 = copy.copy(self.S1)
         self.LS1old = copy.copy(self.S1)
+        # dim = nbos, nocc, nvirt, while U11 is nbos, nocc, nvirt
         self.LU11 = copy.copy(self.U11)
         self.LU11old = copy.copy(self.U11)
+
         self.LS2 = copy.copy(self.S2)
         self.LS2old = copy.copy(self.S2)
         self.LU12 = copy.copy(self.U12)
         self.LU12old = copy.copy(self.U12)
-        if self.LS1 != None:
-            self.LS1 = self.LS1.T
-            self.LS1old = self.LS1old.T
         if self.LU11 != None:
-            self.LU11 = self.LU11.T
-            self.LU11old = self.LU11old.T
+            self.LU11 = self.LU11.transpose(0,2,1)
+            self.LU11old = self.LU11old.transpose(0,2,1)
         if self.LS2 != None:
             self.LS2 = self.LS2.T
             self.LS2old = self.LS2old.T
