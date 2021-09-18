@@ -25,7 +25,7 @@ T = T1 + T2 + S1 + U11
 L1 = E1("L1old", ["vir"], ["occ"])
 L2 = E2("L2old", ["vir"], ["occ"])
 LS1 = P_dexit1("LS1old", ["nm"])
-LU11 = EPS_dexit1("LU11old", ["nm"], ["virt"], ["occ"])
+LU11 = EPS_dexit1("LU11old", ["nm"], ["vir"], ["occ"])
 L = L1 + L2 + LS1 + LU11
 
 # Construct ket projection spaces
@@ -39,14 +39,17 @@ HT = commute(H, T)
 HTT = commute(HT, T)
 HTTT = commute(HTT, T)
 HTTTT = commute(HTTT, T)
-Hbar = H + HT + Fraction('1/2')*HTT
-Hbar += Fraction('1/6')*HTTT + Fraction('1/24')*HTTTT
+Hbar_4t = H + HT + Fraction('1/2')*HTT + Fraction('1/6')*HTTT + Fraction('1/24')*HTTTT
+Hbar_3t = H + HT + Fraction('1/2')*HTT + Fraction('1/6')*HTTT
+Hbar_2t = H + HT + Fraction('1/2')*HTT
+Hbar_1t = H + HT
+Hbar_0t = H
 
 # ***** L1 residuals *****
 print("Computing lambda residuals for 1 fermion deexcitation space...")
 print("Computing connected piece not proportional to Lambda...")
 # <0|Hbar|singles> (not proportional to lambda)
-S = Hbar*ket_singles
+S = Hbar_1t*ket_singles
 out = apply_wick(S)
 out.resolve()
 ex = AExpression(Ex=out)
@@ -59,7 +62,7 @@ print("",flush=True)
 
 # <0|(L Hbar)_c|singles> (Connected pieces proportional to Lambda)
 print("Computing connected piece proportional to Lambda...")
-S1 = L*S
+S1 = L*Hbar_3t*ket_singles
 out1 = apply_wick(S1)
 out1.resolve()
 ex1 = AExpression(Ex=out1)
@@ -74,7 +77,7 @@ if False:
     # that involve the fock matrix contracted more than linearly with L1 will
     # have to include the full fock matrix.
     # See p. 371 of Shavitt and Bartlett for more details.  
-    S2 = L*ket_singles*Hbar
+    S2 = L*ket_singles*Hbar_3t
     out2 = apply_wick(S2)
     out2.resolve()
     ex2 = AExpression(Ex=out2)
@@ -92,7 +95,7 @@ print('*****')
 print("Computing lambda residuals for 2 fermion deexcitation space...")
 print("Computing connected piece not proportional to Lambda...")
 # <0|Hbar|doubles> (not proportional to lambda)
-S = Hbar*ket_doubles
+S = Hbar_0t*ket_doubles
 out = apply_wick(S)
 out.resolve()
 ex = AExpression(Ex=out)
@@ -103,7 +106,7 @@ print("",flush=True)
 
 # <0|L Hbar|doubles> (Connected pieces proportional to Lambda)
 print("Computing connected piece proportional to Lambda...")
-S = L*S
+S = L*Hbar_2t*ket_doubles
 out = apply_wick(S)
 out.resolve()
 ex = AExpression(Ex=out)
@@ -117,8 +120,7 @@ print("Computing disconnected piece projecting onto single fermionic excitations
 # Don't apply get_connected here.
 # Form projector onto singles space
 P1 = PE1("occ", "vir")
-#S = (H + HT)*P1*L*ket
-S = Hbar*P1*L*ket_doubles
+S = Hbar_1t * P1 * L * ket_doubles
 out = apply_wick(S)
 out.resolve()
 ex = AExpression(Ex=out)
@@ -130,7 +132,7 @@ print("****")
 print("Computing lambda residuals for 1 boson deexcitation space...")
 print("Computing connected piece not proportional to Lambda...")
 # <0|Hbar|1b> (not proportional to lambda)
-S = Hbar*ket_1b
+S = Hbar_1t * ket_1b
 out = apply_wick(S)
 out.resolve()
 ex = AExpression(Ex=out)
@@ -141,7 +143,7 @@ print("",flush=True)
 
 # <0|L Hbar|1b> (Connected pieces proportional to Lambda)
 print("Computing connected piece proportional to Lambda...")
-S = L*S
+S = L * Hbar_3t * ket_1b
 out = apply_wick(S)
 out.resolve()
 ex = AExpression(Ex=out)
@@ -154,7 +156,7 @@ print("*****",flush=True)
 print("Computing lambda residuals for 1 boson + 1 fermion deexcitation space...")
 print("Computing connected piece not proportional to Lambda...")
 # <0|Hbar|EPS1> (not proportional to lambda)
-S = Hbar*ket_1b1e
+S = Hbar_0t*ket_1b1e
 out = apply_wick(S)
 out.resolve()
 ex = AExpression(Ex=out)
@@ -165,7 +167,7 @@ print("",flush=True)
 
 # <0|L Hbar|EPS1> (Connected pieces proportional to Lambda)
 print("Computing connected piece proportional to Lambda...")
-S = L*S
+S = L*Hbar_2t*ket_1b1e
 out = apply_wick(S)
 out.resolve()
 ex = AExpression(Ex=out)
@@ -179,8 +181,7 @@ print("",flush=True)
 # Form projector onto singles space
 print("Computing disconnected piece projecting onto single fermionic excitations...")
 P1 = PE1("occ", "vir")
-#S = (H + HT)*P1*L*ket
-S = Hbar*P1*L*ket_1b1e
+S = Hbar_1t*P1*L*ket_1b1e
 out = apply_wick(S)
 out.resolve()
 ex = AExpression(Ex=out)
@@ -191,7 +192,7 @@ print("",flush=True)
 # Also require projector onto 1 boson space (from L1 deexcitations)
 print("Computing disconnected piece projecting onto single bosonic excitations...")
 P1b = PB1("nm")
-S = Hbar*P1*L*ket_1b1e
+S = Hbar_1t*P1*L*ket_1b1e
 out = apply_wick(S)
 out.resolve()
 ex = AExpression(Ex=out)
