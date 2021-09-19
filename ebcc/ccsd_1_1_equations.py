@@ -62,7 +62,10 @@ def lam_updates_ccsd_1_1(cc):
     L1old = cc.L1old
     L2old = cc.L2old
     LS1old = cc.LS1old
-    LU11old = cc.LU11old
+    # LU11 is normally nbos, nocc, nvirt 
+    # However, in the contractions here, it is written as occ, virt, bos
+    LU11old = cc.LU11old.copy()
+    LU11old = LU11old.transpose(1,2,0)
     
     # Lambda residuals for 1-fermion deexcitation space
     # Connected piece not proportional to Lambda...
@@ -440,6 +443,9 @@ def lam_updates_ccsd_1_1(cc):
 
 def calc_lam_resid_1_1(F, I, T1old, L1old, T2old, L2old, S1old, LS1old, U11old, LU11old):
     ''' Compute the norm of the residual for the lambda equations (debugging) '''
+    # LU11 is normally nbos, nocc, nvirt 
+    # However, in the contractions here, it is written as occ, virt, bos
+    LU11old = LU11old.transpose(1,2,0)
 
     # Lambda residuals for 1-fermion deexcitation space
     # Connected piece not proportional to Lambda...

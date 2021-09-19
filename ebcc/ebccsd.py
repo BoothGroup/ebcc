@@ -863,7 +863,7 @@ class EBCCSD:
         self.L2old = self.T2.copy().T
         self.LS1 = copy.copy(self.S1)
         self.LS1old = copy.copy(self.S1)
-        # dim = nbos, nocc, nvirt, while U11 is nbos, nocc, nvirt
+        # dim = nbos, nocc, nvirt, while U11 is nbos, nvirt, nocc
         self.LU11 = copy.copy(self.U11)
         self.LU11old = copy.copy(self.U11)
 
@@ -871,13 +871,13 @@ class EBCCSD:
         self.LS2old = copy.copy(self.S2)
         self.LU12 = copy.copy(self.U12)
         self.LU12old = copy.copy(self.U12)
-        if self.LU11 != None:
+        if self.LU11 is not None:
             self.LU11 = self.LU11.transpose(0,2,1)
             self.LU11old = self.LU11old.transpose(0,2,1)
-        if self.LS2 != None:
+        if self.LS2 is not None:
             self.LS2 = self.LS2.T
             self.LS2old = self.LS2old.T
-        if self.LU12 != None:
+        if self.LU12 is not None:
             self.LU12 = self.LU12.T
             self.LU12old = self.LU12old.T
 
