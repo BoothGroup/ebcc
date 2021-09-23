@@ -579,7 +579,7 @@ class EBCCSD:
                 if self.rank[1] >= 1:
                     self.S1 = vec[self.t2_bound:self.s1_bound].reshape((self.nbos))
                 if self.rank[2] >= 1:
-                    self.U11 = vec[self.s1_bound:self.u11_bound].reshape((self.nbos, self.no, self.nv))
+                    self.U11 = vec[self.s1_bound:self.u11_bound].reshape((self.nbos, self.nv, self.no))
                 if self.rank[1] == 2:
                     self.S2 = vec[self.u11_bound:self.s2_bound].reshape((self.nbos, self.nbos))
                 if self.rank[2] == 2:
@@ -592,7 +592,7 @@ class EBCCSD:
                 if self.rank[1] >= 1:
                     self.LS1old = vec[self.t2_bound:self.s1_bound].reshape((self.nbos))
                 if self.rank[2] >= 1:
-                    self.LU11old = vec[self.s1_bound:self.u11_bound].reshape((self.no, self.nv, self.nbos))
+                    self.LU11old = vec[self.s1_bound:self.u11_bound].reshape((self.nbos, self.no, self.nv))
                 if self.rank[1] == 2:
                     self.LS2old = vec[self.u11_bound:self.s2_bound].reshape((self.nbos, self.nbos))
                 if self.rank[2] == 2:
@@ -603,7 +603,7 @@ class EBCCSD:
                 if self.rank[1] >= 1:
                     self.LS1 = vec[self.t2_bound:self.s1_bound].reshape((self.nbos))
                 if self.rank[2] >= 1:
-                    self.LU11 = vec[self.s1_bound:self.u11_bound].reshape((self.nv, self.no, self.nbos))
+                    self.LU11 = vec[self.s1_bound:self.u11_bound].reshape((self.nbos, self.no, self.nv))
                 if self.rank[1] == 2:
                     self.LS2 = vec[self.u11_bound:self.s2_bound].reshape((self.nbos, self.nbos))
                 if self.rank[2] == 2:
@@ -784,7 +784,8 @@ class EBCCSD:
         if self.rank == (2,0,0):
             res_norm = ccsd_equations.calc_lam_resid(self.fock_mo, self.I, self.T1old, self.L1old, self.T2old, self.L2old)
         elif self.rank == (2,1,1):
-            res_norm = ccsd_1_1_equations.calc_lam_resid_1_1(self.fock_mo, self.I, self.T1old, self.L1old, 
+            res_norm = ccsd_1_1_equations.calc_lam_resid_1_1(self.fock_mo, self.I, self.G, 
+                    self.g_mo_blocks, self.omega, self.T1old, self.L1old, 
                 self.T2old, self.L2old, self.S1old, self.LS1old, self.U11old, self.LU11old)
         else:
             raise NotImplementedError
@@ -863,7 +864,6 @@ class EBCCSD:
         self.L2old = self.T2.copy().T
         self.LS1 = copy.copy(self.S1)
         self.LS1old = copy.copy(self.S1)
-        # dim = nbos, nocc, nvirt, while U11 is nbos, nvirt, nocc
         self.LU11 = copy.copy(self.U11)
         self.LU11old = copy.copy(self.U11)
 
@@ -872,6 +872,7 @@ class EBCCSD:
         self.LU12 = copy.copy(self.U12)
         self.LU12old = copy.copy(self.U12)
         if self.LU11 is not None:
+            # U11 is (nb, nv, no), while LU11 is (nb, no, nv)
             self.LU11 = self.LU11.transpose(0,2,1)
             self.LU11old = self.LU11old.transpose(0,2,1)
         if self.LS2 is not None:

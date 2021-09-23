@@ -33,16 +33,16 @@ def EPS_dexit1(name, bspaces, ospaces, vspaces, index_key=None):
     vspaces (list): list of virtual spaces
     """
     terms = []
-    for os in ospaces:
-        for vs in vspaces:
-            for bs in bspaces:
+    for bs in bspaces:
+        for os in ospaces:
+            for vs in vspaces:
                 x = Idx(0, bs, fermion=False)
                 i = Idx(0, os)
                 a = Idx(0, vs)
-                sums = [Sigma(i), Sigma(a), Sigma(x)]
-                tensors = [Tensor([a, i, x], name)]
-                operators = [FOperator(a, True), 
-                             FOperator(i, False), BOperator(x, False)]
+                sums = [Sigma(x), Sigma(i), Sigma(a)]
+                tensors = [Tensor([x, a, i], name)]
+                operators = [BOperator(x, False), FOperator(a, True), 
+                             FOperator(i, False)]
                 e1 = Term(1, sums, tensors, operators, [], index_key=index_key)
                 terms.append(e1)
     return Expression(terms)
