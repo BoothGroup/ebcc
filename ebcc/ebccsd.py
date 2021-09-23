@@ -101,8 +101,6 @@ class EBCCSD:
         fock_u = (t,t) + self.mf.get_veff(self.mol, dm=(self.pa,self.pb))
         # Get it in ghf formal
         self.bare_fock = utils.block_diag(fock_u[0],fock_u[1])
-        
-        #e, v = np.linalg.eigh(self.bare_fock)
 
         if self.rank != (2,0,0):
             assert(self.omega is not None)
@@ -110,6 +108,7 @@ class EBCCSD:
             self.nbos = len(omega)
             assert(self.gmat.shape == (self.nbos, self.nao, self.nao))
             # Construct self.gmatso, which stores the spin-orbital version of gmat correctly (i.e. of dimension nbos, nso, nso)
+            # Note that this ensure that we only couple of the paramagnetic density. No coupling to spin densities.
             gmatso = [utils.block_diag(self.gmat[i], self.gmat[i]) for i in range(len(self.gmat))]
             self.gmatso = np.asarray(gmatso)
             # Transform g into the spin-orbital MO representation,
@@ -520,6 +519,52 @@ class EBCCSD:
             self.U12 = U12 / self.D2p.transpose((0, 1, 3, 2))
 
         return
+    
+    def make_sing_b_dm(self):
+        ''' Get single boson DM <b^+> and <b> with the creation first'''
+
+        if self.rank == (2, 0, 0):
+            dm_b_cre, dm_b_ann = ccsd_equations.dm_singbos(self)
+        elif self.rank == (2, 1, 1):
+            dm_b_cre, dm_b_ann = ccsd_1_1_equations.dm_singbos(self)
+        elif self.rank == (2, 2, 1):
+            dm_b_cre, dm_b_ann = ccsd_2_1_equations.dm_singbos(self)
+        elif self.rank == (2, 2, 2):
+            dm_b_cre, dm_b_ann = ccsd_2_2_equations.dm_singbos(self)
+
+        return (dm_b_cre, dm_b_ann)
+    
+    def make_1rdm_b(self):
+        ''' Get bosonic 1RDM <b^+ b>'''
+
+        if self.rank == (2, 0, 0):
+            rdm1_b = ccsd_equations.one_rdm_bos(self)
+        elif self.rank == (2, 1, 1):
+            rdm1_b = ccsd_1_1_equations.one_rdm_bos(self)
+        elif self.rank == (2, 2, 1):
+            rdm1_b = ccsd_2_1_equations.one_rdm_bos(self)
+        elif self.rank == (2, 2, 2):
+            rdm1_b = ccsd_2_2_equations.one_rdm_bos(self)
+
+        return rdm1_b
+
+    def make_eb_coup_rdm(self):
+        ''' Get electron-boson coupling RDMs <b+ i^+ j> and <b i^+ j>.
+            These two matrices are returned as a tuple of two matrices, of size
+            (nbos, nso, nso), where the bosonic creation and then annihilation matrices
+            are returned.
+        '''
+
+        if self.rank == (2, 0, 0):
+            dm_coup_boscre, dm_coup_bosann = ccsd_equations.eb_coup_rdm(self)
+        elif self.rank == (2, 1, 1):
+            dm_coup_boscre, dm_coup_bosann = ccsd_1_1_equations.eb_coup_rdm(self)
+        elif self.rank == (2, 2, 1):
+            dm_coup_boscre, dm_coup_bosann = ccsd_2_1_equations.eb_coup_rdm(self)
+        elif self.rank == (2, 2, 2):
+            dm_coup_boscre, dm_coup_bosann = ccsd_2_2_equations.eb_coup_rdm(self)
+
+        return (dm_coup_boscre, dm_coup_bosann) 
 
     def make_1rdm_f(self, autogen=None):
         ''' Get fermionic 1RDM'''
@@ -530,7 +575,7 @@ class EBCCSD:
         if self.rank == (2, 0, 0):
             rdm1 = ccsd_equations.one_rdm_ferm(self, autogen=autogen)
         elif self.rank == (2, 1, 1):
-            rdm1 = ccsd_1_1_equations.one_rdm_ferm(self, autogen=autogen)
+            rdm1 = ccsd_1_1_equations.one_rdm_ferm(self)
         elif self.rank == (2, 2, 1):
             rdm1 = ccsd_2_1_equations.one_rdm_ferm(self, autogen=autogen)
         elif self.rank == (2, 2, 2):
@@ -547,7 +592,7 @@ class EBCCSD:
         if self.rank == (2, 0, 0):
             rdm1 = ccsd_equations.two_rdm_ferm(self, autogen=autogen)
         elif self.rank == (2, 1, 1):
-            rdm1 = ccsd_1_1_equations.two_rdm_ferm(self, autogen=autogen)
+            rdm1 = ccsd_1_1_equations.two_rdm_ferm(self)
         elif self.rank == (2, 2, 1):
             rdm1 = ccsd_2_1_equations.two_rdm_ferm(self, autogen=autogen)
         elif self.rank == (2, 2, 2):

@@ -376,6 +376,26 @@ def two_rdm_ferm(cc, autogen=False, write=True):
     dm2 = dm2.transpose(2,0,3,1)
     return dm2
 
+def one_rdm_bos(cc, write=True):
+    ''' Calculate bosonic 1RDM: <b^+_i b_j> '''
+    if write:
+        print('No bosonic RDM for the CCSD model...')
+    return np.zeros((cc.nbos, cc.nbos))
+
+def dm_singbos(cc, write=True):
+    ''' Calculate single boson RDMs as a tuple, (<b^+>, <b>) '''
+    if write:
+        print('No single boson RDMs for the CCSD model...')
+    return (np.zeros((cc.nbos)), np.zeros((cc.nbos)))
+
+def eb_coup_rdm(cc, write=True):
+    ''' Calculate the e-b coupling RDMs: <b^+_I p^+ q> and <b_I p^+ q>.
+        Returns as a tuple (Ipq, Ipq), where the first matrix corresponds
+        to the bosonic creation, and the second to the annihilation
+    '''
+    if write:
+        print('No bosonic RDM for the CCSD model...')
+    return (np.zeros((cc.nbos, cc.nso, cc.nso)), np.zeros((cc.nbos, cc.nso, cc.nso)))
 
 def one_rdm_ferm(cc, autogen=False, write=True):
     ''' Calculate 1RDM '''
