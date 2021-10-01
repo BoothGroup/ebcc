@@ -34,6 +34,34 @@ LS1 = P_dexit1("LS1", ["nm"])
 LU11 = EPS_dexit1("LU11", ["nm"], ["vir"], ["occ"])
 L = L1 + L2 + LS1 + LU11
 
+# Bosonic RDMs <b^+>
+operators = [BOperator(I, True)]
+pbb = Expression([Term(1, [], [Tensor([I], "")], operators, [])])
+PT = commute(pbb, T)
+PTT = commute(PT, T)
+PTTT = commute(PTT, T)
+mid = pbb + PT + Fraction('1/2')*PTT + Fraction('1/6')*PTTT
+full = mid + L*mid
+out = apply_wick(full)
+out.resolve()
+final = AExpression(Ex=out)
+print("P_{b_} = ")
+print(final._print_einsum('dm1_b_'))
+
+# Bosonic RDMs <b>
+operators = [BOperator(I, False)]
+pbb = Expression([Term(1, [], [Tensor([I], "")], operators, [])])
+PT = commute(pbb, T)
+PTT = commute(PT, T)
+PTTT = commute(PTT, T)
+mid = pbb + PT + Fraction('1/2')*PTT + Fraction('1/6')*PTTT
+full = mid + L*mid
+out = apply_wick(full)
+out.resolve()
+final = AExpression(Ex=out)
+print("P_{b} = ")
+print(final._print_einsum('dm1_b'))
+
 # Bosonic RDMs <b^+ b>
 operators = [BOperator(I, True), BOperator(J, False)]
 pbb = Expression([Term(1, [], [Tensor([I, J], "")], operators, [])])

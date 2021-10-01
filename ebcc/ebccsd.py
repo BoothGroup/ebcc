@@ -604,10 +604,15 @@ class EBCCSD:
         ''' Take a flattened vector of all amplitudes in the ansatz
             and distribute them back to the ebcc object amplitudes.
             By default, they will be returned to the 'old' amplitudes,
-            unless amps is not set to 'old'. '''
+            unless amps is not set to 'old'.
+            If amps = 'arrays', the individual arrays will be returned, and 
+            the ebcc object not updated.
+            '''
+
+        assert(amps.lower() in ['old', 'new', 'arrays'])
 
         if t_or_l.lower() == 't':
-            if amps == 'old':
+            if amps.lower() == 'old':
                 self.T1old = vec[:self.t1_bound].reshape((self.nv, self.no))
                 self.T2old = vec[self.t1_bound:self.t2_bound].reshape((self.nv, self.nv, self.no, self.no))
                 if self.rank[1] >= 1:
@@ -618,7 +623,7 @@ class EBCCSD:
                     self.S2old = vec[self.u11_bound:self.s2_bound].reshape((self.nbos, self.nbos))
                 if self.rank[2] == 2:
                     self.U12old = vec[self.s2_bound:].reshape((self.nbos, self.nbos, self.nv, self.no))
-            else:
+            elif amps.lower() == 'new':
                 self.T1 = vec[:self.t1_bound].reshape((self.nv, self.no))
                 self.T2 = vec[self.t1_bound:self.t2_bound].reshape((self.nv, self.nv, self.no, self.no))
                 if self.rank[1] >= 1:
@@ -629,9 +634,21 @@ class EBCCSD:
                     self.S2 = vec[self.u11_bound:self.s2_bound].reshape((self.nbos, self.nbos))
                 if self.rank[2] == 2:
                     self.U12 = vec[self.s2_bound:].reshape((self.nbos, self.nbos, self.nv, self.no))
+            else:
+                # Just return the individual arrays of amplitudes
+                T1 = vec[:self.t1_bound].reshape((self.nv, self.no))
+                T2 = vec[self.t1_bound:self.t2_bound].reshape((self.nv, self.nv, self.no, self.no))
+                if self.rank[1] >= 1:
+                    S1 = vec[self.t2_bound:self.s1_bound].reshape((self.nbos))
+                if self.rank[2] >= 1:
+                    U11 = vec[self.s1_bound:self.u11_bound].reshape((self.nbos, self.nv, self.no))
+                if self.rank[1] == 2:
+                    S2 = vec[self.u11_bound:self.s2_bound].reshape((self.nbos, self.nbos))
+                if self.rank[2] == 2:
+                    U12 = vec[self.s2_bound:].reshape((self.nbos, self.nbos, self.nv, self.no))
         else:
             # Do the same for the lambda amplitudes
-            if amps == 'old':
+            if amps.lower() == 'old':
                 self.L1old = vec[:self.t1_bound].reshape((self.no, self.nv))
                 self.L2old = vec[self.t1_bound:self.t2_bound].reshape((self.no, self.no, self.nv, self.nv))
                 if self.rank[1] >= 1:
@@ -642,7 +659,7 @@ class EBCCSD:
                     self.LS2old = vec[self.u11_bound:self.s2_bound].reshape((self.nbos, self.nbos))
                 if self.rank[2] == 2:
                     self.LU12old = vec[self.s2_bound:].reshape((self.no, self.nv, self.nbos, self.nbos))
-            else:
+            elif amps.lower() == 'new':
                 self.L1 = vec[:self.t1_bound].reshape((self.no, self.nv))
                 self.L2 = vec[self.t1_bound:self.t2_bound].reshape((self.no, self.no, self.nv, self.nv))
                 if self.rank[1] >= 1:
@@ -653,8 +670,44 @@ class EBCCSD:
                     self.LS2 = vec[self.u11_bound:self.s2_bound].reshape((self.nbos, self.nbos))
                 if self.rank[2] == 2:
                     self.LU12 = vec[self.s2_bound:].reshape((self.no, self.nv, self.nbos, self.nbos))
-
-        return None
+            else:
+                # Just return the individual arrays
+                L1 = vec[:self.t1_bound].reshape((self.no, self.nv))
+                L2 = vec[self.t1_bound:self.t2_bound].reshape((self.no, self.no, self.nv, self.nv))
+                if self.rank[1] >= 1:
+                    LS1 = vec[self.t2_bound:self.s1_bound].reshape((self.nbos))
+                if self.rank[2] >= 1:
+                    LU11 = vec[self.s1_bound:self.u11_bound].reshape((self.nbos, self.no, self.nv))
+                if self.rank[1] == 2:
+                    LS2 = vec[self.u11_bound:self.s2_bound].reshape((self.nbos, self.nbos))
+                if self.rank[2] == 2:
+                    LU12 = vec[self.s2_bound:].reshape((self.no, self.nv, self.nbos, self.nbos))
+            
+        if amps.lower() == 'arrays':
+            if t_or_l.lower() == 't': 
+                if self.rank == (2,0,0):
+                    return T1, T2
+                elif self.rank == (2,1,1):
+                    return T1, T2, S1, U11
+                elif self.rank == (2,2,1):
+                    return T1, T2, S1, S2, U11
+                elif self.rank == (2,2,2):
+                    return T1, T2, S1, S2, U11, U12
+                else:
+                    raise NotImplementedError
+            else:
+                if self.rank == (2,0,0):
+                    return L1, L2
+                elif self.rank == (2,1,1):
+                    return L1, L2, LS1, LU11
+                elif self.rank == (2,2,1):
+                    return L1, L2, LS1, LS2, LU11
+                elif self.rank == (2,2,2):
+                    return L1, L2, LS1, LS2, LU11, LU12
+                else:
+                    raise NotImplementedError
+        else:
+            return None
 
     def amps_to_vec(self, amps='old',t_or_l='t'):
         ''' Flatten the amplitudes of the cc ansatz to a vector.
@@ -927,4 +980,42 @@ class EBCCSD:
             self.LU12 = self.LU12.T
             self.LU12old = self.LU12old.T
 
+        return None
+    
+    def test_opt_lam(self):
+        ''' Numerically differentiate the CC lagrangian, to test whether it is stationary wrt T-amplitudes'''
+        import numdifftools as nd
+
+        def eval_lag(vec_t, self):
+            ''' Evaluate the CC lagrangian with a flattened set of T amplitudes, with all hamiltonian
+            or lambda (new) parameters taken from the CC object'''
+
+            # Expand out T amplitudes
+            if self.rank == (2,1,1):
+                T1, T2, S1, U11 = self.vec_to_amps(vec_t, amps = 'arrays', t_or_l='t')
+                lag = ccsd_1_1_equations.calc_lagrangian_1_1(self.fock_mo, self.I, self.G, self.g_mo_blocks, self.omega, T1, self.L1,
+                        T2, self.L2, S1, self.LS1, U11, self.LU11)
+            else:
+                raise NotImplementedError
+            return lag
+
+        # Get flattened representation of all T-amplitudes (the 'new' ones)
+        vec_t = self.amps_to_vec(amps='new', t_or_l='t')
+        grad = nd.Gradient(eval_lag)(vec_t, self)
+        # grad should presumably have the same dimensions as the T-amplitudes
+        if self.rank == (2,1,1):
+            T1_grad, T2_grad, S1_grad, U11_grad = self.vec_to_amps(grad, amps='arrays', t_or_l='t')
+
+            print('Gradient of CC lagrangian wrt T1 amplitudes:')
+            print(T1_grad)
+            print('Gradient of CC lagrangian wrt T2 amplitudes:')
+            print(T2_grad)
+            print('Gradient of CC lagrangian wrt S1 amplitudes:')
+            print(S1_grad)
+            print('Gradient of CC lagrangian wrt U11 amplitudes:')
+            print(U11_grad)
+
+            return T1_grad, T2_grad, S1_grad, U11_grad
+        else:
+            raise NotImplementedError
         return None
