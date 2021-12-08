@@ -45,7 +45,7 @@ Hbar_2t = H + HT + Fraction('1/2')*HTT
 Hbar_1t = H + HT
 Hbar_0t = H
 
-simplify = False
+simplify = True
 
 # ***** L1 residuals *****
 print("Computing lambda residuals for 1 fermion deexcitation space...")

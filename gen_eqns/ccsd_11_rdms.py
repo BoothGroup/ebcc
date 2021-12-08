@@ -32,6 +32,8 @@ LS1 = P_dexit1("LS1", ["nm"])
 LU11 = EPS_dexit1("LU11", ["nm"], ["vir"], ["occ"])
 L = L1 + L2 + LS1 + LU11
 
+simplify = True 
+
 # ov block
 operators = [FOperator(a, True), FOperator(i, False)]
 pvo = Expression([Term(1, [], [Tensor([i, a], "")], operators, [])])
@@ -43,7 +45,7 @@ mid = pvo + PT + Fraction('1/2')*PTT + Fraction('1/6')*PTTT
 full = mid + L*mid
 out = apply_wick(full)
 out.resolve()
-final = AExpression(Ex=out)
+final = AExpression(Ex=out, simplify=simplify)
 print("P_{ov} = ")
 print(final._print_einsum('dm1_ov'))
 
@@ -57,7 +59,7 @@ mid = pvv + PT + Fraction('1/2')*PTT
 full = mid + L*mid
 out = apply_wick(full)
 out.resolve()
-final = AExpression(Ex=out)
+final = AExpression(Ex=out, simplify=simplify)
 final.sort_tensors()
 print("P_{vv} = ")
 print(final._print_einsum('dm1_vv'))
@@ -72,7 +74,7 @@ mid = poo + PT + Fraction('1/2')*PTT
 full = mid + L*mid
 out = apply_wick(full)
 out.resolve()
-final = AExpression(Ex=out)
+final = AExpression(Ex=out, simplify=simplify)
 final.sort_tensors()
 print("P_{oo} = ")
 print(final._print_einsum('dm1_oo'))
@@ -87,7 +89,7 @@ mid = pvo + PT + Fraction('1/2')*PTT + Fraction('1/6')*PTTT
 full = mid + L*mid
 out = apply_wick(full)
 out.resolve()
-final = AExpression(Ex=out)
+final = AExpression(Ex=out, simplify=simplify)
 final.sort_tensors()
 print("P_{vo} = ")
 print(final._print_einsum('dm1_vo'))
@@ -106,7 +108,7 @@ mid += Fraction('1/24')*PTTTT
 full = mid + L*mid
 out = apply_wick(full)
 out.resolve()
-final = AExpression(Ex=out)
+final = AExpression(Ex=out, simplify=simplify)
 #final = final.get_connected()
 final.sort_tensors()
 print("P_{oooo} = ")
@@ -126,7 +128,7 @@ mid += Fraction('1/24')*PTTTT
 full = mid + L*mid
 out = apply_wick(full)
 out.resolve()
-final = AExpression(Ex=out)
+final = AExpression(Ex=out, simplify=simplify)
 #final = final.get_connected()
 final.sort_tensors()
 print("P_{vvvv} = ")
@@ -146,7 +148,7 @@ mid += Fraction('1/24')*PTTTT
 full = mid + L*mid
 out = apply_wick(full)
 out.resolve()
-final = AExpression(Ex=out)
+final = AExpression(Ex=out, simplify=simplify)
 #final = final.get_connected()
 final.sort_tensors()
 print("P_{ovvv} = ")
@@ -166,7 +168,7 @@ mid += Fraction('1/24')*PTTTT
 full = mid + L*mid
 out = apply_wick(full)
 out.resolve()
-final = AExpression(Ex=out)
+final = AExpression(Ex=out, simplify=simplify)
 #final = final.get_connected()
 final.sort_tensors()
 print("P_{vovv} = ")
@@ -186,7 +188,7 @@ mid += Fraction('1/24')*PTTTT
 full = mid + L*mid
 out = apply_wick(full)
 out.resolve()
-final = AExpression(Ex=out)
+final = AExpression(Ex=out, simplify=simplify)
 #final = final.get_connected()
 final.sort_tensors()
 print("P_{vvov} = ")
@@ -206,7 +208,7 @@ mid += Fraction('1/24')*PTTTT
 full = mid + L*mid
 out = apply_wick(full)
 out.resolve()
-final = AExpression(Ex=out)
+final = AExpression(Ex=out, simplify=simplify)
 #final = final.get_connected()
 final.sort_tensors()
 print("P_{vvvo} = ")
@@ -226,7 +228,7 @@ mid += Fraction('1/24')*PTTTT
 full = mid + L*mid
 out = apply_wick(full)
 out.resolve()
-final = AExpression(Ex=out)
+final = AExpression(Ex=out, simplify=simplify)
 #final = final.get_connected()
 final.sort_tensors()
 print("P_{vooo} = ")
@@ -247,7 +249,7 @@ mid += Fraction('1/24')*PTTTT
 full = mid + L*mid
 out = apply_wick(full)
 out.resolve()
-final = AExpression(Ex=out)
+final = AExpression(Ex=out, simplify=simplify)
 #final = final.get_connected()
 final.sort_tensors()
 print("P_{ovoo} = ")
@@ -267,7 +269,7 @@ mid += Fraction('1/24')*PTTTT
 full = mid + L*mid
 out = apply_wick(full)
 out.resolve()
-final = AExpression(Ex=out)
+final = AExpression(Ex=out, simplify=simplify)
 #final = final.get_connected()
 final.sort_tensors()
 print("P_{oovo} = ")
@@ -287,7 +289,7 @@ mid += Fraction('1/24')*PTTTT
 full = mid + L*mid
 out = apply_wick(full)
 out.resolve()
-final = AExpression(Ex=out)
+final = AExpression(Ex=out, simplify=simplify)
 #final = final.get_connected()
 final.sort_tensors()
 print("P_{ooov} = ")
@@ -307,7 +309,7 @@ mid += Fraction('1/24')*PTTTT
 full = mid + L*mid
 out = apply_wick(full)
 out.resolve()
-final = AExpression(Ex=out)
+final = AExpression(Ex=out, simplify=simplify)
 #final = final.get_connected()
 final.sort_tensors()
 print("P_{vvoo} = ")
@@ -327,7 +329,7 @@ mid += Fraction('1/24')*PTTTT
 full = mid + L*mid
 out = apply_wick(full)
 out.resolve()
-final = AExpression(Ex=out)
+final = AExpression(Ex=out, simplify=simplify)
 #final = final.get_connected()
 final.sort_tensors()
 print("P_{oovv} = ")
@@ -347,7 +349,7 @@ mid += Fraction('1/24')*PTTTT
 full = mid + L*mid
 out = apply_wick(full)
 out.resolve()
-final = AExpression(Ex=out)
+final = AExpression(Ex=out, simplify=simplify)
 #final = final.get_connected()
 final.sort_tensors()
 print("P_{vovo} = ")
@@ -367,7 +369,7 @@ mid += Fraction('1/24')*PTTTT
 full = mid + L*mid
 out = apply_wick(full)
 out.resolve()
-final = AExpression(Ex=out)
+final = AExpression(Ex=out, simplify=simplify)
 #final = final.get_connected()
 final.sort_tensors()
 print("P_{voov} = ")
@@ -387,7 +389,7 @@ mid += Fraction('1/24')*PTTTT
 full = mid + L*mid
 out = apply_wick(full)
 out.resolve()
-final = AExpression(Ex=out)
+final = AExpression(Ex=out, simplify=simplify)
 #final = final.get_connected()
 final.sort_tensors()
 print("P_{ovov} = ")

@@ -268,7 +268,7 @@ class EBCCSD:
 
     def get_two_ferm_interactions(self, eri):
         ''' Args:
-            eri: Chemical, spatial orbital non-symmetrized integrals. Note no permutational symmetry should be used.
+            eri: Chemical, spatial AO orbital non-symmetrized integrals. Note no permutational symmetry should be used.
 
             Store as a two_e_blocks object in order to access individual components.
             The integrals are stored as antisymmetrized, physicist notation integrals.
@@ -467,6 +467,18 @@ class EBCCSD:
                 raise NotImplementedError
         
         return E
+
+    def energy_from_rdms(self):
+        ''' Compute the total energy from the RDMs '''
+        
+        dm1_eb = cc.make_1rdm_f()
+        dm2_eb = cc.make_2rdm_f()
+        dm1_bb = cc.make_1rdm_b()
+        dm1_coup_cre, dm1_coup_ann = cc.make_eb_coup_rdm()
+        dm1_b_sing_cre, dm1_b_sing_ann = cc.make_sing_b_dm()
+
+        return
+
     
     def update_l_amps(self, autogen=None):
         '''Update lambda amplitudes'''
@@ -1007,6 +1019,10 @@ class EBCCSD:
     def test_opt_lam(self, simplify=True):
         ''' Numerically differentiate the CC lagrangian, to test whether it is stationary wrt T-amplitudes'''
         import numdifftools as nd
+
+        print('''Note that this is broken for the simplified expressions, since the numerical derivative does not preserve
+        permutational (anti)symmetry of L and T. FIXME.''')
+        1./0
 
         def eval_lag(vec_t, self, simplify):
             ''' Evaluate the CC lagrangian with a flattened set of T amplitudes, with all hamiltonian
