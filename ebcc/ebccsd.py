@@ -328,7 +328,18 @@ class EBCCSD:
         vooo = Ua_mo[np.ix_(vidx,oidx,oidx,oidx)]
         ooov = Ua_mo[np.ix_(oidx,oidx,oidx,vidx)]
         oooo = Ua_mo[np.ix_(oidx,oidx,oidx,oidx)]
-        return utils.two_e_blocks(vvvv=vvvv,vvvo=vvvo, vovv=vovv, vvoo=vvoo, oovv=oovv,vovo=vovo, vooo=vooo, ooov=ooov, oooo=oooo)
+
+        int_blocks = utils.two_e_blocks(vvvv=vvvv,vvvo=vvvo, vovv=vovv, vvoo=vvoo, oovv=oovv,vovo=vovo, vooo=vooo, ooov=ooov, oooo=oooo)
+
+        assert(np.allclose(int_blocks.ovov, Ua_mo[np.ix_(oidx,vidx,oidx,vidx)]))
+        assert(np.allclose(int_blocks.ovvv, Ua_mo[np.ix_(oidx,vidx,vidx,vidx)]))
+        assert(np.allclose(int_blocks.ovoo, Ua_mo[np.ix_(oidx,vidx,oidx,oidx)]))
+        assert(np.allclose(int_blocks.vvov, Ua_mo[np.ix_(vidx,vidx,oidx,vidx)]))
+        assert(np.allclose(int_blocks.voov, Ua_mo[np.ix_(vidx,oidx,oidx,vidx)]))
+        assert(np.allclose(int_blocks.ovvo, Ua_mo[np.ix_(oidx,vidx,vidx,oidx)]))
+        assert(np.allclose(int_blocks.oovo, Ua_mo[np.ix_(oidx,oidx,vidx,oidx)]))
+
+        return int_blocks 
 
     def mfG(self):
         '''Get the bosonic creation/annihilation term which arises if you are normal ordering the bosonic part wrt HF reference.
@@ -364,6 +375,8 @@ class EBCCSD:
             return ehf + self.const
         else:
             return ehf
+
+
     def kernel(self):
         '''Run CCSD calculation'''
 
@@ -397,7 +410,7 @@ class EBCCSD:
             self.update_amps()
 
             # Norm of update
-            res = self.update_norm()
+            deltat = self.update_norm()
 
             # Potentially damp/extrapolate the updates, returning the amps back to 'old'
             self.damp_update()
@@ -405,8 +418,8 @@ class EBCCSD:
             # Update energy
             E = self.energy(amps='old')
             Ediff = abs(E - Eold)
-            print(' {:2d}  {:.10f}   {:.4E}'.format(self.iter+1, E, res))
-            if Ediff < ethresh and res < tthresh:
+            print(' {:2d}  {:.10f}   {:.4E}'.format(self.iter+1, E, deltat))
+            if Ediff < ethresh and deltat < tthresh:
                 converged = True
             Eold = E
             self.iter += 1
@@ -876,11 +889,11 @@ class EBCCSD:
 
         return res
 
-    def lam_res_norm(self):
+    def lam_res_norm(self, simplify=True):
         ''' Get the norm of the lambda residual equations (debugging) '''
         
         if self.rank == (2,0,0):
-            res_norm = ccsd_equations.calc_lam_resid(self.fock_mo, self.I, self.T1old, self.L1old, self.T2old, self.L2old)
+            res_norm = ccsd_equations.calc_lam_resid(self.fock_mo, self.I, self.T1old, self.L1old, self.T2old, self.L2old, simplify=simplify)
         elif self.rank == (2,1,1):
             res_norm = ccsd_1_1_equations.calc_lam_resid_1_1(self.fock_mo, self.I, self.G, 
                     self.g_mo_blocks, self.omega, self.T1old, self.L1old, 
@@ -912,7 +925,7 @@ class EBCCSD:
         print('')
         debug = True 
         if debug:
-            print('Iter.  |Delta_Lam|^2  |Lam_Resid|^2')
+            print('Iter.  |Delta_Lam|^2  |Lam_Resid|^2(simp) |Lam_Resid|^2(no simp) CC.Lag(simp) CC.Lag(no simp)')
         else:
             print('Iter.  |Delta_Lam|^2')
         converged = False
@@ -923,21 +936,30 @@ class EBCCSD:
             self.update_l_amps()
 
             # Norm of update
-            res = self.update_norm(t_or_l='l')
+            deltal = self.update_norm(t_or_l='l')
 
             # Potentially damp/extrapolate the updates, returning the amps back to 'old'
             self.damp_l_update()
             
             if debug:
                 # Compute Norm of full lambda residual
-                lam_res_norm = self.lam_res_norm()
+                lam_res_norm_simp = self.lam_res_norm(simplify=True)
+                lam_res_norm_nosimp = self.lam_res_norm(simplify=False)
                 ## Calculate <Lambda x Hbar> (Note this should always be zero for optimized T amplitudes)
                 #lam_hbar = ccsd_equations.calc_lam_hbar(self.fock_mo, self.I, self.T1old, self.L1old, self.T2old, self.L2old)
-                print(' {:2d}    {:.4E}   {:.4E}  '.format(self.iter_l+1, res, lam_res_norm))
+                if self.rank == (2,0,0):
+                    lag_simp = ccsd_equations.calc_lagrangian(self.fock_mo, self.I, self.T1old, self.L1old, self.T2old, self.L2old, simplify=True)
+                    lag_nosimp = ccsd_equations.calc_lagrangian(self.fock_mo, self.I, self.T1old, self.L1old, self.T2old, self.L2old, simplify=False)
+                elif self.rank == (2,1,1):
+                    lag_simp = ccsd_1_1_equations.calc_lagrangian_1_1(self.fock_mo, self.I, self.G, self.g_mo_blocks, self.omega, self.T1old, self.L1old,
+                            self.T2old, self.L2old, self.S1old, self.LS1old, self.U11old, self.LU11old, simplify=True)
+                    lag_nosimp = ccsd_1_1_equations.calc_lagrangian_1_1(self.fock_mo, self.I, self.G, self.g_mo_blocks, self.omega, self.T1old, self.L1old,
+                            self.T2old, self.L2old, self.S1old, self.LS1old, self.U11old, self.LU11old, simplify=False)
+                print(' {:2d}    {:.4E}   {:.4E}  {:.4E}  {:.4E}  {:.4E}'.format(self.iter_l+1, deltal, lam_res_norm_simp, lam_res_norm_nosimp, lag_simp, lag_nosimp))
             else:
-                print(' {:2d}    {:.4E} '.format(self.iter_l+1, res))
+                print(' {:2d}    {:.4E} '.format(self.iter_l+1, deltal))
 
-            if res < tthresh:
+            if deltal < tthresh:
                 converged = True
             self.iter_l += 1
         
@@ -982,38 +1004,69 @@ class EBCCSD:
 
         return None
     
-    def test_opt_lam(self):
+    def test_opt_lam(self, simplify=True):
         ''' Numerically differentiate the CC lagrangian, to test whether it is stationary wrt T-amplitudes'''
         import numdifftools as nd
 
-        def eval_lag(vec_t, self):
+        def eval_lag(vec_t, self, simplify):
             ''' Evaluate the CC lagrangian with a flattened set of T amplitudes, with all hamiltonian
             or lambda (new) parameters taken from the CC object'''
-
+            
             # Expand out T amplitudes
-            if self.rank == (2,1,1):
+            if self.rank == (2,0,0):
+                T1, T2 = self.vec_to_amps(vec_t, amps = 'arrays', t_or_l='t')
+                print('T1 amplitudes: ')
+                print(T1)
+                print('T2 amplitudes: ')
+                print(T2)
+                lag = ccsd_equations.calc_lagrangian(self.fock_mo, self.I, T1, self.L1, T2, self.L2, simplify=simplify)
+                print('Lagrangian with simplify = {} is {}'.format(simplify,lag))
+                lag_other = ccsd_equations.calc_lagrangian(self.fock_mo, self.I, T1, self.L1, T2, self.L2, simplify=not simplify)
+                print('Lagrangian with simplify = {} is {}'.format(not simplify,lag_other))
+                print('Difference in Lagrangian is {}'.format(lag-lag_other),flush=True)
+            elif self.rank == (2,1,1):
                 T1, T2, S1, U11 = self.vec_to_amps(vec_t, amps = 'arrays', t_or_l='t')
                 lag = ccsd_1_1_equations.calc_lagrangian_1_1(self.fock_mo, self.I, self.G, self.g_mo_blocks, self.omega, T1, self.L1,
-                        T2, self.L2, S1, self.LS1, U11, self.LU11)
+                        T2, self.L2, S1, self.LS1, U11, self.LU11, simplify=simplify)
             else:
                 raise NotImplementedError
             return lag
 
         # Get flattened representation of all T-amplitudes (the 'new' ones)
+        print('L1 amplitudes: ')
+        print(self.L1)
+        print('L2 amplitudes: ')
+        print(self.L2)
+        print('Initial T1 amplitudes: ')
+        print(self.T1)
+        print('Initial T2 amplitudes: ')
+        print(self.T2)
         vec_t = self.amps_to_vec(amps='new', t_or_l='t')
-        grad = nd.Gradient(eval_lag)(vec_t, self)
+        grad = nd.Gradient(eval_lag)(vec_t, self, simplify)
         # grad should presumably have the same dimensions as the T-amplitudes
-        if self.rank == (2,1,1):
+        writeout = False
+        if self.rank == (2,0,0):
+            T1_grad, T2_grad = self.vec_to_amps(grad, amps='arrays', t_or_l='t')
+
+            if writeout:
+                print('Gradient of CC lagrangian wrt T1 amplitudes:')
+                print(T1_grad)
+                print('Gradient of CC lagrangian wrt T2 amplitudes:')
+                print(T2_grad)
+
+            return T1_grad, T2_grad
+        elif self.rank == (2,1,1):
             T1_grad, T2_grad, S1_grad, U11_grad = self.vec_to_amps(grad, amps='arrays', t_or_l='t')
 
-            print('Gradient of CC lagrangian wrt T1 amplitudes:')
-            print(T1_grad)
-            print('Gradient of CC lagrangian wrt T2 amplitudes:')
-            print(T2_grad)
-            print('Gradient of CC lagrangian wrt S1 amplitudes:')
-            print(S1_grad)
-            print('Gradient of CC lagrangian wrt U11 amplitudes:')
-            print(U11_grad)
+            if writeout:
+                print('Gradient of CC lagrangian wrt T1 amplitudes:')
+                print(T1_grad)
+                print('Gradient of CC lagrangian wrt T2 amplitudes:')
+                print(T2_grad)
+                print('Gradient of CC lagrangian wrt S1 amplitudes:')
+                print(S1_grad)
+                print('Gradient of CC lagrangian wrt U11 amplitudes:')
+                print(U11_grad)
 
             return T1_grad, T2_grad, S1_grad, U11_grad
         else:

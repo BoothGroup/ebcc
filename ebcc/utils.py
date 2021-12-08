@@ -128,8 +128,11 @@ class two_e_blocks:
         self.vooo = vooo
         self.ooov = ooov
         self.oooo = oooo
-        # Added by ghb
+        # Added by ghb. Could be removed to save memory....
         self.ovov = vovo.copy().transpose((1, 0, 3, 2))
         self.ovvv = vovv.copy().transpose((1, 0, 3, 2))
         self.ovoo = vooo.copy().transpose((1, 0, 3, 2))
         self.vvov = vvvo.copy().transpose((1, 0, 3, 2)) 
+        self.voov = -vovo.copy().transpose((0, 1, 3, 2))
+        self.ovvo = self.voov.copy().transpose((1, 0, 3, 2))
+        self.oovo = ooov.copy().transpose((1, 0, 3, 2))
