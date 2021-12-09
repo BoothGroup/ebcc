@@ -357,15 +357,17 @@ def eb_coup_rdm(cc, write=True):
     dm_coup_boscre = np.zeros((cc.nbos, cc.nso, cc.nso))
     dm_coup_bosann = np.zeros((cc.nbos, cc.nso, cc.nso))
 
-    dm_coup_boscre[:, :cc.no, :cc.no] = (dm1_b_oo + dm1_b_oo.transpose(0,2,1)) / 2.
-    dm_coup_boscre[:, cc.no:, cc.no:] = (dm1_b_vv + dm1_b_vv.transpose(0,2,1)) / 2.
-    dm_coup_boscre[:, :cc.no, cc.no:] = (dm1_b_ov + dm1_b_vo.transpose(0,2,1)) / 2.
-    dm_coup_boscre[:, cc.no:, :cc.no] = dm_coup_boscre[:, :cc.no, cc.no:].transpose(0,2,1)
+    dm_coup_boscre[:, :cc.no, :cc.no] = dm1_b_oo # + dm1_b_oo.transpose(0,2,1)) / 2.
+    dm_coup_boscre[:, cc.no:, cc.no:] = dm1_b_vv #+ dm1_b_vv.transpose(0,2,1)) / 2.
+    dm_coup_boscre[:, :cc.no, cc.no:] = dm1_b_ov #+ dm1_b_vo.transpose(0,2,1)) / 2.
+    #dm_coup_boscre[:, cc.no:, :cc.no] = dm_coup_boscre[:, :cc.no, cc.no:].transpose(0,2,1)
+    dm_coup_boscre[:, cc.no:, :cc.no] = dm1_b_vo 
     
-    dm_coup_bosann[:, :cc.no, :cc.no] = (dm1_boo + dm1_boo.transpose(0,2,1)) / 2.
-    dm_coup_bosann[:, cc.no:, cc.no:] = (dm1_bvv + dm1_bvv.transpose(0,2,1)) / 2.
-    dm_coup_bosann[:, :cc.no, cc.no:] = (dm1_bov + dm1_bvo.transpose(0,2,1)) / 2.
-    dm_coup_bosann[:, cc.no:, :cc.no] = dm_coup_bosann[:, :cc.no, cc.no:].transpose(0,2,1)
+    dm_coup_bosann[:, :cc.no, :cc.no] = dm1_boo #+ dm1_boo.transpose(0,2,1)) / 2.
+    dm_coup_bosann[:, cc.no:, cc.no:] = dm1_bvv #+ dm1_bvv.transpose(0,2,1)) / 2.
+    dm_coup_bosann[:, :cc.no, cc.no:] = dm1_bov #+ dm1_bvo.transpose(0,2,1)) / 2.
+    #dm_coup_bosann[:, cc.no:, :cc.no] = dm_coup_bosann[:, :cc.no, cc.no:].transpose(0,2,1)
+    dm_coup_bosann[:, cc.no:, :cc.no] = dm1_bvo 
 
     # Do we need to add a mean-field part to <b^+ a^+ a>?
     #for i in range(cc.no):
