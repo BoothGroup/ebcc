@@ -258,16 +258,18 @@ class EBCCSD:
         Cv = utils.block_diag(self.mf.mo_coeff[0][:,self.na:], self.mf.mo_coeff[1][:,self.nb:])
         if self.shift:
             # Subtract the bosonic part from the normal ordering
-            # Note that here we are assuming that bosonic coupling to fermionic excitations and deexcitations are equivalent...
-            Foo = np.einsum('pi,pq,qj->ij',Co,self.bare_fock,Co) - 2*np.einsum('I,pi,Ipq,qj->ij',self.xi, Co, self.gmatso, Co)
-            Fov = np.einsum('pi,pq,qa->ia',Co,self.bare_fock,Cv) - 2*np.einsum('I,pi,Ipq,qa->ia',self.xi, Co, self.gmatso, Cv)
-            Fvo = np.einsum('pa,pq,qi->ai',Cv,self.bare_fock,Co) - 2*np.einsum('I,pa,Ipq,qi->ai',self.xi, Cv, self.gmatso, Co)
-            Fvv = np.einsum('pa,pq,qb->ab',Cv,self.bare_fock,Cv) - 2*np.einsum('I,pa,Ipq,qb->ab',self.xi, Cv, self.gmatso, Cv)
+            Foo = np.einsum('pi,pq,qj->ij',Co,self.bare_fock,Co) - np.einsum('I,pi,Ipq,qj->ij',self.xi, Co, (self.gmatso + self.gmatso.transpose((0,2,1))), Co)
+            Fov = np.einsum('pi,pq,qa->ia',Co,self.bare_fock,Cv) - np.einsum('I,pi,Ipq,qa->ia',self.xi, Co, (self.gmatso + self.gmatso.transpose((0,2,1))), Cv)
+            Fvo = np.einsum('pa,pq,qi->ai',Cv,self.bare_fock,Co) - np.einsum('I,pa,Ipq,qi->ai',self.xi, Cv, (self.gmatso + self.gmatso.transpose((0,2,1))), Co)
+            Fvv = np.einsum('pa,pq,qb->ab',Cv,self.bare_fock,Cv) - np.einsum('I,pa,Ipq,qb->ab',self.xi, Cv, (self.gmatso + self.gmatso.transpose((0,2,1))), Cv)
         else:
             Foo = np.einsum('pi,pq,qj->ij',Co,self.bare_fock,Co)
             Fov = np.einsum('pi,pq,qa->ia',Co,self.bare_fock,Cv)
             Fvo = np.einsum('pa,pq,qi->ai',Cv,self.bare_fock,Co)
             Fvv = np.einsum('pa,pq,qb->ab',Cv,self.bare_fock,Cv)
+        assert(np.allclose(Foo,Foo.T))
+        assert(np.allclose(Fvv,Fvv.T))
+        assert(np.allclose(Fov,Fvo.T))
         return utils.one_e_blocks(Foo, Fov, Fvo, Fvv)
 
     def get_two_ferm_interactions(self, eri):
