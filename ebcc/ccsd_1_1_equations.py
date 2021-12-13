@@ -353,25 +353,25 @@ def eb_coup_rdm(cc, write=True):
     dm1_bvo = 1.0*einsum('ia,I->Iai', L1, S1)
     dm1_bvo += -1.0*einsum('ijba,Ibj->Iai', L2, U11)
 
-    # Hermitize everything
     dm_coup_boscre = np.zeros((cc.nbos, cc.nso, cc.nso))
     dm_coup_bosann = np.zeros((cc.nbos, cc.nso, cc.nso))
 
-    dm_coup_boscre[:, :cc.no, :cc.no] = dm1_b_oo # + dm1_b_oo.transpose(0,2,1)) / 2.
-    dm_coup_boscre[:, cc.no:, cc.no:] = dm1_b_vv #+ dm1_b_vv.transpose(0,2,1)) / 2.
-    dm_coup_boscre[:, :cc.no, cc.no:] = dm1_b_ov #+ dm1_b_vo.transpose(0,2,1)) / 2.
-    #dm_coup_boscre[:, cc.no:, :cc.no] = dm_coup_boscre[:, :cc.no, cc.no:].transpose(0,2,1)
-    dm_coup_boscre[:, cc.no:, :cc.no] = dm1_b_vo 
+    dm_coup_boscre[:, :cc.no, :cc.no] = dm1_b_oo
+    dm_coup_boscre[:, cc.no:, cc.no:] = dm1_b_vv
+    dm_coup_boscre[:, :cc.no, cc.no:] = dm1_b_ov
+    dm_coup_boscre[:, cc.no:, :cc.no] = dm1_b_vo
     
-    dm_coup_bosann[:, :cc.no, :cc.no] = dm1_boo #+ dm1_boo.transpose(0,2,1)) / 2.
-    dm_coup_bosann[:, cc.no:, cc.no:] = dm1_bvv #+ dm1_bvv.transpose(0,2,1)) / 2.
-    dm_coup_bosann[:, :cc.no, cc.no:] = dm1_bov #+ dm1_bvo.transpose(0,2,1)) / 2.
-    #dm_coup_bosann[:, cc.no:, :cc.no] = dm_coup_bosann[:, :cc.no, cc.no:].transpose(0,2,1)
-    dm_coup_bosann[:, cc.no:, :cc.no] = dm1_bvo 
+    dm_coup_bosann[:, :cc.no, :cc.no] = dm1_boo
+    dm_coup_bosann[:, cc.no:, cc.no:] = dm1_bvv
+    dm_coup_bosann[:, :cc.no, cc.no:] = dm1_bov
+    dm_coup_bosann[:, cc.no:, :cc.no] = dm1_bvo
+    #print("%%")
+    #print(einsum("npp->np",dm_coup_boscre))
+    #print(einsum("npp->np",dm_coup_bosann))
 
-    # Do we need to add a mean-field part to <b^+ a^+ a>?
-    #for i in range(cc.no):
-    #    dm_coup_boscre[:,i,i] += 1.
+    # Hermitize everything if wanted
+    #dm_coup_boscre = (dm_coup_boscre + dm_coup_bosann.transpose((0,2,1))) / 2.0
+    #dm_coup_bosann = dm_coup_boscre.transpose((0,2,1))
 
     return (dm_coup_boscre, dm_coup_bosann)
 

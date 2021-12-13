@@ -111,7 +111,7 @@ class EBCCSD:
             self.nbos = len(omega)
             assert(self.gmat.shape == (self.nbos, self.nao, self.nao))
             # Construct self.gmatso, which stores the spin-orbital version of gmat correctly (i.e. of dimension nbos, nso, nso)
-            # Note that this ensure that we only couple of the paramagnetic density. No coupling to spin densities.
+            # Note that this ensures that we only couple of the paramagnetic density. No coupling to spin densities.
             gmatso = [utils.block_diag(self.gmat[i], self.gmat[i]) for i in range(len(self.gmat))]
             self.gmatso = np.asarray(gmatso)
             # Transform g into the spin-orbital MO representation,
@@ -125,7 +125,7 @@ class EBCCSD:
                 # xi is a vector of length nbos, giving the shift in bosonic operators to diagonalize the phononic hamiltonian
                 # ie. g<n_i>/omega
                 self.xi = np.einsum('Iab,ab->I', self.gmatso, self.ptot) / self.omega
-                self.const = -np.einsum('I,I->',self.omega, self.xi**2)
+                self.const = np.einsum('I,I->',self.omega, self.xi**2)
                 print('Shift in the energy from moving to polaritonic basis: {}'.format(self.const))
             else:
                 self.xi = np.zeros_like(self.omega)
@@ -382,7 +382,7 @@ class EBCCSD:
         ehf = 0.5*(np.einsum('ij,ji->',self.ptot,self.bare_fock) + np.einsum('ij,ji->',self.ptot,self.tmat))
         ehf = ehf + self.mol.energy_nuc()
         if self.shift:
-            return ehf + self.const
+            return ehf - self.const
         else:
             return ehf
 
