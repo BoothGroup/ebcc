@@ -159,6 +159,17 @@ class EBCCSD:
         print('Virtual spinorbital energies: ')
         print(self.ev)
         print('Hartree-Fock energy computed to be: {}'.format(self.ehf))
+        
+        # Get antisymmetrized, spinorb MO fermionic interaction integrals in the physicists notation
+        self.I = self.get_two_ferm_interactions(eri)
+    
+        # Initialize T-amplitudes
+        self.init_t_amps()
+
+        self.e_corr = None
+
+    def init_t_amps(self):
+        ''' Initialize T amplitudes (Lambda amplitudes set to None), and construct energy denominators'''
                 
         # Form matrix of ei-ea energy denominators
         self.D1 = self.eo[:,None] - self.ev[None,:]
@@ -166,9 +177,6 @@ class EBCCSD:
         self.D2 = self.eo[:,None,None,None] + self.eo[None,:,None,None] \
                 - self.ev[None,None,:,None] - self.ev[None,None,None,:]
         
-        # Get antisymmetrized, spinorb MO fermionic interaction integrals in the physicists notation
-        self.I = self.get_two_ferm_interactions(eri)
-
         # Get arrays for required ansatz, and set to initial PT2 values
         self.T1old = self.fock_mo.vo / self.D1.transpose((1,0)) # Note (virt, occ)
         self.T1 = self.T1old.copy() # Note (virt, occ)
@@ -249,7 +257,8 @@ class EBCCSD:
 
         self.converged_t = False
         self.converged_l = False
-        self.e_corr = None
+
+        return None
 
     def get_fock(self):
         ''' Get the Fock matrix in the MO basis. If a phononic shift is applied, this is included in the definition.
@@ -391,7 +400,7 @@ class EBCCSD:
             return ehf
 
 
-    def kernel(self):
+    def kernel(self, new_herm_code=False):
         '''Run CCSD calculation'''
 
         emp2 = ccsd_equations.mp2_energy(self, self.T1old, self.T2old)
@@ -421,7 +430,7 @@ class EBCCSD:
         while self.iter < max_iter and not converged:
 
             # Update amplitudes from 'old' amplitudes to 'non-old' amps
-            self.update_amps()
+            self.update_amps(new_herm_code=new_herm_code)
 
             # Norm of update
             deltat = self.update_norm()
@@ -494,7 +503,7 @@ class EBCCSD:
         return
 
     
-    def update_l_amps(self, autogen=None):
+    def update_l_amps(self, autogen=None, new_herm_code=False):
         '''Update lambda amplitudes'''
 
         if autogen == None:
@@ -503,7 +512,7 @@ class EBCCSD:
         if self.rank == (2, 0, 0):
             L1, L2 = ccsd_equations.lam_updates_ccsd(self, autogen=autogen)
         elif self.rank == (2, 1, 1):
-            L1, L2, LS1, LU11 = ccsd_1_1_equations.lam_updates_ccsd_1_1(self)
+            L1, L2, LS1, LU11 = ccsd_1_1_equations.lam_updates_ccsd_1_1(self, new_herm_code=new_herm_code)
         elif self.rank == (2, 2, 1):
             L1, L2, LS1, LS2, LU11 = ccsd_2_1_equations.lam_updates_ccsd_2_1(self, autogen=autogen)
         elif self.rank == (2, 2, 2):
@@ -527,7 +536,7 @@ class EBCCSD:
 
         return
 
-    def update_amps(self, autogen=None):
+    def update_amps(self, autogen=None, new_herm_code=False):
         '''Update amplitudes'''
 
         if autogen == None:
@@ -536,7 +545,7 @@ class EBCCSD:
         if self.rank == (2, 0, 0):
             T1, T2 = ccsd_equations.amp_updates_ccsd(self, autogen=autogen)
         elif self.rank == (2, 1, 1):
-            T1, T2, S1, U11 = ccsd_1_1_equations.amp_updates_ccsd_1_1(self, autogen=autogen)
+            T1, T2, S1, U11 = ccsd_1_1_equations.amp_updates_ccsd_1_1(self, autogen=autogen, new_herm_code=new_herm_code)
         elif self.rank == (2, 2, 1):
             T1, T2, S1, S2, U11 = ccsd_2_1_equations.amp_updates_ccsd_2_1(self, autogen=autogen)
         elif self.rank == (2, 2, 2):
@@ -929,7 +938,7 @@ class EBCCSD:
 
         return res_norm
 
-    def solve_lambda(self):
+    def solve_lambda(self,new_herm_code=False):
         '''Solve lambda equations'''
 
         # Initialize to the T-amplitudes
@@ -949,7 +958,7 @@ class EBCCSD:
             print('DIIS acceleration not enabled...')
             print('Lambda amplitude damping: {}'.format(self.options['damp']))
         print('')
-        debug = False
+        debug = True 
         if debug:
             print('Iter.  |Delta_Lam|^2  |Lam_Resid|^2(simp) |Lam_Resid|^2(no simp) CC.Lag(simp) CC.Lag(no simp)')
         else:
@@ -959,7 +968,7 @@ class EBCCSD:
         while self.iter_l < max_iter and not converged:
 
             # Update amplitudes from 'old' amplitudes to 'non-old' amps
-            self.update_l_amps()
+            self.update_l_amps(new_herm_code=new_herm_code)
 
             # Norm of update
             deltal = self.update_norm(t_or_l='l')
@@ -970,7 +979,7 @@ class EBCCSD:
             if debug:
                 # Compute Norm of full lambda residual
                 lam_res_norm_simp = self.lam_res_norm(simplify=True)
-                lam_res_norm_nosimp = self.lam_res_norm(simplify=False)
+                lam_res_norm_nosimp = 0. #self.lam_res_norm(simplify=False)
                 ## Calculate <Lambda x Hbar> (Note this should always be zero for optimized T amplitudes)
                 #lam_hbar = ccsd_equations.calc_lam_hbar(self.fock_mo, self.I, self.T1old, self.L1old, self.T2old, self.L2old)
                 if self.rank == (2,0,0):
@@ -979,8 +988,8 @@ class EBCCSD:
                 elif self.rank == (2,1,1):
                     lag_simp = ccsd_1_1_equations.calc_lagrangian_1_1(self.fock_mo, self.I, self.G, self.g_mo_blocks, self.omega, self.T1old, self.L1old,
                             self.T2old, self.L2old, self.S1old, self.LS1old, self.U11old, self.LU11old, simplify=True)
-                    lag_nosimp = ccsd_1_1_equations.calc_lagrangian_1_1(self.fock_mo, self.I, self.G, self.g_mo_blocks, self.omega, self.T1old, self.L1old,
-                            self.T2old, self.L2old, self.S1old, self.LS1old, self.U11old, self.LU11old, simplify=False)
+                    lag_nosimp = 0. #ccsd_1_1_equations.calc_lagrangian_1_1(self.fock_mo, self.I, self.G, self.g_mo_blocks, self.omega, self.T1old, self.L1old,
+                    #        self.T2old, self.L2old, self.S1old, self.LS1old, self.U11old, self.LU11old, simplify=False)
                 print(' {:2d}    {:.4E}   {:.4E}  {:.4E}  {:.4E}  {:.4E}'.format(self.iter_l+1, deltal, lam_res_norm_simp, lam_res_norm_nosimp, lag_simp, lag_nosimp))
             else:
                 print(' {:2d}    {:.4E} '.format(self.iter_l+1, deltal))
