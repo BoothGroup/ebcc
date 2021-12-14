@@ -118,6 +118,10 @@ class EBCCSD:
             # and store in occ/virt blocks (note not a tuple of these as in epcc, as required for complex couplings)
             self.g_mo_blocks = self.g_traf()
 
+            if (not np.allclose(self.gmat,self.gmat.transpose((0,2,1))) ) and (not self.autogen):
+                print('Autogen code must be used with bosonic non-symmetric coupling...')
+                assert(False)
+
             # Whether to shift to normal-ordering (removing coupling to HF density of the bosons).
             # If this is True, it will change the fermionic Fock matrix, and introduce an energy shift
             self.shift = shift
