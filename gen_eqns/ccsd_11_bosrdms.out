@@ -1,3 +1,8 @@
+P_{b_} = 
+dm1_b_ += 1.0*einsum('I->I', LS1)
+P_{b} = 
+dm1_b += 1.0*einsum('I->I', S1)
+dm1_b += 1.0*einsum('ia,Iai->I', L1, U11)
 P_{bb} = 
 dm1_bb += 1.0*einsum('I,J->IJ', LS1, S1)
 dm1_bb += 1.0*einsum('Iia,Jai->IJ', LU11, U11)

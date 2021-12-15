@@ -400,7 +400,7 @@ class EBCCSD:
             return ehf
 
 
-    def kernel(self, new_herm_code=False):
+    def kernel(self):
         '''Run CCSD calculation'''
 
         emp2 = ccsd_equations.mp2_energy(self, self.T1old, self.T2old)
@@ -430,7 +430,7 @@ class EBCCSD:
         while self.iter < max_iter and not converged:
 
             # Update amplitudes from 'old' amplitudes to 'non-old' amps
-            self.update_amps(new_herm_code=new_herm_code)
+            self.update_amps()
 
             # Norm of update
             deltat = self.update_norm()
@@ -493,6 +493,7 @@ class EBCCSD:
 
     def energy_from_rdms(self):
         ''' Compute the total energy from the RDMs '''
+        # TODO
         
         dm1_eb = cc.make_1rdm_f()
         dm2_eb = cc.make_2rdm_f()
@@ -503,7 +504,7 @@ class EBCCSD:
         return
 
     
-    def update_l_amps(self, autogen=None, new_herm_code=False):
+    def update_l_amps(self, autogen=None):
         '''Update lambda amplitudes'''
 
         if autogen == None:
@@ -512,7 +513,7 @@ class EBCCSD:
         if self.rank == (2, 0, 0):
             L1, L2 = ccsd_equations.lam_updates_ccsd(self, autogen=autogen)
         elif self.rank == (2, 1, 1):
-            L1, L2, LS1, LU11 = ccsd_1_1_equations.lam_updates_ccsd_1_1(self, new_herm_code=new_herm_code)
+            L1, L2, LS1, LU11 = ccsd_1_1_equations.lam_updates_ccsd_1_1(self)
         elif self.rank == (2, 2, 1):
             L1, L2, LS1, LS2, LU11 = ccsd_2_1_equations.lam_updates_ccsd_2_1(self, autogen=autogen)
         elif self.rank == (2, 2, 2):
@@ -536,7 +537,7 @@ class EBCCSD:
 
         return
 
-    def update_amps(self, autogen=None, new_herm_code=False):
+    def update_amps(self, autogen=None):
         '''Update amplitudes'''
 
         if autogen == None:
@@ -545,7 +546,7 @@ class EBCCSD:
         if self.rank == (2, 0, 0):
             T1, T2 = ccsd_equations.amp_updates_ccsd(self, autogen=autogen)
         elif self.rank == (2, 1, 1):
-            T1, T2, S1, U11 = ccsd_1_1_equations.amp_updates_ccsd_1_1(self, autogen=autogen, new_herm_code=new_herm_code)
+            T1, T2, S1, U11 = ccsd_1_1_equations.amp_updates_ccsd_1_1(self, autogen=autogen)
         elif self.rank == (2, 2, 1):
             T1, T2, S1, S2, U11 = ccsd_2_1_equations.amp_updates_ccsd_2_1(self, autogen=autogen)
         elif self.rank == (2, 2, 2):
@@ -938,7 +939,7 @@ class EBCCSD:
 
         return res_norm
 
-    def solve_lambda(self,new_herm_code=False):
+    def solve_lambda(self, debug=False):
         '''Solve lambda equations'''
 
         # Initialize to the T-amplitudes
@@ -958,9 +959,9 @@ class EBCCSD:
             print('DIIS acceleration not enabled...')
             print('Lambda amplitude damping: {}'.format(self.options['damp']))
         print('')
-        debug = True 
+        
         if debug:
-            print('Iter.  |Delta_Lam|^2  |Lam_Resid|^2(simp) |Lam_Resid|^2(no simp) CC.Lag(simp) CC.Lag(no simp)')
+            print('Iter.  |Delta_Lam|^2  |Lam_Resid|^2(simp)  CC.Lag(simp)')
         else:
             print('Iter.  |Delta_Lam|^2')
         converged = False
@@ -968,7 +969,7 @@ class EBCCSD:
         while self.iter_l < max_iter and not converged:
 
             # Update amplitudes from 'old' amplitudes to 'non-old' amps
-            self.update_l_amps(new_herm_code=new_herm_code)
+            self.update_l_amps()
 
             # Norm of update
             deltal = self.update_norm(t_or_l='l')
@@ -979,18 +980,17 @@ class EBCCSD:
             if debug:
                 # Compute Norm of full lambda residual
                 lam_res_norm_simp = self.lam_res_norm(simplify=True)
-                lam_res_norm_nosimp = 0. #self.lam_res_norm(simplify=False)
                 ## Calculate <Lambda x Hbar> (Note this should always be zero for optimized T amplitudes)
                 #lam_hbar = ccsd_equations.calc_lam_hbar(self.fock_mo, self.I, self.T1old, self.L1old, self.T2old, self.L2old)
                 if self.rank == (2,0,0):
                     lag_simp = ccsd_equations.calc_lagrangian(self.fock_mo, self.I, self.T1old, self.L1old, self.T2old, self.L2old, simplify=True)
-                    lag_nosimp = ccsd_equations.calc_lagrangian(self.fock_mo, self.I, self.T1old, self.L1old, self.T2old, self.L2old, simplify=False)
+                    #lag_nosimp = ccsd_equations.calc_lagrangian(self.fock_mo, self.I, self.T1old, self.L1old, self.T2old, self.L2old, simplify=False)
                 elif self.rank == (2,1,1):
                     lag_simp = ccsd_1_1_equations.calc_lagrangian_1_1(self.fock_mo, self.I, self.G, self.g_mo_blocks, self.omega, self.T1old, self.L1old,
                             self.T2old, self.L2old, self.S1old, self.LS1old, self.U11old, self.LU11old, simplify=True)
-                    lag_nosimp = 0. #ccsd_1_1_equations.calc_lagrangian_1_1(self.fock_mo, self.I, self.G, self.g_mo_blocks, self.omega, self.T1old, self.L1old,
+                    #lag_nosimp = ccsd_1_1_equations.calc_lagrangian_1_1(self.fock_mo, self.I, self.G, self.g_mo_blocks, self.omega, self.T1old, self.L1old,
                     #        self.T2old, self.L2old, self.S1old, self.LS1old, self.U11old, self.LU11old, simplify=False)
-                print(' {:2d}    {:.4E}   {:.4E}  {:.4E}  {:.4E}  {:.4E}'.format(self.iter_l+1, deltal, lam_res_norm_simp, lam_res_norm_nosimp, lag_simp, lag_nosimp))
+                print(' {:2d}    {:.4E}   {:.4E}  {:.4E} '.format(self.iter_l+1, deltal, lam_res_norm_simp, lag_simp))
             else:
                 print(' {:2d}    {:.4E} '.format(self.iter_l+1, deltal))
 
