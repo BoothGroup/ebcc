@@ -13,16 +13,16 @@ def ccsd_1_1_energy(cc, T1, T2, S1, U11):
 
     # Fermionic part
     # doubles contrib
-    E_ferm = 0.25*einsum('abij,ijab->', T2, cc.I.oovv)
+    E_ferm = 0.25*einsum('ijab,baji->', cc.I.oovv, T2)
     # t1 contribution
-    E_ferm += einsum('ai,ia->', T1, cc.fock_mo.ov)
+    E_ferm += einsum('ia,ai->', cc.fock_mo.ov, T1)
     # t1**2 contribution
-    E_ferm += 0.5*einsum('ai,bj,ijab->', T1, T1, cc.I.oovv)
+    E_ferm += -0.5*einsum('ijab,bi,aj->', cc.I.oovv, T1, T1)
 
     # Bosonic and coupling part
     E_bos = einsum('I,I->',cc.G,S1)
-    E_bos += einsum('Iia,Iai->',cc.g_mo_blocks.ov, U11)
-    E_bos += einsum('Iia,ai,I->',cc.g_mo_blocks.ov, T1, S1)
+    E_bos += einsum('Iai,Iai->',cc.g_mo_blocks.vo, U11)
+    E_bos += einsum('Iai,ai,I->',cc.g_mo_blocks.vo, T1, S1)
     #print('Fermionic correlation energy contribution: {}'.format(E_ferm))
     #print('Bosonic correlation energy contribution: {}'.format(E_bos))
 

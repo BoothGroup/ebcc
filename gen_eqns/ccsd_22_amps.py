@@ -1,4 +1,5 @@
 from fractions import Fraction
+from add_suffix import add_H_suffix_blocks
 from wick.expression import AExpression
 from wick.wick import apply_wick
 from wick.convenience import one_e, two_e, two_p, one_p, ep11, E1, E2, P1, P2, EPS1, EPS2, braE1, braE2, braP1, braP2, braP1E1, braP2E1, commute
@@ -39,58 +40,60 @@ HTTTT = commute(HTTT, T)
 Hbar = H + HT + Fraction('1/2')*HTT
 Hbar += Fraction('1/6')*HTTT + Fraction('1/24')*HTTTT
 
+simplify = True
+
 # Compute energy expression
 print('Energy expression: ')
 out = apply_wick(Hbar)
 out.resolve()
-final = AExpression(Ex=out)
-print(final._print_einsum('E'))
+final = AExpression(Ex=out, simplify=simplify)
+print(add_H_suffix_blocks(final._print_einsum('E')))
 print('*******',flush=True)
 
 # Projection onto singles
 S = bra_singles * Hbar
 out = apply_wick(S)
 out.resolve()
-final = AExpression(Ex=out)
-print(final._print_einsum('T1'))
+final = AExpression(Ex=out, simplify=simplify)
+print(add_H_suffix_blocks(final._print_einsum('T1')))
 print('*******',flush=True)
 
 # Projection onto doubles
 S = bra_doubles * Hbar
 out = apply_wick(S)
 out.resolve()
-final = AExpression(Ex=out)
-print(final._print_einsum('T2'))
+final = AExpression(Ex=out, simplify=simplify)
+print(add_H_suffix_blocks(final._print_einsum('T2')))
 print('*******',flush=True)
 
 # Projection onto single boson creation
 S = bra_1b * Hbar
 out = apply_wick(S)
 out.resolve()
-final = AExpression(Ex=out)
-print(final._print_einsum('S1'))
+final = AExpression(Ex=out, simplify=simplify)
+print(add_H_suffix_blocks(final._print_einsum('S1')))
 print('*******',flush=True)
 
 # Projection onto two boson creation
 S = bra_2b * Hbar
 out = apply_wick(S)
 out.resolve()
-final = AExpression(Ex=out)
-print(final._print_einsum('S2'))
+final = AExpression(Ex=out, simplify=simplify)
+print(add_H_suffix_blocks(final._print_einsum('S2')))
 print('*******',flush=True)
 
 # Projection onto single boson creation + single ferm excitation
 S = bra_1b1e * Hbar
 out = apply_wick(S)
 out.resolve()
-final = AExpression(Ex=out)
-print(final._print_einsum('U11'))
+final = AExpression(Ex=out, simplify=simplify)
+print(add_H_suffix_blocks(final._print_einsum('U11')))
 print('*******',flush=True)
 
 # Projection onto double boson creation + single ferm excitation
 S = bra_2b1e * Hbar
 out = apply_wick(S)
 out.resolve()
-final = AExpression(Ex=out)
-print(final._print_einsum('U12'))
+final = AExpression(Ex=out, simplify=simplify)
+print(add_H_suffix_blocks(final._print_einsum('U12')))
 print('*******',flush=True)
