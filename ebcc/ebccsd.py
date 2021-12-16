@@ -45,8 +45,8 @@ class EBCCSD:
         if 'max_iter' not in self.options:
             self.options['max_iter'] = 500
         if 'damp' not in self.options and 'diis space' not in self.options:
-            self.options['damp'] = 0.4
-            self.options['diis space'] = None
+            self.options['damp'] = 1.0
+            self.options['diis space'] = 12  
         if 'damp' in self.options and 'diis space' not in self.options:
             self.options['diis space'] = None
         if 'diis space' in self.options and 'damp' not in self.options:
@@ -583,13 +583,13 @@ class EBCCSD:
 
         return (dm_b_cre, dm_b_ann)
     
-    def make_1rdm_b(self):
+    def make_1rdm_b(self, unshifted_bos=True):
         ''' Get bosonic 1RDM <b^+ b>'''
 
         if self.rank == (2, 0, 0):
             rdm1_b = ccsd_equations.one_rdm_bos(self)
         elif self.rank == (2, 1, 1):
-            rdm1_b = ccsd_1_1_equations.one_rdm_bos(self)
+            rdm1_b = ccsd_1_1_equations.one_rdm_bos(self, unshifted_bos=unshifted_bos)
         elif self.rank == (2, 2, 1):
             rdm1_b = ccsd_2_1_equations.one_rdm_bos(self)
         elif self.rank == (2, 2, 2):
@@ -597,7 +597,7 @@ class EBCCSD:
 
         return rdm1_b
 
-    def make_eb_coup_rdm(self):
+    def make_eb_coup_rdm(self, unshifted_bos=True):
         ''' Get electron-boson coupling RDMs <b+ i^+ j> and <b i^+ j>.
             These two matrices are returned as a tuple of two matrices, of size
             (nbos, nso, nso), where the bosonic creation and then annihilation matrices
@@ -607,7 +607,7 @@ class EBCCSD:
         if self.rank == (2, 0, 0):
             dm_coup_boscre, dm_coup_bosann = ccsd_equations.eb_coup_rdm(self)
         elif self.rank == (2, 1, 1):
-            dm_coup_boscre, dm_coup_bosann = ccsd_1_1_equations.eb_coup_rdm(self)
+            dm_coup_boscre, dm_coup_bosann = ccsd_1_1_equations.eb_coup_rdm(self, unshifted_bos=unshifted_bos)
         elif self.rank == (2, 2, 1):
             dm_coup_boscre, dm_coup_bosann = ccsd_2_1_equations.eb_coup_rdm(self)
         elif self.rank == (2, 2, 2):

@@ -17,6 +17,8 @@ nmo = myhf.mo_coeff.shape[1]
 nbos = 5
 # Boson energies and couplings to AO density
 gmat = np.random.random((nbos,nmo,nmo)) * 0.02
+# Note that the optimized code only (I think) works with symmetric e-b couplings wrt fermionic indices
+gmat = (gmat + gmat.transpose((0,2,1))) / 2.     
 omega = np.random.random((nbos)) * 5.
 
 # AO eri array passed in

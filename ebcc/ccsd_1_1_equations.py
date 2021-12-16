@@ -283,13 +283,18 @@ def two_rdm_ferm(cc, write=True):
     dm2 = dm2.transpose(2,0,3,1)
     return dm2
 
-def eb_coup_rdm(cc, write=True):
+def eb_coup_rdm(cc, write=True, unshifted_bos=True):
     ''' Calculate the e-b coupling RDMs: <b^+_I p^+ q> and <b_I p^+ q>.
         Returns as a tuple (Ipq, Ipq), where the first matrix corresponds
         to the bosonic creation, and the second to the annihilation.
 
         By default, it will ensure that these two expectation values are the
         h.c. of each other.
+        
+        Note that if we are shifting the bosonic operators s.t. we remove coupling
+        to a single-determinant static density, then we will transform back if
+        unshifted_bos=True so that the boson operators are defined wrt the 
+        *unshifted* bosons.
     '''
 
     if write:
@@ -372,14 +377,27 @@ def eb_coup_rdm(cc, write=True):
     #print(einsum("npp->np",dm_coup_boscre))
     #print(einsum("npp->np",dm_coup_bosann))
 
-    # Hermitize
+    # Hermitize: This is not enforced automatically in CC theory
     dm_coup_boscre = (dm_coup_boscre + dm_coup_bosann.transpose((0,2,1))) / 2.0
     dm_coup_bosann = dm_coup_boscre.transpose((0,2,1))
+
+    if unshifted_bos and cc.shift:
+        if write:
+            print('Shifting bosonic RDMs st they are defined wrt the unshifted operators')
+
+        # Since the bosonic operators are shifted by cc.xi, we need to 
+        # shift back, and include a fermionic 1RDM contribution.
+        rdm_f_1 = one_rdm_ferm(cc, write=False)
+        for i in range(dm_coup_boscre.shape[0]):
+            dm_coup_boscre[i,:,:] -= 0.5*cc.xi[i]*rdm_f_1[:,:]
+            dm_coup_bosann[i,:,:] -= 0.5*cc.xi[i]*rdm_f_1[:,:]
 
     return (dm_coup_boscre, dm_coup_bosann)
 
 def dm_singbos(cc, write=True):
-    ''' Calculate single boson RDMs as a tuple, (<b^+>, <b>) '''
+    ''' Calculate single boson RDMs as a tuple, (<b^+>, <b>) 
+        Note that these are *not* shifted back in the case of using shifted boson operators.
+    '''
 
     if write:
         print('Computing single boson RDMs...')
@@ -402,8 +420,10 @@ def dm_singbos(cc, write=True):
 
     return (dm1_b_cre, dm1_b_ann)
 
-def one_rdm_bos(cc, write=True):
-    ''' Calculate bosonic 1RDM: <b^+_i b_j> '''
+def one_rdm_bos(cc, write=True, unshifted_bos=True):
+    ''' Calculate bosonic 1RDM: <b^+_i b_j> 
+        Note that we shift the boson operators back to be defined wrt the unshifted boson operators.
+    '''
 
     if write:
         print('Computing bosonic space 1RDM...')
@@ -425,6 +445,13 @@ def one_rdm_bos(cc, write=True):
 
     # Hermitize
     dm1_b = (dm1_b + dm1_b.T) / 2.
+
+    if unshifted_bos and cc.shift:
+        if write:
+            print('Shifting back bosonic RDM to be defined wrt unshifted boson operator')
+        dm1_b_cre, dm1_b_ann = dm_singbos(cc, write=False)
+        for i in range(dm1_b.shape[0]):
+            dm1_b[i,i] = dm1_b[i,i] - cc.xi[i]*(dm1_b_cre[i] + dm1_b_ann[i]) + cc.xi[i]**2 
 
     if write:
         print('Trace of bosonic 1RDM: {}'.format(np.trace(dm1_b)))
