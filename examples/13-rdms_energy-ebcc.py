@@ -57,8 +57,8 @@ def get_e_b(cc, dm1_bb, dm1_coup_cre, dm1_coup_ann, dm_singbos_cre, dm_singbos_a
     gmat_mo[np.ix_(mask_bos,mask_b, mask_a)] = 0.
 
     # Contraction of coupling RDMs with coupling hamiltonian
-    E_eb_cre = np.einsum('Ipq,Ipq->',gmat_mo,dm1_coup_cre)
-    E_eb_ann = np.einsum('Ipq,Iqp->',gmat_mo,dm1_coup_ann)
+    E_eb_cre = np.einsum('Ipq,Iqp->',gmat_mo,dm1_coup_cre)
+    E_eb_ann = np.einsum('Ipq,Ipq->',gmat_mo,dm1_coup_ann)
     #print('Boson create coupling energy: ',E_eb_cre)
     #print('Boson annihilate coupling energy: ',E_eb_ann)
 
@@ -91,6 +91,10 @@ mf = mol.RHF().run()
 nao = mf.mo_coeff.shape[1]
 nbos = 5
 np.random.seed(97)
+# Note that gmat is the tensor corresponding to the boson annihilation
+# i.e. the hamiltonian is gmat[p,q,x] c_p^+ c_q b_x
+# The term corresponding to the boson creation is appropriately
+# transposed to ensure overall hermiticity.
 gmat = np.random.random((nbos,nao,nao)) * 0.01
 omega = 0.1+np.random.random((nbos)) * 10 
 eri = ao2mo.restore(1, mf._eri, nao)

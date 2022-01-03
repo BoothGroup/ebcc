@@ -16,7 +16,9 @@ mf = mol.UHF().run()
 nmo = mf.mo_coeff[1].shape[1]
 nbos = 5
 # Boson energies and couplings to AO density
-gmat = np.random.random((nbos,nmo,nmo)) * 0.01
+# Note that these couplings are for the boson *annihilation* operator (i.e. gmat[p,q,x] c_p^+ c_q b_x)
+# with the creation operator appropriately transposed
+gmat = np.random.random((nbos,nmo,nmo)) * 0.005
 omega = np.random.random((nbos)) * 5.
 
 # AO eri array passed in

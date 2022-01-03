@@ -25,6 +25,9 @@ class EBCCSD:
 
             gmat: electron-boson coupling matrix, of dim (nbos, nao, nao), where nao is the number of spatial orbitals.
                   Fermionic orbital basis is the AO representation, so there are no spin-dependent couplings (this could be relaxed later).
+                  NOTE: gmat corresponds to the bosonic *annihilation* operator, i.e. gmat[p,q,x] c_p^+ c_q b_x. 
+                  The creation part is assumed to be the fermionic transpose of this tensor, i.e. gmat[q,p,x] c_p^+ c_q b^+_x in order 
+                  to retain hermiticity of the overall hamiltonian.
 
             shift: Whether to shift the boson operators s.t. the Hamiltonian is normal-ordered wrt a coherent state. This removes the bosonic 
                     coupling to the static HF density, and introduces a constant energy shift. 
@@ -491,19 +494,6 @@ class EBCCSD:
         
         return E
 
-    def energy_from_rdms(self):
-        ''' Compute the total energy from the RDMs '''
-        # TODO
-        
-        dm1_eb = cc.make_1rdm_f()
-        dm2_eb = cc.make_2rdm_f()
-        dm1_bb = cc.make_1rdm_b()
-        dm1_coup_cre, dm1_coup_ann = cc.make_eb_coup_rdm()
-        dm1_b_sing_cre, dm1_b_sing_ann = cc.make_sing_b_dm()
-
-        return
-
-    
     def update_l_amps(self, autogen=None):
         '''Update lambda amplitudes'''
 

@@ -8,7 +8,9 @@ from wick.convenience import one_e, two_e, two_p, one_p, ep11, E1, E2, P1, EPS1,
 H1 = one_e("F", ["occ", "vir"], norder=True)
 H2 = two_e("I", ["occ", "vir"], norder=True)
 Hp = two_p("w") + one_p("G")
-Hep = ep11("g", ["occ", "vir"], ["nm"], norder=True)
+# g[p,q,x] is the tensor for p^+ q b_x (annihilation)
+# g_boscre[p,q,x] is the tensor for p^+ q b_x^+
+Hep = ep11("g", ["occ", "vir"], ["nm"], norder=True, name2="g_boscre")
 H = H1 + H2 + Hp + Hep
 
 # Define projection spaces

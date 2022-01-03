@@ -66,6 +66,22 @@ def add_H_suffix_blocks(einsum_str):
                         # We can have capital letters denoting boson indices.
                         raise Exception
                 g = f.replace(' g',' g'+suffix)
+            elif tensors[i] == 'g_boscre':
+                if found_ham:
+                    # Should only find one term to replace
+                    raise Exception
+                found_ham = True
+                assert(len(contractions[i])==3)
+                suffix = '.'
+                for char in contractions[i]:
+                    if char in ['a', 'b', 'c', 'd', 'e', 'f']:
+                        suffix += 'v'
+                    elif char in ['i', 'j', 'k', 'l', 'm', 'n', 'o']:
+                        suffix += 'o'
+                    elif not char.isupper():
+                        # We can have capital letters denoting boson indices.
+                        raise Exception
+                g = f.replace(' g_boscre',' g_boscre'+suffix)
             elif tensors[i] == 'F':
                 #print('found F',i)
                 if found_ham:
