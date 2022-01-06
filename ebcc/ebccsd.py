@@ -638,7 +638,39 @@ class EBCCSD:
             rdm1 = ccsd_2_2_equations.two_rdm_ferm(self, autogen=autogen)
 
         return rdm1
+    
+    def make_ea_1mom(self):
+        ''' Get the fermionic first particle (EA) single-particle moments
+            mom[p,q] = <c_p (H-E) c^+_q>
+        '''
 
+        if self.rank == (2, 0, 0):
+            ea_mom = ccsd_equations.part1_mom(self)
+        elif self.rank == (2, 1, 1):
+            ea_mom = ccsd_1_1_equations.part1_mom(self)
+        elif self.rank == (2, 2, 1):
+            ea_mom = ccsd_2_1_equations.part1_mom(self)
+        elif self.rank == (2, 2, 2):
+            ea_mom = ccsd_2_2_equations.part1_mom(self)
+
+        return ea_mom
+    
+    def make_ip_1mom(self):
+        ''' Get the fermionic first hole (IP) single-particle moments
+            mom[p,q] = <c^+_p (H-E) c_q>
+        '''
+
+        if self.rank == (2, 0, 0):
+            ip_mom = ccsd_equations.hole1_mom(self)
+        elif self.rank == (2, 1, 1):
+            ip_mom = ccsd_1_1_equations.hole1_mom(self)
+        elif self.rank == (2, 2, 1):
+            ip_mom = ccsd_2_1_equations.hole1_mom(self)
+        elif self.rank == (2, 2, 2):
+            ip_mom = ccsd_2_2_equations.hole1_mom(self)
+
+        return ip_mom
+         
     def vec_to_amps(self, vec, amps='old',t_or_l='t'):
         ''' Take a flattened vector of all amplitudes in the ansatz
             and distribute them back to the ebcc object amplitudes.
