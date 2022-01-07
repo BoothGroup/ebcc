@@ -122,7 +122,7 @@ def mom_expression(ov_string, T, L_terms, L_term_rank, H_terms, H_term_rank, sim
                 ncommute_b = abs(rank_b)
             else:
                 ncommute_b = 0
-            commute_tot = max(ncommute_f, ncommute_b)
+            commute_tot = ncommute_f + ncommute_b
             if commute_tot > largest_tpow:
                 largest_tpow = commute_tot
 
