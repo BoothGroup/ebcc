@@ -138,6 +138,7 @@ def mom_expression(ov_string, T, L_terms, L_term_rank, H_terms, H_term_rank, sim
             out = apply_wick(term)
             out.resolve()
             final.append(AExpression(Ex=out, simplify=simplify))
+            print('Simplified expression for Lambda term {} and H term {}.'.format(i,j), flush=True)
 
     allterms = final[0].terms
     for i in range(1,len(final)):
