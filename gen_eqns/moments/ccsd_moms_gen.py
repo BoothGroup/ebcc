@@ -142,14 +142,14 @@ def mom_expression(ov_string, T, L_terms, L_term_rank, H_terms, H_term_rank, sim
             tic_wick = time.perf_counter()
             out = apply_wick(term)
             toc_wick = time.perf_counter()
-            print('Applied wicks theorem... took {:0.4f} sec'.format(toc_wick-tic_wick), flush=True)
+            print('Applied wicks theorem... took {:0.2f} sec'.format(toc_wick-tic_wick), flush=True)
             out.resolve()
             tic_simp = time.perf_counter()
             final.append(AExpression(Ex=out, simplify=simplify))
             toc_simp = time.perf_counter()
-            print('Simplified expression... took {:0.4f} sec'.format(toc_simp-tic_simp), flush=True)
+            print('Simplified expression... took {:0.2f} sec'.format(toc_simp-tic_simp), flush=True)
             toc_full = time.perf_counter()
-            print('Full time for generating and simplifying this part of the full moment: {:0.4f} sec'.format(toc_full-tic_full),flush=True)
+            print('Full time for generating and simplifying this part of the full moment: {:0.2f} sec'.format(toc_full-tic_full),flush=True)
 
     allterms = final[0].terms
     for i in range(1,len(final)):
