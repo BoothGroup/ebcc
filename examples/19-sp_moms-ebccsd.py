@@ -9,7 +9,12 @@ mol = pyscf.M(
     atom = 'N 0 0 0; N 0 0 1.2',
     basis = 'cc-pvdz')
 mf = mol.RHF().run()
-eri = ao2mo.restore(1, mf._eri, mf.mol.nao_nr())
+nbos = 8
+nao = mf.mol.nao_nr()
+np.random.seed(92)
+gmat = np.random.random((nbos,nao,nao)) * 0.01
+omega = 0.1+np.random.random((nbos)) * 10 
+eri = ao2mo.restore(1, mf._eri, nao)
 
 # Set up cc object and run kernel for T-amplitude optimization (no bosons)
 mycc = ebccsd.EBCCSD(mol, mf, eri, options={'tthresh': 1e-10, 'diis space': 12}, autogen_code=True)
@@ -52,18 +57,17 @@ t_so = np.linalg.multi_dot((C.T, mycc.mf.get_hcore(), C))
 t_so[np.ix_(mask_a, mask_b)] = 0.
 t_so[np.ix_(mask_b, mask_a)] = 0.
 
-# E from RDMs
+# Fermionic part of the energy from RDMs (obviously this isn't the total energy)
 E_rdms = np.einsum('jk,kj->', t_so, dm1) + 0.5*np.einsum('ijkl,ijkl->', eri_g, dm2) + mol.energy_nuc()
-assert(np.isclose(E_rdms, etot))
 
-# E from moments
+# Fermionic energy from moments
 # Note that the sign of the first hole moment is flipped cf. e.g. https://arxiv.org/pdf/1904.08019.pdf.
 # This is due to the definition as <c^+ (H-E) c>, rather than the commutator expression (which is actually the negative of this).
 E_ip_mom = 0.5*np.einsum('ij,ji->', t_so, dm1) - 0.5*np.trace(ip_mom) + mol.energy_nuc()
-assert(np.isclose(E_ip_mom, etot))
+assert(np.isclose(E_ip_mom, E_rdms))
 assert(np.allclose(ip_mom, ip_mom.T))
 assert(np.allclose(ea_mom, ea_mom.T))
-print('Energies from moments correct.')
+print('Fermionic energies from moments correct.')
 
 # 2. Compute moments via contraction of 2-RDM.
 # *** Note that the moments constructed in this way are not identical to the direct construction, due to the non-variational nature of CC theory.
@@ -82,7 +86,7 @@ ea_mom_contract2rdm = 0.5*(ea_mom_contract2rdm + ea_mom_contract2rdm.T)
 
 # Energy should be the same
 E_ip_mom_contract2rdm = 0.5*np.einsum('ij,ji->', t_so, dm1) - 0.5*np.trace(ip_mom_contract2rdm) + mol.energy_nuc()
-assert(np.isclose(E_ip_mom_contract2rdm, etot))
+assert(np.isclose(E_ip_mom_contract2rdm, E_rdms))
 
 # The two approaches to the moments will only be identical for 2-electron systems? (Where they are both exact)
 # Evaluate the difference.
