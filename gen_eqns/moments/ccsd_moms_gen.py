@@ -6,6 +6,7 @@ from wick.expression import Term, Expression, AExpression, ATerm
 from wick.wick import apply_wick
 from wick.convenience import one_e, two_e, two_p, one_p, ep11, E1, E2, P1, EPS1, PE1, ketE1, ketE2, ketP1, ketP1E1, commute
 from convenience_extra import P_dexit1, EPS_dexit1, PB1
+import time
 
 def mom_expression(ov_string, T, L_terms, L_term_rank, H_terms, H_term_rank, simplify=True, ip_mom=True):
 
@@ -106,6 +107,7 @@ def mom_expression(ov_string, T, L_terms, L_term_rank, H_terms, H_term_rank, sim
         #print('For L item {}, rank change is: {}'.format(i,ltermrank_f))
 
         for j, hterm in enumerate(H_terms):
+            tic_full = time.perf_counter()
             htermrank_f, htermrank_b = H_term_rank[j]
             #print('For H item {}, rank change is: {}'.format(j,htermrank_f))
 
@@ -126,6 +128,8 @@ def mom_expression(ov_string, T, L_terms, L_term_rank, H_terms, H_term_rank, sim
             if commute_tot > largest_tpow:
                 largest_tpow = commute_tot
 
+            print('Computing L term {} and H term {} with commutator order {}...'.format(i,j,commute_tot), flush=True)
+
             expr = [L_expr * hterm * R_expr]
             for t_ord in range(commute_tot):
                 expr.append(commute(expr[t_ord], T))
@@ -135,10 +139,17 @@ def mom_expression(ov_string, T, L_terms, L_term_rank, H_terms, H_term_rank, sim
                 term += fracs[t_ord]*expr[t_ord+1]
 
             term = lterm * term
+            tic_wick = time.perf_counter()
             out = apply_wick(term)
+            toc_wick = time.perf_counter()
+            print('Applied wicks theorem... took {:0.4f} sec'.format(toc_wick-tic_wick), flush=True)
             out.resolve()
+            tic_simp = time.perf_counter()
             final.append(AExpression(Ex=out, simplify=simplify))
-            print('Simplified expression for Lambda term {} and H term {}.'.format(i,j), flush=True)
+            toc_simp = time.perf_counter()
+            print('Simplified expression... took {:0.4f} sec'.format(toc_simp-tic_simp), flush=True)
+            toc_full = time.perf_counter()
+            print('Full time for generating and simplifying this part of the full moment: {:0.4f} sec'.format(toc_full-tic_full),flush=True)
 
     allterms = final[0].terms
     for i in range(1,len(final)):
@@ -150,7 +161,6 @@ def mom_expression(ov_string, T, L_terms, L_term_rank, H_terms, H_term_rank, sim
     return
 
 bosons = True
-
 if bosons:
     T1 = E1("T1", ["occ"], ["vir"])
     T2 = E2("T2", ["occ"], ["vir"])
@@ -209,6 +219,6 @@ else:
     # H_term_rank is the maximum (fermionic, bosonic) de-excitations in each part
     H_term_rank = [(0,0), (-1,0), (-2,0)]
 
-#ov_string = 'vvvo'
-for ov_string in ['vo', 'vv', 'oo']:
-    mom_expression(ov_string, T, L_terms, L_term_rank, H_terms, H_term_rank, simplify=simplify, ip_mom=True)
+ov_string = 'ovvv'
+#for ov_string in ['vo', 'vv', 'oo']:
+mom_expression(ov_string, T, L_terms, L_term_rank, H_terms, H_term_rank, simplify=simplify, ip_mom=True)
