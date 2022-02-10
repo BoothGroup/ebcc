@@ -5,11 +5,11 @@ from wick.operator import FOperator, Tensor
 from wick.expression import Term, Expression, AExpression, ATerm
 from wick.wick import apply_wick
 from wick.convenience import one_e, two_e, two_p, one_p, ep11, E1, E2, P1, EPS1, PE1, ketE1, ketE2, ketP1, ketP1E1, commute, braEip1, braEip2, braEea1, braEea2, Eea1, Eea2, Eip1, Eip2
-from wick.convenience import ketEea1, ketEea2, ketEip1, ketEip2
+from wick.convenience import ketEea1, ketEea2, ketEip1, ketEip2, braP1Eea1, ketP1Eea1, braP1Eip1, ketP1Eip1, EP1ea1, EP1ip1
 from convenience_extra import P_dexit1, EPS_dexit1, PB1
 import time
 
-bosons = False
+bosons = True 
 if bosons:
     T1 = E1("T1", ["occ"], ["vir"])
     T2 = E2("T2", ["occ"], ["vir"])
