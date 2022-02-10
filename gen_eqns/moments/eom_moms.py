@@ -5,11 +5,11 @@ from wick.operator import FOperator, Tensor
 from wick.expression import Term, Expression, AExpression, ATerm
 from wick.wick import apply_wick
 from wick.convenience import one_e, two_e, two_p, one_p, ep11, E1, E2, P1, EPS1, PE1, ketE1, ketE2, ketP1, ketP1E1, commute, braEip1, braEip2, braEea1, braEea2, Eea1, Eea2, Eip1, Eip2
-from wick.convenience import ketEea1, ketEea2, ketEip1, ketEip2, braP1Eea1, ketP1Eea1, braP1Eip1, ketP1Eip1, EP1ea1, EP1ip1
+from wick.convenience import ketEea1, ketEea2, ketEip1, ketEip2, braP1Eea1, ketP1Eea1, braP1Eip1, ketP1Eip1, EP1ea1, EP1ip1, braE1, braE2
 from convenience_extra import P_dexit1, EPS_dexit1, PB1
 import time
 
-bosons = True 
+bosons = False
 if bosons:
     T1 = E1("T1", ["occ"], ["vir"])
     T2 = E2("T2", ["occ"], ["vir"])
@@ -55,7 +55,7 @@ HTTTTT = commute(HTTTT, T)
 
 simplify = True
 gen_h = True 
-moms = 'sp'   # 'sp' or 'dd'
+moms = 'dd'   # 'sp' or 'dd'
 ip_mom = False
 
 # Generate ket state first 
@@ -108,12 +108,51 @@ if moms == 'sp':
             print(add_H_suffix_blocks(final._print_einsum('R0_{}'.format(i))), flush=True)
         print('')
 
+elif moms == 'dd':
+    for op_space in ['oo', 'ov', 'vo', 'vv']:
+        if op_space == 'oo':
+            R_expr = Expression([Term(1, [], [Tensor([Idx(0, "occ"), Idx(1, "occ")], "")], [FOperator(Idx(0, "occ"), True), FOperator(Idx(1, "occ"), False)], [])])
+            print('Occupied-Occupied density perturbation for Ket state (final indices are perturbation indices?)')
+        elif op_space == 'ov':
+            R_expr = Expression([Term(1, [], [Tensor([Idx(0, "occ"), Idx(0, "vir")], "")], [FOperator(Idx(0, "occ"), True), FOperator(Idx(0, "vir"), False)], [])])
+            print('Occupied-Virtual density perturbation for Ket state (final indices are perturbation indices?)')
+        elif op_space == 'vo':
+            R_expr = Expression([Term(1, [], [Tensor([Idx(0, "vir"), Idx(0, "occ")], "")], [FOperator(Idx(0, "vir"), True), FOperator(Idx(0, "occ"), False)], [])])
+            print('Virtual-Occupied density perturbation for Ket state (final indices are perturbation indices?)')
+        elif op_space == 'vv':
+            R_expr = Expression([Term(1, [], [Tensor([Idx(0, "vir"), Idx(1, "vir")], "")], [FOperator(Idx(0, "vir"), True), FOperator(Idx(1, "vir"), False)], [])])
+            print('Virtual-Virtual density perturbation for Ket state (final indices are perturbation indices?)')
+
+        # Should never need to be more 
+        RT = commute(R_expr, T)
+        RTT = commute(RT, T)
+        RTTT = commute(RTT, T)
+        RTTTT = commute(RTTT, T)
+        R_renom = R_expr + RT + fracs[1]*RTT + fracs[2]*RTTT
+
+        # Space of left-hand projector
+        spaces = []
+        spaces.append(braE1("occ", "vir"))
+        spaces.append(braE2("occ", "vir", "occ", "vir"))
+        if bosons:
+            spaces.append(braP1("nm"))
+            spaces.append(braP1E1("nm", "occ", "vir"))
+
+        for i, proj_term in enumerate(spaces):
+            ket_term = proj_term * R_renom
+            out = apply_wick(ket_term)
+            out.resolve()
+            final = AExpression(Ex=out, simplify=simplify)
+            print(add_H_suffix_blocks(final._print_einsum('R0_{}'.format(i))), flush=True)
+        print('')
+else:
+    raise NotImplementedError
+
 # Construct Hbar (independent of the perturbation or projector). Would need to be increased for other ansatz
 Hbar = H + HT + fracs[1]*HTT + fracs[2]*HTTT + fracs[3]*HTTTT + fracs[4]*HTTTTT
 S0 = Hbar
 E0 = apply_wick(S0)                                                                           
 E0.resolve()                                                                                
-
 if gen_h:
 # Now, we want to find {\bar H}-E acting on an arbitrary R1 and R2
 # Create arbitrary R in the right space
@@ -141,7 +180,17 @@ if gen_h:
         if bosons:
             R += EP1ea1("R3", ["nm"], ["vir"])
     elif moms == 'dd':
-        pass
+        spaces.append(braE1("occ", "vir"))
+        spaces.append(braE2("occ", "vir", "occ", "vir"))
+        if bosons:
+            spaces.append(braP1("nm"))
+            spaces.append(braP1E1("nm", "occ", "vir"))
+
+        R = E1("R1", ["occ"], ["vir"])
+        R += E2("R2", ["occ"], ["vir"])
+        if bosons:
+            R += P1("R3", ["nm"])
+            R += EPS1("R4", ["nm"], ["occ"], ["vir"])
     else:
         raise NotImplementedError
 
@@ -186,15 +235,51 @@ if moms == 'sp':
         
         if ip_mom:
             if op_space == 0:
-                print('Occupied Bra state for IP moment (final index is perturbation index)')
+                print('Occupied Bra state for IP moment (first index is perturbation index)')
             else:
-                print('Virtual Bra state for IP moment (final index is perturbation index)')
+                print('Virtual Bra state for IP moment (first index is perturbation index)')
         else:
             if op_space == 0:
-                print('Occupied Bra state for EA moment (final index is perturbation index)')
+                print('Occupied Bra state for EA moment (first index is perturbation index)')
             else:
-                print('Virtual Bra state for EA moment (final index is perturbation index)')
+                print('Virtual Bra state for EA moment (first index is perturbation index)')
 
+        for i, proj_term in enumerate(spaces):
+            bra_term = (L * L_renom + L_renom) * proj_term
+            out = apply_wick(bra_term)
+            out.resolve()
+            final = AExpression(Ex=out)
+            print(add_H_suffix_blocks(final._print_einsum('E_bra_{}'.format(i))),flush=True)
+        print('')
+elif moms == 'dd':
+    for op_space in ['oo', 'ov', 'vo', 'vv']:
+        if op_space == 'oo':
+            L_expr = Expression([Term(1, [], [Tensor([Idx(0, "occ"), Idx(1, "occ")], "")], [FOperator(Idx(0, "occ"), True), FOperator(Idx(1, "occ"), False)], [])])
+            print('Occupied-Occupied density perturbation for Bra state (first indices are perturbation indices?)')
+        elif op_space == 'ov':
+            L_expr = Expression([Term(1, [], [Tensor([Idx(0, "occ"), Idx(0, "vir")], "")], [FOperator(Idx(0, "occ"), True), FOperator(Idx(0, "vir"), False)], [])])
+            print('Occupied-Virtual density perturbation for Bra state (first indices are perturbation indices?)')
+        elif op_space == 'vo':
+            L_expr = Expression([Term(1, [], [Tensor([Idx(0, "vir"), Idx(0, "occ")], "")], [FOperator(Idx(0, "vir"), True), FOperator(Idx(0, "occ"), False)], [])])
+            print('Virtual-Occupied density perturbation for Bra state (first indices are perturbation indices?)')
+        elif op_space == 'vv':
+            L_expr = Expression([Term(1, [], [Tensor([Idx(0, "vir"), Idx(1, "vir")], "")], [FOperator(Idx(0, "vir"), True), FOperator(Idx(1, "vir"), False)], [])])
+            print('Virtual-Virtual density perturbation for Bra state (first indices are perturbation indices?)')
+        # Should never need to be more 
+        L_opT = commute(L_expr, T)
+        L_opTT = commute(L_opT, T)
+        L_opTTT = commute(L_opTT, T)
+        L_opTTTT = commute(L_opTTT, T)
+        L_renom = L_expr + L_opT + fracs[1]*L_opTT + fracs[2]*L_opTTT + fracs[3]*L_opTTTT
+
+        # Space of right-hand projector
+        spaces = []
+        spaces.append(ketE1("occ", "vir"))
+        spaces.append(ketE2("occ", "vir", "occ", "vir"))
+        if bosons:
+            spaces.append(ketP1("nm"))
+            spaces.append(ketP1E1("nm", "occ", "vir"))
+        
         for i, proj_term in enumerate(spaces):
             bra_term = (L * L_renom + L_renom) * proj_term
             out = apply_wick(bra_term)
