@@ -397,6 +397,429 @@ def eb_coup_rdm(cc, write=True):
         print('No bosonic RDM for the CCSD model...')
     return (np.zeros((cc.nbos, cc.nso, cc.nso)), np.zeros((cc.nbos, cc.nso, cc.nso)))
 
+def part_moms_indirect(cc, order, write=True):
+    ''' Get arbitrary-order moments of the fermionic particle (EA) single-particle spectral function.
+        mom[p,q,order] = <c^+_p (H-E)^(order) c_q>
+        Note that the moments from 0 up to order will be computed and returned.
+        These moments should be identical to the equivalent EOM spectral moments'''
+
+    if write:
+        print('Computing fermionic space single-particle spectral moments up to (and including) order {}'.format(order))
+    if cc.L1 is None:
+        if write:
+            print('No optimized lambda amplitudes found to compute density matrices.')
+            print('Using L = T^+ approximation...')
+        cc.init_lam()
+    L1 = cc.L1
+    L2 = cc.L2
+    T1 = cc.T1
+    T2 = cc.T2
+    nocc = T1.shape[1]
+    nvir = T1.shape[0]
+    ntot = nocc + nvir
+    delta = np.eye(T1.shape[0]) # Virtual-virtual delta
+
+    ea_moms = np.zeros((ntot, ntot, order+1))
+
+    # Set up the projection of the ket state
+    # Note that for these kets, the final index is the perturbation index
+    R0_1 = np.zeros((nvir, ntot))
+    R0_2 = np.zeros((nvir, nvir, nocc, ntot))
+
+    # Occupied parts
+    R0_1[:,:nocc] = -T1.copy() 
+    R0_2[:,:,:,:nocc] = T2.copy().transpose(1,0,3,2) 
+    # Virtual parts
+    R0_1[:,nocc:] = delta.copy() 
+    R0_2[:,:,:,nocc:] = np.zeros((nvir, nvir, nocc, nvir)) 
+
+    kets = [(R0_1, R0_2)]
+    for i in range(order):
+        # Apply (H-E) sequentially to each ket. Final index of the R vectors will be considered the list of vectors to apply the operator to.
+        kets.append(apply_hbar_ea(cc, kets[-1]))
+
+    # Find the bra states (occupied ones first - First index is operator??)
+    E_bra_1 = np.zeros((ntot, nvir))
+    E_bra_2 = np.zeros((ntot, nocc, nvir, nvir))
+
+    # Virtual annihilator
+    E_bra_1[nocc:, :] = delta.copy() 
+    E_bra_1[nocc:, :] += -1.0*einsum('ia,bi->ba', L1, T1)
+    E_bra_1[nocc:, :] += -0.5*einsum('ijab,bcji->ca', L2, T2)
+    # I think the problem is likely to be in E_bra_2
+    E_bra_2[nocc:, :, :, :] = -1.0*einsum('ia,bc->biac', L1, delta)
+    E_bra_2[nocc:, :, :, :] += 1.0*einsum('ia,bc->bica', L1, delta)
+    E_bra_2[nocc:, :, :, :] += 1.0*einsum('ijab,ci->cjba', L2, T1)
+
+    # Occupied annihilator
+    E_bra_1[:nocc, :] = -L1.copy()
+    E_bra_2[:nocc, :, :, :] = L2.copy().transpose(0,1,3,2)
+
+    # Now, dot product together every set of states in kets list with the bra states of E_bra
+    for i in range(order+1):
+        ea_moms[:,:,i] = einsum('pa,aq->pq', E_bra_1, kets[i][0])
+        ea_moms[:,:,i] += 0.5*einsum('piab,abiq->pq', E_bra_2, kets[i][1]) # Perhaps ab want to be swapped in one of these tensors?
+
+        # Hermitize
+        ea_moms[:,:,i] = 0.5*(ea_moms[:,:,i] + ea_moms[:,:,i].T)
+
+    return ea_moms
+
+def gen_ea_eom_matrix(cc, write=True):
+
+    if write:
+        print('Computing EA EOM matrix')
+    if cc.L1 is None:
+        if write:
+            print('No optimized lambda amplitudes found to compute density matrices.')
+            print('Using L = T^+ approximation...')
+        cc.init_lam()
+    nocc = cc.T1.shape[1]
+    nvir = cc.T1.shape[0]
+    ntot = nocc + nvir
+    h_size = nvir + (nvir**2)*nocc
+
+    R1 = np.zeros((nvir, h_size))
+    R2 = np.zeros((nvir, nvir, nocc, h_size))
+    ind = 0
+    for l in range(nvir):
+        R1[l, ind] = 1.0
+        ind += 1
+
+    for i in range(nvir):
+        for j in range(nvir):
+            for k in range(nocc):
+                R2[i,j,k,ind] = 1.
+                ind += 1 
+    H1, H2 = apply_hbar_ea(cc, (R1, R2))
+    
+    full_h = np.zeros((h_size, h_size))
+    full_h[:nvir,:] = H1
+    ind = nvir
+    for i in range(nvir):
+        for j in range(nvir):
+            for k in range(nocc):
+                full_h[ind, :] = H2[i,j,k,:]
+                ind += 1
+
+    return full_h
+
+def gen_ip_eom_matrix(cc, write=True):
+
+    if write:
+        print('Computing IP EOM matrix')
+    if cc.L1 is None:
+        if write:
+            print('No optimized lambda amplitudes found to compute density matrices.')
+            print('Using L = T^+ approximation...')
+        cc.init_lam()
+    nocc = cc.T1.shape[1]
+    nvir = cc.T1.shape[0]
+    ntot = nocc + nvir
+    h_size = nocc + (nocc**2)*nvir
+
+    R1 = np.zeros((nocc, h_size))
+    R2 = np.zeros((nvir, nocc, nocc, h_size))
+    ind = 0
+    for l in range(nocc):
+        R1[l, ind] = 1.0
+        ind += 1
+
+    for i in range(nvir):
+        for j in range(nocc):
+            for k in range(nocc):
+                R2[i,j,k,ind] = 1.
+                ind += 1 
+    H1, H2 = apply_hbar_ip(cc, (R1, R2))
+    
+    full_h = np.zeros((h_size, h_size))
+    full_h[:nocc,:] = H1
+    ind = nocc
+    for i in range(nvir):
+        for j in range(nocc):
+            for k in range(nocc):
+                full_h[ind, :] = H2[i,j,k,:]
+                ind += 1
+
+    return full_h
+
+def hole_moms_indirect(cc, order, write=True):
+    ''' Get arbitrary-order moments of the fermionic hole (IP) single-particle spectral function.
+        mom[p,q,order] = <c_p (H-E)^(order) c^+_q>
+        Note that the moments from 0 up to order will be computed and returned.
+        These moments should be identical to the equivalent EOM spectral moments'''
+
+    if write:
+        print('Computing fermionic space single-hole spectral moments up to (and including) order {}'.format(order))
+    if cc.L1 is None:
+        if write:
+            print('No optimized lambda amplitudes found to compute density matrices.')
+            print('Using L = T^+ approximation...')
+        cc.init_lam()
+    L1 = cc.L1
+    L2 = cc.L2
+    T1 = cc.T1
+    T2 = cc.T2
+    nocc = T1.shape[1]
+    nvir = T1.shape[0]
+    ntot = nocc + nvir
+    delta = np.eye(T1.shape[1]) # Occupied-occupied delta
+
+    ip_moms = np.zeros((ntot, ntot, order+1))
+
+    # Set up the projection of the ket state
+    # Note that for these kets, the final index is the perturbation index
+    # These expressions can also be found in ijqc, Nooijen and Schneiders, 1993
+    R0_1 = np.zeros((nocc, ntot))
+    R0_2 = np.zeros((nvir, nocc, nocc, ntot))
+
+    # Occupied annihilator
+    R0_1[:,:nocc] = delta.copy() # occ x occ
+    R0_2[:,:,:,:nocc] = np.zeros((nvir, nocc, nocc, nocc)) # Occ annihilator projected onto 2h1p space is zero
+    # Virtual annihilator
+    R0_1[:,nocc:] = T1.copy().transpose(1,0) # occ, virt: Virtual ann projected onto 1h space
+    R0_2[:,:,:,nocc:] = T2.copy().transpose(0,3,2,1) # [vir, occ, occ, vir]
+
+    kets = [(R0_1, R0_2)]
+    for i in range(order):
+        # Apply (H-E) sequentially to each ket. Final index of the R vectors will be considered the list of vectors to apply the operator to.
+        kets.append(apply_hbar_ip(cc, kets[-1]))
+
+    # Find the bra states (occupied ones first - First index is operator??)
+    E_bra_1 = np.zeros((ntot, nocc))
+    E_bra_2 = np.zeros((ntot, nocc, nocc, nvir))
+
+    # Occupied creator
+    E_bra_1[:nocc, :] = delta.copy()
+    E_bra_1[:nocc, :] += -1.0*einsum('ia,aj->ji', L1, T1)
+    E_bra_1[:nocc, :] += -0.5*einsum('ijab,baki->kj', L2, T2)
+
+    # I think the problem is likely to be in these three lines
+    E_bra_2[:nocc, :, :, :] = -1.0*einsum('ia,jk->jika', L1, delta)
+    E_bra_2[:nocc, :, :, :] += 1.0*einsum('ia,jk->jkia', L1, delta)
+    E_bra_2[:nocc, :, :, :] += -1.0*einsum('ijab,bk->kjia', L2, T1)
+
+    # Virtual creator
+    E_bra_1[nocc:, :] = L1.copy().transpose(1,0)
+    E_bra_2[nocc:, :, :, :] = L2.copy().transpose(3,1,0,2) # 1.0*einsum('ijab->bjia', L2) # Is this correct?
+    #E_bra_2[nocc:, :, :, :] = einsum('ijab->bjia', L2).copy() # Is this correct?
+
+    # Now, dot product together every set of states in kets list with the bra states of E_bra
+    for i in range(order+1):
+        ip_moms[:,:,i] = einsum('pi,iq->pq', E_bra_1, kets[i][0])
+        ip_moms[:,:,i] += 0.5*einsum('pija,aijq->pq', E_bra_2, kets[i][1]) # Perhaps ij want to be swapped in one of these tensors?
+
+        # Hermitize
+        ip_moms[:,:,i] = 0.5*(ip_moms[:,:,i] + ip_moms[:,:,i].T)
+
+    return ip_moms
+
+def apply_hbar_ip(cc, R):
+    ''' Apply the IP (N-1) hamiltonian, (H-E0) to a trial state.
+    R is a tuple of R1 (1h) and R2 (2h1p) states, with the final index being an index of the vectors to apply the operator to'''
+
+    R1 = R[0]
+    R2 = R[1]
+    assert(R1.shape[-1] == R2.shape[-1])
+    
+    L1 = cc.L1
+    L2 = cc.L2
+    T1 = cc.T1
+    T2 = cc.T2
+    F = cc.fock_mo
+    I = cc.I
+
+    S_1 = -1.0*einsum('ji,jp->ip', F.oo, R1)
+    S_1 += -1.0*einsum('ja,ajip->ip', F.ov, R2)
+    S_1 += 0.5*einsum('jkia,akjp->ip', I.ooov, R2)
+    S_1 += -1.0*einsum('ja,ai,jp->ip', F.ov, T1, R1)
+    S_1 += 1.0*einsum('jkia,aj,kp->ip', I.ooov, T1, R1)
+    S_1 += -0.5*einsum('jkab,bi,akjp->ip', I.oovv, T1, R2)
+    S_1 += 1.0*einsum('jkab,bj,akip->ip', I.oovv, T1, R2)
+    S_1 += 0.5*einsum('jkab,baji,kp->ip', I.oovv, T2, R1)
+    S_1 += -1.0*einsum('jkab,bi,aj,kp->ip', I.oovv, T1, T1, R1)
+
+    S_2 = -1.0*einsum('ai,jp->aijp', F.vo, R1)
+    S_2 += 1.0*einsum('aj,ip->aijp', F.vo, R1)
+    S_2 += -1.0*einsum('ki,akjp->aijp', F.oo, R2)
+    S_2 += 1.0*einsum('kj,akip->aijp', F.oo, R2)
+    S_2 += -1.0*einsum('ab,bjip->aijp', F.vv, R2)
+    S_2 += 1.0*einsum('kaji,kp->aijp', I.ovoo, R1)
+    S_2 += 0.5*einsum('klji,alkp->aijp', I.oooo, R2)
+    S_2 += -1.0*einsum('kaib,bkjp->aijp', I.ovov, R2)
+    S_2 += 1.0*einsum('kajb,bkip->aijp', I.ovov, R2)
+    S_2 += 1.0*einsum('ki,ak,jp->aijp', F.oo, T1, R1)
+    S_2 += -1.0*einsum('kj,ak,ip->aijp', F.oo, T1, R1)
+    S_2 += -1.0*einsum('ab,bi,jp->aijp', F.vv, T1, R1)
+    S_2 += 1.0*einsum('ab,bj,ip->aijp', F.vv, T1, R1)
+    S_2 += 1.0*einsum('kb,ak,bjip->aijp', F.ov, T1, R2)
+    S_2 += -1.0*einsum('kb,bi,akjp->aijp', F.ov, T1, R2)
+    S_2 += 1.0*einsum('kb,bj,akip->aijp', F.ov, T1, R2)
+    S_2 += -1.0*einsum('kb,abji,kp->aijp', F.ov, T2, R1)
+    S_2 += 1.0*einsum('kb,abki,jp->aijp', F.ov, T2, R1)
+    S_2 += -1.0*einsum('kb,abkj,ip->aijp', F.ov, T2, R1)
+    S_2 += 1.0*einsum('klji,ak,lp->aijp', I.oooo, T1, R1)
+    S_2 += -1.0*einsum('kaib,bj,kp->aijp', I.ovov, T1, R1)
+    S_2 += 1.0*einsum('kaib,bk,jp->aijp', I.ovov, T1, R1)
+    S_2 += 1.0*einsum('kajb,bi,kp->aijp', I.ovov, T1, R1)
+    S_2 += -1.0*einsum('kajb,bk,ip->aijp', I.ovov, T1, R1)
+    S_2 += -1.0*einsum('klib,ak,bljp->aijp', I.ooov, T1, R2)
+    S_2 += -0.5*einsum('klib,bj,alkp->aijp', I.ooov, T1, R2)
+    S_2 += 1.0*einsum('klib,bk,aljp->aijp', I.ooov, T1, R2)
+    S_2 += -1.0*einsum('klib,abkj,lp->aijp', I.ooov, T2, R1)
+    S_2 += -0.5*einsum('klib,ablk,jp->aijp', I.ooov, T2, R1)
+    S_2 += 1.0*einsum('kljb,ak,blip->aijp', I.ooov, T1, R2)
+    S_2 += 0.5*einsum('kljb,bi,alkp->aijp', I.ooov, T1, R2)
+    S_2 += -1.0*einsum('kljb,bk,alip->aijp', I.ooov, T1, R2)
+    S_2 += 1.0*einsum('kljb,abki,lp->aijp', I.ooov, T2, R1)
+    S_2 += 0.5*einsum('kljb,ablk,ip->aijp', I.ooov, T2, R1)
+    S_2 += 1.0*einsum('kabc,ci,bkjp->aijp', I.ovvv, T1, R2)
+    S_2 += -1.0*einsum('kabc,cj,bkip->aijp', I.ovvv, T1, R2)
+    S_2 += 1.0*einsum('kabc,ck,bjip->aijp', I.ovvv, T1, R2)
+    S_2 += -0.5*einsum('kabc,cbji,kp->aijp', I.ovvv, T2, R1)
+    S_2 += 0.5*einsum('kabc,cbki,jp->aijp', I.ovvv, T2, R1)
+    S_2 += -0.5*einsum('kabc,cbkj,ip->aijp', I.ovvv, T2, R1)
+    S_2 += -0.5*einsum('klbc,acji,blkp->aijp', I.oovv, T2, R2)
+    S_2 += 1.0*einsum('klbc,acki,bljp->aijp', I.oovv, T2, R2)
+    S_2 += -1.0*einsum('klbc,ackj,blip->aijp', I.oovv, T2, R2)
+    S_2 += -0.5*einsum('klbc,aclk,bjip->aijp', I.oovv, T2, R2)
+    S_2 += -0.25*einsum('klbc,cbji,alkp->aijp', I.oovv, T2, R2)
+    S_2 += 0.5*einsum('klbc,cbki,aljp->aijp', I.oovv, T2, R2)
+    S_2 += -0.5*einsum('klbc,cbkj,alip->aijp', I.oovv, T2, R2)
+    S_2 += 1.0*einsum('kb,bi,ak,jp->aijp', F.ov, T1, T1, R1)
+    S_2 += -1.0*einsum('kb,bj,ak,ip->aijp', F.ov, T1, T1, R1)
+    S_2 += 1.0*einsum('klib,ak,bl,jp->aijp', I.ooov, T1, T1, R1)
+    S_2 += -1.0*einsum('klib,bj,ak,lp->aijp', I.ooov, T1, T1, R1)
+    S_2 += -1.0*einsum('kljb,ak,bl,ip->aijp', I.ooov, T1, T1, R1)
+    S_2 += 1.0*einsum('kljb,bi,ak,lp->aijp', I.ooov, T1, T1, R1)
+    S_2 += 1.0*einsum('kabc,ci,bj,kp->aijp', I.ovvv, T1, T1, R1)
+    S_2 += -1.0*einsum('kabc,ci,bk,jp->aijp', I.ovvv, T1, T1, R1)
+    S_2 += 1.0*einsum('kabc,cj,bk,ip->aijp', I.ovvv, T1, T1, R1)
+    S_2 += 1.0*einsum('klbc,ak,cl,bjip->aijp', I.oovv, T1, T1, R2)
+    S_2 += -0.5*einsum('klbc,ak,cbji,lp->aijp', I.oovv, T1, T2, R1)
+    S_2 += 0.5*einsum('klbc,ak,cbli,jp->aijp', I.oovv, T1, T2, R1)
+    S_2 += -0.5*einsum('klbc,ak,cblj,ip->aijp', I.oovv, T1, T2, R1)
+    S_2 += 1.0*einsum('klbc,ci,ak,bljp->aijp', I.oovv, T1, T1, R2)
+    S_2 += 0.5*einsum('klbc,ci,bj,alkp->aijp', I.oovv, T1, T1, R2)
+    S_2 += -1.0*einsum('klbc,ci,bk,aljp->aijp', I.oovv, T1, T1, R2)
+    S_2 += 1.0*einsum('klbc,ci,abkj,lp->aijp', I.oovv, T1, T2, R1)
+    S_2 += 0.5*einsum('klbc,ci,ablk,jp->aijp', I.oovv, T1, T2, R1)
+    S_2 += -1.0*einsum('klbc,cj,ak,blip->aijp', I.oovv, T1, T1, R2)
+    S_2 += 1.0*einsum('klbc,cj,bk,alip->aijp', I.oovv, T1, T1, R2)
+    S_2 += -1.0*einsum('klbc,cj,abki,lp->aijp', I.oovv, T1, T2, R1)
+    S_2 += -0.5*einsum('klbc,cj,ablk,ip->aijp', I.oovv, T1, T2, R1)
+    S_2 += 1.0*einsum('klbc,ck,abji,lp->aijp', I.oovv, T1, T2, R1)
+    S_2 += -1.0*einsum('klbc,ck,abli,jp->aijp', I.oovv, T1, T2, R1)
+    S_2 += 1.0*einsum('klbc,ck,ablj,ip->aijp', I.oovv, T1, T2, R1)
+    S_2 += -1.0*einsum('klbc,ci,ak,bl,jp->aijp', I.oovv, T1, T1, T1, R1)
+    S_2 += 1.0*einsum('klbc,ci,bj,ak,lp->aijp', I.oovv, T1, T1, T1, R1)
+    S_2 += 1.0*einsum('klbc,cj,ak,bl,ip->aijp', I.oovv, T1, T1, T1, R1)
+
+    return (S_1, S_2)
+
+def apply_hbar_ea(cc, R):
+    ''' Apply the EA (N+1) hamiltonian, (H-E0) to a trial state.
+    R is a tuple of R1 (1p) and R2 (2p1h) states, with the final index being an index of the vectors to apply the operator to'''
+
+    R1 = R[0]
+    R2 = R[1]
+    assert(R1.shape[-1] == R2.shape[-1])
+    
+    L1 = cc.L1
+    L2 = cc.L2
+    T1 = cc.T1
+    T2 = cc.T2
+    F = cc.fock_mo
+    I = cc.I
+
+    S_1 = 1.0*einsum('ab,bp->ap', F.vv, R1)
+    S_1 += 1.0*einsum('ib,abip->ap', F.ov, R2)
+    S_1 += 0.5*einsum('iabc,cbip->ap', I.ovvv, R2)
+    S_1 += -1.0*einsum('ib,ai,bp->ap', F.ov, T1, R1)
+    S_1 += -1.0*einsum('iabc,ci,bp->ap', I.ovvv, T1, R1)
+    S_1 += 0.5*einsum('ijbc,ai,cbjp->ap', I.oovv, T1, R2)
+    S_1 += -1.0*einsum('ijbc,ci,abjp->ap', I.oovv, T1, R2)
+    S_1 += 0.5*einsum('ijbc,acji,bp->ap', I.oovv, T2, R1)
+    S_1 += -1.0*einsum('ijbc,ai,cj,bp->ap', I.oovv, T1, T1, R1)
+
+    S_2 = -1.0*einsum('ai,bp->abip', F.vo, R1)
+    S_2 += 1.0*einsum('bi,ap->abip', F.vo, R1)
+    S_2 += 1.0*einsum('ji,bajp->abip', F.oo, R2)
+    S_2 += -1.0*einsum('ac,bcip->abip', F.vv, R2)
+    S_2 += 1.0*einsum('bc,acip->abip', F.vv, R2)
+    S_2 += 1.0*einsum('baic,cp->abip', I.vvov, R1)
+    S_2 += 1.0*einsum('jaic,bcjp->abip', I.ovov, R2)
+    S_2 += -1.0*einsum('jbic,acjp->abip', I.ovov, R2)
+    S_2 += 0.5*einsum('bacd,dcip->abip', I.vvvv, R2)
+    S_2 += 1.0*einsum('ji,aj,bp->abip', F.oo, T1, R1)
+    S_2 += -1.0*einsum('ji,bj,ap->abip', F.oo, T1, R1)
+    S_2 += -1.0*einsum('ac,ci,bp->abip', F.vv, T1, R1)
+    S_2 += 1.0*einsum('bc,ci,ap->abip', F.vv, T1, R1)
+    S_2 += 1.0*einsum('jc,aj,bcip->abip', F.ov, T1, R2)
+    S_2 += -1.0*einsum('jc,bj,acip->abip', F.ov, T1, R2)
+    S_2 += 1.0*einsum('jc,ci,bajp->abip', F.ov, T1, R2)
+    S_2 += 1.0*einsum('jc,acji,bp->abip', F.ov, T2, R1)
+    S_2 += 1.0*einsum('jc,baji,cp->abip', F.ov, T2, R1)
+    S_2 += -1.0*einsum('jc,bcji,ap->abip', F.ov, T2, R1)
+    S_2 += -1.0*einsum('jaic,bj,cp->abip', I.ovov, T1, R1)
+    S_2 += 1.0*einsum('jaic,cj,bp->abip', I.ovov, T1, R1)
+    S_2 += 1.0*einsum('jbic,aj,cp->abip', I.ovov, T1, R1)
+    S_2 += -1.0*einsum('jbic,cj,ap->abip', I.ovov, T1, R1)
+    S_2 += -1.0*einsum('bacd,di,cp->abip', I.vvvv, T1, R1)
+    S_2 += 1.0*einsum('jkic,aj,bckp->abip', I.ooov, T1, R2)
+    S_2 += -1.0*einsum('jkic,bj,ackp->abip', I.ooov, T1, R2)
+    S_2 += -1.0*einsum('jkic,cj,bakp->abip', I.ooov, T1, R2)
+    S_2 += -0.5*einsum('jkic,ackj,bp->abip', I.ooov, T2, R1)
+    S_2 += -0.5*einsum('jkic,bakj,cp->abip', I.ooov, T2, R1)
+    S_2 += 0.5*einsum('jkic,bckj,ap->abip', I.ooov, T2, R1)
+    S_2 += -0.5*einsum('jacd,bj,dcip->abip', I.ovvv, T1, R2)
+    S_2 += -1.0*einsum('jacd,di,bcjp->abip', I.ovvv, T1, R2)
+    S_2 += 1.0*einsum('jacd,dj,bcip->abip', I.ovvv, T1, R2)
+    S_2 += 1.0*einsum('jacd,bdji,cp->abip', I.ovvv, T2, R1)
+    S_2 += 0.5*einsum('jacd,dcji,bp->abip', I.ovvv, T2, R1)
+    S_2 += 0.5*einsum('jbcd,aj,dcip->abip', I.ovvv, T1, R2)
+    S_2 += 1.0*einsum('jbcd,di,acjp->abip', I.ovvv, T1, R2)
+    S_2 += -1.0*einsum('jbcd,dj,acip->abip', I.ovvv, T1, R2)
+    S_2 += -1.0*einsum('jbcd,adji,cp->abip', I.ovvv, T2, R1)
+    S_2 += -0.5*einsum('jbcd,dcji,ap->abip', I.ovvv, T2, R1)
+    S_2 += -1.0*einsum('jkcd,adji,bckp->abip', I.oovv, T2, R2)
+    S_2 += -0.5*einsum('jkcd,adkj,bcip->abip', I.oovv, T2, R2)
+    S_2 += -0.5*einsum('jkcd,baji,dckp->abip', I.oovv, T2, R2)
+    S_2 += -0.25*einsum('jkcd,bakj,dcip->abip', I.oovv, T2, R2)
+    S_2 += 1.0*einsum('jkcd,bdji,ackp->abip', I.oovv, T2, R2)
+    S_2 += 0.5*einsum('jkcd,bdkj,acip->abip', I.oovv, T2, R2)
+    S_2 += -0.5*einsum('jkcd,dcji,bakp->abip', I.oovv, T2, R2)
+    S_2 += 1.0*einsum('jc,ci,aj,bp->abip', F.ov, T1, T1, R1)
+    S_2 += -1.0*einsum('jc,ci,bj,ap->abip', F.ov, T1, T1, R1)
+    S_2 += 1.0*einsum('jkic,aj,ck,bp->abip', I.ooov, T1, T1, R1)
+    S_2 += 1.0*einsum('jkic,bj,ak,cp->abip', I.ooov, T1, T1, R1)
+    S_2 += -1.0*einsum('jkic,bj,ck,ap->abip', I.ooov, T1, T1, R1)
+    S_2 += 1.0*einsum('jacd,di,bj,cp->abip', I.ovvv, T1, T1, R1)
+    S_2 += -1.0*einsum('jacd,di,cj,bp->abip', I.ovvv, T1, T1, R1)
+    S_2 += -1.0*einsum('jbcd,di,aj,cp->abip', I.ovvv, T1, T1, R1)
+    S_2 += 1.0*einsum('jbcd,di,cj,ap->abip', I.ovvv, T1, T1, R1)
+    S_2 += 1.0*einsum('jkcd,aj,dk,bcip->abip', I.oovv, T1, T1, R2)
+    S_2 += 1.0*einsum('jkcd,aj,bdki,cp->abip', I.oovv, T1, T2, R1)
+    S_2 += 0.5*einsum('jkcd,aj,dcki,bp->abip', I.oovv, T1, T2, R1)
+    S_2 += 0.5*einsum('jkcd,bj,ak,dcip->abip', I.oovv, T1, T1, R2)
+    S_2 += -1.0*einsum('jkcd,bj,dk,acip->abip', I.oovv, T1, T1, R2)
+    S_2 += -1.0*einsum('jkcd,bj,adki,cp->abip', I.oovv, T1, T2, R1)
+    S_2 += -0.5*einsum('jkcd,bj,dcki,ap->abip', I.oovv, T1, T2, R1)
+    S_2 += -1.0*einsum('jkcd,di,aj,bckp->abip', I.oovv, T1, T1, R2)
+    S_2 += 1.0*einsum('jkcd,di,bj,ackp->abip', I.oovv, T1, T1, R2)
+    S_2 += 1.0*einsum('jkcd,di,cj,bakp->abip', I.oovv, T1, T1, R2)
+    S_2 += 0.5*einsum('jkcd,di,ackj,bp->abip', I.oovv, T1, T2, R1)
+    S_2 += 0.5*einsum('jkcd,di,bakj,cp->abip', I.oovv, T1, T2, R1)
+    S_2 += -0.5*einsum('jkcd,di,bckj,ap->abip', I.oovv, T1, T2, R1)
+    S_2 += -1.0*einsum('jkcd,dj,acki,bp->abip', I.oovv, T1, T2, R1)
+    S_2 += -1.0*einsum('jkcd,dj,baki,cp->abip', I.oovv, T1, T2, R1)
+    S_2 += 1.0*einsum('jkcd,dj,bcki,ap->abip', I.oovv, T1, T2, R1)
+    S_2 += -1.0*einsum('jkcd,di,aj,ck,bp->abip', I.oovv, T1, T1, T1, R1)
+    S_2 += -1.0*einsum('jkcd,di,bj,ak,cp->abip', I.oovv, T1, T1, T1, R1)
+    S_2 += 1.0*einsum('jkcd,di,bj,ck,ap->abip', I.oovv, T1, T1, T1, R1)
+
+    return (S_1, S_2)
+
 def part1_mom(cc, write=True):
     ''' Get the fermionic first particle (EA) single-particle moments
         mom[p,q] = <c_p (H-E) c^+_q>

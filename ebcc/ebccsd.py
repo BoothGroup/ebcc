@@ -454,6 +454,8 @@ class EBCCSD:
             print("WARNING: eb-CCSD did not converge!")
         else:
             print("CC iterations converged!")
+            print('Final CCSD correlation energy: {}'.format(Eold))
+            print('Final CCSD total energy: {}'.format(self.ehf + Eold))
 
         # Point final values in 'old' to 'non-old'
         self.copy_amps()
@@ -670,6 +672,40 @@ class EBCCSD:
             ip_mom = ccsd_2_2_equations.hole1_mom(self)
 
         return ip_mom
+         
+    def make_ea_EOM_moms(self, order, write=True):
+        ''' Get the fermionic particle (EA) single-particle moments
+            mom[p,q] = <c_p (H-E)^n c^+_q>
+            for all orders up to and including n
+        '''
+
+        if self.rank == (2, 0, 0):
+            ea_moms = ccsd_equations.part_moms_indirect(self, order, write=True)
+        elif self.rank == (2, 1, 1):
+            ea_moms = ccsd_1_1_equations.part_moms_indirect(self, order, write=True)
+        elif self.rank == (2, 2, 1):
+            ea_moms = ccsd_2_1_equations.part_moms_indirect(self, order, write=True)
+        elif self.rank == (2, 2, 2):
+            ea_moms = ccsd_2_2_equations.part_moms_indirect(self, order, write=True)
+
+        return ea_moms
+         
+    def make_ip_EOM_moms(self, order, write=True):
+        ''' Get the fermionic hole (IP) single-particle moments
+            mom[p,q] = <c^+_p (H-E)^n c_q>
+            for all orders up to and including n
+        '''
+
+        if self.rank == (2, 0, 0):
+            ip_moms = ccsd_equations.hole_moms_indirect(self, order, write=True)
+        elif self.rank == (2, 1, 1):
+            ip_moms = ccsd_1_1_equations.hole_moms_indirect(self, order, write=True)
+        elif self.rank == (2, 2, 1):
+            ip_moms = ccsd_2_1_equations.hole_moms_indirect(self, order, write=True)
+        elif self.rank == (2, 2, 2):
+            ip_moms = ccsd_2_2_equations.hole_moms_indirect(self, order, write=True)
+
+        return ip_moms
          
     def vec_to_amps(self, vec, amps='old',t_or_l='t'):
         ''' Take a flattened vector of all amplitudes in the ansatz
