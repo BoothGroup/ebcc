@@ -5,7 +5,7 @@ from wick.operator import FOperator, Tensor
 from wick.expression import Term, Expression, AExpression, ATerm
 from wick.wick import apply_wick
 from wick.convenience import one_e, two_e, two_p, one_p, ep11, E1, E2, P1, EPS1, PE1, ketE1, ketE2, ketP1, ketP1E1, commute, braEip1, braEip2, braEea1, braEea2, Eea1, Eea2, Eip1, Eip2
-from wick.convenience import ketEea1, ketEea2, ketEip1, ketEip2, braP1Eea1, ketP1Eea1, braP1Eip1, ketP1Eip1, EP1ea1, EP1ip1, braE1, braE2
+from wick.convenience import ketEea1, ketEea2, ketEip1, ketEip2, braP1Eea1, ketP1Eea1, braP1Eip1, ketP1Eip1, EP1ea1, EP1ip1, braE1, braE2, braP1, braP1E1
 from convenience_extra import P_dexit1, EPS_dexit1, PB1
 import time
 
@@ -55,10 +55,11 @@ HTTTTT = commute(HTTTT, T)
 
 simplify = True
 gen_h = True 
-moms = 'dd'   # 'sp' or 'dd'
-ip_mom = False
+moms = 'sp'   # 'sp' or 'dd'
+ip_mom = True 
 
 # Generate ket state first 
+tic_ket = time.perf_counter()
 if moms == 'sp':
 # First the occupied index
     inds = [Idx(0, "occ"), Idx(0, "vir")]
@@ -147,6 +148,8 @@ elif moms == 'dd':
         print('')
 else:
     raise NotImplementedError
+toc_ket = time.perf_counter()
+print('Time to generate all ket states: ',toc_ket-tic_ket,flush=True)
 
 # Construct Hbar (independent of the perturbation or projector). Would need to be increased for other ansatz
 Hbar = H + HT + fracs[1]*HTT + fracs[2]*HTTT + fracs[3]*HTTTT + fracs[4]*HTTTTT
@@ -157,6 +160,7 @@ if gen_h:
 # Now, we want to find {\bar H}-E acting on an arbitrary R1 and R2
 # Create arbitrary R in the right space
     spaces = [] # Spaces for the projector defining the space of the effective hamiltonian
+    excitations = [] # Excitation classes on the RHS
     if moms == 'sp' and ip_mom:
         spaces.append(braEip1("occ"))
         spaces.append(braEip2("occ","occ","vir"))
@@ -164,10 +168,10 @@ if gen_h:
             spaces.append(braP1Eip1("nm", "occ"))
 
         # The space of the arbitrary function we are applying the hamiltonian to
-        R = Eip1("R1", ["occ"])
-        R += Eip2("R2", ["occ"], ["vir"])
+        excitations.append(Eip1("R1", ["occ"]))
+        excitations.append(Eip2("R2", ["occ"], ["vir"]))
         if bosons:
-            R += EP1ip1("R3", ["nm"], ["occ"])
+            excitations.append(EP1ip1("R3", ["nm"], ["occ"]))
 
     elif moms == 'sp' and not ip_mom:
         spaces.append(braEea1("vir"))
@@ -175,10 +179,10 @@ if gen_h:
         if bosons:
             spaces.append(braP1Eea1("nm", "vir"))
 
-        R = Eea1("R1", ["vir"])
-        R += Eea2("R2", ["occ"], ["vir"])
+        excitations.append(Eea1("R1", ["vir"]))
+        excitations.append(Eea2("R2", ["occ"], ["vir"]))
         if bosons:
-            R += EP1ea1("R3", ["nm"], ["vir"])
+            excitations.append(EP1ea1("R3", ["nm"], ["vir"]))
     elif moms == 'dd':
         spaces.append(braE1("occ", "vir"))
         spaces.append(braE2("occ", "vir", "occ", "vir"))
@@ -186,11 +190,11 @@ if gen_h:
             spaces.append(braP1("nm"))
             spaces.append(braP1E1("nm", "occ", "vir"))
 
-        R = E1("R1", ["occ"], ["vir"])
-        R += E2("R2", ["occ"], ["vir"])
+        excitations.append(E1("R1", ["occ"], ["vir"]))
+        excitations.append(E2("R2", ["occ"], ["vir"]))
         if bosons:
-            R += P1("R3", ["nm"])
-            R += EPS1("R4", ["nm"], ["occ"], ["vir"])
+            excitations.append(P1("R3", ["nm"]))
+            excitations.append(EPS1("R4", ["nm"], ["occ"], ["vir"]))
     else:
         raise NotImplementedError
 
@@ -198,15 +202,28 @@ if gen_h:
     print('Generating action of H-E on a single perturbation...')
 
     for i, proj_term in enumerate(spaces):
-        S = proj_term * (Hbar - E0) * R
-        out = apply_wick(S)
-        out.resolve()
-        final = AExpression(Ex=out)
-        print(add_H_suffix_blocks(final._print_einsum('S_{}'.format(i))),flush=True)
+        comb_terms = []
+        for j, R_term in enumerate(excitations):
+            S = proj_term * (Hbar - E0) * R_term
+            print('Applying wick theorem for space {}/{} and R-term {}/{}...'.format(i+1,len(spaces),j+1,len(excitations)),flush=True)
+            tic_wick = time.perf_counter()
+            out = apply_wick(S)
+            toc_wick = time.perf_counter()
+            print('Wick theorem applied in {} sec'.format(toc_wick-tic_wick),flush=True)
+            out.resolve()
+            tic_simp = time.perf_counter()
+            comb_terms.append(AExpression(Ex=out, simplify=simplify))
+            toc_simp = time.perf_counter()
+            print('Simplifying terms took {} sec'.format(toc_simp-tic_simp),flush=True)
+        allterms = comb_terms[0].terms
+        for k in range(1,len(comb_terms)):
+            allterms = allterms + comb_terms[k].terms
+        simp_terms = AExpression(terms=allterms, simplify=simplify)
+        print(add_H_suffix_blocks(simp_terms._print_einsum('S_{}'.format(i))),flush=True)
     print('')
 
 # Now to find the bra with which to do the dot product
-print('Finding bra expression...(first index is operator index)')
+print('Finding bra expression...(first index is operator index)',flush=True)
 if moms == 'sp':
     inds = [Idx(0, "occ"), Idx(0, "vir")]
     for op_space in range(2):
