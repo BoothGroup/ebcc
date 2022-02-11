@@ -1,9 +1,10 @@
-''' Compute the first hole and particle one-body spectral moments at CCSD level. 
-    Compare to direct contraction from RDMs.'''
+''' Compute the first hole and particle one-body spectral moments at CCSD level
+    for the CCSD-11 model.. 
+    Compare exact, contraction from RDMs and EOM approaches (see header of 18-sp_moms-ccsd.py for more info.'''
 import numpy as np
 import pyscf
 from pyscf import gto, scf, cc, ao2mo
-from ebcc import ebccsd
+from ebcc import ebccsd, ccsd_equations
 
 mol = pyscf.M(
     atom = 'N 0 0 0; N 0 0 1.2',
@@ -29,7 +30,29 @@ dm2 = mycc.make_2rdm_f()
 ip_mom = mycc.make_ip_1mom()
 ea_mom = mycc.make_ea_1mom()
 
+# EOM moments
+ip_moms = mycc.make_ip_EOM_moms(1)
+#ea_moms = mycc.make_ea_EOM_moms(1)
+
 ### TESTS and CHECKS
+
+# 1. Compare the EOM CCSD-11 moments to the direct evaluation
+nocc = mycc.na + mycc.nb
+print('Are the exact and EOM zeroth IP moments (1DMs) correct?',np.allclose(dm1, ip_moms[:,:,0]))
+#print('Are the exact and EOM zeroth EA moments (hole DM) correct?', np.allclose(np.eye(dm1.shape[0])-dm1, ea_moms[:,:,0]))
+print('Are the occ-occ blocks of exact and and EOM first IP moments correct?', np.allclose(ip_mom[:nocc,:nocc], ip_moms[:nocc,:nocc,1]))
+print('Are the vir-vir blocks of exact and and EOM first IP moments correct?', np.allclose(ip_mom[nocc:,nocc:], ip_moms[nocc:,nocc:,1]))
+print('Are the occ-vir blocks of exact and and EOM first IP moments correct?', np.allclose(ip_mom[:nocc,nocc:], ip_moms[:nocc,nocc:,1]))
+#print('Are the occ-occ blocks of exact and and EOM first EA moments correct?', np.allclose(ea_mom[:nocc,:nocc], ea_moms[:nocc,:nocc,1]))
+# Note that even for 2 electrons, I don't think that the EA-EOM has to be exactly correct.
+#print('Are the vir-vir blocks of exact and and EOM first EA moments correct?', np.allclose(ea_mom[nocc:,nocc:], ea_moms[nocc:,nocc:,1]))
+#print('Are the occ-vir blocks of exact and and EOM first EA moments correct?', np.allclose(ea_mom[:nocc,nocc:], ea_moms[:nocc,nocc:,1]))
+if np.allclose(gmat, np.zeros_like(gmat)):
+    # Check that at zero electron-boson coupling, that the moments reproduce the ccsd model?
+    # Hack so we call the CCSD model function directly
+    ccsd_ip_moms = ccsd_equations.hole_moms_eom(mycc, 1)
+    assert(np.allclose(ccsd_ip_moms, ip_moms))
+    print('In the limit of no boson coupling, moments are the same as the ccsd model.')
 
 # 1. Compute total energy from RDMs and first hole moment
 # First compute the MO GHF basis for the hamiltonian terms, in the appropriate ordering for the orbitals in ebcc 
@@ -68,6 +91,12 @@ assert(np.isclose(E_ip_mom, E_rdms))
 assert(np.allclose(ip_mom, ip_mom.T))
 assert(np.allclose(ea_mom, ea_mom.T))
 print('Fermionic energies from moments correct.')
+E_ip_eom_mom = 0.5*np.einsum('ij,ji->', t_so, ip_moms[:,:,0]) - 0.5*np.trace(ip_moms[:,:,1]) + mol.energy_nuc()
+if np.isclose(E_ip_eom_mom, etot):
+    print('Fermionic energies from EOM moments correct and exactly equal to CCSD energy.')
+else:
+    print('Fermionic energy from EOM-CC moments compared to exact: ',E_ip_eom_mom, E_rdms,' with error: ',E_rdms-E_ip_eom_mom)
+    print('Note that we do not expect energies from EOM to be exact without 3h2p excitations.')
 
 # 2. Compute moments via contraction of 2-RDM.
 # *** Note that the moments constructed in this way are not identical to the direct construction, due to the non-variational nature of CC theory.

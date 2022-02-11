@@ -680,13 +680,13 @@ class EBCCSD:
         '''
 
         if self.rank == (2, 0, 0):
-            ea_moms = ccsd_equations.part_moms_indirect(self, order, write=True)
+            ea_moms = ccsd_equations.part_moms_eom(self, order, write=True)
         elif self.rank == (2, 1, 1):
-            ea_moms = ccsd_1_1_equations.part_moms_indirect(self, order, write=True)
+            ea_moms = ccsd_1_1_equations.part_moms_eom(self, order, write=True)
         elif self.rank == (2, 2, 1):
-            ea_moms = ccsd_2_1_equations.part_moms_indirect(self, order, write=True)
+            ea_moms = ccsd_2_1_equations.part_moms_eom(self, order, write=True)
         elif self.rank == (2, 2, 2):
-            ea_moms = ccsd_2_2_equations.part_moms_indirect(self, order, write=True)
+            ea_moms = ccsd_2_2_equations.part_moms_eom(self, order, write=True)
 
         return ea_moms
          
@@ -697,13 +697,13 @@ class EBCCSD:
         '''
 
         if self.rank == (2, 0, 0):
-            ip_moms = ccsd_equations.hole_moms_indirect(self, order, write=True)
+            ip_moms = ccsd_equations.hole_moms_eom(self, order, write=True)
         elif self.rank == (2, 1, 1):
-            ip_moms = ccsd_1_1_equations.hole_moms_indirect(self, order, write=True)
+            ip_moms = ccsd_1_1_equations.hole_moms_eom(self, order, write=True)
         elif self.rank == (2, 2, 1):
-            ip_moms = ccsd_2_1_equations.hole_moms_indirect(self, order, write=True)
+            ip_moms = ccsd_2_1_equations.hole_moms_eom(self, order, write=True)
         elif self.rank == (2, 2, 2):
-            ip_moms = ccsd_2_2_equations.hole_moms_indirect(self, order, write=True)
+            ip_moms = ccsd_2_2_equations.hole_moms_eom(self, order, write=True)
 
         return ip_moms
          

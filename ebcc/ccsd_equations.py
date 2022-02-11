@@ -397,7 +397,7 @@ def eb_coup_rdm(cc, write=True):
         print('No bosonic RDM for the CCSD model...')
     return (np.zeros((cc.nbos, cc.nso, cc.nso)), np.zeros((cc.nbos, cc.nso, cc.nso)))
 
-def part_moms_indirect(cc, order, write=True):
+def part_moms_eom(cc, order, write=True):
     ''' Get arbitrary-order moments of the fermionic particle (EA) single-particle spectral function.
         mom[p,q,order] = <c^+_p (H-E)^(order) c_q>
         Note that the moments from 0 up to order will be computed and returned.
@@ -543,7 +543,7 @@ def gen_ip_eom_matrix(cc, write=True):
 
     return full_h
 
-def hole_moms_indirect(cc, order, write=True):
+def hole_moms_eom(cc, order, write=True):
     ''' Get arbitrary-order moments of the fermionic hole (IP) single-particle spectral function.
         mom[p,q,order] = <c_p (H-E)^(order) c^+_q>
         Note that the moments from 0 up to order will be computed and returned.

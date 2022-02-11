@@ -515,6 +515,309 @@ def one_rdm_ferm(cc, write=True):
 
     return dm1
 
+def hole_moms_eom(cc, order, write=True):
+    ''' Get arbitrary-order moments of the fermionic hole (IP) single-particle spectral function.
+        mom[p,q,order] = <c_p (H-E)^(order) c^+_q>
+        Note that the moments from 0 up to order will be computed and returned.
+        These moments should be identical to the equivalent EOM spectral moments'''
+
+    if write:
+        print('Computing fermionic space single-hole spectral moments up to (and including) order {}'.format(order))
+    if cc.L1 is None:
+        if write:
+            print('No optimized lambda amplitudes found to compute density matrices.')
+            print('Using L = T^+ approximation...')
+        cc.init_lam()
+    L1 = cc.L1
+    L2 = cc.L2
+    LS1old = cc.LS1 # Whoops, these got left named as 'old' in the wick script, and I can't be bothered to change
+    LU11old = cc.LU11
+    T1 = cc.T1
+    T2 = cc.T2
+    S1 = cc.S1
+    U11 = cc.U11
+
+    F = cc.fock_mo
+    I = cc.I
+
+    g = copy.copy(cc.g_mo_blocks)
+    G = cc.G.copy()
+    # Note that g is the bosonic annihilation term. The creator tensor is the transpose of it.
+    # Explicitly make this, as these are different contractions.
+    g_boscre = copy.copy(g)
+    g_boscre.vo = cc.g_mo_blocks.ov.copy().transpose((0,2,1))
+    g_boscre.ov = cc.g_mo_blocks.vo.copy().transpose((0,2,1))
+    g_boscre.oo = cc.g_mo_blocks.oo.copy().transpose((0,2,1))
+    g_boscre.vv = cc.g_mo_blocks.vv.copy().transpose((0,2,1))
+
+    w = np.diag(cc.omega).copy()
+    # Delta contributions in occupied block due to unlinked contributions.
+    delta = np.eye(T1.shape[1]) # Occ x Occ
+    
+    nocc = T1.shape[1]
+    nvir = T1.shape[0]
+    nbos = U11.shape[0]
+    # Set up the projection of the ket state
+    # Note that for these kets, the final index is the perturbation index
+    # We are projecting onto occ, occ:occ:vir and bos:occ spaces
+    R0_1 = np.zeros((nocc, ntot))
+    R0_2 = np.zeros((nvir, nocc, nocc, ntot))
+    R0_3 = np.zeros((nbos, nocc, ntot))
+
+    # Occupied annihilator
+    R0_1[:,:nocc] = delta.copy()
+    # Virtual annihilator
+    R0_1[:,nocc:] = T1.copy().transpose(1,0)
+    R0_2[:,:,:,nocc:] = T2.copy().transpose(0,3,2,1)
+    R0_3[:,:,nocc:] = U11.copy()
+
+    kets = [(R0_1, R0_2, R0_3)]
+    for i in range(order):
+        # Apply (H-E) sequentially to each ket. Final index of the R vectors will be considered the list of vectors to apply the operator to.
+        kets.append(apply_hbar_11_ip(cc, kets[-1]))
+
+    # Find the bra states (occupied ones first - First index is operator??)
+    E_bra_0 = np.zeros((ntot, nocc))
+    E_bra_1 = np.zeros((ntot, nocc, nocc, nvir))
+    E_bra_2 = np.zeros((ntot, nbos, nocc))
+
+    E_bra_0[:nocc,:] = delta.copy()
+    E_bra_0[:nocc,:] += -1.0*einsum('ia,aj->ji', L1, T1)
+    E_bra_0[:nocc,:] += -1.0*einsum('Iia,Iaj->ji', LU11old, U11)
+    E_bra_0[:nocc,:] += -0.5*einsum('ijab,baki->kj', L2, T2)
+
+    E_bra_1[:nocc,:,:,:] = -1.0*einsum('ia,jk->jika', L1, delta)
+    E_bra_1[:nocc,:,:,:] += 1.0*einsum('ia,jk->jkia', L1, delta)
+    E_bra_1[:nocc,:,:,:] += -1.0*einsum('ijab,bk->kjia', L2, T1)
+
+    E_bra_2[:nocc,:,:] = 1.0*einsum('I,ij->iIj', LS1old, delta)
+    E_bra_2[:nocc,:,:] += -1.0*einsum('Iia,aj->jIi', LU11old, T1)
+
+    # Virtual creator
+    E_bra_0[nocc:,:] += L1.copy().transpose(1,0) 
+    E_bra_1[nocc:,:,:,:] += L2.copy().transpose(3,1,0,2)
+    E_bra_2[nocc:,:,:] += LU11old.copy().transpose(2,0,1)
+
+    # Now, dot product together every set of states in kets list with the bra states of E_bra
+    for i in range(order+1):
+        ip_moms[:,:,i] = einsum('pi,iq->pq', E_bra_0, kets[i][0])
+        ip_moms[:,:,i] += 0.5*einsum('pija,aijq->pq', E_bra_1, kets[i][1]) # Perhaps ij want to be swapped in one of these tensors?
+        ip_moms[:,:,i] += einsum('pIi,Iiq->pq', E_bra_2, kets[i][2])
+
+        # Hermitize
+        ip_moms[:,:,i] = 0.5*(ip_moms[:,:,i] + ip_moms[:,:,i].T)
+
+    return ip_moms
+
+def apply_hbar_11_ip(cc, R): 
+    ''' Apply the IP (N-1) hamiltonian, (H-E0) to a trial state.
+    R is a tuple of R1 (1h) and R2 (2h1p) and R3(1b+1h) states, with the final index being an index of the vectors to apply the operator to'''
+
+    R1 = R[0]   # nocc, ntot
+    R2 = R[1]   # nvir, nocc, nocc, ntot
+    R3 = R[2]   # nbos, nocc, ntot
+    assert(R1.shape[-1] == R2.shape[-1])
+    assert(R2.shape[-1] == R3.shape[-1])
+    
+    L1 = cc.L1
+    L2 = cc.L2
+    LS1old = cc.LS1 # Whoops, these got left named as 'old' in the wick script, and I can't be bothered to change
+    LU11old = cc.LU11
+    T1 = cc.T1
+    T2 = cc.T2
+    S1 = cc.S1
+    U11 = cc.U11
+
+    F = cc.fock_mo
+    I = cc.I
+
+    g = copy.copy(cc.g_mo_blocks)
+    G = cc.G.copy()
+    # Note that g is the bosonic annihilation term. The creator tensor is the transpose of it.
+    # Explicitly make this, as these are different contractions.
+    g_boscre = copy.copy(g)
+    g_boscre.vo = cc.g_mo_blocks.ov.copy().transpose((0,2,1))
+    g_boscre.ov = cc.g_mo_blocks.vo.copy().transpose((0,2,1))
+    g_boscre.oo = cc.g_mo_blocks.oo.copy().transpose((0,2,1))
+    g_boscre.vv = cc.g_mo_blocks.vv.copy().transpose((0,2,1))
+
+    w = np.diag(cc.omega).copy()
+    # Delta contributions in occupied block due to unlinked contributions.
+    delta = np.eye(T1.shape[1]) # Occ x Occ
+
+    S_0 = 1.0*einsum('I,Iip->ip', G, R3)
+    S_0 += -1.0*einsum('ji,jp->ip', F.oo, R1)
+    S_0 += -1.0*einsum('ja,ajip->ip', F.ov, R2)
+    S_0 += -1.0*einsum('Iji,Ijp->ip', g.oo, R3)
+    S_0 += 0.5*einsum('jkia,akjp->ip', I.ooov, R2)
+    S_0 += -1.0*einsum('ja,ai,jp->ip', F.ov, T1, R1)
+    S_0 += -1.0*einsum('Iji,I,jp->ip', g.oo, S1, R1)
+    S_0 += -1.0*einsum('Ija,I,ajip->ip', g.ov, S1, R2)
+    S_0 += -1.0*einsum('Ija,ai,Ijp->ip', g.ov, T1, R3)
+    S_0 += 1.0*einsum('Ija,aj,Iip->ip', g.ov, T1, R3)
+    S_0 += -1.0*einsum('Ija,Iai,jp->ip', g.ov, U11, R1)
+    S_0 += 1.0*einsum('jkia,aj,kp->ip', I.ooov, T1, R1)
+    S_0 += -0.5*einsum('jkab,bi,akjp->ip', I.oovv, T1, R2)
+    S_0 += 1.0*einsum('jkab,bj,akip->ip', I.oovv, T1, R2)
+    S_0 += 0.5*einsum('jkab,baji,kp->ip', I.oovv, T2, R1)
+    S_0 += -1.0*einsum('Ija,ai,I,jp->ip', g.ov, T1, S1, R1)
+    S_0 += -1.0*einsum('jkab,bi,aj,kp->ip', I.oovv, T1, T1, R1)
+
+    S_1 = -1.0*einsum('ai,jp->aijp', F.vo, R1)
+    S_1 += 1.0*einsum('aj,ip->aijp', F.vo, R1)
+    S_1 += -1.0*einsum('ki,akjp->aijp', F.oo, R2)
+    S_1 += 1.0*einsum('kj,akip->aijp', F.oo, R2)
+    S_1 += -1.0*einsum('ab,bjip->aijp', F.vv, R2)
+    S_1 += -1.0*einsum('Iai,Ijp->aijp', g.vo, R3)
+    S_1 += 1.0*einsum('Iaj,Iip->aijp', g.vo, R3)
+    S_1 += 1.0*einsum('kaji,kp->aijp', I.ovoo, R1)
+    S_1 += 0.5*einsum('klji,alkp->aijp', I.oooo, R2)
+    S_1 += -1.0*einsum('kaib,bkjp->aijp', I.ovov, R2)
+    S_1 += 1.0*einsum('kajb,bkip->aijp', I.ovov, R2)
+    S_1 += -1.0*einsum('I,Iai,jp->aijp', G, U11, R1)
+    S_1 += 1.0*einsum('I,Iaj,ip->aijp', G, U11, R1)
+    S_1 += 1.0*einsum('ki,ak,jp->aijp', F.oo, T1, R1)
+    S_1 += -1.0*einsum('kj,ak,ip->aijp', F.oo, T1, R1)
+    S_1 += -1.0*einsum('ab,bi,jp->aijp', F.vv, T1, R1)
+    S_1 += 1.0*einsum('ab,bj,ip->aijp', F.vv, T1, R1)
+    S_1 += -1.0*einsum('Iai,I,jp->aijp', g.vo, S1, R1)
+    S_1 += 1.0*einsum('Iaj,I,ip->aijp', g.vo, S1, R1)
+    S_1 += 1.0*einsum('kb,ak,bjip->aijp', F.ov, T1, R2)
+    S_1 += -1.0*einsum('kb,bi,akjp->aijp', F.ov, T1, R2)
+    S_1 += 1.0*einsum('kb,bj,akip->aijp', F.ov, T1, R2)
+    S_1 += -1.0*einsum('kb,abji,kp->aijp', F.ov, T2, R1)
+    S_1 += 1.0*einsum('kb,abki,jp->aijp', F.ov, T2, R1)
+    S_1 += -1.0*einsum('kb,abkj,ip->aijp', F.ov, T2, R1)
+    S_1 += -1.0*einsum('Iki,I,akjp->aijp', g.oo, S1, R2)
+    S_1 += 1.0*einsum('Iki,ak,Ijp->aijp', g.oo, T1, R3)
+    S_1 += -1.0*einsum('Iki,Iaj,kp->aijp', g.oo, U11, R1)
+    S_1 += 1.0*einsum('Iki,Iak,jp->aijp', g.oo, U11, R1)
+    S_1 += 1.0*einsum('Ikj,I,akip->aijp', g.oo, S1, R2)
+    S_1 += -1.0*einsum('Ikj,ak,Iip->aijp', g.oo, T1, R3)
+    S_1 += 1.0*einsum('Ikj,Iai,kp->aijp', g.oo, U11, R1)
+    S_1 += -1.0*einsum('Ikj,Iak,ip->aijp', g.oo, U11, R1)
+    S_1 += -1.0*einsum('Iab,I,bjip->aijp', g.vv, S1, R2)
+    S_1 += -1.0*einsum('Iab,bi,Ijp->aijp', g.vv, T1, R3)
+    S_1 += 1.0*einsum('Iab,bj,Iip->aijp', g.vv, T1, R3)
+    S_1 += -1.0*einsum('Iab,Ibi,jp->aijp', g.vv, U11, R1)
+    S_1 += 1.0*einsum('Iab,Ibj,ip->aijp', g.vv, U11, R1)
+    S_1 += 1.0*einsum('klji,ak,lp->aijp', I.oooo, T1, R1)
+    S_1 += -1.0*einsum('kaib,bj,kp->aijp', I.ovov, T1, R1)
+    S_1 += 1.0*einsum('kaib,bk,jp->aijp', I.ovov, T1, R1)
+    S_1 += 1.0*einsum('kajb,bi,kp->aijp', I.ovov, T1, R1)
+    S_1 += -1.0*einsum('kajb,bk,ip->aijp', I.ovov, T1, R1)
+    S_1 += 1.0*einsum('Ikb,Iai,bkjp->aijp', g.ov, U11, R2)
+    S_1 += -1.0*einsum('Ikb,Iaj,bkip->aijp', g.ov, U11, R2)
+    S_1 += 1.0*einsum('Ikb,Iak,bjip->aijp', g.ov, U11, R2)
+    S_1 += -1.0*einsum('Ikb,Ibi,akjp->aijp', g.ov, U11, R2)
+    S_1 += 1.0*einsum('Ikb,Ibj,akip->aijp', g.ov, U11, R2)
+    S_1 += -1.0*einsum('Ikb,abji,Ikp->aijp', g.ov, T2, R3)
+    S_1 += 1.0*einsum('Ikb,abki,Ijp->aijp', g.ov, T2, R3)
+    S_1 += -1.0*einsum('Ikb,abkj,Iip->aijp', g.ov, T2, R3)
+    S_1 += -1.0*einsum('klib,ak,bljp->aijp', I.ooov, T1, R2)
+    S_1 += -0.5*einsum('klib,bj,alkp->aijp', I.ooov, T1, R2)
+    S_1 += 1.0*einsum('klib,bk,aljp->aijp', I.ooov, T1, R2)
+    S_1 += -1.0*einsum('klib,abkj,lp->aijp', I.ooov, T2, R1)
+    S_1 += -0.5*einsum('klib,ablk,jp->aijp', I.ooov, T2, R1)
+    S_1 += 1.0*einsum('kljb,ak,blip->aijp', I.ooov, T1, R2)
+    S_1 += 0.5*einsum('kljb,bi,alkp->aijp', I.ooov, T1, R2)
+    S_1 += -1.0*einsum('kljb,bk,alip->aijp', I.ooov, T1, R2)
+    S_1 += 1.0*einsum('kljb,abki,lp->aijp', I.ooov, T2, R1)
+    S_1 += 0.5*einsum('kljb,ablk,ip->aijp', I.ooov, T2, R1)
+    S_1 += 1.0*einsum('kabc,ci,bkjp->aijp', I.ovvv, T1, R2)
+    S_1 += -1.0*einsum('kabc,cj,bkip->aijp', I.ovvv, T1, R2)
+    S_1 += 1.0*einsum('kabc,ck,bjip->aijp', I.ovvv, T1, R2)
+    S_1 += -0.5*einsum('kabc,cbji,kp->aijp', I.ovvv, T2, R1)
+    S_1 += 0.5*einsum('kabc,cbki,jp->aijp', I.ovvv, T2, R1)
+    S_1 += -0.5*einsum('kabc,cbkj,ip->aijp', I.ovvv, T2, R1)
+    S_1 += -0.5*einsum('klbc,acji,blkp->aijp', I.oovv, T2, R2)
+    S_1 += 1.0*einsum('klbc,acki,bljp->aijp', I.oovv, T2, R2)
+    S_1 += -1.0*einsum('klbc,ackj,blip->aijp', I.oovv, T2, R2)
+    S_1 += -0.5*einsum('klbc,aclk,bjip->aijp', I.oovv, T2, R2)
+    S_1 += -0.25*einsum('klbc,cbji,alkp->aijp', I.oovv, T2, R2)
+    S_1 += 0.5*einsum('klbc,cbki,aljp->aijp', I.oovv, T2, R2)
+    S_1 += -0.5*einsum('klbc,cbkj,alip->aijp', I.oovv, T2, R2)
+    S_1 += 1.0*einsum('kb,bi,ak,jp->aijp', F.ov, T1, T1, R1)
+    S_1 += -1.0*einsum('kb,bj,ak,ip->aijp', F.ov, T1, T1, R1)
+    S_1 += 1.0*einsum('Iki,ak,I,jp->aijp', g.oo, T1, S1, R1)
+    S_1 += -1.0*einsum('Ikj,ak,I,ip->aijp', g.oo, T1, S1, R1)
+    S_1 += -1.0*einsum('Iab,bi,I,jp->aijp', g.vv, T1, S1, R1)
+    S_1 += 1.0*einsum('Iab,bj,I,ip->aijp', g.vv, T1, S1, R1)
+    S_1 += 1.0*einsum('Ikb,ak,I,bjip->aijp', g.ov, T1, S1, R2)
+    S_1 += 1.0*einsum('Ikb,ak,Ibi,jp->aijp', g.ov, T1, U11, R1)
+    S_1 += -1.0*einsum('Ikb,ak,Ibj,ip->aijp', g.ov, T1, U11, R1)
+    S_1 += -1.0*einsum('Ikb,bi,I,akjp->aijp', g.ov, T1, S1, R2)
+    S_1 += 1.0*einsum('Ikb,bi,ak,Ijp->aijp', g.ov, T1, T1, R3)
+    S_1 += -1.0*einsum('Ikb,bi,Iaj,kp->aijp', g.ov, T1, U11, R1)
+    S_1 += 1.0*einsum('Ikb,bi,Iak,jp->aijp', g.ov, T1, U11, R1)
+    S_1 += 1.0*einsum('Ikb,bj,I,akip->aijp', g.ov, T1, S1, R2)
+    S_1 += -1.0*einsum('Ikb,bj,ak,Iip->aijp', g.ov, T1, T1, R3)
+    S_1 += 1.0*einsum('Ikb,bj,Iai,kp->aijp', g.ov, T1, U11, R1)
+    S_1 += -1.0*einsum('Ikb,bj,Iak,ip->aijp', g.ov, T1, U11, R1)
+    S_1 += -1.0*einsum('Ikb,bk,Iai,jp->aijp', g.ov, T1, U11, R1)
+    S_1 += 1.0*einsum('Ikb,bk,Iaj,ip->aijp', g.ov, T1, U11, R1)
+    S_1 += -1.0*einsum('Ikb,abji,I,kp->aijp', g.ov, T2, S1, R1)
+    S_1 += 1.0*einsum('Ikb,abki,I,jp->aijp', g.ov, T2, S1, R1)
+    S_1 += -1.0*einsum('Ikb,abkj,I,ip->aijp', g.ov, T2, S1, R1)
+    S_1 += 1.0*einsum('klib,ak,bl,jp->aijp', I.ooov, T1, T1, R1)
+    S_1 += -1.0*einsum('klib,bj,ak,lp->aijp', I.ooov, T1, T1, R1)
+    S_1 += -1.0*einsum('kljb,ak,bl,ip->aijp', I.ooov, T1, T1, R1)
+    S_1 += 1.0*einsum('kljb,bi,ak,lp->aijp', I.ooov, T1, T1, R1)
+    S_1 += 1.0*einsum('kabc,ci,bj,kp->aijp', I.ovvv, T1, T1, R1)
+    S_1 += -1.0*einsum('kabc,ci,bk,jp->aijp', I.ovvv, T1, T1, R1)
+    S_1 += 1.0*einsum('kabc,cj,bk,ip->aijp', I.ovvv, T1, T1, R1)
+    S_1 += 1.0*einsum('klbc,ak,cl,bjip->aijp', I.oovv, T1, T1, R2)
+    S_1 += -0.5*einsum('klbc,ak,cbji,lp->aijp', I.oovv, T1, T2, R1)
+    S_1 += 0.5*einsum('klbc,ak,cbli,jp->aijp', I.oovv, T1, T2, R1)
+    S_1 += -0.5*einsum('klbc,ak,cblj,ip->aijp', I.oovv, T1, T2, R1)
+    S_1 += 1.0*einsum('klbc,ci,ak,bljp->aijp', I.oovv, T1, T1, R2)
+    S_1 += 0.5*einsum('klbc,ci,bj,alkp->aijp', I.oovv, T1, T1, R2)
+    S_1 += -1.0*einsum('klbc,ci,bk,aljp->aijp', I.oovv, T1, T1, R2)
+    S_1 += 1.0*einsum('klbc,ci,abkj,lp->aijp', I.oovv, T1, T2, R1)
+    S_1 += 0.5*einsum('klbc,ci,ablk,jp->aijp', I.oovv, T1, T2, R1)
+    S_1 += -1.0*einsum('klbc,cj,ak,blip->aijp', I.oovv, T1, T1, R2)
+    S_1 += 1.0*einsum('klbc,cj,bk,alip->aijp', I.oovv, T1, T1, R2)
+    S_1 += -1.0*einsum('klbc,cj,abki,lp->aijp', I.oovv, T1, T2, R1)
+    S_1 += -0.5*einsum('klbc,cj,ablk,ip->aijp', I.oovv, T1, T2, R1)
+    S_1 += 1.0*einsum('klbc,ck,abji,lp->aijp', I.oovv, T1, T2, R1)
+    S_1 += -1.0*einsum('klbc,ck,abli,jp->aijp', I.oovv, T1, T2, R1)
+    S_1 += 1.0*einsum('klbc,ck,ablj,ip->aijp', I.oovv, T1, T2, R1)
+    S_1 += 1.0*einsum('Ikb,bi,ak,I,jp->aijp', g.ov, T1, T1, S1, R1)
+    S_1 += -1.0*einsum('Ikb,bj,ak,I,ip->aijp', g.ov, T1, T1, S1, R1)
+    S_1 += -1.0*einsum('klbc,ci,ak,bl,jp->aijp', I.oovv, T1, T1, T1, R1)
+    S_1 += 1.0*einsum('klbc,ci,bj,ak,lp->aijp', I.oovv, T1, T1, T1, R1)
+    S_1 += 1.0*einsum('klbc,cj,ak,bl,ip->aijp', I.oovv, T1, T1, T1, R1)
+
+    S_2 = 1.0*einsum('I,ip->Iip', G, R1)
+    S_2 += -1.0*einsum('ji,Ijp->Iip', F.oo, R3)
+    S_2 += 1.0*einsum('IJ,Jip->Iip', w, R3)
+    S_2 += -1.0*einsum('Iji,jp->Iip', g_boscre.oo, R1)
+    S_2 += -1.0*einsum('Ija,ajip->Iip', g_boscre.ov, R2)
+    S_2 += 1.0*einsum('IJ,J,ip->Iip', w, S1, R1)
+    S_2 += -1.0*einsum('ja,ai,Ijp->Iip', F.ov, T1, R3)
+    S_2 += -1.0*einsum('ja,Iai,jp->Iip', F.ov, U11, R1)
+    S_2 += 1.0*einsum('ja,Iaj,ip->Iip', F.ov, U11, R1)
+    S_2 += -1.0*einsum('Jji,J,Ijp->Iip', g.oo, S1, R3)
+    S_2 += -1.0*einsum('Ija,ai,jp->Iip', g_boscre.ov, T1, R1)
+    S_2 += 1.0*einsum('Ija,aj,ip->Iip', g_boscre.ov, T1, R1)
+    S_2 += -1.0*einsum('Jja,Iai,Jjp->Iip', g.ov, U11, R3)
+    S_2 += 1.0*einsum('Jja,Iaj,Jip->Iip', g.ov, U11, R3)
+    S_2 += -1.0*einsum('Jja,Jai,Ijp->Iip', g.ov, U11, R3)
+    S_2 += 1.0*einsum('jkia,aj,Ikp->Iip', I.ooov, T1, R3)
+    S_2 += 1.0*einsum('jkia,Iaj,kp->Iip', I.ooov, U11, R1)
+    S_2 += -0.5*einsum('jkab,Ibi,akjp->Iip', I.oovv, U11, R2)
+    S_2 += 1.0*einsum('jkab,Ibj,akip->Iip', I.oovv, U11, R2)
+    S_2 += 0.5*einsum('jkab,baji,Ikp->Iip', I.oovv, T2, R3)
+    S_2 += -1.0*einsum('Jja,J,Iai,jp->Iip', g.ov, S1, U11, R1)
+    S_2 += 1.0*einsum('Jja,J,Iaj,ip->Iip', g.ov, S1, U11, R1)
+    S_2 += -1.0*einsum('Jja,ai,J,Ijp->Iip', g.ov, T1, S1, R3)
+    S_2 += -1.0*einsum('jkab,bi,aj,Ikp->Iip', I.oovv, T1, T1, R3)
+    S_2 += -1.0*einsum('jkab,bi,Iaj,kp->Iip', I.oovv, T1, U11, R1)
+    S_2 += 1.0*einsum('jkab,bj,Iai,kp->Iip', I.oovv, T1, U11, R1)
+    S_2 += -1.0*einsum('jkab,bj,Iak,ip->Iip', I.oovv, T1, U11, R1)
+
+    return (S_0, S_1, S_2)
+
 def hole1_mom(cc, write=True):
     ''' Get the fermionic first hole (IP) single-particle moments
         mom[p,q] = <c^+_p (H-E) c_q>
@@ -535,10 +838,11 @@ def hole1_mom(cc, write=True):
     LU11 = cc.LU11
     T1 = cc.T1
     T2 = cc.T2
-    F = cc.fock_mo
-    I = cc.I
     S1 = cc.S1
     U11 = cc.U11
+
+    F = cc.fock_mo
+    I = cc.I
 
     g = copy.copy(cc.g_mo_blocks)
     G = cc.G.copy()
