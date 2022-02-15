@@ -675,8 +675,8 @@ class EBCCSD:
          
     def make_ea_EOM_moms(self, order, write=True):
         ''' Get the fermionic particle (EA) single-particle moments
-            mom[p,q] = <c_p (H-E)^n c^+_q>
-            for all orders up to and including n
+            mom[p,q,n] = <c_p (H-E)^n c^+_q>
+            for all orders from 0 up to and including n
         '''
 
         if self.rank == (2, 0, 0):
@@ -692,8 +692,8 @@ class EBCCSD:
          
     def make_ip_EOM_moms(self, order, write=True):
         ''' Get the fermionic hole (IP) single-particle moments
-            mom[p,q] = <c^+_p (H-E)^n c_q>
-            for all orders up to and including n
+            mom[p,q,n] = <c^+_p (H-E)^n c_q>
+            for all orders from 0 up to and including n
         '''
 
         if self.rank == (2, 0, 0):
@@ -706,6 +706,23 @@ class EBCCSD:
             ip_moms = ccsd_2_2_equations.hole_moms_eom(self, order, write=True)
 
         return ip_moms
+
+    def make_dd_EOM_moms(self, order, write=True):
+        ''' Get the fermionic density-density moments
+            mom[p,q,r,s,n] = <c^+_p c_q (H-E)^n c^+_r c_s>
+            for all orders from 0 up to and including n
+        '''
+
+        if self.rank == (2, 0, 0):
+            dd_moms = ccsd_equations.dd_moms_eom(self, order, write=True)
+        elif self.rank == (2, 1, 1):
+            dd_moms = ccsd_1_1_equations.dd_moms_eom(self, order, write=True)
+        elif self.rank == (2, 2, 1):
+            dd_moms = ccsd_2_1_equations.dd_moms_eom(self, order, write=True)
+        elif self.rank == (2, 2, 2):
+            dd_moms = ccsd_2_2_equations.dd_moms_eom(self, order, write=True)
+
+        return dd_moms
          
     def vec_to_amps(self, vec, amps='old',t_or_l='t'):
         ''' Take a flattened vector of all amplitudes in the ansatz
