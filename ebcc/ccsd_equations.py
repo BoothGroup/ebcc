@@ -397,11 +397,14 @@ def eb_coup_rdm(cc, write=True):
         print('No bosonic RDM for the CCSD model...')
     return (np.zeros((cc.nbos, cc.nso, cc.nso)), np.zeros((cc.nbos, cc.nso, cc.nso)))
 
-def dd_moms_eom(cc, order, write=True):
+def dd_moms_eom(cc, order, include_ref_proj=False, write=True):
     ''' Get arbitrary-order moments of the fermionic density-density spectral function.
         mom[p,q,r,s,order] = <c^+_p c_q (H-E)^(order) c^+_r c_s>
         Note that the moments from 0 up to order will be computed and returned.
-        These moments should be identical to the equivalent EOM spectral moments'''
+        These moments should be identical to the equivalent EOM spectral moments
+
+        include_ref_proj will include in the projector the HF reference determinant in the space
+        '''
     if write:
         print('Computing fermionic space dd spectral moments up to (and including) order {}'.format(order))
     if cc.L1 is None:
@@ -423,14 +426,20 @@ def dd_moms_eom(cc, order, write=True):
 
     # Set up the projection of the ket state
     # Note that for these kets, the final two indices are the perturbation indices
-    R0_0 = np.zeros((nvir, nocc, ntot, ntot))
-    R0_1 = np.zeros((nvir, nvir, nocc, nocc, ntot, ntot))
+    R0_0 = np.zeros((nvir, nocc, ntot, ntot))   # Projection onto singles space
+    R0_1 = np.zeros((nvir, nvir, nocc, nocc, ntot, ntot))   # Projection onto doubles space
+    if include_ref_proj:
+        R0_ref = np.zeros((ntot, ntot)) # Projection onto reference space (if desired)
 
     # occ-occ contrib
+    if include_ref_proj:
+        R0_ref[:nocc,:nocc] = delta_o.copy()
     R0_0[:,:,:nocc,:nocc] += -1.0*einsum('aj,ik->aijk', T1, delta_o)
     R0_1[:,:,:,:,:nocc,:nocc] += -1.0*einsum('baki,jl->abijkl', T2, delta_o)
     R0_1[:,:,:,:,:nocc,:nocc] += 1.0*einsum('bakj,il->abijkl', T2, delta_o)
     # occ-virt contrib
+    if include_ref_proj:
+        R0_ref[:nocc, nocc:] = T1.copy().transpose(1,0)
     R0_0[:,:,:nocc,nocc:] += -T2.copy().transpose(0,3,2,1) # -1.0*einsum('abji->aijb', T2)
     R0_0[:,:,:nocc,nocc:] += -1.0*einsum('bi,aj->aijb', T1, T1)
     R0_1[:,:,:,:,:nocc,nocc:] += -1.0*einsum('ak,bcji->abijkc', T1, T2)
@@ -444,16 +453,27 @@ def dd_moms_eom(cc, order, write=True):
     R0_1[:,:,:,:,nocc:,nocc:] += -1.0*einsum('adji,bc->abijcd', T2, delta_v) 
     R0_1[:,:,:,:,nocc:,nocc:] += 1.0*einsum('bdji,ac->abijcd', T2, delta_v)
 
-    kets = [(R0_0, R0_1)]
+    if include_ref_proj:
+        kets = [(R0_ref, R0_0, R0_1)]
+    else:
+        # Currently, only pass in the singles and doubles space to the projector, not the reference state
+        # Otherwise, this *will* change the excitation energies (TODO: Check)
+        kets = [(R0_0, R0_1)]
     for i in range(order):
         # Apply (H-E) sequentially to each ket. Final index of the R vectors will be considered the list of vectors to apply the operator to.
         kets.append(apply_hbar_dd(cc, kets[-1]))
 
     # Find the bra states (First indices are operators??)
-    E_bra_0 = np.zeros((ntot, ntot, nocc, nvir))
-    E_bra_1 = np.zeros((ntot, ntot, nocc, nocc, nvir, nvir))
+    E_bra_0 = np.zeros((ntot, ntot, nocc, nvir))    # Projection of bra states onto single excitations
+    E_bra_1 = np.zeros((ntot, ntot, nocc, nocc, nvir, nvir)) # Projection of bra states onto doubles
+    if include_ref_proj:
+        E_bra_hf = np.zeros((ntot, ntot))   # Optionally, include projection onto reference space
 
     # occ-occ blocks
+    if include_ref_proj:
+        E_bra_hf[:nocc, :nocc] = delta_o.copy()
+        E_bra_hf[:nocc, :nocc] += -1.0*einsum('ia,aj->ji', L1, T1)
+        E_bra_hf[:nocc, :nocc] += 0.5*einsum('ijab,bakj->ki', L2, T2)
     E_bra_0[:nocc,:nocc,:,:] += -1.0*einsum('ia,jk->jika', L1, delta_o)
     E_bra_0[:nocc,:nocc,:,:] += 1.0*einsum('ia,jk->jkia', L1, delta_o)
     E_bra_0[:nocc,:nocc,:,:] += 1.0*einsum('ijab,bk->kija', L2, T1)
@@ -461,6 +481,13 @@ def dd_moms_eom(cc, order, write=True):
     E_bra_1[:nocc,:nocc,:,:,:,:] += 1.0*einsum('ijab,kl->kiljba', L2, delta_o)
     E_bra_1[:nocc,:nocc,:,:,:,:] += 1.0*einsum('ijab,kl->kljiba', L2, delta_o)
     # occ-vir blocks
+    if include_ref_proj:
+        E_bra_hf[:nocc,nocc:] = T1.copy().transpose(1,0)
+        E_bra_hf[:nocc,nocc:] += -1.0*einsum('ia,abji->jb', L1, T2)
+        E_bra_hf[:nocc,nocc:] += -1.0*einsum('ia,bi,aj->jb', L1, T1, T1)
+        E_bra_hf[:nocc,nocc:] += 0.5*einsum('ijab,bk,acji->kc', L2, T1, T2)
+        E_bra_hf[:nocc,nocc:] += 0.5*einsum('ijab,ci,bakj->kc', L2, T1, T2)
+
     E_bra_0[:nocc,nocc:,:,:] += 1.0*einsum('ij,ab->iajb', delta_o, delta_v)
     E_bra_0[:nocc,nocc:,:,:] += 1.0*einsum('ia,bj->jbia', L1, T1)
     E_bra_0[:nocc,nocc:,:,:] += 1.0*einsum('ijab,bcki->kcja', L2, T2)
@@ -479,8 +506,13 @@ def dd_moms_eom(cc, order, write=True):
     E_bra_1[:nocc,nocc:,:,:,:,:] += 1.0*einsum('ijab,bk,cd->kcjiad', L2, T1, delta_v)
     E_bra_1[:nocc,nocc:,:,:,:,:] += -1.0*einsum('ijab,bk,cd->kcjida', L2, T1, delta_v)
     # vir-occ blocks
+    if include_ref_proj:
+        E_bra_hf[nocc:, :nocc] = L1.copy().transpose(1,0)
     E_bra_0[nocc:,:nocc,:,:] += -1.0*L2.copy().transpose(3,0,1,2) # -1.0*einsum('ijab->bija', L2)
     # vir-vir blocks
+    if include_ref_proj:
+        E_bra_hf[nocc:, nocc:] += 1.0*einsum('ia,bi->ab', L1, T1)
+        E_bra_hf[nocc:, nocc:] += -0.5*einsum('ijab,acji->bc', L2, T2)
     E_bra_0[nocc:,nocc:,:,:] += 1.0*einsum('ia,bc->abic', L1, delta_v)
     E_bra_0[nocc:,nocc:,:,:] += -1.0*einsum('ijab,ci->bcja', L2, T1)
     E_bra_1[nocc:,nocc:,:,:,:,:] += -1.0*einsum('ijab,cd->bcjiad', L2, delta_v)
@@ -488,8 +520,19 @@ def dd_moms_eom(cc, order, write=True):
 
     # Now, dot product together every set of states in kets list with the bra states of E_bra
     for i in range(order+1):
-        dd_moms[:,:,:,:,i] = einsum('pqia,airs->pqrs', E_bra_0, kets[i][0])
-        dd_moms[:,:,:,:,i] += 0.25*einsum('pqijab,abijrs->pqrs', E_bra_1, kets[i][1]) # Perhaps ab want to be swapped in one of these tensors, and maybe the factor wants to be a quarter?
+        if include_ref_proj:
+            # Include contributions from the reference projector
+            # This will ensure that all moments are exact for 2e systems
+            # There is still a contribution to the 2RDM from a triples projector for >2e systems, so this will not be exactly right (for ov bra blocks)
+            dd_moms[:,:,:,:,i] += einsum('pq,rs->pqrs', E_bra_hf, kets[i][0])
+            # Singles
+            dd_moms[:,:,:,:,i] += einsum('pqia,airs->pqrs', E_bra_0, kets[i][1])
+            # Doubles
+            dd_moms[:,:,:,:,i] += 0.25*einsum('pqijab,abijrs->pqrs', E_bra_1, kets[i][2]) # Perhaps ab want to be swapped in one of these tensors, and maybe the factor wants to be a quarter?
+        else:
+            # No reference projector term
+            dd_moms[:,:,:,:,i] += einsum('pqia,airs->pqrs', E_bra_0, kets[i][0])
+            dd_moms[:,:,:,:,i] += 0.25*einsum('pqijab,abijrs->pqrs', E_bra_1, kets[i][1]) # Perhaps ab want to be swapped in one of these tensors, and maybe the factor wants to be a quarter?
 
         # Hermitize
         dd_moms[:,:,:,:,i] = 0.5*(dd_moms[:,:,:,:,i] + dd_moms[:,:,:,:,i].transpose(3,2,1,0))
@@ -503,8 +546,18 @@ def apply_hbar_dd(cc, R):
     R is a tuple of 1h1p and 2h2p2 states, with the final index being an index of the vectors
     to apply the state to'''
 
-    R1 = R[0]
-    R2 = R[1]
+    if len(R) == 2:
+        # Assume that we have the projection just onto a singles and doubles space
+        R1 = R[0]
+        R2 = R[1]
+        include_ref_proj = False
+    elif len(R) == 3:
+        # Assume that we also have the projection onto a reference state
+        R0 = R[0]
+        R1 = R[1]
+        R2 = R[2]
+        assert(R0.shape[-1] == R2.shape[-1])
+        include_ref_proj = True
     assert(R1.shape[-1] == R2.shape[-1])
     
     L1 = cc.L1
@@ -514,6 +567,12 @@ def apply_hbar_dd(cc, R):
     F = cc.fock_mo
     I = cc.I
 
+    if include_ref_proj:
+        # Include the projection onto the reference state
+        S_ref = 1.0*einsum('ia,aipq->pq', F.ov, R1)
+        S_ref += 0.25*einsum('ijab,bajipq->pq', I.oovv, R2)
+        S_ref += -1.0*einsum('ijab,bi,ajpq->pq', I.oovv, T1, R1)
+    
     S_0 = -1.0*einsum('ji,ajpq->aipq', F.oo, R1)
     S_0 += 1.0*einsum('ab,bipq->aipq', F.vv, R1)
     S_0 += -1.0*einsum('jb,abjipq->aipq', F.ov, R2)
@@ -719,7 +778,10 @@ def apply_hbar_dd(cc, R):
     S_1 += -1.0*einsum('klcd,dj,bk,al,cipq->abijpq', I.oovv, T1, T1, T1, R1)
     S_1 += 1.0*einsum('klcd,dj,bk,cl,aipq->abijpq', I.oovv, T1, T1, T1, R1)
 
-    return (S_0, S_1)
+    if include_ref_proj:
+        return (S_ref, S_0, S_1)
+    else:
+        return (S_0, S_1)
 
 def part_moms_eom(cc, order, write=True):
     ''' Get arbitrary-order moments of the fermionic particle (EA) single-particle spectral function.
@@ -789,10 +851,14 @@ def part_moms_eom(cc, order, write=True):
 
     return ea_moms
 
-def gen_dd_eom_matrix(cc, write=True):
+def gen_dd_eom_matrix(cc, include_ref_proj=False, write=True):
 
     if write:
-        print('Computing dd EOM matrix')
+        if include_ref_proj:
+            print('Computing neutral EOM matrix, projected into reference, singles and doubles space')
+        else:
+            print('Computing neutral EOM matrix, projected into singles and doubles space')
+
     if cc.L1 is None:
         if write:
             print('No optimized lambda amplitudes found to compute density matrices.')
@@ -801,11 +867,21 @@ def gen_dd_eom_matrix(cc, write=True):
     nocc = cc.T1.shape[1]
     nvir = cc.T1.shape[0]
     ntot = nocc + nvir
-    h_size = nvir*nocc + (nvir**2)*nocc*nocc
+    if include_ref_proj:
+        h_size = 1 + nvir*nocc + (nvir**2)*nocc*nocc
+    else:
+        h_size = nvir*nocc + (nvir**2)*nocc*nocc
 
+    if include_ref_proj:
+        R0 = np.zeros((1, h_size, 1))
     R1 = np.zeros((nvir, nocc, h_size, 1))
     R2 = np.zeros((nvir, nvir, nocc, nocc, h_size, 1))
-    ind = 0
+
+    if include_ref_proj:
+        R0[0, 0, 0] = 1.0
+        ind = 1
+    else:
+        ind = 0
     for l in range(nvir):
         for m in range(nocc): 
             R1[l, m, ind, 0] = 1.0
@@ -817,11 +893,19 @@ def gen_dd_eom_matrix(cc, write=True):
                 for l in range(nocc):
                     R2[i,j,k,l,ind,0] = 1.
                     ind += 1 
-    H1, H2 = apply_hbar_dd(cc, (R1, R2))
+
+    if include_ref_proj:
+        H0, H1, H2 = apply_hbar_dd(cc, (R0, R1, R2))
+    else:
+        H1, H2 = apply_hbar_dd(cc, (R1, R2))
     
     full_h = np.zeros((h_size, h_size))
-    ind = 0
-    # Do these want to be the other way around?
+    
+    if include_ref_proj:
+        full_h[0,:] = H0[:,0]
+        ind = 1
+    else:
+        ind = 0
     for i in range(nvir):
         for j in range(nocc):
             full_h[ind,:] = H1[i,j,:,0]

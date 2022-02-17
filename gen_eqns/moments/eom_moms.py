@@ -55,8 +55,11 @@ HTTTTT = commute(HTTTT, T)
 
 simplify = True
 gen_h = True 
-moms = 'sp'   # 'sp' or 'dd'
+moms = 'dd'   # 'sp' or 'dd'
 ip_mom = True 
+include_ref_proj = True
+if include_ref_proj:
+    assert(moms == 'dd')
 
 # Generate ket state first 
 tic_ket = time.perf_counter()
@@ -139,6 +142,14 @@ elif moms == 'dd':
             spaces.append(braP1("nm"))
             spaces.append(braP1E1("nm", "occ", "vir"))
 
+        if include_ref_proj:
+            # Projection onto reference state
+            ket_term = R_renom
+            out = apply_wick(ket_term)
+            out.resolve()
+            final = AExpression(Ex=out, simplify=simplify)
+            print(add_H_suffix_blocks(final._print_einsum('R0_ref')), flush=True)
+
         for i, proj_term in enumerate(spaces):
             ket_term = proj_term * R_renom
             out = apply_wick(ket_term)
@@ -200,7 +211,21 @@ if gen_h:
 
     print('')
     print('Generating action of H-E on a single perturbation...')
-
+    if include_ref_proj:
+        # include projection onto HF state
+        # Don't need to include excitations from reference state, as these will always produce zero
+        comb_terms = []
+        for j, R_term in enumerate(excitations):
+            S = (Hbar - E0) * R_term
+            out = apply_wick(S)
+            out.resolve()
+            comb_terms.append(AExpression(Ex=out, simplify=simplify))
+        allterms = comb_terms[0].terms
+        for k in range(1,len(comb_terms)):
+            allterms = allterms + comb_terms[k].terms
+        simp_terms = AExpression(terms=allterms, simplify=simplify)
+        print(add_H_suffix_blocks(simp_terms._print_einsum('S_ref')), flush=True)
+    
     for i, proj_term in enumerate(spaces):
         comb_terms = []
         for j, R_term in enumerate(excitations):
@@ -296,6 +321,13 @@ elif moms == 'dd':
         if bosons:
             spaces.append(ketP1("nm"))
             spaces.append(ketP1E1("nm", "occ", "vir"))
+
+        if include_ref_proj:
+            bra_term = (L * L_renom + L_renom)
+            out = apply_wick(bra_term)
+            out.resolve()
+            final = AExpression(Ex=out)
+            print(add_H_suffix_blocks(final._print_einsum('E_bra_ref')), flush=True)
         
         for i, proj_term in enumerate(spaces):
             bra_term = (L * L_renom + L_renom) * proj_term
