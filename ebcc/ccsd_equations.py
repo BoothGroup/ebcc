@@ -397,13 +397,16 @@ def eb_coup_rdm(cc, write=True):
         print('No bosonic RDM for the CCSD model...')
     return (np.zeros((cc.nbos, cc.nso, cc.nso)), np.zeros((cc.nbos, cc.nso, cc.nso)))
 
-def dd_moms_eom(cc, order, include_ref_proj=False, write=True):
+def dd_moms_eom(cc, order, include_ref_proj=False, hermit_gs_contrib=False, write=True):
     ''' Get arbitrary-order moments of the fermionic density-density spectral function.
         mom[p,q,r,s,order] = <c^+_p c_q (H-E)^(order) c^+_r c_s>
         Note that the moments from 0 up to order will be computed and returned.
         These moments should be identical to the equivalent EOM spectral moments
 
         include_ref_proj will include in the projector the HF reference determinant in the space
+            If this is included, then the contribution of the ground state to the zeroth order moment
+            needs to be removed, and this can be done with either the hermitized 1RDMs, or the non-
+            hermitized 1RDM. This is controlled by 'hermit_gs_contrib'.
         '''
     if write:
         print('Computing fermionic space dd spectral moments up to (and including) order {}'.format(order))
@@ -457,7 +460,7 @@ def dd_moms_eom(cc, order, include_ref_proj=False, write=True):
         kets = [(R0_ref, R0_0, R0_1)]
     else:
         # Currently, only pass in the singles and doubles space to the projector, not the reference state
-        # Otherwise, this *will* change the excitation energies (TODO: Check)
+        # Including this state however doesn't seem to change the excitation energies?
         kets = [(R0_0, R0_1)]
     for i in range(order):
         # Apply (H-E) sequentially to each ket. Final index of the R vectors will be considered the list of vectors to apply the operator to.
@@ -534,7 +537,17 @@ def dd_moms_eom(cc, order, include_ref_proj=False, write=True):
             dd_moms[:,:,:,:,i] += einsum('pqia,airs->pqrs', E_bra_0, kets[i][0])
             dd_moms[:,:,:,:,i] += 0.25*einsum('pqijab,abijrs->pqrs', E_bra_1, kets[i][1]) # Perhaps ab want to be swapped in one of these tensors, and maybe the factor wants to be a quarter?
 
-        # Hermitize
+    if include_ref_proj:
+        # If we are including the reference state in the projector for the excitations definition, then
+        # we need to remove the ground state contribution. We can approximate this as the product of 1RDMs
+        # This can be done either as the product of hermitian, or non-hermitian RDMs (and hermitised after),
+        # which is slightly different.
+        # TODO: Do we need to think about the appropriate way to rigorously remove the GS contribution from higher-order moments?
+        rdm1 = one_rdm_ferm(cc, write=False, make_hermitian=hermit_gs_contrib)
+        dd_moms[:,:,:,:,0] -= einsum('pq,rs->pqrs',rdm1,rdm1) 
+
+    # Hermitize all moments
+    for i in range(order+1):
         dd_moms[:,:,:,:,i] = 0.5*(dd_moms[:,:,:,:,i] + dd_moms[:,:,:,:,i].transpose(3,2,1,0))
         # TODO: Surely we also want to ensure antisymmetry wrt exchange of the first two or last two indices
         # But does this require additional consideration of the lower-order quantities?
@@ -2560,7 +2573,7 @@ def hole1_mom(cc, write=True):
 
     return ip_mom
 
-def one_rdm_ferm(cc, autogen=False, write=True):
+def one_rdm_ferm(cc, autogen=False, write=True, make_hermitian=True):
     ''' Calculate 1RDM '''
 
     if write:
@@ -2622,11 +2635,17 @@ def one_rdm_ferm(cc, autogen=False, write=True):
             dm1_vo -= 0.5*einsum('kjcb,ak,cbij->ai', L2, T1, T2)
 
     dm1 = np.zeros((cc.nso, cc.nso))
-    # Hermitize everything
-    dm1[:cc.no, :cc.no] = (dm1_oo + dm1_oo.T) / 2.
-    dm1[:cc.no, cc.no:] = (dm1_ov + dm1_vo.T) / 2.
-    dm1[cc.no:, :cc.no] = dm1[:cc.no, cc.no:].T
-    dm1[cc.no:, cc.no:] = (dm1_vv + dm1_vv.T) / 2.
+    if make_hermitian:
+        # Hermitize everything
+        dm1[:cc.no, :cc.no] = (dm1_oo + dm1_oo.T) / 2.
+        dm1[:cc.no, cc.no:] = (dm1_ov + dm1_vo.T) / 2.
+        dm1[cc.no:, :cc.no] = dm1[:cc.no, cc.no:].T
+        dm1[cc.no:, cc.no:] = (dm1_vv + dm1_vv.T) / 2.
+    else:
+        dm1[:cc.no, :cc.no] = dm1_oo
+        dm1[:cc.no, cc.no:] = dm1_ov # + dm1_vo.T) / 2.
+        dm1[cc.no:, :cc.no] = dm1_vo #[:cc.no, cc.no:].T
+        dm1[cc.no:, cc.no:] = dm1_vv
 
     # Add mean-field part
     dm1[np.diag_indices(cc.no)] += 1.
