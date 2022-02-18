@@ -707,20 +707,33 @@ class EBCCSD:
 
         return ip_moms
 
-    def make_dd_EOM_moms(self, order, write=True):
-        ''' Get the fermionic density-density moments
-            mom[p,q,r,s,n] = <c^+_p c_q (H-E)^n c^+_r c_s>
-            for all orders from 0 up to and including n
+    def make_dd_EOM_moms(self, order, include_ref_proj=False, hermit_gs_contrib=False, write=True):
+        ''' Get the fermionic density-density moments approximation to
+            mom[p,q,r,s,n] = <c^+_p c_q (H-E)^n c^+_r c_s> - delta_{n0} <c+_p c_q |GS><GS| c+_r c_s>
+            for all orders from 0 up to and including n.
+            Note that the moments from 0 up to order will be computed and returned.
+            These moments should be identical to the equivalent EOM spectral moments if
+            include_ref_proj=False.
+
+            include_ref_proj will include in the projector the HF reference determinant in the space
+                If this is included, then the contribution of the ground state to the zeroth order moment
+                needs to be removed, and this can be done with either the hermitized 1RDMs, or the non-
+                hermitized 1RDM. This is controlled by 'hermit_gs_contrib'. However, this has the advantage
+                that the moments will be exact for 2-electron systems.
         '''
 
         if self.rank == (2, 0, 0):
-            dd_moms = ccsd_equations.dd_moms_eom(self, order, write=True)
+            dd_moms = ccsd_equations.dd_moms_eom(self, order, include_ref_proj=include_ref_proj, 
+                    hermit_gs_contrib=hermit_gs_contrib, write=True)
         elif self.rank == (2, 1, 1):
-            dd_moms = ccsd_1_1_equations.dd_moms_eom(self, order, write=True)
+            dd_moms = ccsd_1_1_equations.dd_moms_eom(self, order, include_ref_proj=include_ref_proj,
+                    hermit_gs_contrib=hermit_gs_contrib, write=True)
         elif self.rank == (2, 2, 1):
-            dd_moms = ccsd_2_1_equations.dd_moms_eom(self, order, write=True)
+            dd_moms = ccsd_2_1_equations.dd_moms_eom(self, order, include_ref_proj=include_ref_proj,
+                    hermit_gs_contrib=hermit_gs_contrib, write=True)
         elif self.rank == (2, 2, 2):
-            dd_moms = ccsd_2_2_equations.dd_moms_eom(self, order, write=True)
+            dd_moms = ccsd_2_2_equations.dd_moms_eom(self, order, include_ref_proj=include_ref_proj,
+                    hermit_gs_contrib=hermit_gs_contrib, write=True)
 
         return dd_moms
          

@@ -399,14 +399,16 @@ def eb_coup_rdm(cc, write=True):
 
 def dd_moms_eom(cc, order, include_ref_proj=False, hermit_gs_contrib=False, write=True):
     ''' Get arbitrary-order moments of the fermionic density-density spectral function.
-        mom[p,q,r,s,order] = <c^+_p c_q (H-E)^(order) c^+_r c_s>
+        mom[p,q,r,s,order] = <c^+_p c_q (H-E)^(order) c^+_r c_s> - \delta_{n0} <c^+_p c_q c^+r c_s>
         Note that the moments from 0 up to order will be computed and returned.
-        These moments should be identical to the equivalent EOM spectral moments
+        These moments should be identical to the equivalent EOM spectral moments if
+        include_ref_proj=False.
 
         include_ref_proj will include in the projector the HF reference determinant in the space
             If this is included, then the contribution of the ground state to the zeroth order moment
             needs to be removed, and this can be done with either the hermitized 1RDMs, or the non-
-            hermitized 1RDM. This is controlled by 'hermit_gs_contrib'.
+            hermitized 1RDM. This is controlled by 'hermit_gs_contrib'. However, this has the advantage
+            that the moments will be exact for 2-electron systems.
         '''
     if write:
         print('Computing fermionic space dd spectral moments up to (and including) order {}'.format(order))

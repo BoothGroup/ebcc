@@ -1,4 +1,19 @@
 ''' Compute the EOM dd spectral moments at CCSD level. 
+
+    There are various ways that this can be done. The formal expression for the CC dd-moments is:
+    dd_moms[p,q,r,s,n] = <(1+L) e^-T a^+_p a_q e^T P ((e^-T H e^T - E_cc)P)^n e^-T a^+_r a_s e^T> - delta_{n0} <(1+L) e^-T a^+_p a_q e^T |gs><gs| e^-T a^+_r a_s e^T>.
+
+    We can approximate this in various ways. In the EOM approximation, the P operator is a projection
+    operator onto the space of singles and doubles only (meaning there is no GS (at least reference) contribution in the
+    Lehmann representation, and the second term is neglected).
+
+    With the 'include_ref_proj' keyword, we can also include the projector onto the reference state, in which case the
+    expressions become exact for two-electrons. The second term then needs to be explicitly removed, which can be done
+    (approximately) via the hermitized 1RDMs, the non-hermitized 1RDMs (depending on the hermit_gs_contrib kwarg).
+    Note that whether you remove the GS contribution with hermitized or non-hermitized 1RDMs is seemingly unimportant numerically.
+
+    We then compare these zeroth moments in terms of their energy, and agreement with the 2RDM, as well as comparing
+    the Hbar eigenvalues to the neutral excitation energies of ee-eom-ccsd from pyscf.
 '''
 import numpy as np
 import pyscf
@@ -12,6 +27,7 @@ mol = pyscf.M(
     basis = 'sto-3g')
 mf = mol.RHF().run()
 pyscf_cc = mf.CCSD().run()
+Ecorr_pyscf = pyscf_cc.e_corr
 
 eri = ao2mo.restore(1, mf._eri, mf.mol.nao_nr())
 
@@ -27,88 +43,112 @@ dm1 = mycc.make_1rdm_f()
 dm2 = mycc.make_2rdm_f()
 
 # EOM computation of dd spectral moments
-# dd moments as dd_moms[p,q,r,s,n] = <p^+ q (H-E)^n r^+ s>
-dd_moms = mycc.make_dd_EOM_moms(1)
-dd_moms_with_ref_proj = ccsd_equations.dd_moms_eom(mycc, 1, include_ref_proj=True)
+# dd moments as dd_moms[p,q,r,s,n] = <p^+ q (H-E)^n r^+ s> - \delta_{n0} <p^+ q r^+ s>
+# First is the computation under the EOM approximation (i.e. excited state space is limited to S+D)
+dd_moms_eom = mycc.make_dd_EOM_moms(1)
+# Next is the approximation where the excited state space can include the reference state (with the GS contribution removed from non-hermitian 1RDMs for the zeroth moment)
+dd_moms_with_ref_proj = mycc.make_dd_EOM_moms(1, include_ref_proj=True)
+# Finally, there is the approximation which is the same above, but removing the GS contribution from hermitian 1RDMs for the zeroth moment.
+# Both of these last two approximations should be exact for all orders for 2 electrons
+dd_moms_with_ref_proj_herm = mycc.make_dd_EOM_moms(1, include_ref_proj=True, hermit_gs_contrib=True)
 
 ### TESTS and CHECKS
 nocc = mycc.na + mycc.nb 
 nvir = mycc.va + mycc.vb
 ntot = dm2.shape[0]
 
-# 1. Check agreement between zeroth dd moment and 2RDM (should at least be exact for 2-electrons)
-# First, turn zeroth-order dd moment into normal ordered form of dm2 (is this correct?)
-moms_dm2 = dd_moms[:,:,:,:,0]
-moms_dm2 -= np.einsum('qr,ps->pqrs',np.eye(dm2.shape[0]),dm1)
-print('Is full matrix in agreement: ',np.allclose(moms_dm2,dm2))
-print('Testing vvvv agreement: ',np.allclose(moms_dm2[nocc:,nocc:,nocc:,nocc:],dm2[nocc:,nocc:,nocc:,nocc:]))
-print('Testing ovvv agreement: ',np.allclose(moms_dm2[:nocc,nocc:,nocc:,nocc:],dm2[:nocc,nocc:,nocc:,nocc:]))
-print('Testing vvvo agreement: ',np.allclose(moms_dm2[nocc:,nocc:,nocc:,:nocc],dm2[nocc:,nocc:,nocc:,:nocc]))
-print('Testing vvov agreement: ',np.allclose(moms_dm2[nocc:,nocc:,:nocc,nocc:],dm2[nocc:,nocc:,:nocc,nocc:]))
-print('Testing vovv agreement: ',np.allclose(moms_dm2[nocc:,:nocc,nocc:,nocc:],dm2[nocc:,:nocc,nocc:,nocc:]))
-print('Testing oooo agreement: ',np.allclose(moms_dm2[:nocc,:nocc,:nocc,:nocc],dm2[:nocc,:nocc,:nocc,:nocc]))
-print('***')
-print('Writing out non-zero elements: ')
-print('My dd oooo block: ')
-for i,j,k,l in itertools.product(range(nocc),range(nocc),range(nocc),range(nocc)):
-    if abs(moms_dm2[i,j,k,l]) > 1.e-12:
-        print(i,j,k,l,moms_dm2[i,j,k,l])
-#print(dd_moms[:nocc,:nocc,:nocc,:nocc,0])
-print('***')
-print('2dm oooo block: ')
-for i,j,k,l in itertools.product(range(nocc),range(nocc),range(nocc),range(nocc)):
-    if abs(dm2[i,j,k,l]) > 1.e-12:
-        print(i,j,k,l,dm2[i,j,k,l])
-#print(dm2_singexcits_[:nocc,:nocc,:nocc,:nocc])
-print('****')
-print('1dm oo block: ')
-print(dm1[:nocc,:nocc])
+# 1. Check agreement between zeroth dd moment and moment from 2RDM
+# First, convert the 2RDM into a product of single-excitations form
+moms_dm2 = dm2 + np.einsum('qr,ps->pqrs', np.eye(dm2.shape[0]), dm1)
+# Now, remove the ground state contribution
+moms_dm2 -= np.einsum('pq,rs->pqrs', dm1, dm1)
 
+# Look for the MSE in the elements of the zeroth moment, compared to the 'exact' solution
+mse_dd_eom = np.linalg.norm(moms_dm2-dd_moms_eom[:,:,:,:,0]) / (dm2.shape[0]**2)
+mse_dd_eom_ref = np.linalg.norm(moms_dm2-dd_moms_with_ref_proj[:,:,:,:,0]) / (dm2.shape[0]**2)
+mse_dd_eom_ref_herm = np.linalg.norm(moms_dm2-dd_moms_with_ref_proj_herm[:,:,:,:,0]) / (dm2.shape[0]**2)
+
+print('Mean squared error in the zeroth moment (EOM approximation) compared to "exact" CCSD zeroth moment: ',mse_dd_eom)
+print('Mean squared error in the zeroth moment (EOM with reference proj approximation) compared to "exact" CCSD zeroth moment: ',mse_dd_eom_ref)
+print('Mean squared error in the zeroth moment (EOM with reference proj and zeroth-order moment removing hermitized (rather than unhermitized) 1RDMs) compared to "exact" CCSD zeroth moment: ',mse_dd_eom_ref_herm)
+print('Note that the latter two approximations should be exact for two-electron systems')
 print('')
-print('Now testing including the reference state in the EOM projector...')
-moms_dm2 = dd_moms_with_ref_proj[:,:,:,:,0]
-moms_dm2 -= np.einsum('qr,ps->pqrs',np.eye(dm2.shape[0]),dm1)
-print('Is full matrix in agreement: ',np.allclose(moms_dm2,dm2))
-print('Testing vvvv agreement: ',np.allclose(moms_dm2[nocc:,nocc:,nocc:,nocc:],dm2[nocc:,nocc:,nocc:,nocc:]))
-print('Testing ovvv agreement: ',np.allclose(moms_dm2[:nocc,nocc:,nocc:,nocc:],dm2[:nocc,nocc:,nocc:,nocc:]))
-print('Testing vvvo agreement: ',np.allclose(moms_dm2[nocc:,nocc:,nocc:,:nocc],dm2[nocc:,nocc:,nocc:,:nocc]))
-print('Testing vvov agreement: ',np.allclose(moms_dm2[nocc:,nocc:,:nocc,nocc:],dm2[nocc:,nocc:,:nocc,nocc:]))
-print('Testing vovv agreement: ',np.allclose(moms_dm2[nocc:,:nocc,nocc:,nocc:],dm2[nocc:,:nocc,nocc:,nocc:]))
-print('Testing oovv agreement: ',np.allclose(moms_dm2[:nocc,:nocc,nocc:,nocc:],dm2[:nocc,:nocc,nocc:,nocc:]))
-print('Testing ovov agreement: ',np.allclose(moms_dm2[:nocc,nocc:,:nocc,nocc:],dm2[:nocc,nocc:,:nocc,nocc:]))
-print('Testing ovvo agreement: ',np.allclose(moms_dm2[:nocc,nocc:,nocc:,:nocc],dm2[:nocc,nocc:,nocc:,:nocc]))
-print('Testing voov agreement: ',np.allclose(moms_dm2[nocc:,:nocc,:nocc,nocc:],dm2[nocc:,:nocc,:nocc,nocc:]))
-print('Testing vovo agreement: ',np.allclose(moms_dm2[nocc:,:nocc,nocc:,:nocc],dm2[nocc:,:nocc,nocc:,:nocc]))
-print('Testing vvoo agreement: ',np.allclose(moms_dm2[nocc:,nocc:,:nocc,:nocc],dm2[nocc:,nocc:,:nocc,:nocc]))
-print('Testing vooo agreement: ',np.allclose(moms_dm2[nocc:,:nocc,:nocc,:nocc],dm2[nocc:,:nocc,:nocc,:nocc]))
-print('Testing ovoo agreement: ',np.allclose(moms_dm2[:nocc,nocc:,:nocc,:nocc],dm2[:nocc,nocc:,:nocc,:nocc]))
-print('Testing oovo agreement: ',np.allclose(moms_dm2[:nocc,:nocc,nocc:,:nocc],dm2[:nocc,:nocc,nocc:,:nocc]))
-print('Testing ooov agreement: ',np.allclose(moms_dm2[:nocc,:nocc,:nocc,nocc:],dm2[:nocc,:nocc,:nocc,nocc:]))
-print('Testing oooo agreement: ',np.allclose(moms_dm2[:nocc,:nocc,:nocc,:nocc],dm2[:nocc,:nocc,:nocc,:nocc]))
-print('***')
-print('Writing out non-zero elements: ')
-print('My dd oooo block: ')
-for i,j,k,l in itertools.product(range(nocc),range(nocc),range(nocc),range(nocc)):
-    if abs(moms_dm2[i,j,k,l]) > 1.e-12:
-        print(i,j,k,l,moms_dm2[i,j,k,l])
-#print(dd_moms[:nocc,:nocc,:nocc,:nocc,0])
-print('***')
-print('2dm oooo block: ')
-for i,j,k,l in itertools.product(range(nocc),range(nocc),range(nocc),range(nocc)):
-    if abs(dm2[i,j,k,l]) > 1.e-12:
-        print(i,j,k,l,dm2[i,j,k,l])
-#print(dm2_singexcits_[:nocc,:nocc,:nocc,:nocc])
-print('****')
-print('1dm oo block: ')
-print(dm1[:nocc,:nocc])
+print('Testing exactness of zeroth dd-mom from 2RDM vs. EOM approximation with reference in projector in individual sectors (I think only ov blocks in the bra should be error for >2e):')
+# Convert 2RDM to product of single excitation form
+dm2_pose = dm2 + np.einsum('qr,ps->pqrs', np.eye(dm2.shape[0]), dm1)
+# Also include back in the GS contribution to the zeroth moment of the approximation with the reference projector
+dm2_pose_eom_ref = dd_moms_with_ref_proj_herm[:,:,:,:,0] + np.einsum('pq,rs->pqrs',dm1,dm1)
+print('Is full matrix in agreement: ',np.allclose(dm2_pose_eom_ref,dm2_pose))
+print('Testing vvvv agreement: ',np.allclose(dm2_pose_eom_ref[nocc:,nocc:,nocc:,nocc:],dm2_pose[nocc:,nocc:,nocc:,nocc:]))
+print('Testing ovvv agreement: ',np.allclose(dm2_pose_eom_ref[:nocc,nocc:,nocc:,nocc:],dm2_pose[:nocc,nocc:,nocc:,nocc:]))
+print('Testing vvvo agreement: ',np.allclose(dm2_pose_eom_ref[nocc:,nocc:,nocc:,:nocc],dm2_pose[nocc:,nocc:,nocc:,:nocc]))
+print('Testing vvov agreement: ',np.allclose(dm2_pose_eom_ref[nocc:,nocc:,:nocc,nocc:],dm2_pose[nocc:,nocc:,:nocc,nocc:]))
+print('Testing vovv agreement: ',np.allclose(dm2_pose_eom_ref[nocc:,:nocc,nocc:,nocc:],dm2_pose[nocc:,:nocc,nocc:,nocc:]))
+print('Testing oovv agreement: ',np.allclose(dm2_pose_eom_ref[:nocc,:nocc,nocc:,nocc:],dm2_pose[:nocc,:nocc,nocc:,nocc:]))
+print('Testing ovov agreement: ',np.allclose(dm2_pose_eom_ref[:nocc,nocc:,:nocc,nocc:],dm2_pose[:nocc,nocc:,:nocc,nocc:]))
+print('Testing ovvo agreement: ',np.allclose(dm2_pose_eom_ref[:nocc,nocc:,nocc:,:nocc],dm2_pose[:nocc,nocc:,nocc:,:nocc]))
+print('Testing voov agreement: ',np.allclose(dm2_pose_eom_ref[nocc:,:nocc,:nocc,nocc:],dm2_pose[nocc:,:nocc,:nocc,nocc:]))
+print('Testing vovo agreement: ',np.allclose(dm2_pose_eom_ref[nocc:,:nocc,nocc:,:nocc],dm2_pose[nocc:,:nocc,nocc:,:nocc]))
+print('Testing vvoo agreement: ',np.allclose(dm2_pose_eom_ref[nocc:,nocc:,:nocc,:nocc],dm2_pose[nocc:,nocc:,:nocc,:nocc]))
+print('Testing vooo agreement: ',np.allclose(dm2_pose_eom_ref[nocc:,:nocc,:nocc,:nocc],dm2_pose[nocc:,:nocc,:nocc,:nocc]))
+print('Testing ovoo agreement: ',np.allclose(dm2_pose_eom_ref[:nocc,nocc:,:nocc,:nocc],dm2_pose[:nocc,nocc:,:nocc,:nocc]))
+print('Testing oovo agreement: ',np.allclose(dm2_pose_eom_ref[:nocc,:nocc,nocc:,:nocc],dm2_pose[:nocc,:nocc,nocc:,:nocc]))
+print('Testing ooov agreement: ',np.allclose(dm2_pose_eom_ref[:nocc,:nocc,:nocc,nocc:],dm2_pose[:nocc,:nocc,:nocc,nocc:]))
+print('Testing oooo agreement: ',np.allclose(dm2_pose_eom_ref[:nocc,:nocc,:nocc,:nocc],dm2_pose[:nocc,:nocc,:nocc,:nocc]))
 
-if (nocc*nvir)**2 < 3000:
+# 2. Calculate the energy from the zeroth moment (using the 1RDM)
+# Is there a better way to directly get the energy from ACFDT?
+# Add back the GS projector contribution, and convert to normal ordered form of 2RDM
+print('')
+print('Calculating ground state energy from zeroth moment approximations')
+rdm2_eom = dd_moms_eom[:,:,:,:,0] + np.einsum('pq,rs->pqrs',dm1, dm1) - np.einsum('qr,ps->pqrs', np.eye(dm2.shape[0]), dm1)
+rdm2_ref = dd_moms_with_ref_proj[:,:,:,:,0] + np.einsum('pq,rs->pqrs',dm1, dm1) - np.einsum('qr,ps->pqrs', np.eye(dm2.shape[0]), dm1)
+rdm2_ref_herm = dd_moms_with_ref_proj_herm[:,:,:,:,0] + np.einsum('pq,rs->pqrs',dm1, dm1) - np.einsum('qr,ps->pqrs', np.eye(dm2.shape[0]), dm1)
+
+# Now get the hamiltonian terms in the right (GHF) ordering
+# NOTE: ebcc returns RDMs in molecular spin-orbitals as occ_a, occ_b, virt_a, virt_b.
+# Therefore, construct a list of spinorbital coefficients in this order
+C = np.hstack((mycc.mf.mo_coeff[0][:,:mycc.na], mycc.mf.mo_coeff[1][:,:mycc.nb], mycc.mf.mo_coeff[0][:,mycc.na:], mycc.mf.mo_coeff[1][:,mycc.nb:]))
+# Get full spinorbital integrals in this ordering
+eri_g = ao2mo.full(eri, C, compact=False)
+# zero out spin-forbidden sectors of the integrals
+mask_a = [True]*mycc.na + [False]*mycc.nb + [True]*mycc.va + [False]*mycc.vb
+mask_b = [not i for i in mask_a]
+eri_g[np.ix_(mask_b,mask_a,mask_a,mask_a)] = 0.0
+eri_g[np.ix_(mask_a,mask_b,mask_a,mask_a)] = 0.0
+eri_g[np.ix_(mask_a,mask_a,mask_b,mask_a)] = 0.0
+eri_g[np.ix_(mask_a,mask_a,mask_a,mask_b)] = 0.0
+eri_g[np.ix_(mask_a,mask_b,mask_b,mask_b)] = 0.0
+eri_g[np.ix_(mask_b,mask_a,mask_b,mask_b)] = 0.0
+eri_g[np.ix_(mask_b,mask_b,mask_a,mask_b)] = 0.0
+eri_g[np.ix_(mask_b,mask_b,mask_b,mask_a)] = 0.0
+eri_g[np.ix_(mask_b,mask_a,mask_b,mask_a)] = 0.0
+eri_g[np.ix_(mask_a,mask_b,mask_a,mask_b)] = 0.0
+eri_g[np.ix_(mask_a,mask_b,mask_b,mask_a)] = 0.0
+eri_g[np.ix_(mask_b,mask_a,mask_a,mask_b)] = 0.0
+# Get 1e hamiltonian in spin-orbital basis
+t_so = np.linalg.multi_dot((C.T, mf.get_hcore(), C))
+t_so[np.ix_(mask_a, mask_b)] = 0.
+t_so[np.ix_(mask_b, mask_a)] = 0.
+
+# Contract for correlation energy from different RDM approximations from zeroth moments
+E10b = np.einsum('pq,qp',t_so, dm1) + mol.energy_nuc()
+e_eom = np.einsum('pqrs,pqrs', eri_g, rdm2_eom) * .5 + E10b - mf.energy_tot()
+e_eom_ref = np.einsum('pqrs,pqrs', eri_g, rdm2_ref) * .5 + E10b - mf.energy_tot()
+e_eom_ref_herm = np.einsum('pqrs,pqrs', eri_g, rdm2_ref_herm) * .5 + E10b - mf.energy_tot()
+print('Etot from EOM approx: {}, while pyscf={} (error = {})'.format(e_eom, Ecorr_pyscf, abs(e_eom-Ecorr_pyscf)))
+print('Etot from EOM+ref approx: {}, while pyscf={} (error = {})'.format(e_eom_ref, Ecorr_pyscf, abs(e_eom_ref-Ecorr_pyscf)))
+print('Etot from EOM+ref+herm approx: {}, while pyscf={} (error = {})'.format(e_eom_ref_herm, Ecorr_pyscf, abs(e_eom_ref_herm-Ecorr_pyscf)))
+
+# 3. Now (if the system is small enough), generate the whole H_bar matrix, and investigate the excitations compared to EOM-CC in pyscf
+# Note that there is the potential for differences if the reference projector is used or not
+if (nocc*nvir)**2 < 4000:
     # Testing full EOM hamiltonian roots compared to pyscf
     print('Completely diagonalizing Hbar-E_cc to get all excitation energies, in space of singles and doubles...')
     full_eom_h = ccsd_equations.gen_dd_eom_matrix(mycc)
     e = np.linalg.eigvals(full_eom_h)
     e_sorted = np.sort(e.real)
-    print('First positive 30 eigenvalues from diagonalization of effective EOM hamiltonian: ')
+    print('First positive 30 eigenvalues from diagonalization of effective EOM hamiltonian (without reference state in projector): ')
     e_sorted_pos = e_sorted[e_sorted > 1.e-12]
     print(e_sorted_pos[:30])
     print('Roots from pyscf ee-eom')
