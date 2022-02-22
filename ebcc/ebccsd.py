@@ -98,7 +98,7 @@ class EBCCSD:
                 # xi is a vector of length nbos, giving the shift in bosonic operators to diagonalize the phononic hamiltonian
                 # ie. g<n_i>/omega
                 # Note we don't need the density matrix since the orbitals are ordered occupied-virtual.
-                self.xi = einsum('Iaa->I', self.gmatso[:,self.no,self.no]) / self.omega
+                self.xi = einsum('Iaa->I', self.gmatso[:,:self.no,:self.no]) / self.omega
                 self.const = einsum('I,I->', self.omega, self.xi ** 2)
                 print('Shift in the energy from moving to polaritonic basis: {}'.format(self.const))
             else:
@@ -177,6 +177,31 @@ class EBCCSD:
         eriso[np.ix_(bindx, bindx, bindx, bindx)] = eri[2]
         eriso[np.ix_(aindx, aindx, bindx, bindx)] = eri[1]
         eriso[np.ix_(bindx, bindx, aindx, aindx)] = eri[1].transpose([2, 3, 0, 1])
+
+        if "gmat" in kwargs:
+            # Need to ensure this is properly adjusted into spinorbitals.
+            gmat = kwargs["gmat"]
+            if gmat is None:
+                pass
+            else:
+                if isinstance(gmat, tuple):
+                    nbos = gmat[0].shape[0]
+                    (gmat_a, gmat_b) = gmat
+                elif isinstance(gmat, np.ndarray):
+                    if len(gmat.shape) == 3:
+                        nbos = gmat.shape[0]
+                        gmat_a = gmat_b = gmat
+                    else:
+                        nbos = gmat.shape[1]
+                        gmat_a = gmat[0]
+                        gmat_b = gmat[1]
+                else:
+                    raise ValueError("Unknown fermion-boson coupling specified")
+                gmatso = np.zeros((nbos, nso, nso))
+                gmatso[np.ix_(range(nbos), aindx, aindx)] = gmat_a
+                gmatso[np.ix_(range(nbos), bindx, bindx)] = gmat_b
+            kwargs["gmat"] = gmatso
+
         return EBCCSD(fockso, eriso, no, nv, **kwargs)
 
     def init_t_amps(self):
@@ -344,15 +369,15 @@ class EBCCSD:
             return np.zeros(self.nbos)
         else:
             # Add back in coupling to the density if we haven't deducted it
-            return einsum('Ipp->I',self.gmatso[:self.no, :self.no])
+            return einsum('Ipp->I',self.gmatso[:, :self.no, :self.no])
 
     def g_traf(self):
         ''' Transform the electron-boson coupling term to the MO basis, and store in occupied/virtual blocks.'''
 
-        oo = self.gmatso[:, :self.nocc, :self.nocc]
-        ov = self.gmatso[:, :self.nocc, self.nocc:]
-        vo = self.gmatso[:, self.nocc:, :self.nocc]
-        vv = self.gmatso[:, self.nocc:, self.nocc:]
+        oo = self.gmatso[:, :self.no, :self.no]
+        ov = self.gmatso[:, :self.no, self.no:]
+        vo = self.gmatso[:, self.no:, :self.no]
+        vv = self.gmatso[:, self.no:, self.no:]
         g_mo_blocks = utils.one_e_blocks(oo,ov,vo,vv)
         return g_mo_blocks
 

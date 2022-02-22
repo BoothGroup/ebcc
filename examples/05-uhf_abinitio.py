@@ -22,16 +22,15 @@ gmat = np.random.random((nbos,nmo,nmo)) * 0.005
 omega = np.random.random((nbos)) * 5.
 
 # AO eri array passed in
-eri = ao2mo.restore(1, mf._eri, nmo)
 options = {'damp': 0.3}
-cc = ebccsd.EBCCSD(mol, mf, eri, options = options, rank=(2,1,1), omega=omega, gmat=gmat, shift=True, autogen_code=True)
-etot, e_corr = cc.kernel()
-print('EBCCSD correlation energy', cc.e_corr)
-print('EBCCSD total energy', etot)
+cc = ebccsd.EBCCSD.fromUHFobj(mf, options = options, rank=(2,1,1), omega=omega, gmat=gmat, shift=True, autogen_code=True)
+e_corr = cc.kernel()
+print('EBCCSD correlation energy for rank 211:', cc.e_corr)
+print('EBCCSD total energy', e_corr + mf.e_tot - cc.const)
 
 options = {'diis space': 12}
-cc_diis = ebccsd.EBCCSD(mol, mf, eri, options = options, rank=(2,1,1), omega=omega, gmat=gmat, shift=True, autogen_code=True)
-etot, e_corr = cc_diis.kernel()
-print('EBCCSD correlation energy', cc_diis.e_corr)
-print('EBCCSD total energy', etot)
+cc_diis = ebccsd.EBCCSD.fromUHFobj(mf, options = options, rank=(2,1,1), omega=omega, gmat=gmat, shift=True, autogen_code=True)
+e_corr = cc_diis.kernel()
+print('EBCCSD correlation energy for rank 211:', cc_diis.e_corr)
+print('EBCCSD total energy', e_corr + mf.e_tot - cc_diis.const)
 assert(np.allclose(cc_diis.e_corr, cc.e_corr))

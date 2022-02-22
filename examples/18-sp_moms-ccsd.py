@@ -22,8 +22,9 @@ pyscf_cc = mf.CCSD().run()
 eri = ao2mo.restore(1, mf._eri, mf.mol.nao_nr())
 
 # Set up cc object and run kernel for T-amplitude optimization (no bosons)
-mycc = ebccsd.EBCCSD(mol, mf, eri, options={'tthresh': 1e-10, 'diis space': 12}, autogen_code=True)
-etot, ecorr = mycc.kernel()
+mycc = ebccsd.EBCCSD.fromUHFobj(mf, options={'tthresh': 1e-10, 'diis space': 12}, autogen_code=True)
+ecorr = mycc.kernel()
+etot = mf.e_tot + ecorr - mycc.const
 assert(np.isclose(ecorr, pyscf_cc.e_corr))
 mycc.solve_lambda()
 
@@ -44,7 +45,7 @@ ea_moms = mycc.make_ea_EOM_moms(1)
 ### TESTS and CHECKS
 
 # 1. Compare the EOM CCSD moments to the direct evaluation of the moments
-nocc = mycc.na + mycc.nb 
+nocc = sum(sum(mf.mo_occ>0.0))
 print('Are the exact and EOM zeroth IP moments (1DMs) correct?', np.allclose(dm1, ip_moms[:,:,0]))
 print('Are the exact and EOM zeroth EA moments (hole DM) correct?', np.allclose(np.eye(dm1.shape[0])-dm1, ea_moms[:,:,0]))
 print('Are the occ-occ blocks of exact and and EOM first IP moments correct?', np.allclose(ip_mom[:nocc,:nocc], ip_moms[:nocc,:nocc,1]))
@@ -76,11 +77,19 @@ if ((dm1.shape[0]-nocc)**2)*nocc < 2500:
     eea, cea = pyscf_cc.eaccsd(nroots=50)
     print(eea[:30])
 
+nspato = mf.mol.nao_nr()
+na = sum(mf.mo_occ[0] > 0.0)
+nb = sum(mf.mo_occ[1] > 0.0)
+va = nspato - na
+vb = nspato - nb
+no = na + nb
+nv = va + vb
+
 # 2. Compute total energy from RDMs and first hole moment
 # First compute the MO GHF basis for the hamiltonian terms, in the appropriate ordering for the orbitals in ebcc 
 # NOTE: ebcc returns RDMs in molecular spin-orbitals as occ_a, occ_b, virt_a, virt_b.
-C = np.hstack((mycc.mf.mo_coeff[0][:,:mycc.na], mycc.mf.mo_coeff[1][:,:mycc.nb], mycc.mf.mo_coeff[0][:,mycc.na:], mycc.mf.mo_coeff[1][:,mycc.nb:]))
-mask_a = [True]*mycc.na + [False]*mycc.nb + [True]*mycc.va + [False]*mycc.vb
+C = np.hstack((mf.mo_coeff[0][:,:na], mf.mo_coeff[1][:,:nb], mf.mo_coeff[0][:,na:], mf.mo_coeff[1][:,nb:]))
+mask_a = [True]*na + [False]*nb + [True]*va + [False]*vb
 mask_b = [not elem for elem in mask_a]
 # Get full spinorbital integrals in this ordering
 eri_g = ao2mo.full(eri, C, compact=False)
@@ -98,7 +107,7 @@ eri_g[np.ix_(mask_a,mask_b,mask_a,mask_b)] = 0.0
 eri_g[np.ix_(mask_a,mask_b,mask_b,mask_a)] = 0.0
 eri_g[np.ix_(mask_b,mask_a,mask_a,mask_b)] = 0.0
 # Get 1e hamiltonian in spin-orbital basis
-t_so = np.linalg.multi_dot((C.T, mycc.mf.get_hcore(), C))
+t_so = np.linalg.multi_dot((C.T, mf.get_hcore(), C))
 t_so[np.ix_(mask_a, mask_b)] = 0.
 t_so[np.ix_(mask_b, mask_a)] = 0.
 
