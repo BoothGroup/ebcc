@@ -1,7 +1,7 @@
 import numpy as np
 from pyscf import scf
 
-def reorder_to_ghf(cc, mat):
+def reorder_to_ghf(mf, mat):
     ''' Orbital dependent expectation values (e.g. RDMs) from ebcc are returned with
     a spinorbital index of occ_a, occ_b, virt_a, virt_b.
 
@@ -10,34 +10,43 @@ def reorder_to_ghf(cc, mat):
     these quantities, i.e. occupied, virtual, in energy/occupation ordering.
 
     The energy ordering comes from the original cc.mf object'''
+    # Ensure we always have an mf object
+    mf = mf.to_uhf()
+    orbspin = scf.addons.get_ghf_orbspin(mf.mo_energy, mf.mo_occ, is_rhf=False)
 
-    # Note cc.mf will always be a UHF object
-    orbspin = scf.addons.get_ghf_orbspin(cc.mf.mo_energy, cc.mf.mo_occ, is_rhf=False)
+    nspat_orb = mf.mol.nao_nr()
+    na = sum(mf.mo_occ[0] > 0.0)
+    nb = sum(mf.mo_occ[1] > 0.0)
+    va = nspat_orb - na
+    vb = nspat_orb - nb
+    no = na + nb
+    nv = va + vb
+    nso = no + nv
 
     # orbspin will be a list of length #spinorbs, and will say whether we want to include a
     # alpha or beta spinorb in the ghf ordering
-    assert(len(orbspin) == cc.nso)
+    assert(len(orbspin) == nso)
 
     # This is a very non-pythonic way of solving this problem!
     def increment_alpha_ind(ind_a):
         # Initial index should be 0
         ind_a += 1
-        if ind_a == cc.na:
+        if ind_a == na:
             # Switch to the starting index of the virtual alpha block
-            ind_a = cc.no
+            ind_a = no
         return ind_a
 
     def increment_beta_ind(ind_b):
         # Initial index should be cc.na (which is where the occupied beta will start)
         ind_b += 1
-        if ind_b == cc.no:
+        if ind_b == no:
             # Switch to the starting index of the virtual beta block
-            ind_b = cc.no + cc.va
+            ind_b = no + va
         return ind_b
 
     idx = []
     ind_a = 0
-    ind_b = cc.na
+    ind_b = na
     for i in range(len(orbspin)):
         if orbspin[i] == 0:
             # Next orbital should be an alpha
@@ -58,7 +67,7 @@ def reorder_to_ghf(cc, mat):
 
     return mat_reorder
 
-def reorder_to_uhf(cc, mat):
+def reorder_to_uhf(mf, mat):
     ''' Orbital dependent expectation values (e.g. RDMs) from ebcc are returned with
     a spinorbital index of occ_a, occ_b, virt_a, virt_b.
 

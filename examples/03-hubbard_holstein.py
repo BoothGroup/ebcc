@@ -31,7 +31,8 @@ mf._eri = ao2mo.restore(8, eri, L)
 mol.incore_anyway = True
 mf.kernel()
 
-cc = ebccsd.EBCCSD(mol, mf, eri, options={'diis space': 8}, rank=(2,2,2), omega=omega, gmat=gmat, shift=True)
-etot, e_corr = cc.kernel()
+cc = ebccsd.EBCCSD.fromUHFobj(mf, options={'diis space': 8}, rank=(2,2,2), omega=omega, gmat=gmat, shift=True)
+
+e_corr = cc.kernel()
 print('EBCCSD correlation energy', cc.e_corr)
-print('EBCCSD total energy', etot)
+print('EBCCSD total energy', mf.e_tot - cc.const + cc.e_corr)

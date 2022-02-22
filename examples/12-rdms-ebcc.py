@@ -23,10 +23,10 @@ eri = ao2mo.restore(1, mf._eri, nao)
 
 for rank in [(2,1,1)]:
     for shift in [True, False]:
-        cc = ebccsd.EBCCSD(mol, mf, eri, options={'tthresh': 1e-8}, rank=rank, omega=omega, gmat=gmat, shift=shift, autogen_code=True)
-        etot, e_corr = cc.kernel()
+        cc = ebccsd.EBCCSD.fromUHFobj(mf, options={'tthresh': 1e-8}, rank=rank, omega=omega, gmat=gmat, shift=shift, autogen_code=True)
+        e_corr = cc.kernel()
         print('EBCCSD correlation energy for rank {} and shift {}:   {}'.format(rank,shift,cc.e_corr))
-        print('EBCCSD total energy', etot)
+        print('EBCCSD total energy', mf.e_tot + e_corr - cc.const)
         
         cc.solve_lambda()
         

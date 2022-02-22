@@ -34,8 +34,8 @@ omega = 0.1+np.random.random((nbos)) * 10
 eri = ao2mo.restore(1, mf._eri, nao)
 
 # Set up cc object and run kernel for T-amplitude optimization
-mycc = ebccsd.EBCCSD(mol, mf, eri, options={'tthresh': 1e-10, 'diis space': 12}, rank=(2,1,1), omega=omega, gmat=gmat, shift=True, autogen_code=True)
-etot, ecorr = mycc.kernel()
+mycc = ebccsd.EBCCSD.fromUHFobj(mf, options={'tthresh': 1e-10, 'diis space': 12}, rank=(2,1,1), omega=omega, gmat=gmat, shift=True, autogen_code=True)
+ecorr = mycc.kernel()
 mycc.solve_lambda()
 
 # Generate 1 and 2 RDMs
@@ -54,9 +54,14 @@ dd_moms_with_ref_proj = mycc.make_dd_EOM_moms(1, include_ref_proj=True)
 dd_moms_with_ref_proj_herm = mycc.make_dd_EOM_moms(1, include_ref_proj=True, hermit_gs_contrib=True)
 
 ### TESTS and CHECKS
-nocc = mycc.na + mycc.nb 
-nvir = mycc.va + mycc.vb
-ntot = dm2.shape[0]
+umf = mf.to_uhf()
+nspato = umf.mol.nao_nr()
+na = sum(umf.mo_occ[0] > 0.0)
+nb = sum(umf.mo_occ[1] > 0.0)
+va = nspato - na
+vb = nspato - nb
+nocc = na + nb
+nvir = va + vb
 
 # 1. Check agreement between zeroth dd moment and moment from 2RDM
 # First, convert the 2RDM into a product of single-excitations form
@@ -109,11 +114,11 @@ rdm2_ref_herm = dd_moms_with_ref_proj_herm[:,:,:,:,0] + np.einsum('pq,rs->pqrs',
 # Now get the hamiltonian terms in the right (GHF) ordering
 # NOTE: ebcc returns RDMs in molecular spin-orbitals as occ_a, occ_b, virt_a, virt_b.
 # Therefore, construct a list of spinorbital coefficients in this order
-C = np.hstack((mycc.mf.mo_coeff[0][:,:mycc.na], mycc.mf.mo_coeff[1][:,:mycc.nb], mycc.mf.mo_coeff[0][:,mycc.na:], mycc.mf.mo_coeff[1][:,mycc.nb:]))
+C = np.hstack((umf.mo_coeff[0][:,:na], umf.mo_coeff[1][:,:nb], umf.mo_coeff[0][:,na:], umf.mo_coeff[1][:,nb:]))
 # Get full spinorbital integrals in this ordering
 eri_g = ao2mo.full(eri, C, compact=False)
 # zero out spin-forbidden sectors of the integrals
-mask_a = [True]*mycc.na + [False]*mycc.nb + [True]*mycc.va + [False]*mycc.vb
+mask_a = [True]*na + [False]*nb + [True]*va + [False]*vb
 mask_b = [not i for i in mask_a]
 eri_g[np.ix_(mask_b,mask_a,mask_a,mask_a)] = 0.0
 eri_g[np.ix_(mask_a,mask_b,mask_a,mask_a)] = 0.0

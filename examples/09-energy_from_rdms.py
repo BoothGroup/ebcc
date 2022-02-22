@@ -33,10 +33,10 @@ print('pyscf total energy from dms: {}'.format(Etot_pyscf))
 # Get AO integrals for ebcc
 eri = ao2mo.restore(1, mf._eri, mf.mol.nao_nr())
 # Set up cc object and run kernel for T-amplitude optimization (no bosons)
-cc = ebccsd.EBCCSD(mol, mf, eri, options={'tthresh': 1e-9, 'diis space': 12}, autogen_code=True)
-etot, ecorr = cc.kernel()
+cc = ebccsd.EBCCSD.fromUHFobj(mf, options={'tthresh': 1e-9, 'diis space': 12}, autogen_code=True)
+ecorr = cc.kernel()
 print('EBCCSD correlation energy', cc.e_corr)
-assert(np.allclose(etot, Etot_pyscf))
+assert(np.allclose(mf.e_tot + ecorr, Etot_pyscf))
 
 # Solve lambda equations
 cc.solve_lambda()
@@ -45,13 +45,22 @@ cc.solve_lambda()
 dm1_eb = cc.make_1rdm_f()
 dm2_eb = cc.make_2rdm_f()
 
+umf = mf.to_uhf()
+nspato = umf.mol.nao_nr()
+na = sum(umf.mo_occ[0] > 0.0)
+nb = sum(umf.mo_occ[1] > 0.0)
+va = nspato - na
+vb = nspato - nb
+no = na + nb
+nv = va + vb
+
 # NOTE: ebcc returns RDMs in molecular spin-orbitals as occ_a, occ_b, virt_a, virt_b.
 # Therefore, construct a list of spinorbital coefficients in this order
-C = np.hstack((cc.mf.mo_coeff[0][:,:cc.na], cc.mf.mo_coeff[1][:,:cc.nb], cc.mf.mo_coeff[0][:,cc.na:], cc.mf.mo_coeff[1][:,cc.nb:]))
+C = np.hstack((umf.mo_coeff[0][:,:na], umf.mo_coeff[1][:,:nb], umf.mo_coeff[0][:,na:], umf.mo_coeff[1][:,nb:]))
 # Get full spinorbital integrals in this ordering
 eri_g = ao2mo.full(eri, C, compact=False)
 # zero out spin-forbidden sectors of the integrals
-mask_a = [True]*cc.na + [False]*cc.nb + [True]*cc.va + [False]*cc.vb
+mask_a = [True]*na + [False]*nb + [True]*va + [False]*vb
 mask_b = [not i for i in mask_a]
 eri_g[np.ix_(mask_b,mask_a,mask_a,mask_a)] = 0.0
 eri_g[np.ix_(mask_a,mask_b,mask_a,mask_a)] = 0.0
