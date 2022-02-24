@@ -20,15 +20,20 @@ nbos = 5
 # with the creation operator appropriately transposed
 gmat = np.random.random((nbos,nmo,nmo)) * 0.005
 omega = np.random.random((nbos)) * 5.
-G = np.random.random((nbos)) * 0.005
+G = np.random.random((nbos)) * 0.05
+# Can alternatively represent G as a coupling to the fermionic density.
+gmat_mod = gmat + np.einsum("I,pq->Ipq", G, np.eye(nmo)) / mol.nelectron
 
 options = {'diis space': 12}
-cc_noG = ebccsd.EBCCSD.fromUHFobj(mf, options = options, rank=(2, 1, 1), omega=omega, gmat=gmat, shift=True, autogen_code=True)
+cc_noG = ebccsd.EBCCSD.fromUHFobj(mf, options = options, rank=(2, 1, 1), omega=omega, gmat=gmat_mod, shift=True, autogen_code=True)
 e_corr = cc_noG.kernel()
-print('EBCCSD correlation energy for rank 211 with no boson-nonconserving:', cc_noG.e_corr)
+print('EBCCSD correlation energy for rank 211 with boson-nonconserving term folded into fermion-boson coupling:',
+      cc_noG.e_corr)
 print('EBCCSD total energy', e_corr + mf.e_tot - cc_noG.const)
 
 cc_G = ebccsd.EBCCSD.fromUHFobj(mf, options = options, rank=(2, 1, 1), omega=omega, gmat=gmat, shift=True, G=G, autogen_code=True)
 e_corr = cc_G.kernel()
-print('EBCCSD correlation energy for rank 211 with boson-nonconserving:', cc_G.e_corr)
+print('EBCCSD correlation energy for rank 211 with explicit boson-nonconserving term:', cc_G.e_corr)
 print('EBCCSD total energy', e_corr + mf.e_tot - cc_G.const)
+assert(np.allclose(cc_noG.e_corr, cc_G.e_corr))
+print("Correlation energies match with and without explicit boson-nonconserving term!")
