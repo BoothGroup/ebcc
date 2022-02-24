@@ -11,7 +11,7 @@ except ImportError:
 
 class EBCCSD:
 
-    def __init__(self, fock, eri, nocc, nvir, options=None, rank=(2, 0, 0), omega=None, gmat=None, shift=True, autogen_code=False):
+    def __init__(self, fock, eri, nocc, nvir, options=None, rank=(2, 0, 0), omega=None, gmat=None, G=None, shift=True, autogen_code=False):
         ''' Set up EBCCSD class.
 
         Args:
@@ -29,6 +29,9 @@ class EBCCSD:
                   NOTE: gmat corresponds to the bosonic *annihilation* operator, i.e. gmat[p,q,x] c_p^+ c_q b_x.
                   The creation part is assumed to be the fermionic transpose of this tensor, i.e. gmat[q,p,x] c_p^+ c_q b^+_x in order
                   to retain hermiticity of the overall hamiltonian.
+
+            G: boson-non-conserving term of the Hamiltonian, corresponding to G[x] (b^+_x + b_x).
+
 
             shift: Whether to shift the boson operators s.t. the Hamiltonian is normal-ordered wrt a coherent state. This removes the bosonic
                     coupling to the static HF density, and introduces a constant energy shift.
@@ -72,6 +75,8 @@ class EBCCSD:
         self.omega = omega
         # Electron-boson coupling
         self.gmatso = gmat
+        # Boson-non-conserving term
+        self.bare_G = G
         # Fock matrix
         self.bare_fock = fock
         self.no = nocc
@@ -99,6 +104,11 @@ class EBCCSD:
                 # ie. g<n_i>/omega
                 # Note we don't need the density matrix since the orbitals are ordered occupied-virtual.
                 self.xi = einsum('Iaa->I', self.gmatso[:,:self.no,:self.no]) / self.omega
+                # If there are nonzero boson-non-conserving terms within our original Hamiltonian need to include these.
+                # Can see that this just requires a commensurate increase in the shift for each boson to cancel.
+                if self.bare_G is not None:
+                    assert (len(self.bare_G) == self.nbos)
+                    self.xi += self.bare_G / self.omega
                 self.const = einsum('I,I->', self.omega, self.xi ** 2)
                 print('Shift in the energy from moving to polaritonic basis: {}'.format(self.const))
             else:
@@ -365,11 +375,10 @@ class EBCCSD:
            back in.
         '''
 
-        if self.shift:
-            return np.zeros(self.nbos)
-        else:
-            # Add back in coupling to the density if we haven't deducted it
-            return einsum('Ipp->I',self.gmatso[:, :self.no, :self.no])
+        val = einsum('Ipp->I',self.gmatso[:, :self.no, :self.no]) - self.xi * self.omega
+        if self.bare_G is not None:
+            val += self.bare_G
+        return val
 
     def g_traf(self):
         ''' Transform the electron-boson coupling term to the MO basis, and store in occupied/virtual blocks.'''
