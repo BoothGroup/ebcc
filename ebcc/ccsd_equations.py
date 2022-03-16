@@ -397,7 +397,7 @@ def eb_coup_rdm(cc, write=True):
         print('No bosonic RDM for the CCSD model...')
     return (np.zeros((cc.nbos, cc.nso, cc.nso)), np.zeros((cc.nbos, cc.nso, cc.nso)))
 
-def dd_moms_eom(cc, order, include_ref_proj=False, hermit_gs_contrib=False, write=True):
+def dd_moms_eom(cc, order, include_ref_proj=False, hermit_gs_contrib=False, write=True, pertspace=None):
     ''' Get arbitrary-order moments of the fermionic density-density spectral function.
         mom[p,q,r,s,order] = <c^+_p c_q (H-E)^(order) c^+_r c_s> - \delta_{n0} <c^+_p c_q c^+r c_s>
         Note that the moments from 0 up to order will be computed and returned.
@@ -409,9 +409,17 @@ def dd_moms_eom(cc, order, include_ref_proj=False, hermit_gs_contrib=False, writ
             needs to be removed, and this can be done with either the hermitized 1RDMs, or the non-
             hermitized 1RDM. This is controlled by 'hermit_gs_contrib'. However, this has the advantage
             that the moments will be exact for 2-electron systems.
+
+        pertspace=None. If given, this should be an array of [nocc+nvir,npert], and will ensure that the
+            returned dd-moments are only the ones which span the fermionic space spanned by the (product)
+            of these column vectors (where the space of these perturbations is expressed in the canonical
+            occ + virt space). The returned dd_moms will be of size [npert, npert, npert, npert, order+1],
+            rather then evaluating all possible density moments over the fermionic space.
         '''
     if write:
         print('Computing fermionic space dd spectral moments up to (and including) order {}'.format(order))
+        if pertspace is not None:
+            print('Computing dd moments over custom subspace of full fermionic space, of size {}'.format(pertspace.shape[1]))
     if cc.L1 is None:
         if write:
             print('No optimized lambda amplitudes found to compute density matrices.')
@@ -426,9 +434,15 @@ def dd_moms_eom(cc, order, include_ref_proj=False, hermit_gs_contrib=False, writ
     ntot = nocc + nvir
     delta_v = np.eye(T1.shape[0]) # Virtual-virtual delta
     delta_o = np.eye(T1.shape[1]) # Occupied-occupied delta
-
-    dd_moms = np.zeros((ntot, ntot, ntot, ntot, order+1))
-
+    if pertspace is not None:
+        npert = pertspace.shape[1]
+        assert(npert <= ntot)
+        assert(pertspace.shape[0] == ntot)
+    else:
+        # Computing dd response in the original (full) occupied and virtual space
+        npert = ntot
+    dd_moms = np.zeros((npert, npert, npert, npert, order+1))
+    
     # Set up the projection of the ket state
     # Note that for these kets, the final two indices are the perturbation indices
     R0_0 = np.zeros((nvir, nocc, ntot, ntot))   # Projection onto singles space
@@ -458,12 +472,26 @@ def dd_moms_eom(cc, order, include_ref_proj=False, hermit_gs_contrib=False, writ
     R0_1[:,:,:,:,nocc:,nocc:] += -1.0*einsum('adji,bc->abijcd', T2, delta_v) 
     R0_1[:,:,:,:,nocc:,nocc:] += 1.0*einsum('bdji,ac->abijcd', T2, delta_v)
 
-    if include_ref_proj:
-        kets = [(R0_ref, R0_0, R0_1)]
+    if pertspace is not None:
+        # If we are specifying a custom perturbation subspace, then these initial vectors need to be rotated
+        # into this subspace.
+        R0_0_pert = einsum('aixy,xp,yq->aipq', R0_0, pertspace, pertspace)
+        R0_1_pert = einsum('abijxy,xp,yq->abijpq',R0_1, pertspace, pertspace)
+        if include_ref_proj:
+            R0_ref_pert = einsum('xy,xp,yq->pq', R0_ref, pertspace, pertspace)
+            kets = [(R0_ref_pert, R0_0_pert, R0_1_pert)]
+        else:
+            # Currently, only pass in the singles and doubles space to the projector, not the reference state
+            # Including this state however doesn't seem to change the excitation energies?
+            kets = [(R0_0_pert, R0_1_pert)]
     else:
-        # Currently, only pass in the singles and doubles space to the projector, not the reference state
-        # Including this state however doesn't seem to change the excitation energies?
-        kets = [(R0_0, R0_1)]
+        if include_ref_proj:
+            kets = [(R0_ref, R0_0, R0_1)]
+        else:
+            # Currently, only pass in the singles and doubles space to the projector, not the reference state
+            # Including this state however doesn't seem to change the excitation energies?
+            kets = [(R0_0, R0_1)]
+
     for i in range(order):
         # Apply (H-E) sequentially to each ket. Final index of the R vectors will be considered the list of vectors to apply the operator to.
         kets.append(apply_hbar_dd(cc, kets[-1]))
