@@ -411,10 +411,11 @@ def dd_moms_eom(cc, order, include_ref_proj=False, hermit_gs_contrib=False, writ
             that the moments will be exact for 2-electron systems.
 
         pertspace=None. If given, this should be an array of [nocc+nvir,npert], and will ensure that the
-            returned dd-moments are only the ones which span the fermionic space spanned by the (product)
+            returned dd-moments are only the ones which span the product fermionic space 
             of these column vectors (where the space of these perturbations is expressed in the canonical
             occ + virt space). The returned dd_moms will be of size [npert, npert, npert, npert, order+1],
-            rather then evaluating all possible density moments over the fermionic space.
+            rather then evaluating all possible density moments over the fermionic space, and given in the
+            basis defined by these vectors.
         '''
     if write:
         print('Computing fermionic space dd spectral moments up to (and including) order {}'.format(order))
@@ -551,21 +552,34 @@ def dd_moms_eom(cc, order, include_ref_proj=False, hermit_gs_contrib=False, writ
     E_bra_1[nocc:,nocc:,:,:,:,:] += -1.0*einsum('ijab,cd->bcjiad', L2, delta_v)
     E_bra_1[nocc:,nocc:,:,:,:,:] += 1.0*einsum('ijab,cd->bcjida', L2, delta_v)
 
+    if pertspace is not None:
+        # If we are specifying a custom perturbation subspace, then these bra perturbed states need to be rotated
+        # into this subspace
+        E_bra_0_pert = einsum('xyia,xp,yq->pqia', E_bra_0, pertspace, pertspace)
+        E_bra_1_pert = einsum('xyijab,xp,yq->pqijab', E_bra_1, pertspace, pertspace)
+        if include_ref_proj:
+            E_bra_hf_pert = einsum('xy,xp,yq->pq', E_bra_hf, pertspace, pertspace)
+    else:
+        E_bra_0_pert = E_bra_0
+        E_bra_1_pert = E_bra_1
+        if include_ref_proj:
+            E_bra_hf_pert = E_bra_hf
+
     # Now, dot product together every set of states in kets list with the bra states of E_bra
     for i in range(order+1):
         if include_ref_proj:
             # Include contributions from the reference projector
             # This will ensure that all moments are exact for 2e systems
             # There is still a contribution to the 2RDM from a triples projector for >2e systems, so this will not be exactly right (for ov bra blocks)
-            dd_moms[:,:,:,:,i] += einsum('pq,rs->pqrs', E_bra_hf, kets[i][0])
+            dd_moms[:,:,:,:,i] += einsum('pq,rs->pqrs', E_bra_hf_pert, kets[i][0])
             # Singles
-            dd_moms[:,:,:,:,i] += einsum('pqia,airs->pqrs', E_bra_0, kets[i][1])
+            dd_moms[:,:,:,:,i] += einsum('pqia,airs->pqrs', E_bra_0_pert, kets[i][1])
             # Doubles
-            dd_moms[:,:,:,:,i] += 0.25*einsum('pqijab,abijrs->pqrs', E_bra_1, kets[i][2]) # Perhaps ab want to be swapped in one of these tensors, and maybe the factor wants to be a quarter?
+            dd_moms[:,:,:,:,i] += 0.25*einsum('pqijab,abijrs->pqrs', E_bra_1_pert, kets[i][2]) # Perhaps ab want to be swapped in one of these tensors, and maybe the factor wants to be a quarter?
         else:
             # No reference projector term
-            dd_moms[:,:,:,:,i] += einsum('pqia,airs->pqrs', E_bra_0, kets[i][0])
-            dd_moms[:,:,:,:,i] += 0.25*einsum('pqijab,abijrs->pqrs', E_bra_1, kets[i][1]) # Perhaps ab want to be swapped in one of these tensors, and maybe the factor wants to be a quarter?
+            dd_moms[:,:,:,:,i] += einsum('pqia,airs->pqrs', E_bra_0_pert, kets[i][0])
+            dd_moms[:,:,:,:,i] += 0.25*einsum('pqijab,abijrs->pqrs', E_bra_1_pert, kets[i][1]) # Perhaps ab want to be swapped in one of these tensors, and maybe the factor wants to be a quarter?
 
     if include_ref_proj:
         # If we are including the reference state in the projector for the excitations definition, then
@@ -574,13 +588,16 @@ def dd_moms_eom(cc, order, include_ref_proj=False, hermit_gs_contrib=False, writ
         # which is slightly different.
         # TODO: Do we need to think about the appropriate way to rigorously remove the GS contribution from higher-order moments?
         rdm1 = one_rdm_ferm(cc, write=False, make_hermitian=hermit_gs_contrib)
-        dd_moms[:,:,:,:,0] -= einsum('pq,rs->pqrs',rdm1,rdm1) 
+        if pertspace is not None:
+            # Rotate RDM into perturbation space
+            rdm_pert = einsum('xy,xp,yq->pq',rdm1,rdm1)
+        else:
+            rdm_pert = rdm1
+        dd_moms[:,:,:,:,0] -= einsum('pq,rs->pqrs',rdm_pert,rdm_pert) 
 
     # Hermitize all moments
     for i in range(order+1):
         dd_moms[:,:,:,:,i] = 0.5*(dd_moms[:,:,:,:,i] + dd_moms[:,:,:,:,i].transpose(3,2,1,0))
-        # TODO: Surely we also want to ensure antisymmetry wrt exchange of the first two or last two indices
-        # But does this require additional consideration of the lower-order quantities?
 
     return dd_moms
 

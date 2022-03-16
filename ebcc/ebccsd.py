@@ -694,7 +694,7 @@ class EBCCSD:
 
         return ip_moms
 
-    def make_dd_EOM_moms(self, order, include_ref_proj=False, hermit_gs_contrib=False, write=True):
+    def make_dd_EOM_moms(self, order, include_ref_proj=False, hermit_gs_contrib=False, write=True, pertspace=None):
         ''' Get the fermionic density-density moments approximation to
             mom[p,q,r,s,n] = <c^+_p c_q (H-E)^n c^+_r c_s> - delta_{n0} <c+_p c_q |GS><GS| c+_r c_s>
             for all orders from 0 up to and including n.
@@ -707,11 +707,17 @@ class EBCCSD:
                 needs to be removed, and this can be done with either the hermitized 1RDMs, or the non-
                 hermitized 1RDM. This is controlled by 'hermit_gs_contrib'. However, this has the advantage
                 that the moments will be exact for 2-electron systems.
+        pertspace=None. If given, this should be an array of [nocc+nvir,npert], and will ensure that the
+            returned dd-moments are only the ones which span the product fermionic space 
+            of these column vectors (where the space of these perturbations is expressed in the canonical
+            occ + virt space). The returned dd_moms will be of size [npert, npert, npert, npert, order+1],
+            rather then evaluating all possible density moments over the fermionic space, and given in the
+            basis defined by these vectors.
         '''
 
         if self.rank == (2, 0, 0):
             dd_moms = ccsd_equations.dd_moms_eom(self, order, include_ref_proj=include_ref_proj, 
-                    hermit_gs_contrib=hermit_gs_contrib, write=True)
+                    hermit_gs_contrib=hermit_gs_contrib, write=True, pertspace=pertspace)
         elif self.rank == (2, 1, 1):
             dd_moms = ccsd_1_1_equations.dd_moms_eom(self, order, include_ref_proj=include_ref_proj,
                     hermit_gs_contrib=hermit_gs_contrib, write=True)
