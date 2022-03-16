@@ -9,7 +9,7 @@ from wick.convenience import ketEea1, ketEea2, ketEip1, ketEip2, braP1Eea1, ketP
 from convenience_extra import P_dexit1, EPS_dexit1, PB1
 import time
 
-bosons = False
+bosons = True 
 if bosons:
     T1 = E1("T1", ["occ"], ["vir"])
     T2 = E2("T2", ["occ"], ["vir"])
@@ -55,9 +55,9 @@ HTTTTT = commute(HTTTT, T)
 
 simplify = True
 gen_h = True 
-moms = 'dd'   # 'sp' or 'dd'
-ip_mom = True 
-include_ref_proj = True
+moms = 'sp'   # 'sp' or 'dd'
+ip_mom = False 
+include_ref_proj = False
 if include_ref_proj:
     assert(moms == 'dd')
 

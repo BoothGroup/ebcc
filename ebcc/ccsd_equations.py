@@ -800,7 +800,7 @@ def apply_hbar_dd(cc, R):
 
 def part_moms_eom(cc, order, write=True):
     ''' Get arbitrary-order moments of the fermionic particle (EA) single-particle spectral function.
-        mom[p,q,order] = <c^+_p (H-E)^(order) c_q>
+        mom[p,q,order] = <c_p (H-E)^(order) c^+_q>
         Note that the moments from 0 up to order will be computed and returned.
         These moments should be identical to the equivalent EOM spectral moments'''
 

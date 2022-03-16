@@ -33,7 +33,7 @@ ea_mom = mycc.make_ea_1mom()
 
 # EOM moments
 ip_moms = mycc.make_ip_EOM_moms(1)
-#ea_moms = mycc.make_ea_EOM_moms(1)
+ea_moms = mycc.make_ea_EOM_moms(1)
 
 ### TESTS and CHECKS
 
@@ -51,15 +51,17 @@ print('Are the exact and EOM zeroth IP moments (1DMs) correct?',np.allclose(dm1,
 print('Are the occ-occ blocks of exact and and EOM first IP moments correct?', np.allclose(ip_mom[:nocc,:nocc], ip_moms[:nocc,:nocc,1]))
 print('Are the vir-vir blocks of exact and and EOM first IP moments correct?', np.allclose(ip_mom[nocc:,nocc:], ip_moms[nocc:,nocc:,1]))
 print('Are the occ-vir blocks of exact and and EOM first IP moments correct?', np.allclose(ip_mom[:nocc,nocc:], ip_moms[:nocc,nocc:,1]))
-#print('Are the occ-occ blocks of exact and and EOM first EA moments correct?', np.allclose(ea_mom[:nocc,:nocc], ea_moms[:nocc,:nocc,1]))
+print('Are the occ-occ blocks of exact and and EOM first EA moments correct?', np.allclose(ea_mom[:nocc,:nocc], ea_moms[:nocc,:nocc,1]))
 # Note that even for 2 electrons, I don't think that the EA-EOM has to be exactly correct.
-#print('Are the vir-vir blocks of exact and and EOM first EA moments correct?', np.allclose(ea_mom[nocc:,nocc:], ea_moms[nocc:,nocc:,1]))
-#print('Are the occ-vir blocks of exact and and EOM first EA moments correct?', np.allclose(ea_mom[:nocc,nocc:], ea_moms[:nocc,nocc:,1]))
+print('Are the vir-vir blocks of exact and and EOM first EA moments correct?', np.allclose(ea_mom[nocc:,nocc:], ea_moms[nocc:,nocc:,1]))
+print('Are the occ-vir blocks of exact and and EOM first EA moments correct?', np.allclose(ea_mom[:nocc,nocc:], ea_moms[:nocc,nocc:,1]))
 if np.allclose(gmat, np.zeros_like(gmat)):
     # Check that at zero electron-boson coupling, that the moments reproduce the ccsd model?
     # Hack so we call the CCSD model function directly
     ccsd_ip_moms = ccsd_equations.hole_moms_eom(mycc, 1)
+    ccsd_ea_moms = ccsd_equations.part_moms_eom(mycc, 1)
     assert(np.allclose(ccsd_ip_moms, ip_moms))
+    assert(np.allclose(ccsd_ea_moms, ea_moms))
     print('In the limit of no boson coupling, moments are the same as the ccsd model.')
 
 # 1. Compute total energy from RDMs and first hole moment
