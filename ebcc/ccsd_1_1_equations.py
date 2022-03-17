@@ -716,7 +716,7 @@ def dd_moms_eom(cc, order, include_ref_proj=False, hermit_gs_contrib=False, writ
     if pertspace is not None:
         # If we are specifying a custom perturbation subspace, then these bra perturbed states need to be rotated
         # into this subspace
-        E_bra_0_pert = einsum('xyia,xp,yq,pqia', E_bra_0, pertspace, pertspace)
+        E_bra_0_pert = einsum('xyia,xp,yq->pqia', E_bra_0, pertspace, pertspace)
         E_bra_1_pert = einsum('xyijab,xp,yq->pqijab', E_bra_1, pertspace, pertspace)
         E_bra_2_pert = einsum('xyI,xp,yq->pqI', E_bra_2, pertspace, pertspace)
         E_bra_3_pert = einsum('xyIia,xp,yq->pqIia', E_bra_3, pertspace, pertspace)

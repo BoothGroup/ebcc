@@ -51,6 +51,7 @@ dd_moms_with_ref_proj = mycc.make_dd_EOM_moms(1, include_ref_proj=True)
 # Finally, there is the approximation which is the same above, but removing the GS contribution from hermitian 1RDMs for the zeroth moment.
 # Both of these last two approximations should be exact for all orders for 2 electrons
 dd_moms_with_ref_proj_herm = mycc.make_dd_EOM_moms(1, include_ref_proj=True, hermit_gs_contrib=True)
+# Note that we can also choose to only create the dd-moments over an arbitrary subspace, given by a projector which can be passed in with optional argument 'pertspace'
 
 ### TESTS and CHECKS
 umf = mf.to_uhf()
@@ -62,6 +63,28 @@ vb = nspato - nb
 nocc = na + nb
 nvir = va + vb
 ntot = dm2.shape[0]
+
+# 0. Find dd moment in an arbitrary 2-orbital subspace, and check that this is the same as generating the whole dd-moment and projecting after.
+# Find random vectors spanning two orbital subspace
+pertspace = np.zeros((ntot, 2))
+orb_ind_1, orb_ind_2 = np.random.choice(ntot, size=2, replace=False) # Find two unique integer indices to span.
+mask_inds = [False]*ntot
+mask_inds[orb_ind_1] = True
+mask_inds[orb_ind_2] = True 
+pertspace[orb_ind_1, 0] = 1.
+pertspace[orb_ind_2, 1] = 1.
+# Unitarily mix the vectors to a new representation
+angle = np.random.random()*2*np.pi
+print('Testing subspace dd-moment evaluation, by choosing orbitals {} and {}, and unitarily mixing them by angle {} radians to check consistency...'.format(orb_ind_1,orb_ind_2,angle))
+rot = np.array([[np.cos(angle), -np.sin(angle)],[np.sin(angle), np.cos(angle)]])
+pert_space_ = np.dot(pertspace, rot)
+dd_moms_subspace = mycc.make_dd_EOM_moms(1, include_ref_proj=True, pertspace=pert_space_)
+# Now, rotate the subspace dd moments back to the original (canonical) orbital space
+dd_moms_subspace_canonical = np.einsum('pqrsn,wp,xq,yr,zs->wxyzn', dd_moms_subspace, pert_space_, pert_space_, pert_space_, pert_space_)
+# Check that this is the same as the subspace of the full dd moments spanned by the orbital indices orb_ind_1 and orb_ind_2
+orig_space_mask = np.ix_(mask_inds, mask_inds, mask_inds, mask_inds, [True]*dd_moms_with_ref_proj.shape[-1])
+assert(np.allclose(dd_moms_subspace_canonical[orig_space_mask], dd_moms_with_ref_proj[orig_space_mask]))
+print('Choosing custom perturbation subspace working correctly')
 
 # 1. Check agreement between zeroth dd moment and moment from 2RDM
 # First, convert the 2RDM into a product of single-excitations form
