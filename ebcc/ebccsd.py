@@ -720,7 +720,7 @@ class EBCCSD:
                     hermit_gs_contrib=hermit_gs_contrib, write=True, pertspace=pertspace)
         elif self.rank == (2, 1, 1):
             dd_moms = ccsd_1_1_equations.dd_moms_eom(self, order, include_ref_proj=include_ref_proj,
-                    hermit_gs_contrib=hermit_gs_contrib, write=True)
+                    hermit_gs_contrib=hermit_gs_contrib, write=True, pertspace=pertspace)
         elif self.rank == (2, 2, 1):
             dd_moms = ccsd_2_1_equations.dd_moms_eom(self, order, include_ref_proj=include_ref_proj,
                     hermit_gs_contrib=hermit_gs_contrib, write=True)

@@ -482,7 +482,7 @@ def dd_moms_eom(cc, order, include_ref_proj=False, hermit_gs_contrib=False, writ
             R0_ref_pert = einsum('xy,xp,yq->pq', R0_ref, pertspace, pertspace)
             kets = [(R0_ref_pert, R0_0_pert, R0_1_pert)]
         else:
-            # Currently, only pass in the singles and doubles space to the projector, not the reference state
+            # Only pass in the singles and doubles space to the projector, not the reference state
             # Including this state however doesn't seem to change the excitation energies?
             kets = [(R0_0_pert, R0_1_pert)]
     else:
@@ -497,7 +497,7 @@ def dd_moms_eom(cc, order, include_ref_proj=False, hermit_gs_contrib=False, writ
         # Apply (H-E) sequentially to each ket. Final index of the R vectors will be considered the list of vectors to apply the operator to.
         kets.append(apply_hbar_dd(cc, kets[-1]))
 
-    # Find the bra states (First indices are operators??)
+    # Find the bra states (First indices are perturbation operators)
     E_bra_0 = np.zeros((ntot, ntot, nocc, nvir))    # Projection of bra states onto single excitations
     E_bra_1 = np.zeros((ntot, ntot, nocc, nocc, nvir, nvir)) # Projection of bra states onto doubles
     if include_ref_proj:
@@ -590,7 +590,7 @@ def dd_moms_eom(cc, order, include_ref_proj=False, hermit_gs_contrib=False, writ
         rdm1 = one_rdm_ferm(cc, write=False, make_hermitian=hermit_gs_contrib)
         if pertspace is not None:
             # Rotate RDM into perturbation space
-            rdm_pert = einsum('xy,xp,yq->pq',rdm1,rdm1)
+            rdm_pert = einsum('xy,xp,yq->pq', rdm1, pertspace, pertspace)
         else:
             rdm_pert = rdm1
         dd_moms[:,:,:,:,0] -= einsum('pq,rs->pqrs',rdm_pert,rdm_pert) 
