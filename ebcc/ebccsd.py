@@ -576,17 +576,24 @@ class EBCCSD:
 
         return rdm1_b
 
-    def make_eb_coup_rdm(self, unshifted_bos=True):
+    def make_eb_coup_rdm(self, write=True, unshifted_bos=True, subspace_proj=None):
         ''' Get electron-boson coupling RDMs <b+ i^+ j> and <b i^+ j>.
             These two matrices are returned as a tuple of two matrices, of size
             (nbos, nso, nso), where the bosonic creation and then annihilation matrices
             are returned.
-        '''
+        
+        subspace_proj: ndarray of size nocc x nocc. This is an optional projector to a lower-rank
+            subspace, spanned by the *occupied* spin-orbitals. The energy expression will then
+            be calculated with this projector included, to calculate local quantities over
+            occupied subspaces. Note that this is done relatively crudely by just assuming only a single
+            occupied sum is split up over the subspaces, but could be extended to other approaches.
+
+        NOTE nocc is occupied orbitals in spinorbitals (alpha then beta) '''
 
         if self.rank == (2, 0, 0):
-            dm_coup_boscre, dm_coup_bosann = ccsd_equations.eb_coup_rdm(self)
+            dm_coup_boscre, dm_coup_bosann = ccsd_equations.eb_coup_rdm(self, write=write)
         elif self.rank == (2, 1, 1):
-            dm_coup_boscre, dm_coup_bosann = ccsd_1_1_equations.eb_coup_rdm(self, unshifted_bos=unshifted_bos)
+            dm_coup_boscre, dm_coup_bosann = ccsd_1_1_equations.eb_coup_rdm(self, write=write, unshifted_bos=unshifted_bos, subspace_proj=subspace_proj)
         elif self.rank == (2, 2, 1):
             dm_coup_boscre, dm_coup_bosann = ccsd_2_1_equations.eb_coup_rdm(self)
         elif self.rank == (2, 2, 2):
@@ -595,7 +602,14 @@ class EBCCSD:
         return (dm_coup_boscre, dm_coup_bosann) 
 
     def make_1rdm_f(self, autogen=None, write=True, subspace_proj=None):
-        ''' Get fermionic 1RDM'''
+        ''' Get fermionic 1RDM
+        subspace_proj: ndarray of size nocc x nocc. This is an optional projector to a lower-rank
+            subspace, spanned by the *occupied* spin-orbitals. The energy expression will then
+            be calculated with this projector included, to calculate local quantities over
+            occupied subspaces. Note that this is done relatively crudely by just assuming only a single
+            occupied sum is split up over the subspaces, but could be extended to other approaches.
+
+        NOTE nocc is occupied orbitals in spinorbitals (alpha then beta) '''
 
         if autogen == None:
             autogen = self.autogen
@@ -603,7 +617,7 @@ class EBCCSD:
         if self.rank == (2, 0, 0):
             rdm1 = ccsd_equations.one_rdm_ferm(self, autogen=autogen, write=write, subspace_proj=subspace_proj)
         elif self.rank == (2, 1, 1):
-            rdm1 = ccsd_1_1_equations.one_rdm_ferm(self, write=write)
+            rdm1 = ccsd_1_1_equations.one_rdm_ferm(self, write=write, subspace_proj=subspace_proj)
         elif self.rank == (2, 2, 1):
             rdm1 = ccsd_2_1_equations.one_rdm_ferm(self, autogen=autogen)
         elif self.rank == (2, 2, 2):
@@ -612,7 +626,14 @@ class EBCCSD:
         return rdm1
 
     def make_2rdm_f(self, autogen=None, write=True, subspace_proj=None):
-        ''' Get fermionic 2RDM'''
+        ''' Get fermionic 2RDM
+        subspace_proj: ndarray of size nocc x nocc. This is an optional projector to a lower-rank
+            subspace, spanned by the *occupied* spin-orbitals. The energy expression will then
+            be calculated with this projector included, to calculate local quantities over
+            occupied subspaces. Note that this is done relatively crudely by just assuming only a single
+            occupied sum is split up over the subspaces, but could be extended to other approaches.
+
+        NOTE nocc is occupied orbitals in spinorbitals (alpha then beta) '''
 
         if autogen == None:
             autogen = self.autogen
@@ -620,7 +641,7 @@ class EBCCSD:
         if self.rank == (2, 0, 0):
             rdm1 = ccsd_equations.two_rdm_ferm(self, autogen=autogen, write=write, subspace_proj=subspace_proj)
         elif self.rank == (2, 1, 1):
-            rdm1 = ccsd_1_1_equations.two_rdm_ferm(self, write=write)
+            rdm1 = ccsd_1_1_equations.two_rdm_ferm(self, write=write, subspace_proj=subspace_proj)
         elif self.rank == (2, 2, 1):
             rdm1 = ccsd_2_1_equations.two_rdm_ferm(self, autogen=autogen)
         elif self.rank == (2, 2, 2):

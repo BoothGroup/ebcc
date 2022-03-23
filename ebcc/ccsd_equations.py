@@ -254,8 +254,10 @@ def two_rdm_ferm(cc, autogen=False, write=True, subspace_proj=None):
         #dm2_oooo = dm2_oooo.transpose(1,0,2,3)  # This agrees now
 
         # No get_connected (includes the 1RDM contribution):
-        dm2_oooo = 1.0*einsum('il,jk->ijkl', occ_proj, delta)
-        dm2_oooo += -1.0*einsum('jl,ik->ijkl', occ_proj, delta)
+        dm2_oooo = 0.5*einsum('il,jk->ijkl', occ_proj, delta)
+        dm2_oooo += -0.5*einsum('jl,ik->ijkl', occ_proj, delta)
+        dm2_oooo += 0.5*einsum('il,jk->ijkl', delta, occ_proj)
+        dm2_oooo += -0.5*einsum('jl,ik->ijkl', delta, occ_proj)
         dm2_oooo += -0.5*einsum('klab,baji->ijkl', L2_proj, T2)
         dm2_oooo += 1.0*einsum('ka,ai,jl->ijkl', L1_proj, T1, delta)
         dm2_oooo += -1.0*einsum('ka,aj,il->ijkl', L1_proj, T1, delta)

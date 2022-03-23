@@ -6,7 +6,7 @@
     Since these are both done on the exact full system CCSD solution (which can be thought of as a
     complete bath space), they should both be trivially exact, and should only differ once the 
     solutions differ for the different subspaces (in which case the projected approach is likely 
-    to be more accurate.
+    to be more accurate and physical.
 
     The partitioning of the full system into 'clusters' in this case is just achieved via randomly
     splitting the occupied and virtual states into disjoint orthogonal orbitals. Note that for the
@@ -110,7 +110,7 @@ assert(np.allclose(dm2, -dm2.transpose(0,3,2,1)))
 dm1_proj = np.zeros_like(dm1)
 dm2_proj = np.zeros_like(dm2)
 for i in range(nclust):
-    dm1_clustproj = cc.make_1rdm_f(autogen=False, write=False, subspace_proj=occ_projs[i])
+    dm1_clustproj = cc.make_1rdm_f(autogen=False, write=True, subspace_proj=occ_projs[i])
     dm2_clustproj = cc.make_2rdm_f(autogen=False, write=False, subspace_proj=occ_projs[i])
     dm1_clustproj_autogen = cc.make_1rdm_f(autogen=True, write=False, subspace_proj=occ_projs[i])
     dm2_clustproj_autogen = cc.make_2rdm_f(autogen=True, write=False, subspace_proj=occ_projs[i])
@@ -121,7 +121,7 @@ for i in range(nclust):
     dm1_proj += dm1_clustproj
     dm2_proj += dm2_clustproj
     # Note that each projected cluster density matrix should be physically sensible, and have the correct permutational symmetries
-    # for a GHF dm.
+    # for a GHF dm. They should also trace to the correct number of electrons in each cluster (given by the occupied orbital number)
     assert(np.allclose(dm1_clustproj, dm1_clustproj.T))
     assert(np.allclose(dm2_clustproj, dm2_clustproj.transpose(1,0,3,2)))
     assert(np.allclose(dm2_clustproj, -dm2_clustproj.transpose(2,1,0,3)))
