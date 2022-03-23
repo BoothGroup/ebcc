@@ -452,7 +452,7 @@ class EBCCSD:
 
         return self.e_corr
 
-    def energy(self, amps='old', autogen=None):
+    def energy(self, amps='old', autogen=None, subspace_proj=None):
         ''' Compute energy from cc object, either from the 'old' or 'non-old' stored amplitudes '''
 
         if autogen == None:
@@ -460,7 +460,7 @@ class EBCCSD:
 
         if amps.lower() == 'old':
             if self.rank == (2, 0, 0):
-                E = ccsd_equations.ccsd_energy(self, self.T1old, self.T2old, autogen=autogen)
+                E = ccsd_equations.ccsd_energy(self, self.T1old, self.T2old, autogen=autogen, subspace_proj=subspace_proj)
             elif self.rank == (2, 1, 1):
                 E = ccsd_1_1_equations.ccsd_1_1_energy(self, self.T1old, self.T2old, self.S1old, self.U11old)
             elif self.rank == (2, 2, 1):
@@ -471,7 +471,7 @@ class EBCCSD:
                 raise NotImplementedError
         else:
             if self.rank == (2, 0, 0):
-                E = ccsd_equations.ccsd_energy(self, self.T1, self.T2, autogen=autogen)
+                E = ccsd_equations.ccsd_energy(self, self.T1, self.T2, autogen=autogen, subspace_proj=subspace_proj)
             elif self.rank == (2, 1, 1):
                 E = ccsd_1_1_equations.ccsd_1_1_energy(self, self.T1, self.T2, self.S1, self.U11, autogen=autogen)
             elif self.rank == (2, 2, 1):
@@ -594,16 +594,16 @@ class EBCCSD:
 
         return (dm_coup_boscre, dm_coup_bosann) 
 
-    def make_1rdm_f(self, autogen=None):
+    def make_1rdm_f(self, autogen=None, write=True, subspace_proj=None):
         ''' Get fermionic 1RDM'''
 
         if autogen == None:
             autogen = self.autogen
 
         if self.rank == (2, 0, 0):
-            rdm1 = ccsd_equations.one_rdm_ferm(self, autogen=autogen)
+            rdm1 = ccsd_equations.one_rdm_ferm(self, autogen=autogen, write=write, subspace_proj=subspace_proj)
         elif self.rank == (2, 1, 1):
-            rdm1 = ccsd_1_1_equations.one_rdm_ferm(self)
+            rdm1 = ccsd_1_1_equations.one_rdm_ferm(self, write=write)
         elif self.rank == (2, 2, 1):
             rdm1 = ccsd_2_1_equations.one_rdm_ferm(self, autogen=autogen)
         elif self.rank == (2, 2, 2):
@@ -611,16 +611,16 @@ class EBCCSD:
 
         return rdm1
 
-    def make_2rdm_f(self, autogen=None):
+    def make_2rdm_f(self, autogen=None, write=True, subspace_proj=None):
         ''' Get fermionic 2RDM'''
 
         if autogen == None:
             autogen = self.autogen
 
         if self.rank == (2, 0, 0):
-            rdm1 = ccsd_equations.two_rdm_ferm(self, autogen=autogen)
+            rdm1 = ccsd_equations.two_rdm_ferm(self, autogen=autogen, write=write, subspace_proj=subspace_proj)
         elif self.rank == (2, 1, 1):
-            rdm1 = ccsd_1_1_equations.two_rdm_ferm(self)
+            rdm1 = ccsd_1_1_equations.two_rdm_ferm(self, write=write)
         elif self.rank == (2, 2, 1):
             rdm1 = ccsd_2_1_equations.two_rdm_ferm(self, autogen=autogen)
         elif self.rank == (2, 2, 2):
@@ -707,12 +707,12 @@ class EBCCSD:
                 needs to be removed, and this can be done with either the hermitized 1RDMs, or the non-
                 hermitized 1RDM. This is controlled by 'hermit_gs_contrib'. However, this has the advantage
                 that the moments will be exact for 2-electron systems.
-        pertspace=None. If given, this should be an array of [nocc+nvir,npert], and will ensure that the
-            returned dd-moments are only the ones which span the product fermionic space 
-            of these column vectors (where the space of these perturbations is expressed in the canonical
-            occ + virt space). The returned dd_moms will be of size [npert, npert, npert, npert, order+1],
-            rather then evaluating all possible density moments over the fermionic space, and given in the
-            basis defined by these vectors.
+            pertspace=None. If given, this should be an array of [nocc+nvir,npert], and will ensure that the
+                returned dd-moments are only the ones which span the product fermionic space 
+                of these column vectors (where the space of these perturbations is expressed in the canonical
+                occ + virt space). The returned dd_moms will be of size [npert, npert, npert, npert, order+1],
+                rather then evaluating all possible density moments over the fermionic space, and given in the
+                basis defined by these vectors.
         '''
 
         if self.rank == (2, 0, 0):

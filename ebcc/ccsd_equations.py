@@ -6,36 +6,184 @@ try:
 except ImportError:
     einsum = np.einsum
 
-def mp2_energy(cc, T1, T2):
-    ''' Calculate MP2 energy (this is the CC energy without the T1^2 contribution) '''
+def mp2_energy(cc, T1, T2, subspace_proj=None):
+    ''' Calculate MP2 energy (this is the CC energy without the T1^2 contribution)
+
+        subspace_proj: ndarray of size nocc x nocc. This is an optional projector to a lower-rank
+            subspace, spanned by the *occupied* spin-orbitals. The energy expression will then
+            be calculated with this projector included, to calculate local quantities over
+            occupied subspaces.
+
+        NOTE: nocc is occupied orbitals in spinorbitals (alpha then beta) '''
+    
+    if subspace_proj is not None:
+        assert(subspace_proj.shape[0]==subspace_proj.shape[1])
+        assert(np.allclose(subspace_proj,subspace_proj.T))
+        T1_proj = einsum('ji,ai->aj',subspace_proj,T1)
+        T2_proj = einsum('ik,abij->abkj',subspace_proj,T2)
+        # Symmetrize
+        T2_proj = (T2_proj + T2_proj.transpose(1,0,3,2)) / 2.
+    else:
+        # No subspace projector
+        T1_proj = T1
+        T2_proj = T2
 
     # doubles contrib
-    E = 0.25*einsum('abij,ijab->', T2, cc.I.oovv)
+    E = 0.25*einsum('abij,ijab->', T2_proj, cc.I.oovv)
     # t1 contribution
-    E += einsum('ai,ia->', T1, cc.fock_mo.ov)
+    E += einsum('ai,ia->', T1_proj, cc.fock_mo.ov)
 
     return E
 
-def ccsd_energy(cc, T1, T2, autogen=False):
+def ccsd_energy(cc, T1, T2, autogen=False, subspace_proj=None):
     ''' Calculate CCSD energy. 
         Equation generating script using the 'wick' program found in gen_eqns/ccsd_T.py
+
+        subspace_proj: ndarray of size nocc x nocc. This is an optional projector to a lower-rank
+            subspace, spanned by the *occupied* spin-orbitals. The energy expression will then
+            be calculated with this projector included, to calculate local quantities over
+            occupied subspaces. Note that this is done relatively crudely by just assuming only a single
+            occupied sum is split up over the subspaces, but could be extended to other approaches.
+
+        NOTE: nocc is occupied orbitals in spinorbitals (alpha then beta)
     '''
 
+    if subspace_proj is not None:
+        assert(subspace_proj.shape[0]==subspace_proj.shape[1])
+        assert(np.allclose(subspace_proj,subspace_proj.T))
+        T1_proj = einsum('ji,ai->aj',subspace_proj,T1)
+        T2_proj = einsum('ik,abij->abkj',subspace_proj,T2)
+        # Symmetrize
+        T2_proj = (T2_proj + T2_proj.transpose(1,0,3,2)) / 2.
+    else:
+        # No subspace projector
+        T1_proj = T1
+        T2_proj = T2
+
     if autogen:
-        E = 1.0*einsum('ia,ai->', cc.fock_mo.ov, T1)
-        E += 0.25*einsum('ijab,baji->', cc.I.oovv, T2)
-        E += -0.5*einsum('ijab,bi,aj->', cc.I.oovv, T1, T1)
+        E = 1.0*einsum('ia,ai->', cc.fock_mo.ov, T1_proj)
+        E += 0.25*einsum('ijab,baji->', cc.I.oovv, T2_proj)
+        E += -0.5*einsum('ijab,bi,aj->', cc.I.oovv, T1_proj, T1)
     else:
         # doubles contrib
-        E = 0.25*einsum('abij,ijab->', T2, cc.I.oovv)
+        E = 0.25*einsum('abij,ijab->', T2_proj, cc.I.oovv)
         # t1 contribution
-        E += einsum('ai,ia->', T1, cc.fock_mo.ov)
+        E += einsum('ai,ia->', T1_proj, cc.fock_mo.ov)
         # t1**2 contribution
-        E += 0.5*einsum('ai,bj,ijab->', T1, T1, cc.I.oovv)
+        E += 0.5*einsum('ai,bj,ijab->', T1_proj, T1, cc.I.oovv)
 
     return E
 
-def two_rdm_ferm(cc, autogen=False, write=True):
+def one_rdm_ferm(cc, autogen=False, write=True, make_hermitian=True, subspace_proj=None, include_mf=True):
+    ''' Calculate 1RDM
+        subspace_proj: ndarray of size nocc x nocc. This is an optional projector to a lower-rank
+            subspace, spanned by the *occupied* spin-orbitals. The energy expression will then
+            be calculated with this projector included, to calculate local quantities over
+            occupied subspaces. Note that this is done relatively crudely by just assuming only a single
+            occupied sum is split up over the subspaces, but could be extended to other approaches.
+
+        NOTE nocc is occupied orbitals in spinorbitals (alpha then beta) '''
+
+    if write:
+        print('Computing fermionic space 1RDM...')
+
+    if cc.L1 is None:
+        if write:
+            print('No optimized lambda amplitudes found to compute density matrices.')
+            print('Using L = T^+ approximation...')
+        cc.init_lam()
+
+    L1 = cc.L1
+    L2 = cc.L2
+    T1 = cc.T1
+    T2 = cc.T2
+    # Small optimization for the vo block in the non-autogen code.
+    opt = True 
+    
+    if subspace_proj is not None:
+        assert(subspace_proj.shape[0]==subspace_proj.shape[1])
+        assert(np.allclose(subspace_proj,subspace_proj.T))
+        T1_proj = einsum('ji,ai->aj',subspace_proj,T1)
+        T2_proj = einsum('ik,abij->abkj',subspace_proj,T2)
+        L1_proj = einsum('ji,ia->ja',subspace_proj,L1)
+        L2_proj = einsum('ik,ijab->kjab',subspace_proj,L2)
+        # Symmetrize
+        T2_proj = (T2_proj + T2_proj.transpose(1,0,3,2)) / 2.
+        L2_proj = (L2_proj + L2_proj.transpose(1,0,3,2)) / 2.
+    else:
+        # No subspace projector
+        T1_proj = T1
+        T2_proj = T2
+        L1_proj = L1
+        L2_proj = L2
+
+    if autogen:
+        # Only oo and vv block currently autogenerated
+        dm1_oo = -1.0*einsum('ia,aj->ij', L1_proj, T1)
+        dm1_oo += 0.5*einsum('ikab,bajk->ij', L2_proj, T2)
+
+        dm1_vv = 1.0*einsum('ib,ai->ab', L1_proj, T1)
+        dm1_vv += -0.5*einsum('ijcb,caji->ab', L2_proj, T2)
+
+        dm1_ov = L1_proj.copy()
+
+        dm1_vo = T1_proj.copy() 
+        dm1_vo += -1.0*einsum('jb,baij->ai', L1_proj, T2)
+        dm1_vo += -1.0*einsum('jb,aj,bi->ai', L1_proj, T1, T1)
+        dm1_vo += 0.5*einsum('jkbc,ci,bakj->ai', L2_proj, T1, T2)
+        dm1_vo += 0.5*einsum('jkbc,aj,cbik->ai', L2_proj, T1, T2)
+        
+    else:
+        dm1_oo = -einsum('ja,ai->ji', L1_proj, T1)
+        dm1_oo -= 0.5*einsum('kjca,caki->ji', L2_proj, T2)
+
+        dm1_vv = einsum('ia,bi->ba', L1_proj, T1)
+        dm1_vv += 0.5*einsum('kica,cbki->ba', L2_proj, T2)
+        
+        # This is taken from pyscf. May already be hermitian here.
+        dm1_ov = L1_proj.copy()
+
+        if opt:
+            dm1_vo = T1_proj.copy()
+            T2temp = T2 - einsum('bi,aj->baji', T1, T1)
+            dm1_vo += einsum('jb,baji->ai', L1_proj, T2temp)
+
+            Pac = 0.5*einsum('kjcb,abkj->ac', L2_proj, T2)
+            dm1_vo -= einsum('ac,ci->ai', Pac, T1)
+
+            Pik = 0.5*einsum('kjcb,cbij->ik', L2_proj, T2)
+            dm1_vo -= einsum('ik,ak->ai', Pik, T1)
+        else:
+            dm1_vo = T1 + einsum('jb,baji->ai', L1_proj, T2)
+            dm1_vo -= einsum('jb,bi,aj->ai', L1_proj, T1, T1)
+            dm1_vo -= 0.5*einsum('kjcb,ci,abkj->ai', L2_proj, T1, T2)
+            dm1_vo -= 0.5*einsum('kjcb,ak,cbij->ai', L2_proj, T1, T2)
+
+    dm1 = np.zeros((cc.nso, cc.nso))
+    if make_hermitian:
+        # Hermitize everything
+        dm1[:cc.no, :cc.no] = (dm1_oo + dm1_oo.T) / 2.
+        dm1[:cc.no, cc.no:] = (dm1_ov + dm1_vo.T) / 2.
+        dm1[cc.no:, :cc.no] = dm1[:cc.no, cc.no:].T
+        dm1[cc.no:, cc.no:] = (dm1_vv + dm1_vv.T) / 2.
+    else:
+        dm1[:cc.no, :cc.no] = dm1_oo
+        dm1[:cc.no, cc.no:] = dm1_ov # + dm1_vo.T) / 2.
+        dm1[cc.no:, :cc.no] = dm1_vo #[:cc.no, cc.no:].T
+        dm1[cc.no:, cc.no:] = dm1_vv
+
+    # Add mean-field part
+    if include_mf:
+        if subspace_proj is not None:
+            dm1[:cc.no, :cc.no] += subspace_proj 
+        else:
+            dm1[np.diag_indices(cc.no)] += 1.
+    if write:
+        print('Trace of 1RDM: {}. Number of electrons: {}'.format(np.trace(dm1), cc.no))
+
+    return dm1
+
+def two_rdm_ferm(cc, autogen=False, write=True, subspace_proj=None):
     ''' Return fermionic sector 2RDM in pyscf (chemist) form, i.e.
         dm2[p,q,r,s] = <p^\dagger r^\dagger s q>
         where p,q,r,s are spin-orbitals. p,q correspond to one particle and r,s
@@ -44,8 +192,17 @@ def two_rdm_ferm(cc, autogen=False, write=True):
 
         Note that default ordering of the basis is occ_a, occ_b, virt_a, virt_b, although
         this is a general GHF code.
+        
+        subspace_proj: ndarray of size nocc x nocc. This is an optional projector to a lower-rank
+            subspace, spanned by the *occupied* spin-orbitals. The energy expression will then
+            be calculated with this projector included, to calculate local quantities over
+            occupied subspaces. Note that this is done relatively crudely by just assuming only a single
+            occupied sum is split up over the subspaces, but could be extended to other approaches.
 
         NOTES:
+
+        nocc is occupied orbitals in spinorbitals (alpha then beta)
+
         Equations are derived from wick as [i,j,k,l] = <i^+ j^+ k l> for each block.
         This is done *without* taking the connected part, meaning that no 1rdm contribution
         needs to be included later on, as is done with the non-autogen code (from cqcpy).
@@ -70,6 +227,25 @@ def two_rdm_ferm(cc, autogen=False, write=True):
     T2 = cc.T2.copy()
 
     delta = np.eye(cc.no)
+    
+    if subspace_proj is not None:
+        assert(subspace_proj.shape[0]==subspace_proj.shape[1])
+        assert(np.allclose(subspace_proj,subspace_proj.T))
+        T1_proj = einsum('ji,ai->aj',subspace_proj,T1)
+        T2_proj = einsum('ik,abij->abkj',subspace_proj,T2)
+        L1_proj = einsum('ji,ia->ja',subspace_proj,L1)
+        L2_proj = einsum('ik,ijab->kjab',subspace_proj,L2)
+        occ_proj = subspace_proj.copy()
+        # Symmetrize
+        T2_proj = (T2_proj + T2_proj.transpose(1,0,3,2)) / 2.
+        L2_proj = (L2_proj + L2_proj.transpose(1,0,3,2)) / 2.
+    else:
+        # No subspace projector
+        T1_proj = T1
+        T2_proj = T2
+        L1_proj = L1
+        L2_proj = L2
+        occ_proj = delta
 
     if autogen:
         # oooo block
@@ -78,24 +254,24 @@ def two_rdm_ferm(cc, autogen=False, write=True):
         #dm2_oooo = dm2_oooo.transpose(1,0,2,3)  # This agrees now
 
         # No get_connected (includes the 1RDM contribution):
-        dm2_oooo = 1.0*einsum('il,jk->ijkl', delta, delta)
-        dm2_oooo += -1.0*einsum('jl,ik->ijkl', delta, delta)
-        dm2_oooo += -0.5*einsum('klab,baji->ijkl', L2, T2)
-        dm2_oooo += 1.0*einsum('ka,ai,jl->ijkl', L1, T1, delta)
-        dm2_oooo += -1.0*einsum('ka,aj,il->ijkl', L1, T1, delta)
-        dm2_oooo += -1.0*einsum('la,ai,jk->ijkl', L1, T1, delta)
-        dm2_oooo += 1.0*einsum('la,aj,ik->ijkl', L1, T1, delta)
-        dm2_oooo += 1.0*einsum('klab,bi,aj->ijkl', L2, T1, T1)
-        dm2_oooo += -0.5*einsum('kmab,baim,jl->ijkl', L2, T2, delta)
-        dm2_oooo += 0.5*einsum('kmab,bajm,il->ijkl', L2, T2, delta)
-        dm2_oooo += 0.5*einsum('lmab,baim,jk->ijkl', L2, T2, delta)
-        dm2_oooo += -0.5*einsum('lmab,bajm,ik->ijkl', L2, T2, delta)
+        dm2_oooo = 1.0*einsum('il,jk->ijkl', occ_proj, delta)
+        dm2_oooo += -1.0*einsum('jl,ik->ijkl', occ_proj, delta)
+        dm2_oooo += -0.5*einsum('klab,baji->ijkl', L2_proj, T2)
+        dm2_oooo += 1.0*einsum('ka,ai,jl->ijkl', L1_proj, T1, delta)
+        dm2_oooo += -1.0*einsum('ka,aj,il->ijkl', L1_proj, T1, delta)
+        dm2_oooo += -1.0*einsum('la,ai,jk->ijkl', L1_proj, T1, delta)
+        dm2_oooo += 1.0*einsum('la,aj,ik->ijkl', L1_proj, T1, delta)
+        dm2_oooo += 1.0*einsum('klab,bi,aj->ijkl', L2_proj, T1, T1)
+        dm2_oooo += -0.5*einsum('kmab,baim,jl->ijkl', L2_proj, T2, delta)
+        dm2_oooo += 0.5*einsum('kmab,bajm,il->ijkl', L2_proj, T2, delta)
+        dm2_oooo += 0.5*einsum('lmab,baim,jk->ijkl', L2_proj, T2, delta)
+        dm2_oooo += -0.5*einsum('lmab,bajm,ik->ijkl', L2_proj, T2, delta)
         # Transposed for agreement with cqcpy
         dm2_oooo = dm2_oooo.transpose(1,0,2,3)
 
         # vvvv block
-        dm2_vvvv = -0.5*einsum('ijba,cdji->abcd', L2, T2)
-        dm2_vvvv += 1.0*einsum('ijba,ci,dj->abcd', L2, T1, T1)
+        dm2_vvvv = -0.5*einsum('ijba,cdji->abcd', L2_proj, T2)
+        dm2_vvvv += 1.0*einsum('ijba,ci,dj->abcd', L2_proj, T1, T1)
         dm2_vvvv = dm2_vvvv.transpose(1,0,2,3)  # This agrees now
 
         # vovv block
@@ -105,27 +281,27 @@ def two_rdm_ferm(cc, autogen=False, write=True):
         #dm2_vovv += 1.0*einsum('jkda,cj,dbik->aibc', L2, T1, T2)
         #dm2_vovv += -1.0*einsum('jkda,bj,ck,di->aibc', L2, T1, T1, T1)
         # no get_connected
-        dm2_vovv = 1.0*einsum('ja,bcij->aibc', L1, T2)
-        dm2_vovv += -1.0*einsum('ja,bj,ci->aibc', L1, T1, T1)
-        dm2_vovv += 1.0*einsum('ja,cj,bi->aibc', L1, T1, T1)
-        dm2_vovv += 0.5*einsum('jkda,di,bckj->aibc', L2, T1, T2)
-        dm2_vovv += -1.0*einsum('jkda,bj,dcik->aibc', L2, T1, T2)
-        dm2_vovv += -0.5*einsum('jkda,bi,dckj->aibc', L2, T1, T2)
-        dm2_vovv += 1.0*einsum('jkda,cj,dbik->aibc', L2, T1, T2)
-        dm2_vovv += 0.5*einsum('jkda,ci,dbkj->aibc', L2, T1, T2)
-        dm2_vovv += -1.0*einsum('jkda,bj,ck,di->aibc', L2, T1, T1, T1)
+        dm2_vovv = 1.0*einsum('ja,bcij->aibc', L1_proj, T2)
+        dm2_vovv += -1.0*einsum('ja,bj,ci->aibc', L1_proj, T1, T1)
+        dm2_vovv += 1.0*einsum('ja,cj,bi->aibc', L1_proj, T1, T1)
+        dm2_vovv += 0.5*einsum('jkda,di,bckj->aibc', L2_proj, T1, T2)
+        dm2_vovv += -1.0*einsum('jkda,bj,dcik->aibc', L2_proj, T1, T2)
+        dm2_vovv += -0.5*einsum('jkda,bi,dckj->aibc', L2_proj, T1, T2)
+        dm2_vovv += 1.0*einsum('jkda,cj,dbik->aibc', L2_proj, T1, T2)
+        dm2_vovv += 0.5*einsum('jkda,ci,dbkj->aibc', L2_proj, T1, T2)
+        dm2_vovv += -1.0*einsum('jkda,bj,ck,di->aibc', L2_proj, T1, T1, T1)
         dm2_vovv = dm2_vovv.transpose(0,1,3,2)
 
         # vvvo block
-        dm2_vvvo = -1.0*einsum('ijba,cj->abci', L2, T1)
+        dm2_vvvo = -1.0*einsum('ijba,cj->abci', L2_proj, T1)
         dm2_vvvo = dm2_vvvo.transpose(1,0,2,3)  # This agrees now
 
         #ovoo block
         #dm2_ovoo = 1.0*einsum('jkba,bi->iajk', L2, T1)
         # no get_connected
-        dm2_ovoo = 1.0*einsum('ja,ik->iajk', L1, delta)
-        dm2_ovoo += -1.0*einsum('ka,ij->iajk', L1, delta)
-        dm2_ovoo += 1.0*einsum('jkba,bi->iajk', L2, T1)
+        dm2_ovoo = 1.0*einsum('ja,ik->iajk', L1_proj, delta)
+        dm2_ovoo += -1.0*einsum('ka,ij->iajk', L1_proj, delta)
+        dm2_ovoo += 1.0*einsum('jkba,bi->iajk', L2_proj, T1)
         dm2_ovoo = dm2_ovoo.transpose(0,1,3,2)
 
         #oovo block
@@ -135,77 +311,77 @@ def two_rdm_ferm(cc, autogen=False, write=True):
         #dm2_oovo += 0.5*einsum('klbc,al,cbji->ijak', L2, T1, T2)
         #dm2_oovo += -1.0*einsum('klbc,al,ci,bj->ijak', L2, T1, T1, T1)
         # No get_connected
-        dm2_oovo = -1.0*einsum('ai,jk->ijak', T1, delta)
-        dm2_oovo += 1.0*einsum('aj,ik->ijak', T1, delta)
-        dm2_oovo += 1.0*einsum('kb,baji->ijak', L1, T2)
-        dm2_oovo += -1.0*einsum('kb,bi,aj->ijak', L1, T1, T1)
-        dm2_oovo += 1.0*einsum('kb,bj,ai->ijak', L1, T1, T1)
-        dm2_oovo += 1.0*einsum('lb,bail,jk->ijak', L1, T2, delta)
-        dm2_oovo += -1.0*einsum('lb,bajl,ik->ijak', L1, T2, delta)
-        dm2_oovo += -1.0*einsum('klbc,ci,bajl->ijak', L2, T1, T2)
-        dm2_oovo += 1.0*einsum('klbc,cj,bail->ijak', L2, T1, T2)
-        dm2_oovo += 0.5*einsum('klbc,al,cbji->ijak', L2, T1, T2)
-        dm2_oovo += -0.5*einsum('klbc,ai,cbjl->ijak', L2, T1, T2)
-        dm2_oovo += 0.5*einsum('klbc,aj,cbil->ijak', L2, T1, T2)
-        dm2_oovo += 1.0*einsum('lb,al,bi,jk->ijak', L1, T1, T1, delta)
-        dm2_oovo += -1.0*einsum('lb,al,bj,ik->ijak', L1, T1, T1, delta)
-        dm2_oovo += -1.0*einsum('klbc,al,ci,bj->ijak', L2, T1, T1, T1)
-        dm2_oovo += -0.5*einsum('lmbc,ci,baml,jk->ijak', L2, T1, T2, delta)
-        dm2_oovo += 0.5*einsum('lmbc,cj,baml,ik->ijak', L2, T1, T2, delta)
-        dm2_oovo += -0.5*einsum('lmbc,al,cbim,jk->ijak', L2, T1, T2, delta)
-        dm2_oovo += 0.5*einsum('lmbc,al,cbjm,ik->ijak', L2, T1, T2, delta)
+        dm2_oovo = -1.0*einsum('ai,jk->ijak', T1_proj, delta)
+        dm2_oovo += 1.0*einsum('aj,ik->ijak', T1_proj, delta)
+        dm2_oovo += 1.0*einsum('kb,baji->ijak', L1_proj, T2)
+        dm2_oovo += -1.0*einsum('kb,bi,aj->ijak', L1_proj, T1, T1)
+        dm2_oovo += 1.0*einsum('kb,bj,ai->ijak', L1_proj, T1, T1)
+        dm2_oovo += 1.0*einsum('lb,bail,jk->ijak', L1_proj, T2, delta)
+        dm2_oovo += -1.0*einsum('lb,bajl,ik->ijak', L1_proj, T2, delta)
+        dm2_oovo += -1.0*einsum('klbc,ci,bajl->ijak', L2_proj, T1, T2)
+        dm2_oovo += 1.0*einsum('klbc,cj,bail->ijak', L2_proj, T1, T2)
+        dm2_oovo += 0.5*einsum('klbc,al,cbji->ijak', L2_proj, T1, T2)
+        dm2_oovo += -0.5*einsum('klbc,ai,cbjl->ijak', L2_proj, T1, T2)
+        dm2_oovo += 0.5*einsum('klbc,aj,cbil->ijak', L2_proj, T1, T2)
+        dm2_oovo += 1.0*einsum('lb,al,bi,jk->ijak', L1_proj, T1, T1, delta)
+        dm2_oovo += -1.0*einsum('lb,al,bj,ik->ijak', L1_proj, T1, T1, delta)
+        dm2_oovo += -1.0*einsum('klbc,al,ci,bj->ijak', L2_proj, T1, T1, T1)
+        dm2_oovo += -0.5*einsum('lmbc,ci,baml,jk->ijak', L2_proj, T1, T2, delta)
+        dm2_oovo += 0.5*einsum('lmbc,cj,baml,ik->ijak', L2_proj, T1, T2, delta)
+        dm2_oovo += -0.5*einsum('lmbc,al,cbim,jk->ijak', L2_proj, T1, T2, delta)
+        dm2_oovo += 0.5*einsum('lmbc,al,cbjm,ik->ijak', L2_proj, T1, T2, delta)
         dm2_oovo = dm2_oovo.transpose(1,0,2,3)
         
         # oovv
-        dm2_oovv = 1.0*einsum('abji->ijab', T2)
-        dm2_oovv += -1.0*einsum('ai,bj->ijab', T1, T1)
-        dm2_oovv += 1.0*einsum('bi,aj->ijab', T1, T1)
-        dm2_oovv += -1.0*einsum('kc,ci,abjk->ijab', L1, T1, T2)
-        dm2_oovv += 1.0*einsum('kc,cj,abik->ijab', L1, T1, T2)
-        dm2_oovv += -1.0*einsum('kc,ak,cbji->ijab', L1, T1, T2)
-        dm2_oovv += 1.0*einsum('kc,ai,cbjk->ijab', L1, T1, T2)
-        dm2_oovv += -1.0*einsum('kc,aj,cbik->ijab', L1, T1, T2)
-        dm2_oovv += 1.0*einsum('kc,bk,caji->ijab', L1, T1, T2)
-        dm2_oovv += -1.0*einsum('kc,bi,cajk->ijab', L1, T1, T2)
-        dm2_oovv += 1.0*einsum('kc,bj,caik->ijab', L1, T1, T2)
-        dm2_oovv += -0.5*einsum('klcd,dcik,abjl->ijab', L2, T2, T2)
-        dm2_oovv += 0.5*einsum('klcd,dcjk,abil->ijab', L2, T2, T2)
-        dm2_oovv += -0.5*einsum('klcd,dalk,cbji->ijab', L2, T2, T2)
-        dm2_oovv += 1.0*einsum('klcd,daik,cbjl->ijab', L2, T2, T2)
-        dm2_oovv += 0.5*einsum('klcd,dblk,caji->ijab', L2, T2, T2)
-        dm2_oovv += -1.0*einsum('klcd,dbik,cajl->ijab', L2, T2, T2)
-        dm2_oovv += 0.25*einsum('klcd,ablk,dcji->ijab', L2, T2, T2)
-        dm2_oovv += 1.0*einsum('kc,ak,ci,bj->ijab', L1, T1, T1, T1)
-        dm2_oovv += -1.0*einsum('kc,ak,cj,bi->ijab', L1, T1, T1, T1)
-        dm2_oovv += -1.0*einsum('kc,bk,ci,aj->ijab', L1, T1, T1, T1)
-        dm2_oovv += 1.0*einsum('kc,bk,cj,ai->ijab', L1, T1, T1, T1)
-        dm2_oovv += -0.5*einsum('klcd,di,cj,ablk->ijab', L2, T1, T1, T2)
-        dm2_oovv += 0.5*einsum('klcd,di,aj,cblk->ijab', L2, T1, T1, T2)
-        dm2_oovv += -0.5*einsum('klcd,di,bj,calk->ijab', L2, T1, T1, T2)
-        dm2_oovv += -0.5*einsum('klcd,dj,ai,cblk->ijab', L2, T1, T1, T2)
-        dm2_oovv += 0.5*einsum('klcd,dj,bi,calk->ijab', L2, T1, T1, T2)
-        dm2_oovv += 1.0*einsum('klcd,ak,di,cbjl->ijab', L2, T1, T1, T2)
-        dm2_oovv += -1.0*einsum('klcd,ak,dj,cbil->ijab', L2, T1, T1, T2)
-        dm2_oovv += -0.5*einsum('klcd,ak,bl,dcji->ijab', L2, T1, T1, T2)
-        dm2_oovv += 0.5*einsum('klcd,ak,bi,dcjl->ijab', L2, T1, T1, T2)
-        dm2_oovv += -0.5*einsum('klcd,ak,bj,dcil->ijab', L2, T1, T1, T2)
-        dm2_oovv += -1.0*einsum('klcd,bk,di,cajl->ijab', L2, T1, T1, T2)
-        dm2_oovv += 1.0*einsum('klcd,bk,dj,cail->ijab', L2, T1, T1, T2)
-        dm2_oovv += -0.5*einsum('klcd,bk,ai,dcjl->ijab', L2, T1, T1, T2)
-        dm2_oovv += 0.5*einsum('klcd,bk,aj,dcil->ijab', L2, T1, T1, T2)
-        dm2_oovv += 1.0*einsum('klcd,ak,bl,di,cj->ijab', L2, T1, T1, T1, T1)
+        dm2_oovv = 1.0*einsum('abji->ijab', T2_proj)
+        dm2_oovv += -1.0*einsum('ai,bj->ijab', T1_proj, T1)
+        dm2_oovv += 1.0*einsum('bi,aj->ijab', T1_proj, T1)
+        dm2_oovv += -1.0*einsum('kc,ci,abjk->ijab', L1_proj, T1, T2)
+        dm2_oovv += 1.0*einsum('kc,cj,abik->ijab', L1_proj, T1, T2)
+        dm2_oovv += -1.0*einsum('kc,ak,cbji->ijab', L1_proj, T1, T2)
+        dm2_oovv += 1.0*einsum('kc,ai,cbjk->ijab', L1_proj, T1, T2)
+        dm2_oovv += -1.0*einsum('kc,aj,cbik->ijab', L1_proj, T1, T2)
+        dm2_oovv += 1.0*einsum('kc,bk,caji->ijab', L1_proj, T1, T2)
+        dm2_oovv += -1.0*einsum('kc,bi,cajk->ijab', L1_proj, T1, T2)
+        dm2_oovv += 1.0*einsum('kc,bj,caik->ijab', L1_proj, T1, T2)
+        dm2_oovv += -0.5*einsum('klcd,dcik,abjl->ijab', L2_proj, T2, T2)
+        dm2_oovv += 0.5*einsum('klcd,dcjk,abil->ijab', L2_proj, T2, T2)
+        dm2_oovv += -0.5*einsum('klcd,dalk,cbji->ijab', L2_proj, T2, T2)
+        dm2_oovv += 1.0*einsum('klcd,daik,cbjl->ijab', L2_proj, T2, T2)
+        dm2_oovv += 0.5*einsum('klcd,dblk,caji->ijab', L2_proj, T2, T2)
+        dm2_oovv += -1.0*einsum('klcd,dbik,cajl->ijab', L2_proj, T2, T2)
+        dm2_oovv += 0.25*einsum('klcd,ablk,dcji->ijab', L2_proj, T2, T2)
+        dm2_oovv += 1.0*einsum('kc,ak,ci,bj->ijab', L1_proj, T1, T1, T1)
+        dm2_oovv += -1.0*einsum('kc,ak,cj,bi->ijab', L1_proj, T1, T1, T1)
+        dm2_oovv += -1.0*einsum('kc,bk,ci,aj->ijab', L1_proj, T1, T1, T1)
+        dm2_oovv += 1.0*einsum('kc,bk,cj,ai->ijab', L1_proj, T1, T1, T1)
+        dm2_oovv += -0.5*einsum('klcd,di,cj,ablk->ijab', L2_proj, T1, T1, T2)
+        dm2_oovv += 0.5*einsum('klcd,di,aj,cblk->ijab', L2_proj, T1, T1, T2)
+        dm2_oovv += -0.5*einsum('klcd,di,bj,calk->ijab', L2_proj, T1, T1, T2)
+        dm2_oovv += -0.5*einsum('klcd,dj,ai,cblk->ijab', L2_proj, T1, T1, T2)
+        dm2_oovv += 0.5*einsum('klcd,dj,bi,calk->ijab', L2_proj, T1, T1, T2)
+        dm2_oovv += 1.0*einsum('klcd,ak,di,cbjl->ijab', L2_proj, T1, T1, T2)
+        dm2_oovv += -1.0*einsum('klcd,ak,dj,cbil->ijab', L2_proj, T1, T1, T2)
+        dm2_oovv += -0.5*einsum('klcd,ak,bl,dcji->ijab', L2_proj, T1, T1, T2)
+        dm2_oovv += 0.5*einsum('klcd,ak,bi,dcjl->ijab', L2_proj, T1, T1, T2)
+        dm2_oovv += -0.5*einsum('klcd,ak,bj,dcil->ijab', L2_proj, T1, T1, T2)
+        dm2_oovv += -1.0*einsum('klcd,bk,di,cajl->ijab', L2_proj, T1, T1, T2)
+        dm2_oovv += 1.0*einsum('klcd,bk,dj,cail->ijab', L2_proj, T1, T1, T2)
+        dm2_oovv += -0.5*einsum('klcd,bk,ai,dcjl->ijab', L2_proj, T1, T1, T2)
+        dm2_oovv += 0.5*einsum('klcd,bk,aj,dcil->ijab', L2_proj, T1, T1, T2)
+        dm2_oovv += 1.0*einsum('klcd,ak,bl,di,cj->ijab', L2_proj, T1, T1, T1, T1)
         dm2_oovv = dm2_oovv.transpose(1,0,2,3)
 
         # vvoo
-        dm2_vvoo = 1.0*einsum('ijba->abij', L2)
+        dm2_vvoo = 1.0*einsum('ijba->abij', L2_proj)
         dm2_vvoo = dm2_vvoo.transpose(1,0,2,3)
 
         # vovo
-        dm2_vovo = 1.0*einsum('ja,bi->aibj', L1, T1)
-        dm2_vovo += 1.0*einsum('jkca,cbik->aibj', L2, T2)
-        dm2_vovo += -1.0*einsum('ka,bk,ij->aibj', L1, T1, delta)
-        dm2_vovo += 1.0*einsum('jkca,bk,ci->aibj', L2, T1, T1)
-        dm2_vovo += 0.5*einsum('klca,cblk,ij->aibj', L2, T2, delta)
+        dm2_vovo = 1.0*einsum('ja,bi->aibj', L1_proj, T1)
+        dm2_vovo += 1.0*einsum('jkca,cbik->aibj', L2_proj, T2)
+        dm2_vovo += -1.0*einsum('ka,bk,ij->aibj', L1_proj, T1, delta)
+        dm2_vovo += 1.0*einsum('jkca,bk,ci->aibj', L2_proj, T1, T1)
+        dm2_vovo += 0.5*einsum('klca,cblk,ij->aibj', L2_proj, T2, delta)
         dm2_vovo *= -1. # Flip sign
     else:
         # Code from cqcpy
@@ -213,96 +389,96 @@ def two_rdm_ferm(cc, autogen=False, write=True):
         # oooo block
         T2temp = T2 + einsum('ci,dj->cdij', T1, T1)
         T2temp -= einsum('di,cj->cdij', T1, T1)
-        dm2_oooo = 0.5*einsum('klab,abij->klij', L2, T2temp)
+        dm2_oooo = 0.5*einsum('klab,abij->klij', L2_proj, T2temp)
 
         # ovoo block
         T2temp = T2 + einsum('ci,dj->cdij', T1, T1)
         T2temp -= einsum('di,cj->cdij', T1, T1)
-        dm2_ovoo = -einsum('kb,baij->kaij', L1, T2temp)
-        LTo = einsum('klcd,cdil->ki', L2, T2)
+        dm2_ovoo = -einsum('kb,baij->kaij', L1_proj, T2temp)
+        LTo = einsum('klcd,cdil->ki', L2_proj, T2)
         tmp = -0.5*einsum('ki,aj->kaij', LTo, T1)
         dm2_ovoo += tmp - tmp.transpose((0, 1, 3, 2))
-        Lklid = einsum('klcd,ci->klid', L2, T1)
+        Lklid = einsum('klcd,ci->klid', L2_proj, T1)
         tmp = -einsum('klid,adjl->kaij', Lklid, T2)
         dm2_ovoo += tmp - tmp.transpose((0, 1, 3, 2))
-        dm2_ovoo += 0.5*einsum('lkdb,dbji,al->kaij', L2, T2temp, T1)
+        dm2_ovoo += 0.5*einsum('lkdb,dbji,al->kaij', L2_proj, T2temp, T1)
 
         # vvoo block
-        dm2_vvoo = tfac*T2.copy()
-        dm2_vvoo += tfac*einsum('ai,bj->abij', T1, T1)
-        dm2_vvoo -= tfac*einsum('aj,bi->abij', T1, T1)
-        LTki = einsum('kc,ci->ki', L1, T1)
+        dm2_vvoo = tfac*T2_proj.copy()
+        dm2_vvoo += tfac*einsum('ai,bj->abij', T1_proj, T1)
+        dm2_vvoo -= tfac*einsum('aj,bi->abij', T1_proj, T1)
+        LTki = einsum('kc,ci->ki', L1_proj, T1)
         tmp = -einsum('ki,abkj->abij', LTki, T2)
         dm2_vvoo += tmp - tmp.transpose((0, 1, 3, 2))
-        LTac = einsum('kc,ak->ac', L1, T1)
+        LTac = einsum('kc,ak->ac', L1_proj, T1)
         tmp = -einsum('ac,cbij->abij', LTac, T2)
         dm2_vvoo += tmp - tmp.transpose((1, 0, 2, 3))
         T2temp = T2 - einsum('bk,cj->bcjk', T1, T1)
-        LTbj = einsum('kc,bcjk->bj', L1, T2temp)
+        LTbj = einsum('kc,bcjk->bj', L1_proj, T2temp)
         dm2_vvoo += einsum('ai,bj->abij', LTbj, T1)
         dm2_vvoo -= einsum('aj,bi->abij', LTbj, T1)
         dm2_vvoo -= einsum('bi,aj->abij', LTbj, T1)
         dm2_vvoo += einsum('bj,ai->abij', LTbj, T1)
-        LToo = einsum('klcd,cdij->klij', L2, T2)
+        LToo = einsum('klcd,cdij->klij', L2_proj, T2)
         dm2_vvoo += 0.25*einsum('klij,abkl->abij', LToo, T2)
-        LTov = einsum('klcd,caki->lida', L2, T2)
+        LTov = einsum('klcd,caki->lida', L2_proj, T2)
         tmp = 0.5*einsum('lida,bdjl->abij', LTov, T2)
         dm2_vvoo += tmp - tmp.transpose((0, 1, 3, 2))
         dm2_vvoo -= tmp.transpose((1, 0, 2, 3))
         dm2_vvoo += tmp.transpose((1, 0, 3, 2))
         T2temp = T2 + einsum('cj,ai->acij', T1, T1) - einsum('ci,aj->acij', T1, T1)
-        Lcb = einsum('klcd,bdkl->cb', L2, T2)
+        Lcb = einsum('klcd,bdkl->cb', L2_proj, T2)
         tmp = -0.5*einsum('cb,acij->abij', Lcb, T2temp)
         dm2_vvoo += tmp - tmp.transpose((1, 0, 2, 3))
-        Lkj = einsum('klcd,cdjl->kj', L2, T2)
+        Lkj = einsum('klcd,cdjl->kj', L2_proj, T2)
         tmp = -0.5*einsum('kj,abik->abij', Lkj, T2temp)
         dm2_vvoo += tmp - tmp.transpose((0, 1, 3, 2))
         T2temp = T2 + einsum('ci,dj->cdij', T1, T1)
-        LToo = einsum('klcd,cdij->klij', L2, T2temp)
+        LToo = einsum('klcd,cdij->klij', L2_proj, T2temp)
         tmp = einsum('klij,ak->alij', LToo, T1)
         tmp = 0.25*einsum('alij,bl->abij', tmp, T1)
         dm2_vvoo += tmp - tmp.transpose((1, 0, 2, 3))
-        Looov = einsum('klcd,ci->klid', L2, T1)
+        Looov = einsum('klcd,ci->klid', L2_proj, T1)
         Loooo = einsum('klid,dj->klij', Looov, T1)
         Loooo -= Loooo.transpose((0, 1, 3, 2))
         dm2_vvoo += 0.25*einsum('klij,abkl->abij', Loooo, T2temp)
-        Lalid = einsum('klcd,ak,ci->alid', L2, T1, T1)
+        Lalid = einsum('klcd,ak,ci->alid', L2_proj, T1, T1)
         tmp = einsum('alid,bdjl->abij', Lalid, T2)
         dm2_vvoo -= tmp
         dm2_vvoo += tmp.transpose((0, 1, 3, 2)) + tmp.transpose((1, 0, 2, 3))
         dm2_vvoo -= tmp.transpose((1, 0, 3, 2))
 
         # NOTE: oovv block missing from cqcpy - but it is just the L2 amplitudes
-        dm2_oovv = 1.0*einsum('ijba->ijab', L2)
+        dm2_oovv = 1.0*einsum('ijba->ijab', L2_proj)
         dm2_oovv = dm2_oovv.transpose(1,0,2,3)
 
         # vovo block
-        dm2_vovo = -einsum('ja,bi->bjai', L1, T1)
+        dm2_vovo = -einsum('ja,bi->bjai', L1_proj, T1)
         T2temp = T2 + einsum('bk,ci->bcki', T1, T1)
-        dm2_vovo -= einsum('kjac,bcki->bjai', L2, T2temp)
+        dm2_vovo -= einsum('kjac,bcki->bjai', L2_proj, T2temp)
 
         # vvvo block
         T2temp = T2 + einsum('ci,dj->cdij', T1, T1)
         T2temp -= einsum('di,cj->cdij', T1, T1)
-        dm2_vvvo = einsum('ja,bcji->bcai', L1, T2temp)
-        LTba = einsum('jlad,bdjl->ba', L2, T2)
+        dm2_vvvo = einsum('ja,bcji->bcai', L1_proj, T2temp)
+        LTba = einsum('jlad,bdjl->ba', L2_proj, T2)
         dm2_vvvo += 0.5*einsum('ba,ci->bcai', LTba, T1)
         dm2_vvvo -= 0.5*einsum('ca,bi->bcai', LTba, T1)
-        LTtemp = einsum('jkad,cdik->jcai', L2, T2)
+        LTtemp = einsum('jkad,cdik->jcai', L2_proj, T2)
         dm2_vvvo += einsum('jcai,bj->bcai', LTtemp, T1)
         dm2_vvvo -= einsum('jbai,cj->bcai', LTtemp, T1)
-        dm2_vvvo -= 0.5*einsum('kjda,cbkj,di->bcai', L2, T2temp, T1)
+        dm2_vvvo -= 0.5*einsum('kjda,cbkj,di->bcai', L2_proj, T2temp, T1)
 
         # vvvv block
         T2temp = T2 + einsum('ci,dj->cdij', T1, T1)
         T2temp -= einsum('di,cj->cdij', T1, T1)
-        dm2_vvvv = 0.5*einsum('ijab,cdij->cdab', L2, T2temp)
+        dm2_vvvv = 0.5*einsum('ijab,cdij->cdab', L2_proj, T2temp)
     
         # oovo block
-        dm2_oovo = -einsum('jkab,bi->jkai', L2, T1)
+        dm2_oovo = -einsum('jkab,bi->jkai', L2_proj, T1)
     
         # vovv block
-        dm2_vovv = einsum('jiab,cj->ciab', L2, T1)
+        dm2_vovv = einsum('jiab,cj->ciab', L2_proj, T1)
     
     # Now put the blocks together, symmetrizing where appropriate
     # NOTE: We are storing as occupied_a, occupied_b, virtual_a, virtual_b
@@ -354,9 +530,7 @@ def two_rdm_ferm(cc, autogen=False, write=True):
     if not autogen:
         # Add 1rdm contribution when one electron traced out
         # This is because the non-autogen code was only the connected contribution
-        dm1 = one_rdm_ferm(cc, autogen=autogen, write=False)
-        # Remove MF component of 1RDM
-        dm1[np.diag_indices(cc.no)] -= 1.
+        dm1 = one_rdm_ferm(cc, autogen=autogen, write=False, subspace_proj=subspace_proj, include_mf=False)
 
         for i in range(cc.no):
             dm2[i,:,:,i] -= dm1
@@ -366,11 +540,14 @@ def two_rdm_ferm(cc, autogen=False, write=True):
 
         #print('Trace of 1RDM: {}. Number of electrons: {}'.format(np.trace(dm1), cc.no))
         # Add mean-field part
-        for i in range(cc.no):
-            for j in range(cc.no):
-                pass
-                dm2[i,j,i,j] += 1
-                dm2[i,j,j,i] -= 1
+        # Note that we do this symmetrically, so that if we are including an occupied
+        # projector, it does not break permuational symmetries.
+        dm2[:cc.no, :cc.no, :cc.no, :cc.no] += 0.5*einsum('ik,jl->ijkl', occ_proj, delta)
+        dm2[:cc.no, :cc.no, :cc.no, :cc.no] += 0.5*einsum('ik,jl->ijkl', delta, occ_proj)
+        dm2[:cc.no, :cc.no, :cc.no, :cc.no] -= 0.5*einsum('il,jk->ijkl', occ_proj, delta)
+        dm2[:cc.no, :cc.no, :cc.no, :cc.no] -= 0.5*einsum('il,jk->ijkl', delta, occ_proj)
+        
+        # Note that all permutational symmetries should be maintained even if including occupied projector
 
     # Transpose for consistency with pyscf
     dm2 = dm2.transpose(2,0,3,1)
@@ -397,7 +574,7 @@ def eb_coup_rdm(cc, write=True):
         print('No bosonic RDM for the CCSD model...')
     return (np.zeros((cc.nbos, cc.nso, cc.nso)), np.zeros((cc.nbos, cc.nso, cc.nso)))
 
-def dd_moms_eom(cc, order, include_ref_proj=False, hermit_gs_contrib=False, write=True, pertspace=None):
+def dd_moms_eom(cc, order, include_ref_proj=False, hermit_gs_contrib=False, write=True, pertspace=None, subspace_proj=None):
     ''' Get arbitrary-order moments of the fermionic density-density spectral function.
         mom[p,q,r,s,order] = <c^+_p c_q (H-E)^(order) c^+_r c_s> - \delta_{n0} <c^+_p c_q c^+r c_s>
         Note that the moments from 0 up to order will be computed and returned.
@@ -426,6 +603,10 @@ def dd_moms_eom(cc, order, include_ref_proj=False, hermit_gs_contrib=False, writ
             print('No optimized lambda amplitudes found to compute density matrices.')
             print('Using L = T^+ approximation...')
         cc.init_lam()
+
+    if subspace_proj is not None:
+        print('Unclear how to do a subspace L-amplitude projection for EOM. To investigate and implement later')
+        1./0
     L1 = cc.L1
     L2 = cc.L2
     T1 = cc.T1
@@ -2619,87 +2800,6 @@ def hole1_mom(cc, write=True):
     ip_mom[cc.no:, cc.no:] = (mom1_h_vv + mom1_h_vv.T) / 2.
 
     return ip_mom
-
-def one_rdm_ferm(cc, autogen=False, write=True, make_hermitian=True):
-    ''' Calculate 1RDM '''
-
-    if write:
-        print('Computing fermionic space 1RDM...')
-
-    if cc.L1 is None:
-        if write:
-            print('No optimized lambda amplitudes found to compute density matrices.')
-            print('Using L = T^+ approximation...')
-        cc.init_lam()
-
-    L1 = cc.L1
-    L2 = cc.L2
-    T1 = cc.T1
-    T2 = cc.T2
-    # Small optimization for the vo block in the non-autogen code.
-    opt = True 
-
-    if autogen:
-        # Only oo and vv block currently autogenerated
-        dm1_oo = -1.0*einsum('ia,aj->ij', L1, T1)
-        dm1_oo += 0.5*einsum('ikab,bajk->ij', L2, T2)
-
-        dm1_vv = 1.0*einsum('ib,ai->ab', L1, T1)
-        dm1_vv += -0.5*einsum('ijcb,caji->ab', L2, T2)
-
-        dm1_ov = L1.copy()
-
-        dm1_vo = T1.copy() 
-        dm1_vo += -1.0*einsum('jb,baij->ai', L1, T2)
-        dm1_vo += -1.0*einsum('jb,aj,bi->ai', L1, T1, T1)
-        dm1_vo += 0.5*einsum('jkbc,ci,bakj->ai', L2, T1, T2)
-        dm1_vo += 0.5*einsum('jkbc,aj,cbik->ai', L2, T1, T2)
-        
-    else:
-        dm1_oo = -einsum('ja,ai->ji', L1, T1)
-        dm1_oo -= 0.5*einsum('kjca,caki->ji', L2, T2)
-
-        dm1_vv = einsum('ia,bi->ba', L1, T1)
-        dm1_vv += 0.5*einsum('kica,cbki->ba', L2, T2)
-        
-        # This is taken from pyscf. May already be hermitian here.
-        dm1_ov = L1
-
-        if opt:
-            dm1_vo = T1.copy()
-            T2temp = T2 - einsum('bi,aj->baji', T1, T1)
-            dm1_vo += einsum('jb,baji->ai', L1, T2temp)
-
-            Pac = 0.5*einsum('kjcb,abkj->ac', L2, T2)
-            dm1_vo -= einsum('ac,ci->ai', Pac, T1)
-
-            Pik = 0.5*einsum('kjcb,cbij->ik', L2, T2)
-            dm1_vo -= einsum('ik,ak->ai', Pik, T1)
-        else:
-            dm1_vo = T1 + einsum('jb,baji->ai', L1, T2)
-            dm1_vo -= einsum('jb,bi,aj->ai', L1, T1, T1)
-            dm1_vo -= 0.5*einsum('kjcb,ci,abkj->ai', L2, T1, T2)
-            dm1_vo -= 0.5*einsum('kjcb,ak,cbij->ai', L2, T1, T2)
-
-    dm1 = np.zeros((cc.nso, cc.nso))
-    if make_hermitian:
-        # Hermitize everything
-        dm1[:cc.no, :cc.no] = (dm1_oo + dm1_oo.T) / 2.
-        dm1[:cc.no, cc.no:] = (dm1_ov + dm1_vo.T) / 2.
-        dm1[cc.no:, :cc.no] = dm1[:cc.no, cc.no:].T
-        dm1[cc.no:, cc.no:] = (dm1_vv + dm1_vv.T) / 2.
-    else:
-        dm1[:cc.no, :cc.no] = dm1_oo
-        dm1[:cc.no, cc.no:] = dm1_ov # + dm1_vo.T) / 2.
-        dm1[cc.no:, :cc.no] = dm1_vo #[:cc.no, cc.no:].T
-        dm1[cc.no:, cc.no:] = dm1_vv
-
-    # Add mean-field part
-    dm1[np.diag_indices(cc.no)] += 1.
-    if write:
-        print('Trace of 1RDM: {}. Number of electrons: {}'.format(np.trace(dm1), cc.no))
-
-    return dm1
 
 
 def lam_updates_ccsd(cc, autogen=False):
