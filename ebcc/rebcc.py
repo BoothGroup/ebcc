@@ -84,6 +84,8 @@ class EBCC:
             raise NotImplementedError
         if self.rank == (2, 0, 0):
             import ebcc.ccsd as _eqns
+        elif self.rank == (2, 1, 1):
+            import ebcc.ccsd_1_1 as _eqns
         else:
             raise NotImplementedError
         self._eqns = _eqns
@@ -98,7 +100,7 @@ class EBCC:
         # Build T amplitudes:
         for n in range(1, self.rank[0]+1):
             if n == 1:
-                amplitudes["t%d" % n] = self.fock.ov / e_ia
+                amplitudes["t%d" % n] = self.fock.vo.T / e_ia
             elif n == 2:
                 e_ijab = lib.direct_sum("ia,jb->ijab", e_ia, e_ia)
                 amplitudes["t%d" % n] = self.eri.ovov.swapaxes(1, 2) / e_ijab
@@ -121,9 +123,9 @@ class EBCC:
         for n in range(1, self.rank[2]+1):
             if n == 1:
                 e_xia = lib.direct_sum("ia-x->xia", e_ia, self.omega)
-                amplitudes["u%d" % (1, n)] = h.vo / e_xia
+                amplitudes["u1%d" % n] = h.bov / e_xia
             else:
-                amplitudes["u%d" % (1, n)] = np.zeros((self.nbos,) * n + (self.nocc, self.nvir))
+                amplitudes["u1%d" % n] = np.zeros((self.nbos,) * n + (self.nocc, self.nvir))
 
         return amplitudes
 
@@ -235,7 +237,16 @@ class EBCC:
         """Compute the energy.
         """
 
-        kwargs = dict(f=self.fock, v=self.eri, nocc=self.nocc, nvir=self.nvir)
+        kwargs = dict(
+                f=self.fock,
+                v=self.eri,
+                g=self.g,
+                G=self.G,
+                w=np.diag(self.omega),
+                nocc=self.nocc,
+                nvir=self.nvir,
+                nbos=self.nbos,
+        )
         kwargs.update(amplitudes)
 
         res = self._eqns.energy(**kwargs)
@@ -246,7 +257,16 @@ class EBCC:
         """Update the amplitudes.
         """
 
-        kwargs = dict(f=self.fock, v=self.eri, nocc=self.nocc, nvir=self.nvir)
+        kwargs = dict(
+                f=self.fock,
+                v=self.eri,
+                g=self.g,
+                G=self.G,
+                w=np.diag(self.omega),
+                nocc=self.nocc,
+                nvir=self.nvir,
+                nbos=self.nbos,
+        )
         kwargs.update(amplitudes)
 
         res = self._eqns.update_amps(**kwargs)
@@ -262,6 +282,7 @@ class EBCC:
 
         # Divide S amplitudes:
         for n in range(1, self.rank[1]+1):
+            d = functools.reduce(np.add.outer, ([-self.omega] * n))
             res["s%d" % n] /= d
 
         # Divide U amplitudes:
@@ -275,7 +296,16 @@ class EBCC:
         """Update the lambda amplitudes.
         """
 
-        kwargs = dict(f=self.fock, v=self.eri, nocc=self.nocc, nvir=self.nvir)
+        kwargs = dict(
+                f=self.fock,
+                v=self.eri,
+                g=self.g,
+                G=self.G,
+                w=np.diag(self.omega),
+                nocc=self.nocc,
+                nvir=self.nvir,
+                nbos=self.nbos,
+        )
         kwargs.update(amplitudes)
         kwargs.update(lambdas)
 
@@ -371,7 +401,7 @@ class EBCC:
         raise NotImplementedError  # TODO
 
     def get_mean_field_G(self):
-        val = lib.einsum("Ipp->I", self.g.oo)
+        val = lib.einsum("Ipp->I", self.g.boo) * 2.0
         val -= self.xi * self.omega
 
         if self.bare_G is not None:
@@ -402,17 +432,17 @@ class EBCC:
 
         fock = self.bare_fock
 
-        oo = fock[:self.nocc, :self.nocc] - np.diag(self.eo)
+        oo = fock[:self.nocc, :self.nocc]
         ov = fock[:self.nocc, self.nocc:]
         vo = fock[self.nocc:, :self.nocc]
-        vv = fock[self.nocc:, self.nocc:] - np.diag(self.ev)
+        vv = fock[self.nocc:, self.nocc:]
 
         if self.shift:
             xi = self.xi
-            oo -= lib.einsum("I,Iij->ij", xi, self.g.boo)
-            ov -= lib.einsum("I,Iia->ia", xi, self.g.bov)
-            vo -= lib.einsum("I,Iai->ai", xi, self.g.bvo)
-            vv -= lib.einsum("I,Iab->ab", xi, self.g.bvv)
+            oo -= lib.einsum("I,Iij->ij", xi, self.g.boo + self.g.boo.transpose(0, 2, 1))
+            ov -= lib.einsum("I,Iia->ia", xi, self.g.bov + self.g.bvo.transpose(0, 2, 1))
+            vo -= lib.einsum("I,Iai->ai", xi, self.g.bvo + self.g.bov.transpose(0, 2, 1))
+            vv -= lib.einsum("I,Iab->ab", xi, self.g.bvv + self.g.bvv.transpose(0, 2, 1))
 
         assert np.allclose(oo, oo.T)
         assert np.allclose(vv, vv.T)
@@ -480,7 +510,7 @@ class EBCC:
             amplitudes["s%d" % n] = vector[i0:i0+size].reshape(shape)
             i0 += size
 
-        for n in range(1, self.rank[2]+2):
+        for n in range(1, self.rank[2]+1):
             shape = (self.nbos,) * n + (self.nocc, self.nvir)
             size = np.prod(shape)
             amplitudes["u1%d" % n] = vector[i0:i0+size].reshape(shape)
@@ -539,10 +569,8 @@ class EBCC:
     @property
     def xi(self):
         if self.shift:
-            xi =  lib.einsum("Iij->I", self.g.boo) / self.omega
-            xi += lib.einsum("Iia->I", self.g.bov) / self.omega
-            xi += lib.einsum("Iai->I", self.g.bvo) / self.omega
-            xi += lib.einsum("Iab->I", self.g.bvv) / self.omega
+            xi = lib.einsum("Iii->I", self.g.boo) * 2.0
+            xi /= self.omega
             if self.bare_G is not None:
                 xi += self.bare_G / self.omega
         else:
@@ -576,11 +604,15 @@ class EBCC:
 
     @property
     def eo(self):
-        return self.mf.mo_energy[:self.nocc]
+        # NOTE NOT this:
+        #return self.mf.mo_energy[:self.nocc]
+        return np.diag(self.fock.oo)
 
     @property
     def ev(self):
-        return self.mf.mo_energy[self.nocc:]
+        # NOTE NOT this:
+        #return self.mf.mo_energy[self.nocc:]
+        return np.diag(self.fock.vv)
 
     @property
     def e_tot(self):
@@ -609,23 +641,29 @@ if __name__ == "__main__":
     import numpy as np
 
     mol = gto.Mole()
-    #mol.atom = "H 0 0 0; H 0 0 1"
-    mol.atom = "He 0 0 0"
-    mol.basis = "cc-pvdz"
-    mol.verbose = 5
+    #mol.atom = "He 0 0 0"
+    #mol.basis = "cc-pvdz"
+    mol.atom = "H 0 0 0; F 0 0 1.1"
+    mol.basis = "6-31g"
+    mol.verbose = 0
     mol.build()
 
     mf = scf.RHF(mol)
     mf.kernel()
 
-    ccsd_ref = cc.CCSD(mf)
-    ccsd_ref.kernel()
+    #ccsd_ref = cc.CCSD(mf)
+    #ccsd_ref.kernel()
 
-    ccsd = EBCC(mf, rank=(2, 0, 0))
+    nbos = 5
+    np.random.seed(1)
+    g = np.random.random((nbos, mol.nao, mol.nao)) * 0.03
+    g = g + g.transpose(0, 2, 1)
+    omega = np.random.random((nbos)) * 0.5
+
+    np.set_printoptions(edgeitems=1000, linewidth=1000, precision=8)
+    ccsd = EBCC(mf, rank=(2, 1, 1), omega=omega, g=g)
     ccsd.kernel()
 
-    print(np.allclose(ccsd.t1, ccsd_ref.t1))
-    print(np.allclose(ccsd.t2, ccsd_ref.t2))
-
-    print(ccsd_ref.e_corr)
-    print(ccsd.e_corr)
+    #print(np.allclose(ccsd.t1, ccsd_ref.t1))
+    #print(np.allclose(ccsd.t2, ccsd_ref.t2))
+    #print(ccsd_ref.e_corr)
