@@ -4,9 +4,11 @@
 import sympy
 import drudge
 from fractions import Fraction
-from qwick.expression import AExpression
 from qwick.wick import apply_wick
-from qwick.convenience import one_e, two_e, E1, E2, PE1, braE1, braE2, ketE1, ketE2, commute
+from qwick.index import Idx
+from qwick.operator import FOperator
+from qwick.expression import *
+from qwick.convenience import *
 from qwick import codegen
 from ebcc.codegen import common
 
@@ -46,6 +48,7 @@ printer = codegen.EinsumPrinter(
         occupancy_tags={
             "v": "{base}.{tags}",
             "f": "{base}.{tags}",
+            "delta": "delta_{tags}",
         },
         reorder_axes={
             "v": (0, 2, 1, 3),
@@ -78,6 +81,10 @@ particles = {
         "t2new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
         "l1new": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
         "l2new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
+        "delta": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
+        **{"rdm1_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 0)) for x in ["oo", "ov", "vo", "vv"]},
+        **{"rdm2_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1))
+            for x in ["oooo", "ooov", "oovo", "ovoo", "vooo", "oovv", "ovov", "ovvo", "vovo", "vvoo", "ovvv", "vovv", "vvov", "vvvo", "vvvv"]},
 }
 
 with common.FilePrinter("ccsd") as file_printer:
@@ -182,3 +189,97 @@ with common.FilePrinter("ccsd") as file_printer:
         terms = codegen.sympy_to_drudge(terms, indices)
         function_printer.write_python(printer.doprint([terms])+"\n", comment="L2 amplitude")
         function_printer.write_latex(terms.latex(), comment="L2 amplitude")
+
+    # Get 1RDM expressions:
+    with common.FunctionPrinter(
+            file_printer,
+            "make_rdm1",
+            ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2"],
+            ["rdm1"],
+    ) as function_printer:
+        i, a = Idx(0, "occ"), Idx(0, "vir")
+        j, b = Idx(1, "occ"), Idx(1, "vir")
+
+        def case(i, j, return_value, comment=None):
+            ops = [FOperator(j, True), FOperator(i, False)]
+            P = Expression([Term(1, [], [Tensor([i, j], "")], ops, [])])
+            PT = commute(P, T)
+            PTT = commute(PT, T)
+            mid = P + PT + Fraction("1/2") * PTT
+            full = mid + L * mid
+            out = apply_wick(full)
+            out.resolve()
+            expr = AExpression(Ex=out)
+            terms, indices = codegen.wick_to_sympy(expr, particles, return_value=return_value)
+            terms = codegen.ghf_to_rhf(terms, indices)
+            terms = codegen.sympy_to_drudge(terms, indices)
+            function_printer.write_python(printer.doprint([terms])+"\n", comment=comment)
+            function_printer.write_latex(terms.latex(), comment=comment)
+
+        # Blocks:
+        case(i, j, "rdm1_oo", comment="oo block")
+        case(i, a, "rdm1_ov", comment="ov block")
+        case(a, i, "rdm1_vo", comment="vo block")
+        case(a, b, "rdm1_vv", comment="vv block")
+
+        function_printer.write_python("    rdm1 = np.block([[rdm1_oo, rdm1_ov], [rdm1_vo, rdm1_vv]])\n")
+
+    # Get 2RDM expressions:
+    with common.FunctionPrinter(
+            file_printer,
+            "make_rdm2",
+            ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2"],
+            ["rdm2"],
+    ) as function_printer:
+        i, a = Idx(0, "occ"), Idx(0, "vir")
+        j, b = Idx(1, "occ"), Idx(1, "vir")
+        k, c = Idx(2, "occ"), Idx(2, "vir")
+        l, d = Idx(3, "occ"), Idx(3, "vir")
+
+        function_printer.write_python("    delta_oo = np.eye(nocc)")
+        function_printer.write_python("    delta_vv = np.eye(nvir)\n")
+
+        def case(i, j, k, l, return_value, comment=None):
+            ops = [FOperator(i, True), FOperator(j, True), FOperator(k, False), FOperator(l, False)]
+            P = Expression([Term(1, [], [Tensor([i, j, k, l], "")], ops, [])])
+            PT = commute(P, T)
+            PTT = commute(PT, T)
+            PTTT = commute(PTT, T)
+            PTTTT = commute(PTTT, T)
+            mid = P + PT + Fraction("1/2")*PTT + Fraction("1/6")*PTTT
+            mid += Fraction("1/24")*PTTTT
+            full = mid + L * mid
+            out = apply_wick(full)
+            out.resolve()
+            expr = AExpression(Ex=out)
+            terms, indices = codegen.wick_to_sympy(expr, particles, return_value=return_value)
+            terms = codegen.ghf_to_rhf(terms, indices)
+            terms = codegen.sympy_to_drudge(terms, indices)
+            function_printer.write_python(printer.doprint([terms])+"\n", comment=comment)
+            function_printer.write_latex(terms.latex(), comment=comment)
+
+        # Blocks:
+        case(i, j, k, l, "rdm2_oooo", comment="oooo block")
+        case(i, j, k, a, "rdm2_ooov", comment="ooov block")
+        case(i, j, a, k, "rdm2_oovo", comment="oovo block")
+        case(i, a, j, k, "rdm2_ovoo", comment="ovoo block")
+        case(a, i, j, k, "rdm2_vooo", comment="vooo block")
+        case(i, j, a, b, "rdm2_oovv", comment="oovv block")
+        case(i, a, j, b, "rdm2_ovov", comment="ovov block")
+        case(i, a, b, j, "rdm2_ovvo", comment="ovvo block")
+        case(a, i, b, j, "rdm2_vovo", comment="vovo block")
+        case(a, b, i, j, "rdm2_vvoo", comment="vvoo block")
+        case(i, a, b, c, "rdm2_ovvv", comment="ovvv block")
+        case(a, i, b, c, "rdm2_vovv", comment="vovv block")
+        case(a, b, i, c, "rdm2_vvov", comment="vvov block")
+        case(a, b, c, i, "rdm2_vvvo", comment="vvvo block")
+        case(a, b, c, d, "rdm2_vvvv", comment="vvvv block")
+
+        function_printer.write_python(
+                "    rdm2 = np.block([\n"
+                "            [[[rdm2_oooo, rdm2_ooov], [rdm2_oovo, rdm2_oovv]],\n"
+                "             [[rdm2_ovoo, rdm2_ovov], [rdm2_ovvo, rdm2_ovvv]]],\n"
+                "            [[[rdm2_vooo, rdm2_voov], [rdm2_vovo, rdm2_vovv]],\n"
+                "             [[rdm2_vvoo, rdm2_vvov], [rdm2_vvvo, rdm2_vvvv]]],\n"
+                "    ])\n"
+        )

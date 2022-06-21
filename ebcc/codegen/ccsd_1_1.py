@@ -5,42 +5,20 @@ from pyscf import lib
 from types import SimpleNamespace
 
 def energy(f=None, v=None, w=None, g=None, G=None, nocc=None, nvir=None, nbos=None, t1=None, t2=None, s1=None, u11=None, **kwargs):
-    # Remove diagonal from Fock:
-    f = SimpleNamespace(
-        oo=f.oo-np.diag(np.diag(f.oo)),
-        ov=f.ov,
-        vo=f.vo,
-        vv=f.vv-np.diag(np.diag(f.vv)),
-    )
-
-    # Remove diagonal from omega:
-    w = w - np.diag(np.diag(w))
-
     # CCSD-11 energy
     e_cc = 0
     e_cc += lib.einsum("ia,ia->", f.ov, t1) * 2
+    e_cc += lib.einsum("w,w->", G, s1)
     e_cc += lib.einsum("wia,wia->", g.bov, u11) * 2
     e_cc += lib.einsum("w,ia,wia->", s1, t1, g.bov) * 2
     e_cc += lib.einsum("ijab,iajb->", t2, v.ovov) * 2
     e_cc += lib.einsum("ijab,ibja->", t2, v.ovov) * -1
     e_cc += lib.einsum("ia,jb,iajb->", t1, t1, v.ovov) * 2
     e_cc += lib.einsum("ia,jb,ibja->", t1, t1, v.ovov) * -1
-    e_cc += lib.einsum("w,w->", G, s1)
 
     return {"e_cc": e_cc}
 
 def update_amps(f=None, v=None, w=None, g=None, G=None, nocc=None, nvir=None, nbos=None, t1=None, t2=None, s1=None, u11=None, **kwargs):
-    # Remove diagonal from Fock:
-    f = SimpleNamespace(
-        oo=f.oo-np.diag(np.diag(f.oo)),
-        ov=f.ov,
-        vo=f.vo,
-        vv=f.vv-np.diag(np.diag(f.vv)),
-    )
-
-    # Remove diagonal from omega:
-    w = w - np.diag(np.diag(w))
-
     # Get boson coupling creation array:
     gc = SimpleNamespace(
         boo=g.boo.transpose(0, 2, 1),
@@ -52,25 +30,7 @@ def update_amps(f=None, v=None, w=None, g=None, G=None, nocc=None, nvir=None, nb
     # T1 amplitude
     t1new = np.zeros((nocc, nvir), dtype=np.float64)
     t1new += lib.einsum("bc,jc->jb", f.vv, t1)
-    t1new += lib.einsum("w,wjb->jb", G, u11)
-    t1new += lib.einsum("w,wbj->jb", s1, g.bvo)
-    t1new += lib.einsum("kjcd,bdkc->jb", t2, v.vvov) * 2
-    t1new += lib.einsum("kjcd,bckd->jb", t2, v.vvov) * -1
-    t1new -= lib.einsum("kc,jd,bckd->jb", t1, t1, v.vvov)
-    t1new += lib.einsum("kc,jd,bdkc->jb", t1, t1, v.vvov) * 2
-    t1new -= lib.einsum("w,wkc,kjbc->jb", s1, g.bov, t2)
-    t1new -= lib.einsum("kb,wkc,wjc->jb", t1, g.bov, u11)
-    t1new -= lib.einsum("jc,wkc,wkb->jb", t1, g.bov, u11)
-    t1new += lib.einsum("w,wkc,jkbc->jb", s1, g.bov, t2) * 2
-    t1new += lib.einsum("kc,wkc,wjb->jb", t1, g.bov, u11) * 2
-    t1new -= lib.einsum("w,kb,jc,wkc->jb", s1, t1, t1, g.bov)
-    t1new -= lib.einsum("wkj,wkb->jb", g.boo, u11)
-    t1new -= lib.einsum("w,kb,wkj->jb", s1, t1, g.boo)
-    t1new += lib.einsum("bj->jb", f.vo)
-    t1new += lib.einsum("klbc,kclj->jb", t2, v.ovoo)
-    t1new += lib.einsum("klbc,lckj->jb", t2, v.ovoo) * -2
-    t1new += lib.einsum("kb,lc,kclj->jb", t1, t1, v.ovoo)
-    t1new -= lib.einsum("kb,lc,lckj->jb", t1, t1, v.ovoo) * 2
+    t1new -= lib.einsum("kj,kb->jb", f.oo, t1)
     t1new += lib.einsum("wbc,wjc->jb", g.bvv, u11)
     t1new += lib.einsum("w,jc,wbc->jb", s1, t1, g.bvv)
     t1new += lib.einsum("kc,ljbd,kdlc->jb", t1, t2, v.ovov)
@@ -83,49 +43,39 @@ def update_amps(f=None, v=None, w=None, g=None, G=None, nocc=None, nvir=None, nb
     t1new += lib.einsum("jc,klbd,kcld->jb", t1, t2, v.ovov) * -2
     t1new += lib.einsum("kb,lc,jd,kcld->jb", t1, t1, t1, v.ovov)
     t1new -= lib.einsum("kb,lc,jd,kdlc->jb", t1, t1, t1, v.ovov) * 2
-    t1new -= lib.einsum("kj,kb->jb", f.oo, t1)
+    t1new -= lib.einsum("w,wkc,kjbc->jb", s1, g.bov, t2)
+    t1new -= lib.einsum("kb,wkc,wjc->jb", t1, g.bov, u11)
+    t1new -= lib.einsum("jc,wkc,wkb->jb", t1, g.bov, u11)
+    t1new += lib.einsum("w,wkc,jkbc->jb", s1, g.bov, t2) * 2
+    t1new += lib.einsum("kc,wkc,wjb->jb", t1, g.bov, u11) * 2
+    t1new -= lib.einsum("w,kb,jc,wkc->jb", s1, t1, t1, g.bov)
+    t1new -= lib.einsum("wkj,wkb->jb", g.boo, u11)
+    t1new -= lib.einsum("w,kb,wkj->jb", s1, t1, g.boo)
+    t1new += lib.einsum("kjcd,bdkc->jb", t2, v.vvov) * 2
+    t1new += lib.einsum("kjcd,bckd->jb", t2, v.vvov) * -1
+    t1new -= lib.einsum("kc,jd,bckd->jb", t1, t1, v.vvov)
+    t1new += lib.einsum("kc,jd,bdkc->jb", t1, t1, v.vvov) * 2
+    t1new += lib.einsum("bj->jb", f.vo)
     t1new -= lib.einsum("kc,kjbc->jb", f.ov, t2)
     t1new -= lib.einsum("kc,bckj->jb", t1, v.vvoo)
     t1new += lib.einsum("kc,jkbc->jb", f.ov, t2) * 2
     t1new += lib.einsum("kc,bjkc->jb", t1, v.voov) * 2
     t1new -= lib.einsum("kc,kb,jc->jb", f.ov, t1, t1)
+    t1new += lib.einsum("klbc,kclj->jb", t2, v.ovoo)
+    t1new += lib.einsum("klbc,lckj->jb", t2, v.ovoo) * -2
+    t1new += lib.einsum("kb,lc,kclj->jb", t1, t1, v.ovoo)
+    t1new -= lib.einsum("kb,lc,lckj->jb", t1, t1, v.ovoo) * 2
+    t1new += lib.einsum("w,wjb->jb", G, u11)
+    t1new += lib.einsum("w,wbj->jb", s1, g.bvo)
 
     # T2 amplitude
     t2new = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
-    t2new -= lib.einsum("wme,wkc,mlde->klcd", g.bov, u11, t2)
-    t2new -= lib.einsum("wme,wmc,lkde->klcd", g.bov, u11, t2)
-    t2new -= lib.einsum("wme,wld,mkce->klcd", g.bov, u11, t2)
-    t2new -= lib.einsum("wme,wmd,klce->klcd", g.bov, u11, t2)
-    t2new -= lib.einsum("wme,wke,mlcd->klcd", g.bov, u11, t2)
-    t2new -= lib.einsum("wme,wle,kmcd->klcd", g.bov, u11, t2)
-    t2new += lib.einsum("wme,wkc,lmde->klcd", g.bov, u11, t2) * 2
-    t2new += lib.einsum("wme,wld,kmce->klcd", g.bov, u11, t2) * 2
-    t2new -= lib.einsum("w,mc,wme,lkde->klcd", s1, t1, g.bov, t2)
-    t2new -= lib.einsum("w,md,wme,klce->klcd", s1, t1, g.bov, t2)
-    t2new -= lib.einsum("w,ke,wme,mlcd->klcd", s1, t1, g.bov, t2)
-    t2new -= lib.einsum("w,le,wme,kmcd->klcd", s1, t1, g.bov, t2)
-    t2new -= lib.einsum("mc,ke,wme,wld->klcd", t1, t1, g.bov, u11)
-    t2new -= lib.einsum("md,le,wme,wkc->klcd", t1, t1, g.bov, u11)
-    t2new -= lib.einsum("ke,mlch,dhme->klcd", t1, t2, v.vvov)
-    t2new -= lib.einsum("ke,lmdh,chme->klcd", t1, t2, v.vvov)
-    t2new -= lib.einsum("ke,mldh,cemh->klcd", t1, t2, v.vvov)
-    t2new -= lib.einsum("le,kmch,dhme->klcd", t1, t2, v.vvov)
-    t2new -= lib.einsum("le,mkch,demh->klcd", t1, t2, v.vvov)
-    t2new -= lib.einsum("le,mkdh,chme->klcd", t1, t2, v.vvov)
-    t2new -= lib.einsum("me,klch,demh->klcd", t1, t2, v.vvov)
-    t2new -= lib.einsum("me,lkdh,cemh->klcd", t1, t2, v.vvov)
-    t2new += lib.einsum("ke,lmdh,cemh->klcd", t1, t2, v.vvov) * 2
-    t2new += lib.einsum("le,kmch,demh->klcd", t1, t2, v.vvov) * 2
-    t2new += lib.einsum("me,klch,dhme->klcd", t1, t2, v.vvov) * 2
-    t2new += lib.einsum("me,lkdh,chme->klcd", t1, t2, v.vvov) * 2
-    t2new += lib.einsum("mc,kleh,dhme->klcd", t1, t2, v.vvov) * -1
-    t2new += lib.einsum("md,kleh,cemh->klcd", t1, t2, v.vvov) * -1
-    t2new -= lib.einsum("mc,ke,lh,dhme->klcd", t1, t1, t1, v.vvov)
-    t2new -= lib.einsum("md,ke,lh,cemh->klcd", t1, t1, t1, v.vvov)
-    t2new += lib.einsum("wck,wld->klcd", g.bvo, u11)
-    t2new += lib.einsum("wdl,wkc->klcd", g.bvo, u11)
     t2new += lib.einsum("mncd,mknl->klcd", t2, v.oooo)
     t2new += lib.einsum("mc,nd,mknl->klcd", t1, t1, v.oooo)
+    t2new -= lib.einsum("w,wmk,mlcd->klcd", s1, g.boo, t2)
+    t2new -= lib.einsum("w,wml,kmcd->klcd", s1, g.boo, t2)
+    t2new -= lib.einsum("mc,wmk,wld->klcd", t1, g.boo, u11)
+    t2new -= lib.einsum("md,wml,wkc->klcd", t1, g.boo, u11)
     t2new -= lib.einsum("kmce,deml->klcd", t2, v.vvoo)
     t2new -= lib.einsum("mkce,dlme->klcd", t2, v.voov)
     t2new -= lib.einsum("mlce,demk->klcd", t2, v.vvoo)
@@ -142,7 +92,6 @@ def update_amps(f=None, v=None, w=None, g=None, G=None, nocc=None, nvir=None, nb
     t2new -= lib.einsum("mc,le,demk->klcd", t1, t1, v.vvoo)
     t2new -= lib.einsum("md,ke,ceml->klcd", t1, t1, v.vvoo)
     t2new -= lib.einsum("md,le,ckme->klcd", t1, t1, v.voov)
-    t2new += lib.einsum("ckdl->klcd", v.vovo)
     t2new -= lib.einsum("mk,mlcd->klcd", f.oo, t2)
     t2new -= lib.einsum("ml,kmcd->klcd", f.oo, t2)
     t2new -= lib.einsum("mc,dlmk->klcd", t1, v.vooo)
@@ -151,14 +100,6 @@ def update_amps(f=None, v=None, w=None, g=None, G=None, nocc=None, nvir=None, nb
     t2new += lib.einsum("de,klce->klcd", f.vv, t2)
     t2new += lib.einsum("ke,cedl->klcd", t1, v.vvvo)
     t2new += lib.einsum("le,ckde->klcd", t1, v.vovv)
-    t2new += lib.einsum("w,wce,lkde->klcd", s1, g.bvv, t2)
-    t2new += lib.einsum("w,wde,klce->klcd", s1, g.bvv, t2)
-    t2new += lib.einsum("ke,wce,wld->klcd", t1, g.bvv, u11)
-    t2new += lib.einsum("le,wde,wkc->klcd", t1, g.bvv, u11)
-    t2new -= lib.einsum("w,wmk,mlcd->klcd", s1, g.boo, t2)
-    t2new -= lib.einsum("w,wml,kmcd->klcd", s1, g.boo, t2)
-    t2new -= lib.einsum("mc,wmk,wld->klcd", t1, g.boo, u11)
-    t2new -= lib.einsum("md,wml,wkc->klcd", t1, g.boo, u11)
     t2new += lib.einsum("mc,lnde,menk->klcd", t1, t2, v.ovoo)
     t2new += lib.einsum("mc,nkde,menl->klcd", t1, t2, v.ovoo)
     t2new += lib.einsum("mc,nlde,nemk->klcd", t1, t2, v.ovoo)
@@ -175,6 +116,11 @@ def update_amps(f=None, v=None, w=None, g=None, G=None, nocc=None, nvir=None, nb
     t2new += lib.einsum("le,mncd,nemk->klcd", t1, t2, v.ovoo)
     t2new += lib.einsum("mc,nd,ke,menl->klcd", t1, t1, t1, v.ovoo)
     t2new += lib.einsum("mc,nd,le,nemk->klcd", t1, t1, t1, v.ovoo)
+    t2new += lib.einsum("ckdl->klcd", v.vovo)
+    t2new += lib.einsum("w,wce,lkde->klcd", s1, g.bvv, t2)
+    t2new += lib.einsum("w,wde,klce->klcd", s1, g.bvv, t2)
+    t2new += lib.einsum("ke,wce,wld->klcd", t1, g.bvv, u11)
+    t2new += lib.einsum("le,wde,wkc->klcd", t1, g.bvv, u11)
     t2new += lib.einsum("kmce,nldh,mhne->klcd", t2, t2, v.ovov)
     t2new += lib.einsum("mkce,lndh,mhne->klcd", t2, t2, v.ovov)
     t2new += lib.einsum("mkce,nldh,menh->klcd", t2, t2, v.ovov)
@@ -211,6 +157,38 @@ def update_amps(f=None, v=None, w=None, g=None, G=None, nocc=None, nvir=None, nb
     t2new += lib.einsum("mc,nd,kleh,menh->klcd", t1, t1, t2, v.ovov)
     t2new += lib.einsum("ke,lh,mncd,menh->klcd", t1, t1, t2, v.ovov)
     t2new += lib.einsum("mc,nd,ke,lh,menh->klcd", t1, t1, t1, t1, v.ovov)
+    t2new -= lib.einsum("wme,wkc,mlde->klcd", g.bov, u11, t2)
+    t2new -= lib.einsum("wme,wmc,lkde->klcd", g.bov, u11, t2)
+    t2new -= lib.einsum("wme,wld,mkce->klcd", g.bov, u11, t2)
+    t2new -= lib.einsum("wme,wmd,klce->klcd", g.bov, u11, t2)
+    t2new -= lib.einsum("wme,wke,mlcd->klcd", g.bov, u11, t2)
+    t2new -= lib.einsum("wme,wle,kmcd->klcd", g.bov, u11, t2)
+    t2new += lib.einsum("wme,wkc,lmde->klcd", g.bov, u11, t2) * 2
+    t2new += lib.einsum("wme,wld,kmce->klcd", g.bov, u11, t2) * 2
+    t2new -= lib.einsum("w,mc,wme,lkde->klcd", s1, t1, g.bov, t2)
+    t2new -= lib.einsum("w,md,wme,klce->klcd", s1, t1, g.bov, t2)
+    t2new -= lib.einsum("w,ke,wme,mlcd->klcd", s1, t1, g.bov, t2)
+    t2new -= lib.einsum("w,le,wme,kmcd->klcd", s1, t1, g.bov, t2)
+    t2new -= lib.einsum("mc,ke,wme,wld->klcd", t1, t1, g.bov, u11)
+    t2new -= lib.einsum("md,le,wme,wkc->klcd", t1, t1, g.bov, u11)
+    t2new += lib.einsum("wck,wld->klcd", g.bvo, u11)
+    t2new += lib.einsum("wdl,wkc->klcd", g.bvo, u11)
+    t2new -= lib.einsum("ke,mlch,dhme->klcd", t1, t2, v.vvov)
+    t2new -= lib.einsum("ke,lmdh,chme->klcd", t1, t2, v.vvov)
+    t2new -= lib.einsum("ke,mldh,cemh->klcd", t1, t2, v.vvov)
+    t2new -= lib.einsum("le,kmch,dhme->klcd", t1, t2, v.vvov)
+    t2new -= lib.einsum("le,mkch,demh->klcd", t1, t2, v.vvov)
+    t2new -= lib.einsum("le,mkdh,chme->klcd", t1, t2, v.vvov)
+    t2new -= lib.einsum("me,klch,demh->klcd", t1, t2, v.vvov)
+    t2new -= lib.einsum("me,lkdh,cemh->klcd", t1, t2, v.vvov)
+    t2new += lib.einsum("ke,lmdh,cemh->klcd", t1, t2, v.vvov) * 2
+    t2new += lib.einsum("le,kmch,demh->klcd", t1, t2, v.vvov) * 2
+    t2new += lib.einsum("me,klch,dhme->klcd", t1, t2, v.vvov) * 2
+    t2new += lib.einsum("me,lkdh,chme->klcd", t1, t2, v.vvov) * 2
+    t2new += lib.einsum("mc,kleh,dhme->klcd", t1, t2, v.vvov) * -1
+    t2new += lib.einsum("md,kleh,cemh->klcd", t1, t2, v.vvov) * -1
+    t2new -= lib.einsum("mc,ke,lh,dhme->klcd", t1, t1, t1, v.vvov)
+    t2new -= lib.einsum("md,ke,lh,cemh->klcd", t1, t1, t1, v.vvov)
     t2new += lib.einsum("kleh,cedh->klcd", t2, v.vvvv)
     t2new += lib.einsum("ke,lh,cedh->klcd", t1, t1, v.vvvv)
 
@@ -218,27 +196,19 @@ def update_amps(f=None, v=None, w=None, g=None, G=None, nocc=None, nvir=None, nb
     s1new = np.zeros((nbos), dtype=np.float64)
     s1new += lib.einsum("ia,yia->y", f.ov, u11) * 2
     s1new += lib.einsum("ia,yia->y", t1, gc.bov) * 2
-    s1new += lib.einsum("z,zia,yia->y", s1, g.bov, u11) * 2
+    s1new += lib.einsum("z,zy->y", s1, w)
     s1new += lib.einsum("y->y", G)
+    s1new += lib.einsum("z,zia,yia->y", s1, g.bov, u11) * 2
     s1new -= lib.einsum("ia,yjb,ibja->y", t1, u11, v.ovov) * 2
     s1new += lib.einsum("ia,yjb,iajb->y", t1, u11, v.ovov) * 4
-    s1new += lib.einsum("z,zy->y", s1, w)
 
     # U11 amplitude
     u11new = np.zeros((nbos, nocc, nvir), dtype=np.float64)
-    u11new += lib.einsum("z,zbc,yjc->yjb", s1, g.bvv, u11)
+    u11new -= lib.einsum("z,zkj,ykb->yjb", s1, g.boo, u11)
     u11new += lib.einsum("bc,yjc->yjb", f.vv, u11)
     u11new += lib.einsum("jc,ybc->yjb", t1, gc.bvv)
-    u11new -= lib.einsum("jc,ykd,bdkc->yjb", t1, u11, v.vvov)
-    u11new -= lib.einsum("kc,yjd,bckd->yjb", t1, u11, v.vvov)
-    u11new += lib.einsum("jc,ykd,bckd->yjb", t1, u11, v.vvov) * 2
-    u11new += lib.einsum("kc,yjd,bdkc->yjb", t1, u11, v.vvov) * 2
-    u11new -= lib.einsum("z,zkj,ykb->yjb", s1, g.boo, u11)
-    u11new += lib.einsum("ybj->yjb", gc.bvo)
-    u11new += lib.einsum("kb,ylc,kclj->yjb", t1, u11, v.ovoo)
-    u11new += lib.einsum("kc,ylb,lckj->yjb", t1, u11, v.ovoo)
-    u11new -= lib.einsum("kb,ylc,lckj->yjb", t1, u11, v.ovoo) * 2
-    u11new -= lib.einsum("kc,ylb,kclj->yjb", t1, u11, v.ovoo) * 2
+    u11new -= lib.einsum("kj,ykb->yjb", f.oo, u11)
+    u11new -= lib.einsum("kb,ykj->yjb", t1, gc.boo)
     u11new += lib.einsum("yld,kjbc,kdlc->yjb", u11, t2, v.ovov)
     u11new -= lib.einsum("yld,jkbc,kdlc->yjb", u11, t2, v.ovov) * 2
     u11new -= lib.einsum("yld,kjbc,kcld->yjb", u11, t2, v.ovov) * 2
@@ -253,9 +223,8 @@ def update_amps(f=None, v=None, w=None, g=None, G=None, nocc=None, nvir=None, nb
     u11new -= lib.einsum("kb,jc,yld,kcld->yjb", t1, t1, u11, v.ovov) * 2
     u11new -= lib.einsum("kb,lc,yjd,kdlc->yjb", t1, t1, u11, v.ovov) * 2
     u11new -= lib.einsum("kc,jd,ylb,kcld->yjb", t1, t1, u11, v.ovov) * 2
-    u11new -= lib.einsum("kj,ykb->yjb", f.oo, u11)
-    u11new -= lib.einsum("kb,ykj->yjb", t1, gc.boo)
     u11new += lib.einsum("zy,zjb->yjb", w, u11)
+    u11new += lib.einsum("ybj->yjb", gc.bvo)
     u11new -= lib.einsum("zkc,ykb,zjc->yjb", g.bov, u11, u11)
     u11new -= lib.einsum("zkc,yjc,zkb->yjb", g.bov, u11, u11)
     u11new += lib.einsum("zkc,ykc,zjb->yjb", g.bov, u11, u11) * 2
@@ -268,6 +237,15 @@ def update_amps(f=None, v=None, w=None, g=None, G=None, nocc=None, nvir=None, nb
     u11new -= lib.einsum("kc,kb,yjc->yjb", f.ov, t1, u11)
     u11new -= lib.einsum("kc,jc,ykb->yjb", f.ov, t1, u11)
     u11new -= lib.einsum("kb,jc,ykc->yjb", t1, t1, gc.bov)
+    u11new += lib.einsum("kb,ylc,kclj->yjb", t1, u11, v.ovoo)
+    u11new += lib.einsum("kc,ylb,lckj->yjb", t1, u11, v.ovoo)
+    u11new -= lib.einsum("kb,ylc,lckj->yjb", t1, u11, v.ovoo) * 2
+    u11new -= lib.einsum("kc,ylb,kclj->yjb", t1, u11, v.ovoo) * 2
+    u11new -= lib.einsum("jc,ykd,bdkc->yjb", t1, u11, v.vvov)
+    u11new -= lib.einsum("kc,yjd,bckd->yjb", t1, u11, v.vvov)
+    u11new += lib.einsum("jc,ykd,bckd->yjb", t1, u11, v.vvov) * 2
+    u11new += lib.einsum("kc,yjd,bdkc->yjb", t1, u11, v.vvov) * 2
+    u11new += lib.einsum("z,zbc,yjc->yjb", s1, g.bvv, u11)
 
     return {"t1new": t1new, "t2new": t2new, "s1new": s1new, "u11new": u11new}
 

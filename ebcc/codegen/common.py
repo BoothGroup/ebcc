@@ -46,7 +46,7 @@ class FilePrinter:
 
 
 class FunctionPrinter:
-    def __init__(self, file_printer, name, args, res, remove_f_diagonal=True):
+    def __init__(self, file_printer, name, args, res, remove_f_diagonal=False):
         self.file_printer = file_printer
         self.name = name
         self.args = args

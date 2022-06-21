@@ -68,7 +68,7 @@ printer = codegen.EinsumPrinter(
 )
 
 class FunctionPrinter(common.FunctionPrinter):
-    def __init__(self, *args, init_gc=True, remove_w_diagonal=True, **kwargs):
+    def __init__(self, *args, init_gc=True, remove_w_diagonal=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.init_gc = init_gc
         self.remove_w_diagonal = remove_w_diagonal

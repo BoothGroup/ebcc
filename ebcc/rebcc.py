@@ -83,9 +83,9 @@ class EBCC:
         if opt_code:
             raise NotImplementedError
         if self.rank == (2, 0, 0):
-            import ebcc.ccsd as _eqns
+            import ebcc.codegen.ccsd as _eqns
         elif self.rank == (2, 1, 1):
-            import ebcc.ccsd_1_1 as _eqns
+            import ebcc.codegen.ccsd_1_1 as _eqns
         else:
             raise NotImplementedError
         self._eqns = _eqns
@@ -237,12 +237,14 @@ class EBCC:
         """Compute the energy.
         """
 
+        omega = np.diag(self.omega) if self.omega is not None else None
+
         kwargs = dict(
                 f=self.fock,
                 v=self.eri,
                 g=self.g,
                 G=self.G,
-                w=np.diag(self.omega),
+                w=omega,
                 nocc=self.nocc,
                 nvir=self.nvir,
                 nbos=self.nbos,
@@ -257,12 +259,14 @@ class EBCC:
         """Update the amplitudes.
         """
 
+        omega = np.diag(self.omega) if self.omega is not None else None
+
         kwargs = dict(
                 f=self.fock,
                 v=self.eri,
                 g=self.g,
                 G=self.G,
-                w=np.diag(self.omega),
+                w=omega,
                 nocc=self.nocc,
                 nvir=self.nvir,
                 nbos=self.nbos,
@@ -279,16 +283,19 @@ class EBCC:
             d = functools.reduce(np.add.outer, [e_ia] * n)
             d = d.transpose(perm)
             res["t%d" % n] /= d
+            res["t%d" % n] += amplitudes["t%d" % n]
 
         # Divide S amplitudes:
         for n in range(1, self.rank[1]+1):
             d = functools.reduce(np.add.outer, ([-self.omega] * n))
             res["s%d" % n] /= d
+            res["s%d" % n] += amplitudes["s%d" % n]
 
         # Divide U amplitudes:
         for n in range(1, self.rank[2]+1):
             d = functools.reduce(np.add.outer, ([-self.omega] * n) + [e_ia])
             res["u1%d" % n] /= d
+            res["u1%d" % n] += amplitudes["u1%d" % n]
 
         return res
 
@@ -296,12 +303,14 @@ class EBCC:
         """Update the lambda amplitudes.
         """
 
+        omega = np.diag(self.omega) if self.omega is not None else None
+
         kwargs = dict(
                 f=self.fock,
                 v=self.eri,
                 g=self.g,
                 G=self.G,
-                w=np.diag(self.omega),
+                w=omega,
                 nocc=self.nocc,
                 nvir=self.nvir,
                 nbos=self.nbos,
@@ -319,15 +328,18 @@ class EBCC:
             d = functools.reduce(np.add.outer, [e_ia] * n)
             d = d.transpose(perm)
             res["l%d" % n] /= d
+            res["l%d" % n] += lambdas["l%d" % n]
 
         # Divide S amplitudes:
         for n in range(1, self.rank[1]+1):
             res["ls%d" % n] /= d
+            res["ls%d" % n] += lambdas["ls%d" % n]
 
         # Divide U amplitudes:
         for n in range(1, self.rank[2]+1):
             d = functools.reduce(np.add.outer, ([-self.omega] * n) + [e_ia])
             res["lu1%d" % n] /= d
+            res["lu1%d" % n] += lambdas["lu1%d" % n]
 
         return res
 
@@ -651,19 +663,22 @@ if __name__ == "__main__":
     mf = scf.RHF(mol)
     mf.kernel()
 
-    #ccsd_ref = cc.CCSD(mf)
-    #ccsd_ref.kernel()
+    ccsd_ref = cc.CCSD(mf)
+    ccsd_ref.kernel()
 
-    nbos = 5
-    np.random.seed(1)
-    g = np.random.random((nbos, mol.nao, mol.nao)) * 0.03
-    g = g + g.transpose(0, 2, 1)
-    omega = np.random.random((nbos)) * 0.5
-
-    np.set_printoptions(edgeitems=1000, linewidth=1000, precision=8)
-    ccsd = EBCC(mf, rank=(2, 1, 1), omega=omega, g=g)
+    ccsd = EBCC(mf, rank=(2, 0, 0))
     ccsd.kernel()
 
-    #print(np.allclose(ccsd.t1, ccsd_ref.t1))
-    #print(np.allclose(ccsd.t2, ccsd_ref.t2))
-    #print(ccsd_ref.e_corr)
+    print(np.allclose(ccsd.t1, ccsd_ref.t1))
+    print(np.allclose(ccsd.t2, ccsd_ref.t2))
+    print(ccsd_ref.e_corr)
+
+    #nbos = 5
+    #np.random.seed(1)
+    #g = np.random.random((nbos, mol.nao, mol.nao)) * 0.03
+    #g = g + g.transpose(0, 2, 1)
+    #omega = np.random.random((nbos)) * 0.5
+
+    #np.set_printoptions(edgeitems=1000, linewidth=1000, precision=8)
+    #ccsd = EBCC(mf, rank=(2, 1, 1), omega=omega, g=g)
+    #ccsd.kernel()
