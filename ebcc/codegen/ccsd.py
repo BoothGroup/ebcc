@@ -6,807 +6,1346 @@ from types import SimpleNamespace
 
 def energy(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, **kwargs):
     # CCSD energy
+    x0 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x0 += lib.einsum("jaib->ijab", v.ovov) * -0.5
+    x0 += lib.einsum("jbia->ijab", v.ovov)
+    x1 = np.zeros((nocc, nvir), dtype=np.float64)
+    x1 += lib.einsum("jb,jiba->ia", t1, x0) * 0.25
     e_cc = 0
-    e_cc += lib.einsum("ijab,iajb->", t2, v.ovov) * 2
-    e_cc += lib.einsum("ijab,ibja->", t2, v.ovov) * -1
-    e_cc += lib.einsum("ia,jb,iajb->", t1, t1, v.ovov) * 2
-    e_cc += lib.einsum("ia,jb,ibja->", t1, t1, v.ovov) * -1
-    e_cc += lib.einsum("ia,ia->", f.ov, t1) * 2
+    e_cc += lib.einsum("ijab,ijab->", t2, x0) * 2
+    del x0
+    x1 += lib.einsum("ia->ia", f.ov)
+    e_cc += lib.einsum("ia,ia->", t1, x1) * 0.5
+    del x1
 
     return {"e_cc": e_cc}
 
 def update_amps(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, **kwargs):
-    # T1 amplitude
+    # T1 and T2 amplitude
+    x0 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x0 += lib.einsum("kd,lcmd->klmc", t1, v.ovov)
+    x1 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x1 += lib.einsum("klmc->klmc", x0) * 0.5
+    x1 += lib.einsum("kmlc->klmc", x0) * -0.25
+    x27 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x27 += lib.einsum("lndc,kmnd->klmc", t2, x0)
+    x33 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x33 += lib.einsum("lmkc->klmc", x27) * 0.24999999999999964
+    del x27
+    x47 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x47 += lib.einsum("lndc,knmd->klmc", t2, x0)
+    x52 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x52 += lib.einsum("kmlc->klmc", x47) * -0.9999999999999986
+    del x47
+    x48 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x48 += lib.einsum("klmc->klmc", x0)
+    x48 += lib.einsum("kmlc->klmc", x0) * -0.5
+    x49 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x49 += lib.einsum("nmdc,knld->klmc", t2, x48) * 1.9999999999999971
+    del x48
+    x52 += lib.einsum("klmc->klmc", x49)
+    del x49
+    x66 = np.zeros((nocc, nocc, nocc, nocc), dtype=np.float64)
+    x66 += lib.einsum("lc,knmc->klmn", t1, x0)
+    del x0
+    x67 = np.zeros((nocc, nocc, nocc, nocc), dtype=np.float64)
+    x67 += lib.einsum("nmlk->klmn", x66) * 0.06250000000000004
+    x68 = np.zeros((nocc, nocc, nocc, nocc), dtype=np.float64)
+    x68 += lib.einsum("nmlk->klmn", x66)
+    del x66
+    x1 += lib.einsum("lkmc->klmc", v.ooov) * -1
+    x1 += lib.einsum("mklc->klmc", v.ooov) * 2
     t1new = np.zeros((nocc, nvir), dtype=np.float64)
-    t1new += lib.einsum("bc,jc->jb", f.vv, t1)
-    t1new -= lib.einsum("kc,kjbc->jb", f.ov, t2)
-    t1new -= lib.einsum("kc,bckj->jb", t1, v.vvoo)
-    t1new += lib.einsum("kc,jkbc->jb", f.ov, t2) * 2
-    t1new += lib.einsum("kc,bjkc->jb", t1, v.voov) * 2
-    t1new -= lib.einsum("kc,kb,jc->jb", f.ov, t1, t1)
-    t1new += lib.einsum("bj->jb", f.vo)
-    t1new += lib.einsum("kjcd,bdkc->jb", t2, v.vvov) * 2
-    t1new += lib.einsum("kjcd,bckd->jb", t2, v.vvov) * -1
-    t1new -= lib.einsum("kc,jd,bckd->jb", t1, t1, v.vvov)
-    t1new += lib.einsum("kc,jd,bdkc->jb", t1, t1, v.vvov) * 2
-    t1new -= lib.einsum("kj,kb->jb", f.oo, t1)
-    t1new += lib.einsum("kc,ljbd,kdlc->jb", t1, t2, v.ovov)
-    t1new -= lib.einsum("kc,jlbd,kdlc->jb", t1, t2, v.ovov) * 2
-    t1new -= lib.einsum("kc,ljbd,kcld->jb", t1, t2, v.ovov) * 2
-    t1new += lib.einsum("kc,jlbd,kcld->jb", t1, t2, v.ovov) * 4
-    t1new += lib.einsum("kb,ljcd,kcld->jb", t1, t2, v.ovov)
-    t1new += lib.einsum("jc,klbd,kdlc->jb", t1, t2, v.ovov)
-    t1new += lib.einsum("kb,ljcd,kdlc->jb", t1, t2, v.ovov) * -2
-    t1new += lib.einsum("jc,klbd,kcld->jb", t1, t2, v.ovov) * -2
-    t1new += lib.einsum("kb,lc,jd,kcld->jb", t1, t1, t1, v.ovov)
-    t1new -= lib.einsum("kb,lc,jd,kdlc->jb", t1, t1, t1, v.ovov) * 2
-    t1new += lib.einsum("klbc,kclj->jb", t2, v.ovoo)
-    t1new += lib.einsum("klbc,lckj->jb", t2, v.ovoo) * -2
-    t1new += lib.einsum("kb,lc,kclj->jb", t1, t1, v.ovoo)
-    t1new -= lib.einsum("kb,lc,lckj->jb", t1, t1, v.ovoo) * 2
-
-    # T2 amplitude
+    t1new += lib.einsum("mlcd,klmd->kc", t2, x1) * -1
+    del x1
+    x2 = np.zeros((nocc, nvir, nvir, nvir), dtype=np.float64)
+    x2 += lib.einsum("kdce->kcde", v.ovvv)
+    x2 += lib.einsum("kecd->kcde", v.ovvv) * -0.5
+    t1new += lib.einsum("lkde,lcde->kc", t2, x2) * 2
+    del x2
+    x3 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x3 += lib.einsum("lckd->klcd", v.ovov) * -0.5
+    x3 += lib.einsum("ldkc->klcd", v.ovov)
+    x4 = np.zeros((nocc, nvir), dtype=np.float64)
+    x4 += lib.einsum("ld,lkdc->kc", t1, x3) * 0.5
+    x9 = np.zeros((nocc, nvir), dtype=np.float64)
+    x9 += lib.einsum("ld,lkdc->kc", t1, x3) * 2
+    x30 = np.zeros((nocc, nvir), dtype=np.float64)
+    x30 += lib.einsum("ld,lkdc->kc", t1, x3)
+    x31 = np.zeros((nocc, nvir), dtype=np.float64)
+    x31 += lib.einsum("kc->kc", x30)
+    del x30
+    x35 = np.zeros((nocc, nvir), dtype=np.float64)
+    x35 += lib.einsum("ld,lkdc->kc", t1, x3) * 0.4999999999999992
+    del x3
+    x36 = np.zeros((nocc, nvir), dtype=np.float64)
+    x36 += lib.einsum("kc->kc", x35)
+    del x35
+    x4 += lib.einsum("kc->kc", f.ov)
+    x5 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x5 += lib.einsum("lkcd->klcd", t2) * 2
+    x5 -= lib.einsum("lkdc->klcd", t2)
+    t1new += lib.einsum("ld,lkcd->kc", x4, x5)
+    del x4
+    del x5
+    x6 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x6 += lib.einsum("kdcl->klcd", v.ovvo)
+    x6 += lib.einsum("klcd->klcd", v.oovv) * -0.5
+    t1new += lib.einsum("ld,lkcd->kc", t1, x6) * 0.5
+    del x6
+    x7 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x7 += lib.einsum("lckd->klcd", v.ovov)
+    x7 += lib.einsum("ldkc->klcd", v.ovov) * -0.5
+    x10 = np.zeros((nocc, nocc), dtype=np.float64)
+    x10 += lib.einsum("mldc,mkcd->kl", t2, x7) * 2
+    x54 = np.zeros((nocc, nocc), dtype=np.float64)
+    x54 += lib.einsum("mldc,mkcd->kl", t2, x7)
+    del x7
+    x56 = np.zeros((nocc, nocc), dtype=np.float64)
+    x56 += lib.einsum("kl->kl", x54)
+    del x54
+    x8 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x8 += lib.einsum("kmlc->klmc", v.ooov) * -0.5
+    x8 += lib.einsum("lmkc->klmc", v.ooov)
+    x10 += lib.einsum("mc,mklc->kl", t1, x8) * 0.5
+    x55 = np.zeros((nocc, nocc), dtype=np.float64)
+    x55 += lib.einsum("mc,mklc->kl", t1, x8) * 0.25
+    del x8
+    x56 += lib.einsum("kl->kl", x55)
+    del x55
+    x57 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x57 += lib.einsum("mk,mlcd->klcd", x56, t2) * 2
+    del x56
+    x58 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x58 += lib.einsum("lkdc->klcd", x57)
+    del x57
+    x9 += lib.einsum("kc->kc", f.ov) * 4.000000000000002
+    x10 += lib.einsum("lc,kc->kl", t1, x9) * 0.06249999999999997
+    del x9
+    x10 += lib.einsum("kl->kl", f.oo)
+    t1new += lib.einsum("lc,lk->kc", t1, x10) * -0.25
+    del x10
+    x11 = np.zeros((nocc, nvir, nvir, nvir), dtype=np.float64)
+    x11 += lib.einsum("kdce->kcde", v.ovvv) * -0.5
+    x11 += lib.einsum("kecd->kcde", v.ovvv)
+    x12 = np.zeros((nvir, nvir), dtype=np.float64)
+    x12 += lib.einsum("ke,kcde->cd", t1, x11) * 2
+    del x11
+    x13 = np.zeros((nvir, nvir), dtype=np.float64)
+    x13 += lib.einsum("cd->cd", x12)
+    x43 = np.zeros((nvir, nvir), dtype=np.float64)
+    x43 += lib.einsum("cd->cd", x12)
+    del x12
+    x13 += lib.einsum("cd->cd", f.vv) * 4
+    t1new += lib.einsum("kd,cd->kc", t1, x13) * 0.0625
+    del x13
+    x14 = np.zeros((nocc, nvir, nvir, nvir), dtype=np.float64)
+    x14 += lib.einsum("kg,cedg->kcde", t1, v.vvvv)
     t2new = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
-    t2new += lib.einsum("ce,lkde->klcd", f.vv, t2)
-    t2new += lib.einsum("de,klce->klcd", f.vv, t2)
-    t2new += lib.einsum("ke,cedl->klcd", t1, v.vvvo)
-    t2new += lib.einsum("le,ckde->klcd", t1, v.vovv)
-    t2new += lib.einsum("kleg,cedg->klcd", t2, v.vvvv)
-    t2new += lib.einsum("ke,lg,cedg->klcd", t1, t1, v.vvvv)
-    t2new -= lib.einsum("ke,mlcg,dgme->klcd", t1, t2, v.vvov)
-    t2new -= lib.einsum("ke,lmdg,cgme->klcd", t1, t2, v.vvov)
-    t2new -= lib.einsum("ke,mldg,cemg->klcd", t1, t2, v.vvov)
-    t2new -= lib.einsum("le,kmcg,dgme->klcd", t1, t2, v.vvov)
-    t2new -= lib.einsum("le,mkcg,demg->klcd", t1, t2, v.vvov)
-    t2new -= lib.einsum("le,mkdg,cgme->klcd", t1, t2, v.vvov)
-    t2new -= lib.einsum("me,klcg,demg->klcd", t1, t2, v.vvov)
-    t2new -= lib.einsum("me,lkdg,cemg->klcd", t1, t2, v.vvov)
-    t2new += lib.einsum("ke,lmdg,cemg->klcd", t1, t2, v.vvov) * 2
-    t2new += lib.einsum("le,kmcg,demg->klcd", t1, t2, v.vvov) * 2
-    t2new += lib.einsum("me,klcg,dgme->klcd", t1, t2, v.vvov) * 2
-    t2new += lib.einsum("me,lkdg,cgme->klcd", t1, t2, v.vvov) * 2
-    t2new += lib.einsum("mc,kleg,dgme->klcd", t1, t2, v.vvov) * -1
-    t2new += lib.einsum("md,kleg,cemg->klcd", t1, t2, v.vvov) * -1
-    t2new -= lib.einsum("mc,ke,lg,dgme->klcd", t1, t1, t1, v.vvov)
-    t2new -= lib.einsum("md,ke,lg,cemg->klcd", t1, t1, t1, v.vvov)
-    t2new -= lib.einsum("mk,mlcd->klcd", f.oo, t2)
-    t2new -= lib.einsum("ml,kmcd->klcd", f.oo, t2)
-    t2new -= lib.einsum("mc,dlmk->klcd", t1, v.vooo)
-    t2new -= lib.einsum("md,ckml->klcd", t1, v.vooo)
-    t2new -= lib.einsum("kmce,deml->klcd", t2, v.vvoo)
-    t2new -= lib.einsum("mkce,dlme->klcd", t2, v.voov)
-    t2new -= lib.einsum("mlce,demk->klcd", t2, v.vvoo)
-    t2new -= lib.einsum("lmde,cemk->klcd", t2, v.vvoo)
-    t2new -= lib.einsum("mkde,ceml->klcd", t2, v.vvoo)
-    t2new -= lib.einsum("mlde,ckme->klcd", t2, v.voov)
-    t2new += lib.einsum("kmce,dlme->klcd", t2, v.voov) * 2
-    t2new += lib.einsum("lmde,ckme->klcd", t2, v.voov) * 2
-    t2new -= lib.einsum("me,mc,lkde->klcd", f.ov, t1, t2)
-    t2new -= lib.einsum("me,md,klce->klcd", f.ov, t1, t2)
-    t2new -= lib.einsum("me,ke,mlcd->klcd", f.ov, t1, t2)
-    t2new -= lib.einsum("me,le,kmcd->klcd", f.ov, t1, t2)
-    t2new -= lib.einsum("mc,ke,dlme->klcd", t1, t1, v.voov)
-    t2new -= lib.einsum("mc,le,demk->klcd", t1, t1, v.vvoo)
-    t2new -= lib.einsum("md,ke,ceml->klcd", t1, t1, v.vvoo)
-    t2new -= lib.einsum("md,le,ckme->klcd", t1, t1, v.voov)
-    t2new += lib.einsum("ckdl->klcd", v.vovo)
-    t2new += lib.einsum("mc,lnde,menk->klcd", t1, t2, v.ovoo)
-    t2new += lib.einsum("mc,nkde,menl->klcd", t1, t2, v.ovoo)
-    t2new += lib.einsum("mc,nlde,nemk->klcd", t1, t2, v.ovoo)
-    t2new += lib.einsum("md,knce,menl->klcd", t1, t2, v.ovoo)
-    t2new += lib.einsum("md,nkce,neml->klcd", t1, t2, v.ovoo)
-    t2new += lib.einsum("md,nlce,menk->klcd", t1, t2, v.ovoo)
-    t2new += lib.einsum("me,kncd,neml->klcd", t1, t2, v.ovoo)
-    t2new += lib.einsum("me,nlcd,nemk->klcd", t1, t2, v.ovoo)
-    t2new -= lib.einsum("mc,lnde,nemk->klcd", t1, t2, v.ovoo) * 2
-    t2new -= lib.einsum("md,knce,neml->klcd", t1, t2, v.ovoo) * 2
-    t2new -= lib.einsum("me,kncd,menl->klcd", t1, t2, v.ovoo) * 2
-    t2new -= lib.einsum("me,nlcd,menk->klcd", t1, t2, v.ovoo) * 2
-    t2new += lib.einsum("ke,mncd,menl->klcd", t1, t2, v.ovoo)
-    t2new += lib.einsum("le,mncd,nemk->klcd", t1, t2, v.ovoo)
-    t2new += lib.einsum("mc,nd,ke,menl->klcd", t1, t1, t1, v.ovoo)
-    t2new += lib.einsum("mc,nd,le,nemk->klcd", t1, t1, t1, v.ovoo)
-    t2new += lib.einsum("kmce,nldg,mgne->klcd", t2, t2, v.ovov)
-    t2new += lib.einsum("mkce,lndg,mgne->klcd", t2, t2, v.ovov)
-    t2new += lib.einsum("mkce,nldg,meng->klcd", t2, t2, v.ovov)
-    t2new += lib.einsum("mlce,nkdg,mgne->klcd", t2, t2, v.ovov)
-    t2new -= lib.einsum("kmce,lndg,mgne->klcd", t2, t2, v.ovov) * 2
-    t2new -= lib.einsum("kmce,nldg,meng->klcd", t2, t2, v.ovov) * 2
-    t2new -= lib.einsum("mkce,lndg,meng->klcd", t2, t2, v.ovov) * 2
-    t2new += lib.einsum("kmce,lndg,meng->klcd", t2, t2, v.ovov) * 4
-    t2new += lib.einsum("kmcd,nleg,meng->klcd", t2, t2, v.ovov)
-    t2new += lib.einsum("mlcd,nkeg,meng->klcd", t2, t2, v.ovov)
-    t2new += lib.einsum("mncd,kleg,meng->klcd", t2, t2, v.ovov)
-    t2new += lib.einsum("klce,mndg,mgne->klcd", t2, t2, v.ovov)
-    t2new += lib.einsum("mnce,lkdg,meng->klcd", t2, t2, v.ovov)
-    t2new += lib.einsum("kmcd,nleg,mgne->klcd", t2, t2, v.ovov) * -2
-    t2new += lib.einsum("mlcd,nkeg,mgne->klcd", t2, t2, v.ovov) * -2
-    t2new += lib.einsum("klce,mndg,meng->klcd", t2, t2, v.ovov) * -2
-    t2new += lib.einsum("mnce,lkdg,mgne->klcd", t2, t2, v.ovov) * -2
-    t2new += lib.einsum("mc,ke,lndg,mgne->klcd", t1, t1, t2, v.ovov)
-    t2new += lib.einsum("mc,ke,nldg,meng->klcd", t1, t1, t2, v.ovov)
-    t2new += lib.einsum("mc,le,nkdg,mgne->klcd", t1, t1, t2, v.ovov)
-    t2new += lib.einsum("mc,ne,lkdg,meng->klcd", t1, t1, t2, v.ovov)
-    t2new += lib.einsum("md,ke,nlcg,mgne->klcd", t1, t1, t2, v.ovov)
-    t2new += lib.einsum("md,le,kncg,mgne->klcd", t1, t1, t2, v.ovov)
-    t2new += lib.einsum("md,le,nkcg,meng->klcd", t1, t1, t2, v.ovov)
-    t2new += lib.einsum("md,ne,klcg,meng->klcd", t1, t1, t2, v.ovov)
-    t2new += lib.einsum("me,kg,nlcd,mgne->klcd", t1, t1, t2, v.ovov)
-    t2new += lib.einsum("me,lg,kncd,mgne->klcd", t1, t1, t2, v.ovov)
-    t2new -= lib.einsum("mc,ke,lndg,meng->klcd", t1, t1, t2, v.ovov) * 2
-    t2new -= lib.einsum("mc,ne,lkdg,mgne->klcd", t1, t1, t2, v.ovov) * 2
-    t2new -= lib.einsum("md,le,kncg,meng->klcd", t1, t1, t2, v.ovov) * 2
-    t2new -= lib.einsum("md,ne,klcg,mgne->klcd", t1, t1, t2, v.ovov) * 2
-    t2new -= lib.einsum("me,kg,nlcd,meng->klcd", t1, t1, t2, v.ovov) * 2
-    t2new -= lib.einsum("me,lg,kncd,meng->klcd", t1, t1, t2, v.ovov) * 2
-    t2new += lib.einsum("mc,nd,kleg,meng->klcd", t1, t1, t2, v.ovov)
-    t2new += lib.einsum("ke,lg,mncd,meng->klcd", t1, t1, t2, v.ovov)
-    t2new += lib.einsum("mc,nd,ke,lg,meng->klcd", t1, t1, t1, t1, v.ovov)
-    t2new += lib.einsum("mncd,mknl->klcd", t2, v.oooo)
-    t2new += lib.einsum("mc,nd,mknl->klcd", t1, t1, v.oooo)
+    t2new += lib.einsum("le,kdce->klcd", t1, x14) * 0.0625
+    del x14
+    x15 = np.zeros((nocc, nocc, nocc, nocc), dtype=np.float64)
+    x15 += lib.einsum("klcd,ndmc->klmn", t2, v.ovov)
+    x68 += lib.einsum("nmlk->klmn", x15) * 16.000000000000036
+    t2new += lib.einsum("nmdc,klmn->klcd", t2, x15)
+    del x15
+    x16 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x16 += lib.einsum("ke,clde->klcd", t1, v.vovv)
+    x39 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x39 += lib.einsum("klcd->klcd", x16) * 0.25
+    del x16
+    x17 = np.zeros((nocc, nocc, nocc, nocc), dtype=np.float64)
+    x17 += lib.einsum("kc,lnmc->klmn", t1, v.ooov)
+    x18 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x18 += lib.einsum("nmdc,kmnl->klcd", t2, x17)
+    x39 += lib.einsum("klcd->klcd", x18) * 0.25
+    del x18
+    x26 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x26 += lib.einsum("nc,klnm->klmc", t1, x17)
+    del x17
+    x33 += lib.einsum("lkmc->klmc", x26) * 0.06249999999999997
+    del x26
+    x19 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x19 += lib.einsum("ke,lecd->klcd", t1, v.ovvv)
+    x20 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x20 += lib.einsum("lmce,kmde->klcd", t2, x19)
+    x39 += lib.einsum("klcd->klcd", x20) * -0.25
+    del x20
+    x40 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x40 += lib.einsum("lmec,kmde->klcd", t2, x19)
+    del x19
+    x58 += lib.einsum("klcd->klcd", x40) * 0.25
+    del x40
+    x21 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x21 += lib.einsum("lkcd->klcd", t2) * -1
+    x21 += lib.einsum("lkdc->klcd", t2) * 2
+    x22 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x22 += lib.einsum("ke,ldce->klcd", t1, v.ovvv)
+    x23 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x23 += lib.einsum("mkec,lmde->klcd", x21, x22) * 0.25
+    del x21
+    x39 += lib.einsum("lkcd->klcd", x23)
+    del x23
+    x50 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x50 += lib.einsum("lkcd->klcd", x22) * 0.2499999999999999
+    del x22
+    x24 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x24 += lib.einsum("kd,lmcd->klmc", t1, v.oovv)
+    x33 += lib.einsum("lkmc->klmc", x24) * -0.25
+    del x24
+    x25 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x25 += lib.einsum("kndc,lmnd->klmc", t2, v.ooov)
+    x33 += lib.einsum("lkmc->klmc", x25)
+    del x25
+    x28 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x28 += lib.einsum("kmlc->klmc", v.ooov) * -1
+    x28 += lib.einsum("lmkc->klmc", v.ooov) * 2
+    x29 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x29 += lib.einsum("nmdc,nkld->klmc", t2, x28)
+    del x28
+    x33 += lib.einsum("kmlc->klmc", x29) * -1
+    del x29
+    x31 += lib.einsum("kc->kc", f.ov) * 2.000000000000003
+    x32 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x32 += lib.einsum("kd,lmdc->klmc", x31, t2) * 0.4999999999999993
+    del x31
+    x33 += lib.einsum("kmlc->klmc", x32) * -1
+    del x32
+    x34 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x34 += lib.einsum("md,mklc->klcd", t1, x33) * 0.25
+    del x33
+    x39 += lib.einsum("kldc->klcd", x34)
+    del x34
+    x36 += lib.einsum("kc->kc", f.ov)
+    x37 = np.zeros((nocc, nocc), dtype=np.float64)
+    x37 += lib.einsum("lc,kc->kl", t1, x36) * 2.000000000000003
+    del x36
+    x38 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x38 += lib.einsum("mk,mlcd->klcd", x37, t2) * 0.12499999999999982
+    del x37
+    x39 += lib.einsum("kldc->klcd", x38) * -1
+    del x38
+    t2new += lib.einsum("kldc->klcd", x39)
+    t2new += lib.einsum("lkcd->klcd", x39)
+    del x39
+    x41 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x41 += lib.einsum("lckd->klcd", v.ovov) * -1
+    x41 += lib.einsum("ldkc->klcd", v.ovov) * 2
+    x42 = np.zeros((nvir, nvir), dtype=np.float64)
+    x42 += lib.einsum("klde,klce->cd", t2, x41) * 4
+    del x41
+    x43 += lib.einsum("dc->cd", x42) * -1
+    del x42
+    x44 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x44 += lib.einsum("ce,kled->klcd", x43, t2) * 0.25
+    del x43
+    x58 += lib.einsum("lkdc->klcd", x44) * -1
+    del x44
+    x45 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x45 += lib.einsum("kndc,nmld->klmc", t2, v.ooov)
+    x52 += lib.einsum("klmc->klmc", x45) * -4
+    del x45
+    x46 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x46 += lib.einsum("klde,mdce->klmc", t2, v.ovvv)
+    x52 += lib.einsum("kmlc->klmc", x46) * 4
+    del x46
+    x50 += lib.einsum("kdcl->klcd", v.ovvo)
+    x51 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x51 += lib.einsum("md,klcd->klmc", t1, x50)
+    del x50
+    x52 += lib.einsum("lmkc->klmc", x51)
+    del x51
+    x53 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x53 += lib.einsum("md,kmlc->klcd", t1, x52) * 0.0625
+    del x52
+    x58 += lib.einsum("kldc->klcd", x53)
+    del x53
+    t2new += lib.einsum("klcd->klcd", x58) * -1
+    t2new += lib.einsum("lkdc->klcd", x58) * -1
+    del x58
+    x59 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x59 += lib.einsum("mk,lmcd->klcd", f.oo, t2)
+    x61 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x61 += lib.einsum("klcd->klcd", x59)
+    del x59
+    x60 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x60 += lib.einsum("ce,klde->klcd", f.vv, t2)
+    x61 -= lib.einsum("klcd->klcd", x60)
+    del x60
+    t2new -= lib.einsum("kldc->klcd", x61)
+    t2new -= lib.einsum("lkcd->klcd", x61)
+    del x61
+    x62 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x62 -= lib.einsum("lckd->klcd", v.ovov)
+    x62 += lib.einsum("ldkc->klcd", v.ovov) * 2
+    x63 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x63 += lib.einsum("mlde,mkec->klcd", t2, x62)
+    x64 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x64 += lib.einsum("mled,mkec->klcd", t2, x63)
+    del x63
+    t2new -= lib.einsum("lkdc->klcd", x64)
+    t2new -= lib.einsum("klcd->klcd", x64)
+    del x64
+    x65 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x65 += lib.einsum("mkec,mled->klcd", t2, x62) * 2
+    del x62
+    x65 += lib.einsum("ldck->klcd", v.ovvo) * 2
+    x65 -= lib.einsum("lkcd->klcd", v.oovv)
+    t2new += lib.einsum("mled,kmce->klcd", t2, x65)
+    del x65
+    x67 += lib.einsum("lnkm->klmn", v.oooo)
+    t2new += lib.einsum("mncd,mnkl->klcd", t2, x67)
+    del x67
+    x68 += lib.einsum("lnkm->klmn", v.oooo) * 16.000000000000025
+    x69 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x69 += lib.einsum("nc,nkml->klmc", t1, x68) * 0.06249999999999991
+    del x68
+    x69 += lib.einsum("klcm->klmc", v.oovo) * -4
+    t2new += lib.einsum("md,mlkc->klcd", t1, x69) * 0.0625
+    del x69
+    x70 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x70 -= lib.einsum("ldck->klcd", v.ovvo)
+    x70 += lib.einsum("kmec,meld->klcd", t2, v.ovov)
+    t2new += lib.einsum("mkce,lmde->klcd", t2, x70)
+    del x70
+    x71 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x71 -= lib.einsum("lkcd->klcd", v.oovv)
+    x71 += lib.einsum("kmec,mdle->klcd", t2, v.ovov)
+    t2new += lib.einsum("mkde,lmce->klcd", t2, x71)
+    del x71
+    t1new += lib.einsum("ck->kc", f.vo)
+    t2new += lib.einsum("mc,mkdl->klcd", t1, v.oovo) * -0.25
+    t2new -= lib.einsum("kmce,mlde->klcd", t2, v.oovv)
+    t2new -= lib.einsum("lmed,meck->klcd", t2, v.ovvo)
+    t2new -= lib.einsum("lmec,mkde->klcd", t2, v.oovv)
+    t2new += lib.einsum("kmce,medl->klcd", t2, v.ovvo) * 2
+    t2new += lib.einsum("dlck->klcd", v.vovo)
+    t2new += lib.einsum("lkeg,cgde->klcd", t2, v.vvvv)
 
     return {"t1new": t1new, "t2new": t2new}
 
 def update_lams(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=None, l2=None, **kwargs):
-    # L1 amplitude
-    l1new = np.zeros((nvir, nocc), dtype=np.float64)
-    l1new += lib.einsum("ge,gm->em", f.vv, l1)
-    l1new -= lib.einsum("egno,npgh,pomh->em", l2, t2, v.ooov)
-    l1new -= lib.einsum("egno,pngh,phmo->em", l2, t2, v.ovoo)
-    l1new -= lib.einsum("egno,pogh,pnmh->em", l2, t2, v.ooov)
-    l1new -= lib.einsum("egno,opgh,phmn->em", l2, t2, v.ovoo) * 4
-    l1new += lib.einsum("egno,npgh,phmo->em", l2, t2, v.ovoo) * 2
-    l1new += lib.einsum("egno,opgh,pnmh->em", l2, t2, v.ooov) * 2
-    l1new += lib.einsum("egno,pngh,pomh->em", l2, t2, v.ooov) * 2
-    l1new += lib.einsum("egno,pogh,phmn->em", l2, t2, v.ovoo) * 2
-    l1new += lib.einsum("egnm,opgh,onph->em", l2, t2, v.ooov) * 2
-    l1new += lib.einsum("genm,pogh,onph->em", l2, t2, v.ooov) * 2
-    l1new += lib.einsum("ghnm,pogh,oepn->em", l2, t2, v.ovoo) * 2
-    l1new += lib.einsum("ghno,npgh,pemo->em", l2, t2, v.ovoo) * 2
-    l1new += lib.einsum("ghno,nphg,pome->em", l2, t2, v.ooov) * 2
-    l1new += lib.einsum("egnm,pogh,onph->em", l2, t2, v.ooov) * -1
-    l1new += lib.einsum("ghnm,opgh,oepn->em", l2, t2, v.ovoo) * -1
-    l1new += lib.einsum("ghno,nphg,pemo->em", l2, t2, v.ovoo) * -1
-    l1new += lib.einsum("genm,opgh,onph->em", l2, t2, v.ooov) * -4
-    l1new += lib.einsum("ghno,npgh,pome->em", l2, t2, v.ooov) * -4
-    l1new -= lib.einsum("pg,nh,egno,phmo->em", t1, t1, l2, v.ovoo)
-    l1new -= lib.einsum("pg,oh,egnm,onph->em", t1, t1, l2, v.ooov)
-    l1new -= lib.einsum("pg,oh,egno,pnmh->em", t1, t1, l2, v.ooov)
-    l1new -= lib.einsum("og,ph,genm,onph->em", t1, t1, l2, v.ooov) * 4
-    l1new += lib.einsum("og,ph,egnm,onph->em", t1, t1, l2, v.ooov) * 2
-    l1new += lib.einsum("pg,nh,egno,pomh->em", t1, t1, l2, v.ooov) * 2
-    l1new += lib.einsum("pg,oh,genm,onph->em", t1, t1, l2, v.ooov) * 2
-    l1new += lib.einsum("pg,oh,egno,phmn->em", t1, t1, l2, v.ovoo) * 2
-    l1new += lib.einsum("pg,oh,ghnm,oepn->em", t1, t1, l2, v.ovoo) * 2
-    l1new += lib.einsum("og,ph,ghnm,oepn->em", t1, t1, l2, v.ovoo) * -1
-    l1new += lib.einsum("egno,gnmo->em", l2, v.vooo)
-    l1new += lib.einsum("egno,gomn->em", l2, v.vooo) * -2
-    l1new += lib.einsum("no,ng,egom->em", f.oo, t1, l2)
-    l1new += lib.einsum("en,og,onmg->em", l1, t1, v.ooov)
-    l1new += lib.einsum("gn,og,oemn->em", l1, t1, v.ovoo)
-    l1new -= lib.einsum("no,ng,geom->em", f.oo, t1, l2) * 2
-    l1new -= lib.einsum("en,og,ogmn->em", l1, t1, v.ovoo) * 2
-    l1new -= lib.einsum("gn,og,onme->em", l1, t1, v.ooov) * 2
-    l1new += lib.einsum("pg,egno,pomn->em", t1, l2, v.oooo) * 2
-    l1new += lib.einsum("pg,egno,pnmo->em", t1, l2, v.oooo) * -1
-    l1new -= lib.einsum("mn,en->em", f.oo, l1)
-    l1new -= lib.einsum("gn,egnm->em", f.vo, l2)
-    l1new -= lib.einsum("gn,gemn->em", l1, v.vvoo)
-    l1new -= lib.einsum("ng,nemg->em", t1, v.ovov)
-    l1new += lib.einsum("gn,genm->em", f.vo, l2) * 2
-    l1new += lib.einsum("gn,gnme->em", l1, v.voov) * 2
-    l1new += lib.einsum("ng,ngme->em", t1, v.ovov) * 2
-    l1new -= lib.einsum("mg,en,ng->em", f.ov, l1, t1)
-    l1new -= lib.einsum("ne,gm,ng->em", f.ov, l1, t1)
-    l1new += lib.einsum("ghnm,hegn->em", l2, v.vvvo) * 2
-    l1new += lib.einsum("ghnm,gehn->em", l2, v.vvvo) * -1
-    l1new -= lib.einsum("gh,nh,egnm->em", f.vv, t1, l2)
-    l1new -= lib.einsum("gm,nh,negh->em", l1, t1, v.ovvv)
-    l1new -= lib.einsum("gn,nh,gemh->em", l1, t1, v.vvov)
-    l1new += lib.einsum("gh,nh,genm->em", f.vv, t1, l2) * 2
-    l1new += lib.einsum("gm,nh,genh->em", l1, t1, v.vvov) * 2
-    l1new += lib.einsum("gn,nh,ghme->em", l1, t1, v.vvov) * 2
-    l1new += lib.einsum("ng,ehom,ongh->em", f.ov, l2, t2)
-    l1new += lib.einsum("gn,ongh,oemh->em", l1, t2, v.ovov)
-    l1new += lib.einsum("og,ghnm,oehn->em", t1, l2, v.ovvo)
-    l1new += lib.einsum("nh,egno,ghmo->em", t1, l2, v.vvoo)
-    l1new += lib.einsum("oh,egnm,ongh->em", t1, l2, v.oovv)
-    l1new += lib.einsum("oh,ghnm,geon->em", t1, l2, v.vvoo)
-    l1new += lib.einsum("oh,egno,gnmh->em", t1, l2, v.voov)
-    l1new -= lib.einsum("ng,ehom,nogh->em", f.ov, l2, t2) * 2
-    l1new -= lib.einsum("ng,heom,ongh->em", f.ov, l2, t2) * 2
-    l1new -= lib.einsum("gn,nogh,oemh->em", l1, t2, v.ovov) * 2
-    l1new -= lib.einsum("gn,ongh,ohme->em", l1, t2, v.ovov) * 2
-    l1new -= lib.einsum("og,ghnm,heon->em", t1, l2, v.vvoo) * 2
-    l1new -= lib.einsum("nh,egno,gomh->em", t1, l2, v.voov) * 2
-    l1new -= lib.einsum("oh,egnm,ohgn->em", t1, l2, v.ovvo) * 2
-    l1new -= lib.einsum("oh,genm,ongh->em", t1, l2, v.oovv) * 2
-    l1new -= lib.einsum("oh,ghnm,oegn->em", t1, l2, v.ovvo) * 2
-    l1new -= lib.einsum("oh,egno,ghmn->em", t1, l2, v.vvoo) * 2
-    l1new += lib.einsum("ng,heom,nogh->em", f.ov, l2, t2) * 4
-    l1new += lib.einsum("gn,nogh,ohme->em", l1, t2, v.ovov) * 4
-    l1new += lib.einsum("oh,genm,ohgn->em", t1, l2, v.ovvo) * 4
-    l1new += lib.einsum("mg,ehno,ongh->em", f.ov, l2, t2)
-    l1new += lib.einsum("ne,ghom,nogh->em", f.ov, l2, t2)
-    l1new += lib.einsum("gm,ongh,neoh->em", l1, t2, v.ovov)
-    l1new += lib.einsum("en,nogh,ogmh->em", l1, t2, v.ovov)
-    l1new += lib.einsum("mg,ehno,nogh->em", f.ov, l2, t2) * -2
-    l1new += lib.einsum("ne,ghom,ongh->em", f.ov, l2, t2) * -2
-    l1new += lib.einsum("gm,nogh,neoh->em", l1, t2, v.ovov) * -2
-    l1new += lib.einsum("en,ongh,ogmh->em", l1, t2, v.ovov) * -2
-    l1new += lib.einsum("ng,og,nh,ehom->em", f.ov, t1, t1, l2)
-    l1new += lib.einsum("gm,og,nh,neoh->em", l1, t1, t1, v.ovov)
-    l1new += lib.einsum("en,ng,oh,ogmh->em", l1, t1, t1, v.ovov)
-    l1new += lib.einsum("gn,og,nh,oemh->em", l1, t1, t1, v.ovov)
-    l1new -= lib.einsum("ng,og,nh,heom->em", f.ov, t1, t1, l2) * 2
-    l1new -= lib.einsum("gm,ng,oh,neoh->em", l1, t1, t1, v.ovov) * 2
-    l1new -= lib.einsum("en,og,nh,ogmh->em", l1, t1, t1, v.ovov) * 2
-    l1new -= lib.einsum("gn,og,nh,ohme->em", l1, t1, t1, v.ovov) * 2
-    l1new += lib.einsum("me->em", f.ov)
-    l1new -= lib.einsum("og,ghnm,nphA,peoA->em", t1, l2, t2, v.ovov)
-    l1new -= lib.einsum("og,ghnm,pnhA,oepA->em", t1, l2, t2, v.ovov)
-    l1new -= lib.einsum("nh,egno,pogA,phmA->em", t1, l2, t2, v.ovov)
-    l1new -= lib.einsum("oh,egnm,pngA,oAph->em", t1, l2, t2, v.ovov)
-    l1new -= lib.einsum("oh,ghnm,pngA,peoA->em", t1, l2, t2, v.ovov)
-    l1new -= lib.einsum("oh,egno,npgA,phmA->em", t1, l2, t2, v.ovov)
-    l1new -= lib.einsum("oh,egno,pngA,pAmh->em", t1, l2, t2, v.ovov)
-    l1new -= lib.einsum("nh,egno,opgA,pAmh->em", t1, l2, t2, v.ovov) * 4
-    l1new -= lib.einsum("oh,egnm,npgA,ohpA->em", t1, l2, t2, v.ovov) * 4
-    l1new -= lib.einsum("oh,genm,npgA,oAph->em", t1, l2, t2, v.ovov) * 4
-    l1new -= lib.einsum("oh,genm,pngA,ohpA->em", t1, l2, t2, v.ovov) * 4
-    l1new -= lib.einsum("oh,ghnm,npgA,oepA->em", t1, l2, t2, v.ovov) * 4
-    l1new += lib.einsum("og,ghnm,nphA,oepA->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("og,ghnm,pnhA,peoA->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("nh,egno,opgA,phmA->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("nh,egno,pogA,pAmh->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("oh,egnm,npgA,oAph->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("oh,egnm,pngA,ohpA->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("oh,genm,pngA,oAph->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("oh,ghnm,npgA,peoA->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("oh,ghnm,pngA,oepA->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("oh,egno,npgA,pAmh->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("oh,egno,pngA,phmA->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("oh,genm,npgA,ohpA->em", t1, l2, t2, v.ovov) * 8
-    l1new += lib.einsum("nA,ghnm,pogh,oepA->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("nA,ghno,opgh,pAme->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("nA,ghno,ophg,pemA->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("oA,ghnm,npgh,oepA->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("oA,ghnm,pngh,peoA->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("og,egnm,nphA,ohpA->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("og,genm,nphA,oAph->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("pg,egno,onhA,phmA->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("pg,ghno,nohA,pAme->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("pg,ghno,onhA,pemA->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("nh,egnm,opgA,ohpA->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("nh,genm,opgA,phoA->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("ph,egno,nogA,phmA->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("ph,egno,ongA,pAmh->em", t1, l2, t2, v.ovov) * 2
-    l1new += lib.einsum("nA,ghnm,opgh,oepA->em", t1, l2, t2, v.ovov) * -1
-    l1new += lib.einsum("nA,ghno,opgh,pemA->em", t1, l2, t2, v.ovov) * -1
-    l1new += lib.einsum("oA,ghnm,pngh,oepA->em", t1, l2, t2, v.ovov) * -1
-    l1new += lib.einsum("og,egnm,nphA,oAph->em", t1, l2, t2, v.ovov) * -1
-    l1new += lib.einsum("pg,egno,nohA,phmA->em", t1, l2, t2, v.ovov) * -1
-    l1new += lib.einsum("pg,ghno,nohA,pemA->em", t1, l2, t2, v.ovov) * -1
-    l1new += lib.einsum("nh,egnm,opgA,phoA->em", t1, l2, t2, v.ovov) * -1
-    l1new += lib.einsum("ph,egno,nogA,pAmh->em", t1, l2, t2, v.ovov) * -1
-    l1new += lib.einsum("nA,ghno,ophg,pAme->em", t1, l2, t2, v.ovov) * -4
-    l1new += lib.einsum("oA,ghnm,npgh,peoA->em", t1, l2, t2, v.ovov) * -4
-    l1new += lib.einsum("og,genm,nphA,ohpA->em", t1, l2, t2, v.ovov) * -4
-    l1new += lib.einsum("pg,ghno,onhA,pAme->em", t1, l2, t2, v.ovov) * -4
-    l1new += lib.einsum("nh,genm,opgA,ohpA->em", t1, l2, t2, v.ovov) * -4
-    l1new += lib.einsum("ph,egno,ongA,phmA->em", t1, l2, t2, v.ovov) * -4
-    l1new -= lib.einsum("pA,og,nh,egnm,oAph->em", t1, t1, t1, l2, v.ovov)
-    l1new -= lib.einsum("pA,og,nh,genm,ohpA->em", t1, t1, t1, l2, v.ovov) * 4
-    l1new += lib.einsum("pA,og,nh,egnm,ohpA->em", t1, t1, t1, l2, v.ovov) * 2
-    l1new += lib.einsum("pA,og,nh,genm,oAph->em", t1, t1, t1, l2, v.ovov) * 2
-    l1new += lib.einsum("nA,pg,oh,ghnm,oepA->em", t1, t1, t1, l2, v.ovov) * 2.0000000000000013
-    l1new += lib.einsum("nA,pg,oh,egno,phmA->em", t1, t1, t1, l2, v.ovov) * 2.0000000000000013
-    l1new += lib.einsum("nA,og,ph,ghnm,oepA->em", t1, t1, t1, l2, v.ovov) * -1
-    l1new += lib.einsum("oA,pg,nh,egno,phmA->em", t1, t1, t1, l2, v.ovov) * -1
-    l1new += lib.einsum("ghnm,ongA,oehA->em", l2, t2, v.ovvv)
-    l1new += lib.einsum("ghnm,nohA,oegA->em", l2, t2, v.ovvv)
-    l1new += lib.einsum("ghnm,onhA,geoA->em", l2, t2, v.vvov)
-    l1new -= lib.einsum("ghnm,nogA,oehA->em", l2, t2, v.ovvv) * 2
-    l1new -= lib.einsum("ghnm,ongA,heoA->em", l2, t2, v.vvov) * 2
-    l1new -= lib.einsum("ghnm,nohA,geoA->em", l2, t2, v.vvov) * 2
-    l1new -= lib.einsum("ghnm,onhA,oegA->em", l2, t2, v.ovvv) * 2
-    l1new += lib.einsum("ghnm,nogA,heoA->em", l2, t2, v.vvov) * 4
-    l1new += lib.einsum("egnm,nohA,ohgA->em", l2, t2, v.ovvv)
-    l1new += lib.einsum("egno,nohA,ghmA->em", l2, t2, v.vvov)
-    l1new += lib.einsum("ghno,ongA,hemA->em", l2, t2, v.vvov)
-    l1new += lib.einsum("genm,noAh,ohgA->em", l2, t2, v.ovvv) * 4
-    l1new += lib.einsum("ghno,nogA,hAme->em", l2, t2, v.vvov) * 4
-    l1new += lib.einsum("egnm,noAh,ohgA->em", l2, t2, v.ovvv) * -2
-    l1new += lib.einsum("genm,nohA,ohgA->em", l2, t2, v.ovvv) * -2
-    l1new += lib.einsum("egno,onhA,ghmA->em", l2, t2, v.vvov) * -2
-    l1new += lib.einsum("ghno,nogA,hemA->em", l2, t2, v.vvov) * -2
-    l1new += lib.einsum("ghno,ongA,hAme->em", l2, t2, v.vvov) * -2
-    l1new += lib.einsum("nA,og,ghnm,oehA->em", t1, t1, l2, v.ovvv)
-    l1new += lib.einsum("nA,oh,ghnm,geoA->em", t1, t1, l2, v.vvov)
-    l1new += lib.einsum("oA,nh,egnm,ohgA->em", t1, t1, l2, v.ovvv)
-    l1new -= lib.einsum("nA,og,ghnm,heoA->em", t1, t1, l2, v.vvov) * 2
-    l1new -= lib.einsum("nA,oh,egnm,ohgA->em", t1, t1, l2, v.ovvv) * 2
-    l1new -= lib.einsum("nA,oh,ghnm,oegA->em", t1, t1, l2, v.ovvv) * 2
-    l1new -= lib.einsum("oA,nh,genm,ohgA->em", t1, t1, l2, v.ovvv) * 2
-    l1new += lib.einsum("nA,oh,genm,ohgA->em", t1, t1, l2, v.ovvv) * 4
-    l1new += lib.einsum("oA,nh,egno,ghmA->em", t1, t1, l2, v.vvov)
-    l1new += lib.einsum("nA,oh,egno,ghmA->em", t1, t1, l2, v.vvov) * -2
-    l1new += lib.einsum("nA,ghnm,hegA->em", t1, l2, v.vvvv) * 2
-    l1new += lib.einsum("nA,ghnm,gehA->em", t1, l2, v.vvvv) * -1
-
-    # L2 amplitude
+    # L1 and L2 amplitude
+    x0 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x0 += lib.einsum("oA,pIhA->opIh", f.ov, t2)
+    x16 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x16 += lib.einsum("pIoh->opIh", x0) * 2
+    x16 += lib.einsum("poIh->opIh", x0) * -4
+    del x0
+    x1 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x1 += lib.einsum("poBA,IAhB->opIh", t2, v.ovvv)
+    x4 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x4 += lib.einsum("opIh->opIh", x1) * 4
+    del x1
+    x2 = np.zeros((nocc, nocc, nocc, nocc), dtype=np.float64)
+    x2 += lib.einsum("ophA,IhJA->opIJ", t2, v.ovov)
+    x3 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x3 += lib.einsum("Jh,opIJ->opIh", t1, x2)
+    x4 += lib.einsum("opIh->opIh", x3) * -1
+    del x3
+    x16 += lib.einsum("Ioph->opIh", x4) * -1
+    x16 += lib.einsum("oIph->opIh", x4) * 0.5
+    del x4
+    x116 = np.zeros((nocc, nocc, nocc, nocc), dtype=np.float64)
+    x116 += lib.einsum("JIpo->opIJ", x2)
+    del x2
+    x5 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x5 += lib.einsum("pAoh->ophA", v.ovov)
+    x5 += lib.einsum("phoA->ophA", v.ovov) * -0.5
+    x6 = np.zeros((nocc, nvir), dtype=np.float64)
+    x6 += lib.einsum("pA,poAh->oh", t1, x5)
+    x7 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x7 += lib.einsum("IA,opAh->opIh", x6, t2)
+    x16 += lib.einsum("oIph->opIh", x7)
+    x16 += lib.einsum("Ioph->opIh", x7) * -2
+    del x7
+    x91 = np.zeros((nocc, nocc), dtype=np.float64)
+    x91 += lib.einsum("oh,ph->op", t1, x6) * 0.25
+    x92 = np.zeros((nocc, nocc), dtype=np.float64)
+    x92 += lib.einsum("po->op", x91)
+    del x91
+    x49 = np.zeros((nocc, nvir), dtype=np.float64)
+    x49 += lib.einsum("pA,poAh->oh", t1, x5) * 0.5
+    x51 = np.zeros((nocc, nvir), dtype=np.float64)
+    x51 += lib.einsum("pA,poAh->oh", t1, x5) * 2
+    del x5
+    x52 = np.zeros((nocc, nvir), dtype=np.float64)
+    x52 += lib.einsum("oh->oh", x51)
+    x67 = np.zeros((nocc, nvir), dtype=np.float64)
+    x67 += lib.einsum("oh->oh", x51)
+    x95 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x95 += lib.einsum("ho,pA->ophA", l1, x51) * -0.0625
+    x8 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x8 += lib.einsum("oA,IAph->opIh", t1, v.ovov)
+    x9 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x9 += lib.einsum("oIph->opIh", x8) * 0.25
+    x9 += lib.einsum("opIh->opIh", x8) * -0.125
+    x10 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x10 += lib.einsum("oIph->opIh", x8) * -0.25
+    x10 += lib.einsum("opIh->opIh", x8) * 0.5
+    x13 = np.zeros((nocc, nocc, nocc, nocc), dtype=np.float64)
+    x13 += lib.einsum("ph,oJIh->opIJ", t1, x8)
+    x15 = np.zeros((nocc, nocc, nocc, nocc), dtype=np.float64)
+    x15 += lib.einsum("opIJ->opIJ", x13) * 0.03125000000000002
+    x22 = np.zeros((nocc, nocc, nocc, nocc), dtype=np.float64)
+    x22 += lib.einsum("opIJ->opIJ", x13)
     l2new = np.zeros((nvir, nvir, nocc, nocc), dtype=np.float64)
-    l2new -= lib.einsum("KD,DEIJ,KBEC->BCIJ", t1, l2, v.ovvv)
-    l2new -= lib.einsum("KE,BDIJ,KCDE->BCIJ", t1, l2, v.ovvv)
-    l2new -= lib.einsum("KE,DCIJ,KBDE->BCIJ", t1, l2, v.ovvv)
-    l2new -= lib.einsum("KE,DEIJ,DBKC->BCIJ", t1, l2, v.vvov)
-    l2new -= lib.einsum("KE,BDIK,JEDC->BCIJ", t1, l2, v.ovvv)
-    l2new -= lib.einsum("KE,DBIK,JCDE->BCIJ", t1, l2, v.ovvv)
-    l2new -= lib.einsum("KE,DCIK,JEDB->BCIJ", t1, l2, v.ovvv)
-    l2new -= lib.einsum("KE,CDJK,IEDB->BCIJ", t1, l2, v.ovvv)
-    l2new -= lib.einsum("KE,DBJK,IEDC->BCIJ", t1, l2, v.ovvv)
-    l2new -= lib.einsum("KE,DCJK,IBDE->BCIJ", t1, l2, v.ovvv)
-    l2new += lib.einsum("KE,BDIJ,DCKE->BCIJ", t1, l2, v.vvov) * 2
-    l2new += lib.einsum("KE,DCIJ,DBKE->BCIJ", t1, l2, v.vvov) * 2
-    l2new += lib.einsum("KE,BDIK,JCDE->BCIJ", t1, l2, v.ovvv) * 2
-    l2new += lib.einsum("KE,CDJK,IBDE->BCIJ", t1, l2, v.ovvv) * 2
-    l2new -= lib.einsum("BDIK,JKDC->BCIJ", l2, v.oovv)
-    l2new -= lib.einsum("DBIK,JCDK->BCIJ", l2, v.ovvo)
-    l2new -= lib.einsum("DCIK,JKDB->BCIJ", l2, v.oovv)
-    l2new -= lib.einsum("CDJK,IKDB->BCIJ", l2, v.oovv)
-    l2new -= lib.einsum("DBJK,IKDC->BCIJ", l2, v.oovv)
-    l2new -= lib.einsum("DCJK,IBDK->BCIJ", l2, v.ovvo)
-    l2new += lib.einsum("BDIK,JCDK->BCIJ", l2, v.ovvo) * 2
-    l2new += lib.einsum("CDJK,IBDK->BCIJ", l2, v.ovvo) * 2
-    l2new -= lib.einsum("ID,KD,CBJK->BCIJ", f.ov, t1, l2)
-    l2new -= lib.einsum("JD,KD,BCIK->BCIJ", f.ov, t1, l2)
-    l2new -= lib.einsum("KB,KD,DCIJ->BCIJ", f.ov, t1, l2)
-    l2new -= lib.einsum("KC,KD,BDIJ->BCIJ", f.ov, t1, l2)
-    l2new -= lib.einsum("BI,KD,JDKC->BCIJ", l1, t1, v.ovov)
-    l2new -= lib.einsum("DI,KD,JCKB->BCIJ", l1, t1, v.ovov)
-    l2new -= lib.einsum("CJ,KD,IDKB->BCIJ", l1, t1, v.ovov)
-    l2new -= lib.einsum("DJ,KD,IBKC->BCIJ", l1, t1, v.ovov)
-    l2new -= lib.einsum("BK,KD,IDJC->BCIJ", l1, t1, v.ovov)
-    l2new -= lib.einsum("CK,KD,IBJD->BCIJ", l1, t1, v.ovov)
-    l2new += lib.einsum("BI,KD,JCKD->BCIJ", l1, t1, v.ovov) * 2
-    l2new += lib.einsum("CJ,KD,IBKD->BCIJ", l1, t1, v.ovov) * 2
-    l2new -= lib.einsum("IK,CBJK->BCIJ", f.oo, l2)
-    l2new -= lib.einsum("JK,BCIK->BCIJ", f.oo, l2)
-    l2new -= lib.einsum("BK,IKJC->BCIJ", l1, v.ooov)
-    l2new -= lib.einsum("CK,IBJK->BCIJ", l1, v.ovoo)
-    l2new += lib.einsum("DEIJ,DBEC->BCIJ", l2, v.vvvv)
-    l2new += lib.einsum("KD,BCKL,IDJL->BCIJ", t1, l2, v.ovoo)
-    l2new += lib.einsum("LD,BCIK,JDLK->BCIJ", t1, l2, v.ovoo)
-    l2new += lib.einsum("LD,BDIK,JKLC->BCIJ", t1, l2, v.ooov)
-    l2new += lib.einsum("LD,DBIK,JCLK->BCIJ", t1, l2, v.ovoo)
-    l2new += lib.einsum("LD,DCIK,JKLB->BCIJ", t1, l2, v.ooov)
-    l2new += lib.einsum("LD,CBJK,IDLK->BCIJ", t1, l2, v.ovoo)
-    l2new += lib.einsum("LD,CDJK,IKLB->BCIJ", t1, l2, v.ooov)
-    l2new += lib.einsum("LD,DBJK,IKLC->BCIJ", t1, l2, v.ooov)
-    l2new += lib.einsum("LD,DCJK,IBLK->BCIJ", t1, l2, v.ovoo)
-    l2new += lib.einsum("LD,BCKL,IKJD->BCIJ", t1, l2, v.ooov)
-    l2new -= lib.einsum("LD,BCIK,JKLD->BCIJ", t1, l2, v.ooov) * 2
-    l2new -= lib.einsum("LD,BDIK,JCLK->BCIJ", t1, l2, v.ovoo) * 2
-    l2new -= lib.einsum("LD,CBJK,IKLD->BCIJ", t1, l2, v.ooov) * 2
-    l2new -= lib.einsum("LD,CDJK,IBLK->BCIJ", t1, l2, v.ovoo) * 2
-    l2new += lib.einsum("IB,CJ->BCIJ", f.ov, l1)
-    l2new += lib.einsum("JC,BI->BCIJ", f.ov, l1)
-    l2new += lib.einsum("IBJC->BCIJ", v.ovov)
-    l2new += lib.einsum("BCKL,IKJL->BCIJ", l2, v.oooo)
-    l2new += lib.einsum("BDIK,LKDE,JELC->BCIJ", l2, t2, v.ovov)
-    l2new += lib.einsum("DBIK,KLDE,JELC->BCIJ", l2, t2, v.ovov)
-    l2new += lib.einsum("DBIK,LKDE,JCLE->BCIJ", l2, t2, v.ovov)
-    l2new += lib.einsum("DCIK,LKDE,JELB->BCIJ", l2, t2, v.ovov)
-    l2new += lib.einsum("CDJK,LKDE,IELB->BCIJ", l2, t2, v.ovov)
-    l2new += lib.einsum("DBJK,LKDE,IELC->BCIJ", l2, t2, v.ovov)
-    l2new += lib.einsum("DCJK,KLDE,IELB->BCIJ", l2, t2, v.ovov)
-    l2new += lib.einsum("DCJK,LKDE,IBLE->BCIJ", l2, t2, v.ovov)
-    l2new -= lib.einsum("BDIK,KLDE,JELC->BCIJ", l2, t2, v.ovov) * 2
-    l2new -= lib.einsum("BDIK,LKDE,JCLE->BCIJ", l2, t2, v.ovov) * 2
-    l2new -= lib.einsum("DBIK,KLDE,JCLE->BCIJ", l2, t2, v.ovov) * 2
-    l2new -= lib.einsum("CDJK,KLDE,IELB->BCIJ", l2, t2, v.ovov) * 2
-    l2new -= lib.einsum("CDJK,LKDE,IBLE->BCIJ", l2, t2, v.ovov) * 2
-    l2new -= lib.einsum("DCJK,KLDE,IBLE->BCIJ", l2, t2, v.ovov) * 2
-    l2new += lib.einsum("BDIK,KLDE,JCLE->BCIJ", l2, t2, v.ovov) * 4
-    l2new += lib.einsum("CDJK,KLDE,IBLE->BCIJ", l2, t2, v.ovov) * 4
-    l2new += lib.einsum("BDIJ,LKDE,KCLE->BCIJ", l2, t2, v.ovov)
-    l2new += lib.einsum("DCIJ,LKDE,KBLE->BCIJ", l2, t2, v.ovov)
-    l2new += lib.einsum("DEIJ,KLDE,KBLC->BCIJ", l2, t2, v.ovov)
-    l2new += lib.einsum("BCIK,LKDE,JDLE->BCIJ", l2, t2, v.ovov)
-    l2new += lib.einsum("DEIK,KLDE,JCLB->BCIJ", l2, t2, v.ovov)
-    l2new += lib.einsum("CBJK,LKDE,IDLE->BCIJ", l2, t2, v.ovov)
-    l2new += lib.einsum("DEJK,KLDE,IBLC->BCIJ", l2, t2, v.ovov)
-    l2new += lib.einsum("BCKL,KLDE,IDJE->BCIJ", l2, t2, v.ovov)
-    l2new += lib.einsum("BDKL,KLDE,IEJC->BCIJ", l2, t2, v.ovov)
-    l2new += lib.einsum("CDKL,KLDE,IBJE->BCIJ", l2, t2, v.ovov)
-    l2new += lib.einsum("BDIJ,KLDE,KCLE->BCIJ", l2, t2, v.ovov) * -2
-    l2new += lib.einsum("DCIJ,KLDE,KBLE->BCIJ", l2, t2, v.ovov) * -2
-    l2new += lib.einsum("BCIK,KLDE,JDLE->BCIJ", l2, t2, v.ovov) * -2
-    l2new += lib.einsum("DEIK,LKDE,JCLB->BCIJ", l2, t2, v.ovov) * -2
-    l2new += lib.einsum("CBJK,KLDE,IDLE->BCIJ", l2, t2, v.ovov) * -2
-    l2new += lib.einsum("DEJK,LKDE,IBLC->BCIJ", l2, t2, v.ovov) * -2
-    l2new += lib.einsum("BDKL,LKDE,IEJC->BCIJ", l2, t2, v.ovov) * -2
-    l2new += lib.einsum("CDKL,LKDE,IBJE->BCIJ", l2, t2, v.ovov) * -2
-    l2new += lib.einsum("LD,KE,BDIJ,KCLE->BCIJ", t1, t1, l2, v.ovov)
-    l2new += lib.einsum("LD,KE,DCIJ,KBLE->BCIJ", t1, t1, l2, v.ovov)
-    l2new += lib.einsum("LD,KE,BCIK,JDLE->BCIJ", t1, t1, l2, v.ovov)
-    l2new += lib.einsum("LD,KE,BDIK,JELC->BCIJ", t1, t1, l2, v.ovov)
-    l2new += lib.einsum("LD,KE,DBIK,JCLE->BCIJ", t1, t1, l2, v.ovov)
-    l2new += lib.einsum("LD,KE,DCIK,JELB->BCIJ", t1, t1, l2, v.ovov)
-    l2new += lib.einsum("LD,KE,CBJK,IDLE->BCIJ", t1, t1, l2, v.ovov)
-    l2new += lib.einsum("LD,KE,CDJK,IELB->BCIJ", t1, t1, l2, v.ovov)
-    l2new += lib.einsum("LD,KE,DBJK,IELC->BCIJ", t1, t1, l2, v.ovov)
-    l2new += lib.einsum("LD,KE,DCJK,IBLE->BCIJ", t1, t1, l2, v.ovov)
-    l2new -= lib.einsum("KD,LE,BDIJ,KCLE->BCIJ", t1, t1, l2, v.ovov) * 2
-    l2new -= lib.einsum("KD,LE,DCIJ,KBLE->BCIJ", t1, t1, l2, v.ovov) * 2
-    l2new -= lib.einsum("KD,LE,BCIK,JDLE->BCIJ", t1, t1, l2, v.ovov) * 2
-    l2new -= lib.einsum("KD,LE,CBJK,IDLE->BCIJ", t1, t1, l2, v.ovov) * 2
-    l2new -= lib.einsum("LD,KE,BDIK,JCLE->BCIJ", t1, t1, l2, v.ovov) * 2
-    l2new -= lib.einsum("LD,KE,CDJK,IBLE->BCIJ", t1, t1, l2, v.ovov) * 2
-    l2new += lib.einsum("KD,LE,DEIJ,KBLC->BCIJ", t1, t1, l2, v.ovov)
-    l2new += lib.einsum("KD,LE,BCKL,IDJE->BCIJ", t1, t1, l2, v.ovov)
-    l2new += lib.einsum("DB,DCIJ->BCIJ", f.vv, l2)
-    l2new += lib.einsum("DC,BDIJ->BCIJ", f.vv, l2)
-    l2new += lib.einsum("DI,JCDB->BCIJ", l1, v.ovvv)
-    l2new += lib.einsum("DJ,IBDC->BCIJ", l1, v.ovvv)
+    l2new += lib.einsum("hAJI,JIop->hAop", l2, x13) * 0.0625
+    del x13
+    x48 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x48 += lib.einsum("Ioph->opIh", x8) * -0.5
+    x48 += lib.einsum("Ipoh->opIh", x8)
+    x81 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x81 += lib.einsum("opIh->opIh", x8) * 0.25
+    x107 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x107 += lib.einsum("hI,IopA->ophA", l1, x8)
+    del x8
+    x115 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x115 += lib.einsum("ophA->ophA", x107) * 0.0625
+    del x107
+    x9 += lib.einsum("Ioph->opIh", v.ooov) * -0.5
+    x9 += lib.einsum("poIh->opIh", v.ooov)
+    x16 += lib.einsum("JIAh,opJA->opIh", t2, x9) * 4
+    x10 += lib.einsum("Ioph->opIh", v.ooov) * 2
+    x10 += lib.einsum("poIh->opIh", v.ooov) * -1
+    x16 += lib.einsum("JIhA,opJA->opIh", t2, x10) * 2
+    del x10
+    x11 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x11 += lib.einsum("oB,pAhB->ophA", t1, v.ovvv)
+    x12 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x12 += lib.einsum("pohA->ophA", x11) * 0.25
+    x21 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x21 += lib.einsum("pohA->ophA", x11) * 0.25
+    x12 += lib.einsum("oAhp->ophA", v.ovvo)
+    x12 += lib.einsum("ophA->ophA", v.oovv) * -2
+    x16 += lib.einsum("oA,pIhA->opIh", t1, x12) * 0.5
+    del x12
+    x14 = np.zeros((nocc, nocc, nocc, nocc), dtype=np.float64)
+    x14 += lib.einsum("oh,pJIh->opIJ", t1, v.ooov)
+    x15 += lib.einsum("oIJp->opIJ", x14) * -0.25
+    x15 += lib.einsum("oJIp->opIJ", x14) * 0.125
+    x22 += lib.einsum("oIJp->opIJ", x14) * -1.9999999999999987
+    x22 += lib.einsum("oJIp->opIJ", x14) * 3.9999999999999973
+    x23 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x23 += lib.einsum("Jh,oIpJ->opIh", t1, x22) * -0.06250000000000004
+    del x22
+    x108 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x108 += lib.einsum("AhJI,IopJ->ophA", l2, x14)
+    del x14
+    x115 += lib.einsum("ophA->ophA", x108) * -0.25
+    del x108
+    x15 += lib.einsum("JoIp->opIJ", v.oooo) * -1
+    x15 += lib.einsum("JpIo->opIJ", v.oooo) * 0.5
+    x16 += lib.einsum("Jh,oIpJ->opIh", t1, x15) * -1
+    del x15
+    x16 += lib.einsum("pIho->opIh", v.oovo) * -4
+    x16 += lib.einsum("pohI->opIh", v.oovo) * 2
+    l1new = np.zeros((nvir, nocc), dtype=np.float64)
+    l1new += lib.einsum("AhpI,poIA->ho", l2, x16) * 0.5
+    del x16
+    x17 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x17 += lib.einsum("Ahpo->ophA", l2) * 2
+    x17 -= lib.einsum("hApo->ophA", l2)
+    x18 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x18 -= lib.einsum("IpBA,IoBh->ophA", t2, x17)
+    x18 += lib.einsum("hBoI,IpAB->ophA", l2, t2)
+    x19 = np.zeros((nocc, nvir, nvir, nvir), dtype=np.float64)
+    x19 -= lib.einsum("oAhB->ohAB", v.ovvv)
+    x19 += lib.einsum("oBhA->ohAB", v.ovvv) * 2
+    l1new -= lib.einsum("opAB,pAhB->ho", x18, x19)
+    del x18
+    del x19
+    x20 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x20 += lib.einsum("poAh->ophA", t2)
+    x20 += lib.einsum("pohA->ophA", t2) * -0.5
+    x23 += lib.einsum("JIAh,opJA->opIh", x20, x9) * 8
+    del x9
+    x62 = np.zeros((nocc, nvir), dtype=np.float64)
+    x62 += lib.einsum("Ap,poAh->oh", l1, x20)
+    x63 = np.zeros((nvir, nvir), dtype=np.float64)
+    x63 += lib.einsum("hBop,opAB->hA", l2, x20) * 2
+    x111 = np.zeros((nvir, nvir), dtype=np.float64)
+    x111 += lib.einsum("hBop,opAB->hA", l2, x20)
+    del x20
+    x112 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x112 += lib.einsum("AB,oBph->ophA", x111, v.ovov) * 2
+    del x111
+    x115 += lib.einsum("poAh->ophA", x112)
+    del x112
+    x21 += lib.einsum("oAhp->ophA", v.ovvo)
+    x21 += lib.einsum("ophA->ophA", v.oovv) * -0.5
+    x23 += lib.einsum("oA,pIhA->opIh", t1, x21)
+    del x21
+    l1new += lib.einsum("hApI,poIA->ho", l2, x23) * -0.5
+    del x23
+    x24 = np.zeros((nocc, nvir, nvir, nvir), dtype=np.float64)
+    x24 += lib.einsum("oC,AChB->ohAB", t1, v.vvvv)
+    x25 = np.zeros((nocc, nvir, nvir, nvir), dtype=np.float64)
+    x25 += lib.einsum("oAhB->ohAB", x24) * -0.5
+    x25 += lib.einsum("ohAB->ohAB", x24)
+    del x24
+    x25 += lib.einsum("AohB->ohAB", v.vovv) * 4
+    x25 += lib.einsum("hoAB->ohAB", v.vovv) * -2
+    l1new += lib.einsum("ABpo,pBAh->ho", l2, x25) * 0.5
+    del x25
+    x26 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x26 += lib.einsum("IA,Ahpo->opIh", t1, l2)
+    x27 = np.zeros((nocc, nocc, nocc, nocc), dtype=np.float64)
+    x27 += lib.einsum("Ih,opJh->opIJ", t1, x26)
+    x31 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x31 += lib.einsum("Jh,oJpI->opIh", t1, x27) * 0.03125000000000002
+    x117 = np.zeros((nocc, nocc, nocc, nocc), dtype=np.float64)
+    x117 += lib.einsum("opIJ->opIJ", x27)
+    x31 += lib.einsum("IJhA,oJpA->opIh", t2, x26) * 0.5
+    x33 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x33 += lib.einsum("opIh->opIh", x26)
+    x33 += lib.einsum("poIh->opIh", x26) * -0.5
+    x34 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x34 += lib.einsum("IA,Ioph->ophA", t1, x33)
+    del x33
+    l1new += lib.einsum("phAB,opAB->ho", v.ovvv, x34) * -0.125
+    del x34
+    x35 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x35 += lib.einsum("opIh->opIh", x26) * -0.5
+    x35 += lib.einsum("poIh->opIh", x26)
+    x36 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x36 += lib.einsum("IA,Ioph->ophA", t1, x35) * 2
+    l1new += lib.einsum("pBAh,opAB->ho", v.ovvv, x36) * -0.0625
+    del x36
+    l1new += lib.einsum("phAI,oIpA->ho", v.ovvo, x35) * -0.5
+    x39 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x39 += lib.einsum("IJAh,oJpA->opIh", t2, x26)
+    x42 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x42 += lib.einsum("opIh->opIh", x39) * 0.5
+    x44 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x44 += lib.einsum("opIh->opIh", x39)
+    del x39
+    x45 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x45 += lib.einsum("opIh->opIh", x26) * 2
+    x45 += lib.einsum("poIh->opIh", x26) * -1
+    l1new += lib.einsum("pIAh,oIpA->ho", v.oovv, x45) * -0.25
+    del x45
+    x80 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x80 += lib.einsum("IhBA,poIB->ophA", v.ovvv, x26)
+    x95 += lib.einsum("ophA->ophA", x80) * 0.25
+    del x80
+    x94 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x94 += lib.einsum("IA,opIh->ophA", x6, x26) * 0.125
+    del x6
+    x95 += lib.einsum("ophA->ophA", x94)
+    del x94
+    x104 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x104 += lib.einsum("Ih,opIA->ophA", f.ov, x26)
+    x115 += lib.einsum("ophA->ophA", x104) * 0.25
+    del x104
+    x28 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x28 += lib.einsum("poAh->ophA", t2) * 2
+    x28 += lib.einsum("pohA->ophA", t2) * -1
+    x31 += lib.einsum("JopA,JIAh->opIh", x26, x28) * -0.5
+    x56 = np.zeros((nocc, nvir), dtype=np.float64)
+    x56 += lib.einsum("pAhB,poAB->oh", v.ovvv, x28) * -0.5
+    x29 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x29 += lib.einsum("poAh->ophA", t2) * -0.5
+    x29 += lib.einsum("pohA->ophA", t2)
+    x30 = np.zeros((nocc, nocc), dtype=np.float64)
+    x30 += lib.einsum("hAIo,IpAh->op", l2, x29) * 2
+    x31 += lib.einsum("Ih,op->opIh", t1, x30) * -0.5
+    x113 = np.zeros((nocc, nocc), dtype=np.float64)
+    x113 += lib.einsum("op->op", x30)
+    del x30
+    x53 = np.zeros((nocc, nocc), dtype=np.float64)
+    x53 += lib.einsum("IhoA,IpAh->op", v.ovov, x29) * 2
+    x60 = np.zeros((nocc, nocc), dtype=np.float64)
+    x60 += lib.einsum("hAIo,IpAh->op", l2, x29)
+    x61 = np.zeros((nocc, nocc), dtype=np.float64)
+    x61 += lib.einsum("op->op", x60)
+    del x60
+    x68 = np.zeros((nocc, nocc), dtype=np.float64)
+    x68 += lib.einsum("IhoA,IpAh->op", v.ovov, x29) * 8
+    x70 = np.zeros((nocc, nocc), dtype=np.float64)
+    x70 += lib.einsum("hAIo,IpAh->op", l2, x29) * 32
+    x89 = np.zeros((nocc, nocc), dtype=np.float64)
+    x89 += lib.einsum("IhoA,IpAh->op", v.ovov, x29) * 4
+    del x29
+    x92 += lib.einsum("op->op", x89)
+    del x89
+    x32 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x32 += lib.einsum("pAoh->ophA", v.ovov) * 2
+    x32 += lib.einsum("phoA->ophA", v.ovov) * -1
+    l1new += lib.einsum("opIA,pIhA->ho", x31, x32) * 0.5
+    del x31
+    x37 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x37 += lib.einsum("BhoI,IpAB->ophA", l2, t2)
+    x38 = np.zeros((nocc, nvir, nvir, nvir), dtype=np.float64)
+    x38 += lib.einsum("oAhB->ohAB", v.ovvv) * 2
+    x38 -= lib.einsum("oBhA->ohAB", v.ovvv)
+    l1new -= lib.einsum("opAB,pAhB->ho", x37, x38)
+    del x37
+    del x38
+    x40 = np.zeros((nocc, nocc, nocc, nocc), dtype=np.float64)
+    x40 += lib.einsum("hAop,IJhA->opIJ", l2, t2)
+    x41 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x41 += lib.einsum("Jh,oJpI->opIh", t1, x40)
+    x42 += lib.einsum("oIph->opIh", x41) * 0.5
+    x42 += lib.einsum("opIh->opIh", x41) * -1
+    del x41
+    l1new += lib.einsum("phIA,opIA->ho", v.ovov, x42) * -0.5
+    del x42
+    x46 = np.zeros((nocc, nocc, nocc, nocc), dtype=np.float64)
+    x46 += lib.einsum("poIJ->opIJ", x40)
+    x46 += lib.einsum("poJI->opIJ", x40) * -0.5
+    l1new += lib.einsum("pJIh,JoIp->ho", v.ooov, x46) * 2
+    del x46
+    x117 += lib.einsum("poJI->opIJ", x40) * 16
+    del x40
+    l2new += lib.einsum("IhJA,poJI->hAop", v.ovov, x117) * 0.0625
+    del x117
+    x43 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x43 += lib.einsum("Ao,pIhA->opIh", l1, t2)
+    x44 += lib.einsum("oIph->opIh", x43) * 0.5
+    x44 += lib.einsum("opIh->opIh", x43) * -1
+    del x43
+    l1new += lib.einsum("pAIh,opIA->ho", v.ovov, x44) * 0.5
+    del x44
+    x47 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x47 += lib.einsum("oIph->opIh", v.ooov) * -0.5
+    x47 += lib.einsum("pIoh->opIh", v.ooov)
+    x53 += lib.einsum("Ih,Ioph->op", t1, x47) * 0.5
+    x68 += lib.einsum("Ih,Ioph->op", t1, x47) * 2
+    x90 = np.zeros((nocc, nocc), dtype=np.float64)
+    x90 += lib.einsum("Ih,Ioph->op", t1, x47)
+    x92 += lib.einsum("op->op", x90)
+    del x90
+    x93 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x93 += lib.einsum("pI,hAIo->ophA", x92, l2) * 0.5
+    del x92
+    x95 += lib.einsum("opAh->ophA", x93)
+    del x93
+    l1new += lib.einsum("opIJ,IJph->ho", x27, x47) * 0.125
+    del x27
+    del x47
+    x48 += lib.einsum("oIph->opIh", v.ooov) * 4
+    x56 += lib.einsum("pIhA,pIoA->oh", t2, x48) * 0.25
+    del x48
+    x49 += lib.einsum("oh->oh", f.ov)
+    x56 += lib.einsum("pA,poAh->oh", x49, x28) * -0.5
+    del x49
+    del x28
+    x50 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x50 += lib.einsum("oAhp->ophA", v.ovvo) * 2
+    x50 += lib.einsum("ophA->ophA", v.oovv) * -1
+    x56 += lib.einsum("pA,pohA->oh", t1, x50) * -0.125
+    del x50
+    x52 += lib.einsum("oh->oh", f.ov) * 4.000000000000006
+    x53 += lib.einsum("ph,oh->op", t1, x52) * 0.06249999999999991
+    del x52
+    x53 += lib.einsum("op->op", f.oo)
+    x56 += lib.einsum("ph,po->oh", t1, x53) * 0.125
+    del x53
+    x54 = np.zeros((nocc, nvir, nvir, nvir), dtype=np.float64)
+    x54 += lib.einsum("oAhB->ohAB", v.ovvv)
+    x54 += lib.einsum("oBhA->ohAB", v.ovvv) * -0.5
+    x55 = np.zeros((nvir, nvir), dtype=np.float64)
+    x55 += lib.einsum("oB,ohBA->hA", t1, x54) * 0.5
+    x69 = np.zeros((nvir, nvir), dtype=np.float64)
+    x69 += lib.einsum("oB,ohBA->hA", t1, x54)
+    x86 = np.zeros((nvir, nvir), dtype=np.float64)
+    x86 += lib.einsum("oB,ohBA->hA", t1, x54) * 2
+    del x54
+    x87 = np.zeros((nvir, nvir), dtype=np.float64)
+    x87 += lib.einsum("hA->hA", x86)
+    del x86
+    x55 += lib.einsum("hA->hA", f.vv)
+    x56 += lib.einsum("oA,hA->oh", t1, x55) * -0.125
+    del x55
+    x56 += lib.einsum("ho->oh", f.vo) * -0.5
+    x56 += lib.einsum("IphA,poIA->oh", t2, v.ooov) * -0.5
+    x57 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x57 += lib.einsum("Ahpo->ophA", l2) * 2
+    x57 += lib.einsum("hApo->ophA", l2) * -1
+    x83 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x83 += lib.einsum("IoBh,IpBA->ophA", x11, x57) * 0.25
+    del x11
+    x95 += lib.einsum("poAh->ophA", x83) * -1
+    del x83
+    l1new += lib.einsum("pA,poAh->ho", x56, x57) * -2
+    del x56
+    del x57
+    x58 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x58 += lib.einsum("poAh->ophA", t2) * -1
+    x58 += lib.einsum("pohA->ophA", t2) * 2
+    x62 += lib.einsum("pIoA,pIhA->oh", x26, x58) * -0.5
+    x85 = np.zeros((nvir, nvir), dtype=np.float64)
+    x85 += lib.einsum("ohpB,opBA->hA", v.ovov, x58) * 4
+    del x58
+    x87 += lib.einsum("Ah->hA", x85) * -1
+    del x85
+    x88 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x88 += lib.einsum("BA,Bhop->ophA", x87, l2) * 0.25
+    del x87
+    x95 += lib.einsum("pohA->ophA", x88) * -1
+    del x88
+    x59 = np.zeros((nocc, nocc), dtype=np.float64)
+    x59 += lib.einsum("ho,ph->op", l1, t1)
+    x61 += lib.einsum("op->op", x59) * 0.03125
+    x62 += lib.einsum("ph,po->oh", t1, x61) * -1
+    x70 += lib.einsum("op->op", x59)
+    l1new += lib.einsum("ph,op->ho", f.ov, x70) * -0.0625
+    del x70
+    x113 += lib.einsum("op->op", x59) * 0.0625
+    x114 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x114 += lib.einsum("pI,IhoA->ophA", x113, v.ovov)
+    del x113
+    x115 += lib.einsum("poAh->ophA", x114)
+    del x114
+    l1new += lib.einsum("ph,op->ho", x51, x59) * -0.015625
+    del x59
+    del x51
+    x62 += lib.einsum("oh->oh", t1) * 0.5
+    l1new += lib.einsum("pA,poAh->ho", x62, x32) * 0.5
+    del x32
+    del x62
+    x63 += lib.einsum("ho,oA->hA", l1, t1) * 0.0625
+    x64 = np.zeros((nocc, nvir, nvir, nvir), dtype=np.float64)
+    x64 += lib.einsum("oAhB->ohAB", v.ovvv) * -0.5
+    x64 += lib.einsum("oBhA->ohAB", v.ovvv)
+    l1new += lib.einsum("AB,oABh->ho", x63, x64) * 2
+    del x64
+    del x63
+    x65 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x65 += lib.einsum("oIph->opIh", v.ooov) * 2
+    x65 += lib.einsum("pIoh->opIh", v.ooov) * -1
+    l1new += lib.einsum("pI,Ioph->ho", x61, x65) * -2
+    del x65
+    del x61
+    x66 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x66 += lib.einsum("oAhp->ophA", v.ovvo)
+    x66 += lib.einsum("ophA->ophA", v.oovv) * -0.5
+    l1new += lib.einsum("Ap,opAh->ho", l1, x66) * 0.5
+    del x66
+    x67 += lib.einsum("oh->oh", f.ov) * 4
+    x68 += lib.einsum("ph,oh->op", t1, x67) * 0.25
+    del x67
+    x68 += lib.einsum("op->op", f.oo) * 4
+    l1new += lib.einsum("hp,op->ho", l1, x68) * -0.0625
+    del x68
+    x69 += lib.einsum("hA->hA", f.vv) * 2
+    l1new += lib.einsum("Ao,Ah->ho", l1, x69) * 0.125
+    del x69
+    x71 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x71 += lib.einsum("oI,hApI->ophA", f.oo, l2)
+    x76 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x76 += lib.einsum("ophA->ophA", x71)
+    del x71
+    x72 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x72 += lib.einsum("Bh,ABop->ophA", f.vv, l2)
+    x76 -= lib.einsum("ophA->ophA", x72)
+    del x72
+    x73 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x73 += lib.einsum("IohB,pBIA->ophA", t2, v.ovov)
+    x74 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x74 += lib.einsum("ophA->ophA", x73)
+    del x73
+    x74 -= lib.einsum("pohA->ophA", v.oovv)
+    x75 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x75 += lib.einsum("hBIo,IpBA->ophA", l2, x74)
+    x76 -= lib.einsum("ophA->ophA", x75)
+    del x75
+    l2new -= lib.einsum("opAh->hAop", x76)
+    l2new -= lib.einsum("pohA->hAop", x76)
+    del x76
+    x101 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x101 += lib.einsum("BhIo,IpBA->ophA", l2, x74)
+    del x74
+    x102 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x102 -= lib.einsum("ophA->ophA", x101)
+    del x101
+    x77 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x77 += lib.einsum("hI,oIpA->ophA", l1, v.ooov)
+    x95 += lib.einsum("ophA->ophA", x77) * 0.25
+    del x77
+    x78 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x78 += lib.einsum("oB,pBhA->ophA", t1, v.ovvv)
+    x79 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x79 += lib.einsum("hBoI,IpBA->ophA", l2, x78)
+    x95 += lib.einsum("ophA->ophA", x79) * 0.25
+    del x79
+    x109 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x109 += lib.einsum("BhoI,IpBA->ophA", l2, x78)
+    del x78
+    x115 += lib.einsum("ophA->ophA", x109) * 0.25
+    del x109
+    x81 += lib.einsum("Ioph->opIh", v.ooov)
+    x82 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x82 += lib.einsum("IoJh,IpJA->ophA", x35, x81) * 0.5
+    del x35
+    x95 += lib.einsum("ophA->ophA", x82)
+    del x82
+    x84 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x84 += lib.einsum("oIJh,IJpA->ophA", x26, x81) * 0.25
+    x95 += lib.einsum("ophA->ophA", x84) * -1
+    del x84
+    x110 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x110 += lib.einsum("IoJh,IJpA->ophA", x26, x81) * 0.25
+    del x81
+    del x26
+    x115 += lib.einsum("ophA->ophA", x110) * -1
+    del x110
+    x95 += lib.einsum("oh,Ap->ophA", f.ov, l1) * -0.25
+    l2new += lib.einsum("ophA->hAop", x95) * -1
+    l2new += lib.einsum("poAh->hAop", x95) * -1
+    del x95
+    x96 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x96 += lib.einsum("IoBh,pBIA->ophA", t2, v.ovov)
+    x99 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x99 -= lib.einsum("ophA->ophA", x96)
+    del x96
+    x97 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x97 += lib.einsum("poAh->ophA", t2) * 2
+    x97 -= lib.einsum("pohA->ophA", t2)
+    x98 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x98 += lib.einsum("IBoh,IpBA->ophA", v.ovov, x97)
+    del x97
+    x99 += lib.einsum("poAh->ophA", x98)
+    del x98
+    x99 += lib.einsum("pAho->ophA", v.ovvo)
+    x100 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x100 += lib.einsum("IoBh,IpBA->ophA", x17, x99)
+    del x17
+    del x99
+    x102 -= lib.einsum("ophA->ophA", x100)
+    del x100
+    l2new -= lib.einsum("ophA->hAop", x102)
+    l2new -= lib.einsum("poAh->hAop", x102)
+    del x102
+    x103 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x103 += lib.einsum("Bo,phBA->ophA", l1, v.ovvv)
+    x115 += lib.einsum("ophA->ophA", x103) * -0.25
+    del x103
+    x105 = np.zeros((nocc, nocc), dtype=np.float64)
+    x105 += lib.einsum("oh,ph->op", f.ov, t1)
+    x106 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x106 += lib.einsum("oI,hApI->ophA", x105, l2)
+    del x105
+    x115 += lib.einsum("ophA->ophA", x106) * 0.25
+    del x106
+    l2new += lib.einsum("opAh->hAop", x115) * -1
+    l2new += lib.einsum("pohA->hAop", x115) * -1
+    del x115
+    x116 += lib.einsum("pJoI->opIJ", v.oooo)
+    l2new += lib.einsum("AhIJ,poIJ->hAop", l2, x116)
+    del x116
+    l1new += lib.einsum("oh->ho", f.ov)
+    l2new += lib.einsum("pAoh->hAop", v.ovov)
+    l2new += lib.einsum("BCpo,ChBA->hAop", l2, v.vvvv)
 
     return {"l1new": l1new, "l2new": l2new}
 
-def make_rdm1(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=None, l2=None, **kwargs):
-    # oo block
+def make_rdm1_f(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=None, l2=None, **kwargs):
+    delta_oo = np.eye(nocc)
+    delta_vv = np.eye(nvir)
+
+    # 1RDM
+    x0 = np.zeros((nocc, nocc), dtype=np.float64)
+    x0 += lib.einsum("di,jd->ij", l1, t1)
+    x6 = np.zeros((nocc, nocc), dtype=np.float64)
+    x6 += lib.einsum("ij->ij", x0)
     rdm1_oo = np.zeros((nocc, nocc), dtype=np.float64)
-    rdm1_oo += lib.einsum("mn->mn", delta_oo) * 2
-    rdm1_oo += lib.einsum("abom,onba->mn", l2, t2) * 2
-    rdm1_oo += lib.einsum("abom,onab->mn", l2, t2) * -4
-    rdm1_oo -= lib.einsum("am,na->mn", l1, t1) * 2
-
-    # ov block
-    rdm1_ov = np.zeros((nocc, nvir), dtype=np.float64)
-    rdm1_ov += lib.einsum("bj->jb", l1) * 2
-
-    # vo block
+    rdm1_oo += lib.einsum("ij->ij", x0) * -0.125
+    del x0
+    x1 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x1 += lib.einsum("jide->ijde", t2) * -1
+    x1 += lib.einsum("jied->ijde", t2) * 2
+    rdm1_oo += lib.einsum("deki,kjde->ij", l2, x1) * -2
+    del x1
+    x2 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x2 += lib.einsum("ke,edji->ijkd", t1, l2)
+    x3 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x3 += lib.einsum("ijkd->ijkd", x2) * -1
+    x3 += lib.einsum("jikd->ijkd", x2) * 2
+    del x2
     rdm1_vo = np.zeros((nvir, nocc), dtype=np.float64)
-    rdm1_vo -= lib.einsum("em,mlde->dl", l1, t2) * 2
-    rdm1_vo += lib.einsum("em,lmde->dl", l1, t2) * 4
-    rdm1_vo -= lib.einsum("em,md,le->dl", l1, t1, t1) * 2
-    rdm1_vo += lib.einsum("ld->dl", t1) * 2
-    rdm1_vo += lib.einsum("md,efmn,nlef->dl", t1, l2, t2) * 2
-    rdm1_vo += lib.einsum("le,femn,mndf->dl", t1, l2, t2) * 2
-    rdm1_vo += lib.einsum("md,femn,nlef->dl", t1, l2, t2) * -4
-    rdm1_vo += lib.einsum("le,efmn,mndf->dl", t1, l2, t2) * -4
-
-    # vv block
+    rdm1_vo += lib.einsum("jked,kjie->di", t2, x3) * -0.5
+    del x3
+    x4 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x4 += lib.einsum("jide->ijde", t2)
+    x4 += lib.einsum("jied->ijde", t2) * -0.5
+    rdm1_vo += lib.einsum("ej,jide->di", l1, x4)
+    del x4
+    x5 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x5 += lib.einsum("jide->ijde", t2) * -0.5
+    x5 += lib.einsum("jied->ijde", t2)
+    x6 += lib.einsum("deki,kjde->ij", l2, x5) * 32
+    del x5
+    rdm1_vo += lib.einsum("jd,ji->di", t1, x6) * -0.03125
+    del x6
+    x7 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x7 += lib.einsum("deji->ijde", l2)
+    x7 += lib.einsum("edji->ijde", l2) * -0.5
     rdm1_vv = np.zeros((nvir, nvir), dtype=np.float64)
-    rdm1_vv += lib.einsum("ei,id->de", l1, t1) * 2
-    rdm1_vv += lib.einsum("efij,ijdf->de", l2, t2) * 4
-    rdm1_vv += lib.einsum("efij,jidf->de", l2, t2) * -2
+    rdm1_vv += lib.einsum("ijfd,ijef->de", t2, x7) * 4
+    del x7
+    rdm1_oo += lib.einsum("ji->ij", delta_oo) * 2
+    rdm1_ov = np.zeros((nocc, nvir), dtype=np.float64)
+    rdm1_ov += lib.einsum("di->id", l1) * 0.5
+    rdm1_vo += lib.einsum("id->di", t1) * 0.5
+    rdm1_vv += lib.einsum("ei,id->de", l1, t1) * 0.125
 
     rdm1 = np.block([[rdm1_oo, rdm1_ov], [rdm1_vo, rdm1_vv]])
 
     return {"rdm1": rdm1}
 
-def make_rdm2(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=None, l2=None, **kwargs):
+def make_rdm2_f(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=None, l2=None, **kwargs):
     delta_oo = np.eye(nocc)
     delta_vv = np.eye(nvir)
 
-    # oooo block
+    # 2RDM
+    x0 = np.zeros((nocc, nocc, nocc, nocc), dtype=np.float64)
+    x0 += lib.einsum("feij,lkef->ijkl", l2, t2)
+    x9 = np.zeros((nocc, nocc, nocc, nocc), dtype=np.float64)
+    x9 += lib.einsum("jilk->ijkl", x0)
+    x65 = np.zeros((nocc, nocc, nocc, nocc), dtype=np.float64)
+    x65 += lib.einsum("jilk->ijkl", x0) * 15.99999999999999
+    x67 = np.zeros((nocc, nocc, nocc, nocc), dtype=np.float64)
+    x67 += lib.einsum("jilk->ijkl", x0)
     rdm2_oooo = np.zeros((nocc, nocc, nocc, nocc), dtype=np.float64)
-    rdm2_oooo += lib.einsum("Ip,abJK,Koab->opIJ", delta_oo, l2, t2) * 2
-    rdm2_oooo += lib.einsum("Jo,abIK,Kpab->opIJ", delta_oo, l2, t2) * 2
-    rdm2_oooo += lib.einsum("Io,abJK,Kpba->opIJ", delta_oo, l2, t2) * 8
-    rdm2_oooo += lib.einsum("Jp,abIK,Koba->opIJ", delta_oo, l2, t2) * 8
-    rdm2_oooo += lib.einsum("Io,abJK,Kpab->opIJ", delta_oo, l2, t2) * -4
-    rdm2_oooo += lib.einsum("Ip,abJK,Koba->opIJ", delta_oo, l2, t2) * -4
-    rdm2_oooo += lib.einsum("Jo,abIK,Kpba->opIJ", delta_oo, l2, t2) * -4
-    rdm2_oooo += lib.einsum("Jp,abIK,Koab->opIJ", delta_oo, l2, t2) * -4
-    rdm2_oooo -= lib.einsum("Io,Jp->opIJ", delta_oo, delta_oo) * 4
-    rdm2_oooo += lib.einsum("Ip,Jo->opIJ", delta_oo, delta_oo) * 2
-    rdm2_oooo += lib.einsum("abIJ,opba->opIJ", l2, t2) * 2
-    rdm2_oooo += lib.einsum("abIJ,opab->opIJ", l2, t2) * -4
-    rdm2_oooo -= lib.einsum("oa,pb,abIJ->opIJ", t1, t1, l2) * 4
-    rdm2_oooo += lib.einsum("pa,ob,abIJ->opIJ", t1, t1, l2) * 2
-    rdm2_oooo -= lib.einsum("Ip,aJ,oa->opIJ", delta_oo, l1, t1) * 2
-    rdm2_oooo -= lib.einsum("Jo,aI,pa->opIJ", delta_oo, l1, t1) * 2
-    rdm2_oooo += lib.einsum("Io,aJ,pa->opIJ", delta_oo, l1, t1) * 4
-    rdm2_oooo += lib.einsum("Jp,aI,oa->opIJ", delta_oo, l1, t1) * 4
-
-    # ooov block
-    rdm2_ooov = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
-    rdm2_ooov -= lib.einsum("ep,node->nopd", l1, t2) * 2
-    rdm2_ooov += lib.einsum("ep,onde->nopd", l1, t2) * 4
-    rdm2_ooov -= lib.einsum("ep,nd,oe->nopd", l1, t1, t1) * 2
-    rdm2_ooov += lib.einsum("ep,od,ne->nopd", l1, t1, t1) * 4
-    rdm2_ooov -= lib.einsum("ne,efIp,oIdf->nopd", t1, l2, t2) * 4
-    rdm2_ooov -= lib.einsum("oe,efIp,Indf->nopd", t1, l2, t2) * 4
-    rdm2_ooov -= lib.einsum("nf,efIp,Iode->nopd", t1, l2, t2) * 4
-    rdm2_ooov -= lib.einsum("of,efIp,nIde->nopd", t1, l2, t2) * 4
-    rdm2_ooov += lib.einsum("ne,efIp,Iodf->nopd", t1, l2, t2) * 2
-    rdm2_ooov += lib.einsum("oe,efIp,nIdf->nopd", t1, l2, t2) * 2
-    rdm2_ooov += lib.einsum("of,efIp,Inde->nopd", t1, l2, t2) * 2
-    rdm2_ooov += lib.einsum("nf,efIp,oIde->nopd", t1, l2, t2) * 8
-    rdm2_ooov += lib.einsum("Id,efIp,noef->nopd", t1, l2, t2) * 2
-    rdm2_ooov += lib.einsum("nd,efIp,Iofe->nopd", t1, l2, t2) * 2
-    rdm2_ooov += lib.einsum("od,efIp,Inef->nopd", t1, l2, t2) * 8
-    rdm2_ooov += lib.einsum("Id,efIp,nofe->nopd", t1, l2, t2) * -4
-    rdm2_ooov += lib.einsum("nd,efIp,Ioef->nopd", t1, l2, t2) * -4
-    rdm2_ooov += lib.einsum("od,efIp,Infe->nopd", t1, l2, t2) * -4
-    rdm2_ooov -= lib.einsum("Id,oe,nf,efIp->nopd", t1, t1, t1, l2) * 4
-    rdm2_ooov += lib.einsum("Id,ne,of,efIp->nopd", t1, t1, t1, l2) * 2
-    rdm2_ooov -= lib.einsum("np,od->nopd", delta_oo, t1) * 4
-    rdm2_ooov += lib.einsum("op,nd->nopd", delta_oo, t1) * 2
-    rdm2_ooov += lib.einsum("op,Id,efIJ,Jnef->nopd", delta_oo, t1, l2, t2) * 2
-    rdm2_ooov += lib.einsum("op,ne,feIJ,IJdf->nopd", delta_oo, t1, l2, t2) * 2
-    rdm2_ooov += lib.einsum("np,Id,feIJ,Joef->nopd", delta_oo, t1, l2, t2) * 8
-    rdm2_ooov += lib.einsum("np,oe,efIJ,IJdf->nopd", delta_oo, t1, l2, t2) * 8
-    rdm2_ooov += lib.einsum("np,Id,efIJ,Joef->nopd", delta_oo, t1, l2, t2) * -4
-    rdm2_ooov += lib.einsum("np,oe,feIJ,IJdf->nopd", delta_oo, t1, l2, t2) * -4
-    rdm2_ooov += lib.einsum("op,Id,feIJ,Jnef->nopd", delta_oo, t1, l2, t2) * -4
-    rdm2_ooov += lib.einsum("op,ne,efIJ,IJdf->nopd", delta_oo, t1, l2, t2) * -4
-    rdm2_ooov -= lib.einsum("np,eI,oIde->nopd", delta_oo, l1, t2) * 8
-    rdm2_ooov -= lib.einsum("op,eI,Inde->nopd", delta_oo, l1, t2) * 2
-    rdm2_ooov += lib.einsum("np,eI,Iode->nopd", delta_oo, l1, t2) * 4
-    rdm2_ooov += lib.einsum("op,eI,nIde->nopd", delta_oo, l1, t2) * 4
-    rdm2_ooov -= lib.einsum("op,eI,Id,ne->nopd", delta_oo, l1, t1, t1) * 2
-    rdm2_ooov += lib.einsum("np,eI,Id,oe->nopd", delta_oo, l1, t1, t1) * 4
-
-    # oovo block
-    rdm2_oovo = np.zeros((nocc, nocc, nvir, nocc), dtype=np.float64)
-    rdm2_oovo -= lib.einsum("ep,onde->nodp", l1, t2) * 2
-    rdm2_oovo += lib.einsum("ep,node->nodp", l1, t2) * 4
-    rdm2_oovo -= lib.einsum("ep,od,ne->nodp", l1, t1, t1) * 2
-    rdm2_oovo += lib.einsum("ep,nd,oe->nodp", l1, t1, t1) * 4
-    rdm2_oovo -= lib.einsum("ne,efIp,Iodf->nodp", t1, l2, t2) * 4
-    rdm2_oovo -= lib.einsum("oe,efIp,nIdf->nodp", t1, l2, t2) * 4
-    rdm2_oovo -= lib.einsum("nf,efIp,oIde->nodp", t1, l2, t2) * 4
-    rdm2_oovo -= lib.einsum("of,efIp,Inde->nodp", t1, l2, t2) * 4
-    rdm2_oovo += lib.einsum("ne,efIp,oIdf->nodp", t1, l2, t2) * 2
-    rdm2_oovo += lib.einsum("oe,efIp,Indf->nodp", t1, l2, t2) * 2
-    rdm2_oovo += lib.einsum("nf,efIp,Iode->nodp", t1, l2, t2) * 2
-    rdm2_oovo += lib.einsum("of,efIp,nIde->nodp", t1, l2, t2) * 8
-    rdm2_oovo += lib.einsum("Id,efIp,nofe->nodp", t1, l2, t2) * 2
-    rdm2_oovo += lib.einsum("od,efIp,Infe->nodp", t1, l2, t2) * 2
-    rdm2_oovo += lib.einsum("nd,efIp,Ioef->nodp", t1, l2, t2) * 8
-    rdm2_oovo += lib.einsum("Id,efIp,noef->nodp", t1, l2, t2) * -4
-    rdm2_oovo += lib.einsum("nd,efIp,Iofe->nodp", t1, l2, t2) * -4
-    rdm2_oovo += lib.einsum("od,efIp,Inef->nodp", t1, l2, t2) * -4
-    rdm2_oovo -= lib.einsum("Id,ne,of,efIp->nodp", t1, t1, t1, l2) * 4
-    rdm2_oovo += lib.einsum("Id,oe,nf,efIp->nodp", t1, t1, t1, l2) * 2
-    rdm2_oovo -= lib.einsum("op,nd->nodp", delta_oo, t1) * 4
-    rdm2_oovo += lib.einsum("np,od->nodp", delta_oo, t1) * 2
-    rdm2_oovo += lib.einsum("np,Id,efIJ,Joef->nodp", delta_oo, t1, l2, t2) * 2
-    rdm2_oovo += lib.einsum("np,oe,feIJ,IJdf->nodp", delta_oo, t1, l2, t2) * 2
-    rdm2_oovo += lib.einsum("op,Id,feIJ,Jnef->nodp", delta_oo, t1, l2, t2) * 8
-    rdm2_oovo += lib.einsum("op,ne,efIJ,IJdf->nodp", delta_oo, t1, l2, t2) * 8
-    rdm2_oovo += lib.einsum("np,Id,feIJ,Joef->nodp", delta_oo, t1, l2, t2) * -4
-    rdm2_oovo += lib.einsum("np,oe,efIJ,IJdf->nodp", delta_oo, t1, l2, t2) * -4
-    rdm2_oovo += lib.einsum("op,Id,efIJ,Jnef->nodp", delta_oo, t1, l2, t2) * -4
-    rdm2_oovo += lib.einsum("op,ne,feIJ,IJdf->nodp", delta_oo, t1, l2, t2) * -4
-    rdm2_oovo -= lib.einsum("op,eI,nIde->nodp", delta_oo, l1, t2) * 8
-    rdm2_oovo -= lib.einsum("np,eI,Iode->nodp", delta_oo, l1, t2) * 2
-    rdm2_oovo += lib.einsum("np,eI,oIde->nodp", delta_oo, l1, t2) * 4
-    rdm2_oovo += lib.einsum("op,eI,Inde->nodp", delta_oo, l1, t2) * 4
-    rdm2_oovo -= lib.einsum("np,eI,Id,oe->nodp", delta_oo, l1, t1, t1) * 2
-    rdm2_oovo += lib.einsum("op,eI,Id,ne->nodp", delta_oo, l1, t1, t1) * 4
-
-    # ovoo block
-    rdm2_ovoo = np.zeros((nocc, nvir, nocc, nocc), dtype=np.float64)
-    rdm2_ovoo -= lib.einsum("mn,co->mcno", delta_oo, l1) * 4
-    rdm2_ovoo += lib.einsum("mo,cn->mcno", delta_oo, l1) * 2
-    rdm2_ovoo -= lib.einsum("md,cdno->mcno", t1, l2) * 2
-    rdm2_ovoo += lib.einsum("md,dcno->mcno", t1, l2) * 4
-
-    # vooo block
-    rdm2_vooo = np.zeros((nvir, nocc, nocc, nocc), dtype=np.float64)
-    rdm2_vooo -= lib.einsum("mo,cn->cmno", delta_oo, l1) * 4
-    rdm2_vooo += lib.einsum("mn,co->cmno", delta_oo, l1) * 2
-    rdm2_vooo -= lib.einsum("md,dcno->cmno", t1, l2) * 2
-    rdm2_vooo += lib.einsum("md,cdno->cmno", t1, l2) * 4
-
-    # oovv block
-    rdm2_oovv = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
-    rdm2_oovv -= lib.einsum("ghop,moeg,npfh->mnef", l2, t2, t2) * 16
-    rdm2_oovv -= lib.einsum("ghop,noeg,pmfh->mnef", l2, t2, t2) * 4
-    rdm2_oovv -= lib.einsum("ghop,omeg,pnfh->mnef", l2, t2, t2) * 4
-    rdm2_oovv -= lib.einsum("ghop,oneg,mpfh->mnef", l2, t2, t2) * 4
-    rdm2_oovv -= lib.einsum("hgop,moeg,pnfh->mnef", l2, t2, t2) * 4
-    rdm2_oovv -= lib.einsum("hgop,noeg,mpfh->mnef", l2, t2, t2) * 4
-    rdm2_oovv -= lib.einsum("hgop,omeg,npfh->mnef", l2, t2, t2) * 4
-    rdm2_oovv -= lib.einsum("hgop,oneg,pmfh->mnef", l2, t2, t2) * 4
-    rdm2_oovv += lib.einsum("ghop,oneg,pmfh->mnef", l2, t2, t2) * 2
-    rdm2_oovv += lib.einsum("hgop,noeg,pmfh->mnef", l2, t2, t2) * 2
-    rdm2_oovv += lib.einsum("hgop,omeg,pnfh->mnef", l2, t2, t2) * 2
-    rdm2_oovv += lib.einsum("hgop,oneg,mpfh->mnef", l2, t2, t2) * 2
-    rdm2_oovv += lib.einsum("ghop,moeg,pnfh->mnef", l2, t2, t2) * 8
-    rdm2_oovv += lib.einsum("ghop,noeg,mpfh->mnef", l2, t2, t2) * 8
-    rdm2_oovv += lib.einsum("ghop,omeg,npfh->mnef", l2, t2, t2) * 8
-    rdm2_oovv += lib.einsum("hgop,moeg,npfh->mnef", l2, t2, t2) * 8
-    rdm2_oovv += lib.einsum("ghop,noef,pmgh->mnef", l2, t2, t2) * 2
-    rdm2_oovv += lib.einsum("ghop,omef,pngh->mnef", l2, t2, t2) * 2
-    rdm2_oovv += lib.einsum("ghop,opeg,mnfh->mnef", l2, t2, t2) * 2
-    rdm2_oovv += lib.einsum("hgop,opef,mngh->mnef", l2, t2, t2) * 2
-    rdm2_oovv += lib.einsum("hgop,nmeg,opfh->mnef", l2, t2, t2) * 2
-    rdm2_oovv += lib.einsum("ghop,mneg,opfh->mnef", l2, t2, t2) * 8
-    rdm2_oovv += lib.einsum("hgop,moef,pngh->mnef", l2, t2, t2) * 8
-    rdm2_oovv += lib.einsum("hgop,onef,pmgh->mnef", l2, t2, t2) * 8
-    rdm2_oovv += lib.einsum("hgop,opeg,nmfh->mnef", l2, t2, t2) * 8
-    rdm2_oovv += lib.einsum("ghop,moef,pngh->mnef", l2, t2, t2) * -4
-    rdm2_oovv += lib.einsum("ghop,onef,pmgh->mnef", l2, t2, t2) * -4
-    rdm2_oovv += lib.einsum("ghop,opef,mngh->mnef", l2, t2, t2) * -4
-    rdm2_oovv += lib.einsum("ghop,nmeg,opfh->mnef", l2, t2, t2) * -4
-    rdm2_oovv += lib.einsum("ghop,opeg,nmfh->mnef", l2, t2, t2) * -4
-    rdm2_oovv += lib.einsum("hgop,noef,pmgh->mnef", l2, t2, t2) * -4
-    rdm2_oovv += lib.einsum("hgop,omef,pngh->mnef", l2, t2, t2) * -4
-    rdm2_oovv += lib.einsum("hgop,mneg,opfh->mnef", l2, t2, t2) * -4
-    rdm2_oovv += lib.einsum("hgop,opeg,mnfh->mnef", l2, t2, t2) * -4
-    rdm2_oovv -= lib.einsum("oe,mg,ghop,pnfh->mnef", t1, t1, l2, t2) * 4
-    rdm2_oovv -= lib.einsum("oe,mg,hgop,npfh->mnef", t1, t1, l2, t2) * 4
-    rdm2_oovv -= lib.einsum("oe,ng,ghop,mpfh->mnef", t1, t1, l2, t2) * 4
-    rdm2_oovv -= lib.einsum("oe,ng,hgop,pmfh->mnef", t1, t1, l2, t2) * 4
-    rdm2_oovv -= lib.einsum("of,mg,ghop,npeh->mnef", t1, t1, l2, t2) * 4
-    rdm2_oovv -= lib.einsum("of,mg,hgop,pneh->mnef", t1, t1, l2, t2) * 4
-    rdm2_oovv -= lib.einsum("of,ng,ghop,pmeh->mnef", t1, t1, l2, t2) * 4
-    rdm2_oovv -= lib.einsum("of,ng,hgop,mpeh->mnef", t1, t1, l2, t2) * 4
-    rdm2_oovv += lib.einsum("oe,mg,hgop,pnfh->mnef", t1, t1, l2, t2) * 2
-    rdm2_oovv += lib.einsum("oe,ng,ghop,pmfh->mnef", t1, t1, l2, t2) * 2
-    rdm2_oovv += lib.einsum("oe,ng,hgop,mpfh->mnef", t1, t1, l2, t2) * 2
-    rdm2_oovv += lib.einsum("of,mg,ghop,pneh->mnef", t1, t1, l2, t2) * 2
-    rdm2_oovv += lib.einsum("of,mg,hgop,npeh->mnef", t1, t1, l2, t2) * 2
-    rdm2_oovv += lib.einsum("of,ng,hgop,pmeh->mnef", t1, t1, l2, t2) * 2
-    rdm2_oovv += lib.einsum("oe,mg,ghop,npfh->mnef", t1, t1, l2, t2) * 8
-    rdm2_oovv += lib.einsum("of,ng,ghop,mpeh->mnef", t1, t1, l2, t2) * 8
-    rdm2_oovv += lib.einsum("ne,of,ghop,pmgh->mnef", t1, t1, l2, t2) * 2.0000000000000013
-    rdm2_oovv += lib.einsum("ne,mg,hgop,opfh->mnef", t1, t1, l2, t2) * 2.0000000000000013
-    rdm2_oovv += lib.einsum("oe,mf,ghop,pngh->mnef", t1, t1, l2, t2) * 2.0000000000000013
-    rdm2_oovv += lib.einsum("oe,pf,hgop,mngh->mnef", t1, t1, l2, t2) * 2.0000000000000013
-    rdm2_oovv += lib.einsum("mf,ng,hgop,opeh->mnef", t1, t1, l2, t2) * 2.0000000000000013
-    rdm2_oovv += lib.einsum("mg,nh,hgop,opef->mnef", t1, t1, l2, t2) * 2.0000000000000013
-    rdm2_oovv += lib.einsum("me,of,hgop,pngh->mnef", t1, t1, l2, t2) * 8.000000000000005
-    rdm2_oovv += lib.einsum("me,ng,ghop,opfh->mnef", t1, t1, l2, t2) * 8.000000000000005
-    rdm2_oovv += lib.einsum("oe,nf,hgop,pmgh->mnef", t1, t1, l2, t2) * 8.000000000000005
-    rdm2_oovv += lib.einsum("nf,mg,ghop,opeh->mnef", t1, t1, l2, t2) * 8.000000000000005
-    rdm2_oovv += lib.einsum("me,of,ghop,pngh->mnef", t1, t1, l2, t2) * -4.000000000000003
-    rdm2_oovv += lib.einsum("me,ng,hgop,opfh->mnef", t1, t1, l2, t2) * -4.000000000000003
-    rdm2_oovv += lib.einsum("ne,of,hgop,pmgh->mnef", t1, t1, l2, t2) * -4.000000000000003
-    rdm2_oovv += lib.einsum("ne,mg,ghop,opfh->mnef", t1, t1, l2, t2) * -4.000000000000003
-    rdm2_oovv += lib.einsum("oe,mf,hgop,pngh->mnef", t1, t1, l2, t2) * -4.000000000000003
-    rdm2_oovv += lib.einsum("oe,nf,ghop,pmgh->mnef", t1, t1, l2, t2) * -4.000000000000003
-    rdm2_oovv += lib.einsum("oe,pf,ghop,mngh->mnef", t1, t1, l2, t2) * -4.000000000000003
-    rdm2_oovv += lib.einsum("mf,ng,ghop,opeh->mnef", t1, t1, l2, t2) * -4.000000000000003
-    rdm2_oovv += lib.einsum("nf,mg,hgop,opeh->mnef", t1, t1, l2, t2) * -4.000000000000003
-    rdm2_oovv += lib.einsum("mg,nh,ghop,opef->mnef", t1, t1, l2, t2) * -4.000000000000003
-    rdm2_oovv -= lib.einsum("oe,pf,mg,nh,ghop->mnef", t1, t1, t1, t1, l2) * 4
-    rdm2_oovv += lib.einsum("oe,pf,mg,nh,hgop->mnef", t1, t1, t1, t1, l2) * 2
-    rdm2_oovv -= lib.einsum("mnef->mnef", t2) * 4
-    rdm2_oovv += lib.einsum("nmef->mnef", t2) * 2
-    rdm2_oovv -= lib.einsum("me,nf->mnef", t1, t1) * 4
-    rdm2_oovv += lib.einsum("ne,mf->mnef", t1, t1) * 2
-    rdm2_oovv -= lib.einsum("go,me,nofg->mnef", l1, t1, t2) * 8
-    rdm2_oovv -= lib.einsum("go,nf,moeg->mnef", l1, t1, t2) * 8
-    rdm2_oovv -= lib.einsum("go,ne,omfg->mnef", l1, t1, t2) * 2
-    rdm2_oovv -= lib.einsum("go,oe,mnfg->mnef", l1, t1, t2) * 2
-    rdm2_oovv -= lib.einsum("go,mf,oneg->mnef", l1, t1, t2) * 2
-    rdm2_oovv -= lib.einsum("go,of,nmeg->mnef", l1, t1, t2) * 2
-    rdm2_oovv -= lib.einsum("go,mg,noef->mnef", l1, t1, t2) * 2
-    rdm2_oovv -= lib.einsum("go,ng,omef->mnef", l1, t1, t2) * 2
-    rdm2_oovv += lib.einsum("go,me,onfg->mnef", l1, t1, t2) * 4
-    rdm2_oovv += lib.einsum("go,ne,mofg->mnef", l1, t1, t2) * 4
-    rdm2_oovv += lib.einsum("go,oe,nmfg->mnef", l1, t1, t2) * 4
-    rdm2_oovv += lib.einsum("go,mf,noeg->mnef", l1, t1, t2) * 4
-    rdm2_oovv += lib.einsum("go,nf,omeg->mnef", l1, t1, t2) * 4
-    rdm2_oovv += lib.einsum("go,of,mneg->mnef", l1, t1, t2) * 4
-    rdm2_oovv += lib.einsum("go,mg,onef->mnef", l1, t1, t2) * 4
-    rdm2_oovv += lib.einsum("go,ng,moef->mnef", l1, t1, t2) * 4
-    rdm2_oovv -= lib.einsum("go,ne,of,mg->mnef", l1, t1, t1, t1) * 2
-    rdm2_oovv -= lib.einsum("go,oe,mf,ng->mnef", l1, t1, t1, t1) * 2
-    rdm2_oovv += lib.einsum("go,me,of,ng->mnef", l1, t1, t1, t1) * 4
-    rdm2_oovv += lib.einsum("go,oe,nf,mg->mnef", l1, t1, t1, t1) * 4
-
-    # ovov block
-    rdm2_ovov = np.zeros((nocc, nvir, nocc, nvir), dtype=np.float64)
-    rdm2_ovov -= lib.einsum("lm,dn,ne->ldme", delta_oo, l1, t1) * 4
-    rdm2_ovov -= lib.einsum("dfnm,lnef->ldme", l2, t2) * 2
-    rdm2_ovov -= lib.einsum("fdnm,nlef->ldme", l2, t2) * 2
-    rdm2_ovov += lib.einsum("dfnm,nlef->ldme", l2, t2) * 4
-    rdm2_ovov += lib.einsum("fdnm,lnef->ldme", l2, t2) * 4
-    rdm2_ovov -= lib.einsum("ne,lf,fdnm->ldme", t1, t1, l2) * 2
-    rdm2_ovov += lib.einsum("ne,lf,dfnm->ldme", t1, t1, l2) * 4
-    rdm2_ovov += lib.einsum("lm,dfno,onef->ldme", delta_oo, l2, t2) * 4
-    rdm2_ovov += lib.einsum("lm,dfno,noef->ldme", delta_oo, l2, t2) * -8
-    rdm2_ovov += lib.einsum("dm,le->ldme", l1, t1) * 2
-
-    # ovvo block
+    rdm2_oooo += lib.einsum("jikl->ikjl", x0) * -2
+    rdm2_oooo += lib.einsum("jilk->ikjl", x0) * 4
+    del x0
+    x1 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x1 += lib.einsum("kf,efij->ijke", t1, l2)
+    x2 = np.zeros((nocc, nocc, nocc, nocc), dtype=np.float64)
+    x2 += lib.einsum("le,jike->ijkl", t1, x1)
+    x9 += lib.einsum("ijkl->ijkl", x2) * 0.06249999999999997
+    x10 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x10 += lib.einsum("le,lijk->ijke", t1, x9)
+    x18 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x18 += lib.einsum("ikje->ijke", x10)
+    del x10
+    x30 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x30 += lib.einsum("le,lijk->ijke", t1, x9) * 0.5
+    del x9
+    x31 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x31 += lib.einsum("ikje->ijke", x30)
+    del x30
+    x65 += lib.einsum("ijkl->ijkl", x2)
+    x66 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x66 += lib.einsum("klef,klij->ijef", t2, x65) * 0.12500000000000008
+    del x65
+    x70 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x70 += lib.einsum("ijef->ijef", x66)
+    del x66
+    x67 += lib.einsum("ijkl->ijkl", x2) * 0.06249999999999987
+    x68 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x68 += lib.einsum("le,lijk->ijke", t1, x67)
+    del x67
+    x69 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x69 += lib.einsum("kf,kjie->ijef", t1, x68) * 0.12500000000000008
+    del x68
+    x70 += lib.einsum("jief->ijef", x69)
+    del x69
+    rdm2_oooo += lib.einsum("ijkl->ikjl", x2) * 0.25
+    rdm2_oooo += lib.einsum("ijlk->ikjl", x2) * -0.125
+    del x2
+    x6 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x6 += lib.einsum("klef,iljf->ijke", t2, x1)
+    x18 += lib.einsum("ijke->ijke", x6)
+    x31 += lib.einsum("ijke->ijke", x6) * 0.5
+    x58 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x58 += lib.einsum("ijke->ijke", x6)
+    del x6
+    x11 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x11 += lib.einsum("ijke->ijke", x1) * -0.5
+    x11 += lib.einsum("jike->ijke", x1)
+    x12 = np.zeros((nocc, nvir), dtype=np.float64)
+    x12 += lib.einsum("jkef,jkif->ie", t2, x11)
+    x17 = np.zeros((nocc, nvir), dtype=np.float64)
+    x17 += lib.einsum("ie->ie", x12)
+    del x12
+    x60 = np.zeros((nocc, nvir), dtype=np.float64)
+    x60 += lib.einsum("jkef,jkif->ie", t2, x11)
+    del x11
+    x63 = np.zeros((nocc, nvir), dtype=np.float64)
+    x63 += lib.einsum("ie->ie", x60)
+    del x60
+    x20 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x20 += lib.einsum("klfe,iljf->ijke", t2, x1)
+    x21 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x21 += lib.einsum("ijke->ijke", x20) * -0.5
+    x28 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x28 += lib.einsum("ijke->ijke", x20) * -1
+    x74 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x74 += lib.einsum("ijke->ijke", x20) * -0.9999999999999986
+    del x20
+    x22 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x22 += lib.einsum("ijke->ijke", x1) * -1
+    x22 += lib.einsum("jike->ijke", x1) * 2
+    x23 = np.zeros((nocc, nvir), dtype=np.float64)
+    x23 += lib.einsum("jkef,jkif->ie", t2, x22)
+    x27 = np.zeros((nocc, nvir), dtype=np.float64)
+    x27 += lib.einsum("ie->ie", x23) * -1
+    del x23
+    x43 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x43 += lib.einsum("kf,kije->ijef", t1, x22) * 0.125
+    del x22
     rdm2_ovvo = np.zeros((nocc, nvir, nvir, nocc), dtype=np.float64)
-    rdm2_ovvo += lib.einsum("lm,dn,ne->ldem", delta_oo, l1, t1) * 2
-    rdm2_ovvo -= lib.einsum("fdnm,lnef->ldem", l2, t2) * 8
-    rdm2_ovvo -= lib.einsum("dfnm,nlef->ldem", l2, t2) * 2
-    rdm2_ovvo += lib.einsum("dfnm,lnef->ldem", l2, t2) * 4
-    rdm2_ovvo += lib.einsum("fdnm,nlef->ldem", l2, t2) * 4
-    rdm2_ovvo -= lib.einsum("ne,lf,dfnm->ldem", t1, t1, l2) * 2
-    rdm2_ovvo += lib.einsum("ne,lf,fdnm->ldem", t1, t1, l2) * 4
-    rdm2_ovvo += lib.einsum("lm,dfno,noef->ldem", delta_oo, l2, t2) * 4
-    rdm2_ovvo += lib.einsum("lm,dfno,onef->ldem", delta_oo, l2, t2) * -2
-    rdm2_ovvo -= lib.einsum("dm,le->ldem", l1, t1) * 4
-
-    # vovo block
-    rdm2_vovo = np.zeros((nvir, nocc, nvir, nocc), dtype=np.float64)
-    rdm2_vovo -= lib.einsum("lm,dn,ne->dlem", delta_oo, l1, t1) * 4
-    rdm2_vovo -= lib.einsum("dfnm,lnef->dlem", l2, t2) * 2
-    rdm2_vovo -= lib.einsum("fdnm,nlef->dlem", l2, t2) * 2
-    rdm2_vovo += lib.einsum("dfnm,nlef->dlem", l2, t2) * 4
-    rdm2_vovo += lib.einsum("fdnm,lnef->dlem", l2, t2) * 4
-    rdm2_vovo -= lib.einsum("ne,lf,fdnm->dlem", t1, t1, l2) * 2
-    rdm2_vovo += lib.einsum("ne,lf,dfnm->dlem", t1, t1, l2) * 4
-    rdm2_vovo += lib.einsum("lm,dfno,onef->dlem", delta_oo, l2, t2) * 4
-    rdm2_vovo += lib.einsum("lm,dfno,noef->dlem", delta_oo, l2, t2) * -8
-    rdm2_vovo += lib.einsum("dm,le->dlem", l1, t1) * 2
-
-    # vvoo block
-    rdm2_vvoo = np.zeros((nvir, nvir, nocc, nocc), dtype=np.float64)
-    rdm2_vvoo -= lib.einsum("cdkl->cdkl", l2) * 4
-    rdm2_vvoo += lib.einsum("dckl->cdkl", l2) * 2
-
-    # ovvv block
+    rdm2_ovvo += lib.einsum("ijfe->ifej", x43) * -1
+    rdm2_voov = np.zeros((nvir, nocc, nocc, nvir), dtype=np.float64)
+    rdm2_voov += lib.einsum("ijfe->ejif", x43) * -1
+    del x43
+    x35 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x35 += lib.einsum("ijke->ijke", x1) * 2
+    x35 += lib.einsum("jike->ijke", x1) * -1
+    x36 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x36 += lib.einsum("kf,kije->ijef", t1, x35) * 0.125
+    del x35
+    rdm2_ovov = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    rdm2_ovov += lib.einsum("ijfe->ijef", x36) * -1
+    rdm2_vovo = np.zeros((nvir, nvir, nocc, nocc), dtype=np.float64)
+    rdm2_vovo += lib.einsum("ijfe->efij", x36) * -1
+    del x36
+    x57 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x57 += lib.einsum("klfe,lijf->ijke", t2, x1)
+    x58 += lib.einsum("ijke->ijke", x57)
+    del x57
+    x59 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x59 += lib.einsum("kf,kije->ijef", t1, x58) * 0.24999999999999964
+    del x58
+    x64 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x64 += lib.einsum("ijfe->ijef", x59)
+    del x59
+    x71 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x71 += lib.einsum("klef,lijf->ijke", t2, x1)
+    x72 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x72 += lib.einsum("ke,kijf->ijef", t1, x71)
+    del x71
+    rdm2_vvoo = np.zeros((nvir, nocc, nvir, nocc), dtype=np.float64)
+    rdm2_vvoo += lib.einsum("ijef->eifj", x72) * -0.4999999999999992
+    rdm2_vvoo += lib.einsum("ijfe->eifj", x72) * 0.24999999999999967
+    rdm2_vvoo += lib.einsum("jief->eifj", x72) * 0.24999999999999967
+    rdm2_vvoo += lib.einsum("jife->eifj", x72) * -0.4999999999999992
+    del x72
+    x81 = np.zeros((nocc, nvir, nvir, nvir), dtype=np.float64)
+    x81 += lib.einsum("kjfg,kjie->iefg", t2, x1)
+    x88 = np.zeros((nocc, nvir, nvir, nvir), dtype=np.float64)
+    x88 += lib.einsum("iefg->iefg", x81) * 0.5
+    x91 = np.zeros((nocc, nvir, nvir, nvir), dtype=np.float64)
+    x91 += lib.einsum("iefg->iefg", x81)
+    del x81
+    x83 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x83 += lib.einsum("kf,ikje->ijef", t1, x1)
+    x86 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x86 += lib.einsum("ijef->ijef", x83) * 0.06249999999999997
+    del x83
+    rdm2_ooov = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    rdm2_ooov += lib.einsum("ijke->ikje", x1) * 0.5
+    rdm2_ooov += lib.einsum("jike->ikje", x1) * -1
+    rdm2_oovo = np.zeros((nocc, nvir, nocc, nocc), dtype=np.float64)
+    rdm2_oovo += lib.einsum("ijke->iejk", x1) * -1
+    rdm2_oovo += lib.einsum("jike->iejk", x1) * 0.5
+    x3 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x3 += lib.einsum("jief->ijef", t2)
+    x3 += lib.einsum("jife->ijef", t2) * -0.5
+    x4 = np.zeros((nocc, nocc), dtype=np.float64)
+    x4 += lib.einsum("efki,kjfe->ij", l2, x3)
+    x25 = np.zeros((nocc, nocc), dtype=np.float64)
+    x25 += lib.einsum("ij->ij", x4)
+    rdm2_oooo += lib.einsum("ki,jl->ikjl", delta_oo, x4) * -8
+    rdm2_oooo += lib.einsum("li,jk->ikjl", delta_oo, x4) * 4
+    rdm2_oooo += lib.einsum("jk,il->ikjl", delta_oo, x4) * 4
+    rdm2_oooo += lib.einsum("jl,ik->ikjl", delta_oo, x4) * -8
+    del x4
+    x14 = np.zeros((nocc, nocc), dtype=np.float64)
+    x14 += lib.einsum("efki,kjfe->ij", l2, x3) * 2
+    x15 = np.zeros((nocc, nocc), dtype=np.float64)
+    x15 += lib.einsum("ij->ij", x14)
+    x56 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x56 += lib.einsum("ki,kjef->ijef", x14, t2) * 4
+    x64 += lib.einsum("jife->ijef", x56) * -1
+    del x56
+    x61 = np.zeros((nocc, nocc), dtype=np.float64)
+    x61 += lib.einsum("ij->ij", x14)
+    del x14
+    x24 = np.zeros((nocc, nvir), dtype=np.float64)
+    x24 += lib.einsum("fj,jief->ie", l1, x3) * 2
+    del x3
+    x27 += lib.einsum("ie->ie", x24)
+    del x24
+    x5 = np.zeros((nocc, nocc), dtype=np.float64)
+    x5 += lib.einsum("ei,je->ij", l1, t1)
+    x15 += lib.einsum("ij->ij", x5) * 0.0625
+    x16 = np.zeros((nocc, nvir), dtype=np.float64)
+    x16 += lib.einsum("je,ji->ie", t1, x15) * 0.5
+    x17 += lib.einsum("ie->ie", x16)
+    del x16
+    x21 += lib.einsum("je,ik->ijke", t1, x15) * 0.5
+    x28 += lib.einsum("je,ik->ijke", t1, x15)
+    del x15
+    x25 += lib.einsum("ij->ij", x5) * 0.03125
+    x26 = np.zeros((nocc, nvir), dtype=np.float64)
+    x26 += lib.einsum("je,ji->ie", t1, x25) * 2
+    del x25
+    x27 += lib.einsum("ie->ie", x26) * -1
+    del x26
+    x61 += lib.einsum("ij->ij", x5) * 0.06249999999999995
+    x62 = np.zeros((nocc, nvir), dtype=np.float64)
+    x62 += lib.einsum("je,ji->ie", t1, x61) * 0.5000000000000003
+    del x61
+    x63 += lib.einsum("ie->ie", x62)
+    del x62
+    x73 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x73 += lib.einsum("ki,jkef->ijef", x5, t2)
+    x76 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x76 += lib.einsum("ijef->ijef", x73) * 0.125
+    del x73
+    rdm2_oooo += lib.einsum("ki,jl->ikjl", delta_oo, x5) * -0.25
+    rdm2_oooo += lib.einsum("kj,il->ikjl", delta_oo, x5) * 0.125
+    rdm2_oooo += lib.einsum("li,jk->ikjl", delta_oo, x5) * 0.125
+    rdm2_oooo += lib.einsum("lj,ik->ikjl", delta_oo, x5) * -0.25
+    del x5
+    x7 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x7 += lib.einsum("jief->ijef", t2) * 2
+    x7 += lib.einsum("jife->ijef", t2) * -1
+    x8 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x8 += lib.einsum("ljkf,lief->ijke", x1, x7)
+    x18 += lib.einsum("kije->ijke", x8) * -1
+    del x8
+    x13 = np.zeros((nocc, nvir), dtype=np.float64)
+    x13 += lib.einsum("fj,jief->ie", l1, x7) * 0.5
+    x17 += lib.einsum("ie->ie", x13) * -1
+    x18 += lib.einsum("ji,ke->ijke", delta_oo, x17) * -2
+    del x17
+    rdm2_ovoo = np.zeros((nocc, nocc, nvir, nocc), dtype=np.float64)
+    rdm2_ovoo += lib.einsum("ijke->ijek", x18)
+    rdm2_ovoo += lib.einsum("ikje->ijek", x18) * -0.5
+    del x18
+    x63 += lib.einsum("ie->ie", x13) * -1
+    del x13
+    x64 += lib.einsum("ie,jf->ijef", t1, x63) * -0.5
+    del x63
+    x29 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x29 += lib.einsum("ljkf,lief->ijke", x1, x7) * 0.5
+    del x1
+    del x7
+    x31 += lib.einsum("kije->ijke", x29) * -1
+    del x29
+    rdm2_vooo = np.zeros((nvir, nocc, nocc, nocc), dtype=np.float64)
+    rdm2_vooo += lib.einsum("ijke->ejik", x31) * -1
+    rdm2_vooo += lib.einsum("ikje->ejik", x31) * 2
+    del x31
+    x19 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
+    x19 += lib.einsum("fi,kjfe->ijke", l1, t2)
+    x21 += lib.einsum("ijke->ijke", x19) * 0.5
+    rdm2_ovoo += lib.einsum("ijke->ijek", x21)
+    rdm2_ovoo += lib.einsum("ikje->ijek", x21) * -2
+    del x21
+    x28 += lib.einsum("ijke->ijke", x19)
+    rdm2_vooo += lib.einsum("ijke->ejik", x28) * -1
+    rdm2_vooo += lib.einsum("ikje->ejik", x28) * 0.5
+    del x28
+    x74 += lib.einsum("ijke->ijke", x19)
+    del x19
+    x75 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x75 += lib.einsum("kf,kije->ijef", t1, x74) * 0.125
+    del x74
+    x76 += lib.einsum("ijfe->ijef", x75)
+    del x75
+    rdm2_vvoo += lib.einsum("ijef->eifj", x76)
+    rdm2_vvoo += lib.einsum("ijfe->eifj", x76) * -2
+    rdm2_vvoo += lib.einsum("jief->eifj", x76) * -2
+    rdm2_vvoo += lib.einsum("jife->eifj", x76)
+    del x76
+    x27 += lib.einsum("ie->ie", t1)
+    rdm2_vooo += lib.einsum("ji,ke->ejik", delta_oo, x27) * -0.5
+    rdm2_vooo += lib.einsum("ki,je->ejik", delta_oo, x27)
+    del x27
+    x32 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x32 += lib.einsum("efji->ijef", l2) * 2
+    x32 -= lib.einsum("feji->ijef", l2)
+    x33 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x33 += lib.einsum("kjgf,kieg->ijef", t2, x32)
+    x48 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x48 += lib.einsum("kjfg,kige->ijef", t2, x33)
+    rdm2_vvoo -= lib.einsum("ijef->eifj", x48) * 4
+    rdm2_vvoo += lib.einsum("ijfe->eifj", x48) * 2
+    rdm2_vvoo += lib.einsum("jief->eifj", x48) * 2
+    rdm2_vvoo -= lib.einsum("jife->eifj", x48) * 4
+    del x48
+    x51 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x51 += lib.einsum("kjgf,kige->ijef", t2, x33)
+    x52 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x52 += lib.einsum("jife->ijef", x51) * 2
+    del x51
+    rdm2_ovov -= lib.einsum("ijfe->ijef", x33) * 2
+    del x33
+    x34 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x34 -= lib.einsum("efji->ijef", l2)
+    x34 += lib.einsum("feji->ijef", l2) * 2
+    rdm2_ovov -= lib.einsum("kjeg,kifg->ijef", t2, x34) * 2
+    del x34
+    x37 = np.zeros((nvir, nvir), dtype=np.float64)
+    x37 += lib.einsum("ei,if->ef", l1, t1)
+    x40 = np.zeros((nvir, nvir), dtype=np.float64)
+    x40 += lib.einsum("ef->ef", x37)
+    x44 = np.zeros((nvir, nvir), dtype=np.float64)
+    x44 += lib.einsum("ef->ef", x37) * 0.03125
+    x47 = np.zeros((nvir, nvir), dtype=np.float64)
+    x47 += lib.einsum("ef->ef", x37) * 0.0625
+    del x37
+    x38 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x38 += lib.einsum("efji->ijef", l2)
+    x38 += lib.einsum("feji->ijef", l2) * -0.5
+    x39 = np.zeros((nvir, nvir), dtype=np.float64)
+    x39 += lib.einsum("ijfg,ijge->ef", t2, x38) * 32
+    x40 += lib.einsum("ef->ef", x39)
+    del x39
+    x80 = np.zeros((nocc, nvir, nvir, nvir), dtype=np.float64)
+    x80 += lib.einsum("if,eg->iefg", t1, x40) * 0.0625
+    x89 = np.zeros((nocc, nvir, nvir, nvir), dtype=np.float64)
+    x89 += lib.einsum("if,eg->iefg", t1, x40) * 0.03125
+    rdm2_ovov += lib.einsum("ji,fe->ijef", delta_oo, x40) * 0.25
+    rdm2_voov += lib.einsum("ji,fe->ejif", delta_oo, x40) * -0.125
+    del x40
+    x44 += lib.einsum("ijfg,ijge->ef", t2, x38)
+    rdm2_ovvo += lib.einsum("ji,fe->ifej", delta_oo, x44) * -4
+    del x44
+    x46 = np.zeros((nvir, nvir), dtype=np.float64)
+    x46 += lib.einsum("ijfg,ijge->ef", t2, x38) * 2
+    del x38
+    x47 += lib.einsum("ef->ef", x46)
+    rdm2_vovo += lib.einsum("ji,fe->efij", delta_oo, x47) * 4
+    del x47
+    x55 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x55 += lib.einsum("ge,ijgf->ijef", x46, t2) * 4
+    del x46
+    x64 += lib.einsum("jife->ijef", x55) * -1
+    del x55
+    rdm2_vvoo += lib.einsum("ijef->eifj", x64)
+    rdm2_vvoo += lib.einsum("ijfe->eifj", x64) * -0.5
+    rdm2_vvoo += lib.einsum("jief->eifj", x64) * -0.5
+    rdm2_vvoo += lib.einsum("jife->eifj", x64)
+    del x64
+    x41 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x41 -= lib.einsum("jief->ijef", t2)
+    x41 += lib.einsum("jife->ijef", t2) * 2
+    x42 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x42 += lib.einsum("kieg,kjgf->ijef", x32, x41)
+    del x32
+    rdm2_ovvo += lib.einsum("ijfe->ifej", x42) * 2
+    rdm2_voov += lib.einsum("ijfe->ejif", x42) * 2
+    del x42
+    rdm2_vovo -= lib.einsum("fgki,kjeg->efij", l2, x41) * 2
+    del x41
+    x45 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x45 += lib.einsum("jief->ijef", t2) * 2
+    x45 -= lib.einsum("jife->ijef", t2)
+    rdm2_vovo -= lib.einsum("gfki,kjeg->efij", l2, x45) * 2
+    del x45
+    x49 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x49 += lib.einsum("egik,jkgf->ijef", l2, t2)
+    x50 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x50 += lib.einsum("jkgf,kige->ijef", t2, x49)
+    del x49
+    x52 += lib.einsum("ijef->ijef", x50)
+    del x50
+    x52 += lib.einsum("jife->ijef", t2)
+    rdm2_vvoo -= lib.einsum("ijfe->eifj", x52) * 2
+    rdm2_vvoo += lib.einsum("ijef->eifj", x52) * 4
+    del x52
+    x53 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x53 += lib.einsum("geik,jkgf->ijef", l2, t2)
+    x54 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x54 += lib.einsum("jkgf,kige->ijef", t2, x53)
+    rdm2_vvoo += lib.einsum("jief->eifj", x54) * 4
+    rdm2_vvoo -= lib.einsum("jife->eifj", x54) * 2
+    del x54
+    x79 = np.zeros((nocc, nvir, nvir, nvir), dtype=np.float64)
+    x79 += lib.einsum("jf,jieg->iefg", t1, x53)
+    del x53
+    x80 += lib.einsum("iefg->iefg", x79) * -1
+    x89 += lib.einsum("iefg->iefg", x79) * -0.5
+    del x79
+    x70 += lib.einsum("ie,jf->ijef", t1, t1) * 0.125
+    rdm2_vvoo += lib.einsum("ijfe->eifj", x70) * -1
+    rdm2_vvoo += lib.einsum("ijef->eifj", x70) * 2
+    del x70
+    x77 = np.zeros((nocc, nvir, nvir, nvir), dtype=np.float64)
+    x77 += lib.einsum("jg,efij->iefg", t1, l2)
+    x93 = np.zeros((nvir, nvir, nvir, nvir), dtype=np.float64)
+    x93 += lib.einsum("ih,ifeg->efgh", t1, x77)
+    x94 = np.zeros((nvir, nvir, nvir, nvir), dtype=np.float64)
+    x94 += lib.einsum("fehg->efgh", x93) * 0.125
+    del x93
     rdm2_ovvv = np.zeros((nocc, nvir, nvir, nvir), dtype=np.float64)
-    rdm2_ovvv -= lib.einsum("lg,ehlm,kmfh->kefg", t1, l2, t2) * 8
-    rdm2_ovvv -= lib.einsum("lf,ehlm,mkgh->kefg", t1, l2, t2) * 2
-    rdm2_ovvv -= lib.einsum("mf,ehlm,klgh->kefg", t1, l2, t2) * 2
-    rdm2_ovvv -= lib.einsum("mg,ehlm,lkfh->kefg", t1, l2, t2) * 2
-    rdm2_ovvv += lib.einsum("lf,ehlm,kmgh->kefg", t1, l2, t2) * 4
-    rdm2_ovvv += lib.einsum("mf,ehlm,lkgh->kefg", t1, l2, t2) * 4
-    rdm2_ovvv += lib.einsum("lg,ehlm,mkfh->kefg", t1, l2, t2) * 4
-    rdm2_ovvv += lib.einsum("mg,ehlm,klfh->kefg", t1, l2, t2) * 4
-    rdm2_ovvv += lib.einsum("kf,ehlm,mlgh->kefg", t1, l2, t2) * 4
-    rdm2_ovvv += lib.einsum("kg,ehlm,lmfh->kefg", t1, l2, t2) * 4
-    rdm2_ovvv += lib.einsum("kh,ehlm,mlfg->kefg", t1, l2, t2) * 4
-    rdm2_ovvv += lib.einsum("kg,ehlm,mlfh->kefg", t1, l2, t2) * -2
-    rdm2_ovvv += lib.einsum("kh,ehlm,lmfg->kefg", t1, l2, t2) * -2
-    rdm2_ovvv += lib.einsum("kf,ehlm,lmgh->kefg", t1, l2, t2) * -8
-    rdm2_ovvv -= lib.einsum("lf,mg,kh,ehlm->kefg", t1, t1, t1, l2) * 2
-    rdm2_ovvv += lib.einsum("mf,lg,kh,ehlm->kefg", t1, t1, t1, l2) * 4
-    rdm2_ovvv -= lib.einsum("el,klfg->kefg", l1, t2) * 4
-    rdm2_ovvv += lib.einsum("el,lkfg->kefg", l1, t2) * 2
-    rdm2_ovvv -= lib.einsum("el,kf,lg->kefg", l1, t1, t1) * 4
-    rdm2_ovvv += lib.einsum("el,lf,kg->kefg", l1, t1, t1) * 2
-
-    # vovv block
-    rdm2_vovv = np.zeros((nvir, nocc, nvir, nvir), dtype=np.float64)
-    rdm2_vovv -= lib.einsum("lf,ehlm,kmgh->ekfg", t1, l2, t2) * 8
-    rdm2_vovv -= lib.einsum("mf,ehlm,lkgh->ekfg", t1, l2, t2) * 2
-    rdm2_vovv -= lib.einsum("lg,ehlm,mkfh->ekfg", t1, l2, t2) * 2
-    rdm2_vovv -= lib.einsum("mg,ehlm,klfh->ekfg", t1, l2, t2) * 2
-    rdm2_vovv += lib.einsum("lf,ehlm,mkgh->ekfg", t1, l2, t2) * 4
-    rdm2_vovv += lib.einsum("mf,ehlm,klgh->ekfg", t1, l2, t2) * 4
-    rdm2_vovv += lib.einsum("lg,ehlm,kmfh->ekfg", t1, l2, t2) * 4
-    rdm2_vovv += lib.einsum("mg,ehlm,lkfh->ekfg", t1, l2, t2) * 4
-    rdm2_vovv += lib.einsum("kf,ehlm,lmgh->ekfg", t1, l2, t2) * 4
-    rdm2_vovv += lib.einsum("kg,ehlm,mlfh->ekfg", t1, l2, t2) * 4
-    rdm2_vovv += lib.einsum("kh,ehlm,lmfg->ekfg", t1, l2, t2) * 4
-    rdm2_vovv += lib.einsum("kf,ehlm,mlgh->ekfg", t1, l2, t2) * -2
-    rdm2_vovv += lib.einsum("kh,ehlm,mlfg->ekfg", t1, l2, t2) * -2
-    rdm2_vovv += lib.einsum("kg,ehlm,lmfh->ekfg", t1, l2, t2) * -8
-    rdm2_vovv -= lib.einsum("mf,lg,kh,ehlm->ekfg", t1, t1, t1, l2) * 2
-    rdm2_vovv += lib.einsum("lf,mg,kh,ehlm->ekfg", t1, t1, t1, l2) * 4
-    rdm2_vovv -= lib.einsum("el,lkfg->ekfg", l1, t2) * 4
-    rdm2_vovv += lib.einsum("el,klfg->ekfg", l1, t2) * 2
-    rdm2_vovv -= lib.einsum("el,lf,kg->ekfg", l1, t1, t1) * 4
-    rdm2_vovv += lib.einsum("el,kf,lg->ekfg", l1, t1, t1) * 2
-
-    # vvov block
-    rdm2_vvov = np.zeros((nvir, nvir, nocc, nvir), dtype=np.float64)
-    rdm2_vvov -= lib.einsum("kf,edkj->dejf", t1, l2) * 4
-    rdm2_vvov += lib.einsum("kf,dekj->dejf", t1, l2) * 2
-
-    # vvvo block
+    rdm2_ovvv += lib.einsum("ifge->ifeg", x77)
+    rdm2_ovvv += lib.einsum("igfe->ifeg", x77) * -0.5
+    rdm2_vovv = np.zeros((nvir, nvir, nocc, nvir), dtype=np.float64)
+    rdm2_vovv += lib.einsum("ifge->efig", x77) * -0.5
+    rdm2_vovv += lib.einsum("igfe->efig", x77)
+    del x77
+    x78 = np.zeros((nocc, nvir, nvir, nvir), dtype=np.float64)
+    x78 += lib.einsum("ej,ijfg->iefg", l1, t2)
+    x80 += lib.einsum("iefg->iefg", x78)
+    rdm2_vvov = np.zeros((nvir, nocc, nvir, nvir), dtype=np.float64)
+    rdm2_vvov += lib.einsum("igef->eifg", x80)
+    rdm2_vvov += lib.einsum("igfe->eifg", x80) * -0.5
+    del x80
+    x89 += lib.einsum("iefg->iefg", x78) * 0.5
+    del x78
     rdm2_vvvo = np.zeros((nvir, nvir, nvir, nocc), dtype=np.float64)
-    rdm2_vvvo -= lib.einsum("kf,dekj->defj", t1, l2) * 4
-    rdm2_vvvo += lib.einsum("kf,edkj->defj", t1, l2) * 2
-
-    # vvvv block
+    rdm2_vvvo += lib.einsum("igef->egfi", x89) * -1
+    rdm2_vvvo += lib.einsum("igfe->egfi", x89) * 2
+    del x89
+    x82 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x82 += lib.einsum("geik,jkfg->ijef", l2, t2)
+    x86 += lib.einsum("ijef->ijef", x82)
+    del x82
+    x84 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x84 += lib.einsum("jief->ijef", t2) * -1
+    x84 += lib.einsum("jife->ijef", t2) * 2
+    x85 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x85 += lib.einsum("gfkj,kige->ijef", l2, x84)
+    del x84
+    x86 += lib.einsum("jife->ijef", x85) * -1
+    del x85
+    x87 = np.zeros((nocc, nvir, nvir, nvir), dtype=np.float64)
+    x87 += lib.einsum("jg,jief->iefg", t1, x86) * 0.5
+    x88 += lib.einsum("iegf->iefg", x87)
+    del x87
+    rdm2_vvov += lib.einsum("igef->eifg", x88)
+    rdm2_vvov += lib.einsum("igfe->eifg", x88) * -2
+    del x88
+    x90 = np.zeros((nocc, nvir, nvir, nvir), dtype=np.float64)
+    x90 += lib.einsum("jg,jief->iefg", t1, x86)
+    del x86
+    x91 += lib.einsum("iegf->iefg", x90)
+    del x90
+    rdm2_vvvo += lib.einsum("igef->egfi", x91) * -1
+    rdm2_vvvo += lib.einsum("igfe->egfi", x91) * 0.5
+    del x91
+    x92 = np.zeros((nvir, nvir, nvir, nvir), dtype=np.float64)
+    x92 += lib.einsum("efji,jigh->efgh", l2, t2)
+    x94 += lib.einsum("fehg->efgh", x92) * 2
+    del x92
     rdm2_vvvv = np.zeros((nvir, nvir, nvir, nvir), dtype=np.float64)
-    rdm2_vvvv += lib.einsum("efij,jigh->efgh", l2, t2) * 2
-    rdm2_vvvv += lib.einsum("efij,ijgh->efgh", l2, t2) * -4
-    rdm2_vvvv -= lib.einsum("ig,jh,efij->efgh", t1, t1, l2) * 4
-    rdm2_vvvv += lib.einsum("jg,ih,efij->efgh", t1, t1, l2) * 2
+    rdm2_vvvv += lib.einsum("ghfe->egfh", x94) * -1
+    rdm2_vvvv += lib.einsum("ghef->egfh", x94) * 2
+    del x94
+    rdm2_oooo += lib.einsum("ki,lj->ikjl", delta_oo, delta_oo) * 4
+    rdm2_oooo -= lib.einsum("jk,li->ikjl", delta_oo, delta_oo) * 2
+    rdm2_ooov += lib.einsum("ki,ej->ikje", delta_oo, l1)
+    rdm2_ooov += lib.einsum("kj,ei->ikje", delta_oo, l1) * -0.5
+    rdm2_oovo += lib.einsum("ki,ej->iejk", delta_oo, l1) * -0.5
+    rdm2_oovo += lib.einsum("kj,ei->iejk", delta_oo, l1)
+    rdm2_ovoo += lib.einsum("ji,ke->ijek", delta_oo, t1)
+    rdm2_ovoo += lib.einsum("ki,je->ijek", delta_oo, t1) * -0.5
+    rdm2_oovv = np.zeros((nocc, nvir, nocc, nvir), dtype=np.float64)
+    rdm2_oovv -= lib.einsum("efji->iejf", l2) * 2
+    rdm2_oovv += lib.einsum("feji->iejf", l2) * 4
+    rdm2_ovov += lib.einsum("fi,je->ijef", l1, t1) * -0.125
+    rdm2_ovvo += lib.einsum("fi,je->ifej", l1, t1) * 0.25
+    rdm2_voov += lib.einsum("fi,je->ejif", l1, t1) * 0.25
+    rdm2_vovo += lib.einsum("fi,je->efij", l1, t1) * -0.125
 
     rdm2 = np.block([
             [[[rdm2_oooo, rdm2_ooov], [rdm2_oovo, rdm2_oovv]],

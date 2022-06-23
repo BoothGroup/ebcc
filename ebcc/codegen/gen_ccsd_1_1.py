@@ -8,35 +8,20 @@ from qwick.expression import AExpression
 from qwick.wick import apply_wick
 from qwick.convenience import *
 from qwick import codegen
-from ebcc.codegen import common
+from ebcc.codegen import common, wick
+from ebcc.codegen.convenience_extra import *
 
-# Define hamiltonian
-H1 = one_e("f", ["occ", "vir"], norder=True)
-H2 = two_e("v", ["occ", "vir"], norder=True)
-Hp = one_p("G") + two_p("w")
-Hep = ep11("g", ["occ", "vir"], ["nm"], norder=True, name2="gc")
-H = H1 + H2 + Hp + Hep
+from dummy_spark import SparkContext
+ctx = SparkContext()
+dr = drudge.Drudge(ctx)
 
-# Define left projection spaces
-bra1 = braE1("occ", "vir")
-bra2 = braE2("occ", "vir", "occ", "vir")
-bra1b = braP1("nm")
-bra1b1e = braP1E1("nm", "occ", "vir")
-
-# Define ansatz
-T1 = E1("t1", ["occ"], ["vir"])
-T2 = E2("t2", ["occ"], ["vir"])
-S1 = P1("s1", ["nm"])
-U11 = EPS1("u11", ["nm"], ["occ"], ["vir"])
-T = T1 + T2 + S1 + U11
-
-# Construct Hbar
-HT = commute(H, T)
-HTT = commute(HT, T)
-HTTT = commute(HTT, T)
-HTTTT = commute(HTTT, T)
-Hbar = H + HT + Fraction('1/2')*HTT
-Hbar += Fraction('1/6')*HTTT + Fraction('1/24')*HTTTT
+H, _ = wick.get_hamiltonian(rank=(2, 1, 1))
+bra1, bra2, bra1b, bra1b1e = wick.get_bra_spaces(rank=(2, 1, 1))
+ket1, ket2, ket1b, ket1b1e = wick.get_ket_spaces(rank=(2, 1, 1))
+T, _ = wick.get_excitation_ansatz(rank=(2, 1, 1))
+L, _ = wick.get_deexcitation_ansatz(rank=(2, 1, 1))
+Hbars = wick.construct_hbar(H, T)
+Hbar = Hbars[-1]
 
 # Printer
 printer = codegen.EinsumPrinter(
@@ -45,6 +30,7 @@ printer = codegen.EinsumPrinter(
             "f": "{base}.{tags}",
             "g": "{base}.{tags}",
             "gc": "{base}.{tags}",
+            "delta": "delta_{tags}",
         },
         reorder_axes={
             "v": (0, 2, 1, 3),
@@ -52,12 +38,15 @@ printer = codegen.EinsumPrinter(
             "t2": (2, 3, 0, 1),
             "l1": (1, 0),
             "l2": (2, 3, 0, 1),
-            "u11": (0, 2, 1),  # FIXME?
+            "u11": (0, 2, 1),
+            "lu11": (0, 2, 1),
             "t1new": (1, 0),
             "t2new": (2, 3, 0, 1),
             "l1new": (1, 0),
             "l2new": (2, 3, 0, 1),
-            "u11new": (0, 2, 1),  # FIXME?
+            "u11new": (0, 2, 1),
+            "lu11new": (0, 2, 1),
+            **{"rdm2_f_%s" % x: (0, 2, 1, 3) for x in common.ov_2e},
         },
         remove_spacing=True,
         garbage_collection=True,
@@ -66,7 +55,12 @@ printer = codegen.EinsumPrinter(
         zeros="np.zeros",
         dtype="np.float64",
 )
+sizes = {"nocc": sympy.Symbol("N")*2, "nvir": sympy.Symbol("N")*4, "nbos": sympy.Symbol("N")}
 
+# Timer:
+timer = common.Stopwatch()
+
+# FunctionPrinter with some extra bits:
 class FunctionPrinter(common.FunctionPrinter):
     def __init__(self, *args, init_gc=True, remove_w_diagonal=False, **kwargs):
         super().__init__(*args, **kwargs)
@@ -93,7 +87,6 @@ class FunctionPrinter(common.FunctionPrinter):
             )
         return self
 
-
 # Declare particle types:
 particles = {
         "f": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
@@ -107,13 +100,20 @@ particles = {
         "l1": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
         "l2": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
         "s1": ((codegen.SCALAR_BOSON, 0),),
+        "ls1": ((codegen.SCALAR_BOSON, 0),),
         "u11": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
+        "lu11": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
         "t1new": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
         "t2new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
         "l1new": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
         "l2new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
         "s1new": ((codegen.SCALAR_BOSON, 0),),
+        "ls1new": ((codegen.SCALAR_BOSON, 0),),
         "u11new": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
+        "lu11new": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
+        "delta": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
+        **{"rdm1_f_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 0)) for x in common.ov_1e},
+        **{"rdm2_f_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)) for x in common.ov_2e},
 }
 
 with common.FilePrinter("ccsd_1_1") as file_printer:
@@ -124,15 +124,17 @@ with common.FilePrinter("ccsd_1_1") as file_printer:
             ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "u11"],
             ["e_cc"],
             init_gc=False,
+            timer=timer,
     ) as function_printer:
         out = apply_wick(Hbar)
         out.resolve()
         expr = AExpression(Ex=out, simplify=True)
         terms, indices = codegen.wick_to_sympy(expr, particles, return_value="e_cc")
         terms = codegen.ghf_to_rhf(terms, indices)
-        terms = codegen.sympy_to_drudge(terms, indices)
-        function_printer.write_python(printer.doprint([terms])+"\n", comment="CCSD-11 energy")
+        terms = codegen.sympy_to_drudge(terms, indices, dr=dr)
         function_printer.write_latex(terms.latex(), comment="CCSD-11 energy")
+        terms = codegen.optimize([terms], sizes=sizes, optimize="greedy", verify=False, interm_fmt="x{}")
+        function_printer.write_python(printer.doprint(terms)+"\n", comment="CCSD-11 energy")
 
     # Get amplitudes function:
     with FunctionPrinter(
@@ -140,6 +142,7 @@ with common.FilePrinter("ccsd_1_1") as file_printer:
             "update_amps",
             ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "u11"],
             ["t1new", "t2new", "s1new", "u11new"],
+            timer=timer,
     ) as function_printer:
         # T1 residuals:
         S = bra1 * Hbar
@@ -148,9 +151,8 @@ with common.FilePrinter("ccsd_1_1") as file_printer:
         expr = AExpression(Ex=out, simplify=True)
         terms, indices = codegen.wick_to_sympy(expr, particles, return_value="t1new")
         terms = codegen.ghf_to_rhf(terms, indices, project_onto=[(codegen.ALPHA, codegen.ALPHA)])
-        terms = codegen.sympy_to_drudge(terms, indices)
-        function_printer.write_python(printer.doprint([terms])+"\n", comment="T1 amplitude")
-        function_printer.write_latex(terms.latex(), comment="T1 amplitude")
+        terms_t1 = codegen.sympy_to_drudge(terms, indices, dr=dr)
+        function_printer.write_latex(terms_t1.latex(), comment="T1 amplitude")
 
         # T2 residuals:
         S = bra2 * Hbar
@@ -159,9 +161,8 @@ with common.FilePrinter("ccsd_1_1") as file_printer:
         expr = AExpression(Ex=out, simplify=True)
         terms, indices = codegen.wick_to_sympy(expr, particles, return_value="t2new")
         terms = codegen.ghf_to_rhf(terms, indices, project_onto=[(codegen.ALPHA, codegen.BETA, codegen.ALPHA, codegen.BETA)])
-        terms = codegen.sympy_to_drudge(terms, indices)
-        function_printer.write_python(printer.doprint([terms])+"\n", comment="T2 amplitude")
-        function_printer.write_latex(terms.latex(), comment="T2 amplitude")
+        terms_t2 = codegen.sympy_to_drudge(terms, indices, dr=dr)
+        function_printer.write_latex(terms_t2.latex(), comment="T2 amplitude")
 
         # S1 residuals:
         S = bra1b * Hbar
@@ -169,10 +170,9 @@ with common.FilePrinter("ccsd_1_1") as file_printer:
         out.resolve()
         expr = AExpression(Ex=out, simplify=True)
         terms, indices = codegen.wick_to_sympy(expr, particles, return_value="s1new")
-        terms = codegen.ghf_to_rhf(terms, indices)
-        terms = codegen.sympy_to_drudge(terms, indices)
-        function_printer.write_python(printer.doprint([terms])+"\n", comment="S1 amplitude")
-        function_printer.write_latex(terms.latex(), comment="S1 amplitude")
+        terms = codegen.ghf_to_rhf(terms, indices, project_onto=[(None,)])
+        terms_s1 = codegen.sympy_to_drudge(terms, indices, dr=dr)
+        function_printer.write_latex(terms_s1.latex(), comment="S1 amplitude")
 
         # U11 residuals:
         S = bra1b1e * Hbar
@@ -181,6 +181,235 @@ with common.FilePrinter("ccsd_1_1") as file_printer:
         expr = AExpression(Ex=out, simplify=True)
         terms, indices = codegen.wick_to_sympy(expr, particles, return_value="u11new")
         terms = codegen.ghf_to_rhf(terms, indices, project_onto=[(None, codegen.ALPHA, codegen.ALPHA)])
-        terms = codegen.sympy_to_drudge(terms, indices)
-        function_printer.write_python(printer.doprint([terms])+"\n", comment="U11 amplitude")
-        function_printer.write_latex(terms.latex(), comment="U11 amplitude")
+        terms_u11 = codegen.sympy_to_drudge(terms, indices, dr=dr)
+        function_printer.write_latex(terms_u11.latex(), comment="U11 amplitude")
+
+        terms = codegen.optimize([terms_t1, terms_t2, terms_s1, terms_u11], sizes=sizes, optimize="trav", verify=False, interm_fmt="x{}")
+        function_printer.write_python(printer.doprint(terms)+"\n", comment="T1, T2, S1 and U11 amplitudes")
+
+    # Get lambda amplitudes function:
+    with common.FunctionPrinter(
+            file_printer,
+            "update_lams",
+            ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "u11", "l1", "l2", "ls1", "lsu11"],
+            ["l1new", "l2new", "ls1new", "lu11new"],
+            timer=timer,
+    ) as function_printer:
+        # L1 residuals <0|Hbar|singles> (not proportional to lambda):
+        S = Hbars[1]*ket1
+        out = apply_wick(S)
+        out.resolve()
+        expr1 = AExpression(Ex=out)
+        expr1 = expr1.get_connected()
+        expr1.sort_tensors()
+
+        # L1 residuals <0|(L Hbar)_c|singles> (connected pieces proportional to Lambda):
+        S = Hbars[3] * ket1
+        S1 = L*S
+        out = apply_wick(S1)
+        out.resolve()
+        expr2 = AExpression(Ex=out)
+        expr2 = expr2.get_connected()
+        expr2.sort_tensors()
+        terms, indices = codegen.wick_to_sympy(expr1+expr2, particles, return_value="l1new")
+        terms = codegen.ghf_to_rhf(terms, indices, project_onto=[(codegen.ALPHA, codegen.ALPHA)])
+        terms_l1 = codegen.sympy_to_drudge(terms, indices, dr=dr)
+        function_printer.write_latex(terms_l1.latex(), comment="L1 amplitude")
+
+        # L2 residuals <0|Hbar|doubles> (not proportional to lambda):
+        S = Hbars[0] * ket2
+        out = apply_wick(S)
+        out.resolve()
+        expr1 = AExpression(Ex=out)
+        expr1 = expr1.get_connected()
+        expr1.sort_tensors()
+
+        # L2 residuals <0|L Hbar|doubles> (connected pieces proportional to lambda):
+        S = L * Hbars[2] * ket2
+        out = apply_wick(S)
+        out.resolve()
+        expr2 = AExpression(Ex=out)
+        expr2 = expr2.get_connected()
+        expr2.sort_tensors()
+
+        # L2 residuals (disonnected pieces proportional to lambda):
+        P1 = PE1("occ", "vir")
+        S = Hbars[1] * P1 * L * ket2
+        out = apply_wick(S)
+        out.resolve()
+        expr3 = AExpression(Ex=out)
+        expr3.sort_tensors()
+        terms, indices = codegen.wick_to_sympy(expr1+expr2+expr3, particles, return_value="l2new")
+        terms = codegen.ghf_to_rhf(terms, indices, project_onto=[(codegen.ALPHA, codegen.BETA, codegen.ALPHA, codegen.BETA)])
+        terms_l2 = codegen.sympy_to_drudge(terms, indices, dr=dr)
+        function_printer.write_latex(terms_l2.latex(), comment="L2 amplitude")
+
+        # B1 residuals <0|Hbar|1b> (not proportional to lambda):
+        S = Hbars[1] * ket1b
+        out = apply_wick(S)
+        out.resolve()
+        expr1 = AExpression(Ex=out)
+        expr1 = expr1.get_connected()
+        expr1.sort_tensors()
+
+        # B1 residuals <0|L Hbar|1b> (connected pieces proportional to lambda)
+        S = L * Hbars[3] * ket1b
+        out = apply_wick(S)
+        out.resolve()
+        expr2 = AExpression(Ex=out)
+        expr2 = expr2.get_connected()
+        expr2.sort_tensors()
+        terms, indices = codegen.wick_to_sympy(expr1+expr2, particles, return_value="ls1new")
+        terms = codegen.ghf_to_rhf(terms, indices, project_onto=[(None,)])
+        terms_ls1 = codegen.sympy_to_drudge(terms, indices, dr=dr)
+        function_printer.write_latex(terms_ls1.latex(), comment="LS1 amplitude")
+
+        # BE1 residuals <0|Hbar|EPS1> (not proportional to lambda)
+        S = Hbars[0] * ket1b1e
+        out = apply_wick(S)
+        out.resolve()
+        expr1 = AExpression(Ex=out)
+        expr1 = expr1.get_connected()
+        expr1.sort_tensors()
+
+        # BE1 residuals <0|L Hbar|EPS1> (connected pieces proportional to lambda)
+        S = Hbars[0] * ket1b1e
+        out = apply_wick(S)
+        out.resolve()
+        expr2 = AExpression(Ex=out)
+        expr2 = expr2.get_connected()
+        expr2.sort_tensors()
+
+        # BE1 residuals (disconnected pieces proportional to lambda)
+        P1 = PE1("occ", "vir")
+        S = Hbars[1] * P1 * L * ket1b1e
+        out = apply_wick(S)
+        out.resolve()
+        expr3 = AExpression(Ex=out)
+        expr3.sort_tensors()
+
+        # BE1 residuals (disconnected pieces proportional to lambda, projection onto boson singles)
+        P1b = PB1("nm")
+        S = Hbars[1] * P1 * L * ket1b1e
+        out = apply_wick(S)
+        out.resolve()
+        expr4 = AExpression(Ex=out)
+        expr4.sort_tensors()
+        terms, indices = codegen.wick_to_sympy(expr1+expr2+expr3+expr4, particles, return_value="lu11new")
+        terms = codegen.ghf_to_rhf(terms, indices, project_onto=[(None, codegen.ALPHA, codegen.ALPHA)])
+        terms_lu11 = codegen.sympy_to_drudge(terms, indices, dr=dr)
+        function_printer.write_latex(terms_lu11.latex(), comment="LU11 amplitude")
+
+        terms = codegen.optimize([terms_l1, terms_l2, terms_ls1, terms_lu11], sizes=sizes, optimize="trav", verify=False, interm_fmt="x{}")
+        function_printer.write_python(printer.doprint(terms)+"\n", comment="L1, L2, LS1 and LU11 amplitudes")
+
+    # Get 1RDM expressions:
+    with common.FunctionPrinter(
+            file_printer,
+            "make_rdm1_f",
+            ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "u11", "l1", "l2", "ls1", "lsu11"],
+            ["rdm1_f"],
+            timer=timer,
+    ) as function_printer:
+        i, a = Idx(0, "occ"), Idx(0, "vir")
+        j, b = Idx(1, "occ"), Idx(1, "vir")
+
+        function_printer.write_python("    delta_oo = np.eye(nocc)")
+        function_printer.write_python("    delta_vv = np.eye(nvir)\n")
+
+        def case(i, j, return_value, comment=None):
+            ops = [FOperator(j, True), FOperator(i, False)]
+            P = Expression([Term(1, [], [Tensor([i, j], "")], ops, [])])
+            PT = commute(P, T)
+            PTT = commute(PT, T)
+            mid = P + PT + Fraction("1/2") * PTT
+            full = mid + L * mid
+            out = apply_wick(full)
+            out.resolve()
+            expr = AExpression(Ex=out)
+            terms, indices = codegen.wick_to_sympy(expr, particles, return_value=return_value)
+            terms = codegen.ghf_to_rhf(terms, indices)
+            terms = codegen.sympy_to_drudge(terms, indices, dr=dr)
+            function_printer.write_latex(terms.latex(), comment=comment)
+            return terms
+
+        # Blocks:
+        terms = [
+            case(i, j, "rdm1_f_oo", comment="oo block"),
+            case(i, a, "rdm1_f_ov", comment="ov block"),
+            case(a, i, "rdm1_f_vo", comment="vo block"),
+            case(a, b, "rdm1_f_vv", comment="vv block"),
+        ]
+
+        terms = codegen.optimize(terms, sizes=sizes, optimize="trav", verify=False, interm_fmt="x{}")
+        function_printer.write_python(printer.doprint(terms)+"\n", comment="1RDM")
+        function_printer.write_python("    rdm1_f = np.block([[rdm1_f_oo, rdm1_f_ov], [rdm1_f_vo, rdm1_f_vv]])\n")
+
+    # Get 2RDM expressions:
+    with common.FunctionPrinter(
+            file_printer,
+            "make_rdm2_f",
+            ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "u11", "l1", "l2", "ls1", "lsu11"],
+            ["rdm2_f"],
+            timer=timer,
+    ) as function_printer:
+        i, a = Idx(0, "occ"), Idx(0, "vir")
+        j, b = Idx(1, "occ"), Idx(1, "vir")
+        k, c = Idx(2, "occ"), Idx(2, "vir")
+        l, d = Idx(3, "occ"), Idx(3, "vir")
+
+        function_printer.write_python("    delta_oo = np.eye(nocc)")
+        function_printer.write_python("    delta_vv = np.eye(nvir)\n")
+
+        def case(i, j, k, l, return_value, comment=None):
+            ops = [FOperator(l, True), FOperator(k, True), FOperator(i, False), FOperator(j, False)]
+            P = Expression([Term(1, [], [Tensor([i, j, k, l], "")], ops, [])])
+            PT = commute(P, T)
+            PTT = commute(PT, T)
+            PTTT = commute(PTT, T)
+            PTTTT = commute(PTTT, T)
+            mid = P + PT + Fraction("1/2")*PTT + Fraction("1/6")*PTTT
+            mid += Fraction("1/24")*PTTTT
+            full = mid + L * mid
+            out = apply_wick(full)
+            out.resolve()
+            expr = AExpression(Ex=out)
+            terms, indices = codegen.wick_to_sympy(expr, particles, return_value=return_value)
+            terms = codegen.ghf_to_rhf(terms, indices)
+            terms = codegen.sympy_to_drudge(terms, indices, dr=dr)
+            function_printer.write_latex(terms.latex(), comment=comment)
+            return terms
+
+        # Blocks:
+        terms = [
+            case(i, j, k, l, "rdm2_f_oooo", comment="oooo block"),
+            case(i, j, k, a, "rdm2_f_ooov", comment="ooov block"),
+            case(i, j, a, k, "rdm2_f_oovo", comment="oovo block"),
+            case(i, a, j, k, "rdm2_f_ovoo", comment="ovoo block"),
+            case(a, i, j, k, "rdm2_f_vooo", comment="vooo block"),
+            case(i, j, a, b, "rdm2_f_oovv", comment="oovv block"),
+            case(i, a, j, b, "rdm2_f_ovov", comment="ovov block"),
+            case(i, a, b, j, "rdm2_f_ovvo", comment="ovvo block"),
+            case(a, i, j, b, "rdm2_f_voov", comment="voov block"),
+            case(a, i, b, j, "rdm2_f_vovo", comment="vovo block"),
+            case(a, b, i, j, "rdm2_f_vvoo", comment="vvoo block"),
+            case(i, a, b, c, "rdm2_f_ovvv", comment="ovvv block"),
+            case(a, i, b, c, "rdm2_f_vovv", comment="vovv block"),
+            case(a, b, i, c, "rdm2_f_vvov", comment="vvov block"),
+            case(a, b, c, i, "rdm2_f_vvvo", comment="vvvo block"),
+            case(a, b, c, d, "rdm2_f_vvvv", comment="vvvv block"),
+        ]
+
+        terms = codegen.optimize(terms, sizes=sizes, optimize="trav", verify=False, interm_fmt="x{}")
+        function_printer.write_python(printer.doprint(terms)+"\n", comment="2RDM")
+        function_printer.write_python(
+                "    rdm2_f = np.block([\n"
+                "            [[[rdm2_f_oooo, rdm2_f_ooov], [rdm2_f_oovo, rdm2_f_oovv]],\n"
+                "             [[rdm2_f_ovoo, rdm2_f_ovov], [rdm2_f_ovvo, rdm2_f_ovvv]]],\n"
+                "            [[[rdm2_f_vooo, rdm2_f_voov], [rdm2_f_vovo, rdm2_f_vovv]],\n"
+                "             [[rdm2_f_vvoo, rdm2_f_vvov], [rdm2_f_vvvo, rdm2_f_vvvv]]],\n"
+                "    ])\n"
+        )
+
+
+

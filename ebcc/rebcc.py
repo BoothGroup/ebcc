@@ -213,7 +213,7 @@ class EBCC:
 
         for niter in range(1, self.max_iter+1):
             lambdas_prev = lambdas
-            lambdas = self.update_amps(lambdas)
+            lambdas = self.update_lams(amplitudes, lambdas)
             vector = self.lambdas_to_vector(lambdas)
             vector = diis.update(vector)
             lambdas = self.vector_to_lambdas(vector)
@@ -233,8 +233,9 @@ class EBCC:
 
         return None
 
-    def energy(self, amplitudes):
-        """Compute the energy.
+    def _pack_codegen_kwargs(self, *extra_kwargs):
+        """Pack all the possible keyword arguments for generated code
+        into a dictionary.
         """
 
         omega = np.diag(self.omega) if self.omega is not None else None
@@ -249,9 +250,24 @@ class EBCC:
                 nvir=self.nvir,
                 nbos=self.nbos,
         )
-        kwargs.update(amplitudes)
+        for kw in extra_kwargs:
+            if kw is not None:
+                kwargs.update(kw)
 
-        res = self._eqns.energy(**kwargs)
+        return kwargs
+
+    def energy(self, amplitudes):
+        """Compute the energy.
+        """
+
+        try:
+            func = self._eqns.energy
+        except AttributeError:
+            raise NotImplementedError("energy for rank = %s" % self.rank)
+
+        kwargs = self._pack_codegen_kwargs(amplitudes)
+
+        res = func(**kwargs)
 
         return res["e_cc"]
 
@@ -259,21 +275,14 @@ class EBCC:
         """Update the amplitudes.
         """
 
-        omega = np.diag(self.omega) if self.omega is not None else None
+        try:
+            func = self._eqns.update_amps
+        except AttributeError:
+            raise NotImplementedError("update_amps for rank = %s" % self.rank)
 
-        kwargs = dict(
-                f=self.fock,
-                v=self.eri,
-                g=self.g,
-                G=self.G,
-                w=omega,
-                nocc=self.nocc,
-                nvir=self.nvir,
-                nbos=self.nbos,
-        )
-        kwargs.update(amplitudes)
+        kwargs = self._pack_codegen_kwargs(amplitudes)
 
-        res = self._eqns.update_amps(**kwargs)
+        res = func(**kwargs)
         res = {key.rstrip("new"): val for key, val in res.items()}
         e_ia = lib.direct_sum("i-a->ia", self.eo, self.ev)
 
@@ -303,29 +312,21 @@ class EBCC:
         """Update the lambda amplitudes.
         """
 
-        omega = np.diag(self.omega) if self.omega is not None else None
+        try:
+            func = self._eqns.update_lams
+        except AttributeError:
+            raise NotImplementedError("update_lams for rank = %s" % self.rank)
 
-        kwargs = dict(
-                f=self.fock,
-                v=self.eri,
-                g=self.g,
-                G=self.G,
-                w=omega,
-                nocc=self.nocc,
-                nvir=self.nvir,
-                nbos=self.nbos,
-        )
-        kwargs.update(amplitudes)
-        kwargs.update(lambdas)
+        kwargs = self._pack_codegen_kwargs(amplitudes, lambdas)
 
-        res = self._eqns.update_lams(**kwargs)
+        res = func(**kwargs)
         res = {key.rstrip("new"): val for key, val in res.items()}
-        e_ia = lib.direct_sum("i-a->ia", self.eo, self.ev)
+        e_ai = lib.direct_sum("i-a->ai", self.eo, self.ev)
 
         # Divide T amplitudes:
         for n in range(1, self.rank[0]+1):
             perm = list(range(0, n*2, 2)) + list(range(1, n*2, 2))
-            d = functools.reduce(np.add.outer, [e_ia] * n)
+            d = functools.reduce(np.add.outer, [e_ai] * n)
             d = d.transpose(perm)
             res["l%d" % n] /= d
             res["l%d" % n] += lambdas["l%d" % n]
@@ -337,7 +338,7 @@ class EBCC:
 
         # Divide U amplitudes:
         for n in range(1, self.rank[2]+1):
-            d = functools.reduce(np.add.outer, ([-self.omega] * n) + [e_ia])
+            d = functools.reduce(np.add.outer, ([-self.omega] * n) + [e_ai])
             res["lu1%d" % n] /= d
             res["lu1%d" % n] += lambdas["lu1%d" % n]
 
@@ -349,24 +350,41 @@ class EBCC:
 
         raise NotImplementedError  # TODO
 
-    def make_1rdm_b(self):
+    def make_rdm1_b(self):
         """Build the bosonic 1RDM <b† b>.
         """
 
         raise NotImplementedError  # TODO
 
-    def make_1rdm_f(self):
+    def make_rdm1_f(self, amplitudes, lambdas):
         """Build the fermionic 1RDM.
         """
 
-        raise NotImplementedError  # TODO
+        try:
+            func = self._eqns.make_rdm1_f
+        except AttributeError:
+            raise NotImplementedError("make_rdm1_f for rank = %s" % self.rank)
 
-    def make_2rdm_f(self):
+        kwargs = self._pack_codegen_kwargs(amplitudes, lambdas)
+
+        res = func(**kwargs)
+
+        return res["rdm1"]
+
+    def make_rdm2_f(self, amplitudes, lambdas):
         """Build the fermionic 2RDM.
         """
 
+        try:
+            func = self._eqns.make_rdm2_f
+        except AttributeError:
+            raise NotImplementedError("make_rdm2_f for rank = %s" % self.rank)
 
-        raise NotImplementedError  # TODO
+        kwargs = self._pack_codegen_kwargs(amplitudes, lambdas)
+
+        res = func(**kwargs)
+
+        return res["rdm2"]
 
     def make_eb_coup_rdm(self):
         """Build the electron-boson coupling RDMs <b† i† j> and <b i† j>.
@@ -531,52 +549,50 @@ class EBCC:
         return amplitudes
 
     def lambdas_to_vector(self, lambdas):
-        """Construct a vector containing all of the lamnbda amplitudes
+        """Construct a vector containing all of the lambda amplitudes
         used in the given ansatz.
         """
-        # NOTE same as above
 
         vectors = []
 
         for n in range(1, self.rank[0]+1):
-            vectors.append(amplitudes["l%d" % n].ravel())
+            vectors.append(lambdas["l%d" % n].ravel())
 
         for n in range(1, self.rank[1]+1):
-            vectors.append(amplitudes["ls%d" % n].ravel())
+            vectors.append(lambdas["ls%d" % n].ravel())
 
         for n in range(1, self.rank[2]+1):
-            vectors.append(amplitudes["lu1%d" % n].ravel())
+            vectors.append(lambdas["lu1%d" % n].ravel())
 
         return np.concatenate(vectors)
 
     def vector_to_lambdas(self, vector):
-        """Construct all of the amplitudes used in the given ansatz
+        """Construct all of the lambdas used in the given ansatz
         from a vector.
         """
-        # NOTE same as above
 
-        amplitudes = {}
+        lambdas = {}
         i0 = 0
 
         for n in range(1, self.rank[0]+1):
-            shape = (self.nocc,) * n + (self.nvir,) * n
+            shape = (self.nvir,) * n + (self.nocc,) * n
             size = np.prod(shape)
-            amplitudes["l%d" % n] = vector[i0:i0+size].reshape(shape)
+            lambdas["l%d" % n] = vector[i0:i0+size].reshape(shape)
             i0 += size
 
         for n in range(1, self.rank[1]+1):
             shape = (self.nbos,) * n
             size = np.prod(shape)
-            amplitudes["ls%d" % n] = vector[i0:i0+size].reshape(shape)
+            lambdas["ls%d" % n] = vector[i0:i0+size].reshape(shape)
             i0 += size
 
         for n in range(1, self.rank[2]+2):
-            shape = (self.nbos,) * n + (self.nocc, self.nvir)
+            shape = (self.nbos,) * n + (self.nvir, self.nocc)
             size = np.prod(shape)
-            amplitudes["lu1%d" % n] = vector[i0:i0+size].reshape(shape)
+            lambdas["lu1%d" % n] = vector[i0:i0+size].reshape(shape)
             i0 += size
 
-        return amplitudes
+        return lambdas
 
     @property
     def xi(self):
@@ -663,22 +679,29 @@ if __name__ == "__main__":
     mf = scf.RHF(mol)
     mf.kernel()
 
-    ccsd_ref = cc.CCSD(mf)
-    ccsd_ref.kernel()
+    #ccsd_ref = cc.CCSD(mf)
+    #ccsd_ref.kernel()
 
-    ccsd = EBCC(mf, rank=(2, 0, 0))
-    ccsd.kernel()
-
-    print(np.allclose(ccsd.t1, ccsd_ref.t1))
-    print(np.allclose(ccsd.t2, ccsd_ref.t2))
-    print(ccsd_ref.e_corr)
-
-    #nbos = 5
-    #np.random.seed(1)
-    #g = np.random.random((nbos, mol.nao, mol.nao)) * 0.03
-    #g = g + g.transpose(0, 2, 1)
-    #omega = np.random.random((nbos)) * 0.5
-
-    #np.set_printoptions(edgeitems=1000, linewidth=1000, precision=8)
-    #ccsd = EBCC(mf, rank=(2, 1, 1), omega=omega, g=g)
+    #ccsd = EBCC(mf, rank=(2, 0, 0))
     #ccsd.kernel()
+    #ccsd.solve_lambda()
+
+    #print(np.abs(ccsd.e_corr - ccsd_ref.e_corr))
+    #print(np.max(np.abs(ccsd.t1 - ccsd_ref.t1)))
+    #print(np.max(np.abs(ccsd.t2 - ccsd_ref.t2)))
+    #print(np.max(np.abs(ccsd.make_rdm1_f(ccsd.amplitudes, ccsd.lambdas) - ccsd_ref.make_rdm1())))
+    #print(np.max(np.abs(ccsd.make_rdm2_f(ccsd.amplitudes, ccsd.lambdas) - ccsd_ref.make_rdm2())))
+
+    ## Transpose issue I think:
+    #print(ccsd.make_rdm2_f(ccsd.amplitudes, ccsd.lambdas))
+    #print(ccsd_ref.make_rdm2())
+
+    nbos = 5
+    np.random.seed(1)
+    g = np.random.random((nbos, mol.nao, mol.nao)) * 0.03
+    g = g + g.transpose(0, 2, 1)
+    omega = np.random.random((nbos)) * 0.5
+
+    np.set_printoptions(edgeitems=1000, linewidth=1000, precision=8)
+    ccsd = EBCC(mf, rank=(2, 1, 1), omega=omega, g=g)
+    ccsd.kernel()
