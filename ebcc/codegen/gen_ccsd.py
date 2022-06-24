@@ -41,7 +41,7 @@ printer = codegen.EinsumPrinter(
             "t2new": (2, 3, 0, 1),
             "l1new": (1, 0),
             "l2new": (2, 3, 0, 1),
-            **{"rdm2_%s" % x: (0, 2, 1, 3) for x in common.ov_2e},
+            **{"rdm2_f_%s" % x: (0, 2, 1, 3) for x in common.ov_2e},
         },
         remove_spacing=True,
         garbage_collection=True,
@@ -68,8 +68,8 @@ particles = {
         #**{"r_%s_%s" % (x, y): ((codegen.FERMION, 0), (codegen.FERMION, 0),) for x in ["i", "a"] for y in ["i", "a"]},
         #**{"r_%s_ija" % x: ((codegen.FERMION, 0), (codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)) for x in ["i", "a"]},
         #**{"r_%s_iab" % x: ((codegen.FERMION, 0), (codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)) for x in ["i", "a"]},
-        **{"rdm1_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 0)) for x in common.ov_1e},
-        **{"rdm2_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)) for x in common.ov_2e},
+        **{"rdm1_f_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 0)) for x in common.ov_1e},
+        **{"rdm2_f_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)) for x in common.ov_2e},
 }
 
 # Timer:
@@ -91,7 +91,7 @@ with common.FilePrinter("ccsd") as file_printer:
         terms = codegen.ghf_to_rhf(terms, indices)
         terms = codegen.sympy_to_drudge(terms, indices, dr=dr)
         function_printer.write_latex(terms.latex(), comment="CCSD energy")
-        terms = codegen.optimize([terms], sizes=sizes, optimize="greedy", verify=False, interm_fmt="x{}")
+        terms = codegen.optimize([terms], sizes=sizes, optimize="exhaust", verify=True, interm_fmt="x{}")
         function_printer.write_python(printer.doprint(terms)+"\n", comment="CCSD energy")
 
     # Get amplitudes function:
@@ -189,7 +189,7 @@ with common.FilePrinter("ccsd") as file_printer:
             file_printer,
             "make_rdm1_f",
             ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2"],
-            ["rdm1"],
+            ["rdm1_f"],
             timer=timer,
     ) as function_printer:
         i, a = Idx(0, "occ"), Idx(0, "vir")
@@ -216,22 +216,22 @@ with common.FilePrinter("ccsd") as file_printer:
 
         # Blocks:
         terms = [
-            case(i, j, "rdm1_oo", comment="oo block"),
-            case(i, a, "rdm1_ov", comment="ov block"),
-            case(a, i, "rdm1_vo", comment="vo block"),
-            case(a, b, "rdm1_vv", comment="vv block"),
+            case(i, j, "rdm1_f_oo", comment="oo block"),
+            case(i, a, "rdm1_f_ov", comment="ov block"),
+            case(a, i, "rdm1_f_vo", comment="vo block"),
+            case(a, b, "rdm1_f_vv", comment="vv block"),
         ]
 
         terms = codegen.optimize(terms, sizes=sizes, optimize="trav", verify=False, interm_fmt="x{}")
         function_printer.write_python(printer.doprint(terms)+"\n", comment="1RDM")
-        function_printer.write_python("    rdm1 = np.block([[rdm1_oo, rdm1_ov], [rdm1_vo, rdm1_vv]])\n")
+        function_printer.write_python("    rdm1_f = np.block([[rdm1_f_oo, rdm1_f_ov], [rdm1_f_vo, rdm1_f_vv]])\n")
 
     # Get 2RDM expressions:
     with common.FunctionPrinter(
             file_printer,
             "make_rdm2_f",
             ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2"],
-            ["rdm2"],
+            ["rdm2_f"],
             timer=timer,
     ) as function_printer:
         i, a = Idx(0, "occ"), Idx(0, "vir")
@@ -261,35 +261,28 @@ with common.FilePrinter("ccsd") as file_printer:
             function_printer.write_latex(terms.latex(), comment=comment)
             return terms
 
-        # Blocks:
+        # Blocks:  NOTE: transposed is applied
         terms = [
-            case(i, j, k, l, "rdm2_oooo", comment="oooo block"),
-            case(i, j, k, a, "rdm2_ooov", comment="ooov block"),
-            case(i, j, a, k, "rdm2_oovo", comment="oovo block"),
-            case(i, a, j, k, "rdm2_ovoo", comment="ovoo block"),
-            case(a, i, j, k, "rdm2_vooo", comment="vooo block"),
-            case(i, j, a, b, "rdm2_oovv", comment="oovv block"),
-            case(i, a, j, b, "rdm2_ovov", comment="ovov block"),
-            case(i, a, b, j, "rdm2_ovvo", comment="ovvo block"),
-            case(a, i, j, b, "rdm2_voov", comment="voov block"),
-            case(a, i, b, j, "rdm2_vovo", comment="vovo block"),
-            case(a, b, i, j, "rdm2_vvoo", comment="vvoo block"),
-            case(i, a, b, c, "rdm2_ovvv", comment="ovvv block"),
-            case(a, i, b, c, "rdm2_vovv", comment="vovv block"),
-            case(a, b, i, c, "rdm2_vvov", comment="vvov block"),
-            case(a, b, c, i, "rdm2_vvvo", comment="vvvo block"),
-            case(a, b, c, d, "rdm2_vvvv", comment="vvvv block"),
+            case(i, j, k, l, "rdm2_f_oooo", comment="oooo block"),
+            case(i, j, k, a, "rdm2_f_ooov", comment="ooov block"),
+            case(i, j, a, k, "rdm2_f_ovoo", comment="oovo block"),
+            case(i, a, j, k, "rdm2_f_oovo", comment="ovoo block"),
+            case(a, i, j, k, "rdm2_f_vooo", comment="vooo block"),
+            case(i, j, a, b, "rdm2_f_ovov", comment="oovv block"),
+            case(i, a, j, b, "rdm2_f_oovv", comment="ovov block"),
+            case(i, a, b, j, "rdm2_f_ovvo", comment="ovvo block"),
+            case(a, i, j, b, "rdm2_f_voov", comment="voov block"),
+            case(a, i, b, j, "rdm2_f_vvoo", comment="vovo block"),
+            case(a, b, i, j, "rdm2_f_vovo", comment="vvoo block"),
+            case(i, a, b, c, "rdm2_f_ovvv", comment="ovvv block"),
+            case(a, i, b, c, "rdm2_f_vvov", comment="vovv block"),
+            case(a, b, i, c, "rdm2_f_vovv", comment="vvov block"),
+            case(a, b, c, i, "rdm2_f_vvvo", comment="vvvo block"),
+            case(a, b, c, d, "rdm2_f_vvvv", comment="vvvv block"),
         ]
 
         terms = codegen.optimize(terms, sizes=sizes, optimize="trav", verify=False, interm_fmt="x{}")
         function_printer.write_python(printer.doprint(terms)+"\n", comment="2RDM")
-        function_printer.write_python(
-                "    rdm2 = np.block([\n"
-                "            [[[rdm2_oooo, rdm2_ooov], [rdm2_oovo, rdm2_oovv]],\n"
-                "             [[rdm2_ovoo, rdm2_ovov], [rdm2_ovvo, rdm2_ovvv]]],\n"
-                "            [[[rdm2_vooo, rdm2_voov], [rdm2_vovo, rdm2_vovv]],\n"
-                "             [[rdm2_vvoo, rdm2_vvov], [rdm2_vvvo, rdm2_vvvv]]],\n"
-                "    ])\n"
-        )
+        function_printer.write_python("    rdm2_f = common.pack_2e(%s)\n" % ", ".join(["rdm2_f_%s" % x for x in common.ov_2e]))
 
 

@@ -28,10 +28,9 @@ def get_hamiltonian(rank=(2, 0, 0), compress=False):
 
     # bosons
     if rank[0] > 0 or rank[1] > 0:
-        h1p = one_p("G")
-        h2p = two_p("w")
+        hp = two_p("w") + one_p("G")
         hep = ep11("g", ["occ", "vir"], ["nm"], norder=True, name2="gc")
-        h += h1p + h2p + hep
+        h += hp + hep
 
         particles["G"] = ((SCALAR_BOSON, 0),)
         particles["w"] = ((SCALAR_BOSON, 0), (SCALAR_BOSON, 0))
@@ -124,7 +123,7 @@ def get_excitation_ansatz(rank=(2, 0, 0)):
     for n in range(1, rank[0]+1):
         occ = [Idx(i, "occ") for i in range(n)]
         vir = [Idx(a, "vir") for a in range(n)]
-        scalar = Fraction(1, 4)
+        scalar = Fraction(1, 4**(n-1))
         sums = [Sigma(i) for i in occ] + [Sigma(a) for a in vir]
         name = "t{n}".format(n=n)
         tensors = [Tensor(vir + occ, name, sym=get_sym(True) if n == 2 else TensorSym([], []))]  # FIXME get symmetry for all n
@@ -135,7 +134,7 @@ def get_excitation_ansatz(rank=(2, 0, 0)):
     # boson
     for n in range(1, rank[1]+1):
         nm = [Idx(x, "nm", fermion=False) for x in range(n)]
-        scalar = Fraction("1/2")
+        scalar = Fraction(1, 2**(n-1))
         sums = [Sigma(x) for x in nm]
         name = "s{n}".format(n=n)
         tensors = [Tensor(nm, name, sym=TensorSym([(0, 1), (1, 0)], [1, 1]) if n == 2 else TensorSym([], []))]  # FIXME symmetry
@@ -148,7 +147,7 @@ def get_excitation_ansatz(rank=(2, 0, 0)):
         i = Idx(0, "occ")
         a = Idx(0, "vir")
         nm = [Idx(x, "nm", fermion=False) for x in range(n)]
-        scalar = Fraction("1/2")
+        scalar = Fraction(1, 2**(n-1))
         sums = [Sigma(x) for x in nm] + [Sigma(i), Sigma(a)]
         name = "u1{n}".format(n=n)
         tensors = [Tensor(nm + [a, i], name, sym=TensorSym([(0, 1, 2, 3), (1, 0, 2, 3)], [1, 1]) if n == 2 else TensorSym([], []))]
@@ -171,7 +170,7 @@ def get_deexcitation_ansatz(rank=(2, 0, 0)):
         # Swapped variables names so I can copy the code:
         vir = [Idx(i, "occ") for i in range(n)]
         occ = [Idx(a, "vir") for a in range(n)]
-        scalar = Fraction(1, 4)
+        scalar = Fraction(1, 4**(n-1))
         sums = [Sigma(i) for i in occ] + [Sigma(a) for a in vir]
         name = "l{n}".format(n=n)
         tensors = [Tensor(vir + occ, name, sym=get_sym(True) if n == 2 else TensorSym([], []))]  # FIXME get symmetry for all n
@@ -182,7 +181,7 @@ def get_deexcitation_ansatz(rank=(2, 0, 0)):
     # boson
     for n in range(1, rank[1]+1):
         nm = [Idx(x, "nm", fermion=False) for x in range(n)]
-        scalar = Fraction("1/2")
+        scalar = Fraction(1, 2**(n-1))
         sums = [Sigma(x) for x in nm]
         name = "ls{n}".format(n=n)
         tensors = [Tensor(nm, name, sym=TensorSym([(0, 1), (1, 0)], [1, 1]) if n == 2 else TensorSym([], []))]  # FIXME symmetry
@@ -196,7 +195,7 @@ def get_deexcitation_ansatz(rank=(2, 0, 0)):
         a = Idx(0, "occ")
         i = Idx(0, "vir")
         nm = [Idx(x, "nm", fermion=False) for x in range(n)]
-        scalar = Fraction("1/2")
+        scalar = Fraction(1, 2**(n-1))
         sums = [Sigma(x) for x in nm] + [Sigma(i), Sigma(a)]
         name = "lu1{n}".format(n=n)
         tensors = [Tensor(nm + [a, i], name, sym=TensorSym([(0, 1, 2, 3), (1, 0, 2, 3)], [1, 1]) if n == 2 else TensorSym([], []))]
@@ -212,18 +211,20 @@ def construct_hbar(h, t, max_commutator=4):
     """
 
     def factorial(n):
-        if n > 1:
+        if n in (0, 1):
+            return 1
+        elif n > 1:
             return n * factorial(n-1)
         else:
-            return n
+            raise ValueError("{n}!".format(n=n))
+
+    comms = [h]
+    for i in range(max_commutator):
+        comms.append(commute(comms[-1], t))
 
     hbars = [h]
-    hbars_raw = [h]
-
-    for i in range(max_commutator):
-        scalar = Fraction("1/%d" % factorial(i+1))
-        hbar_next = commute(hbars_raw[-1], t)
-        hbars.append(hbars[-1] + hbar_next * scalar)
-        hbars_raw.append(hbar_next)
+    for i in range(1, len(comms)):
+        scalar = Fraction(1, factorial(i))
+        hbars.append(hbars[-1] + comms[i] * scalar)
 
     return hbars
