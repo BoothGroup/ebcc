@@ -85,6 +85,8 @@ class EBCC:
             import ebcc.codegen.ccsd as _eqns
         elif self.rank == (2, 1, 1):
             import ebcc.codegen.ccsd_1_1 as _eqns
+        elif self.rank == (2, 2, 1):
+            import ebcc.codegen.ccsd_2_1 as _eqns
         else:
             raise NotImplementedError
         self._eqns = _eqns
@@ -131,9 +133,12 @@ class EBCC:
 
         return amplitudes
 
-    def init_lams(self, amplitudes):
+    def init_lams(self, amplitudes=None):
         """Initialise lambda amplitudes.
         """
+
+        if amplitudes is None:
+            amplitudes = self.amplitudes
 
         lambdas = dict()
 
@@ -836,13 +841,15 @@ if __name__ == "__main__":
     omega = np.random.random((nbos)) * 0.5
 
     np.set_printoptions(edgeitems=1000, linewidth=1000, precision=8)
-    ccsd = EBCC(mf, rank=(2, 1, 1), omega=omega, g=g)
+    ccsd = EBCC(mf, rank=(2, 2, 1), omega=omega, g=g)
     ccsd.kernel()
     ccsd.solve_lambda()
 
-    ccsd.make_rdm1_f()
-    ccsd.make_rdm2_f()
+    #amps = ccsd.init_amps()
+    #amps = ccsd.update_amps(amplitudes=amps)
+    #print(amps["t1"])
+    #print(amps["t2"])
+    #print(amps["s1"])
+    #print(amps["s2"])
+    #print(amps["u11"])
 
-    ccsd.make_rdm1_b()
-    ccsd.make_sing_b_dm()
-    ccsd.make_eb_coup_rdm()
