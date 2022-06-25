@@ -2,7 +2,7 @@ import numpy as np
 import math
 import pyscf
 from pyscf import ao2mo, gto, scf
-from ebcc import ebccsd
+from ebcc import EBCC
 
 # Set up ab initio system with random e-b couplings
 mol = pyscf.M(
@@ -17,20 +17,20 @@ nmo = myhf.mo_coeff.shape[1]
 nbos = 5
 # Boson energies and couplings to AO density
 # gmat can be specified either spatially or spin-resolved.
-gmat = np.random.random((nbos,nmo,nmo)) * 0.03
+g = np.random.random((nbos,nmo,nmo)) * 0.03
 omega = np.random.random((nbos)) * 5.
 
 # One boson in bosonic and coupling parts of ansatz
-cc = ebccsd.EBCCSD.fromUHFobj(myhf, options={'diis space': 12}, rank=(2,1,1), omega=omega, gmat=gmat, autogen_code=True)
+cc = EBCC(myhf, rank=(2, 1, 1), omega=omega, g=g)
 e_corr = cc.kernel()
-print('EBCCSD correlation energy for rank 211:   {}'.format(cc.e_corr))
+print('EBCCSD correlation energy for rank 211:   {}'.format(e_corr))
 
 # Improve ansatz to double boson excitations
-cc = ebccsd.EBCCSD.fromUHFobj(myhf, options={'diis space': 12}, rank=(2,2,1), omega=omega, gmat=gmat, autogen_code=True)
+cc = EBCC(myhf, rank=(2, 2, 1), omega=omega, g=g)
 e_corr = cc.kernel()
-print('EBCCSD correlation energy for rank 221:   {}'.format(cc.e_corr))
+print('EBCCSD correlation energy for rank 221:   {}'.format(e_corr))
 
 # Improve ansatz to double boson excitations in coupling term too
-cc = ebccsd.EBCCSD.fromUHFobj(myhf, options={'diis space': 12}, rank=(2,2,2), omega=omega, gmat=gmat, autogen_code=True)
+cc = EBCC(myhf, rank=(2, 2, 2), omega=omega, g=g)
 e_corr = cc.kernel()
-print('EBCCSD correlation energy for rank 222:   {}'.format(cc.e_corr))
+print('EBCCSD correlation energy for rank 222:   {}'.format(e_corr))

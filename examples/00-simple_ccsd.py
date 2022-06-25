@@ -1,7 +1,7 @@
 import numpy as np
 import pyscf
 from pyscf import ao2mo
-from ebcc import ebccsd
+from ebcc import EBCC
 
 mol = pyscf.M(
     atom = 'H 0 0 0; F 0 0 1.1',
@@ -12,12 +12,11 @@ mf = mol.RHF().run()
 mycc = mf.CCSD().run()
 print('CCSD correlation energy', mycc.e_corr)
 
-# Get integrals
+ebccsd = EBCC(mf, rank=(2, 0, 0))
+ecorr = ebccsd.kernel()
+print('EBCCSD correlation energy', ebccsd.e_corr)
 
-cc = ebccsd.EBCCSD.fromUHFobj(mf, options={'diis space': 12}, autogen_code=True)
-ecorr = cc.kernel()
-print('EBCCSD correlation energy', cc.e_corr)
-if np.allclose(cc.e_corr,mycc.e_corr):
+if np.allclose(ebccsd.e_corr, mycc.e_corr):
     print('**********************************************************************')
     print('EXCELLENT: CCSD correlation energies agree between pyscf and ebcc')
     print('**********************************************************************')
