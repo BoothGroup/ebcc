@@ -15,11 +15,17 @@ from dummy_spark import SparkContext
 ctx = SparkContext()
 dr = drudge.Drudge(ctx)
 
+# Indices
+occs = i, j, k, l = [Idx(n, "occ") for n in range(4)]
+virs = a, b, c, d = [Idx(n, "vir") for n in range(4)]
+nms = x, y = [Idx(n, "nm") for n in range(2)]
+
+# Tensors
 H, _ = wick.get_hamiltonian(rank=(2, 1, 1))
-bra1, bra2, bra1b, bra1b1e = wick.get_bra_spaces(rank=(2, 1, 1))
-ket1, ket2, ket1b, ket1b1e = wick.get_ket_spaces(rank=(2, 1, 1))
-T, _ = wick.get_excitation_ansatz(rank=(2, 1, 1))
-L, _ = wick.get_deexcitation_ansatz(rank=(2, 1, 1))
+bra = bra1, bra2, bra1b, bra1b1e = wick.get_bra_spaces(rank=(2, 1, 1), occs=occs, virs=virs, nms=nms)
+ket = ket1, ket2, ket1b, ket1b1e = wick.get_ket_spaces(rank=(2, 1, 1), occs=occs, virs=virs, nms=nms)
+T, _ = wick.get_excitation_ansatz(rank=(2, 1, 1), occs=occs, virs=virs, nms=nms)
+L, _ = wick.get_deexcitation_ansatz(rank=(2, 1, 1), occs=occs, virs=virs, nms=nms)
 Hbars = wick.construct_hbar(H, T)
 Hbar = Hbars[-1]
 
@@ -34,19 +40,10 @@ printer = codegen.EinsumPrinter(
         },
         reorder_axes={
             "v": (0, 2, 1, 3),
-            "t1": (1, 0),
-            "t2": (2, 3, 0, 1),
-            "l1": (1, 0),
-            "l2": (2, 3, 0, 1),
-            "u11": (0, 2, 1),
-            "lu11": (0, 2, 1),
-            "t1new": (1, 0),
-            "t2new": (2, 3, 0, 1),
+            **{"rdm2_f_%s" % x: (0, 2, 1, 3) for x in common.ov_2e},
             "l1new": (1, 0),
             "l2new": (2, 3, 0, 1),
-            "u11new": (0, 2, 1),
             "lu11new": (0, 2, 1),
-            **{"rdm2_f_%s" % x: (0, 2, 1, 3) for x in common.ov_2e},
         },
         remove_spacing=True,
         garbage_collection=True,
@@ -115,9 +112,7 @@ particles = {
         **{"rdm1_f_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 0)) for x in common.ov_1e},
         **{"rdm2_f_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)) for x in common.ov_2e},
         "rdm1_b": ((codegen.BOSON, 0), (codegen.BOSON, 0)),
-        "dm_b_cre": ((codegen.BOSON, 0),),
-        "dm_b_des": ((codegen.BOSON, 0),),
-        "dm_b": ((codegen.BOSON, 0),),
+        **{"dm_b%s" % x: ((codegen.BOSON, 0),) for x in ("", "_cre", "_des")},
         **{"rdm_eb_%s_%s" % (x, y): ((codegen.BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)) for y in common.ov_1e for x in ("cre", "des")},
 }
 
@@ -315,18 +310,13 @@ with common.FilePrinter("ccsd_1_1") as file_printer:
             ["rdm1_f"],
             timer=timer,
     ) as function_printer:
-        i, a = Idx(0, "occ"), Idx(0, "vir")
-        j, b = Idx(1, "occ"), Idx(1, "vir")
-
         function_printer.write_python("    delta_oo = np.eye(nocc)")
         function_printer.write_python("    delta_vv = np.eye(nvir)\n")
 
         def case(i, j, return_value, comment=None):
             ops = [FOperator(j, True), FOperator(i, False)]
             P = Expression([Term(1, [], [Tensor([i, j], "")], ops, [])])
-            PT = commute(P, T)
-            PTT = commute(PT, T)
-            mid = P + PT + Fraction("1/2") * PTT
+            mid = wick.bch(P, T, max_commutator=2)[-1]
             full = mid + L * mid
             out = apply_wick(full)
             out.resolve()
@@ -357,23 +347,13 @@ with common.FilePrinter("ccsd_1_1") as file_printer:
             ["rdm2_f"],
             timer=timer,
     ) as function_printer:
-        i, a = Idx(0, "occ"), Idx(0, "vir")
-        j, b = Idx(1, "occ"), Idx(1, "vir")
-        k, c = Idx(2, "occ"), Idx(2, "vir")
-        l, d = Idx(3, "occ"), Idx(3, "vir")
-
         function_printer.write_python("    delta_oo = np.eye(nocc)")
         function_printer.write_python("    delta_vv = np.eye(nvir)\n")
 
         def case(i, j, k, l, return_value, comment=None):
             ops = [FOperator(l, True), FOperator(k, True), FOperator(i, False), FOperator(j, False)]
             P = Expression([Term(1, [], [Tensor([i, j, k, l], "")], ops, [])])
-            PT = commute(P, T)
-            PTT = commute(PT, T)
-            PTTT = commute(PTT, T)
-            PTTTT = commute(PTTT, T)
-            mid = P + PT + Fraction("1/2")*PTT + Fraction("1/6")*PTTT
-            mid += Fraction("1/24")*PTTTT
+            mid = wick.bch(P, T, max_commutator=4)[-1]
             full = mid + L * mid
             out = apply_wick(full)
             out.resolve()
@@ -416,16 +396,10 @@ with common.FilePrinter("ccsd_1_1") as file_printer:
             ["dm_b"],
             timer=timer,
     ) as function_printer:
-        I = Idx(0, "nm", fermion=False)
-        J = Idx(1, "nm", fermion=False)
-
         def case(i, cre, return_value, comment=None):
             ops = [BOperator(i, cre)]
             P = Expression([Term(1, [], [Tensor([i], "")], ops, [])])
-            PT = commute(P, T)
-            PTT = commute(PT, T)
-            PTTT = commute(PTT, T)
-            mid = P + PT + Fraction("1/2")*PTT + Fraction("1/6")*PTTT
+            mid = wick.bch(P, T, max_commutator=3)[-1]
             full = mid + L * mid
             out = apply_wick(full)
             out.resolve()
@@ -437,8 +411,8 @@ with common.FilePrinter("ccsd_1_1") as file_printer:
             return terms
 
         terms = [
-            case(I, True, "dm_b_cre"),
-            case(J, False, "dm_b_des"),
+            case(x, True, "dm_b_cre"),
+            case(y, False, "dm_b_des"),
         ]
 
         terms = codegen.optimize(terms, sizes=sizes, optimize="trav", verify=False, interm_fmt="x{}")
@@ -455,15 +429,9 @@ with common.FilePrinter("ccsd_1_1") as file_printer:
             ["rdm1_b"],
             timer=timer,
     ) as function_printer:
-        I = Idx(0, "nm", fermion=False)
-        J = Idx(1, "nm", fermion=False)
-
-        ops = [BOperator(I, True), BOperator(J, False)]
-        P = Expression([Term(1, [], [Tensor([I, J], "")], ops, [])])
-        PT = commute(P, T)
-        PTT = commute(PT, T)
-        PTTT = commute(PTT, T)
-        mid = P + PT + Fraction("1/2")*PTT + Fraction("1/6")*PTTT
+        ops = [BOperator(x, True), BOperator(y, False)]
+        P = Expression([Term(1, [], [Tensor([x, y], "")], ops, [])])
+        mid = wick.bch(P, T, max_commutator=3)[-1]
         full = mid + L * mid
         out = apply_wick(full)
         out.resolve()
@@ -484,23 +452,13 @@ with common.FilePrinter("ccsd_1_1") as file_printer:
             ["rdm_eb"],
             timer=timer,
     ) as function_printer:
-        I = Idx(0, "nm", fermion=False)
-        i = Idx(1, "occ")
-        a = Idx(1, "vir")
-        j = Idx(2, "occ")
-        b = Idx(2, "vir")
-
         function_printer.write_python("    delta_oo = np.eye(nocc)")
         function_printer.write_python("    delta_vv = np.eye(nvir)\n")
 
         def case(bos_cre, i, j, return_value, comment=None):
-            ops = [BOperator(I, bos_cre), FOperator(i, True), FOperator(j, False)]
-            P = Expression([Term(1, [], [Tensor([I, i, j], "")], ops, [])])
-            PT = commute(P, T)
-            PTT = commute(PT, T)
-            PTTT = commute(PTT, T)
-            PTTTT = commute(PTTT, T)
-            mid = P + PT + Fraction("1/2")*PTT + Fraction("1/6")*PTTT + Fraction("1/24")*PTTT
+            ops = [BOperator(x, bos_cre), FOperator(i, True), FOperator(j, False)]
+            P = Expression([Term(1, [], [Tensor([x, i, j], "")], ops, [])])
+            mid = wick.bch(P, T, max_commutator=4)[-1]
             full = mid + L * mid
             out = apply_wick(full)
             out.resolve()

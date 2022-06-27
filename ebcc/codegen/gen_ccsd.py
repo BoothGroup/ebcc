@@ -1,6 +1,7 @@
 """Script to generate equations for the CCSD model.
 """
 
+import warnings
 import sympy
 import drudge
 from fractions import Fraction
@@ -16,11 +17,24 @@ from dummy_spark import SparkContext
 ctx = SparkContext()
 dr = drudge.Drudge(ctx)
 
+warnings.simplefilter("ignore", UserWarning)
+
+# Indices
+occs = i, j, k, l = [Idx(n, "occ") for n in range(4)]
+virs = a, b, c, d = [Idx(n, "vir") for n in range(4)]
+
+# Tensors
 H, _ = wick.get_hamiltonian(rank=(2, 0, 0))
-bra1, bra2 = wick.get_bra_spaces(rank=(2, 0, 0))
-ket1, ket2 = wick.get_ket_spaces(rank=(2, 0, 0))
-T, _ = wick.get_excitation_ansatz(rank=(2, 0, 0))
-L, _ = wick.get_deexcitation_ansatz(rank=(2, 0, 0))
+bra = bra1, bra2 = wick.get_bra_spaces(rank=(2, 0, 0), occs=occs, virs=virs)
+ket = ket1, ket2 = wick.get_ket_spaces(rank=(2, 0, 0), occs=occs, virs=virs)
+braip = bra1ip, bra2ip = wick.get_bra_ip_spaces(rank=(2, 0, 0), occs=occs, virs=virs)
+braea = bra1ea, bra2ea = wick.get_bra_ea_spaces(rank=(2, 0, 0), occs=occs, virs=virs)
+ketip = ket1ip, ket2ip = wick.get_ket_ip_spaces(rank=(2, 0, 0), occs=occs, virs=virs)
+ketea = ket1ea, ket2ea = wick.get_ket_ea_spaces(rank=(2, 0, 0), occs=occs, virs=virs)
+rip = r1ip, r2ip = wick.get_r_ip_spaces(rank=(2, 0, 0), occs=occs, virs=virs)
+rea = r1ea, r2ea = wick.get_r_ea_spaces(rank=(2, 0, 0), occs=occs, virs=virs)
+T, _ = wick.get_excitation_ansatz(rank=(2, 0, 0), occs=occs, virs=virs)
+L, _ = wick.get_deexcitation_ansatz(rank=(2, 0, 0), occs=occs, virs=virs)
 Hbars = wick.construct_hbar(H, T)
 Hbar = Hbars[-1]
 
@@ -33,15 +47,10 @@ printer = codegen.EinsumPrinter(
         },
         reorder_axes={
             "v": (0, 2, 1, 3),
-            "t1": (1, 0),
-            "t2": (2, 3, 0, 1),
-            "l1": (1, 0),
-            "l2": (2, 3, 0, 1),
-            "t1new": (1, 0),
-            "t2new": (2, 3, 0, 1),
+            **{"rdm2_f_%s" % x: (0, 2, 1, 3) for x in common.ov_2e},
+            # NOTE: not sure why these do this but sure:
             "l1new": (1, 0),
             "l2new": (2, 3, 0, 1),
-            **{"rdm2_f_%s" % x: (0, 2, 1, 3) for x in common.ov_2e},
         },
         remove_spacing=True,
         garbage_collection=True,
@@ -60,14 +69,17 @@ particles = {
         "t2": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
         "l1": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
         "l2": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
+        "r1": ((codegen.FERMION, 0),),
+        "r2": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0)),
         "t1new": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
         "t2new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
         "l1new": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
         "l2new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
+        "r1new": ((codegen.FERMION, 0),),
+        "r2new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0)),
         "delta": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
-        #**{"r_%s_%s" % (x, y): ((codegen.FERMION, 0), (codegen.FERMION, 0),) for x in ["i", "a"] for y in ["i", "a"]},
-        #**{"r_%s_ija" % x: ((codegen.FERMION, 0), (codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)) for x in ["i", "a"]},
-        #**{"r_%s_iab" % x: ((codegen.FERMION, 0), (codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)) for x in ["i", "a"]},
+        **{"r1_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 0),) for x in ["o", "v"]},
+        **{"r2_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)) for x in ["o", "v"]},
         **{"rdm1_f_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 0)) for x in common.ov_1e},
         **{"rdm2_f_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)) for x in common.ov_2e},
 }
@@ -134,7 +146,7 @@ with common.FilePrinter("ccsd") as file_printer:
             timer=timer,
     ) as function_printer:
         # L1 residuals <0|Hbar|singles> (not proportional to lambda):
-        S = Hbar*ket1
+        S = Hbar * ket1
         out = apply_wick(S)
         out.resolve()
         expr1 = AExpression(Ex=out)
@@ -142,8 +154,8 @@ with common.FilePrinter("ccsd") as file_printer:
         expr1.sort_tensors()
 
         # L1 residuals <0|(L Hbar)_c|singles> (connected pieces proportional to Lambda):
-        S1 = L*S
-        out = apply_wick(S1)
+        S = L * Hbar * ket1
+        out = apply_wick(S)
         out.resolve()
         expr2 = AExpression(Ex=out)
         expr2 = expr2.get_connected()
@@ -154,7 +166,7 @@ with common.FilePrinter("ccsd") as file_printer:
         function_printer.write_latex(terms_l1.latex(), comment="L1 amplitude")
 
         # L2 residuals <0|Hbar|doubles> (not proportional to lambda):
-        S = Hbar*ket2
+        S = Hbar * ket2
         out = apply_wick(S)
         out.resolve()
         expr1 = AExpression(Ex=out)
@@ -162,7 +174,7 @@ with common.FilePrinter("ccsd") as file_printer:
         expr1.sort_tensors()
 
         # L2 residuals <0|L Hbar|doubles> (connected pieces proportional to lambda):
-        S = L*S
+        S = L * Hbar * ket1
         out = apply_wick(S)
         out.resolve()
         expr2 = AExpression(Ex=out)
@@ -171,7 +183,7 @@ with common.FilePrinter("ccsd") as file_printer:
 
         # L2 residuals (disonnected pieces proportional to lambda):
         P1 = PE1("occ", "vir")
-        S = Hbar*P1*L*ket2
+        S = Hbar * P1 * L * ket2
         out = apply_wick(S)
         out.resolve()
         expr3 = AExpression(Ex=out)
@@ -192,18 +204,13 @@ with common.FilePrinter("ccsd") as file_printer:
             ["rdm1_f"],
             timer=timer,
     ) as function_printer:
-        i, a = Idx(0, "occ"), Idx(0, "vir")
-        j, b = Idx(1, "occ"), Idx(1, "vir")
-
         function_printer.write_python("    delta_oo = np.eye(nocc)")
         function_printer.write_python("    delta_vv = np.eye(nvir)\n")
 
         def case(i, j, return_value, comment=None):
             ops = [FOperator(j, True), FOperator(i, False)]
             P = Expression([Term(1, [], [Tensor([i, j], "")], ops, [])])
-            PT = commute(P, T)
-            PTT = commute(PT, T)
-            mid = P + PT + Fraction("1/2") * PTT
+            mid = wick.bch(P, T, max_commutator=2)[-1]
             full = mid + L * mid
             out = apply_wick(full)
             out.resolve()
@@ -234,23 +241,13 @@ with common.FilePrinter("ccsd") as file_printer:
             ["rdm2_f"],
             timer=timer,
     ) as function_printer:
-        i, a = Idx(0, "occ"), Idx(0, "vir")
-        j, b = Idx(1, "occ"), Idx(1, "vir")
-        k, c = Idx(2, "occ"), Idx(2, "vir")
-        l, d = Idx(3, "occ"), Idx(3, "vir")
-
         function_printer.write_python("    delta_oo = np.eye(nocc)")
         function_printer.write_python("    delta_vv = np.eye(nvir)\n")
 
         def case(i, j, k, l, return_value, comment=None):
             ops = [FOperator(l, True), FOperator(k, True), FOperator(i, False), FOperator(j, False)]
             P = Expression([Term(1, [], [Tensor([i, j, k, l], "")], ops, [])])
-            PT = commute(P, T)
-            PTT = commute(PT, T)
-            PTTT = commute(PTT, T)
-            PTTTT = commute(PTTT, T)
-            mid = P + PT + Fraction("1/2")*PTT + Fraction("1/6")*PTTT
-            mid += Fraction("1/24")*PTTTT
+            mid = wick.bch(P, T, max_commutator=4)[-1]
             full = mid + L * mid
             out = apply_wick(full)
             out.resolve()
@@ -285,4 +282,113 @@ with common.FilePrinter("ccsd") as file_printer:
         function_printer.write_python(printer.doprint(terms)+"\n", comment="2RDM")
         function_printer.write_python("    rdm2_f = common.pack_2e(%s)\n" % ", ".join(["rdm2_f_%s" % x for x in common.ov_2e]))
 
+    # Get IP and EA moment expressions:
+    for ket, ket_name in [(True, "bra"), (False, "ket")]:
+        for ip, ip_name in [(True, "ip"), (False, "ea")]:
+            with common.FunctionPrinter(
+                    file_printer,
+                    "make_%s_mom_%ss" % (ip_name, ket_name),
+                    ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2"],
+                    ["r1", "r2"],
+                    timer=timer,
+            ) as function_printer:
+                spaces = (braip if ip else braea) if ket else (ketip if ip else ketea)
+
+                function_printer.write_python("    delta_oo = np.eye(nocc)")
+                function_printer.write_python("    delta_vv = np.eye(nvir)\n")
+
+                all_terms = []
+                for space_no, space in enumerate(spaces):
+                    for ind, ind_name in zip([i, a], ["o", "v"]):
+                        return_value = "r%d_%s" % (space_no+1, ind_name)
+
+                        ops = [FOperator(ind, (not ip) if ket else ip)]
+                        R = Expression([Term(1, [], [Tensor([ind], "")], ops, [])])
+                        mid = wick.bch(R, T, max_commutator=4)[-1]
+
+                        if ket:
+                            full = space * mid
+                        else:
+                            full = (L * mid + mid) * space
+
+                        out = apply_wick(full)
+                        out.resolve()
+                        expr = AExpression(Ex=out)
+
+                        if len(expr.terms) == 0:
+                            # Bit of a hack to make sure the term definition remains  TODO as a function
+                            term = Term(0, [], [t for t in out.terms[0].tensors if t.name == ""], [], [])
+                            expr = AExpression(terms=[ATerm(term)], simplify=False)
+
+                        terms, indices = codegen.wick_to_sympy(expr, particles, return_value=return_value)
+                        if all(all(f == 0 for f in term.rhs) for term in terms):
+                            name = terms[0].lhs.base.name
+                            shape = []
+                            for index in terms[0].lhs.external_indices:
+                                shape.append("nocc" if index.space is codegen.OCCUPIED else "nvir" if index.space is codegen.VIRTUAL else "nbos")
+                            function_printer.write_python("    %s = %s((%s), dtype=%s)" % (name, printer._zeros, ", ".join(shape), printer._dtype))
+                        else:
+                            terms = codegen.ghf_to_rhf(terms, indices)
+                            terms = codegen.sympy_to_drudge(terms, indices, dr=dr)
+                            function_printer.write_latex(terms.latex())
+                            all_terms.append(terms)
+
+                all_terms = codegen.optimize(all_terms, sizes=sizes, optimize="exhaust", verify=False, interm_fmt="x{}")
+                function_printer.write_python(printer.doprint(all_terms)+"\n")
+                if ket:
+                    function_printer.write_python(
+                            "    r1 = np.concatenate([r1_o, r1_v], axis=1)\n"
+                            "    r2 = np.concatenate([r2_o, r2_v], axis=3).swapaxes(1, 2)\n"
+                    )
+                else:
+                    function_printer.write_python(
+                            "    r1 = np.concatenate([r1_o, r1_v], axis=0)\n"
+                            "    r2 = np.concatenate([r2_o, r2_v], axis=0).swapaxes(1, 2)\n"
+                    )
+
+    # Get IP and EA EOM hamiltonian-vector product expressions:
+    for ip, ip_name in [(True, "ip"), (False, "ea")]:
+        with common.FunctionPrinter(
+                file_printer,
+                "hbar_matvec_%s" % ip_name,
+                ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2", "r1", "r2"],
+                ["r1new", "r2new"],
+                timer=timer,
+        ) as function_printer:
+            E0 = apply_wick(Hbar)
+            E0.resolve()
+            spaces = braip if ip else braea
+            excitations = rip if ip else rea
+
+            all_terms = []
+            for space_no, space in enumerate(spaces):
+                return_value = "r%dnew" % (space_no + 1)
+                comb_terms = []
+                for excit_no, excit in enumerate(excitations):
+                    full = space * (Hbar - E0) * excit
+                    out = apply_wick(full)
+                    out.resolve()
+                    expr = AExpression(Ex=out, simplify=True)
+                    comb_terms.append(expr)
+
+                terms = comb_terms[0].terms
+                for t in comb_terms[1:]:
+                    terms += t.terms
+                expr = AExpression(terms=terms, simplify=True)
+
+                terms, indices = codegen.wick_to_sympy(expr, particles, return_value=return_value)
+                if all(all(f == 0 for f in term.rhs) for term in terms):
+                    name = terms[0].lhs.base.name
+                    shape = []
+                    for index in terms[0].lhs.external_indices:
+                        shape.append("nocc" if index.space is codegen.OCCUPIED else "nvir" if index.space is codegen.VIRTUAL else "nbos")
+                    function_printer.write_python("    %s = %s((%s), dtype=%s)" % (name, printer._zeros, ", ".join(shape), printer._dtype))
+                else:
+                    terms = codegen.ghf_to_rhf(terms, indices)
+                    terms = codegen.sympy_to_drudge(terms, indices, dr=dr)
+                    function_printer.write_latex(terms.latex())
+                    all_terms.append(terms)
+
+            all_terms = codegen.optimize(all_terms, sizes=sizes, optimize="exhaust", verify=False, interm_fmt="x{}")
+            function_printer.write_python(printer.doprint(all_terms)+"\n")
 

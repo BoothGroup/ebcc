@@ -15,11 +15,17 @@ from dummy_spark import SparkContext
 ctx = SparkContext()
 dr = drudge.Drudge(ctx)
 
+# Indices
+occs = i, j, k, l = [Idx(n, "occ") for n in range(4)]
+virs = a, b, c, d = [Idx(n, "vir") for n in range(4)]
+nms = w, x, y, z = [Idx(n, "nm") for n in range(4)]
+
+# Tensors
 H, _ = wick.get_hamiltonian(rank=(2, 2, 1))
-bra1, bra2, bra1b, bra2b, bra1b1e = wick.get_bra_spaces(rank=(2, 2, 1))
-ket1, ket2, ket1b, ket2b, ket1b1e = wick.get_ket_spaces(rank=(2, 2, 1))
-T, _ = wick.get_excitation_ansatz(rank=(2, 2, 1))
-L, _ = wick.get_deexcitation_ansatz(rank=(2, 2, 1))
+bras = bra1, bra2, bra1b, bra2b, bra1b1e = wick.get_bra_spaces(rank=(2, 2, 1), occs=occs, virs=virs, nms=nms)
+kets = ket1, ket2, ket1b, ket2b, ket1b1e = wick.get_ket_spaces(rank=(2, 2, 1), occs=occs, virs=virs, nms=nms)
+T, _ = wick.get_excitation_ansatz(rank=(2, 2, 1), occs=occs, virs=virs, nms=nms)
+L, _ = wick.get_deexcitation_ansatz(rank=(2, 2, 1), occs=occs, virs=virs, nms=nms)
 Hbars = wick.construct_hbar(H, T)
 Hbar = Hbars[-1]
 
@@ -34,19 +40,10 @@ printer = codegen.EinsumPrinter(
         },
         reorder_axes={
             "v": (0, 2, 1, 3),
-            "t1": (1, 0),
-            "t2": (2, 3, 0, 1),
-            "l1": (1, 0),
-            "l2": (2, 3, 0, 1),
-            "u11": (0, 2, 1),
-            "lu11": (0, 2, 1),
-            "t1new": (1, 0),
-            "t2new": (2, 3, 0, 1),
+            **{"rdm2_f_%s" % x: (0, 2, 1, 3) for x in common.ov_2e},
             "l1new": (1, 0),
             "l2new": (2, 3, 0, 1),
-            "u11new": (0, 2, 1),
             "lu11new": (0, 2, 1),
-            **{"rdm2_f_%s" % x: (0, 2, 1, 3) for x in common.ov_2e},
         },
         remove_spacing=True,
         garbage_collection=True,
@@ -119,9 +116,7 @@ particles = {
         **{"rdm1_f_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 0)) for x in common.ov_1e},
         **{"rdm2_f_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)) for x in common.ov_2e},
         "rdm1_b": ((codegen.BOSON, 0), (codegen.BOSON, 0)),
-        "dm_b_cre": ((codegen.BOSON, 0),),
-        "dm_b_des": ((codegen.BOSON, 0),),
-        "dm_b": ((codegen.BOSON, 0),),
+        **{"dm_b%s" % x: ((codegen.BOSON, 0),) for x in ("", "_cre", "_des")},
         **{"rdm_eb_%s_%s" % (x, y): ((codegen.BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)) for y in common.ov_1e for x in ("cre", "des")},
 }
 

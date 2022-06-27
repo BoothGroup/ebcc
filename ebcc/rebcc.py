@@ -4,6 +4,16 @@ from typing import Tuple
 from types import SimpleNamespace
 from pyscf import lib, ao2mo
 
+# TODO generalise dispatch of functions from self._eqns
+# TODO rename ranks from i.e. 0, 1, 2 -> "", "S", "SD"
+# TODO interface to EOM solver
+# TODO interface to GF solver
+# TODO diagonal Hbar
+# TODO dd moments
+
+# NOTE CCSD HBar.v is off by a factor of 2 - not sure where?
+# NOTE CCSD-21 lambdas don't seem to work
+
 
 _supported_methods = {
         (2, 0, 0): "CCSD",
@@ -272,25 +282,54 @@ class EBCC:
 
         return kwargs
 
+    def _load_function(self, name, eris=False, amplitudes=False, lambdas=False, **kwargs):
+        """Load a function from the generated code, and return a dict
+        of arguments.
+        """
+
+        if not (eris is False):
+            if eris is None:
+                eris = self.get_eris()
+        else:
+            eris = None
+
+        dicts = []
+
+        if not (amplitudes is False):
+            if amplitudes is None:
+                amplitudes = self.amplitudes
+            if amplitudes is None:
+                amplitudes = self.init_amps(eris=eris)
+            dicts.append(amplitudes)
+
+        if not (lambdas is False):
+            if lambdas is None:
+                lambdas = self.lambdas
+            if lambdas is None:
+                lambdas = self.init_lams(amplitudes=amplitudes)
+            dicts.append(lambdas)
+
+        if kwargs:
+            dicts.append(kwargs)
+
+        func = getattr(self._eqns, name, None)
+
+        if func is None:
+            raise NotImplementedError("%s for rank = %s" % (name, self.rank))
+
+        kwargs = self._pack_codegen_kwargs(*dicts, eris=eris)
+
+        return func, kwargs
+
     def energy(self, eris=None, amplitudes=None):
         """Compute the energy.
         """
 
-        if eris is None:
-            eris = self.get_eris()
-
-        if amplitudes is None:
-            amplitudes = self.amplitudes
-        if amplitudes is None:
-            amplitudes = self.init_amps(eris=eris)
-
-        try:
-            func = self._eqns.energy
-        except AttributeError:
-            raise NotImplementedError("energy for rank = %s" % self.rank)
-
-        kwargs = self._pack_codegen_kwargs(amplitudes, eris=eris)
-
+        func, kwargs = self._load_function(
+                "energy",
+                eris=eris,
+                amplitudes=amplitudes,
+        )
         res = func(**kwargs)
 
         return res["e_cc"]
@@ -299,23 +338,14 @@ class EBCC:
         """Update the amplitudes.
         """
 
-        if eris is None:
-            eris = self.get_eris()
-
-        if amplitudes is None:
-            amplitudes = self.amplitudes
-        if amplitudes is None:
-            amplitudes = self.init_amps(eris=eris)
-
-        try:
-            func = self._eqns.update_amps
-        except AttributeError:
-            raise NotImplementedError("update_amps for rank = %s" % self.rank)
-
-        kwargs = self._pack_codegen_kwargs(amplitudes, eris=eris)
-
+        func, kwargs = self._load_function(
+                "update_amps",
+                eris=eris,
+                amplitudes=amplitudes,
+        )
         res = func(**kwargs)
         res = {key.rstrip("new"): val for key, val in res.items()}
+
         e_ia = lib.direct_sum("i-a->ia", self.eo, self.ev)
 
         # Divide T amplitudes:
@@ -344,28 +374,15 @@ class EBCC:
         """Update the lambda amplitudes.
         """
 
-        if eris is None:
-            eris = self.get_eris()
-
-        if amplitudes is None:
-            amplitudes = self.amplitudes
-        if amplitudes is None:
-            amplitudes = self.init_amps(eris=eris)
-
-        if lambdas is None:
-            lambdas = self.lambdas
-        if lambdas is None:
-            lambdas = self.init_lams(amplitudes=amplitudes)
-
-        try:
-            func = self._eqns.update_lams
-        except AttributeError:
-            raise NotImplementedError("update_lams for rank = %s" % self.rank)
-
-        kwargs = self._pack_codegen_kwargs(amplitudes, lambdas, eris=eris)
-
+        func, kwargs = self._load_function(
+                "update_lams",
+                eris=eris,
+                amplitudes=amplitudes,
+                lambdas=lambdas,
+        )
         res = func(**kwargs)
         res = {key.rstrip("new"): val for key, val in res.items()}
+
         e_ai = lib.direct_sum("i-a->ai", self.eo, self.ev)
 
         # Divide T amplitudes:
@@ -394,26 +411,12 @@ class EBCC:
         """Build the single boson DM <b†> and <b>.
         """
 
-        if eris is None:
-            eris = self.get_eris()
-
-        if amplitudes is None:
-            amplitudes = self.amplitudes
-        if amplitudes is None:
-            amplitudes = self.init_amps(eris=eris)
-
-        if lambdas is None:
-            lambdas = self.lambdas
-        if lambdas is None:
-            lambdas = self.init_lams(eris=eris)
-
-        try:
-            func = self._eqns.make_sing_b_dm
-        except AttributeError:
-            raise NotImplementedError("make_sing_b_dm for rank = %s" % self.rank)
-
-        kwargs = self._pack_codegen_kwargs(amplitudes, lambdas, eris=eris)
-
+        func, kwargs = self._load_function(
+                "make_sing_b_dm",
+                eris=eris,
+                amplitudes=amplitudes,
+                lambdas=lambdas,
+        )
         res = func(**kwargs)
 
         return res["dm_b"]
@@ -422,26 +425,12 @@ class EBCC:
         """Build the bosonic 1RDM <b† b>.
         """
 
-        if eris is None:
-            eris = self.get_eris()
-
-        if amplitudes is None:
-            amplitudes = self.amplitudes
-        if amplitudes is None:
-            amplitudes = self.init_amps(eris=eris)
-
-        if lambdas is None:
-            lambdas = self.lambdas
-        if lambdas is None:
-            lambdas = self.init_lams(eris=eris)
-
-        try:
-            func = self._eqns.make_rdm1_b
-        except AttributeError:
-            raise NotImplementedError("make_rdm1_b for rank = %s" % self.rank)
-
-        kwargs = self._pack_codegen_kwargs(amplitudes, lambdas, eris=eris)
-
+        func, kwargs = self._load_function(
+                "make_rdm1_b",
+                eris=eris,
+                amplitudes=amplitudes,
+                lambdas=lambdas,
+        )
         res = func(**kwargs)
 
         return res["rdm1_b"]
@@ -450,26 +439,12 @@ class EBCC:
         """Build the fermionic 1RDM.
         """
 
-        if eris is None:
-            eris = self.get_eris()
-
-        if amplitudes is None:
-            amplitudes = self.amplitudes
-        if amplitudes is None:
-            amplitudes = self.init_amps(eris=eris)
-
-        if lambdas is None:
-            lambdas = self.lambdas
-        if lambdas is None:
-            lambdas = self.init_lams(amplitudes=amplitudes)
-
-        try:
-            func = self._eqns.make_rdm1_f
-        except AttributeError:
-            raise NotImplementedError("make_rdm1_f for rank = %s" % self.rank)
-
-        kwargs = self._pack_codegen_kwargs(amplitudes, lambdas, eris=eris)
-
+        func, kwargs = self._load_function(
+                "make_rdm1_f",
+                eris=eris,
+                amplitudes=amplitudes,
+                lambdas=lambdas,
+        )
         res = func(**kwargs)
 
         return res["rdm1_f"]
@@ -478,26 +453,12 @@ class EBCC:
         """Build the fermionic 2RDM.
         """
 
-        if eris is None:
-            eris = self.get_eris()
-
-        if amplitudes is None:
-            amplitudes = self.amplitudes
-        if amplitudes is None:
-            amplitudes = self.init_amps(eris=eris)
-
-        if lambdas is None:
-            lambdas = self.lambdas
-        if lambdas is None:
-            lambdas = self.init_lams(eris=eris)
-
-        try:
-            func = self._eqns.make_rdm2_f
-        except AttributeError:
-            raise NotImplementedError("make_rdm2_f for rank = %s" % self.rank)
-
-        kwargs = self._pack_codegen_kwargs(amplitudes, lambdas, eris=eris)
-
+        func, kwargs = self._load_function(
+                "make_rdm2_f",
+                eris=eris,
+                amplitudes=amplitudes,
+                lambdas=lambdas,
+        )
         res = func(**kwargs)
 
         return res["rdm2_f"]
@@ -506,29 +467,115 @@ class EBCC:
         """Build the electron-boson coupling RDMs <b† i† j> and <b i† j>.
         """
 
-        if eris is None:
-            eris = self.get_eris()
-
-        if amplitudes is None:
-            amplitudes = self.amplitudes
-        if amplitudes is None:
-            amplitudes = self.init_amps(eris=eris)
-
-        if lambdas is None:
-            lambdas = self.lambdas
-        if lambdas is None:
-            lambdas = self.init_lams(eris=eris)
-
-        try:
-            func = self._eqns.make_eb_coup_rdm
-        except AttributeError:
-            raise NotImplementedError("make_eb_coup_rdm for rank = %s" % self.rank)
-
-        kwargs = self._pack_codegen_kwargs(amplitudes, lambdas, eris=eris)
-
+        func, kwargs = self._load_function(
+                "make_eb_coup_rdm",
+                eris=eris,
+                amplitudes=amplitudes,
+                lambdas=lambdas,
+        )
         res = func(**kwargs)
 
         return res["rdm_eb"]
+
+    def hbar_matvec_ip(self, r1, r2, eris=None, amplitudes=None):
+        """Compute the product between a state vector and the EOM
+        Hamiltonian for the IP.
+        """
+
+        func, kwargs = self._load_function(
+                "hbar_matvec_ip",
+                eris=eris,
+                amplitudes=amplitudes,
+                r1=r1,
+                r2=r2,
+        )
+        res = func(**kwargs)
+
+        return res["r1new"], res["r2new"]
+
+    def hbar_matvec_ea(self, r1, r2, eris=None, amplitudes=None):
+        """Compute the product between a state vector and the EOM
+        Hamiltonian for the EA.
+        """
+
+        func, kwargs = self._load_function(
+                "hbar_matvec_ea",
+                eris=eris,
+                amplitudes=amplitudes,
+                r1=r1,
+                r2=r2,
+        )
+        res = func(**kwargs)
+
+        return res["r1new"], res["r2new"]
+
+    def make_ip_mom_bras(self, eris=None, amplitudes=None, lambdas=None):
+        """Get the bra IP vectors to construct EOM moments.
+        """
+
+        func, kwargs = self._load_function(
+                "make_ip_mom_bras",
+                eris=eris,
+                amplitudes=amplitudes,
+                lambdas=lambdas,
+        )
+        res = func(**kwargs)
+
+        return res["r1"], res["r2"]
+
+    def make_ea_mom_bras(self, eris=None, amplitudes=None, lambdas=None):
+        """Get the bra EA vectors to construct EOM moments.
+        """
+
+        func, kwargs = self._load_function(
+                "make_ea_mom_bras",
+                eris=eris,
+                amplitudes=amplitudes,
+                lambdas=lambdas,
+        )
+        res = func(**kwargs)
+
+        return res["r1"], res["r2"]
+
+    def make_dd_mom_bras(self, eris=None, amplitudes=None, lambdas=None):
+        """Get the bra DD vectors to construct EOM moments.
+        """
+
+        raise NotImplementedError  # TODO
+
+    def make_ip_mom_kets(self, eris=None, amplitudes=None, lambdas=None):
+        """Get the ket IP vectors to construct EOM moments.
+        """
+
+        func, kwargs = self._load_function(
+                "make_ip_mom_kets",
+                eris=eris,
+                amplitudes=amplitudes,
+                lambdas=lambdas,
+        )
+        res = func(**kwargs)
+
+        return res["r1"], res["r2"]
+
+    def make_ea_mom_kets(self, eris=None, amplitudes=None, lambdas=None):
+        """Get the ket IP vectors to construct EOM moments.
+        """
+
+        func, kwargs = self._load_function(
+                "make_ea_mom_kets",
+                eris=eris,
+                amplitudes=amplitudes,
+                lambdas=lambdas,
+        )
+        res = func(**kwargs)
+
+        return res["r1"], res["r2"]
+
+    def make_dd_mom_kets(self, eris=None, amplitudes=None, lambdas=None):
+        """Get the ket DD vectors to construct EOM moments.
+        """
+
+        raise NotImplementedError  # TODO
 
     def make_ip_1mom(self, eris=None, amplitudes=None, lambdas=None):
         """Build the first fermionic hole single-particle moment.
@@ -546,27 +593,28 @@ class EBCC:
 
         raise NotImplementedError  # TODO
 
-    def make_ip_eom_moms(self, order, eris=None, amplitudes=None, lambdas=None):
-        """Build the fermionic hole single-particle EOM moments.
+    # Interface to PySCF for these?
+    #def make_ip_eom_moms(self, order, eris=None, amplitudes=None, lambdas=None):
+    #    """Build the fermionic hole single-particle EOM moments.
 
-            T_{n, p, q} = <c†_p (H - E)^n c_q>
-        """
+    #        T_{n, p, q} = <c†_p (H - E)^n c_q>
+    #    """
 
-        raise NotImplementedError  # TODO
+    #    raise NotImplementedError  # TODO
 
-    def make_ea_eom_moms(self, order, eris=None, amplitudes=None, lambdas=None):
-        """Build the fermionic particle single-particle EOM moments.
+    #def make_ea_eom_moms(self, order, eris=None, amplitudes=None, lambdas=None):
+    #    """Build the fermionic particle single-particle EOM moments.
 
-            T_{n, p, q} = <c_p (H - E)^n c†_q>
-        """
+    #        T_{n, p, q} = <c_p (H - E)^n c†_q>
+    #    """
 
-        raise NotImplementedError  # TODO
+    #    raise NotImplementedError  # TODO
 
-    def make_dd_eom_moms(self, order, eris=None, amplitudes=None, lambdas=None):
-        """Build the fermionic density-density moments.
-        """
+    #def make_dd_eom_moms(self, order, eris=None, amplitudes=None, lambdas=None):
+    #    """Build the fermionic density-density moments.
+    #    """
 
-        raise NotImplementedError  # TODO
+    #    raise NotImplementedError  # TODO
 
     def get_mean_field_G(self):
         val = lib.einsum("Ipp->I", self.g.boo) * 2.0
@@ -794,11 +842,11 @@ class EBCC:
 
     @property
     def l1(self):
-        return self.amplitudes["l1"]
+        return self.lambdas["l1"]
 
     @property
     def l2(self):
-        return self.amplitudes["l2"]
+        return self.lambdas["l2"]
 
 
 
@@ -811,7 +859,7 @@ if __name__ == "__main__":
     #mol.basis = "cc-pvdz"
     mol.atom = "H 0 0 0; F 0 0 1.1"
     mol.basis = "6-31g"
-    mol.verbose = 0
+    mol.verbose = 5
     mol.build()
 
     mf = scf.RHF(mol)
@@ -819,20 +867,31 @@ if __name__ == "__main__":
 
     ccsd_ref = cc.CCSD(mf)
     ccsd_ref.kernel()
+    ccsd_ref.solve_lambda()
 
-    ccsd = EBCC(mf, rank=(2, 0, 0))
-    ccsd.kernel()
-    ccsd.solve_lambda()
+    #ccsd = EBCC(mf, rank=(2, 0, 0))
+    #ccsd.kernel()
+    #ccsd.solve_lambda()
 
-    print(np.abs(ccsd.e_corr - ccsd_ref.e_corr))
-    print(np.max(np.abs(ccsd.t1 - ccsd_ref.t1)))
-    print(np.max(np.abs(ccsd.t2 - ccsd_ref.t2)))
-    print(np.max(np.abs(ccsd.make_rdm1_f() - ccsd_ref.make_rdm1())))
-    print(np.max(np.abs(ccsd.make_rdm2_f() - ccsd_ref.make_rdm2())))
+    #print("e ", np.abs(ccsd.e_corr - ccsd_ref.e_corr))
+    #print("t1", np.max(np.abs(ccsd.t1 - ccsd_ref.t1)))
+    #print("t2", np.max(np.abs(ccsd.t2 - ccsd_ref.t2)))
+    #print("l1", np.max(np.abs(ccsd.l1 - ccsd_ref.l1.T)))
+    #print("l2", np.max(np.abs(ccsd.l2 - ccsd_ref.l2.transpose(2, 3, 0, 1))))
+    #print("rdm1", np.max(np.abs(ccsd.make_rdm1_f() - ccsd_ref.make_rdm1())))
+    #print("rdm2", np.max(np.abs(ccsd.make_rdm2_f() - ccsd_ref.make_rdm2())))
 
-    # Transpose issue I think:
-    #print(ccsd.make_rdm2_f())
-    #print(ccsd_ref.make_rdm2())
+    ## Transpose issue I think:
+    ##print(ccsd.make_rdm2_f())
+    ##print(ccsd_ref.make_rdm2())
+
+    #v1 = np.ones((ccsd.nocc,))
+    #v2 = np.zeros((ccsd.nocc, ccsd.nocc, ccsd.nvir))
+
+    #ra = ccsd_ref.eomip_method().gen_matvec()[0]([np.concatenate([v1.ravel(), v2.ravel()])])
+    #rb1, rb2 = ccsd.hbar_matvec_ip(r1=v1, r2=v2)
+    #rb = np.concatenate([rb1.ravel(), rb2.ravel()])
+    #print("r", np.allclose(ra, rb/2))
 
     nbos = 5
     np.random.seed(1)
@@ -841,7 +900,7 @@ if __name__ == "__main__":
     omega = np.random.random((nbos)) * 0.5
 
     np.set_printoptions(edgeitems=1000, linewidth=1000, precision=8)
-    ccsd = EBCC(mf, rank=(2, 2, 1), omega=omega, g=g)
+    ccsd = EBCC(mf, rank=(2, 1, 1), omega=omega, g=g)
     ccsd.kernel()
     ccsd.solve_lambda()
 
@@ -850,6 +909,5 @@ if __name__ == "__main__":
     #print(amps["t1"])
     #print(amps["t2"])
     #print(amps["s1"])
-    #print(amps["s2"])
     #print(amps["u11"])
 

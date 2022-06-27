@@ -12,6 +12,22 @@ from qwick.codegen import ALPHA, BETA, FERMION, SCALAR_BOSON
 from ebcc.codegen.convenience_extra import *
 
 
+def get_factor(*indices):
+    """Return the factor for a given operator, where a factor
+    1/2 is raised to the power of the number of identical
+    indices.
+    """
+
+    counts = {"occ": 0, "vir": 0, "nm": 0}
+
+    for index in indices:
+        counts[index.space] += 1
+
+    n = sum(max(0, count-1) for count in counts.values())
+
+    return Fraction(1, 2**n)
+
+
 def get_hamiltonian(rank=(2, 0, 0), compress=False):
     """Define the core Hamiltonian.
     """
@@ -40,7 +56,7 @@ def get_hamiltonian(rank=(2, 0, 0), compress=False):
     return h, particles
 
 
-def get_bra_spaces(rank=(2, 0, 0)):
+def get_bra_spaces(rank=(2, 0, 0), occs=None, virs=None, nms=None):
     """Define left projection spaces.
     """
 
@@ -48,33 +64,107 @@ def get_bra_spaces(rank=(2, 0, 0)):
 
     # fermion
     for n in range(1, rank[0]+1):
-        occ = [Idx(i, "occ") for i in range(n)]
-        vir = [Idx(a, "vir") for a in range(n)]
+        occ = [Idx(i, "occ") for i in range(n)] if occs is None else occs[:n]
+        vir = [Idx(a, "vir") for a in range(n)] if virs is None else virs[:n]
         operators = [FOperator(i, True) for i in occ] + [FOperator(a, False) for a in vir[::-1]]
-        tensors = [Tensor(vir + occ, "")]
+        tensors = [Tensor(occ + vir, "")]
         bras.append(Expression([Term(1, [], tensors, operators, [])]))
 
     # boson
     for n in range(1, rank[1]+1):
-        nm = [Idx(x, "nm", fermion=False) for x in range(n)]
+        nm = [Idx(x, "nm", fermion=False) for x in range(n)] if nms is None else nms[:n]
         operators = [BOperator(x, False) for x in nm]
         tensors = [Tensor(nm, "")]
         bras.append(Expression([Term(1, [], tensors, operators, [])]))
 
     # fermion-boson coupling
     for n in range(1, rank[2]+1):
-        i = Idx(0, "occ")
-        a = Idx(0, "vir")
-        nm = [Idx(x, "nm", fermion=False) for x in range(n)]
+        i = Idx(0, "occ") if occs is None else occs[0]
+        a = Idx(0, "vir") if virs is None else virs[0]
+        nm = [Idx(x, "nm", fermion=False) for x in range(n)] if nms is None else nms[:n]
         operators = [BOperator(x, False) for x in nm] + \
                 [FOperator(i, True), FOperator(a, False)]
-        tensors = [Tensor(nm + [a, i], "")]
+        tensors = [Tensor(nm + [i, a], "")]
         bras.append(Expression([Term(1, [], tensors, operators, [])]))
 
     return tuple(bras)
 
 
-def get_ket_spaces(rank=(2, 0, 0)):
+def get_bra_ip_spaces(rank=(2, 0, 0), occs=None, virs=None, nms=None):
+    """Define left IP projection spaces.
+    """
+
+    bras = []
+
+    # fermion
+    for n in range(1, rank[0]+1):
+        occ = [Idx(i, "occ") for i in range(n)] if occs is None else occs[:n]
+        vir = [Idx(a, "vir") for a in range(n-1)] if virs is None else virs[:n-1]
+        operators = [FOperator(i, True) for i in occ] + [FOperator(a, False) for a in vir[::-1]]
+        tensors = [Tensor(occ + vir, "")]
+        bras.append(Expression([Term(1, [], tensors, operators, [])]))
+
+    # boson
+    for n in range(1, rank[1]+1):
+        raise NotImplementedError  # TODO
+
+    # fermion-boson coupling
+    for n in range(1, rank[2]+1):
+        raise NotImplementedError  # TODO
+
+    return tuple(bras)
+
+
+def get_bra_ea_spaces(rank=(2, 0, 0), occs=None, virs=None, nms=None):
+    """Define left IP projection spaces.
+    """
+
+    bras = []
+
+    # fermion
+    for n in range(1, rank[0]+1):
+        occ = [Idx(i, "occ") for i in range(n-1)] if occs is None else occs[:n-1]
+        vir = [Idx(a, "vir") for a in range(n)] if virs is None else virs[:n]
+        operators = [FOperator(i, True) for i in occ] + [FOperator(a, False) for a in vir[::-1]]
+        tensors = [Tensor(occ + vir, "")]
+        bras.append(Expression([Term(1, [], tensors, operators, [])]))
+
+    # boson
+    for n in range(1, rank[1]+1):
+        raise NotImplementedError  # TODO
+
+    # fermion-boson coupling
+    for n in range(1, rank[2]+1):
+        raise NotImplementedError  # TODO
+
+    return tuple(bras)
+
+
+def get_bra_ip_spaces(rank=(2, 0, 0), occs=None, virs=None, nms=None):
+    """Define left IP projection spaces.
+    """
+
+    bras = []
+
+    # fermion
+    for n in range(1, rank[0]+1):
+        occ = [Idx(i, "occ") for i in range(n)] if occs is None else occs[:n]
+        vir = [Idx(a, "vir") for a in range(n-1)] if virs is None else virs[:n-1]
+        operators = [FOperator(i, True) for i in occ] + [FOperator(a, False) for a in vir[::-1]]
+        tensors = [Tensor(occ + vir, "")]
+        bras.append(Expression([Term(1, [], tensors, operators, [])]))
+
+    # boson
+    for n in range(1, rank[1]+1):
+        raise NotImplementedError  # TODO
+
+    # fermion-boson coupling
+    for n in range(1, rank[2]+1):
+        raise NotImplementedError  # TODO
+
+    return tuple(bras)
+
+def get_ket_spaces(rank=(2, 0, 0), occs=None, virs=None, nms=None):
     """Define right projection spaces.
     """
 
@@ -82,24 +172,24 @@ def get_ket_spaces(rank=(2, 0, 0)):
 
     # fermion
     for n in range(1, rank[0]+1):
-        occ = [Idx(i, "occ") for i in range(n)]
-        vir = [Idx(a, "vir") for a in range(n)]
+        occ = [Idx(i, "occ") for i in range(n)] if occs is None else occs[:n]
+        vir = [Idx(a, "vir") for a in range(n)] if virs is None else virs[:n]
         operators = [FOperator(a, True) for a in vir] + [FOperator(i, False) for i in occ[::-1]]
         tensors = [Tensor(occ + vir, "")]
         kets.append(Expression([Term(1, [], tensors, operators, [])]))
 
     # boson
     for n in range(1, rank[1]+1):
-        nm = [Idx(x, "nm", fermion=False) for x in range(n)]
+        nm = [Idx(x, "nm", fermion=False) for x in range(n)] if nms is None else nms[:n]
         operators = [BOperator(x, True) for x in nm]
         tensors = [Tensor(nm, "")]
         kets.append(Expression([Term(1, [], tensors, operators, [])]))
 
     # fermion-boson coupling
     for n in range(1, rank[2]+1):
-        i = Idx(0, "occ")
-        a = Idx(0, "vir")
-        nm = [Idx(x, "nm", fermion=False) for x in range(n)]
+        i = Idx(0, "occ") if occs is None else occs[0]
+        a = Idx(0, "vir") if virs is None else virs[0]
+        nm = [Idx(x, "nm", fermion=False) for x in range(n)] if nms is None else nms[:n]
         operators = [BOperator(x, True) for x in nm] + \
                 [FOperator(a, True), FOperator(i, False)]
         tensors = [Tensor(nm + [i, a], "")]
@@ -108,11 +198,117 @@ def get_ket_spaces(rank=(2, 0, 0)):
     return tuple(kets)
 
 
+def get_ket_ip_spaces(rank=(2, 0, 0), occs=None, virs=None, nms=None):
+    """Define left IP projection spaces.
+    """
+
+    kets = []
+
+    # fermion
+    for n in range(1, rank[0]+1):
+        occ = [Idx(i, "occ") for i in range(n)] if occs is None else occs[:n]
+        vir = [Idx(a, "vir") for a in range(n-1)] if virs is None else virs[:n-1]
+        operators = [FOperator(a, True) for a in vir] + [FOperator(i, False) for i in occ[::-1]]
+        tensors = [Tensor(occ + vir, "")]
+        kets.append(Expression([Term(1, [], tensors, operators, [])]))
+
+    # boson
+    for n in range(1, rank[1]+1):
+        raise NotImplementedError  # TODO
+
+    # fermion-boson coupling
+    for n in range(1, rank[2]+1):
+        raise NotImplementedError  # TODO
+
+    return tuple(kets)
+
+
+def get_ket_ea_spaces(rank=(2, 0, 0), occs=None, virs=None, nms=None):
+    """Define left IP projection spaces.
+    """
+
+    kets = []
+
+    # fermion
+    for n in range(1, rank[0]+1):
+        occ = [Idx(i, "occ") for i in range(n-1)] if occs is None else occs[:n-1]
+        vir = [Idx(a, "vir") for a in range(n)] if virs is None else virs[:n]
+        operators = [FOperator(a, True) for a in vir[::-1]] + [FOperator(i, False) for i in occ]
+        tensors = [Tensor(occ + vir, "")]
+        kets.append(Expression([Term(1, [], tensors, operators, [])]))
+
+    # boson
+    for n in range(1, rank[1]+1):
+        raise NotImplementedError  # TODO
+
+    # fermion-boson coupling
+    for n in range(1, rank[2]+1):
+        raise NotImplementedError  # TODO
+
+    return tuple(kets)
+
+
+def get_r_ip_spaces(rank=(2, 0, 0), occs=None, virs=None, nms=None):
+    """Define space of trial vector to apply an IP hamiltonian to.
+    """
+
+    rs = []
+
+    # fermion
+    for n in range(1, rank[0]+1):
+        occ = [Idx(i, "occ") for i in range(n)] if occs is None else occs[:n]
+        vir = [Idx(a, "vir") for a in range(n-1)] if virs is None else virs[:n-1]
+        name = "r{n}".format(n=n)
+        scalar = get_factor(*occ, *vir)
+        sums = [Sigma(i) for i in occ] + [Sigma(a) for a in vir]
+        operators = [FOperator(a, True) for a in vir] + [FOperator(i, False) for i in occ[::-1]]
+        tensors = [Tensor(occ + vir, name, sym=TensorSym([[0, 1, 2], [1, 0, 2]], [1, 1]) if n == 2 else TensorSym([], []))]  # FIXME symm
+        rs.append(Expression([Term(scalar, sums, tensors, operators, [])]))
+
+    # boson
+    for n in range(1, rank[1]+1):
+        raise NotImplementedError  # TODO
+
+    # fermion-boson coupling
+    for n in range(1, rank[2]+1):
+        raise NotImplementedError  # TODO
+
+    return tuple(rs)
+
+
+def get_r_ea_spaces(rank=(2, 0, 0), occs=None, virs=None, nms=None):
+    """Define space of trial vector to apply an EA hamiltonian to.
+    """
+
+    rs = []
+
+    # fermion
+    for n in range(1, rank[0]+1):
+        occ = [Idx(i, "occ") for i in range(n-1)] if occs is None else occs[:n-1]
+        vir = [Idx(a, "vir") for a in range(n)] if virs is None else virs[:n]
+        name = "r{n}".format(n=n)
+        scalar = get_factor(*occ, *vir)
+        sums = [Sigma(a) for a in vir] + [Sigma(i) for i in occ]
+        operators = [FOperator(a, True) for a in vir[::-1]] + [FOperator(i, False) for i in occ]
+        tensors = [Tensor(occ + vir, name, sym=TensorSym([[0, 1, 2], [1, 0, 2]], [1, 1]) if n == 2 else TensorSym([], []))]  # FIXME symm
+        rs.append(Expression([Term(scalar, sums, tensors, operators, [])]))
+
+    # boson
+    for n in range(1, rank[1]+1):
+        raise NotImplementedError  # TODO
+
+    # fermion-boson coupling
+    for n in range(1, rank[2]+1):
+        raise NotImplementedError  # TODO
+
+    return tuple(rs)
+
+
 def get_symm(particles):
     raise NotImplementedError
 
 
-def get_excitation_ansatz(rank=(2, 0, 0)):
+def get_excitation_ansatz(rank=(2, 0, 0), occs=None, virs=None, nms=None):
     """Define excitation amplitudes for the given ansatz.
     """
 
@@ -121,20 +317,20 @@ def get_excitation_ansatz(rank=(2, 0, 0)):
 
     # fermion
     for n in range(1, rank[0]+1):
-        occ = [Idx(i, "occ") for i in range(n)]
-        vir = [Idx(a, "vir") for a in range(n)]
-        scalar = Fraction(1, 4**(n-1))
+        occ = [Idx(i, "occ") for i in range(n)] if occs is None else occs[:n]
+        vir = [Idx(a, "vir") for a in range(n)] if virs is None else virs[:n]
+        scalar = get_factor(*occ, *vir)
         sums = [Sigma(i) for i in occ] + [Sigma(a) for a in vir]
         name = "t{n}".format(n=n)
-        tensors = [Tensor(vir + occ, name, sym=get_sym(True) if n == 2 else TensorSym([], []))]  # FIXME get symmetry for all n
+        tensors = [Tensor(occ + vir, name, sym=get_sym(True) if n == 2 else TensorSym([], []))]  # FIXME get symmetry for all n
         operators = [FOperator(a, True) for a in vir] + [FOperator(i, False) for i in occ[::-1]]
         t.append(Term(scalar, sums, tensors, operators, []))
         particles[name] = tuple((FERMION, x) for x in range(n)) * 2
 
     # boson
     for n in range(1, rank[1]+1):
-        nm = [Idx(x, "nm", fermion=False) for x in range(n)]
-        scalar = Fraction(1, 2**(n-1))
+        nm = [Idx(x, "nm", fermion=False) for x in range(n)] if nms is None else nms[:n]
+        scalar = get_factor(*nm)
         sums = [Sigma(x) for x in nm]
         name = "s{n}".format(n=n)
         tensors = [Tensor(nm, name, sym=TensorSym([(0, 1), (1, 0)], [1, 1]) if n == 2 else TensorSym([], []))]  # FIXME symmetry
@@ -144,13 +340,13 @@ def get_excitation_ansatz(rank=(2, 0, 0)):
 
     # fermion-boson coupling
     for n in range(1, rank[2]+1):
-        i = Idx(0, "occ")
-        a = Idx(0, "vir")
-        nm = [Idx(x, "nm", fermion=False) for x in range(n)]
-        scalar = Fraction(1, 2**(n-1))
+        i = Idx(0, "occ") if occs is None else occs[0]
+        a = Idx(0, "vir") if virs is None else virs[0]
+        nm = [Idx(x, "nm", fermion=False) for x in range(n)] if nms is None else nms[:n]
+        scalar = get_factor(i, a, *nm)
         sums = [Sigma(x) for x in nm] + [Sigma(i), Sigma(a)]
         name = "u1{n}".format(n=n)
-        tensors = [Tensor(nm + [a, i], name, sym=TensorSym([(0, 1, 2, 3), (1, 0, 2, 3)], [1, 1]) if n == 2 else TensorSym([], []))]
+        tensors = [Tensor(nm + [i, a], name, sym=TensorSym([(0, 1, 2, 3), (1, 0, 2, 3)], [1, 1]) if n == 2 else TensorSym([], []))]
         operators = [BOperator(x, True) for x in nm] + [FOperator(a, True), FOperator(i, False)]
         t.append(Term(scalar, sums, tensors, operators, []))
         particles[name] = tuple((SCALAR_BOSON, x) for x in range(n)) + ((FERMION, n), (FERMION, n))
@@ -158,7 +354,7 @@ def get_excitation_ansatz(rank=(2, 0, 0)):
     return Expression(t), particles
 
 
-def get_deexcitation_ansatz(rank=(2, 0, 0)):
+def get_deexcitation_ansatz(rank=(2, 0, 0), occs=None, virs=None, nms=None):
     """Define de-excitation amplitudes for the given ansatz.
     """
 
@@ -168,20 +364,20 @@ def get_deexcitation_ansatz(rank=(2, 0, 0)):
     # fermion
     for n in range(1, rank[0]+1):
         # Swapped variables names so I can copy the code:
-        vir = [Idx(i, "occ") for i in range(n)]
-        occ = [Idx(a, "vir") for a in range(n)]
-        scalar = Fraction(1, 4**(n-1))
+        vir = [Idx(i, "occ") for i in range(n)] if occs is None else occs[:n]
+        occ = [Idx(a, "vir") for a in range(n)] if virs is None else virs[:n]
+        scalar = get_factor(*occ, *vir)
         sums = [Sigma(i) for i in occ] + [Sigma(a) for a in vir]
         name = "l{n}".format(n=n)
-        tensors = [Tensor(vir + occ, name, sym=get_sym(True) if n == 2 else TensorSym([], []))]  # FIXME get symmetry for all n
+        tensors = [Tensor(occ + vir, name, sym=get_sym(True) if n == 2 else TensorSym([], []))]  # FIXME get symmetry for all n
         operators = [FOperator(a, True) for a in vir] + [FOperator(i, False) for i in occ[::-1]]
         l.append(Term(scalar, sums, tensors, operators, []))
         particles[name] = tuple((FERMION, x) for x in range(n)) * 2
 
     # boson
     for n in range(1, rank[1]+1):
-        nm = [Idx(x, "nm", fermion=False) for x in range(n)]
-        scalar = Fraction(1, 2**(n-1))
+        nm = [Idx(x, "nm", fermion=False) for x in range(n)] if nms is None else nms[:n]
+        scalar = get_factor(*nm)
         sums = [Sigma(x) for x in nm]
         name = "ls{n}".format(n=n)
         tensors = [Tensor(nm, name, sym=TensorSym([(0, 1), (1, 0)], [1, 1]) if n == 2 else TensorSym([], []))]  # FIXME symmetry
@@ -192,13 +388,13 @@ def get_deexcitation_ansatz(rank=(2, 0, 0)):
     # fermion-boson coupling
     for n in range(1, rank[2]+1):
         # Swapped variables names so I can copy the code:
-        a = Idx(0, "occ")
-        i = Idx(0, "vir")
-        nm = [Idx(x, "nm", fermion=False) for x in range(n)]
-        scalar = Fraction(1, 2**(n-1))
+        a = Idx(0, "occ") if occs is None else occs[0]
+        i = Idx(0, "vir") if virs is None else virs[0]
+        nm = [Idx(x, "nm", fermion=False) for x in range(n)] if nms is None else nms[:n]
+        scalar = get_factor(i, a, *nm)
         sums = [Sigma(x) for x in nm] + [Sigma(i), Sigma(a)]
         name = "lu1{n}".format(n=n)
-        tensors = [Tensor(nm + [a, i], name, sym=TensorSym([(0, 1, 2, 3), (1, 0, 2, 3)], [1, 1]) if n == 2 else TensorSym([], []))]
+        tensors = [Tensor(nm + [i, a], name, sym=TensorSym([(0, 1, 2, 3), (1, 0, 2, 3)], [1, 1]) if n == 2 else TensorSym([], []))]
         operators = [BOperator(x, False) for x in nm] + [FOperator(a, True), FOperator(i, False)]
         l.append(Term(scalar, sums, tensors, operators, []))
         particles[name] = tuple((SCALAR_BOSON, x) for x in range(n)) + ((FERMION, n), (FERMION, n))
@@ -206,7 +402,7 @@ def get_deexcitation_ansatz(rank=(2, 0, 0)):
     return Expression(l), particles
 
 
-def construct_hbar(h, t, max_commutator=4):
+def bch(h, t, max_commutator=4):
     """Construct successive orders of \\bar{H} and return a list.
     """
 
@@ -228,3 +424,5 @@ def construct_hbar(h, t, max_commutator=4):
         hbars.append(hbars[-1] + comms[i] * scalar)
 
     return hbars
+
+construct_hbar = bch
