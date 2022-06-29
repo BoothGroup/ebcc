@@ -1,3 +1,6 @@
+"""Restricted electron-boson coupled cluster.
+"""
+
 import functools
 import numpy as np
 from typing import Tuple
@@ -491,7 +494,7 @@ class EBCC:
         )
         res = func(**kwargs)
 
-        return res["r1new"], res["r2new"]
+        return res["r1new"], res["r2new"]  # FIXME generalise
 
     def hbar_matvec_ea(self, r1, r2, eris=None, amplitudes=None):
         """Compute the product between a state vector and the EOM
@@ -507,7 +510,46 @@ class EBCC:
         )
         res = func(**kwargs)
 
-        return res["r1new"], res["r2new"]
+        return res["r1new"], res["r2new"]  # FIXME generalise
+
+    def hbar_matvec_dd(self, r1, r2, eris=None, amplitudes=None):
+        """Compute the product between a state vector and the EOM
+        Hamiltonian for the DD.
+        """
+
+        raise NotImplementedError  # TODO
+
+    def hbar_diag_ip(self, eris=None, amplitudes=None):
+        """Compute the diagonal of the EOM Hamiltonian for the IP.
+        """
+
+        func, kwargs = self._load_function(
+                "hbar_diag_ip",
+                eris=eris,
+                amplitudes=amplitudes,
+        )
+        res = func(**kwargs)
+
+        return res["r1"], res["r2"]  # FIXME generalise
+
+    def hbar_diag_ea(self, eris=None, amplitudes=None):
+        """Compute the diagonal of the EOM Hamiltonian for the EA.
+        """
+
+        func, kwargs = self._load_function(
+                "hbar_diag_ea",
+                eris=eris,
+                amplitudes=amplitudes,
+        )
+        res = func(**kwargs)
+
+        return res["r1"], res["r2"]  # FIXME generalise
+
+    def hbar_diag_dd(self, eris=None, amplitudes=None):
+        """Compute the of the EOM Hamiltonian for the DD.
+        """
+
+        raise NotImplementedError  # TODO
 
     def make_ip_mom_bras(self, eris=None, amplitudes=None, lambdas=None):
         """Get the bra IP vectors to construct EOM moments.
@@ -521,7 +563,7 @@ class EBCC:
         )
         res = func(**kwargs)
 
-        return res["r1"], res["r2"]
+        return res["r1"], res["r2"]  # FIXME generalise
 
     def make_ea_mom_bras(self, eris=None, amplitudes=None, lambdas=None):
         """Get the bra EA vectors to construct EOM moments.
@@ -535,7 +577,7 @@ class EBCC:
         )
         res = func(**kwargs)
 
-        return res["r1"], res["r2"]
+        return res["r1"], res["r2"]  # FIXME generalise
 
     def make_dd_mom_bras(self, eris=None, amplitudes=None, lambdas=None):
         """Get the bra DD vectors to construct EOM moments.
@@ -555,7 +597,7 @@ class EBCC:
         )
         res = func(**kwargs)
 
-        return res["r1"], res["r2"]
+        return res["r1"], res["r2"]  # FIXME generalise
 
     def make_ea_mom_kets(self, eris=None, amplitudes=None, lambdas=None):
         """Get the ket IP vectors to construct EOM moments.
@@ -569,7 +611,7 @@ class EBCC:
         )
         res = func(**kwargs)
 
-        return res["r1"], res["r2"]
+        return res["r1"], res["r2"]  # FIXME generalise
 
     def make_dd_mom_kets(self, eris=None, amplitudes=None, lambdas=None):
         """Get the ket DD vectors to construct EOM moments.
@@ -593,28 +635,113 @@ class EBCC:
 
         raise NotImplementedError  # TODO
 
-    # Interface to PySCF for these?
-    #def make_ip_eom_moms(self, order, eris=None, amplitudes=None, lambdas=None):
-    #    """Build the fermionic hole single-particle EOM moments.
+    def eom_ip(self, nroots=5, eris=None, amplitudes=None):
+        """Solve the similarity-transformed hamiltonian for the IP
+        with the equation-of-motion approach.
+        """
 
-    #        T_{n, p, q} = <c†_p (H - E)^n c_q>
-    #    """
+        def vector_to_amplitudes(v):
+            shapes = [d.shape for d in diag_parts]
+            parts = []
+            for shape in shapes:
+                size = np.prod(shape)
+                vp, v = v[:size].reshape(shape), v[size:]
+                parts.append(vp)
+            return tuple(parts)
 
-    #    raise NotImplementedError  # TODO
+        def amplitudes_to_vectors(*amps):
+            return np.concatenate([a.ravel() for a in amps], axis=0)
 
-    #def make_ea_eom_moms(self, order, eris=None, amplitudes=None, lambdas=None):
-    #    """Build the fermionic particle single-particle EOM moments.
+        diag_parts = self.hbar_diag_ip(eris=eris, amplitudes=amplitudes)
+        diag = amplitudes_to_vectors(*diag_parts)
 
-    #        T_{n, p, q} = <c_p (H - E)^n c†_q>
-    #    """
+        def matvec(v):
+            r = self.hbar_matvec_ip(*vector_to_amplitudes(v), eris=eris, amplitudes=amplitudes)
+            return amplitudes_to_vectors(*r)
+        matvecs = lambda vs: [matvec(v) for v in vs]
 
-    #    raise NotImplementedError  # TODO
+        def pick(w, v, nroots, envs):
+            w, v, idx = lib.linalg_helper.pick_real_eigs(w, v, nroots, envs)
+            mask = np.argsort(w)
+            return w[mask], v[:,mask], idx
 
-    #def make_dd_eom_moms(self, order, eris=None, amplitudes=None, lambdas=None):
-    #    """Build the fermionic density-density moments.
-    #    """
+        guesses = np.zeros((nroots, diag.size))
+        arg = np.argsort(np.absolute(diag))
+        for root, guess in enumerate(arg[:nroots]):
+            guesses[root, guess] = 1.0
+        guesses = list(guesses)
 
-    #    raise NotImplementedError  # TODO
+        conv, e, v = lib.davidson_nosym1(
+                matvecs,
+                guesses,
+                diag,
+                tol=self.e_tol,
+                nroots=nroots,
+                pick=pick,
+                max_cycle=self.max_iter,
+                max_space=12,
+                verbose=0,
+        )
+
+        return e, v
+
+    def eom_ea(self, nroots=5, eris=None, amplitudes=None):
+        """Solve the similarity-transformed hamiltonian for the EA
+        with the equation-of-motion approach.
+        """
+        # TODO move to kernel function and combine with above
+
+        def vector_to_amplitudes(v):
+            shapes = [d.shape for d in diag_parts]
+            parts = []
+            for shape in shapes:
+                size = np.prod(shape)
+                vp, v = v[:size].reshape(shape), v[size:]
+                parts.append(vp)
+            return tuple(parts)
+
+        def amplitudes_to_vectors(*amps):
+            return np.concatenate([a.ravel() for a in amps], axis=0)
+
+        diag_parts = self.hbar_diag_ea(eris=eris, amplitudes=amplitudes)
+        diag = amplitudes_to_vectors(*diag_parts)
+
+        def matvec(v):
+            r = self.hbar_matvec_ea(*vector_to_amplitudes(v), eris=eris, amplitudes=amplitudes)
+            return amplitudes_to_vectors(*r)
+        matvecs = lambda vs: [matvec(v) for v in vs]
+
+        def pick(w, v, nroots, envs):
+            w, v, idx = lib.linalg_helper.pick_real_eigs(w, v, nroots, envs)
+            mask = np.argsort(w)
+            return w[mask], v[:,mask], idx
+
+        guesses = np.zeros((nroots, diag.size))
+        arg = np.argsort(np.absolute(diag))
+        for root, guess in enumerate(arg[:nroots]):
+            guesses[root, guess] = 1.0
+        guesses = list(guesses)
+
+        conv, e, v = lib.davidson_nosym1(
+                matvecs,
+                guesses,
+                diag,
+                tol=self.e_tol,
+                nroots=nroots,
+                pick=pick,
+                max_cycle=self.max_iter,
+                max_space=12,
+                verbose=0,
+        )
+
+        return e, v
+
+    def eom_ee(self, nroots=5, eris=None, amplitudes=None):
+        """Solve the similarity-transformed hamiltonian for the EA
+        with the equation-of-motion approach.
+        """
+
+        raise NotImplementedError  # TODO
 
     def get_mean_field_G(self):
         val = lib.einsum("Ipp->I", self.g.boo) * 2.0

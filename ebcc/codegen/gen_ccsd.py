@@ -1,6 +1,7 @@
 """Script to generate equations for the CCSD model.
 """
 
+import re
 import warnings
 import sympy
 import drudge
@@ -19,6 +20,9 @@ dr = drudge.Drudge(ctx)
 
 warnings.simplefilter("ignore", UserWarning)
 
+# Spin setting:
+spin = "ghf"  # {"ghf", "rhf", "uhf"}
+
 # Indices
 occs = i, j, k, l = [Idx(n, "occ") for n in range(4)]
 virs = a, b, c, d = [Idx(n, "vir") for n in range(4)]
@@ -35,23 +39,26 @@ rip = r1ip, r2ip = wick.get_r_ip_spaces(rank=(2, 0, 0), occs=occs, virs=virs)
 rea = r1ea, r2ea = wick.get_r_ea_spaces(rank=(2, 0, 0), occs=occs, virs=virs)
 T, _ = wick.get_excitation_ansatz(rank=(2, 0, 0), occs=occs, virs=virs)
 L, _ = wick.get_deexcitation_ansatz(rank=(2, 0, 0), occs=occs, virs=virs)
-Hbars = wick.construct_hbar(H, T)
-Hbar = Hbars[-1]
+Hbars = wick.construct_hbar(H, T, max_commutator=5)
+Hbar = Hbars[-2]
 
 # Printer
+reorder_axes = {
+        # TODO remove:
+        "l1new": (1, 0),
+        "l2new": (2, 3, 0, 1),
+}
+if spin == "rhf":
+    reorder_axes["v"] = (0, 2, 1, 3)
+    for x in common.ov_2e:
+        reorder_axes["rdm2_f_%s" % x] = (0, 2, 1, 3)
 printer = codegen.EinsumPrinter(
         occupancy_tags={
             "v": "{base}.{tags}",
             "f": "{base}.{tags}",
             "delta": "delta_{tags}",
         },
-        reorder_axes={
-            "v": (0, 2, 1, 3),
-            **{"rdm2_f_%s" % x: (0, 2, 1, 3) for x in common.ov_2e},
-            # NOTE: not sure why these do this but sure:
-            "l1new": (1, 0),
-            "l2new": (2, 3, 0, 1),
-        },
+        reorder_axes=reorder_axes,
         remove_spacing=True,
         garbage_collection=True,
         base_indent=1,
@@ -60,6 +67,17 @@ printer = codegen.EinsumPrinter(
         dtype="np.float64",
 )
 sizes = {"nocc": sympy.Symbol("N"), "nvir": sympy.Symbol("N")*5}
+
+# Get prefix and spin transformation function according to setting:
+if spin == "rhf":
+    transform_spin = lambda terms, indices, **kwargs: codegen.ghf_to_rhf(terms, indices, **kwargs)
+    prefix = ""
+elif spin == "uhf":
+    transform_spin = lambda terms, indices, **kwargs: codegen.ghf_to_uhf(terms, indices, **kwargs)
+    prefix = "u"
+elif spin == "ghf":
+    transform_spin = lambda terms, indices, **kwargs: terms
+    prefix = "g"
 
 # Declare particle types:
 particles = {
@@ -82,12 +100,14 @@ particles = {
         **{"r2_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)) for x in ["o", "v"]},
         **{"rdm1_f_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 0)) for x in common.ov_1e},
         **{"rdm2_f_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)) for x in common.ov_2e},
+        "h11": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
+        "h22": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 2), (codegen.FERMION, 3), (codegen.FERMION, 2)),  # FIXME?
 }
 
 # Timer:
 timer = common.Stopwatch()
 
-with common.FilePrinter("ccsd") as file_printer:
+with common.FilePrinter("%sccsd" % prefix) as file_printer:
     # Get energy expression:
     with common.FunctionPrinter(
             file_printer,
@@ -100,7 +120,7 @@ with common.FilePrinter("ccsd") as file_printer:
         out.resolve()
         expr = AExpression(Ex=out)
         terms, indices = codegen.wick_to_sympy(expr, particles, return_value="e_cc")
-        terms = codegen.ghf_to_rhf(terms, indices)
+        terms = transform_spin(terms, indices)
         terms = codegen.sympy_to_drudge(terms, indices, dr=dr)
         function_printer.write_latex(terms.latex(), comment="CCSD energy")
         terms = codegen.optimize([terms], sizes=sizes, optimize="exhaust", verify=True, interm_fmt="x{}")
@@ -120,7 +140,7 @@ with common.FilePrinter("ccsd") as file_printer:
         out.resolve()
         expr = AExpression(Ex=out)
         terms, indices = codegen.wick_to_sympy(expr, particles, return_value="t1new")
-        terms = codegen.ghf_to_rhf(terms, indices, project_onto=[(codegen.ALPHA, codegen.ALPHA)])
+        terms = transform_spin(terms, indices, project_onto=[(codegen.ALPHA, codegen.ALPHA)])
         terms_t1 = codegen.sympy_to_drudge(terms, indices, dr=dr)
         function_printer.write_latex(terms_t1.latex(), comment="T1 amplitude")
 
@@ -130,7 +150,7 @@ with common.FilePrinter("ccsd") as file_printer:
         out.resolve()
         expr = AExpression(Ex=out)
         terms, indices = codegen.wick_to_sympy(expr, particles, return_value="t2new")
-        terms = codegen.ghf_to_rhf(terms, indices, project_onto=[(codegen.ALPHA, codegen.BETA, codegen.ALPHA, codegen.BETA)])
+        terms = transform_spin(terms, indices, project_onto=[(codegen.ALPHA, codegen.BETA, codegen.ALPHA, codegen.BETA)])
         terms_t2 = codegen.sympy_to_drudge(terms, indices, dr=dr)
         function_printer.write_latex(terms_t2.latex(), comment="T2 amplitude")
 
@@ -161,7 +181,7 @@ with common.FilePrinter("ccsd") as file_printer:
         expr2 = expr2.get_connected()
         expr2.sort_tensors()
         terms, indices = codegen.wick_to_sympy(expr1+expr2, particles, return_value="l1new")
-        terms = codegen.ghf_to_rhf(terms, indices, project_onto=[(codegen.ALPHA, codegen.ALPHA)])
+        terms = transform_spin(terms, indices, project_onto=[(codegen.ALPHA, codegen.ALPHA)])
         terms_l1 = codegen.sympy_to_drudge(terms, indices, dr=dr)
         function_printer.write_latex(terms_l1.latex(), comment="L1 amplitude")
 
@@ -174,7 +194,7 @@ with common.FilePrinter("ccsd") as file_printer:
         expr1.sort_tensors()
 
         # L2 residuals <0|L Hbar|doubles> (connected pieces proportional to lambda):
-        S = L * Hbar * ket1
+        S = L * Hbar * ket2
         out = apply_wick(S)
         out.resolve()
         expr2 = AExpression(Ex=out)
@@ -189,7 +209,7 @@ with common.FilePrinter("ccsd") as file_printer:
         expr3 = AExpression(Ex=out)
         expr3.sort_tensors()
         terms, indices = codegen.wick_to_sympy(expr1+expr2+expr3, particles, return_value="l2new")
-        terms = codegen.ghf_to_rhf(terms, indices, project_onto=[(codegen.ALPHA, codegen.BETA, codegen.ALPHA, codegen.BETA)])
+        terms = transform_spin(terms, indices, project_onto=[(codegen.ALPHA, codegen.BETA, codegen.ALPHA, codegen.BETA)])
         terms_l2 = codegen.sympy_to_drudge(terms, indices, dr=dr)
         function_printer.write_latex(terms_l2.latex(), comment="L2 amplitude")
 
@@ -216,7 +236,7 @@ with common.FilePrinter("ccsd") as file_printer:
             out.resolve()
             expr = AExpression(Ex=out)
             terms, indices = codegen.wick_to_sympy(expr, particles, return_value=return_value)
-            terms = codegen.ghf_to_rhf(terms, indices)
+            terms = transform_spin(terms, indices)
             terms = codegen.sympy_to_drudge(terms, indices, dr=dr)
             function_printer.write_latex(terms.latex(), comment=comment)
             return terms
@@ -245,7 +265,7 @@ with common.FilePrinter("ccsd") as file_printer:
         function_printer.write_python("    delta_vv = np.eye(nvir)\n")
 
         def case(i, j, k, l, return_value, comment=None):
-            ops = [FOperator(l, True), FOperator(k, True), FOperator(i, False), FOperator(j, False)]
+            ops = [FOperator(i, True), FOperator(j, True), FOperator(l, False), FOperator(k, False)]
             P = Expression([Term(1, [], [Tensor([i, j, k, l], "")], ops, [])])
             mid = wick.bch(P, T, max_commutator=4)[-1]
             full = mid + L * mid
@@ -253,7 +273,7 @@ with common.FilePrinter("ccsd") as file_printer:
             out.resolve()
             expr = AExpression(Ex=out)
             terms, indices = codegen.wick_to_sympy(expr, particles, return_value=return_value)
-            terms = codegen.ghf_to_rhf(terms, indices)
+            terms = transform_spin(terms, indices)
             terms = codegen.sympy_to_drudge(terms, indices, dr=dr)
             function_printer.write_latex(terms.latex(), comment=comment)
             return terms
@@ -328,7 +348,7 @@ with common.FilePrinter("ccsd") as file_printer:
                                 shape.append("nocc" if index.space is codegen.OCCUPIED else "nvir" if index.space is codegen.VIRTUAL else "nbos")
                             function_printer.write_python("    %s = %s((%s), dtype=%s)" % (name, printer._zeros, ", ".join(shape), printer._dtype))
                         else:
-                            terms = codegen.ghf_to_rhf(terms, indices)
+                            terms = transform_spin(terms, indices)
                             terms = codegen.sympy_to_drudge(terms, indices, dr=dr)
                             function_printer.write_latex(terms.latex())
                             all_terms.append(terms)
@@ -345,6 +365,79 @@ with common.FilePrinter("ccsd") as file_printer:
                             "    r1 = np.concatenate([r1_o, r1_v], axis=0)\n"
                             "    r2 = np.concatenate([r2_o, r2_v], axis=0).swapaxes(1, 2)\n"
                     )
+
+    # Get the diagonal of the IP and EA EOM hamiltonians:
+    for ip, ip_name in [(True, "ip"), (False, "ea")]:
+        with common.FunctionPrinter(
+                file_printer,
+                "hbar_diag_%s" % ip_name,
+                ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2"],
+                ["r1", "r2"],
+                timer=timer,
+        ) as function_printer:
+            function_printer.write_python("    delta_oo = np.eye(nocc)")
+            function_printer.write_python("    delta_vv = np.eye(nvir)\n")
+
+            E0 = apply_wick(Hbar)
+            E0.resolve()
+            bras = braip if ip else braea
+            kets = ketip if ip else ketea
+
+            def _subs_indices(tensor, subs):
+                if not isinstance(tensor, codegen.Tensor):
+                    return tensor
+                indices = tuple(subs.get(i, i) for i in tensor.indices)
+                return tensor.copy(indices=indices)
+
+            all_terms = []
+            for space_no, (bra, ket) in enumerate(zip(bras, kets)):
+                return_value = "h%d%d" % ((space_no + 1,) * 2)
+                diag_return_value = "r%d" % (space_no + 1)
+
+                full = bra * (Hbars[-1] - E0) * ket
+                full *= Fraction(1, 2)  # FIXME find where I lost this factor!!
+                out = apply_wick(full)
+                out.resolve()
+                expr = AExpression(Ex=out, simplify=True)
+
+                terms, indices = codegen.wick_to_sympy(expr, particles, return_value=return_value)
+                terms = transform_spin(terms, indices)
+                terms = codegen.sympy_to_drudge(terms, indices, dr=dr)
+                function_printer.write_latex(terms.latex())
+                einsums = printer.doprint([terms])
+
+                # Convert the einsums to diagonal of the hamiltonian,
+                # this is actually kind of difficult algebraically
+                # because most tools assume external indices only
+                # appear once:
+                lines = []
+                for line in einsums.split("\n"):
+                    if printer._einsum in line:
+                        subscript = line.split("\"")[1]
+                        inp, out = subscript.split("->")
+                        subs = dict(zip(out[len(out)//2:], out[:len(out)//2]))
+                        for key, val in subs.items():
+                            out = out.replace(key, val)
+                        new_subscript = inp + "->" + out[:len(out)//2]
+                        einsum = line.replace(return_value, diag_return_value, 1)
+                        einsum = einsum.replace(subscript, new_subscript)
+                        lines.append(einsum)
+                    elif printer._zeros in line:
+                        shape = line.replace("(", ")").split(")")[2]
+                        new_shape = shape.split(",")
+                        new_shape = ", ".join(new_shape[:len(new_shape)//2])
+                        zeros = line.replace(return_value, diag_return_value, 1)
+                        zeros = zeros.replace(shape, new_shape)
+                        lines.append(zeros)
+                    else:
+                        lines.append(line)
+
+                lines = "\n".join(lines)
+                function_printer.write_python(lines+"\n")
+
+            if not ip:
+                # r2 for the EA will be calculated as iab, transpose to abi
+                function_printer.write_python("    r2 = r2.transpose(1, 2, 0)\n")
 
     # Get IP and EA EOM hamiltonian-vector product expressions:
     for ip, ip_name in [(True, "ip"), (False, "ea")]:
@@ -365,7 +458,8 @@ with common.FilePrinter("ccsd") as file_printer:
                 return_value = "r%dnew" % (space_no + 1)
                 comb_terms = []
                 for excit_no, excit in enumerate(excitations):
-                    full = space * (Hbar - E0) * excit
+                    full = space * (Hbars[-1] - E0) * excit
+                    full *= Fraction(1, 2)  # FIXME find where I lost this factor!!
                     out = apply_wick(full)
                     out.resolve()
                     expr = AExpression(Ex=out, simplify=True)
@@ -377,18 +471,14 @@ with common.FilePrinter("ccsd") as file_printer:
                 expr = AExpression(terms=terms, simplify=True)
 
                 terms, indices = codegen.wick_to_sympy(expr, particles, return_value=return_value)
-                if all(all(f == 0 for f in term.rhs) for term in terms):
-                    name = terms[0].lhs.base.name
-                    shape = []
-                    for index in terms[0].lhs.external_indices:
-                        shape.append("nocc" if index.space is codegen.OCCUPIED else "nvir" if index.space is codegen.VIRTUAL else "nbos")
-                    function_printer.write_python("    %s = %s((%s), dtype=%s)" % (name, printer._zeros, ", ".join(shape), printer._dtype))
-                else:
-                    terms = codegen.ghf_to_rhf(terms, indices)
-                    terms = codegen.sympy_to_drudge(terms, indices, dr=dr)
-                    function_printer.write_latex(terms.latex())
-                    all_terms.append(terms)
+                terms = transform_spin(terms, indices)
+                terms = codegen.sympy_to_drudge(terms, indices, dr=dr)
+                function_printer.write_latex(terms.latex())
+                all_terms.append(terms)
 
             all_terms = codegen.optimize(all_terms, sizes=sizes, optimize="exhaust", verify=False, interm_fmt="x{}")
             function_printer.write_python(printer.doprint(all_terms)+"\n")
+            if not ip:
+                # r2 for the EA will be calculated as iab, transpose to abi
+                function_printer.write_python("    r2new = r2new.transpose(1, 2, 0)\n")
 
