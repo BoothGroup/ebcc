@@ -647,6 +647,7 @@ class EBCC:
                 size = np.prod(shape)
                 vp, v = v[:size].reshape(shape), v[size:]
                 parts.append(vp)
+            assert v.size == 0
             return tuple(parts)
 
         def amplitudes_to_vectors(*amps):
@@ -660,10 +661,17 @@ class EBCC:
             return amplitudes_to_vectors(*r)
         matvecs = lambda vs: [matvec(v) for v in vs]
 
+        h = np.array(matvecs(np.eye(diag.size)))
+        h[np.abs(h) < 1e-8] = 0
+        np.savetxt("h1.tmp", h, fmt="%10.6f")
+
         def pick(w, v, nroots, envs):
             w, v, idx = lib.linalg_helper.pick_real_eigs(w, v, nroots, envs)
+            mask = w > 0  # FIXME
+            w, v = w[mask], v[:, mask]
             mask = np.argsort(w)
-            return w[mask], v[:,mask], idx
+            w, v = w[mask], v[:, mask]
+            return w, v, 0
 
         guesses = np.zeros((nroots, diag.size))
         arg = np.argsort(np.absolute(diag))
@@ -713,8 +721,11 @@ class EBCC:
 
         def pick(w, v, nroots, envs):
             w, v, idx = lib.linalg_helper.pick_real_eigs(w, v, nroots, envs)
+            mask = w > 0  # FIXME
+            w, v = w[mask], v[:, mask]
             mask = np.argsort(w)
-            return w[mask], v[:,mask], idx
+            w, v = w[mask], v[:, mask]
+            return w, v, 0
 
         guesses = np.zeros((nroots, diag.size))
         arg = np.argsort(np.absolute(diag))

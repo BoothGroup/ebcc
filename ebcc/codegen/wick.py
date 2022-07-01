@@ -1,9 +1,10 @@
 """Generate sympy expressions in spin-orbital notation using qwick.
 """
 
+import os
 import sympy
 from fractions import Fraction
-from qwick.wick import apply_wick
+from qwick.wick import apply_wick as _apply_wick
 from qwick.index import Idx
 from qwick.operator import FOperator, BOperator
 from qwick.expression import *
@@ -426,3 +427,10 @@ def bch(h, t, max_commutator=4):
     return hbars
 
 construct_hbar = bch
+
+
+def apply_wick(expr):
+    """Apply wick.
+    """
+
+    return _apply_wick(expr)

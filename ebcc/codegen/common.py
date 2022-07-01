@@ -39,6 +39,129 @@ LATEX_FOOTER = r"""
 \end{document}"""
 
 
+ov_2e = ["oooo", "ooov", "oovo", "ovoo", "vooo", "oovv", "ovov", "ovvo", "voov", "vovo", "vvoo", "ovvv", "vovv", "vvov", "vvvo", "vvvv"]
+ov_1e = ["oo", "ov", "vo", "vv"]
+
+
+CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cache.pkl")
+
+def cache(func):
+    """Cache output of function in a pickle file.
+    """
+
+    def wrapper(*args, **kwargs):
+        key = hash((func, *args, *tuple(kwargs.items())))
+
+        if not os.path.exists(CACHE_FILE):
+            with open(CACHE_FILE, "wb") as f:
+                pickle.dump({}, f)
+
+        with open(CACHE_FILE, "rb") as f:
+            data = pickle.load(f)
+
+        if key not in data:
+            res = func(*args, **kwargs)
+            data[key] = res
+            with open(CACHE_FILE, "wb") as f:
+                pickle.write(data, f)
+
+        return data[key]
+
+    return wrapper
+
+
+# Default particle types:
+particles = {
+        "f": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
+        "v": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
+        "G": ((codegen.SCALAR_BOSON, 0),),
+        "w": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 1)),
+        "g": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
+        "gc": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
+        "t1": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
+        "t2": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
+        "l1": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
+        "l2": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
+        "s1": ((codegen.SCALAR_BOSON, 0),),
+        "s2": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0)),
+        "ls1": ((codegen.SCALAR_BOSON, 0),),
+        "ls2": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0)),
+        "u11": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
+        "lu11": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
+        "r1": ((codegen.FERMION, 0),),
+        "r2": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0)),
+        "t1new": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
+        "t2new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
+        "l1new": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
+        "l2new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
+        "s1new": ((codegen.SCALAR_BOSON, 0),),
+        "s2new": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0)),
+        "ls1new": ((codegen.SCALAR_BOSON, 0),),
+        "ls2new": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0)),
+        "u11new": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
+        "lu11new": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
+        "r1new": ((codegen.FERMION, 0),),
+        "r2new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0)),
+        "delta": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
+        **{"r1_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 0),) for x in ["o", "v"]},
+        **{"r2_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)) for x in ["o", "v"]},
+        **{"rdm1_f_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 0)) for x in ov_1e},
+        **{"rdm2_f_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)) for x in ov_2e},
+        "rdm1_b": ((codegen.BOSON, 0), (codegen.BOSON, 0)),
+        **{"dm_b%s" % x: ((codegen.BOSON, 0),) for x in ("", "_cre", "_des")},
+        **{"rdm_eb_%s_%s" % (x, y): ((codegen.BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)) for y in ov_1e for x in ("cre", "des")},
+        "h11": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
+        "h22": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 2), (codegen.FERMION, 3), (codegen.FERMION, 2)),  # FIXME?
+}
+
+
+# Default printer
+def get_printer(spin):
+    reorder_axes = {
+            # TODO remove:
+            "l1new": (1, 0),
+            "l2new": (2, 3, 0, 1),
+            "lu11new": (0, 2, 1),
+    }
+
+    if spin == "rhf":
+        reorder_axes["v"] = (0, 2, 1, 3)
+        for x in ov_2e:
+            reorder_axes["rdm2_f_%s" % x] = (0, 2, 1, 3)
+
+    printer = codegen.EinsumPrinter(
+            occupancy_tags={
+                "v": "{base}.{tags}",
+                "f": "{base}.{tags}",
+                "delta": "delta_{tags}",
+            },
+            reorder_axes=reorder_axes,
+            remove_spacing=True,
+            garbage_collection=True,
+            base_indent=1,
+            einsum="lib.einsum",
+            zeros="np.zeros",
+            dtype="np.float64",
+    )
+
+    return printer
+
+
+# Prefix and spin transformation function
+def get_transformation_function(spin):
+    if spin == "rhf":
+        transform_spin = lambda terms, indices, **kwargs: codegen.ghf_to_rhf(terms, indices, **kwargs)
+        prefix = ""
+    elif spin == "uhf":
+        transform_spin = lambda terms, indices, **kwargs: codegen.ghf_to_uhf(terms, indices, **kwargs)
+        prefix = "u"
+    elif spin == "ghf":
+        transform_spin = lambda terms, indices, **kwargs: terms
+        prefix = "g"
+
+    return transform_spin, prefix
+
+
 class FilePrinter:
     def __init__(self, name):
         if rank != 0:
@@ -146,9 +269,6 @@ class Stopwatch:
 
     __call__ = lap
 
-
-ov_2e = ["oooo", "ooov", "oovo", "ovoo", "vooo", "oovv", "ovov", "ovvo", "voov", "vovo", "vvoo", "ovvv", "vovv", "vvov", "vvvo", "vvvv"]
-ov_1e = ["oo", "ov", "vo", "vv"]
 
 def pack_2e(*args):
     # args should be in the order of ov_2e
