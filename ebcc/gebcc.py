@@ -7,7 +7,7 @@ import numpy as np
 from typing import Tuple
 from types import SimpleNamespace
 from pyscf import lib, ao2mo
-from ebcc.rebcc import REBCC
+from ebcc.rebcc import util, REBCC
 
 
 class GEBCC(REBCC):
@@ -93,6 +93,139 @@ class GEBCC(REBCC):
 
         return two_e_blocks()
 
+    #def excitations_to_vector_ip(self, *excitations):
+    #    """Construct a vector containing all of the excitation
+    #    amplitudes used in the given ansatz.
+    #    """
+
+    #    vectors = []
+    #    m = 0
+
+    #    for n in self.rank_numeric[0]:
+    #        shape = (self.nocc,) * n + (self.nvir,) * (n-1)
+    #        occ = util.tril_indices_ndim(self.nocc, n)
+    #        vir = util.tril_indices_ndim(self.nvir, n-1)
+    #        excitation = excitations[m]
+    #        excitation = excitation.reshape(shape)
+    #        if n == 1:
+    #            excitation = excitation[occ]
+    #        else:
+    #            excitation = excitation[occ][..., vir]
+    #        vectors.append(excitation.ravel())
+    #        m += 1
+
+    #    for n in self.rank_numeric[1]:
+    #        raise NotImplementedError
+
+    #    for n in self.rank_numeric[2]:
+    #        raise NotImplementedError
+
+    #    return np.concatenate(vectors)
+
+    #def excitations_to_vector_ea(self, *excitations):
+    #    """Construct a vector containing all of the excitation
+    #    amplitudes used in the given ansatz.
+    #    """
+
+    #    vectors = []
+    #    m = 0
+
+    #    for n in self.rank_numeric[0]:
+    #        shape = (self.nvir,) * n + (self.nocc,) * (n-1)
+    #        occ = util.tril_indices_ndim(self.nocc, n-1)
+    #        vir = util.tril_indices_ndim(self.nvir, n)
+    #        excitation = excitations[m]
+    #        excitation = excitation.reshape(shape)
+    #        excitation = excitation[vir][..., occ]
+    #        vectors.append(excitation.ravel())
+    #        m += 1
+
+    #    for n in self.rank_numeric[1]:
+    #        raise NotImplementedError
+
+    #    for n in self.rank_numeric[2]:
+    #        raise NotImplementedError
+
+    #    return np.concatenate(vectors)
+
+    #def vector_to_excitations_ip(self, vector):
+    #    """Construct all of the excitation amplitudes used in the
+    #    given ansatz from a vector.
+    #    """
+
+    #    excitations = []
+    #    i0 = 0
+
+    #    for n in self.rank_numeric[0]:
+    #        shape = (self.nocc,) * n + (self.nvir,) * (n-1)
+    #        excitation = np.zeros(shape)
+    #        occ = util.tril_indices_ndim(self.nocc, n)
+    #        vir = util.tril_indices_ndim(self.nvir, n-1)
+
+    #        if n == 1:
+    #            reduced_size = excitation[occ].size
+    #            shape = excitation[occ].shape
+    #            excitation[occ] = vector[i0:i0+reduced_size].reshape(shape)
+
+    #            for pocc, so in util.permutations_with_signs(occ):
+    #                pocc = tuple(pocc)
+    #                excitation[pocc] = so * excitation[occ]
+
+    #        else:
+    #            reduced_size = excitation[occ][..., vir].size
+    #            shape = excitation[occ][..., vir].shape
+    #            excitation[occ][..., vir] = vector[i0:i0+reduced_size].reshape(shape)
+
+    #            for pocc, so in util.permutations_with_signs(occ):
+    #                pocc = tuple(pocc)
+    #                for pvir, sv in util.permutations_with_signs(vir):
+    #                    pvir = tuple(pvir)
+    #                    excitation[pocc][..., pvir] = so * sv * excitation[occ][..., vir]
+
+    #        excitations.append(excitation)
+    #        i0 += reduced_size
+
+    #    for n in self.rank_numeric[1]:
+    #        raise NotImplementedError
+
+    #    for n in self.rank_numeric[2]:
+    #        raise NotImplementedError
+
+    #    return tuple(excitations)
+
+    #def vector_to_excitations_ea(self, vector):
+    #    """Construct all of the excitation amplitudes used in the
+    #    given ansatz from a vector.
+    #    """
+
+    #    excitations = []
+    #    i0 = 0
+
+    #    for n in self.rank_numeric[0]:
+    #        shape = (self.nvir,) * n + (self.nocc,) * (n-1)
+    #        occ = util.tril_indices_ndim(self.nocc, n-1)
+    #        vir = util.tril_indices_ndim(self.nvir, n)
+    #        excitation = np.zeros((self.nvir**n, self.nocc**(n-1)))
+    #        excitation[np.ix_(*vir, *occ)] = vector[i0:i0+len(vir)*len(occ)]
+    #        excitation = excitation.reshape(shape)
+
+    #        for a in itertools.product(range(nvir), repeat=n):
+    #            for i in itertools.product(range(nocc), repeat=n-1):
+    #                sign = pow(-1, util.minimum_swaps(a) + util.minimum_swaps(i))
+    #                inds = tuple(a) + tuple(i)
+    #                ref = tuple(sorted(a)) + tuple(sorted(i))
+    #                excitation[inds] = excitation[ref] * sign
+
+    #        excitations.append(excitation)
+
+    #    for n in self.rank_numeric[1]:
+    #        raise NotImplementedError
+
+    #    for n in self.rank_numeric[2]:
+    #        raise NotImplementedError
+
+    #    return tuple(excitations)
+
     @property
     def xi(self):
         if self.shift:
@@ -106,7 +239,7 @@ class GEBCC(REBCC):
 
     @property
     def name(self):
-        return "GCC" + "-".join(self.rank)
+        return "GCC" + "-".join(self.rank).rstrip("-")
 
 
 

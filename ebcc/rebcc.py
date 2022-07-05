@@ -10,6 +10,7 @@ from typing import Tuple
 from types import SimpleNamespace
 import numpy as np
 from pyscf import lib, ao2mo
+from ebcc import util
 
 # TODO generalise dispatch of functions from self._eqns
 # TODO rename ranks from i.e. 0, 1, 2 -> "", "S", "SD"
@@ -652,25 +653,15 @@ class REBCC:
         with the equation-of-motion approach.
         """
 
-        def vector_to_amplitudes(v):
-            shapes = [d.shape for d in diag_parts]
-            parts = []
-            for shape in shapes:
-                size = np.prod(shape)
-                vp, v = v[:size].reshape(shape), v[size:]
-                parts.append(vp)
-            assert v.size == 0
-            return tuple(parts)
-
-        def amplitudes_to_vectors(*amps):
-            return np.concatenate([a.ravel() for a in amps], axis=0)
+        amplitudes_to_vector = self.excitations_to_vector_ip
+        vector_to_amplitudes = self.vector_to_excitations_ip
 
         diag_parts = self.hbar_diag_ip(eris=eris, amplitudes=amplitudes)
-        diag = amplitudes_to_vectors(*diag_parts)
+        diag = amplitudes_to_vector(*diag_parts)
 
         def matvec(v):
             r = self.hbar_matvec_ip(*vector_to_amplitudes(v), eris=eris, amplitudes=amplitudes)
-            return amplitudes_to_vectors(*r)
+            return amplitudes_to_vector(*r)
         matvecs = lambda vs: [matvec(v) for v in vs]
 
         def pick(w, v, nroots, envs):
@@ -707,24 +698,15 @@ class REBCC:
         """
         # TODO move to kernel function and combine with above
 
-        def vector_to_amplitudes(v):
-            shapes = [d.shape for d in diag_parts]
-            parts = []
-            for shape in shapes:
-                size = np.prod(shape)
-                vp, v = v[:size].reshape(shape), v[size:]
-                parts.append(vp)
-            return tuple(parts)
-
-        def amplitudes_to_vectors(*amps):
-            return np.concatenate([a.ravel() for a in amps], axis=0)
+        amplitudes_to_vector = self.excitations_to_vector_ea
+        vector_to_amplitudes = self.vector_to_excitations_ea
 
         diag_parts = self.hbar_diag_ea(eris=eris, amplitudes=amplitudes)
-        diag = amplitudes_to_vectors(*diag_parts)
+        diag = amplitudes_to_vector(*diag_parts)
 
         def matvec(v):
             r = self.hbar_matvec_ea(*vector_to_amplitudes(v), eris=eris, amplitudes=amplitudes)
-            return amplitudes_to_vectors(*r)
+            return amplitudes_to_vector(*r)
         matvecs = lambda vs: [matvec(v) for v in vs]
 
         def pick(w, v, nroots, envs):
@@ -926,6 +908,72 @@ class REBCC:
             i0 += size
 
         return lambdas
+
+    def excitations_to_vector_ip(self, *excitations):
+        """Construct a vector containing all of the excitation
+        amplitudes used in the given ansatz.
+        """
+
+        vectors = []
+        m = 0
+
+        for n in self.rank_numeric[0]:
+            vectors.append(excitations[m].ravel())
+            m += 1
+
+        for n in self.rank_numeric[1]:
+            raise NotImplementedError
+
+        for n in self.rank_numeric[2]:
+            raise NotImplementedError
+
+        return np.concatenate(vectors)
+
+    excitations_to_vector_ea = excitations_to_vector_ip
+
+    def vector_to_excitations_ip(self, vector):
+        """Construct all of the excitation amplitudes used in the
+        given ansatz from a vector.
+        """
+
+        excitations = []
+        i0 = 0
+
+        for n in self.rank_numeric[0]:
+            shape = (self.nocc,) * n + (self.nvir,) * (n-1)
+            size = np.prod(shape)
+            excitations.append(vector[i0:i0+size].reshape(shape))
+            i0 += size
+
+        for n in self.rank_numeric[1]:
+            raise NotImplementedError
+
+        for n in self.rank_numeric[2]:
+            raise NotImplementedError
+
+        return tuple(excitations)
+
+    def vector_to_excitations_ea(self, vector):
+        """Construct all of the excitation amplitudes used in the
+        given ansatz from a vector.
+        """
+
+        excitations = []
+        i0 = 0
+
+        for n in self.rank_numeric[0]:
+            shape = (self.nvir,) * n + (self.nocc,) * (n-1)
+            size = np.prod(shape)
+            excitations.append(vector[i0:i0+size].reshape(shape))
+            i0 += size
+
+        for n in self.rank_numeric[1]:
+            raise NotImplementedError
+
+        for n in self.rank_numeric[2]:
+            raise NotImplementedError
+
+        return tuple(excitations)
 
     @property
     def xi(self):
