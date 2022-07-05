@@ -72,44 +72,54 @@ def cache(func):
 
 # Default particle types:
 particles = {
+        # Fermionic hamiltonian elements:
         "f": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
         "v": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
+        # Bosonic hamiltonian elements:
         "G": ((codegen.SCALAR_BOSON, 0),),
         "w": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 1)),
+        # Fermion-boson coupling:
         "g": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
         "gc": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
+        # Amplitudes:
         "t1": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
         "t2": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
-        "l1": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
-        "l2": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
         "s1": ((codegen.SCALAR_BOSON, 0),),
         "s2": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0)),
+        "u11": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
+        # Lambda amplitudes:
+        "l1": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
+        "l2": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
         "ls1": ((codegen.SCALAR_BOSON, 0),),
         "ls2": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0)),
-        "u11": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
         "lu11": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
+        # Excitation operators:
         "r1": ((codegen.FERMION, 0),),
         "r2": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0)),
+        **{"r1_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 0),) for x in ["o", "v"]},
+        **{"r2_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)) for x in ["o", "v"]},
+        # Updates:
         "t1new": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
         "t2new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
-        "l1new": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
-        "l2new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
         "s1new": ((codegen.SCALAR_BOSON, 0),),
         "s2new": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0)),
+        "u11new": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
+        "l1new": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
+        "l2new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
         "ls1new": ((codegen.SCALAR_BOSON, 0),),
         "ls2new": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0)),
-        "u11new": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
         "lu11new": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
         "r1new": ((codegen.FERMION, 0),),
         "r2new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0)),
+        # Delta function:
         "delta": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
-        **{"r1_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 0),) for x in ["o", "v"]},
-        **{"r2_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)) for x in ["o", "v"]},
+        # Density matrices:
         **{"rdm1_f_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 0)) for x in ov_1e},
         **{"rdm2_f_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)) for x in ov_2e},
         "rdm1_b": ((codegen.BOSON, 0), (codegen.BOSON, 0)),
         **{"dm_b%s" % x: ((codegen.BOSON, 0),) for x in ("", "_cre", "_des")},
         **{"rdm_eb_%s_%s" % (x, y): ((codegen.BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)) for y in ov_1e for x in ("cre", "des")},
+        # Hbar elements:
         "h11": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
         "h22": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 2), (codegen.FERMION, 3), (codegen.FERMION, 2)),  # FIXME?
 }
@@ -133,6 +143,8 @@ def get_printer(spin):
             occupancy_tags={
                 "v": "{base}.{tags}",
                 "f": "{base}.{tags}",
+                "g": "{base}.{tags}",
+                "gc": "{base}.{tags}",
                 "delta": "delta_{tags}",
             },
             reorder_axes=reorder_axes,
@@ -151,7 +163,7 @@ def get_printer(spin):
 def get_transformation_function(spin):
     if spin == "rhf":
         transform_spin = lambda terms, indices, **kwargs: codegen.ghf_to_rhf(terms, indices, **kwargs)
-        prefix = ""
+        prefix = "r"
     elif spin == "uhf":
         transform_spin = lambda terms, indices, **kwargs: codegen.ghf_to_uhf(terms, indices, **kwargs)
         prefix = "u"
@@ -194,12 +206,13 @@ class FilePrinter:
 
 
 class FunctionPrinter:
-    def __init__(self, file_printer, name, args, res, remove_f_diagonal=False, timer=None):
+    def __init__(self, file_printer, name, args, res, remove_f_diagonal=False, return_dict=True, timer=None):
         self.file_printer = file_printer
         self.name = name
         self.args = args
         self.res = res
         self.remove_f_diagonal = remove_f_diagonal
+        self.return_dict = return_dict
         self.timer = timer
 
     def write_python(self, string, comment=None):
@@ -243,8 +256,11 @@ class FunctionPrinter:
         if rank != 0:
             return
         # Return from python function
-        res_dict = "{" + ", ".join(["\"%s\": %s" % (v, v) for v in self.res]) + "}"
-        self.write_python("    return %s\n" % res_dict)
+        if self.return_dict:
+            res = "{" + ", ".join(["\"%s\": %s" % (v, v) for v in self.res]) + "}"
+        else:
+            res = ", ".join(self.res)
+        self.write_python("    return %s\n" % res)
         if self.timer is not None:
             print("Time for %s: %.5f s" % (self.name, self.timer()))
 

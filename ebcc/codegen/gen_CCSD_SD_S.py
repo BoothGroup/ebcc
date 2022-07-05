@@ -3,6 +3,7 @@
 
 import sympy
 import drudge
+import warnings
 from fractions import Fraction
 from qwick.expression import AExpression
 from qwick.wick import apply_wick
@@ -15,44 +16,43 @@ from dummy_spark import SparkContext
 ctx = SparkContext()
 dr = drudge.Drudge(ctx)
 
+warnings.simplefilter("ignore", UserWarning)
+
+# Rank of fermion, boson, coupling operators:
+rank = ("SD", "S", "S")
+
+# Spin setting:
+spin = "rhf"  # {"ghf", "rhf", "uhf"}
+
 # Indices
 occs = i, j, k, l = [Idx(n, "occ") for n in range(4)]
 virs = a, b, c, d = [Idx(n, "vir") for n in range(4)]
 nms = w, x, y, z = [Idx(n, "nm") for n in range(4)]
+sizes = {"nocc": sympy.Symbol("N")*2, "nvir": sympy.Symbol("N")*4, "nbos": sympy.Symbol("N")}
 
 # Tensors
-H, _ = wick.get_hamiltonian(rank=(2, 2, 1))
-bras = bra1, bra2, bra1b, bra2b, bra1b1e = wick.get_bra_spaces(rank=(2, 2, 1), occs=occs, virs=virs, nms=nms)
-kets = ket1, ket2, ket1b, ket2b, ket1b1e = wick.get_ket_spaces(rank=(2, 2, 1), occs=occs, virs=virs, nms=nms)
-T, _ = wick.get_excitation_ansatz(rank=(2, 2, 1), occs=occs, virs=virs, nms=nms)
-L, _ = wick.get_deexcitation_ansatz(rank=(2, 2, 1), occs=occs, virs=virs, nms=nms)
-Hbars = wick.construct_hbar(H, T)
-Hbar = Hbars[-1]
+H, _ = wick.get_hamiltonian(rank=rank)
+bra = bra1, bra2 = wick.get_bra_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
+ket = ket1, ket2 = wick.get_ket_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
+braip = bra1ip, bra2ip = wick.get_bra_ip_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
+braea = bra1ea, bra2ea = wick.get_bra_ea_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
+ketip = ket1ip, ket2ip = wick.get_ket_ip_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
+ketea = ket1ea, ket2ea = wick.get_ket_ea_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
+rip = r1ip, r2ip = wick.get_r_ip_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
+rea = r1ea, r2ea = wick.get_r_ea_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
+T, _ = wick.get_excitation_ansatz(rank=rank, occs=occs, virs=virs, nms=nms)
+L, _ = wick.get_deexcitation_ansatz(rank=rank, occs=occs, virs=virs, nms=nms)
+Hbars = wick.construct_hbar(H, T, max_commutator=5)
+Hbar = Hbars[-2]
 
 # Printer
-printer = codegen.EinsumPrinter(
-        occupancy_tags={
-            "v": "{base}.{tags}",
-            "f": "{base}.{tags}",
-            "g": "{base}.{tags}",
-            "gc": "{base}.{tags}",
-            "delta": "delta_{tags}",
-        },
-        reorder_axes={
-            "v": (0, 2, 1, 3),
-            **{"rdm2_f_%s" % x: (0, 2, 1, 3) for x in common.ov_2e},
-            "l1new": (1, 0),
-            "l2new": (2, 3, 0, 1),
-            "lu11new": (0, 2, 1),
-        },
-        remove_spacing=True,
-        garbage_collection=True,
-        base_indent=1,
-        einsum="lib.einsum",
-        zeros="np.zeros",
-        dtype="np.float64",
-)
-sizes = {"nocc": sympy.Symbol("N")*2, "nvir": sympy.Symbol("N")*4, "nbos": sympy.Symbol("N")}
+printer = common.get_printer(spin)
+
+# Get prefix and spin transformation function according to setting:
+transform_spin, prefix = common.get_transformation_function(spin)
+
+# Declare particle types:
+particles = common.particles
 
 # Timer:
 timer = common.Stopwatch()
@@ -84,43 +84,7 @@ class FunctionPrinter(common.FunctionPrinter):
             )
         return self
 
-# Declare particle types:
-particles = {
-        "f": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
-        "v": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
-        "G": ((codegen.SCALAR_BOSON, 0),),
-        "w": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 1)),
-        "g": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
-        "gc": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
-        "t1": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
-        "t2": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
-        "l1": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
-        "l2": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
-        "s1": ((codegen.SCALAR_BOSON, 0),),
-        "s2": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0)),
-        "ls1": ((codegen.SCALAR_BOSON, 0),),
-        "ls2": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0)),
-        "u11": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
-        "lu11": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
-        "t1new": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
-        "t2new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
-        "l1new": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
-        "l2new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
-        "s1new": ((codegen.SCALAR_BOSON, 0),),
-        "s2new": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0)),
-        "ls1new": ((codegen.SCALAR_BOSON, 0),),
-        "ls2new": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0)),
-        "u11new": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
-        "lu11new": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
-        "delta": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
-        **{"rdm1_f_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 0)) for x in common.ov_1e},
-        **{"rdm2_f_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)) for x in common.ov_2e},
-        "rdm1_b": ((codegen.BOSON, 0), (codegen.BOSON, 0)),
-        **{"dm_b%s" % x: ((codegen.BOSON, 0),) for x in ("", "_cre", "_des")},
-        **{"rdm_eb_%s_%s" % (x, y): ((codegen.BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)) for y in common.ov_1e for x in ("cre", "des")},
-}
-
-with common.FilePrinter("ccsd_2_1") as file_printer:
+with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_"))) as file_printer:
     # Get energy expression:
     with FunctionPrinter(
             file_printer,
@@ -128,6 +92,7 @@ with common.FilePrinter("ccsd_2_1") as file_printer:
             ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11"],
             ["e_cc"],
             init_gc=False,
+            return_dict=False,
             timer=timer,
     ) as function_printer:
         out = apply_wick(Hbar)
@@ -136,9 +101,9 @@ with common.FilePrinter("ccsd_2_1") as file_printer:
         terms, indices = codegen.wick_to_sympy(expr, particles, return_value="e_cc")
         terms = codegen.ghf_to_rhf(terms, indices)
         terms = codegen.sympy_to_drudge(terms, indices, dr=dr)
-        function_printer.write_latex(terms.latex(), comment="CCSD-21 energy")
+        function_printer.write_latex(terms.latex(), comment="Energy")
         terms = codegen.optimize([terms], sizes=sizes, optimize="exhaust", verify=True, interm_fmt="x{}")
-        function_printer.write_python(printer.doprint(terms)+"\n", comment="CCSD-21 energy")
+        function_printer.write_python(printer.doprint(terms)+"\n", comment="Energy")
 
     # Get amplitudes function:
     with FunctionPrinter(
@@ -146,6 +111,7 @@ with common.FilePrinter("ccsd_2_1") as file_printer:
             "update_amps",
             ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11"],
             ["t1new", "t2new", "s1new", "s2new", "u11new"],
+            return_dict=False,
             timer=timer,
     ) as function_printer:
         # T1 residuals:
@@ -207,6 +173,7 @@ with common.FilePrinter("ccsd_2_1") as file_printer:
             "update_lams",
             ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11", "l1", "l2", "ls1", "ls2", "lu11"],
             ["l1new", "l2new", "ls1new", "ls2new", "lu11new"],
+            return_dict=False,
             timer=timer,
     ) as function_printer:
         # L1 residuals <0|Hbar|singles> (not proportional to lambda):
@@ -350,6 +317,7 @@ with common.FilePrinter("ccsd_2_1") as file_printer:
     #        "make_rdm1_f",
     #        ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11", "l1", "l2", "ls1", "ls2", "lu11"],
     #        ["rdm1_f"],
+    #        return_dict=False,
     #        timer=timer,
     #) as function_printer:
     #    i, a = Idx(0, "occ"), Idx(0, "vir")
@@ -392,6 +360,7 @@ with common.FilePrinter("ccsd_2_1") as file_printer:
     #        "make_rdm2_f",
     #        ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11", "l1", "l2", "ls1", "ls2", "lu11"],
     #        ["rdm2_f"],
+    #        return_dict=False,
     #        timer=timer,
     #) as function_printer:
     #    i, a = Idx(0, "occ"), Idx(0, "vir")
@@ -451,6 +420,7 @@ with common.FilePrinter("ccsd_2_1") as file_printer:
     #        "make_sing_b_dm",
     #        ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11", "l1", "l2", "ls1", "ls2", "lu11"],
     #        ["dm_b"],
+    #        return_dict=False,
     #        timer=timer,
     #) as function_printer:
     #    I = Idx(0, "nm", fermion=False)
@@ -490,6 +460,7 @@ with common.FilePrinter("ccsd_2_1") as file_printer:
     #        "make_rdm1_b",
     #        ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11", "l1", "l2", "ls1", "ls2", "lu11"],
     #        ["rdm1_b"],
+    #        return_dict=False,
     #        timer=timer,
     #) as function_printer:
     #    I = Idx(0, "nm", fermion=False)
@@ -519,6 +490,7 @@ with common.FilePrinter("ccsd_2_1") as file_printer:
     #        "make_eb_coup_rdm",
     #        ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11", "l1", "l2", "ls1", "ls2", "lu11"],
     #        ["rdm_eb"],
+    #        return_dict=False,
     #        timer=timer,
     #) as function_printer:
     #    I = Idx(0, "nm", fermion=False)

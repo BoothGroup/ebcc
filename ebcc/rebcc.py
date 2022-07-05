@@ -1,108 +1,131 @@
 """Restricted electron-boson coupled cluster.
 """
 
+import sys
+import logging
 import functools
-import numpy as np
+import importlib
+import dataclasses
 from typing import Tuple
 from types import SimpleNamespace
+import numpy as np
 from pyscf import lib, ao2mo
 
 # TODO generalise dispatch of functions from self._eqns
 # TODO rename ranks from i.e. 0, 1, 2 -> "", "S", "SD"
-# TODO interface to EOM solver
 # TODO interface to GF solver
-# TODO diagonal Hbar
 # TODO dd moments
-
-# NOTE CCSD HBar.v is off by a factor of 2 - not sure where?
 # NOTE CCSD-21 lambdas don't seem to work
 
 
-_supported_methods = {
-        (2, 0, 0): "CCSD",
-        (2, 1, 1): "CCSD-11",
-        (2, 2, 1): "CCSD-21",
-        (2, 2, 2): "CCSD-22",
-}
+@dataclasses.dataclass
+class Options:
+    """Options for EBCC calculations.
+    """
+
+    rank: Tuple[int] = ("SD", "", "")
+    omega: np.ndarray = None
+    g: np.ndarray = None
+    G: np.ndarray = None
+    shift: bool = True
+    e_tol: float = 1e-8
+    t_tol: float = 1e-8
+    max_iter: int = 200
+    diis_space: int = 20
 
 
-class EBCC:
+class REBCC:
+    Options = Options
+
     def __init__(
             self,
             mf,
-            rank: Tuple[int] = (2, 0, 0),
+            log: logging.Logger = None,
+            rank: Tuple[int] = ("SD", "", ""),
             omega: np.ndarray = None,
             g: np.ndarray = None,
             G: np.ndarray = None,
-            shift: bool = True,
-            opt_code: bool = False,
-            e_tol: float = 1e-8,
-            t_tol: float = 1e-8,
-            max_iter: int = 500,
-            diis_space: int = 12,
+            options: Options = None,
+            **kwargs,
     ):
-        self.mf = mf
-        if rank not in _supported_methods:
-            raise NotImplementedError
+        self.log = self._get_log(log)
+        self.mf = self._convert_mf(mf)
         self.rank = rank
+        self._eqns = self._get_eqns()
 
-        print("%s" % _supported_methods[self.rank])
-        print(" > Rank of fermionic cluster excitations: %d" % self.rank[0])
-        print(" > Rank of bosonic cluster excitations:   %d" % self.rank[1])
-        print(" > Rank of bosonic-1e cluster coupling:   %d" % self.rank[2])
+        self.log.info("%s", self.name)
+        self.log.info("%s", "*" * len(self.name))
+        self.log.info(" > Fermion rank:   %s", self.rank[0])
+        self.log.info(" > Boson rank:     %s", self.rank[1] if len(self.rank[1]) else None)
+        self.log.info(" > Coupling rank:  %s", self.rank[2] if len(self.rank[2]) else None)
 
-        # Cleanup - do we need all these states?
         self.omega = omega
         self.bare_G = G
-        self.shift = shift
 
-        self.e_tol = e_tol
-        self.t_tol = t_tol
-        self.max_iter = max_iter
-        self.diis_space = diis_space
+        if options is None:
+            options = self.Options()
+        self.options = options
+        for key, val in kwargs.items():
+            setattr(self.options, key, val)
 
-        self.amplitudes = None
         self.e_corr = None
+        self.amplitudes = None
         self.converged = False
-
         self.lambdas = None
         self.converged_lambda = False
 
-        if not (self.rank[1] == self.rank[2] == 0):
+        if not (self.rank[1] == self.rank[2] == ""):
             assert self.omega is not None
             assert g.shape == (self.nbos, self.nmo, self.nmo)
 
             self.g = self.get_g(g)
             self.G = self.get_mean_field_G()
 
-            if self.shift:
-                print(" > Energy shift due to polaritonic basis: %.10f" % self.const)
+            if self.options.shift:
+                self.log.info(" > Energy shift due to polaritonic basis:  %.10f", self.const)
         else:
             assert self.nbos == 0
-            self.shift = False
+            self.options.shift = False
             self.g = None
             self.G = None
 
-        print(" > Number of bosonic modes: %d" % self.nbos)
-        print(" > e_tol: %s" % self.e_tol)
-        print(" > t_tol: %s" % self.t_tol)
-        print(" > max_iter: %s" % self.max_iter)
-        print(" > diis_space: %s" % self.diis_space)
-
         self.fock = self.get_fock()
 
-        # TODO generalise:
-        if opt_code:
-            raise NotImplementedError
-        if self.rank == (2, 0, 0):
-            import ebcc.codegen.ccsd as _eqns
-        elif self.rank == (2, 1, 1):
-            import ebcc.codegen.ccsd_1_1 as _eqns
-        elif self.rank == (2, 2, 1):
-            import ebcc.codegen.ccsd_2_1 as _eqns
-        else:
-            raise NotImplementedError
-        self._eqns = _eqns
+        self.log.info(" > nmo:   %d", self.nmo)
+        self.log.info(" > nocc:  %d", self.nocc)
+        self.log.info(" > nvir:  %d", self.nvir)
+        self.log.info(" > nbos:  %d", self.nbos)
+        self.log.info(" > e_tol:  %s", self.options.e_tol)
+        self.log.info(" > t_tol:  %s", self.options.t_tol)
+        self.log.info(" > max_iter:  %s", self.options.max_iter)
+        self.log.info(" > diis_space:  %s", self.options.diis_space)
+
+    @staticmethod
+    def _get_log(log):
+        if log is None:
+            log = logging.getLogger(__name__)
+            log.setLevel(logging.INFO)
+            errh = logging.StreamHandler(sys.stderr)
+            log.addHandler(errh)
+
+        logging.addLevelName(25, "OUTPUT")
+
+        def output(self, msg, *args, **kwargs):
+            if self.isEnabledFor(25):
+                self._log(25, msg, args, **kwargs)
+
+        logging.Logger.output = output
+
+        return log
+
+    @staticmethod
+    def _convert_mf(mf):
+        return mf
+
+    def _get_eqns(self):
+        name = self.name.replace("-", "_")
+        eqns = importlib.import_module("ebcc.codegen.%s" % name)
+        return eqns
 
     def init_amps(self, eris=None):
         """Initialise amplitudes.
@@ -115,7 +138,7 @@ class EBCC:
         e_ia = lib.direct_sum("i-a->ia", self.eo, self.ev)
 
         # Build T amplitudes:
-        for n in range(1, self.rank[0]+1):
+        for n in self.rank_numeric[0]:
             if n == 1:
                 amplitudes["t%d" % n] = self.fock.vo.T / e_ia
             elif n == 2:
@@ -124,20 +147,20 @@ class EBCC:
             else:
                 amplitudes["t%d" % n] = np.zeros((self.nocc,) * n + (self.nvir,) * n)
 
-        if not (self.rank[1] == self.rank[2] == 0):
+        if not (self.rank[1] == self.rank[2] == ""):
             # Only true for real-valued couplings:
             h = self.g
             H = self.G
 
         # Build S amplitudes:
-        for n in range(1, self.rank[1]+1):
+        for n in self.rank_numeric[1]:
             if n == 1:
                 amplitudes["s%d" % n] = -H / self.omega
             else:
                 amplitudes["s%d" % n] = np.zeros((self.nbos,) * n)
 
         # Build U amplitudes:
-        for n in range(1, self.rank[2]+1):
+        for n in self.rank_numeric[2]:
             if n == 1:
                 e_xia = lib.direct_sum("ia-x->xia", e_ia, self.omega)
                 amplitudes["u1%d" % n] = h.bov / e_xia
@@ -156,17 +179,17 @@ class EBCC:
         lambdas = dict()
 
         # Build L amplitudes:
-        for n in range(1, self.rank[0]+1):
+        for n in self.rank_numeric[0]:
             perm = list(range(n, 2*n)) + list(range(n))
             lambdas["l%d" % n] = amplitudes["t%d" % n].transpose(perm)
 
         # Build LS amplitudes:
-        for n in range(1, self.rank[1]+1):
+        for n in self.rank_numeric[1]:
             # FIXME should these be transposed?
             lambdas["ls%d" % n] = amplitudes["s%d" % n]
 
         # Build LU amplitudes:
-        for n in range(1, self.rank[2]+1):
+        for n in self.rank_numeric[2]:
             perm = list(range(n)) + [n+1, n]
             lambdas["lu1%d" % n] = amplitudes["u1%d" % n].transpose(perm)
 
@@ -184,13 +207,13 @@ class EBCC:
         converged = False
 
         diis = lib.diis.DIIS()
-        diis.space = self.diis_space
+        diis.space = self.options.diis_space
 
-        print("Solving for excitation amplitudes.")
-        print("%4s %16s %16s %16s" % ("Iter", "Energy (corr.)", "Δ(Energy)", "Δ(Amplitudes)"))
-        print("%4d %16.10f" % (0, e_init))
+        self.log.output("Solving for excitation amplitudes.")
+        self.log.info("%4s %16s %16s %16s", "Iter", "Energy (corr.)", "Δ(Energy)", "Δ(Amplitudes)")
+        self.log.info("%4d %16.10f", 0, e_init)
 
-        for niter in range(1, self.max_iter+1):
+        for niter in range(1, self.options.max_iter+1):
             amplitudes_prev = amplitudes
             amplitudes = self.update_amps(amplitudes=amplitudes, eris=eris)
             vector = self.amplitudes_to_vector(amplitudes)
@@ -202,18 +225,21 @@ class EBCC:
             e_cc = self.energy(amplitudes=amplitudes, eris=eris)
             de = abs(e_prev - e_cc)
 
-            print("%4d %16.10f %16.5g %16.5g" % (niter, e_cc, de, dt))
+            self.log.info("%4d %16.10f %16.5g %16.5g", niter, e_cc, de, dt)
 
-            converged = de < self.e_tol and dt < self.t_tol
+            converged = de < self.options.e_tol and dt < self.options.t_tol
             if converged:
-                print("Converged.")
+                self.log.output("Converged.")
                 break
         else:
-            print("Failed to converge.")
+            self.log.warning("Failed to converge.")
 
         self.e_corr = e_cc
         self.amplitudes = amplitudes
         self.converged = converged
+
+        self.log.output("E(corr) = %.10f", self.e_corr)
+        self.log.output("E(tot)  = %.10f", self.e_tot)
 
         return e_cc
 
@@ -232,12 +258,12 @@ class EBCC:
         lambdas = self.init_lams(amplitudes=amplitudes)
 
         diis = lib.diis.DIIS()
-        diis.space = self.diis_space
+        diis.space = self.options.diis_space
 
-        print("Solving for de-excitation (lambda) amplitudes.")
-        print("%4s %16s" % ("Iter", "Δ(Amplitudes)"))
+        self.log.output("Solving for de-excitation (lambda) amplitudes.")
+        self.log.info("%4s %16s", "Iter", "Δ(Amplitudes)")
 
-        for niter in range(1, self.max_iter+1):
+        for niter in range(1, self.options.max_iter+1):
             lambdas_prev = lambdas
             lambdas = self.update_lams(amplitudes=amplitudes, lambdas=lambdas, eris=eris)
             vector = self.lambdas_to_vector(lambdas)
@@ -245,14 +271,14 @@ class EBCC:
             lambdas = self.vector_to_lambdas(vector)
             dl = np.linalg.norm(vector - self.lambdas_to_vector(lambdas_prev))**2
 
-            print("%4d %16.5g" % (niter, dl))
+            self.log.info("%4d %16.5g", niter, dl)
 
-            converged = dl < self.t_tol
+            converged = dl < self.options.t_tol
             if converged:
-                print("Converged.")
+                self.log.output("Converged.")
                 break
         else:
-            print("Failed to converge.")
+            self.log.warning("Failed to converge.")
 
         self.lambdas = lambdas
         self.converged_lambda = converged
@@ -333,9 +359,8 @@ class EBCC:
                 eris=eris,
                 amplitudes=amplitudes,
         )
-        res = func(**kwargs)
 
-        return res["e_cc"]
+        return func(**kwargs)
 
     def update_amps(self, eris=None, amplitudes=None):
         """Update the amplitudes.
@@ -352,7 +377,7 @@ class EBCC:
         e_ia = lib.direct_sum("i-a->ia", self.eo, self.ev)
 
         # Divide T amplitudes:
-        for n in range(1, self.rank[0]+1):
+        for n in self.rank_numeric[0]:
             perm = list(range(0, n*2, 2)) + list(range(1, n*2, 2))
             d = functools.reduce(np.add.outer, [e_ia] * n)
             d = d.transpose(perm)
@@ -360,13 +385,13 @@ class EBCC:
             res["t%d" % n] += amplitudes["t%d" % n]
 
         # Divide S amplitudes:
-        for n in range(1, self.rank[1]+1):
+        for n in self.rank_numeric[1]:
             d = functools.reduce(np.add.outer, ([-self.omega] * n))
             res["s%d" % n] /= d
             res["s%d" % n] += amplitudes["s%d" % n]
 
         # Divide U amplitudes:
-        for n in range(1, self.rank[2]+1):
+        for n in self.rank_numeric[2]:
             d = functools.reduce(np.add.outer, ([-self.omega] * n) + [e_ia])
             res["u1%d" % n] /= d
             res["u1%d" % n] += amplitudes["u1%d" % n]
@@ -389,7 +414,7 @@ class EBCC:
         e_ai = lib.direct_sum("i-a->ai", self.eo, self.ev)
 
         # Divide T amplitudes:
-        for n in range(1, self.rank[0]+1):
+        for n in self.rank_numeric[0]:
             perm = list(range(0, n*2, 2)) + list(range(1, n*2, 2))
             d = functools.reduce(np.add.outer, [e_ai] * n)
             d = d.transpose(perm)
@@ -397,13 +422,13 @@ class EBCC:
             res["l%d" % n] += lambdas["l%d" % n]
 
         # Divide S amplitudes:
-        for n in range(1, self.rank[1]+1):
+        for n in self.rank_numeric[1]:
             d = functools.reduce(np.add.outer, [-self.omega] * n)
             res["ls%d" % n] /= d
             res["ls%d" % n] += lambdas["ls%d" % n]
 
         # Divide U amplitudes:
-        for n in range(1, self.rank[2]+1):
+        for n in self.rank_numeric[2]:
             d = functools.reduce(np.add.outer, ([-self.omega] * n) + [e_ai])
             res["lu1%d" % n] /= d
             res["lu1%d" % n] += lambdas["lu1%d" % n]
@@ -420,9 +445,8 @@ class EBCC:
                 amplitudes=amplitudes,
                 lambdas=lambdas,
         )
-        res = func(**kwargs)
 
-        return res["dm_b"]
+        return func(**kwargs)
 
     def make_rdm1_b(self, eris=None, amplitudes=None, lambdas=None):
         """Build the bosonic 1RDM <b† b>.
@@ -434,9 +458,8 @@ class EBCC:
                 amplitudes=amplitudes,
                 lambdas=lambdas,
         )
-        res = func(**kwargs)
 
-        return res["rdm1_b"]
+        return func(**kwargs)
 
     def make_rdm1_f(self, eris=None, amplitudes=None, lambdas=None):
         """Build the fermionic 1RDM.
@@ -448,9 +471,8 @@ class EBCC:
                 amplitudes=amplitudes,
                 lambdas=lambdas,
         )
-        res = func(**kwargs)
 
-        return res["rdm1_f"]
+        return func(**kwargs)
 
     def make_rdm2_f(self, eris=None, amplitudes=None, lambdas=None):
         """Build the fermionic 2RDM.
@@ -462,9 +484,8 @@ class EBCC:
                 amplitudes=amplitudes,
                 lambdas=lambdas,
         )
-        res = func(**kwargs)
 
-        return res["rdm2_f"]
+        return func(**kwargs)
 
     def make_eb_coup_rdm(self, eris=None, amplitudes=None, lambdas=None):
         """Build the electron-boson coupling RDMs <b† i† j> and <b i† j>.
@@ -476,9 +497,8 @@ class EBCC:
                 amplitudes=amplitudes,
                 lambdas=lambdas,
         )
-        res = func(**kwargs)
 
-        return res["rdm_eb"]
+        return func(**kwargs)
 
     def hbar_matvec_ip(self, r1, r2, eris=None, amplitudes=None):
         """Compute the product between a state vector and the EOM
@@ -492,9 +512,8 @@ class EBCC:
                 r1=r1,
                 r2=r2,
         )
-        res = func(**kwargs)
 
-        return res["r1new"], res["r2new"]  # FIXME generalise
+        return func(**kwargs)
 
     def hbar_matvec_ea(self, r1, r2, eris=None, amplitudes=None):
         """Compute the product between a state vector and the EOM
@@ -508,9 +527,8 @@ class EBCC:
                 r1=r1,
                 r2=r2,
         )
-        res = func(**kwargs)
 
-        return res["r1new"], res["r2new"]  # FIXME generalise
+        return func(**kwargs)
 
     def hbar_matvec_dd(self, r1, r2, eris=None, amplitudes=None):
         """Compute the product between a state vector and the EOM
@@ -528,9 +546,8 @@ class EBCC:
                 eris=eris,
                 amplitudes=amplitudes,
         )
-        res = func(**kwargs)
 
-        return res["r1"], res["r2"]  # FIXME generalise
+        return func(**kwargs)
 
     def hbar_diag_ea(self, eris=None, amplitudes=None):
         """Compute the diagonal of the EOM Hamiltonian for the EA.
@@ -541,9 +558,8 @@ class EBCC:
                 eris=eris,
                 amplitudes=amplitudes,
         )
-        res = func(**kwargs)
 
-        return res["r1"], res["r2"]  # FIXME generalise
+        return func(**kwargs)
 
     def hbar_diag_dd(self, eris=None, amplitudes=None):
         """Compute the of the EOM Hamiltonian for the DD.
@@ -561,9 +577,8 @@ class EBCC:
                 amplitudes=amplitudes,
                 lambdas=lambdas,
         )
-        res = func(**kwargs)
 
-        return res["r1"], res["r2"]  # FIXME generalise
+        return func(**kwargs)
 
     def make_ea_mom_bras(self, eris=None, amplitudes=None, lambdas=None):
         """Get the bra EA vectors to construct EOM moments.
@@ -575,9 +590,8 @@ class EBCC:
                 amplitudes=amplitudes,
                 lambdas=lambdas,
         )
-        res = func(**kwargs)
 
-        return res["r1"], res["r2"]  # FIXME generalise
+        return func(**kwargs)
 
     def make_dd_mom_bras(self, eris=None, amplitudes=None, lambdas=None):
         """Get the bra DD vectors to construct EOM moments.
@@ -595,9 +609,8 @@ class EBCC:
                 amplitudes=amplitudes,
                 lambdas=lambdas,
         )
-        res = func(**kwargs)
 
-        return res["r1"], res["r2"]  # FIXME generalise
+        return func(**kwargs)
 
     def make_ea_mom_kets(self, eris=None, amplitudes=None, lambdas=None):
         """Get the ket IP vectors to construct EOM moments.
@@ -609,9 +622,8 @@ class EBCC:
                 amplitudes=amplitudes,
                 lambdas=lambdas,
         )
-        res = func(**kwargs)
 
-        return res["r1"], res["r2"]  # FIXME generalise
+        return func(**kwargs)
 
     def make_dd_mom_kets(self, eris=None, amplitudes=None, lambdas=None):
         """Get the ket DD vectors to construct EOM moments.
@@ -661,10 +673,6 @@ class EBCC:
             return amplitudes_to_vectors(*r)
         matvecs = lambda vs: [matvec(v) for v in vs]
 
-        h = np.array(matvecs(np.eye(diag.size)))
-        h[np.abs(h) < 1e-8] = 0
-        np.savetxt("h1.tmp", h, fmt="%10.6f")
-
         def pick(w, v, nroots, envs):
             w, v, idx = lib.linalg_helper.pick_real_eigs(w, v, nroots, envs)
             mask = w > 0  # FIXME
@@ -683,10 +691,10 @@ class EBCC:
                 matvecs,
                 guesses,
                 diag,
-                tol=self.e_tol,
+                tol=self.options.e_tol,
                 nroots=nroots,
                 pick=pick,
-                max_cycle=self.max_iter,
+                max_cycle=self.options.max_iter,
                 max_space=12,
                 verbose=0,
         )
@@ -722,7 +730,8 @@ class EBCC:
         def pick(w, v, nroots, envs):
             w, v, idx = lib.linalg_helper.pick_real_eigs(w, v, nroots, envs)
             mask = w > 0  # FIXME
-            w, v = w[mask], v[:, mask]
+            if np.any(mask):
+                w, v = w[mask], v[:, mask]
             mask = np.argsort(w)
             w, v = w[mask], v[:, mask]
             return w, v, 0
@@ -737,10 +746,10 @@ class EBCC:
                 matvecs,
                 guesses,
                 diag,
-                tol=self.e_tol,
+                tol=self.options.e_tol,
                 nroots=nroots,
                 pick=pick,
-                max_cycle=self.max_iter,
+                max_cycle=self.options.max_iter,
                 max_space=12,
                 verbose=0,
         )
@@ -791,7 +800,7 @@ class EBCC:
         vo = fock[self.nocc:, :self.nocc]
         vv = fock[self.nocc:, self.nocc:]
 
-        if self.shift:
+        if self.options.shift:
             xi = self.xi
             oo -= lib.einsum("I,Iij->ij", xi, self.g.boo + self.g.boo.transpose(0, 2, 1))
             ov -= lib.einsum("I,Iia->ia", xi, self.g.bov + self.g.bvo.transpose(0, 2, 1))
@@ -833,13 +842,13 @@ class EBCC:
 
         vectors = []
 
-        for n in range(1, self.rank[0]+1):
+        for n in self.rank_numeric[0]:
             vectors.append(amplitudes["t%d" % n].ravel())
 
-        for n in range(1, self.rank[1]+1):
+        for n in self.rank_numeric[1]:
             vectors.append(amplitudes["s%d" % n].ravel())
 
-        for n in range(1, self.rank[2]+1):
+        for n in self.rank_numeric[2]:
             vectors.append(amplitudes["u1%d" % n].ravel())
 
         return np.concatenate(vectors)
@@ -852,19 +861,19 @@ class EBCC:
         amplitudes = {}
         i0 = 0
 
-        for n in range(1, self.rank[0]+1):
+        for n in self.rank_numeric[0]:
             shape = (self.nocc,) * n + (self.nvir,) * n
             size = np.prod(shape)
             amplitudes["t%d" % n] = vector[i0:i0+size].reshape(shape)
             i0 += size
 
-        for n in range(1, self.rank[1]+1):
+        for n in self.rank_numeric[1]:
             shape = (self.nbos,) * n
             size = np.prod(shape)
             amplitudes["s%d" % n] = vector[i0:i0+size].reshape(shape)
             i0 += size
 
-        for n in range(1, self.rank[2]+1):
+        for n in self.rank_numeric[2]:
             shape = (self.nbos,) * n + (self.nocc, self.nvir)
             size = np.prod(shape)
             amplitudes["u1%d" % n] = vector[i0:i0+size].reshape(shape)
@@ -879,13 +888,13 @@ class EBCC:
 
         vectors = []
 
-        for n in range(1, self.rank[0]+1):
+        for n in self.rank_numeric[0]:
             vectors.append(lambdas["l%d" % n].ravel())
 
-        for n in range(1, self.rank[1]+1):
+        for n in self.rank_numeric[1]:
             vectors.append(lambdas["ls%d" % n].ravel())
 
-        for n in range(1, self.rank[2]+1):
+        for n in self.rank_numeric[2]:
             vectors.append(lambdas["lu1%d" % n].ravel())
 
         return np.concatenate(vectors)
@@ -898,19 +907,19 @@ class EBCC:
         lambdas = {}
         i0 = 0
 
-        for n in range(1, self.rank[0]+1):
+        for n in self.rank_numeric[0]:
             shape = (self.nvir,) * n + (self.nocc,) * n
             size = np.prod(shape)
             lambdas["l%d" % n] = vector[i0:i0+size].reshape(shape)
             i0 += size
 
-        for n in range(1, self.rank[1]+1):
+        for n in self.rank_numeric[1]:
             shape = (self.nbos,) * n
             size = np.prod(shape)
             lambdas["ls%d" % n] = vector[i0:i0+size].reshape(shape)
             i0 += size
 
-        for n in range(1, self.rank[2]+1):
+        for n in self.rank_numeric[2]:
             shape = (self.nbos,) * n + (self.nvir, self.nocc)
             size = np.prod(shape)
             lambdas["lu1%d" % n] = vector[i0:i0+size].reshape(shape)
@@ -920,7 +929,7 @@ class EBCC:
 
     @property
     def xi(self):
-        if self.shift:
+        if self.options.shift:
             xi = lib.einsum("Iii->I", self.g.boo) * 2.0
             xi /= self.omega
             if self.bare_G is not None:
@@ -931,10 +940,19 @@ class EBCC:
 
     @property
     def const(self):
-        if self.shift:
+        if self.options.shift:
             return lib.einsum("I,I->", self.omega, self.xi**2)
         else:
             return 0.0
+
+    @property
+    def name(self):
+        return "RCC" + "-".join(self.rank).rstrip("-")
+
+    @property
+    def rank_numeric(self):
+        values = {"S": 1, "D": 2, "T": 3, "Q": 4}
+        return tuple(tuple(values[i] for i in j) for j in self.rank)
 
     @property
     def nmo(self):
@@ -1007,7 +1025,7 @@ if __name__ == "__main__":
     ccsd_ref.kernel()
     ccsd_ref.solve_lambda()
 
-    #ccsd = EBCC(mf, rank=(2, 0, 0))
+    #ccsd = REBCC(mf, rank=(2, 0, 0))
     #ccsd.kernel()
     #ccsd.solve_lambda()
 
@@ -1038,7 +1056,7 @@ if __name__ == "__main__":
     omega = np.random.random((nbos)) * 0.5
 
     np.set_printoptions(edgeitems=1000, linewidth=1000, precision=8)
-    ccsd = EBCC(mf, rank=(2, 1, 1), omega=omega, g=g)
+    ccsd = REBCC(mf, rank=(2, 1, 1), omega=omega, g=g)
     ccsd.kernel()
     ccsd.solve_lambda()
 
