@@ -10,7 +10,7 @@ from pyscf import gto, scf, cc, lib
 from ebcc import util, GEBCC
 
 
-class GCCSDTests(unittest.TestCase):
+class GCCSD_Tests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         mol = gto.Mole()

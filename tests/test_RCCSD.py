@@ -10,7 +10,7 @@ from pyscf import gto, scf, cc, lib
 from ebcc import util, REBCC
 
 
-class RCCSDTests(unittest.TestCase):
+class RCCSD_Tests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -31,8 +31,8 @@ class RCCSDTests(unittest.TestCase):
         ccsd_ref.solve_lambda()
 
         ccsd = REBCC(mf, rank=("SD", "", ""), log=util.NullLogger())
-        ccsd.e_tol = 1e-12
-        ccsd.t_tol = 1e-12
+        ccsd.options.e_tol = 1e-12
+        ccsd.options.t_tol = 1e-12
         eris = ccsd.get_eris()
         ccsd.kernel(eris=eris)
         ccsd.solve_lambda(eris=eris)

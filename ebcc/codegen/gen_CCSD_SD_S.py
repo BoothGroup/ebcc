@@ -19,7 +19,7 @@ dr = drudge.Drudge(ctx)
 warnings.simplefilter("ignore", UserWarning)
 
 # Rank of fermion, boson, coupling operators:
-rank = ("SD", "S", "S")
+rank = ("SD", "SD", "S")
 
 # Spin setting:
 spin = "rhf"  # {"ghf", "rhf", "uhf"}
@@ -27,19 +27,19 @@ spin = "rhf"  # {"ghf", "rhf", "uhf"}
 # Indices
 occs = i, j, k, l = [Idx(n, "occ") for n in range(4)]
 virs = a, b, c, d = [Idx(n, "vir") for n in range(4)]
-nms = w, x, y, z = [Idx(n, "nm") for n in range(4)]
+nms = w, x, y, z = [Idx(n, "nm", fermion=False) for n in range(4)]
 sizes = {"nocc": sympy.Symbol("N")*2, "nvir": sympy.Symbol("N")*4, "nbos": sympy.Symbol("N")}
 
 # Tensors
 H, _ = wick.get_hamiltonian(rank=rank)
-bra = bra1, bra2 = wick.get_bra_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
-ket = ket1, ket2 = wick.get_ket_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
-braip = bra1ip, bra2ip = wick.get_bra_ip_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
-braea = bra1ea, bra2ea = wick.get_bra_ea_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
-ketip = ket1ip, ket2ip = wick.get_ket_ip_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
-ketea = ket1ea, ket2ea = wick.get_ket_ea_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
-rip = r1ip, r2ip = wick.get_r_ip_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
-rea = r1ea, r2ea = wick.get_r_ea_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
+bra = bra1, bra2, bra1b, bra2b, bra1b1e = wick.get_bra_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
+ket = ket1, ket2, ket1b, ket2b, ket1b1e = wick.get_ket_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
+#braip = bra1ip, bra2ip = wick.get_bra_ip_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
+#braea = bra1ea, bra2ea = wick.get_bra_ea_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
+#ketip = ket1ip, ket2ip = wick.get_ket_ip_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
+#ketea = ket1ea, ket2ea = wick.get_ket_ea_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
+#rip = r1ip, r2ip = wick.get_r_ip_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
+#rea = r1ea, r2ea = wick.get_r_ea_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
 T, _ = wick.get_excitation_ansatz(rank=rank, occs=occs, virs=virs, nms=nms)
 L, _ = wick.get_deexcitation_ansatz(rank=rank, occs=occs, virs=virs, nms=nms)
 Hbars = wick.construct_hbar(H, T, max_commutator=5)

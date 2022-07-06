@@ -32,7 +32,7 @@ class Options:
     e_tol: float = 1e-8
     t_tol: float = 1e-8
     max_iter: int = 200
-    diis_space: int = 20
+    diis_space: int = 12
 
 
 class REBCC:
@@ -1073,7 +1073,7 @@ if __name__ == "__main__":
     ccsd_ref.kernel()
     ccsd_ref.solve_lambda()
 
-    #ccsd = REBCC(mf, rank=(2, 0, 0))
+    #ccsd = REBCC(mf, rank=("SD", "", ""))
     #ccsd.kernel()
     #ccsd.solve_lambda()
 
@@ -1104,7 +1104,7 @@ if __name__ == "__main__":
     omega = np.random.random((nbos)) * 0.5
 
     np.set_printoptions(edgeitems=1000, linewidth=1000, precision=8)
-    ccsd = REBCC(mf, rank=(2, 1, 1), omega=omega, g=g)
+    ccsd = REBCC(mf, rank=("SD", "S", "S"), omega=omega, g=g)
     ccsd.kernel()
     ccsd.solve_lambda()
 
