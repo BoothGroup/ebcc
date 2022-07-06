@@ -49,7 +49,7 @@ class REBCC:
             options: Options = None,
             **kwargs,
     ):
-        self.log = self._get_log(log)
+        self.log = util.default_log if log is None else log
         self.mf = self._convert_mf(mf)
         self.rank = rank
         self._eqns = self._get_eqns()
@@ -100,24 +100,6 @@ class REBCC:
         self.log.info(" > t_tol:  %s", self.options.t_tol)
         self.log.info(" > max_iter:  %s", self.options.max_iter)
         self.log.info(" > diis_space:  %s", self.options.diis_space)
-
-    @staticmethod
-    def _get_log(log):
-        if log is None:
-            log = logging.getLogger(__name__)
-            log.setLevel(logging.INFO)
-            errh = logging.StreamHandler(sys.stderr)
-            log.addHandler(errh)
-
-        logging.addLevelName(25, "OUTPUT")
-
-        def output(self, msg, *args, **kwargs):
-            if self.isEnabledFor(25):
-                self._log(25, msg, args, **kwargs)
-
-        logging.Logger.output = output
-
-        return log
 
     @staticmethod
     def _convert_mf(mf):
