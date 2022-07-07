@@ -22,12 +22,12 @@ warnings.simplefilter("ignore", UserWarning)
 rank = ("SD", "S", "S")
 
 # Spin setting:
-spin = "rhf"  # {"ghf", "rhf", "uhf"}
+spin = "ghf"  # {"ghf", "rhf", "uhf"}
 
 # Indices
 occs = i, j, k, l = [Idx(n, "occ") for n in range(4)]
 virs = a, b, c, d = [Idx(n, "vir") for n in range(4)]
-nms = x, y = [Idx(n, "nm") for n in range(2)]
+nms = x, y = [Idx(n, "nm", fermion=False) for n in range(2)]
 sizes = {"nocc": sympy.Symbol("N")*2, "nvir": sympy.Symbol("N")*4, "nbos": sympy.Symbol("N")}
 
 # Tensors

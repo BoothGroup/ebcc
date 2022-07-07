@@ -228,7 +228,7 @@ class GEBCC(REBCC):
 
     @property
     def xi(self):
-        if self.shift:
+        if self.options.shift:
             xi = lib.einsum("Iii->I", self.g.boo)
             xi /= self.omega
             if self.bare_G is not None:

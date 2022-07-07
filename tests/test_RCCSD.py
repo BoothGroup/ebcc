@@ -37,11 +37,11 @@ class RCCSD_Tests(unittest.TestCase):
         ccsd.kernel(eris=eris)
         ccsd.solve_lambda(eris=eris)
 
-        cls.mol, cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris = mol, mf, ccsd_ref, ccsd, eris
+        cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris = mf, ccsd_ref, ccsd, eris
 
     @classmethod
     def tearDownClass(cls):
-        del cls.mol, cls.mf, cls.ccsd_ref, cls.ccsd
+        del cls.mf, cls.ccsd_ref, cls.ccsd
 
     def test_energy(self):
         a = self.ccsd_ref.e_tot

@@ -24,10 +24,6 @@ class Options:
     """Options for EBCC calculations.
     """
 
-    rank: Tuple[int] = ("SD", "", "")
-    omega: np.ndarray = None
-    g: np.ndarray = None
-    G: np.ndarray = None
     shift: bool = True
     e_tol: float = 1e-8
     t_tol: float = 1e-8
@@ -49,6 +45,12 @@ class REBCC:
             options: Options = None,
             **kwargs,
     ):
+        if options is None:
+            options = self.Options()
+        self.options = options
+        for key, val in kwargs.items():
+            setattr(self.options, key, val)
+
         self.log = util.default_log if log is None else log
         self.mf = self._convert_mf(mf)
         self.rank = rank
@@ -63,12 +65,6 @@ class REBCC:
         self.omega = omega
         self.bare_G = G
 
-        if options is None:
-            options = self.Options()
-        self.options = options
-        for key, val in kwargs.items():
-            setattr(self.options, key, val)
-
         self.e_corr = None
         self.amplitudes = None
         self.converged = False
@@ -76,9 +72,6 @@ class REBCC:
         self.converged_lambda = False
 
         if not (self.rank[1] == self.rank[2] == ""):
-            assert self.omega is not None
-            assert g.shape == (self.nbos, self.nmo, self.nmo)
-
             self.g = self.get_g(g)
             self.G = self.get_mean_field_G()
 
@@ -103,7 +96,7 @@ class REBCC:
 
     @staticmethod
     def _convert_mf(mf):
-        return mf
+        return mf.to_rhf()
 
     def _get_eqns(self):
         name = self.name.replace("-", "_")
@@ -431,7 +424,7 @@ class REBCC:
 
         return func(**kwargs)
 
-    def make_rdm1_b(self, eris=None, amplitudes=None, lambdas=None):
+    def make_rdm1_b(self, eris=None, amplitudes=None, lambdas=None, unshifted=True):
         """Build the bosonic 1RDM <b† b>.
         """
 
@@ -441,6 +434,14 @@ class REBCC:
                 amplitudes=amplitudes,
                 lambdas=lambdas,
         )
+
+        res = func(**kwargs)
+
+        if unshifted and self.options.shift:
+            dm_cre, dm_ann = self.make_sing_b_dm()
+            xi = self.xi
+            for i in range(self.nbos):
+                res[i, i] -= xi[i] * (dm_cre[i] + dm_ann[i]) + xi[i]**2
 
         return func(**kwargs)
 
@@ -753,8 +754,7 @@ class REBCC:
 
     def get_fock(self):
         """Get blocks of the Fock matrix, shifted due to bosons where
-        the ansatz requires. The diagonal of the bare Fock matrix is
-        subtracted.
+        the ansatz requires.
         """
 
         fock = self.bare_fock
@@ -1086,9 +1086,10 @@ if __name__ == "__main__":
     omega = np.random.random((nbos)) * 0.5
 
     np.set_printoptions(edgeitems=1000, linewidth=1000, precision=8)
-    ccsd = REBCC(mf, rank=("SD", "S", "S"), omega=omega, g=g)
+    ccsd = REBCC(mf, rank=("SD", "S", "S"), omega=omega, g=g, shift=False)
     ccsd.kernel()
     ccsd.solve_lambda()
+    np.savetxt("tmp2.dat", ccsd.make_rdm1_b())
 
     #amps = ccsd.init_amps()
     #amps = ccsd.update_amps(amplitudes=amps)
