@@ -4,6 +4,7 @@
 import functools
 import itertools
 import numpy as np
+import scipy.linalg
 from typing import Tuple
 from types import SimpleNamespace
 from pyscf import lib, ao2mo
