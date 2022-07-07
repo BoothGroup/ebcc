@@ -24,7 +24,7 @@ class RCCSD_S_S_Tests(unittest.TestCase):
         with open(path, "rb") as f:
             data = pickle.load(f)
             mo_coeff = data["mo_coeff"]
-            data = data[(2, 1, 1)]
+            data = data[(2, 2, 1)]
 
         mol = gto.Mole()
         mol.atom = "H 0 0 0; F 0 0 1.1"
@@ -44,7 +44,7 @@ class RCCSD_S_S_Tests(unittest.TestCase):
         g = 0.5 * (g + g.transpose(0, 2, 1).conj())
         omega = np.random.random((nbos,)) * 5.0
 
-        ccsd = REBCC(mf, rank=("SD", "S", "S"), g=g, omega=omega, shift=cls.shift, log=util.NullLogger())
+        ccsd = REBCC(mf, rank=("SD", "SD", "S"), g=g, omega=omega, shift=cls.shift, log=util.NullLogger())
         ccsd.options.e_tol = 1e-12
         ccsd.options.t_tol = 1e-12
         eris = ccsd.get_eris()

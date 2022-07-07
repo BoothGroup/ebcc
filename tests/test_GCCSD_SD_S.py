@@ -1,9 +1,8 @@
-"""Tests for the RCCSD-S-S model.
+"""Tests for the GCCSD-S-S model.
 """
 
 import unittest
 import pytest
-import itertools
 import pickle
 import os
 
@@ -12,10 +11,10 @@ import scipy.linalg
 
 from pyscf import gto, scf, cc, lib
 
-from ebcc import util, REBCC
+from ebcc import util, GEBCC
 
 
-class RCCSD_S_S_Tests(unittest.TestCase):
+class GCCSD_SD_S_Tests(unittest.TestCase):
     shift = True
 
     @classmethod
@@ -24,7 +23,7 @@ class RCCSD_S_S_Tests(unittest.TestCase):
         with open(path, "rb") as f:
             data = pickle.load(f)
             mo_coeff = data["mo_coeff"]
-            data = data[(2, 1, 1)]
+            data = data[(2, 2, 1)]
 
         mol = gto.Mole()
         mol.atom = "H 0 0 0; F 0 0 1.1"
@@ -40,28 +39,27 @@ class RCCSD_S_S_Tests(unittest.TestCase):
         nmo = mf.mo_occ.size
         nbos = 5
         np.random.seed(12345)
-        g = np.random.random((nbos, nmo, nmo)) * 0.02
-        g = 0.5 * (g + g.transpose(0, 2, 1).conj())
+        g_ = np.random.random((nbos, nmo, nmo)) * 0.02
+        g_ = 0.5 * (g_ + g_.transpose(0, 2, 1).conj())
         omega = np.random.random((nbos,)) * 5.0
 
-        ccsd = REBCC(mf, rank=("SD", "S", "S"), g=g, omega=omega, shift=cls.shift, log=util.NullLogger())
+        orbspin = scf.addons.get_ghf_orbspin(mf.mo_energy, mf.mo_occ, True)
+        g = np.zeros((nbos, nmo*2, nmo*2))
+        g[np.ix_(range(nbos), orbspin==0, orbspin==0)] = g_
+        g[np.ix_(range(nbos), orbspin==1, orbspin==1)] = g_
+
+        ccsd = GEBCC(mf, rank=("SD", "SD", "S"), g=g, omega=omega, shift=cls.shift, log=util.NullLogger())
         ccsd.options.e_tol = 1e-12
         ccsd.options.t_tol = 1e-12
         eris = ccsd.get_eris()
         ccsd.kernel(eris=eris)
         ccsd.solve_lambda(eris=eris)
 
-        osort = list(itertools.chain(*zip(range(ccsd.nocc), range(ccsd.nocc, 2*ccsd.nocc))))
-        vsort = list(itertools.chain(*zip(range(ccsd.nvir), range(ccsd.nvir, 2*ccsd.nvir))))
-        fsort = osort + [x+(2*ccsd.nocc) for x in vsort]
-
         cls.mf, cls.ccsd, cls.eris, cls.data = mf, ccsd, eris, data
-        cls.osort, cls.vsort, cls.fsort = osort, vsort, fsort
 
     @classmethod
     def tearDownClass(cls):
         del cls.mf, cls.ccsd, cls.eris, cls.data
-        del cls.osort, cls.vsort
 
     def test_const(self):
         a = self.data[self.shift]["const"]
@@ -73,6 +71,18 @@ class RCCSD_S_S_Tests(unittest.TestCase):
         b = self.ccsd.xi
         np.testing.assert_almost_equal(a, b, 7)
 
+    def test_fock(self):
+        for tag in ("oo", "ov", "vo", "vv"):
+            a = self.data[self.shift]["f"+tag]
+            b = getattr(self.ccsd.fock, tag)
+            np.testing.assert_almost_equal(a, b, 7)
+
+    def test_g(self):
+        for tag in ("oo", "ov", "vo", "vv"):
+            a = self.data[self.shift]["gb"+tag]
+            b = getattr(self.ccsd.g, "b"+tag)
+            np.testing.assert_almost_equal(a, b, 7)
+
     def test_energy(self):
         a = self.data[self.shift]["e_corr"]
         b = self.ccsd.e_corr
@@ -80,7 +90,12 @@ class RCCSD_S_S_Tests(unittest.TestCase):
 
     def test_t1_amplitudes(self):
         a = self.data[self.shift]["t1"]
-        b = scipy.linalg.block_diag(self.ccsd.t1, self.ccsd.t1)[self.osort][:, self.vsort]
+        b = self.ccsd.t1
+        np.testing.assert_almost_equal(a, b, 6)
+
+    def test_t2_amplitudes(self):
+        a = self.data[self.shift]["t2"]
+        b = self.ccsd.t2
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_s1_amplitudes(self):
@@ -90,13 +105,12 @@ class RCCSD_S_S_Tests(unittest.TestCase):
 
     def test_u11_amplitudes(self):
         a = self.data[self.shift]["u11"]
-        b = np.array([scipy.linalg.block_diag(x, x) for x in self.ccsd.amplitudes["u11"]])
-        b = b[:, self.osort][:, :, self.vsort]
+        b = self.ccsd.amplitudes["u11"]
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_l1_amplitudes(self):
         a = self.data[self.shift]["l1"]
-        b = scipy.linalg.block_diag(self.ccsd.l1, self.ccsd.l1)[self.vsort][:, self.osort]
+        b = self.ccsd.l1
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_ls1_amplitudes(self):
@@ -106,16 +120,12 @@ class RCCSD_S_S_Tests(unittest.TestCase):
 
     def test_lu11_amplitudes(self):
         a = self.data[self.shift]["lu11"]
-        b = np.array([scipy.linalg.block_diag(x, x) for x in self.ccsd.lambdas["lu11"]])
-        b = b[:, self.vsort][:, :, self.osort]
+        b = self.ccsd.lambdas["lu11"]
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_rdm1_f(self):
-        rdm1_f = self.ccsd.make_rdm1_f()
-        rdm1_f = 0.5 * (rdm1_f + rdm1_f.T.conj())
         a = self.data[self.shift]["rdm1_f"]
-        b = scipy.linalg.block_diag(rdm1_f, rdm1_f) / 2
-        b = b[self.fsort][:, self.fsort]
+        b = self.ccsd.make_rdm1_f()
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_rdm1_b(self):
@@ -129,17 +139,16 @@ class RCCSD_S_S_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_rdm_eb(self):
-        a = np.array(self.data[self.shift]["rdm_eb"])
-        b = np.array([[scipy.linalg.block_diag(x, x) for x in y] for y in self.ccsd.make_eb_coup_rdm()])
-        b = b[:, :, self.fsort][:, :, :, self.fsort]
+        a = self.data[self.shift]["rdm_eb"]
+        b = self.ccsd.make_eb_coup_rdm()
         np.testing.assert_almost_equal(a, b, 6)
 
 
-class RCCSD_S_S_NoShift_Tests(RCCSD_S_S_Tests):
+class GCCSD_SD_S_NoShift_Tests(GCCSD_SD_S_Tests):
     shift = False
 
 
 
 if __name__ == "__main__":
-    print("Tests for RCCSD-S-S")
+    print("Tests for GCCSD-SD-S")
     unittest.main()

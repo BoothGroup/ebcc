@@ -22,7 +22,7 @@ warnings.simplefilter("ignore", UserWarning)
 rank = ("SD", "SD", "S")
 
 # Spin setting:
-spin = "rhf"  # {"ghf", "rhf", "uhf"}
+spin = "ghf"  # {"ghf", "rhf", "uhf"}
 
 # Indices
 occs = i, j, k, l = [Idx(n, "occ") for n in range(4)]
@@ -99,7 +99,7 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
         out.resolve()
         expr = AExpression(Ex=out, simplify=True)
         terms, indices = codegen.wick_to_sympy(expr, particles, return_value="e_cc")
-        terms = codegen.ghf_to_rhf(terms, indices)
+        terms = transform_spin(terms, indices)
         terms = codegen.sympy_to_drudge(terms, indices, dr=dr)
         function_printer.write_latex(terms.latex(), comment="Energy")
         terms = codegen.optimize([terms], sizes=sizes, optimize="exhaust", verify=True, interm_fmt="x{}")
@@ -111,7 +111,6 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
             "update_amps",
             ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11"],
             ["t1new", "t2new", "s1new", "s2new", "u11new"],
-            return_dict=False,
             timer=timer,
     ) as function_printer:
         # T1 residuals:
@@ -120,7 +119,7 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
         out.resolve()
         expr = AExpression(Ex=out, simplify=True)
         terms, indices = codegen.wick_to_sympy(expr, particles, return_value="t1new")
-        terms = codegen.ghf_to_rhf(terms, indices, project_onto=[(codegen.ALPHA, codegen.ALPHA)])
+        terms = transform_spin(terms, indices, project_onto=[(codegen.ALPHA, codegen.ALPHA)])
         terms_t1 = codegen.sympy_to_drudge(terms, indices, dr=dr)
         function_printer.write_latex(terms_t1.latex(), comment="T1 amplitude")
 
@@ -130,7 +129,7 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
         out.resolve()
         expr = AExpression(Ex=out, simplify=True)
         terms, indices = codegen.wick_to_sympy(expr, particles, return_value="t2new")
-        terms = codegen.ghf_to_rhf(terms, indices, project_onto=[(codegen.ALPHA, codegen.BETA, codegen.ALPHA, codegen.BETA)])
+        terms = transform_spin(terms, indices, project_onto=[(codegen.ALPHA, codegen.BETA, codegen.ALPHA, codegen.BETA)])
         terms_t2 = codegen.sympy_to_drudge(terms, indices, dr=dr)
         function_printer.write_latex(terms_t2.latex(), comment="T2 amplitude")
 
@@ -140,7 +139,7 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
         out.resolve()
         expr = AExpression(Ex=out, simplify=True)
         terms, indices = codegen.wick_to_sympy(expr, particles, return_value="s1new")
-        terms = codegen.ghf_to_rhf(terms, indices, project_onto=[(None,)])
+        terms = transform_spin(terms, indices, project_onto=[(None,)])
         terms_s1 = codegen.sympy_to_drudge(terms, indices, dr=dr)
         function_printer.write_latex(terms_s1.latex(), comment="S1 amplitude")
 
@@ -150,7 +149,7 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
         out.resolve()
         expr = AExpression(Ex=out, simplify=True)
         terms, indices = codegen.wick_to_sympy(expr, particles, return_value="s2new")
-        terms = codegen.ghf_to_rhf(terms, indices, project_onto=[(None, None)])
+        terms = transform_spin(terms, indices, project_onto=[(None, None)])
         terms_s2 = codegen.sympy_to_drudge(terms, indices, dr=dr)
         function_printer.write_latex(terms_s2.latex(), comment="S2 amplitude")
 
@@ -160,7 +159,7 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
         out.resolve()
         expr = AExpression(Ex=out, simplify=True)
         terms, indices = codegen.wick_to_sympy(expr, particles, return_value="u11new")
-        terms = codegen.ghf_to_rhf(terms, indices, project_onto=[(None, codegen.ALPHA, codegen.ALPHA)])
+        terms = transform_spin(terms, indices, project_onto=[(None, codegen.ALPHA, codegen.ALPHA)])
         terms_u11 = codegen.sympy_to_drudge(terms, indices, dr=dr)
         function_printer.write_latex(terms_u11.latex(), comment="U11 amplitude")
 
@@ -173,7 +172,6 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
             "update_lams",
             ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11", "l1", "l2", "ls1", "ls2", "lu11"],
             ["l1new", "l2new", "ls1new", "ls2new", "lu11new"],
-            return_dict=False,
             timer=timer,
     ) as function_printer:
         # L1 residuals <0|Hbar|singles> (not proportional to lambda):
@@ -192,7 +190,7 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
         expr2 = expr2.get_connected()
         expr2.sort_tensors()
         terms, indices = codegen.wick_to_sympy(expr1+expr2, particles, return_value="l1new")
-        terms = codegen.ghf_to_rhf(terms, indices, project_onto=[(codegen.ALPHA, codegen.ALPHA)])
+        terms = transform_spin(terms, indices, project_onto=[(codegen.ALPHA, codegen.ALPHA)])
         terms_l1 = codegen.sympy_to_drudge(terms, indices, dr=dr)
         function_printer.write_latex(terms_l1.latex(), comment="L1 amplitude")
 
@@ -220,7 +218,7 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
         expr3 = AExpression(Ex=out)
         expr3.sort_tensors()
         terms, indices = codegen.wick_to_sympy(expr1+expr2+expr3, particles, return_value="l2new")
-        terms = codegen.ghf_to_rhf(terms, indices, project_onto=[(codegen.ALPHA, codegen.BETA, codegen.ALPHA, codegen.BETA)])
+        terms = transform_spin(terms, indices, project_onto=[(codegen.ALPHA, codegen.BETA, codegen.ALPHA, codegen.BETA)])
         terms_l2 = codegen.sympy_to_drudge(terms, indices, dr=dr)
         function_printer.write_latex(terms_l2.latex(), comment="L2 amplitude")
 
@@ -240,7 +238,7 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
         expr2 = expr2.get_connected()
         expr2.sort_tensors()
         terms, indices = codegen.wick_to_sympy(expr1+expr2, particles, return_value="ls1new")
-        terms = codegen.ghf_to_rhf(terms, indices, project_onto=[(None,)])
+        terms = transform_spin(terms, indices, project_onto=[(None,)])
         terms_ls1 = codegen.sympy_to_drudge(terms, indices, dr=dr)
         function_printer.write_latex(terms_ls1.latex(), comment="LS1 amplitude")
 
@@ -268,7 +266,7 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
         expr3 = AExpression(Ex=out)
         expr3.sort_tensors()
         terms, indices = codegen.wick_to_sympy(expr1+expr2+expr3, particles, return_value="ls2new")
-        terms = codegen.ghf_to_rhf(terms, indices, project_onto=[(None, None)])
+        terms = transform_spin(terms, indices, project_onto=[(None, None)])
         terms_ls2 = codegen.sympy_to_drudge(terms, indices, dr=dr)
         function_printer.write_latex(terms_ls2.latex(), comment="LS2 amplitude")
 
@@ -304,7 +302,7 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
         expr4 = AExpression(Ex=out)
         expr4.sort_tensors()
         terms, indices = codegen.wick_to_sympy(expr1+expr2+expr3+expr4, particles, return_value="lu11new")
-        terms = codegen.ghf_to_rhf(terms, indices, project_onto=[(None, codegen.ALPHA, codegen.ALPHA)])
+        terms = transform_spin(terms, indices, project_onto=[(None, codegen.ALPHA, codegen.ALPHA)])
         terms_lu11 = codegen.sympy_to_drudge(terms, indices, dr=dr)
         function_printer.write_latex(terms_lu11.latex(), comment="LU11 amplitude")
 
@@ -337,7 +335,7 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
     #        out.resolve()
     #        expr = AExpression(Ex=out)
     #        terms, indices = codegen.wick_to_sympy(expr, particles, return_value=return_value)
-    #        terms = codegen.ghf_to_rhf(terms, indices)
+    #        terms = transform_spin(terms, indices)
     #        terms = codegen.sympy_to_drudge(terms, indices, dr=dr)
     #        function_printer.write_latex(terms.latex(), comment=comment)
     #        return terms
@@ -385,7 +383,7 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
     #        out.resolve()
     #        expr = AExpression(Ex=out)
     #        terms, indices = codegen.wick_to_sympy(expr, particles, return_value=return_value)
-    #        terms = codegen.ghf_to_rhf(terms, indices)
+    #        terms = transform_spin(terms, indices)
     #        terms = codegen.sympy_to_drudge(terms, indices, dr=dr)
     #        function_printer.write_latex(terms.latex(), comment=comment)
     #        return terms
@@ -438,7 +436,7 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
     #        out.resolve()
     #        expr = AExpression(Ex=out)
     #        terms, indices = codegen.wick_to_sympy(expr, particles, return_value=return_value)
-    #        terms = codegen.ghf_to_rhf(terms, indices)
+    #        terms = transform_spin(terms, indices)
     #        terms = codegen.sympy_to_drudge(terms, indices, dr=dr)
     #        function_printer.write_latex(terms.latex(), comment=comment)
     #        return terms
@@ -477,7 +475,7 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
     #    out.resolve()
     #    expr = AExpression(Ex=out)
     #    terms, indices = codegen.wick_to_sympy(expr, particles, return_value="rdm1_b")
-    #    terms = codegen.ghf_to_rhf(terms, indices)
+    #    terms = transform_spin(terms, indices)
     #    terms = codegen.sympy_to_drudge(terms, indices, dr=dr)
     #    function_printer.write_latex(terms.latex(), comment="Boson 1RDM")
 
@@ -515,7 +513,7 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
     #        out.resolve()
     #        expr = AExpression(Ex=out)
     #        terms, indices = codegen.wick_to_sympy(expr, particles, return_value=return_value)
-    #        terms = codegen.ghf_to_rhf(terms, indices)
+    #        terms = transform_spin(terms, indices)
     #        terms = codegen.sympy_to_drudge(terms, indices, dr=dr)
     #        function_printer.write_latex(terms.latex(), comment=comment)
     #        return terms
