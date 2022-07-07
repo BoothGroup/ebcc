@@ -232,6 +232,7 @@ class REBCC:
             amplitudes = self.init_amps(eris=eris)  # TODO warn?
 
         lambdas = self.init_lams(amplitudes=amplitudes)
+        converged = False
 
         diis = lib.diis.DIIS()
         diis.space = self.options.diis_space
