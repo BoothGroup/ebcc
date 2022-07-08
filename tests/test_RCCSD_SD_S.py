@@ -94,48 +94,50 @@ class RCCSD_SD_S_Tests(unittest.TestCase):
         b = b[:, self.osort][:, :, self.vsort]
         np.testing.assert_almost_equal(a, b, 6)
 
-    def test_l1_amplitudes(self):
-        a = self.data[self.shift]["l1"]
-        b = scipy.linalg.block_diag(self.ccsd.l1, self.ccsd.l1)[self.vsort][:, self.osort]
-        np.testing.assert_almost_equal(a, b, 6)
+    # TODO: these are not in the old code, how to test?
 
-    def test_ls1_amplitudes(self):
-        a = self.data[self.shift]["ls1"]
-        b = self.ccsd.lambdas["ls1"]
-        np.testing.assert_almost_equal(a, b, 6)
+    #def test_l1_amplitudes(self):
+    #    a = self.data[self.shift]["l1"]
+    #    b = scipy.linalg.block_diag(self.ccsd.l1, self.ccsd.l1)[self.vsort][:, self.osort]
+    #    np.testing.assert_almost_equal(a, b, 6)
 
-    def test_lu11_amplitudes(self):
-        a = self.data[self.shift]["lu11"]
-        b = np.array([scipy.linalg.block_diag(x, x) for x in self.ccsd.lambdas["lu11"]])
-        b = b[:, self.vsort][:, :, self.osort]
-        np.testing.assert_almost_equal(a, b, 6)
+    #def test_ls1_amplitudes(self):
+    #    a = self.data[self.shift]["ls1"]
+    #    b = self.ccsd.lambdas["ls1"]
+    #    np.testing.assert_almost_equal(a, b, 6)
 
-    def test_rdm1_f(self):
-        rdm1_f = self.ccsd.make_rdm1_f()
-        rdm1_f = 0.5 * (rdm1_f + rdm1_f.T.conj())
-        a = self.data[self.shift]["rdm1_f"]
-        b = scipy.linalg.block_diag(rdm1_f, rdm1_f) / 2
-        b = b[self.fsort][:, self.fsort]
-        np.testing.assert_almost_equal(a, b, 6)
+    #def test_lu11_amplitudes(self):
+    #    a = self.data[self.shift]["lu11"]
+    #    b = np.array([scipy.linalg.block_diag(x, x) for x in self.ccsd.lambdas["lu11"]])
+    #    b = b[:, self.vsort][:, :, self.osort]
+    #    np.testing.assert_almost_equal(a, b, 6)
 
-    def test_rdm1_b(self):
-        a = self.data[self.shift]["rdm1_b"]
-        b = self.ccsd.make_rdm1_b()
-        np.testing.assert_almost_equal(a, b, 6)
+    #def test_rdm1_f(self):
+    #    rdm1_f = self.ccsd.make_rdm1_f()
+    #    a = self.data[self.shift]["rdm1_f"]
+    #    b = scipy.linalg.block_diag(rdm1_f, rdm1_f) / 2
+    #    b = b[self.fsort][:, self.fsort]
+    #    np.testing.assert_almost_equal(a, b, 6)
+    #        factor = 1.0 if self.spatial else 1.0
 
-    def test_dm_b(self):
-        a = self.data[self.shift]["dm_b"]
-        b = np.array(self.ccsd.make_sing_b_dm())
-        np.testing.assert_almost_equal(a, b, 6)
+    #def test_rdm1_b(self):
+    #    a = self.data[self.shift]["rdm1_b"]
+    #    b = self.ccsd.make_rdm1_b()
+    #    np.testing.assert_almost_equal(a, b, 6)
 
-    def test_rdm_eb(self):
-        a = np.array(self.data[self.shift]["rdm_eb"])
-        b = np.array([[scipy.linalg.block_diag(x, x) for x in y] for y in self.ccsd.make_eb_coup_rdm()])
-        b = b[:, :, self.fsort][:, :, :, self.fsort]
-        np.testing.assert_almost_equal(a, b, 6)
+    #def test_dm_b(self):
+    #    a = self.data[self.shift]["dm_b"]
+    #    b = np.array(self.ccsd.make_sing_b_dm())
+    #    np.testing.assert_almost_equal(a, b, 6)
+
+    #def test_rdm_eb(self):
+    #    a = np.array(self.data[self.shift]["rdm_eb"])
+    #    b = np.array([[scipy.linalg.block_diag(x, x) for x in y] for y in self.ccsd.make_eb_coup_rdm()])
+    #    b = b[:, :, self.fsort][:, :, :, self.fsort]
+    #    np.testing.assert_almost_equal(a, b, 6)
 
 
-class RCCSD_SD_S_NoShift_Tests(RCCSD_S_S_Tests):
+class RCCSD_SD_S_NoShift_Tests(RCCSD_SD_S_Tests):
     shift = False
 
 
