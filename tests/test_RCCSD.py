@@ -2,8 +2,13 @@
 """
 
 import unittest
+import pytest
+import itertools
+import pickle
+import os
 
 import numpy as np
+import scipy.linalg
 
 from pyscf import gto, scf, cc, lib
 
@@ -11,6 +16,73 @@ from ebcc import util, REBCC
 
 
 class RCCSD_Tests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_data.pkl")
+        with open(path, "rb") as f:
+            data = pickle.load(f)
+            mo_coeff = data["mo_coeff"]
+            data = data[(2, 0, 0)]
+
+        mol = gto.Mole()
+        mol.atom = "H 0 0 0; F 0 0 1.1"
+        mol.basis = "6-31g"
+        mol.verbose = 0
+        mol.build()
+
+        mf = scf.RHF(mol)
+        mf.conv_tol = 1e-12
+        mf.kernel()
+        mf.mo_coeff = mo_coeff
+
+        orbspin = scf.addons.get_ghf_orbspin(mf.mo_energy, mf.mo_occ, True)
+
+        ccsd = REBCC(mf, rank=("SD", "", ""), log=util.NullLogger())
+        ccsd.options.e_tol = 1e-12
+        ccsd.options.t_tol = 1e-12
+        eris = ccsd.get_eris()
+        ccsd.kernel(eris=eris)
+        ccsd.solve_lambda(eris=eris)
+
+        osort = list(itertools.chain(*zip(range(ccsd.nocc), range(ccsd.nocc, 2*ccsd.nocc))))
+        vsort = list(itertools.chain(*zip(range(ccsd.nvir), range(ccsd.nvir, 2*ccsd.nvir))))
+        fsort = list(itertools.chain(*zip(range(ccsd.nmo), range(ccsd.nmo, 2*ccsd.nmo))))
+
+        cls.mf, cls.ccsd, cls.eris, cls.data = mf, ccsd, eris, data
+        cls.osort, cls.vsort, cls.fsort = osort, vsort, fsort
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.mf, cls.ccsd, cls.eris, cls.data
+        del cls.osort, cls.vsort
+
+    def test_energy(self):
+        a = self.data[True]["e_corr"]
+        b = self.ccsd.e_corr
+        self.assertAlmostEqual(a, b, 7)
+
+    def test_t1_amplitudes(self):
+        a = self.data[True]["t1"]
+        b = scipy.linalg.block_diag(self.ccsd.t1, self.ccsd.t1)[self.osort][:, self.vsort]
+        np.testing.assert_almost_equal(a, b, 6)
+
+    def test_rdm1_f(self):
+        rdm1_f = self.ccsd.make_rdm1_f()
+        rdm1_f = 0.5 * (rdm1_f + rdm1_f.T.conj())
+        a = self.data[True]["rdm1_f"]
+        b = scipy.linalg.block_diag(rdm1_f, rdm1_f) / 2
+        b = b[self.fsort][:, self.fsort]
+        np.savetxt("tmp1.dat", a)
+        np.savetxt("tmp2.dat", b)
+        np.testing.assert_almost_equal(a, b, 6)
+
+    def test_l1_amplitudes(self):
+        a = self.data[True]["l1"]
+        b = scipy.linalg.block_diag(self.ccsd.l1, self.ccsd.l1)[self.vsort][:, self.osort]
+        np.testing.assert_almost_equal(a, b, 6)
+
+
+class RCCSD_PySCF_Tests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):

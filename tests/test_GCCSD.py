@@ -35,9 +35,6 @@ class GCCSD_Tests(unittest.TestCase):
         mf.mo_coeff = mo_coeff
 
         orbspin = scf.addons.get_ghf_orbspin(mf.mo_energy, mf.mo_occ, True)
-        g = np.zeros((nbos, nmo*2, nmo*2))
-        g[np.ix_(range(nbos), orbspin==0, orbspin==0)] = g_
-        g[np.ix_(range(nbos), orbspin==1, orbspin==1)] = g_
 
         ccsd = GEBCC(mf, rank=("SD", "", ""), log=util.NullLogger())
         ccsd.options.e_tol = 1e-12
@@ -54,43 +51,43 @@ class GCCSD_Tests(unittest.TestCase):
 
     def test_fock(self):
         for tag in ("oo", "ov", "vo", "vv"):
-            a = self.data[self.shift]["f"+tag]
+            a = self.data[True]["f"+tag]
             b = getattr(self.ccsd.fock, tag)
             np.testing.assert_almost_equal(a, b, 7)
 
     def test_energy(self):
-        a = self.data[self.shift]["e_corr"]
+        a = self.data[True]["e_corr"]
         b = self.ccsd.e_corr
         self.assertAlmostEqual(a, b, 7)
 
     def test_t1_amplitudes(self):
-        a = self.data[self.shift]["t1"]
+        a = self.data[True]["t1"]
         b = self.ccsd.t1
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_t2_amplitudes(self):
-        a = self.data[self.shift]["t2"]
+        a = self.data[True]["t2"]
         b = self.ccsd.t2
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_rdm1_f(self):
-        a = self.data[self.shift]["rdm1_f"]
+        a = self.data[True]["rdm1_f"]
         b = self.ccsd.make_rdm1_f()
         b = 0.5 * (b + b.T)
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_rdm2_f(self):
-        a = self.data[self.shift]["rdm2_f"]
+        a = self.data[True]["rdm2_f"]
         b = self.ccsd.make_rdm2_f()
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_l1_amplitudes(self):
-        a = self.data[self.shift]["l1"]
+        a = self.data[True]["l1"]
         b = self.ccsd.l1
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_l2_amplitudes(self):
-        a = self.data[self.shift]["l2"]
+        a = self.data[True]["l2"]
         b = self.ccsd.l2
         np.testing.assert_almost_equal(a, b, 6)
 

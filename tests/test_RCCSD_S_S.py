@@ -53,7 +53,7 @@ class RCCSD_S_S_Tests(unittest.TestCase):
 
         osort = list(itertools.chain(*zip(range(ccsd.nocc), range(ccsd.nocc, 2*ccsd.nocc))))
         vsort = list(itertools.chain(*zip(range(ccsd.nvir), range(ccsd.nvir, 2*ccsd.nvir))))
-        fsort = osort + [x+(2*ccsd.nocc) for x in vsort]
+        fsort = list(itertools.chain(*zip(range(ccsd.nmo), range(ccsd.nmo, 2*ccsd.nmo))))
 
         cls.mf, cls.ccsd, cls.eris, cls.data = mf, ccsd, eris, data
         cls.osort, cls.vsort, cls.fsort = osort, vsort, fsort
