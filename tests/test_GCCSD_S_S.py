@@ -113,6 +113,11 @@ class GCCSD_S_S_Tests(unittest.TestCase):
         b = self.ccsd.l1
         np.testing.assert_almost_equal(a, b, 6)
 
+    def test_l2_amplitudes(self):
+        a = self.data[self.shift]["l2"]
+        b = self.ccsd.l2
+        np.testing.assert_almost_equal(a, b, 6)
+
     def test_ls1_amplitudes(self):
         a = self.data[self.shift]["ls1"]
         b = self.ccsd.lambdas["ls1"]
@@ -124,6 +129,12 @@ class GCCSD_S_S_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_rdm1_f(self):
+        a = self.data[self.shift]["rdm1_f"]
+        b = self.ccsd.make_rdm1_f()
+        b = 0.5 * (b + b.T)
+        np.testing.assert_almost_equal(a, b, 6)
+
+    def test_rdm2_f(self):
         a = self.data[self.shift]["rdm1_f"]
         b = self.ccsd.make_rdm1_f()
         b = 0.5 * (b + b.T)
