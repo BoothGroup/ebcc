@@ -15,7 +15,7 @@ from ebcc import util, GEBCC
 
 
 class GCCSD_S_S_Tests(unittest.TestCase):
-    shift = False
+    shift = True
 
     @classmethod
     def setUpClass(cls):
@@ -131,19 +131,16 @@ class GCCSD_S_S_Tests(unittest.TestCase):
     def test_rdm1_f(self):
         a = self.data[self.shift]["rdm1_f"]
         b = self.ccsd.make_rdm1_f()
-        b = 0.5 * (b + b.T)
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_rdm2_f(self):
         a = self.data[self.shift]["rdm1_f"]
         b = self.ccsd.make_rdm1_f()
-        b = 0.5 * (b + b.T)
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_rdm1_b(self):
         a = self.data[self.shift]["rdm1_b"]
         b = self.ccsd.make_rdm1_b()
-        b = 0.5 * (b + b.T)
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_dm_b(self):
@@ -154,16 +151,11 @@ class GCCSD_S_S_Tests(unittest.TestCase):
     def test_rdm_eb(self):
         a = self.data[self.shift]["rdm_eb"]
         b = self.ccsd.make_eb_coup_rdm()
-        b = 0.5 * (b + b.transpose(0, 1, 3, 2))
-        np.set_printoptions(edgeitems=1000, linewidth=1000, precision=6)
-        print()
-        print(a[0][0][:6, :6])
-        print(b[0][0][:6, :6])
         np.testing.assert_almost_equal(a, b, 6)
 
 
-#class GCCSD_S_S_NoShift_Tests(GCCSD_S_S_Tests):
-#    shift = False
+class GCCSD_S_S_NoShift_Tests(GCCSD_S_S_Tests):
+    shift = False
 
 
 

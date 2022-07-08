@@ -34,6 +34,14 @@ class Options:
 class REBCC:
     Options = Options
 
+    @property
+    def spatial(self):
+        return True
+
+    @property
+    def restricted(self):
+        return True
+
     def __init__(
             self,
             mf,
@@ -425,7 +433,7 @@ class REBCC:
 
         return func(**kwargs)
 
-    def make_rdm1_b(self, eris=None, amplitudes=None, lambdas=None, unshifted=True):
+    def make_rdm1_b(self, eris=None, amplitudes=None, lambdas=None, unshifted=True, hermitise=True):
         """Build the bosonic 1RDM <b† b>.
         """
 
@@ -436,17 +444,19 @@ class REBCC:
                 lambdas=lambdas,
         )
 
-        res = func(**kwargs)
+        dm = func(**kwargs)
+
+        if hermitise:
+            dm = 0.5 * (dm + dm.T)
 
         if unshifted and self.options.shift:
             dm_cre, dm_ann = self.make_sing_b_dm()
             xi = self.xi
-            for i in range(self.nbos):
-                res[i, i] -= xi[i] * (dm_cre[i] + dm_ann[i]) + xi[i]**2
+            dm[np.diag_indices_from(dm)] -= xi * (dm_cre + dm_ann) - xi**2
 
-        return func(**kwargs)
+        return dm
 
-    def make_rdm1_f(self, eris=None, amplitudes=None, lambdas=None):
+    def make_rdm1_f(self, eris=None, amplitudes=None, lambdas=None, hermitise=True):
         """Build the fermionic 1RDM.
         """
 
@@ -457,9 +467,14 @@ class REBCC:
                 lambdas=lambdas,
         )
 
-        return func(**kwargs)
+        dm = func(**kwargs)
 
-    def make_rdm2_f(self, eris=None, amplitudes=None, lambdas=None):
+        if hermitise:
+            dm = 0.5 * (dm + dm.T)
+
+        return dm
+
+    def make_rdm2_f(self, eris=None, amplitudes=None, lambdas=None, hermitise=True):
         """Build the fermionic 2RDM.
         """
 
@@ -470,9 +485,23 @@ class REBCC:
                 lambdas=lambdas,
         )
 
-        return func(**kwargs)
+        dm = func(**kwargs)
 
-    def make_eb_coup_rdm(self, eris=None, amplitudes=None, lambdas=None):
+        if hermitise:
+            dm = 0.125 * (
+                    + dm.transpose(0, 1, 2, 3)
+                    + dm.transpose(1, 0, 2, 3)
+                    + dm.transpose(0, 1, 3, 2)
+                    + dm.transpose(1, 0, 3, 2)
+                    + dm.transpose(2, 3, 0, 1)
+                    + dm.transpose(2, 3, 1, 0)
+                    + dm.transpose(3, 2, 0, 1)
+                    + dm.transpose(3, 2, 1, 0)
+            )
+
+        return dm
+
+    def make_eb_coup_rdm(self, eris=None, amplitudes=None, lambdas=None, unshifted=True, hermitise=True):
         """Build the electron-boson coupling RDMs <b† i† j> and <b i† j>.
         """
 
@@ -483,7 +512,18 @@ class REBCC:
                 lambdas=lambdas,
         )
 
-        return func(**kwargs)
+        dm_eb = func(**kwargs)
+
+        if hermitise:
+            dm_eb[0] = 0.5 * (dm_eb[0] + dm_eb[1].transpose(0, 2, 1))
+            dm_eb[1] = dm_eb[0].transpose(0, 2, 1).copy()
+
+        if unshifted and self.options.shift:
+            rdm1_f = self.make_rdm1_f(hermitise=hermitise)
+            shift = lib.einsum("x,ij->xij", self.xi, rdm1_f)
+            dm_eb -= shift[None]
+
+        return dm_eb
 
     def hbar_matvec_ip(self, r1, r2, eris=None, amplitudes=None):
         """Compute the product between a state vector and the EOM

@@ -68,7 +68,6 @@ class RCCSD_Tests(unittest.TestCase):
 
     def test_rdm1_f(self):
         rdm1_f = self.ccsd.make_rdm1_f()
-        rdm1_f = 0.5 * (rdm1_f + rdm1_f.T.conj())
         a = self.data[True]["rdm1_f"]
         b = scipy.linalg.block_diag(rdm1_f, rdm1_f) / 2
         b = b[self.fsort][:, self.fsort]
@@ -143,23 +142,11 @@ class RCCSD_PySCF_Tests(unittest.TestCase):
     def test_rdm1(self):
         a = self.ccsd_ref.make_rdm1()
         b = self.ccsd.make_rdm1_f(eris=self.eris)
-        b = 0.5 * (b + b.T.conj())
         np.testing.assert_almost_equal(a, b, 6, verbose=True)
 
     def test_rdm2(self):
         a = self.ccsd_ref.make_rdm2()
         b = self.ccsd.make_rdm2_f(eris=self.eris)
-        #o, v = slice(None, self.ccsd.nocc), slice(self.ccsd.nocc, None)
-        #d2 = (
-        #    b[o,v,o,v], b[v,v,v,v], b[o,o,o,o], b[o,o,v,v],
-        #    b[o,v,v,o], b[v,v,o,v], b[o,v,v,v], b[o,o,o,v],
-        #)
-        #b = cc.ccsd_rdm._make_rdm2(self.ccsd, None, d2, with_dm1=False, with_frozen=False) * 0.25
-        #for s1, k1 in [(o, "o"), (v, "v")]:
-        #    for s2, k2 in [(o, "o"), (v, "v")]:
-        #        for s3, k3 in [(o, "o"), (v, "v")]:
-        #            for s4, k4 in [(o, "o"), (v, "v")]:
-        #                print(k1+k2+k3+k4, np.linalg.norm(a[s1,s2,s3,s4]-b[s1,s2,s3,s4]), np.allclose(a[s1,s2,s3,s4], b[s1,s2,s3,s4]))
         np.testing.assert_almost_equal(a, b, 6, verbose=True)
 
     def test_eom_ip(self):

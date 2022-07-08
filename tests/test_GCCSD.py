@@ -73,7 +73,6 @@ class GCCSD_Tests(unittest.TestCase):
     def test_rdm1_f(self):
         a = self.data[True]["rdm1_f"]
         b = self.ccsd.make_rdm1_f()
-        b = 0.5 * (b + b.T)
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_rdm2_f(self):
@@ -152,20 +151,11 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
     def test_rdm1(self):
         a = self.ccsd_ref.make_rdm1()
         b = self.ccsd.make_rdm1_f(eris=self.eris)
-        b = 0.5 * (b + b.T.conj())
         np.testing.assert_almost_equal(a, b, 6, verbose=True)
 
     def test_rdm2(self):
         a = self.ccsd_ref.make_rdm2()
         b = self.ccsd.make_rdm2_f(eris=self.eris).transpose(0, 2, 1, 3)
-        #o, v = slice(None, self.ccsd.nocc), slice(self.ccsd.nocc, None)
-        #d2 = [b[tuple({"o":o, "v":v}[k] for k in key)] for key in "ovov, vvvv, oooo, oovv, ovvo, vvov, ovvv, ooov".split(", ")]
-        #b = cc.gccsd_rdm._make_rdm2(self.ccsd, None, d2, with_dm1=False, with_frozen=False)
-        #b = (
-        #    b.transpose(0, 1, 2, 3) + b.transpose(1, 0, 2, 3) + b.transpose(0, 1, 3, 2) + b.transpose(1, 0, 3, 2) +
-        #    b.transpose(2, 3, 0, 1) + b.transpose(2, 3, 1, 0) + b.transpose(3, 2, 0, 1) + b.transpose(3, 2, 1, 0)
-        #)
-        #b /= 8
         np.testing.assert_almost_equal(a, b, 6, verbose=True)
 
     def test_eom_ip(self):

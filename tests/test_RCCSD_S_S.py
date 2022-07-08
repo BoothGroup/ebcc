@@ -112,7 +112,6 @@ class RCCSD_S_S_Tests(unittest.TestCase):
 
     def test_rdm1_f(self):
         rdm1_f = self.ccsd.make_rdm1_f()
-        rdm1_f = 0.5 * (rdm1_f + rdm1_f.T.conj())
         a = self.data[self.shift]["rdm1_f"]
         b = scipy.linalg.block_diag(rdm1_f, rdm1_f) / 2
         b = b[self.fsort][:, self.fsort]
@@ -130,7 +129,7 @@ class RCCSD_S_S_Tests(unittest.TestCase):
 
     def test_rdm_eb(self):
         a = np.array(self.data[self.shift]["rdm_eb"])
-        b = np.array([[scipy.linalg.block_diag(x, x) for x in y] for y in self.ccsd.make_eb_coup_rdm()])
+        b = np.array([[scipy.linalg.block_diag(x, x) for x in y] for y in self.ccsd.make_eb_coup_rdm()]) / 2
         b = b[:, :, self.fsort][:, :, :, self.fsort]
         np.testing.assert_almost_equal(a, b, 6)
 
