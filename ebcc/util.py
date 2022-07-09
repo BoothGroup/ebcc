@@ -3,6 +3,7 @@
 
 import sys
 import logging
+import inspect
 import itertools
 import numpy as np
 
@@ -117,3 +118,16 @@ def permutations_with_signs(seq):
         return items
 
     return [(item, -1 if i % 2 else 1) for i, item in enumerate(_permutations(list(seq)))]
+
+
+def inherit_docstrings(cls):
+    """Inherit docstring from superclass.
+    """
+
+    for name, func in inspect.getmembers(cls, inspect.isfunction):
+        if not func.__doc__:
+            for parent in cls.__mro__[1:]:
+                if hasattr(parent, name):
+                    func.__doc__ = getattr(parent, name).__doc__
+
+    return cls

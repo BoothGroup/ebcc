@@ -12,8 +12,10 @@ from qwick import codegen
 from ebcc.codegen import common, wick
 from ebcc.codegen.convenience_extra import *
 
-from dummy_spark import SparkContext
-ctx = SparkContext()
+from pyspark import SparkContext
+ctx = SparkContext("local[16]")
+#from dummy_spark import SparkContext
+#ctx = SparkContext()
 dr = drudge.Drudge(ctx)
 
 warnings.simplefilter("ignore", UserWarning)
@@ -22,7 +24,7 @@ warnings.simplefilter("ignore", UserWarning)
 rank = ("SD", "SD", "SD")
 
 # Spin setting:
-spin = "ghf"  # {"ghf", "rhf", "uhf"}
+spin = "rhf"  # {"ghf", "rhf", "uhf"}
 
 # Indices
 occs = i, j, k, l = [Idx(n, "occ") for n in range(4)]
@@ -36,8 +38,8 @@ bra = bra1, bra2, bra1b, bra2b, bra1b1e, bra2b1e = wick.get_bra_spaces(rank=rank
 ket = ket1, ket2, ket1b, ket2b, ket1b1e, ket2b1e = wick.get_ket_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
 T, _ = wick.get_excitation_ansatz(rank=rank, occs=occs, virs=virs, nms=nms)
 L, _ = wick.get_deexcitation_ansatz(rank=rank, occs=occs, virs=virs, nms=nms)
-Hbars = wick.construct_hbar(H, T, max_commutator=5)
-Hbar = Hbars[-2]
+Hbars = wick.construct_hbar(H, T, max_commutator=4)
+Hbar = Hbars[-1]
 
 # Printer
 printer = common.get_printer(spin)
@@ -348,7 +350,7 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
         terms_lu12 = codegen.sympy_to_drudge(terms, indices, dr=dr)
         function_printer.write_latex(terms_lu12.latex(), comment="LU12 amplitude")
 
-        terms = codegen.optimize([terms_l1, terms_l2, terms_ls1, terms_ls2, terms_lu11, terms_lu12], sizes=sizes, optimize="trav", verify=False, interm_fmt="x{}")
+        terms = codegen.optimize([terms_l1, terms_l2, terms_ls1, terms_ls2, terms_lu11, terms_lu12], sizes=sizes, optimize="opt", verify=False, interm_fmt="x{}")
         function_printer.write_python(printer.doprint(terms)+"\n", comment="L1, L2, LS1, LS2, LU11 and LU12 amplitudes")
 
     ## Get 1RDM expressions:

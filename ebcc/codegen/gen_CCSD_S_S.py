@@ -12,6 +12,8 @@ from qwick import codegen
 from ebcc.codegen import common, wick
 from ebcc.codegen.convenience_extra import *
 
+#from pyspark import SparkContext
+#ctx = SparkContext("local[16]")
 from dummy_spark import SparkContext
 ctx = SparkContext()
 dr = drudge.Drudge(ctx)
@@ -22,7 +24,7 @@ warnings.simplefilter("ignore", UserWarning)
 rank = ("SD", "S", "S")
 
 # Spin setting:
-spin = "ghf"  # {"ghf", "rhf", "uhf"}
+spin = "rhf"  # {"ghf", "rhf", "uhf"}
 
 # Indices
 occs = i, j, k, l = [Idx(n, "occ") for n in range(4)]

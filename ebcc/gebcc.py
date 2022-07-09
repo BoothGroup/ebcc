@@ -11,15 +11,13 @@ from pyscf import lib, ao2mo
 from ebcc.rebcc import util, REBCC
 
 
+@util.inherit_docstrings
 class GEBCC(REBCC):
     @staticmethod
     def _convert_mf(mf):
         return mf.to_ghf()
 
     def init_amps(self, eris=None):
-        """Initialise amplitudes.
-        """
-
         if eris is None:
             eris = self.get_eris()
 
