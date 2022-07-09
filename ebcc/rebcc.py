@@ -2069,33 +2069,21 @@ class REBCC:
 
     @property
     def rank_numeric(self):
-        """Get the equivalent numeric rank tuple from the string one.
-        The numeric rank is used in the original work by White et al.,
-        whilst the new format allows for non-standard cluster
-        operators. In the case of incompatibility of the old numeric
-        rank, a `ValueError` will be raised.
-
-        Raises
-        ------
-        ValueError
-            If the rank is not compatible with the numeric format.
+        """Get a list of cluster operator rank numbers for each of
+        the fermionic, bosonic and coupling ansatz.
 
         Returns
         -------
-        rank_numeric : tuple of int
+        rank_numeric : tuple of tuple of int
             Numeric form of rank tuple.
         """
+        # TODO this won't support i.e. SDt
 
-        values = "SDTQ"
+        values = {"S": 1, "D": 2, "T": 3, "Q": 4}
 
         rank = []
         for op in self.rank:
-            i = len(op)
-            if values[:i] == op:
-                rank.append(i)
-            else:
-                raise ValueError("Can't convert rank %s to numeric "
-                                 "format." % self.rank)
+            rank.append(tuple(values[char] for char in op))
 
         return tuple(rank)
 

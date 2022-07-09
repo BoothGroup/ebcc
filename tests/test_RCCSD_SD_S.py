@@ -1,4 +1,4 @@
-"""Tests for the RCCSD-S-S model.
+"""Tests for the RCCSD-SD-S model.
 """
 
 import unittest
@@ -143,5 +143,5 @@ class RCCSD_SD_S_NoShift_Tests(RCCSD_SD_S_Tests):
 
 
 if __name__ == "__main__":
-    print("Tests for RCCSD-S-S")
+    print("Tests for RCCSD-SD-S")
     unittest.main()

@@ -16,14 +16,6 @@ class GEBCC(REBCC):
     def _convert_mf(mf):
         return mf.to_ghf()
 
-    @property
-    def spatial(self):
-        return False
-
-    @property
-    def restricted(Self):
-        return None
-
     def init_amps(self, eris=None):
         """Initialise amplitudes.
         """

@@ -1,4 +1,4 @@
-"""Tests for the GCCSD-SD-S model.
+"""Tests for the GCCSD-SD-SD model.
 """
 
 import unittest
@@ -14,7 +14,7 @@ from pyscf import gto, scf, cc, lib
 from ebcc import util, GEBCC
 
 
-class GCCSD_SD_S_Tests(unittest.TestCase):
+class GCCSD_SD_SD_Tests(unittest.TestCase):
     shift = True
 
     @classmethod
@@ -23,7 +23,7 @@ class GCCSD_SD_S_Tests(unittest.TestCase):
         with open(path, "rb") as f:
             data = pickle.load(f)
             mo_coeff = data["mo_coeff"]
-            data = data[(2, 2, 1)]
+            data = data[(2, 2, 2)]
 
         mol = gto.Mole()
         mol.atom = "H 0 0 0; F 0 0 1.1"
@@ -48,7 +48,7 @@ class GCCSD_SD_S_Tests(unittest.TestCase):
         g[np.ix_(range(nbos), orbspin==0, orbspin==0)] = g_
         g[np.ix_(range(nbos), orbspin==1, orbspin==1)] = g_
 
-        ccsd = GEBCC(mf, rank=("SD", "SD", "S"), g=g, omega=omega, shift=cls.shift, log=util.NullLogger())
+        ccsd = GEBCC(mf, rank=("SD", "SD", "SD"), g=g, omega=omega, shift=cls.shift, log=util.NullLogger())
         ccsd.options.e_tol = 1e-12
         ccsd.options.t_tol = 1e-12
         eris = ccsd.get_eris()
@@ -166,11 +166,11 @@ class GCCSD_SD_S_Tests(unittest.TestCase):
     #    np.testing.assert_almost_equal(a, b, 6)
 
 
-class GCCSD_SD_S_NoShift_Tests(GCCSD_SD_S_Tests):
+class GCCSD_SD_SD_NoShift_Tests(GCCSD_SD_SD_Tests):
     shift = False
 
 
 
 if __name__ == "__main__":
-    print("Tests for GCCSD-SD-S")
+    print("Tests for GCCSD-SD-SD")
     unittest.main()

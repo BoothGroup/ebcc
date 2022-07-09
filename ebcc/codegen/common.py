@@ -87,12 +87,14 @@ particles = {
         "s1": ((codegen.SCALAR_BOSON, 0),),
         "s2": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0)),
         "u11": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
+        "u12": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
         # Lambda amplitudes:
         "l1": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
         "l2": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
         "ls1": ((codegen.SCALAR_BOSON, 0),),
         "ls2": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0)),
         "lu11": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
+        "lu12": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
         # Excitation operators:
         "r1": ((codegen.FERMION, 0),),
         "r2": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0)),
@@ -104,11 +106,13 @@ particles = {
         "s1new": ((codegen.SCALAR_BOSON, 0),),
         "s2new": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0)),
         "u11new": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
+        "u12new": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
         "l1new": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
         "l2new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
         "ls1new": ((codegen.SCALAR_BOSON, 0),),
         "ls2new": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0)),
         "lu11new": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
+        "lu12new": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
         "r1new": ((codegen.FERMION, 0),),
         "r2new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0)),
         # Delta function:
@@ -132,6 +136,7 @@ def get_printer(spin):
             "l1new": (1, 0),
             "l2new": (2, 3, 0, 1),
             "lu11new": (0, 2, 1),
+            "lu12new": (0, 1, 3, 2),
     }
 
     if spin == "rhf":

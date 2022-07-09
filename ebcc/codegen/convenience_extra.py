@@ -59,3 +59,23 @@ def PB1(bspace, index_key=None):
     exp = Expression([
         Term(1, [Sigma(x)], [], operators, [], index_key=index_key)])
     return exp
+
+def PB2(bspace, index_key=None):
+    x = Idx(0, bspace, fermion=False)
+    y = Idx(1, bspace, fermion=False)
+    P = Projector()
+    operators = [BOperator(x, True), BOperator(y, True), P, BOperator(y, False), BOperator(x, False)]
+    exp = Expression([
+        Term(1, [Sigma(x), Sigma(y)], [], operators, [], index_key=index_key)])
+    return exp
+
+def PE2(ospace, vspace, index_key=None):
+    i = Idx(0, ospace)
+    a = Idx(0, vspace)
+    P = Projector()
+    operators = [
+            FOperator(a, True), FOperator(i, False),
+            P, FOperator(i, True), FOperator(a, False)]
+    exp = Expression([
+        Term(1, [Sigma(i), Sigma(a)], [], operators, [], index_key=index_key)])
+    return exp
