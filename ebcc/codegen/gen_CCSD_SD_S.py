@@ -87,229 +87,229 @@ class FunctionPrinter(common.FunctionPrinter):
         return self
 
 with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_"))) as file_printer:
-    ## Get energy expression:
-    #with FunctionPrinter(
-    #        file_printer,
-    #        "energy",
-    #        ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11"],
-    #        ["e_cc"],
-    #        init_gc=False,
-    #        return_dict=False,
-    #        timer=timer,
-    #) as function_printer:
-    #    out = apply_wick(Hbar)
-    #    out.resolve()
-    #    expr = AExpression(Ex=out, simplify=True)
-    #    terms, indices = codegen.wick_to_sympy(expr, particles, return_value="e_cc")
-    #    terms = transform_spin(terms, indices)
-    #    terms = codegen.sympy_to_drudge(terms, indices, dr=dr)
-    #    function_printer.write_latex(terms.latex(), comment="Energy")
-    #    terms = codegen.optimize([terms], sizes=sizes, optimize="exhaust", verify=True, interm_fmt="x{}")
-    #    function_printer.write_python(printer.doprint(terms)+"\n", comment="Energy")
+    # Get energy expression:
+    with FunctionPrinter(
+            file_printer,
+            "energy",
+            ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11"],
+            ["e_cc"],
+            init_gc=False,
+            return_dict=False,
+            timer=timer,
+    ) as function_printer:
+        out = apply_wick(Hbar)
+        out.resolve()
+        expr = AExpression(Ex=out, simplify=True)
+        terms, indices = codegen.wick_to_sympy(expr, particles, return_value="e_cc")
+        terms = transform_spin(terms, indices)
+        terms = codegen.sympy_to_drudge(terms, indices, dr=dr)
+        function_printer.write_latex(terms.latex(), comment="Energy")
+        terms = codegen.optimize([terms], sizes=sizes, optimize="exhaust", verify=True, interm_fmt="x{}")
+        function_printer.write_python(printer.doprint(terms)+"\n", comment="Energy")
 
-    ## Get amplitudes function:
-    #with FunctionPrinter(
-    #        file_printer,
-    #        "update_amps",
-    #        ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11"],
-    #        ["t1new", "t2new", "s1new", "s2new", "u11new"],
-    #        timer=timer,
-    #) as function_printer:
-    #    # T1 residuals:
-    #    S = bra1 * Hbar
-    #    out = apply_wick(S)
-    #    out.resolve()
-    #    expr = AExpression(Ex=out, simplify=True)
-    #    terms, indices = codegen.wick_to_sympy(expr, particles, return_value="t1new")
-    #    terms = transform_spin(terms, indices, project_onto=[(codegen.ALPHA, codegen.ALPHA)])
-    #    terms_t1 = codegen.sympy_to_drudge(terms, indices, dr=dr)
-    #    function_printer.write_latex(terms_t1.latex(), comment="T1 amplitude")
+    # Get amplitudes function:
+    with FunctionPrinter(
+            file_printer,
+            "update_amps",
+            ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11"],
+            ["t1new", "t2new", "s1new", "s2new", "u11new"],
+            timer=timer,
+    ) as function_printer:
+        # T1 residuals:
+        S = bra1 * Hbar
+        out = apply_wick(S)
+        out.resolve()
+        expr = AExpression(Ex=out, simplify=True)
+        terms, indices = codegen.wick_to_sympy(expr, particles, return_value="t1new")
+        terms = transform_spin(terms, indices, project_onto=[(codegen.ALPHA, codegen.ALPHA)])
+        terms_t1 = codegen.sympy_to_drudge(terms, indices, dr=dr)
+        function_printer.write_latex(terms_t1.latex(), comment="T1 amplitude")
 
-    #    # T2 residuals:
-    #    S = bra2 * Hbar
-    #    out = apply_wick(S)
-    #    out.resolve()
-    #    expr = AExpression(Ex=out, simplify=True)
-    #    terms, indices = codegen.wick_to_sympy(expr, particles, return_value="t2new")
-    #    terms = transform_spin(terms, indices, project_onto=[(codegen.ALPHA, codegen.BETA, codegen.ALPHA, codegen.BETA)])
-    #    terms_t2 = codegen.sympy_to_drudge(terms, indices, dr=dr)
-    #    function_printer.write_latex(terms_t2.latex(), comment="T2 amplitude")
+        # T2 residuals:
+        S = bra2 * Hbar
+        out = apply_wick(S)
+        out.resolve()
+        expr = AExpression(Ex=out, simplify=True)
+        terms, indices = codegen.wick_to_sympy(expr, particles, return_value="t2new")
+        terms = transform_spin(terms, indices, project_onto=[(codegen.ALPHA, codegen.BETA, codegen.ALPHA, codegen.BETA)])
+        terms_t2 = codegen.sympy_to_drudge(terms, indices, dr=dr)
+        function_printer.write_latex(terms_t2.latex(), comment="T2 amplitude")
 
-    #    # S1 residuals:
-    #    S = bra1b * Hbar
-    #    out = apply_wick(S)
-    #    out.resolve()
-    #    expr = AExpression(Ex=out, simplify=True)
-    #    terms, indices = codegen.wick_to_sympy(expr, particles, return_value="s1new")
-    #    terms = transform_spin(terms, indices, project_onto=[(None,)])
-    #    terms_s1 = codegen.sympy_to_drudge(terms, indices, dr=dr)
-    #    function_printer.write_latex(terms_s1.latex(), comment="S1 amplitude")
+        # S1 residuals:
+        S = bra1b * Hbar
+        out = apply_wick(S)
+        out.resolve()
+        expr = AExpression(Ex=out, simplify=True)
+        terms, indices = codegen.wick_to_sympy(expr, particles, return_value="s1new")
+        terms = transform_spin(terms, indices, project_onto=[(None,)])
+        terms_s1 = codegen.sympy_to_drudge(terms, indices, dr=dr)
+        function_printer.write_latex(terms_s1.latex(), comment="S1 amplitude")
 
-    #    # S2 residuals:
-    #    S = bra2b * Hbar
-    #    out = apply_wick(S)
-    #    out.resolve()
-    #    expr = AExpression(Ex=out, simplify=True)
-    #    terms, indices = codegen.wick_to_sympy(expr, particles, return_value="s2new")
-    #    terms = transform_spin(terms, indices, project_onto=[(None, None)])
-    #    terms_s2 = codegen.sympy_to_drudge(terms, indices, dr=dr)
-    #    function_printer.write_latex(terms_s2.latex(), comment="S2 amplitude")
+        # S2 residuals:
+        S = bra2b * Hbar
+        out = apply_wick(S)
+        out.resolve()
+        expr = AExpression(Ex=out, simplify=True)
+        terms, indices = codegen.wick_to_sympy(expr, particles, return_value="s2new")
+        terms = transform_spin(terms, indices, project_onto=[(None, None)])
+        terms_s2 = codegen.sympy_to_drudge(terms, indices, dr=dr)
+        function_printer.write_latex(terms_s2.latex(), comment="S2 amplitude")
 
-    #    # U11 residuals:
-    #    S = bra1b1e * Hbar
-    #    out = apply_wick(S)
-    #    out.resolve()
-    #    expr = AExpression(Ex=out, simplify=True)
-    #    terms, indices = codegen.wick_to_sympy(expr, particles, return_value="u11new")
-    #    terms = transform_spin(terms, indices, project_onto=[(None, codegen.ALPHA, codegen.ALPHA)])
-    #    terms_u11 = codegen.sympy_to_drudge(terms, indices, dr=dr)
-    #    function_printer.write_latex(terms_u11.latex(), comment="U11 amplitude")
+        # U11 residuals:
+        S = bra1b1e * Hbar
+        out = apply_wick(S)
+        out.resolve()
+        expr = AExpression(Ex=out, simplify=True)
+        terms, indices = codegen.wick_to_sympy(expr, particles, return_value="u11new")
+        terms = transform_spin(terms, indices, project_onto=[(None, codegen.ALPHA, codegen.ALPHA)])
+        terms_u11 = codegen.sympy_to_drudge(terms, indices, dr=dr)
+        function_printer.write_latex(terms_u11.latex(), comment="U11 amplitude")
 
-    #    terms = codegen.optimize([terms_t1, terms_t2, terms_s1, terms_s2, terms_u11], sizes=sizes, optimize="trav", verify=False, interm_fmt="x{}")
-    #    function_printer.write_python(printer.doprint(terms)+"\n", comment="T1, T2, S1, S2 and U11 amplitudes")
+        terms = codegen.optimize([terms_t1, terms_t2, terms_s1, terms_s2, terms_u11], sizes=sizes, optimize="trav", verify=False, interm_fmt="x{}")
+        function_printer.write_python(printer.doprint(terms)+"\n", comment="T1, T2, S1, S2 and U11 amplitudes")
 
-    ## Get lambda amplitudes function:
-    #with FunctionPrinter(
-    #        file_printer,
-    #        "update_lams",
-    #        ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11", "l1", "l2", "ls1", "ls2", "lu11"],
-    #        ["l1new", "l2new", "ls1new", "ls2new", "lu11new"],
-    #        timer=timer,
-    #) as function_printer:
-    #    # L1 residuals <0|Hbar|singles> (not proportional to lambda):
-    #    S = Hbars[1]*ket1
-    #    out = apply_wick(S)
-    #    out.resolve()
-    #    expr1 = AExpression(Ex=out)
-    #    expr1 = expr1.get_connected()
-    #    expr1.sort_tensors()
+    # Get lambda amplitudes function:
+    with FunctionPrinter(
+            file_printer,
+            "update_lams",
+            ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11", "l1", "l2", "ls1", "ls2", "lu11"],
+            ["l1new", "l2new", "ls1new", "ls2new", "lu11new"],
+            timer=timer,
+    ) as function_printer:
+        # L1 residuals <0|Hbar|singles> (not proportional to lambda):
+        S = Hbars[1]*ket1
+        out = apply_wick(S)
+        out.resolve()
+        expr1 = AExpression(Ex=out)
+        expr1 = expr1.get_connected()
+        expr1.sort_tensors()
 
-    #    # L1 residuals <0|(L Hbar)_c|singles> (connected pieces proportional to Lambda):
-    #    S = L * Hbars[3] * ket1
-    #    out = apply_wick(S)
-    #    out.resolve()
-    #    expr2 = AExpression(Ex=out)
-    #    expr2 = expr2.get_connected()
-    #    expr2.sort_tensors()
-    #    terms, indices = codegen.wick_to_sympy(expr1+expr2, particles, return_value="l1new")
-    #    terms = transform_spin(terms, indices, project_onto=[(codegen.ALPHA, codegen.ALPHA)])
-    #    terms_l1 = codegen.sympy_to_drudge(terms, indices, dr=dr)
-    #    function_printer.write_latex(terms_l1.latex(), comment="L1 amplitude")
+        # L1 residuals <0|(L Hbar)_c|singles> (connected pieces proportional to Lambda):
+        S = L * Hbars[3] * ket1
+        out = apply_wick(S)
+        out.resolve()
+        expr2 = AExpression(Ex=out)
+        expr2 = expr2.get_connected()
+        expr2.sort_tensors()
+        terms, indices = codegen.wick_to_sympy(expr1+expr2, particles, return_value="l1new")
+        terms = transform_spin(terms, indices, project_onto=[(codegen.ALPHA, codegen.ALPHA)])
+        terms_l1 = codegen.sympy_to_drudge(terms, indices, dr=dr)
+        function_printer.write_latex(terms_l1.latex(), comment="L1 amplitude")
 
-    #    # L2 residuals <0|Hbar|doubles> (not proportional to lambda):
-    #    S = Hbars[0] * ket2
-    #    out = apply_wick(S)
-    #    out.resolve()
-    #    expr1 = AExpression(Ex=out)
-    #    expr1 = expr1.get_connected()
-    #    expr1.sort_tensors()
+        # L2 residuals <0|Hbar|doubles> (not proportional to lambda):
+        S = Hbars[0] * ket2
+        out = apply_wick(S)
+        out.resolve()
+        expr1 = AExpression(Ex=out)
+        expr1 = expr1.get_connected()
+        expr1.sort_tensors()
 
-    #    # L2 residuals <0|L Hbar|doubles> (connected pieces proportional to lambda):
-    #    S = L * Hbars[2] * ket2
-    #    out = apply_wick(S)
-    #    out.resolve()
-    #    expr2 = AExpression(Ex=out)
-    #    expr2 = expr2.get_connected()
-    #    expr2.sort_tensors()
+        # L2 residuals <0|L Hbar|doubles> (connected pieces proportional to lambda):
+        S = L * Hbars[2] * ket2
+        out = apply_wick(S)
+        out.resolve()
+        expr2 = AExpression(Ex=out)
+        expr2 = expr2.get_connected()
+        expr2.sort_tensors()
 
-    #    # L2 residuals (disonnected pieces proportional to lambda):
-    #    P1 = PE1("occ", "vir")
-    #    S = Hbars[1] * P1 * L * ket2
-    #    out = apply_wick(S)
-    #    out.resolve()
-    #    expr3 = AExpression(Ex=out)
-    #    expr3.sort_tensors()
-    #    terms, indices = codegen.wick_to_sympy(expr1+expr2+expr3, particles, return_value="l2new")
-    #    terms = transform_spin(terms, indices, project_onto=[(codegen.ALPHA, codegen.BETA, codegen.ALPHA, codegen.BETA)])
-    #    terms_l2 = codegen.sympy_to_drudge(terms, indices, dr=dr)
-    #    function_printer.write_latex(terms_l2.latex(), comment="L2 amplitude")
+        # L2 residuals (disonnected pieces proportional to lambda):
+        P1 = PE1("occ", "vir")
+        S = Hbars[1] * P1 * L * ket2
+        out = apply_wick(S)
+        out.resolve()
+        expr3 = AExpression(Ex=out)
+        expr3.sort_tensors()
+        terms, indices = codegen.wick_to_sympy(expr1+expr2+expr3, particles, return_value="l2new")
+        terms = transform_spin(terms, indices, project_onto=[(codegen.ALPHA, codegen.BETA, codegen.ALPHA, codegen.BETA)])
+        terms_l2 = codegen.sympy_to_drudge(terms, indices, dr=dr)
+        function_printer.write_latex(terms_l2.latex(), comment="L2 amplitude")
 
-    #    # B1 residuals <0|Hbar|1b> (not proportional to lambda):
-    #    S = Hbars[1] * ket1b
-    #    out = apply_wick(S)
-    #    out.resolve()
-    #    expr1 = AExpression(Ex=out)
-    #    expr1 = expr1.get_connected()
-    #    expr1.sort_tensors()
+        # B1 residuals <0|Hbar|1b> (not proportional to lambda):
+        S = Hbars[1] * ket1b
+        out = apply_wick(S)
+        out.resolve()
+        expr1 = AExpression(Ex=out)
+        expr1 = expr1.get_connected()
+        expr1.sort_tensors()
 
-    #    # B1 residuals <0|L Hbar|1b> (connected pieces proportional to lambda)
-    #    S = L * Hbars[3] * ket1b
-    #    out = apply_wick(S)
-    #    out.resolve()
-    #    expr2 = AExpression(Ex=out)
-    #    expr2 = expr2.get_connected()
-    #    expr2.sort_tensors()
-    #    terms, indices = codegen.wick_to_sympy(expr1+expr2, particles, return_value="ls1new")
-    #    terms = transform_spin(terms, indices, project_onto=[(None,)])
-    #    terms_ls1 = codegen.sympy_to_drudge(terms, indices, dr=dr)
-    #    function_printer.write_latex(terms_ls1.latex(), comment="LS1 amplitude")
+        # B1 residuals <0|L Hbar|1b> (connected pieces proportional to lambda)
+        S = L * Hbars[3] * ket1b
+        out = apply_wick(S)
+        out.resolve()
+        expr2 = AExpression(Ex=out)
+        expr2 = expr2.get_connected()
+        expr2.sort_tensors()
+        terms, indices = codegen.wick_to_sympy(expr1+expr2, particles, return_value="ls1new")
+        terms = transform_spin(terms, indices, project_onto=[(None,)])
+        terms_ls1 = codegen.sympy_to_drudge(terms, indices, dr=dr)
+        function_printer.write_latex(terms_ls1.latex(), comment="LS1 amplitude")
 
-    #    # B2 residuals <0|Hbar|2b> (not proportional to lambda):
-    #    S = Hbar * ket2b  # FIXME truncate rank
-    #    out = apply_wick(S)
-    #    out.resolve()
-    #    expr1 = AExpression(Ex=out)
-    #    expr1 = expr1.get_connected()
-    #    expr1.sort_tensors()
+        # B2 residuals <0|Hbar|2b> (not proportional to lambda):
+        S = Hbar * ket2b  # FIXME truncate rank
+        out = apply_wick(S)
+        out.resolve()
+        expr1 = AExpression(Ex=out)
+        expr1 = expr1.get_connected()
+        expr1.sort_tensors()
 
-    #    # B2 residuals <0|L Hbar|2b> (connected pieces proportional to lambda)
-    #    S = L * Hbar * ket2b  # FIXME truncate rank
-    #    out = apply_wick(S)
-    #    out.resolve()
-    #    expr2 = AExpression(Ex=out)
-    #    expr2 = expr2.get_connected()
-    #    expr2.sort_tensors()
+        # B2 residuals <0|L Hbar|2b> (connected pieces proportional to lambda)
+        S = L * Hbar * ket2b  # FIXME truncate rank
+        out = apply_wick(S)
+        out.resolve()
+        expr2 = AExpression(Ex=out)
+        expr2 = expr2.get_connected()
+        expr2.sort_tensors()
 
-    #    # B2 residuals (disonnected pieces proportional to lambda):
-    #    P1 = PB1("nm")
-    #    S = Hbar * P1 * L * ket2b  # FIXME truncate rank
-    #    out = apply_wick(S)
-    #    out.resolve()
-    #    expr3 = AExpression(Ex=out)
-    #    expr3.sort_tensors()
-    #    terms, indices = codegen.wick_to_sympy(expr1+expr2+expr3, particles, return_value="ls2new")
-    #    terms = transform_spin(terms, indices, project_onto=[(None, None)])
-    #    terms_ls2 = codegen.sympy_to_drudge(terms, indices, dr=dr)
-    #    function_printer.write_latex(terms_ls2.latex(), comment="LS2 amplitude")
+        # B2 residuals (disonnected pieces proportional to lambda):
+        P1 = PB1("nm")
+        S = Hbar * P1 * L * ket2b  # FIXME truncate rank
+        out = apply_wick(S)
+        out.resolve()
+        expr3 = AExpression(Ex=out)
+        expr3.sort_tensors()
+        terms, indices = codegen.wick_to_sympy(expr1+expr2+expr3, particles, return_value="ls2new")
+        terms = transform_spin(terms, indices, project_onto=[(None, None)])
+        terms_ls2 = codegen.sympy_to_drudge(terms, indices, dr=dr)
+        function_printer.write_latex(terms_ls2.latex(), comment="LS2 amplitude")
 
-    #    # BE1 residuals <0|Hbar|EPS1> (not proportional to lambda)
-    #    S = Hbars[0] * ket1b1e
-    #    out = apply_wick(S)
-    #    out.resolve()
-    #    expr1 = AExpression(Ex=out)
-    #    expr1 = expr1.get_connected()
-    #    expr1.sort_tensors()
+        # BE1 residuals <0|Hbar|EPS1> (not proportional to lambda)
+        S = Hbars[0] * ket1b1e
+        out = apply_wick(S)
+        out.resolve()
+        expr1 = AExpression(Ex=out)
+        expr1 = expr1.get_connected()
+        expr1.sort_tensors()
 
-    #    # BE1 residuals <0|L Hbar|EPS1> (connected pieces proportional to lambda)
-    #    S = L * Hbars[0] * ket1b1e
-    #    out = apply_wick(S)
-    #    out.resolve()
-    #    expr2 = AExpression(Ex=out)
-    #    expr2 = expr2.get_connected()
-    #    expr2.sort_tensors()
+        # BE1 residuals <0|L Hbar|EPS1> (connected pieces proportional to lambda)
+        S = L * Hbars[0] * ket1b1e
+        out = apply_wick(S)
+        out.resolve()
+        expr2 = AExpression(Ex=out)
+        expr2 = expr2.get_connected()
+        expr2.sort_tensors()
 
-    #    # BE1 residuals (disconnected pieces proportional to lambda)
-    #    P1 = PE1("occ", "vir")
-    #    S = Hbars[1] * P1 * L * ket1b1e
-    #    out = apply_wick(S)
-    #    out.resolve()
-    #    expr3 = AExpression(Ex=out)
-    #    expr3.sort_tensors()
+        # BE1 residuals (disconnected pieces proportional to lambda)
+        P1 = PE1("occ", "vir")
+        S = Hbars[1] * P1 * L * ket1b1e
+        out = apply_wick(S)
+        out.resolve()
+        expr3 = AExpression(Ex=out)
+        expr3.sort_tensors()
 
-    #    # BE1 residuals (disconnected pieces proportional to lambda, projection onto boson singles)
-    #    P1b = PB1("nm")
-    #    S = Hbars[1] * P1 * L * ket1b1e
-    #    out = apply_wick(S)
-    #    out.resolve()
-    #    expr4 = AExpression(Ex=out)
-    #    expr4.sort_tensors()
-    #    terms, indices = codegen.wick_to_sympy(expr1+expr2+expr3+expr4, particles, return_value="lu11new")
-    #    terms = transform_spin(terms, indices, project_onto=[(None, codegen.ALPHA, codegen.ALPHA)])
-    #    terms_lu11 = codegen.sympy_to_drudge(terms, indices, dr=dr)
-    #    function_printer.write_latex(terms_lu11.latex(), comment="LU11 amplitude")
+        # BE1 residuals (disconnected pieces proportional to lambda, projection onto boson singles)
+        P1b = PB1("nm")
+        S = Hbars[1] * P1 * L * ket1b1e
+        out = apply_wick(S)
+        out.resolve()
+        expr4 = AExpression(Ex=out)
+        expr4.sort_tensors()
+        terms, indices = codegen.wick_to_sympy(expr1+expr2+expr3+expr4, particles, return_value="lu11new")
+        terms = transform_spin(terms, indices, project_onto=[(None, codegen.ALPHA, codegen.ALPHA)])
+        terms_lu11 = codegen.sympy_to_drudge(terms, indices, dr=dr)
+        function_printer.write_latex(terms_lu11.latex(), comment="LU11 amplitude")
 
-    #    terms = codegen.optimize([terms_l1, terms_l2, terms_ls1, terms_ls2, terms_lu11], sizes=sizes, optimize="trav", verify=False, interm_fmt="x{}")
-    #    function_printer.write_python(printer.doprint(terms)+"\n", comment="L1, L2, LS1 , LS2 and LU11 amplitudes")
+        terms = codegen.optimize([terms_l1, terms_l2, terms_ls1, terms_ls2, terms_lu11], sizes=sizes, optimize="trav", verify=False, interm_fmt="x{}")
+        function_printer.write_python(printer.doprint(terms)+"\n", comment="L1, L2, LS1 , LS2 and LU11 amplitudes")
 
     # Get 1RDM expressions:
     with FunctionPrinter(
