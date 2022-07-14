@@ -101,6 +101,31 @@ class GEBCC(rebcc.REBCC):
 
         return amplitudes
 
+    def make_rdm2_f(self, eris=None, amplitudes=None, lambdas=None, hermitise=True):
+        func, kwargs = self._load_function(
+                "make_rdm2_f",
+                eris=eris,
+                amplitudes=amplitudes,
+                lambdas=lambdas,
+        )
+
+        dm = func(**kwargs)
+
+        # TODO REMOVE ME when GCCSD equations are regenerated!
+        dm = dm.transpose(0, 2, 1, 3)
+
+        if hermitise:
+            dm = 0.5 * (
+                    + dm.transpose(0, 1, 2, 3)
+                    + dm.transpose(2, 3, 0, 1)
+            )
+            dm = 0.5 * (
+                    + dm.transpose(0, 1, 2, 3)
+                    + dm.transpose(1, 0, 3, 2)
+            )
+
+        return dm
+
     def get_mean_field_G(self):
         val = lib.einsum("Ipp->I", self.g.boo)
         val -= self.xi * self.omega

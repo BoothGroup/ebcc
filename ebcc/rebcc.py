@@ -885,7 +885,9 @@ class REBCC:
     def make_rdm2_f(self, eris=None, amplitudes=None, lambdas=None, hermitise=True):
         """Build the fermionic two-particle reduced density matrix:
 
-        ..math :: \\langle i^+ j^+ l k \\rangle
+        ..math :: \Gamma_{ijkl} = \\langle i^+ j^+ l k \\rangle
+
+        which is stored in Chemist's notation.
 
         Parameters
         ----------

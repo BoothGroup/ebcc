@@ -161,7 +161,7 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
 
     def test_rdm2(self):
         a = self.ccsd_ref.make_rdm2()
-        b = self.ccsd.make_rdm2_f(eris=self.eris).transpose(0, 2, 1, 3)
+        b = self.ccsd.make_rdm2_f(eris=self.eris)
         np.testing.assert_almost_equal(a, b, 6, verbose=True)
 
     def test_eom_ip(self):

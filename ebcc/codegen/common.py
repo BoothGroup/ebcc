@@ -142,8 +142,8 @@ def get_printer(spin):
 
     if spin == "rhf" or spin == "uhf":
         reorder_axes["v"] = (0, 2, 1, 3)
-        for x in ov_2e:
-            reorder_axes["rdm2_f_%s" % x] = (0, 2, 1, 3)
+    for x in ov_2e:
+        reorder_axes["rdm2_f_%s" % x] = (0, 2, 1, 3)
 
     # This should be done earlier and the indices themselves manipulated:
     occ = "ijklmnop"
