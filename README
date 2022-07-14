@@ -1,3 +1,0 @@
-Based of epcc and WICK code for symbolic algebra of diagrammatic expressions of Alec White (https://github.com/awhite862/wick).
-
-WICK input files to generate required residual equations can be found in gen_eqns folder. 
