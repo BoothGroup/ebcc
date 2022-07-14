@@ -3,18 +3,48 @@
 ebcc: Coupled cluster calculations on electron-boson systems
 ************************************************************
 
-Quickstart
-----------
-`ebcc` builds upon the PySCF quantum chemistry package to expose
-various coupled cluster (CC) models to systems consisting of coupled
-electrons and bosons. Input to the solvers are PySCF mean-field
-objects::
+The `ebcc`  package implements various coupled cluster (CC) models
+for application to electron-boson systems, with a focus on
+generality and model extensibility.
 
-    >>> from pyscf import gto, scf
-    >>> mol = gto.M(atom="H 0 0 0; H 0 0 1", basis="cc-pvdz")
-    >>> mf = scf.RHF(mol).run()
-    >>> ccsd = ebcc.EBCC(mf)
-    >>> ccsd.kernel()
+
+Installation
+------------
+
+From the python package index:
+
+    pip install ebcc
+
+From source:
+
+    git clone https://github.com/BoothGroup/ebcc
+    pip install .
+
+
+Usage
+-----
+
+The implemented models are built upon the mean-field objects of
+`PySCF <https://github.com/pyscf/pyscf>`_:
+
+>>> from pyscf import gto, scf
+>>> from ebcc import EBCC
+>>> mol = gto.M(atom="H 0 0 0; H 0 0 1", basis="cc-pvdz")
+>>> mf = scf.RHF(mol)
+>>> mf.kernel()
+>>> ccsd = EBCC(mf)
+>>> ccsd.kernel()
+
+
+Code generation
+---------------
+
+The models implemented are generated algorithmically from expressions
+over second quantized operators. Expressions are generated using
+`qwick <https://github.com/obackhouse/qwick>`_ with optimisation of
+common subexpressions and contraction order achieved using
+`drudge <https://github.com/tschijnmo/drudge>`_ and
+`gristmill <https://github.com/tschijnmo/gristmill>`_.
 
 """
 
