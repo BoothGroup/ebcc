@@ -8,25 +8,6 @@ import itertools
 import numpy as np
 
 
-default_log = logging.getLogger(__name__)
-default_log.setLevel(logging.INFO)
-default_log.addHandler(logging.StreamHandler(sys.stderr))
-
-logging.addLevelName(25, "OUTPUT")
-def output(self, msg, *args, **kwargs):
-    if self.isEnabledFor(25):
-        self._log(25, msg, args, **kwargs)
-logging.Logger.output = output
-
-
-class NullLogger(logging.Logger):
-    def __init__(self, *args, **kwargs):
-        super().__init__("null")
-
-    def _log(self, level, msg, args, **kwargs):
-        pass
-
-
 def factorial(n):
     """Return the factorial of n.
     """

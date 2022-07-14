@@ -9,10 +9,58 @@ from typing import Tuple
 from types import SimpleNamespace
 import numpy as np
 from pyscf import lib, ao2mo
-from ebcc import util
+from ebcc import default_log, util
 
 # TODO math in docstrings
 # TODO resolve G vs bare_G confusion
+
+
+class Amplitudes(dict):
+    """Amplitude container class. Consists of a dictionary with keys
+    that are strings of the name of each amplitude, and values are
+    arrays whose dimension depends on the particular amplitude.
+    """
+
+    pass
+
+
+class ERIs(SimpleNamespace):
+    """Electronic repulsion integral container class. Consists of a
+    just-in-time namespace containing blocks of the integrals, with
+    keys that are length-4 strings of `"o"` or `"v"` signifying
+    whether the corresponding dimension is occupied or virtual.
+    """
+
+    def __init__(self, ebcc, slices=None, mo_coeff=None):
+        self.mf = ebcc.mf
+        self.slices = slices
+        self.mo_coeff = mo_coeff
+
+        if self.mo_coeff is None:
+            self.mo_coeff = self.mf.mo_coeff
+        if not (isinstance(self.mo_coeff, (tuple, list)) or self.mo_coeff.ndim == 3):
+            self.mo_coeff = [self.mo_coeff] * 4
+
+        if self.slices is None:
+            o = slice(None, ebcc.nocc)
+            v = slice(ebcc.nocc, None)
+            self.slices = {"o": o, "v": v}
+        if not isinstance(self.slices, (tuple, list)):
+            self.slices = [self.slices] * 4
+
+    def __getattr__(self, key):
+        """Just-in-time attribute getter.
+        """
+
+        if key not in self.__dict__:
+            coeffs = []
+            for i, k in enumerate(key):
+                coeffs.append(self.mo_coeff[i][:, self.slices[i][k]])
+            block = ao2mo.incore.general(self.mf._eri, coeffs, compact=False)
+            block = block.reshape([c.shape[-1] for c in coeffs])
+            self.__dict__[key] = block
+
+        return self.__dict__[key]
 
 
 @dataclasses.dataclass
@@ -94,14 +142,10 @@ class REBCC:
         operators.
     e_corr : float
         Correlation energy.
-    amplitudes : dict of (str, numpy.ndarray)
-        Dictionary containing the amplitudes. Keys are strings of the
-        name of each amplitudes, and values are arrays whose dimension
-        depends on the particular amplitude.
-    lambdas : dict of (str, numpy.ndarray)
-        Dictionary containing the lambda amplitudes. Keys are strings
-        of the name of each lambda amplitude, and values are arrays
-        whose dimension depends on the particular lambda amplitude.
+    amplitudes : Amplitudes
+        Cluster amplitudes.
+    lambdas : Amplitudes
+        Cluster lambda amplitudes.
     converged : bool
         Whether the coupled cluster equations converged.
     converged_lambda : bool
@@ -259,7 +303,7 @@ class REBCC:
         for key, val in kwargs.items():
             setattr(self.options, key, val)
 
-        self.log = util.default_log if log is None else log
+        self.log = default_log if log is None else log
         self.mf = self._convert_mf(mf)
         self.rank = rank
         self._eqns = self._get_eqns()
@@ -294,8 +338,8 @@ class REBCC:
         self.fock = self.get_fock()
 
         self.log.info(" > nmo:   %d", self.nmo)
-        self.log.info(" > nocc:  %d", self.nocc)
-        self.log.info(" > nvir:  %d", self.nvir)
+        self.log.info(" > nocc:  %s", self.nocc)
+        self.log.info(" > nvir:  %s", self.nvir)
         self.log.info(" > nbos:  %d", self.nbos)
         self.log.info(" > e_tol:  %s", self.options.e_tol)
         self.log.info(" > t_tol:  %s", self.options.t_tol)
@@ -307,12 +351,9 @@ class REBCC:
 
         Parameters
         ----------
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
 
         Returns
         -------
@@ -369,16 +410,12 @@ class REBCC:
 
         Parameters
         ----------
-        amplitudes : dict of (str, numpy.ndarray), optional
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitudes, and values are arrays whose
-            dimension depends on the particular amplitude.
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
         """
 
         if eris is None:
@@ -505,25 +542,20 @@ class REBCC:
 
         Parameters
         ----------
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
 
         Returns
         -------
-        amplitudes : dict of (str, numpy.ndarray)
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitudes, and values are arrays whose
-            dimension depends on the particular amplitude.
+        amplitudes : Amplitudes
+            Cluster amplitudes.
         """
 
         if eris is None:
             eris = self.get_eris()
 
-        amplitudes = dict()
+        amplitudes = Amplitudes()
         e_ia = lib.direct_sum("i-a->ia", self.eo, self.ev)
 
         # Build T amplitudes:
@@ -563,25 +595,20 @@ class REBCC:
 
         Parameters
         ----------
-        amplitudes : dict of (str, numpy.ndarray), optional
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitude, and values are arrays whose
-            dimension depends on the particular amplitude. Default
-            value is generated using `self.init_amps()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
 
         Returns
         -------
-        lambdas : dict of (str, numpy.ndarray)
-            Dictionary containing the lambda amplitudes. Keys are
-            strings of the name of each lambda amplitude, and values
-            are arrays whose dimension depends on the particular
-            lambda amplitude.
+        lambdas : Amplitudes
+            Updated cluster lambda amplitudes.
         """
 
         if amplitudes is None:
             amplitudes = self.amplitudes
 
-        lambdas = dict()
+        lambdas = Amplitudes()
 
         # Build L amplitudes:
         for n in self.rank_numeric[0]:
@@ -605,17 +632,12 @@ class REBCC:
 
         Parameters
         ----------
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
-        amplitudes : dict of (str, numpy.ndarray), optional
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitudes, and values are arrays whose
-            dimension depends on the particular amplitude. Default
-            value is generated using `self.init_amps()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
 
         Returns
         -------
@@ -636,25 +658,17 @@ class REBCC:
 
         Parameters
         ----------
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
-        amplitudes : dict of (str, numpy.ndarray), optional
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitudes, and values are arrays whose
-            dimension depends on the particular amplitude. Default
-            value is generated using `self.init_amps()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
 
         Returns
         -------
-        amplitudes : dict of (str, numpy.ndarray)
-            Dictionary containing the updated amplitudes. Keys are
-            strings of the name of each amplitudes, and values are
-            arrays whose dimension depends on the particular
-            amplitude.
+        amplitudes : Amplitudes
+            Updated cluster amplitudes.
         """
 
         func, kwargs = self._load_function(
@@ -694,31 +708,20 @@ class REBCC:
 
         Parameters
         ----------
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
-        amplitudes : dict of (str, numpy.ndarray), optional
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitude, and values are arrays whose
-            dimension depends on the particular amplitude. Default
-            value is generated using `self.init_amps()`.
-        lambdas : dict of (str, numpy.ndarray), optional
-            Dictionary containing the lambda amplitudes. Keys are
-            strings of the name of each lambda amplitude, and values
-            are arrays whose dimension depends on the particular
-            lambda amplitude. Default value is generated using
-            `self.init_lams()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
+        lambdas : Amplitudes, optional
+            Cluster lambda amplitudes. Default value is generated
+            using `self.init_lams()`.
 
         Returns
         -------
-        lambdas : dict of (str, numpy.ndarray)
-            Dictionary containing the updated lambda amplitudes. Keys
-            are strings of the name of each lambda amplitude, and
-            values are arrays whose dimension depends on the
-            particular lambda amplitude.
+        lambdas : Amplitudes
+            Updated cluster lambda amplitudes.
         """
 
         func, kwargs = self._load_function(
@@ -765,23 +768,15 @@ class REBCC:
 
         Parameters
         ----------
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
-        amplitudes : dict of (str, numpy.ndarray), optional
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitude, and values are arrays whose
-            dimension depends on the particular amplitude. Default
-            value is generated using `self.init_amps()`.
-        lambdas : dict of (str, numpy.ndarray), optional
-            Dictionary containing the lambda amplitudes. Keys are
-            strings of the name of each lambda amplitude, and values
-            are arrays whose dimension depends on the particular
-            lambda amplitude. Default value is generated using
-            `self.init_lams()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
+        lambdas : Amplitudes, optional
+            Cluster lambda amplitudes. Default value is generated
+            using `self.init_lams()`.
 
         Returns
         -------
@@ -805,23 +800,15 @@ class REBCC:
 
         Parameters
         ----------
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
-        amplitudes : dict of (str, numpy.ndarray), optional
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitude, and values are arrays whose
-            dimension depends on the particular amplitude. Default
-            value is generated using `self.init_amps()`.
-        lambdas : dict of (str, numpy.ndarray), optional
-            Dictionary containing the lambda amplitudes. Keys are
-            strings of the name of each lambda amplitude, and values
-            are arrays whose dimension depends on the particular
-            lambda amplitude. Default value is generated using
-            `self.init_lams()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
+        lambdas : Amplitudes, optional
+            Cluster lambda amplitudes. Default value is generated
+            using `self.init_lams()`.
         unshifted : bool, optional
             If `self.shift` is `True`, then `unshifted=True` applies
             the reverse transformation such that the bosonic operators
@@ -862,23 +849,15 @@ class REBCC:
 
         Parameters
         ----------
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
-        amplitudes : dict of (str, numpy.ndarray), optional
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitude, and values are arrays whose
-            dimension depends on the particular amplitude. Default
-            value is generated using `self.init_amps()`.
-        lambdas : dict of (str, numpy.ndarray), optional
-            Dictionary containing the lambda amplitudes. Keys are
-            strings of the name of each lambda amplitude, and values
-            are arrays whose dimension depends on the particular
-            lambda amplitude. Default value is generated using
-            `self.init_lams()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
+        lambdas : Amplitudes, optional
+            Cluster lambda amplitudes. Default value is generated
+            using `self.init_lams()`.
         hermitise : bool, optional
             Force Hermiticity in the output. Default value is `True`.
 
@@ -909,23 +888,15 @@ class REBCC:
 
         Parameters
         ----------
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
-        amplitudes : dict of (str, numpy.ndarray), optional
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitude, and values are arrays whose
-            dimension depends on the particular amplitude. Default
-            value is generated using `self.init_amps()`.
-        lambdas : dict of (str, numpy.ndarray), optional
-            Dictionary containing the lambda amplitudes. Keys are
-            strings of the name of each lambda amplitude, and values
-            are arrays whose dimension depends on the particular
-            lambda amplitude. Default value is generated using
-            `self.init_lams()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
+        lambdas : Amplitudes, optional
+            Cluster lambda amplitudes. Default value is generated
+            using `self.init_lams()`.
         hermitise : bool, optional
             Force Hermiticity in the output. Default value is `True`.
 
@@ -969,23 +940,15 @@ class REBCC:
 
         Parameters
         ----------
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
-        amplitudes : dict of (str, numpy.ndarray), optional
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitude, and values are arrays whose
-            dimension depends on the particular amplitude. Default
-            value is generated using `self.init_amps()`.
-        lambdas : dict of (str, numpy.ndarray), optional
-            Dictionary containing the lambda amplitudes. Keys are
-            strings of the name of each lambda amplitude, and values
-            are arrays whose dimension depends on the particular
-            lambda amplitude. Default value is generated using
-            `self.init_lams()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
+        lambdas : Amplitudes, optional
+            Cluster lambda amplitudes. Default value is generated
+            using `self.init_lams()`.
         unshifted : bool, optional
             If `self.shift` is `True`, then `unshifted=True` applies
             the reverse transformation such that the bosonic operators
@@ -1032,17 +995,12 @@ class REBCC:
             Dictionary containing the vectors in each sector. Keys are
             strings of the name of each vector, and values are arrays
             whose dimension depends on the particular sector.
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
-        amplitudes : dict of (str, numpy.ndarray), optional
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitude, and values are arrays whose
-            dimension depends on the particular amplitude. Default
-            value is generated using `self.init_amps()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
 
         Returns
         -------
@@ -1075,17 +1033,12 @@ class REBCC:
             Dictionary containing the vectors in each sector. Keys are
             strings of the name of each vector, and values are arrays
             whose dimension depends on the particular sector.
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
-        amplitudes : dict of (str, numpy.ndarray), optional
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitude, and values are arrays whose
-            dimension depends on the particular amplitude. Default
-            value is generated using `self.init_amps()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
 
         Returns
         -------
@@ -1117,17 +1070,12 @@ class REBCC:
             Dictionary containing the vectors in each sector. Keys are
             strings of the name of each vector, and values are arrays
             whose dimension depends on the particular sector.
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
-        amplitudes : dict of (str, numpy.ndarray), optional
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitude, and values are arrays whose
-            dimension depends on the particular amplitude. Default
-            value is generated using `self.init_amps()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
 
         Returns
         -------
@@ -1146,17 +1094,12 @@ class REBCC:
 
         Parameters
         ----------
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
-        amplitudes : dict of (str, numpy.ndarray), optional
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitude, and values are arrays whose
-            dimension depends on the particular amplitude. Default
-            value is generated using `self.init_amps()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
 
         Returns
         -------
@@ -1180,17 +1123,12 @@ class REBCC:
 
         Parameters
         ----------
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
-        amplitudes : dict of (str, numpy.ndarray), optional
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitude, and values are arrays whose
-            dimension depends on the particular amplitude. Default
-            value is generated using `self.init_amps()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
 
         Returns
         -------
@@ -1214,17 +1152,12 @@ class REBCC:
 
         Parameters
         ----------
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
-        amplitudes : dict of (str, numpy.ndarray), optional
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitude, and values are arrays whose
-            dimension depends on the particular amplitude. Default
-            value is generated using `self.init_amps()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
 
         Returns
         -------
@@ -1242,23 +1175,15 @@ class REBCC:
 
         Parameters
         ----------
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
-        amplitudes : dict of (str, numpy.ndarray), optional
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitude, and values are arrays whose
-            dimension depends on the particular amplitude. Default
-            value is generated using `self.init_amps()`.
-        lambdas : dict of (str, numpy.ndarray), optional
-            Dictionary containing the lambda amplitudes. Keys are
-            strings of the name of each lambda amplitude, and values
-            are arrays whose dimension depends on the particular
-            lambda amplitude. Default value is generated using
-            `self.init_lams()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
+        lambdas : Amplitudes, optional
+            Cluster lambda amplitudes. Default value is generated
+            using `self.init_lams()`.
 
         Returns
         -------
@@ -1282,23 +1207,15 @@ class REBCC:
 
         Parameters
         ----------
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
-        amplitudes : dict of (str, numpy.ndarray), optional
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitude, and values are arrays whose
-            dimension depends on the particular amplitude. Default
-            value is generated using `self.init_amps()`.
-        lambdas : dict of (str, numpy.ndarray), optional
-            Dictionary containing the lambda amplitudes. Keys are
-            strings of the name of each lambda amplitude, and values
-            are arrays whose dimension depends on the particular
-            lambda amplitude. Default value is generated using
-            `self.init_lams()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
+        lambdas : Amplitudes, optional
+            Cluster lambda amplitudes. Default value is generated
+            using `self.init_lams()`.
 
         Returns
         -------
@@ -1322,23 +1239,15 @@ class REBCC:
 
         Parameters
         ----------
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
-        amplitudes : dict of (str, numpy.ndarray), optional
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitude, and values are arrays whose
-            dimension depends on the particular amplitude. Default
-            value is generated using `self.init_amps()`.
-        lambdas : dict of (str, numpy.ndarray), optional
-            Dictionary containing the lambda amplitudes. Keys are
-            strings of the name of each lambda amplitude, and values
-            are arrays whose dimension depends on the particular
-            lambda amplitude. Default value is generated using
-            `self.init_lams()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
+        lambdas : Amplitudes, optional
+            Cluster lambda amplitudes. Default value is generated
+            using `self.init_lams()`.
 
         Returns
         -------
@@ -1355,23 +1264,15 @@ class REBCC:
 
         Parameters
         ----------
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
-        amplitudes : dict of (str, numpy.ndarray), optional
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitude, and values are arrays whose
-            dimension depends on the particular amplitude. Default
-            value is generated using `self.init_amps()`.
-        lambdas : dict of (str, numpy.ndarray), optional
-            Dictionary containing the lambda amplitudes. Keys are
-            strings of the name of each lambda amplitude, and values
-            are arrays whose dimension depends on the particular
-            lambda amplitude. Default value is generated using
-            `self.init_lams()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
+        lambdas : Amplitudes, optional
+            Cluster lambda amplitudes. Default value is generated
+            using `self.init_lams()`.
 
         Returns
         -------
@@ -1395,23 +1296,15 @@ class REBCC:
 
         Parameters
         ----------
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
-        amplitudes : dict of (str, numpy.ndarray), optional
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitude, and values are arrays whose
-            dimension depends on the particular amplitude. Default
-            value is generated using `self.init_amps()`.
-        lambdas : dict of (str, numpy.ndarray), optional
-            Dictionary containing the lambda amplitudes. Keys are
-            strings of the name of each lambda amplitude, and values
-            are arrays whose dimension depends on the particular
-            lambda amplitude. Default value is generated using
-            `self.init_lams()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
+        lambdas : Amplitudes, optional
+            Cluster lambda amplitudes. Default value is generated
+            using `self.init_lams()`.
 
         Returns
         -------
@@ -1435,23 +1328,15 @@ class REBCC:
 
         Parameters
         ----------
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
-        amplitudes : dict of (str, numpy.ndarray), optional
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitude, and values are arrays whose
-            dimension depends on the particular amplitude. Default
-            value is generated using `self.init_amps()`.
-        lambdas : dict of (str, numpy.ndarray), optional
-            Dictionary containing the lambda amplitudes. Keys are
-            strings of the name of each lambda amplitude, and values
-            are arrays whose dimension depends on the particular
-            lambda amplitude. Default value is generated using
-            `self.init_lams()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
+        lambdas : Amplitudes, optional
+            Cluster lambda amplitudes. Default value is generated
+            using `self.init_lams()`.
 
         Returns
         -------
@@ -1470,23 +1355,15 @@ class REBCC:
 
         Parameters
         ----------
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
-        amplitudes : dict of (str, numpy.ndarray), optional
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitude, and values are arrays whose
-            dimension depends on the particular amplitude. Default
-            value is generated using `self.init_amps()`.
-        lambdas : dict of (str, numpy.ndarray), optional
-            Dictionary containing the lambda amplitudes. Keys are
-            strings of the name of each lambda amplitude, and values
-            are arrays whose dimension depends on the particular
-            lambda amplitude. Default value is generated using
-            `self.init_lams()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
+        lambdas : Amplitudes, optional
+            Cluster lambda amplitudes. Default value is generated
+            using `self.init_lams()`.
 
         Returns
         -------
@@ -1503,23 +1380,15 @@ class REBCC:
 
         Parameters
         ----------
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
-        amplitudes : dict of (str, numpy.ndarray), optional
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitude, and values are arrays whose
-            dimension depends on the particular amplitude. Default
-            value is generated using `self.init_amps()`.
-        lambdas : dict of (str, numpy.ndarray), optional
-            Dictionary containing the lambda amplitudes. Keys are
-            strings of the name of each lambda amplitude, and values
-            are arrays whose dimension depends on the particular
-            lambda amplitude. Default value is generated using
-            `self.init_lams()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
+        lambdas : Amplitudes, optional
+            Cluster lambda amplitudes. Default value is generated
+            using `self.init_lams()`.
 
         Returns
         -------
@@ -1633,10 +1502,9 @@ class REBCC:
 
         Parameters
         ----------
-        amplitudes : dict of (str, numpy.ndarray)
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitudes, and values are arrays whose
-            dimension depends on the particular amplitude.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
 
         Returns
         -------
@@ -1670,10 +1538,8 @@ class REBCC:
 
         Returns
         -------
-        amplitudes : dict of (str, numpy.ndarray)
-            Dictionary containing the amplitudes. Keys are strings of
-            the name of each amplitudes, and values are arrays whose
-            dimension depends on the particular amplitude.
+        amplitudes : Amplitudes
+            Cluster amplitudes.
         """
 
         amplitudes = {}
@@ -1705,10 +1571,9 @@ class REBCC:
 
         Parameters
         ----------
-        lambdas : dict of (str, numpy.ndarray)
-            Dictionary containing the lambdas. Keys are strings of
-            the name of each lambdas, and values are arrays whose
-            dimension depends on the particular lambda amplitude.
+        lambdas : Amplitudes, optional
+            Cluster lambda amplitudes. Default value is generated
+            using `self.init_lams()`.
 
         Returns
         -------
@@ -1742,10 +1607,8 @@ class REBCC:
 
         Returns
         -------
-        lambdas : dict of (str, numpy.ndarray)
-            Dictionary containing the lambdas. Keys are strings of
-            the name of each lambdas, and values are arrays whose
-            dimension depends on the particular lambda amplitude.
+        lambdas : Amplitudes
+            Cluster lambda amplitudes.
         """
 
         lambdas = {}
@@ -1965,10 +1828,6 @@ class REBCC:
             vo -= lib.einsum("I,Iai->ai", xi, self.g.bvo + self.g.bov.transpose(0, 2, 1))
             vv -= lib.einsum("I,Iab->ab", xi, self.g.bvv + self.g.bvv.transpose(0, 2, 1))
 
-        assert np.allclose(oo, oo.T)
-        assert np.allclose(vv, vv.T)
-        assert np.allclose(ov, vo.T)
-
         f = SimpleNamespace(oo=oo, ov=ov, vo=vo, vv=vv)
 
         return f
@@ -1978,29 +1837,12 @@ class REBCC:
 
         Returns
         -------
-        eris : SimpleNamespace, optional
-            Namespace containing blocks of the electronic repulsion
-            integrals. Each attribute should be a length-4 string of
-            `o` or `v` signifying whether the corresponding axis is
-            occupied or virtual. Default value is generated using
-            `self.get_eri()`.
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
         """
 
-        o = slice(None, self.nocc)
-        v = slice(self.nocc, None)
-        slices = {"o": o, "v": v}
-
-        # JIT namespace
-        class two_e_blocks:
-            def __getattr__(blocks, key):
-                if key not in blocks.__dict__:
-                    coeffs = [self.mf.mo_coeff[:, slices[k]] for k in key]
-                    block = ao2mo.incore.general(self.mf._eri, coeffs, compact=False)
-                    block = block.reshape([c.shape[-1] for c in coeffs])
-                    blocks.__dict__[key] = block
-                return blocks.__dict__[key]
-
-        return two_e_blocks()
+        return ERIs(self)
 
     @property
     def bare_fock(self):
