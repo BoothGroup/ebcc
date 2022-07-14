@@ -917,15 +917,13 @@ class REBCC:
         dm = func(**kwargs)
 
         if hermitise:
-            dm = 0.125 * (
+            dm = 0.5 * (
                     + dm.transpose(0, 1, 2, 3)
-                    + dm.transpose(1, 0, 2, 3)
-                    + dm.transpose(0, 1, 3, 2)
-                    + dm.transpose(1, 0, 3, 2)
                     + dm.transpose(2, 3, 0, 1)
-                    + dm.transpose(2, 3, 1, 0)
-                    + dm.transpose(3, 2, 0, 1)
-                    + dm.transpose(3, 2, 1, 0)
+            )
+            dm = 0.5 * (
+                    + dm.transpose(0, 1, 2, 3)
+                    + dm.transpose(1, 0, 3, 2)
             )
 
         return dm
