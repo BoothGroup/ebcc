@@ -11,10 +11,14 @@ import scipy.linalg
 
 from pyscf import gto, scf, cc, lib
 
-from ebcc import util, GEBCC
+from ebcc import NullLogger, GEBCC
 
 
 class GCCSD_SD_SD_Tests(unittest.TestCase):
+    """Test GCCSD-SD-SD against the legacy GCCSD-SD-SD values with
+    shift=True.
+    """
+
     shift = True
 
     @classmethod
@@ -48,7 +52,7 @@ class GCCSD_SD_SD_Tests(unittest.TestCase):
         g[np.ix_(range(nbos), orbspin==0, orbspin==0)] = g_
         g[np.ix_(range(nbos), orbspin==1, orbspin==1)] = g_
 
-        ccsd = GEBCC(mf, rank=("SD", "SD", "SD"), g=g, omega=omega, shift=cls.shift, log=util.NullLogger())
+        ccsd = GEBCC(mf, rank=("SD", "SD", "SD"), g=g, omega=omega, shift=cls.shift, log=NullLogger())
         ccsd.options.e_tol = 1e-12
         ccsd.options.t_tol = 1e-12
         eris = ccsd.get_eris()
@@ -167,6 +171,10 @@ class GCCSD_SD_SD_Tests(unittest.TestCase):
 
 
 class GCCSD_SD_SD_NoShift_Tests(GCCSD_SD_SD_Tests):
+    """Test GCCSD-SD-SD against the legacy GCCSD-SD-SD values with
+    shift=False.
+    """
+
     shift = False
 
 

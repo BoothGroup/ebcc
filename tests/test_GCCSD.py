@@ -11,10 +11,13 @@ import scipy.linalg
 
 from pyscf import gto, scf, cc, lib
 
-from ebcc import util, GEBCC
+from ebcc import NullLogger, GEBCC
 
 
 class GCCSD_Tests(unittest.TestCase):
+    """Test GCCSD against the legacy GCCSD values.
+    """
+
     @classmethod
     def setUpClass(cls):
         path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_data.pkl")
@@ -36,7 +39,7 @@ class GCCSD_Tests(unittest.TestCase):
 
         orbspin = scf.addons.get_ghf_orbspin(mf.mo_energy, mf.mo_occ, True)
 
-        ccsd = GEBCC(mf, rank=("SD", "", ""), log=util.NullLogger())
+        ccsd = GEBCC(mf, rank=("SD", "", ""), log=NullLogger())
         ccsd.options.e_tol = 1e-12
         ccsd.options.t_tol = 1e-12
         eris = ccsd.get_eris()
@@ -92,6 +95,9 @@ class GCCSD_Tests(unittest.TestCase):
 
 
 class GCCSD_PySCF_Tests(unittest.TestCase):
+    """Test GCCSD against the PySCF GCCSD values.
+    """
+
     @classmethod
     def setUpClass(cls):
         mol = gto.Mole()
@@ -110,7 +116,7 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
         ccsd_ref.kernel()
         ccsd_ref.solve_lambda()
 
-        ccsd = GEBCC(mf, rank=("SD", "", ""), log=util.NullLogger())
+        ccsd = GEBCC(mf, rank=("SD", "", ""), log=NullLogger())
         ccsd.e_tol = 1e-12
         ccsd.t_tol = 1e-12
         eris = ccsd.get_eris()

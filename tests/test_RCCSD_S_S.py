@@ -12,10 +12,14 @@ import scipy.linalg
 
 from pyscf import gto, scf, cc, lib
 
-from ebcc import util, REBCC
+from ebcc import NullLogger, REBCC
 
 
 class RCCSD_S_S_Tests(unittest.TestCase):
+    """Test RCCSD-S-S against the legacy GCCSD-S-S values with
+    shift=True.
+    """
+
     shift = True
 
     @classmethod
@@ -44,7 +48,7 @@ class RCCSD_S_S_Tests(unittest.TestCase):
         g = 0.5 * (g + g.transpose(0, 2, 1).conj())
         omega = np.random.random((nbos,)) * 5.0
 
-        ccsd = REBCC(mf, rank=("SD", "S", "S"), g=g, omega=omega, shift=cls.shift, log=util.NullLogger())
+        ccsd = REBCC(mf, rank=("SD", "S", "S"), g=g, omega=omega, shift=cls.shift, log=NullLogger())
         ccsd.options.e_tol = 1e-12
         ccsd.options.t_tol = 1e-12
         eris = ccsd.get_eris()
@@ -135,6 +139,10 @@ class RCCSD_S_S_Tests(unittest.TestCase):
 
 
 class RCCSD_S_S_NoShift_Tests(RCCSD_S_S_Tests):
+    """Test RCCSD-S-S against the legacy GCCSD-S-S values with
+    shift=False.
+    """
+
     shift = False
 
 

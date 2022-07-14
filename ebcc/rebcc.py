@@ -285,6 +285,8 @@ class REBCC:
     """
 
     Options = Options
+    Amplitudes = Amplitudes
+    ERIs = ERIs
 
     def __init__(
             self,
@@ -555,7 +557,7 @@ class REBCC:
         if eris is None:
             eris = self.get_eris()
 
-        amplitudes = Amplitudes()
+        amplitudes = self.Amplitudes()
         e_ia = lib.direct_sum("i-a->ia", self.eo, self.ev)
 
         # Build T amplitudes:
@@ -608,7 +610,7 @@ class REBCC:
         if amplitudes is None:
             amplitudes = self.amplitudes
 
-        lambdas = Amplitudes()
+        lambdas = self.Amplitudes()
 
         # Build L amplitudes:
         for n in self.rank_numeric[0]:
@@ -617,7 +619,6 @@ class REBCC:
 
         # Build LS amplitudes:
         for n in self.rank_numeric[1]:
-            # FIXME should these be transposed?
             lambdas["ls%d" % n] = amplitudes["s%d" % n]
 
         # Build LU amplitudes:
@@ -1542,7 +1543,7 @@ class REBCC:
             Cluster amplitudes.
         """
 
-        amplitudes = {}
+        amplitudes = self.Amplitudes()
         i0 = 0
 
         for n in self.rank_numeric[0]:
@@ -1611,7 +1612,7 @@ class REBCC:
             Cluster lambda amplitudes.
         """
 
-        lambdas = {}
+        lambdas = self.Amplitudes()
         i0 = 0
 
         for n in self.rank_numeric[0]:
@@ -1842,7 +1843,7 @@ class REBCC:
             using `self.get_eris()`.
         """
 
-        return ERIs(self)
+        return self.ERIs(self)
 
     @property
     def bare_fock(self):

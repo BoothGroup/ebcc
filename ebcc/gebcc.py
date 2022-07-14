@@ -8,11 +8,56 @@ import scipy.linalg
 from typing import Tuple
 from types import SimpleNamespace
 from pyscf import lib, ao2mo
-from ebcc.rebcc import util, REBCC
+from ebcc import util, rebcc
+
+
+class Amplitudes(rebcc.Amplitudes):
+    """Amplitude container class. Consists of a dictionary with keys
+    that are strings of the name of each amplitude. Values are
+    namespaces with keys indicating whether each fermionic dimension
+    is alpha (`"a"`) or beta (`"b"`) spin, and values are arrays whose
+    dimension depends on the particular amplitude. For purely bosonic
+    amplitudes the values of `Amplitudes` are simply arrays, with no
+    fermionic spins to index.
+    """
+
+    pass
+
+
+class ERIs(rebcc.ERIs):
+    """Electronic repulsion integral container class. Consists of a
+    namespace containing blocks of the integrals, with keys that are
+    length-4 strings of `"o"` or `"v"` signifying whether the
+    corresponding dimension is occupied or virtual.
+    """
+
+    def __init__(self, ebcc, slices=None, mo_coeff=None):
+        rebcc.ERIs.__init__(self, ebcc, slices=slices, mo_coeff=mo_coeff)
+
+        mo_a = [mo[:self.mf.mol.nao] for mo in self.mo_coeff]
+        mo_b = [mo[self.mf.mol.nao:] for mo in self.mo_coeff]
+
+        eri  = ao2mo.kernel(self.mf._eri, mo_a)
+        eri += ao2mo.kernel(self.mf._eri, mo_b)
+        eri += ao2mo.kernel(self.mf._eri, mo_a[:2] + mo_b[2:])
+        eri += ao2mo.kernel(self.mf._eri, mo_b[:2] + mo_a[2:])
+
+        eri = ao2mo.addons.restore(1, eri, ebcc.nmo)
+        eri = eri.reshape((ebcc.nmo,) * 4)
+        eri = eri.transpose(0, 2, 1, 3) - eri.transpose(0, 2, 3, 1)
+
+        self.eri = eri
+
+    def __getattr__(self, key):
+        i, j, k, l = (self.slices[i][k] for i, k in enumerate(key))
+        return self.eri[i, j, k, l]
 
 
 @util.inherit_docstrings
-class GEBCC(REBCC):
+class GEBCC(rebcc.REBCC):
+    Amplitudes = Amplitudes
+    ERIs = ERIs
+
     @staticmethod
     def _convert_mf(mf):
         return mf.to_ghf()
@@ -21,7 +66,7 @@ class GEBCC(REBCC):
         if eris is None:
             eris = self.get_eris()
 
-        amplitudes = dict()
+        amplitudes = self.Amplitudes()
         e_ia = lib.direct_sum("i-a->ia", self.eo, self.ev)
 
         # Build T amplitudes:
@@ -66,31 +111,7 @@ class GEBCC(REBCC):
         return val
 
     def get_eris(self):
-        o = self.mf.mo_occ > 0
-        v = self.mf.mo_occ == 0
-        a = slice(None, self.mf.mol.nao)
-        b = slice(self.mf.mol.nao, None)
-        slices = {"o": o, "v": v, "a": slice(None)}
-
-        mo_a = self.mf.mo_coeff[a]
-        mo_b = self.mf.mo_coeff[b]
-
-        eri  = ao2mo.kernel(self.mf._eri, mo_a)
-        eri += ao2mo.kernel(self.mf._eri, mo_b)
-        eri1 = ao2mo.kernel(self.mf._eri, (mo_a, mo_a, mo_b, mo_b))
-        eri += eri1
-        eri += eri1.T
-
-        eri = ao2mo.addons.restore(1, eri, self.nmo)
-        eri = eri.reshape((self.nmo,) * 4)
-        eri = eri.transpose(0, 2, 1, 3) - eri.transpose(0, 2, 3, 1)
-
-        class two_e_blocks:
-            def __getattr__(blocks, key):
-                i, j, k, l = (slices[k] for k in key)
-                return eri[:, :, :, l][:, :, k][:, j][i]
-
-        return two_e_blocks()
+        return self.ERIs(self)
 
     #def excitations_to_vector_ip(self, *excitations):
     #    """Construct a vector containing all of the excitation

@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import sys
+from types import MethodType
 from timeit import default_timer as timer
 from qwick import codegen
 
@@ -139,18 +140,107 @@ def get_printer(spin):
             "lu12new": (0, 1, 3, 2),
     }
 
-    if spin == "rhf":
+    if spin == "rhf" or spin == "uhf":
         reorder_axes["v"] = (0, 2, 1, 3)
         for x in ov_2e:
             reorder_axes["rdm2_f_%s" % x] = (0, 2, 1, 3)
 
-    printer = codegen.EinsumPrinter(
+    # This should be done earlier and the indices themselves manipulated:
+    occ = "ijklmnop"
+    vir = "abcdefgh"
+    bos = "wxyzstuv"
+    char_to_sector = {
+            **{x: "o" for x in occ},
+            **{x: "v" for x in vir},
+            **{x: "b" for x in bos},
+    }
+    sector_to_char = {}
+    for key, val in char_to_sector.items():
+        if val not in sector_to_char:
+            sector_to_char[val] = []
+        sector_to_char[val].append(key)
+    char_to_sector = {
+            **char_to_sector,
+            **{key.upper(): val for key, val in char_to_sector.items()},
+    }
+    char_to_sector = {
+            **char_to_sector,
+            **{key+"α": val for key, val in char_to_sector.items()},
+            **{key+"β": val for key, val in char_to_sector.items()},
+    }
+
+    class EinsumPrinter(codegen.EinsumPrinter):
+        def doprint(self, terms, *args, **kwargs):
+            out = codegen.EinsumPrinter.doprint(self, terms, *args, **kwargs)
+            lines = out.split("\n")
+            for i, line in enumerate(lines):
+                if "lib.einsum" in line:
+                    subscript = line.split("\"")[1]
+                    subscript_in = subscript.split("->")[0].split(",")
+                    subscript_out = subscript.split("->")[1]
+
+                    ins = []
+                    for sin in subscript_in:
+                        part = []
+                        for j in range(len(sin)):
+                            if sin[j] in ("α", "β"):
+                                part[-1] += sin[j]
+                            else:
+                                part.append(sin[j])
+                        ins.append(tuple(part))
+
+                    out = []
+                    for j in range(len(subscript_out)):
+                        if subscript_out[j] in ("α", "β"):
+                            out[-1] += subscript_out[j]
+                        else:
+                            out.append(subscript_out[j])
+                    out = tuple(out)
+
+                    sector_counts = {"o": 0, "v": 0, "b": 0}
+                    index_map = {}
+                    for sin in ins:
+                        for s in sin:
+                            if s not in index_map:
+                                index_map[s] = (char_to_sector[s], sector_counts[char_to_sector[s]])
+                                sector_counts[char_to_sector[s]] += 1
+                    for s in out:
+                        if s not in index_map:
+                            index_map[s] = (char_to_sector[s], sector_counts[char_to_sector[s]])
+                            sector_counts[char_to_sector[s]] += 1
+
+                    new_ins = []
+                    for sin in ins:
+                        new_ins.append([])
+                        for x in sin:
+                            s, j = index_map[x]
+                            new_ins[-1].append(sector_to_char[s][j])
+                    new_out = []
+                    for x in out:
+                        s, j = index_map[x]
+                        new_out.append(sector_to_char[s][j])
+
+                    subscript_in = ",".join(["".join(x) for x in new_ins])
+                    subscript_out = "".join(new_out)
+
+                    new_subscript = subscript_in + "->" + subscript_out
+                    line = line.replace(subscript, new_subscript)
+
+                lines[i] = line
+
+            return "\n".join(lines)
+
+    printer = EinsumPrinter(
             occupancy_tags={
-                "v": "{base}.{tags}",
-                "f": "{base}.{tags}",
-                "g": "{base}.{tags}",
-                "gc": "{base}.{tags}",
-                "delta": "delta_{tags}",
+                "f": "{base}{spindelim}{spin}.{tags}",
+                "v": "{base}{spindelim}{spin}.{tags}",
+                "g": "{base}{spindelim}{spin}.{tags}",
+                "gc": "{base}{spindelim}{spin}.{tags}",
+                "delta": "delta_{tags}{spindelim}{spin}",
+                **{"t%d" % n: "{base}{spindelim}{spin}" for n in range(1, 4)},
+                **{"u1%d" % n: "{base}{spindelim}{spin}" for n in range(1, 4)},
+                **{"l%d" % n: "{base}{spindelim}{spin}" for n in range(1, 4)},
+                **{"lu1%d" % n: "{base}{spindelim}{spin}" for n in range(1, 4)},
             },
             reorder_axes=reorder_axes,
             remove_spacing=True,
@@ -167,14 +257,28 @@ def get_printer(spin):
 # Prefix and spin transformation function
 def get_transformation_function(spin):
     if spin == "rhf":
-        transform_spin = lambda terms, indices, **kwargs: codegen.ghf_to_rhf(terms, indices, **kwargs)
         prefix = "r"
+        def transform_spin(terms, indices, **kwargs):
+            project_onto = kwargs.pop("project_rhf", None)
+            return codegen.ghf_to_rhf(terms, indices, **kwargs)
     elif spin == "uhf":
-        transform_spin = lambda terms, indices, **kwargs: codegen.ghf_to_uhf(terms, indices, **kwargs)
         prefix = "u"
+        def transform_spin(terms, indices, **kwargs):
+            kwargs.pop("project_rhf", None)
+            return codegen.ghf_to_uhf(terms, indices, **kwargs)
     elif spin == "ghf":
-        transform_spin = lambda terms, indices, **kwargs: terms
         prefix = "g"
+        def transform_spin(terms, indices, **kwargs):
+            groups = [[terms[0]]]
+            for term in terms[1:]:
+                for i, group in enumerate(groups):
+                    if group[0].lhs == term.lhs:
+                        groups[i].append(term)
+                        break
+                else:
+                    groups.append([term])
+
+            return groups
 
     return transform_spin, prefix
 
@@ -211,14 +315,14 @@ class FilePrinter:
 
 
 class FunctionPrinter:
-    def __init__(self, file_printer, name, args, res, remove_f_diagonal=False, return_dict=True, timer=None):
+    def __init__(self, file_printer, name, args, res, return_dict=True, timer=None, spin_cases={}):
         self.file_printer = file_printer
         self.name = name
         self.args = args
         self.res = res
-        self.remove_f_diagonal = remove_f_diagonal
         self.return_dict = return_dict
         self.timer = timer
+        self.spin_cases = spin_cases
 
     def write_python(self, string, comment=None):
         if rank != 0:
@@ -245,21 +349,27 @@ class FunctionPrinter:
         self.write_python("def %s(%s, **kwargs):" % (
             self.name, ", ".join(["%s=None" % arg for arg in self.args])
         ))
-        if self.remove_f_diagonal:
-            self.write_python(
-                    "    # Remove diagonal from Fock:\n"
-                    "    f = SimpleNamespace(\n"
-                    "        oo=f.oo-np.diag(np.diag(f.oo)),\n"
-                    "        ov=f.ov,\n"
-                    "        vo=f.vo,\n"
-                    "        vv=f.vv-np.diag(np.diag(f.vv)),\n"
-                    "    )\n"
-            )
+        # Unrestricted spin cases:
+        break_line = False
+        for res in self.res:
+            if len(self.spin_cases.get(res, [])):
+                self.write_python("    %s = SimpleNamespace()" % res)
+                break_line = True
+        if break_line:
+            self.write_python("")
         return self
 
     def __exit__(self, *args, **kwargs):
         if rank != 0:
             return
+        # Unrestricted spin cases:
+        break_line = False
+        for res in self.res:
+            for case in self.spin_cases.get(res, []):
+                break_line = True
+                self.write_python("    %s.%s = %s_%s" % (res, case, res, case))
+        if break_line:
+            self.write_python("")
         # Return from python function
         if self.return_dict:
             res = "{" + ", ".join(["\"%s\": %s" % (v, v) for v in self.res]) + "}"
@@ -268,6 +378,72 @@ class FunctionPrinter:
         self.write_python("    return %s\n" % res)
         if self.timer is not None:
             print("Time for %s: %.5f s" % (self.name, self.timer()))
+
+
+# TODO this is a horrible horrible mess...
+def get_function_printer(spin, has_bosons=False):
+    if spin == "uhf":
+        FunctionPrinter_ = FunctionPrinter
+    else:
+        class FunctionPrinter_(FunctionPrinter):
+            def __init__(self, *args, **kwargs):
+                kwargs["spin_cases"] = {}
+                return FunctionPrinter_.__init__(self, *args, **kwargs)
+
+    if has_bosons:
+        class FunctionPrinter__(FunctionPrinter_):
+            def __init__(self, *args, init_gc=True, **kwargs):
+                FunctionPrinter_.__init__(self, *args, **kwargs)
+                self.init_gc = init_gc
+
+            def __enter__(self):
+                self = FunctionPrinter_.__enter__(self)
+                if self.init_gc:
+                    if spin == "uhf":
+                        self.write_python(
+                                "    # Get boson coupling creation array:\n"
+                                "    gc = SimpleNamespace(\n"
+                                "        aa = SimpleNamespace(\n"
+                                "            boo=g.aa.boo.transpose(0, 2, 1),\n"
+                                "            bov=g.aa.bvo.transpose(0, 2, 1),\n"
+                                "            bvo=g.aa.bov.transpose(0, 2, 1),\n"
+                                "            bvv=g.aa.bvv.transpose(0, 2, 1),\n"
+                                "        ),\n"
+                                "        bb = SimpleNamespace(\n"
+                                "            boo=g.bb.boo.transpose(0, 2, 1),\n"
+                                "            bov=g.bb.bvo.transpose(0, 2, 1),\n"
+                                "            bvo=g.bb.bov.transpose(0, 2, 1),\n"
+                                "            bvv=g.bb.bvv.transpose(0, 2, 1),\n"
+                                "        ),\n"
+                                "    )\n"
+                        )
+                    else:
+                        self.write_python(
+                                "    # Get boson coupling creation array:\n"
+                                "    gc = SimpleNamespace(\n"
+                                "        boo=g.boo.transpose(0, 2, 1),\n"
+                                "        bov=g.bvo.transpose(0, 2, 1),\n"
+                                "        bvo=g.bov.transpose(0, 2, 1),\n"
+                                "        bvv=g.bvv.transpose(0, 2, 1),\n"
+                                "    )\n"
+                        )
+                return self
+    else:
+        FunctionPrinter__ = FunctionPrinter_
+
+    return FunctionPrinter__
+
+
+def get_sizes(nocc, nvir, nbos, spin):
+    if spin == "uhf":
+        sizes = {"nocc[0]": nocc, "nocc[1]": nocc, "nvir[0]": nvir, "nvir[1]": nvir}
+    else:
+        sizes = {"nocc": nocc, "nvir": nvir}
+
+    if nbos:
+        sizes["nbos"] = nbos
+
+    return sizes
 
 
 class Stopwatch:
