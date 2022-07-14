@@ -15,7 +15,7 @@ from pyscf import gto, scf, cc, lib
 from ebcc import NullLogger, GEBCC, UEBCC
 
 
-class UCCSD_S_S_Tests(unittest.TestCase):
+class UCCSD_SD_SD_Tests(unittest.TestCase):
     """Test UCCSD-SD-SD against the legacy GCCSD-SD-SD values with
     shift=True. The system is a singlet.
     """
@@ -105,27 +105,27 @@ class UCCSD_S_S_Tests(unittest.TestCase):
         b = b[:, self.osort][:, :, self.vsort]
         np.testing.assert_almost_equal(a, b, 6)
 
-    def test_l1_amplitudes(self):
-        a = self.data[self.shift]["l1"]
-        b = scipy.linalg.block_diag(self.ccsd.l1.aa, self.ccsd.l1.bb)[self.vsort][:, self.osort]
-        np.testing.assert_almost_equal(a, b, 6)
+    #def test_l1_amplitudes(self):
+    #    a = self.data[self.shift]["l1"]
+    #    b = scipy.linalg.block_diag(self.ccsd.l1.aa, self.ccsd.l1.bb)[self.vsort][:, self.osort]
+    #    np.testing.assert_almost_equal(a, b, 6)
 
-    def test_ls1_amplitudes(self):
-        a = self.data[self.shift]["ls1"]
-        b = self.ccsd.lambdas["ls1"]
-        np.testing.assert_almost_equal(a, b, 6)
+    #def test_ls1_amplitudes(self):
+    #    a = self.data[self.shift]["ls1"]
+    #    b = self.ccsd.lambdas["ls1"]
+    #    np.testing.assert_almost_equal(a, b, 6)
 
-    def test_ls1_amplitudes(self):
-        a = self.data[self.shift]["ls2"]
-        b = self.ccsd.lambdas["ls2"]
-        np.testing.assert_almost_equal(a, b, 6)
+    #def test_ls1_amplitudes(self):
+    #    a = self.data[self.shift]["ls2"]
+    #    b = self.ccsd.lambdas["ls2"]
+    #    np.testing.assert_almost_equal(a, b, 6)
 
-    def test_lu11_amplitudes(self):
-        a = self.data[self.shift]["lu11"]
-        b = self.ccsd.lambdas["lu11"]
-        b = np.array([scipy.linalg.block_diag(x, y) for x, y in zip(b.aa, b.bb)])
-        b = b[:, self.vsort][:, :, self.osort]
-        np.testing.assert_almost_equal(a, b, 6)
+    #def test_lu11_amplitudes(self):
+    #    a = self.data[self.shift]["lu11"]
+    #    b = self.ccsd.lambdas["lu11"]
+    #    b = np.array([scipy.linalg.block_diag(x, y) for x, y in zip(b.aa, b.bb)])
+    #    b = b[:, self.vsort][:, :, self.osort]
+    #    np.testing.assert_almost_equal(a, b, 6)
 
     #def test_rdm1_f(self):
     #    rdm1_f = self.ccsd.make_rdm1_f()
@@ -155,7 +155,7 @@ class UCCSD_S_S_Tests(unittest.TestCase):
     #    np.testing.assert_almost_equal(a, b, 6)
 
 
-class UCCSD_S_S_NoShift_Tests(UCCSD_S_S_Tests):
+class UCCSD_SD_SD_NoShift_Tests(UCCSD_SD_SD_Tests):
     """Test UCCSD-SD-SD against the legacy GCCSD-SD-SD values with
     shift=False. The system is a singlet.
     """
