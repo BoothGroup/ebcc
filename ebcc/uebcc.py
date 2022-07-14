@@ -339,10 +339,10 @@ class UEBCC(rebcc.REBCC):
         dm_eb = func(**kwargs)
 
         if hermitise:
-            dm_eb[0].aa = 0.5 * (dm_eb[0].aa + dm_eb[1].aa.transpose(0, 2, 1))
-            dm_eb[0].bb = 0.5 * (dm_eb[0].bb + dm_eb[1].bb.transpose(0, 2, 1))
-            dm_eb[1].aa = dm_eb[0].aa.transpose(0, 2, 1).copy()
-            dm_eb[1].bb = dm_eb[0].bb.transpose(0, 2, 1).copy()
+            dm_eb.aa[0] = 0.5 * (dm_eb.aa[0] + dm_eb.aa[1].transpose(0, 2, 1))
+            dm_eb.bb[0] = 0.5 * (dm_eb.bb[0] + dm_eb.bb[1].transpose(0, 2, 1))
+            dm_eb.aa[1] = dm_eb.aa[0].transpose(0, 2, 1).copy()
+            dm_eb.bb[1] = dm_eb.bb[0].transpose(0, 2, 1).copy()
 
         if unshifted and self.options.shift:
             rdm1_f = self.make_rdm1_f(hermitise=hermitise)
@@ -391,6 +391,19 @@ class UEBCC(rebcc.REBCC):
         fock = SimpleNamespace(aa=fock[0], bb=fock[1])
         return fock
 
+    @property
+    def xi(self):
+        if self.options.shift:
+            xi  = lib.einsum("Iii->I", self.g.aa.boo)
+            xi += lib.einsum("Iii->I", self.g.bb.boo)
+            xi /= self.omega
+            if self.bare_G is not None:
+                xi += self.bare_G / self.omega
+        else:
+            xi = np.zeros_like(self.omega)
+
+        return xi
+
     def get_fock(self):
         fock = self.bare_fock
         if self.options.shift:
@@ -404,6 +417,7 @@ class UEBCC(rebcc.REBCC):
         vv = fock.aa[self.nocc[0]:, self.nocc[0]:]
 
         if self.options.shift:
+            g = self.g
             oo -= lib.einsum("I,Iij->ij", xi, g.aa.boo + g.aa.boo.transpose(0, 2, 1))
             ov -= lib.einsum("I,Iia->ia", xi, g.aa.bov + g.aa.bvo.transpose(0, 2, 1))
             vo -= lib.einsum("I,Iai->ai", xi, g.aa.bvo + g.aa.bov.transpose(0, 2, 1))
@@ -417,6 +431,7 @@ class UEBCC(rebcc.REBCC):
         vv = fock.bb[self.nocc[1]:, self.nocc[1]:]
 
         if self.options.shift:
+            g = self.g
             oo -= lib.einsum("I,Iij->ij", xi, g.bb.boo + g.bb.boo.transpose(0, 2, 1))
             ov -= lib.einsum("I,Iia->ia", xi, g.bb.bov + g.bb.bvo.transpose(0, 2, 1))
             vo -= lib.einsum("I,Iai->ai", xi, g.bb.bvo + g.bb.bov.transpose(0, 2, 1))

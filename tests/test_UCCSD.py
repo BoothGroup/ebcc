@@ -40,8 +40,6 @@ class UCCSD_Tests(unittest.TestCase):
         mf.mo_coeff = mo_coeff
         mf = mf.to_uhf()
 
-        orbspin = scf.addons.get_ghf_orbspin(mf.mo_energy, mf.mo_occ, False)
-
         ccsd = UEBCC(mf, rank=("SD", "", ""), log=NullLogger())
         ccsd.options.e_tol = 1e-12
         ccsd.options.t_tol = 1e-12
