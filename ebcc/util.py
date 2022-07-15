@@ -8,6 +8,12 @@ import itertools
 import numpy as np
 
 
+class InheritedType:
+    pass
+
+Inherited = InheritedType()
+
+
 def factorial(n):
     """Return the factorial of n.
     """

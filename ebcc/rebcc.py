@@ -9,7 +9,7 @@ from typing import Tuple
 from types import SimpleNamespace
 import numpy as np
 from pyscf import lib, ao2mo
-from ebcc import default_log, util
+from ebcc import default_log, util, eom
 
 # TODO math in docstrings
 # TODO resolve G vs bare_G confusion
@@ -1399,103 +1399,14 @@ class REBCC:
 
         raise NotImplementedError  # TODO
 
-    def eom_ip(self, nroots=5, eris=None, amplitudes=None):
-        """Solve the similarity-transformed hamiltonian for the IP
-        with the equation-of-motion approach.
-        """
-        # TODO move to another class?
+    def ip_eom(self, options=None, **kwargs):
+        return eom.IP_EOM(self, options=options, **kwargs)
 
-        amplitudes_to_vector = self.excitations_to_vector_ip
-        vector_to_amplitudes = self.vector_to_excitations_ip
+    def ea_eom(self, options=None, **kwargs):
+        return eom.EA_EOM(self, options=options, **kwargs)
 
-        diag_parts = self.hbar_diag_ip(eris=eris, amplitudes=amplitudes)
-        diag = amplitudes_to_vector(*diag_parts)
-
-        def matvec(v):
-            r = self.hbar_matvec_ip(*vector_to_amplitudes(v), eris=eris, amplitudes=amplitudes)
-            return amplitudes_to_vector(*r)
-        matvecs = lambda vs: [matvec(v) for v in vs]
-
-        def pick(w, v, nroots, envs):
-            w, v, idx = lib.linalg_helper.pick_real_eigs(w, v, nroots, envs)
-            mask = w > 0  # FIXME
-            w, v = w[mask], v[:, mask]
-            mask = np.argsort(w)
-            w, v = w[mask], v[:, mask]
-            return w, v, 0
-
-        guesses = np.zeros((nroots, diag.size))
-        arg = np.argsort(np.absolute(diag))
-        for root, guess in enumerate(arg[:nroots]):
-            guesses[root, guess] = 1.0
-        guesses = list(guesses)
-
-        conv, e, v = lib.davidson_nosym1(
-                matvecs,
-                guesses,
-                diag,
-                tol=self.options.e_tol,
-                nroots=nroots,
-                pick=pick,
-                max_cycle=self.options.max_iter,
-                max_space=12,
-                verbose=0,
-        )
-
-        return e, v
-
-    def eom_ea(self, nroots=5, eris=None, amplitudes=None):
-        """Solve the similarity-transformed hamiltonian for the EA
-        with the equation-of-motion approach.
-        """
-        # TODO move to kernel function and combine with above
-
-        amplitudes_to_vector = self.excitations_to_vector_ea
-        vector_to_amplitudes = self.vector_to_excitations_ea
-
-        diag_parts = self.hbar_diag_ea(eris=eris, amplitudes=amplitudes)
-        diag = amplitudes_to_vector(*diag_parts)
-
-        def matvec(v):
-            r = self.hbar_matvec_ea(*vector_to_amplitudes(v), eris=eris, amplitudes=amplitudes)
-            return amplitudes_to_vector(*r)
-        matvecs = lambda vs: [matvec(v) for v in vs]
-
-        def pick(w, v, nroots, envs):
-            w, v, idx = lib.linalg_helper.pick_real_eigs(w, v, nroots, envs)
-            mask = w > 0  # FIXME
-            if np.any(mask):
-                w, v = w[mask], v[:, mask]
-            mask = np.argsort(w)
-            w, v = w[mask], v[:, mask]
-            return w, v, 0
-
-        guesses = np.zeros((nroots, diag.size))
-        arg = np.argsort(np.absolute(diag))
-        for root, guess in enumerate(arg[:nroots]):
-            guesses[root, guess] = 1.0
-        guesses = list(guesses)
-
-        conv, e, v = lib.davidson_nosym1(
-                matvecs,
-                guesses,
-                diag,
-                tol=self.options.e_tol,
-                nroots=nroots,
-                pick=pick,
-                max_cycle=self.options.max_iter,
-                max_space=12,
-                verbose=0,
-        )
-
-        return e, v
-
-    def eom_ee(self, nroots=5, eris=None, amplitudes=None):
-        """Solve the similarity-transformed hamiltonian for the EA
-        with the equation-of-motion approach.
-        """
-
-        raise NotImplementedError  # TODO
+    def ee_eom(self, options=None, **kwargs):
+        return eom.EE_EOM(self, options=options, **kwargs)
 
     def amplitudes_to_vector(self, amplitudes):
         """Construct a vector containing all of the amplitudes used in

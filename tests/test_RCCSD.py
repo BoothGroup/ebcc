@@ -79,6 +79,25 @@ class RCCSD_Tests(unittest.TestCase):
         b = scipy.linalg.block_diag(self.ccsd.l1, self.ccsd.l1)[self.vsort][:, self.osort]
         np.testing.assert_almost_equal(a, b, 6)
 
+    def test_ip_moments(self):
+        eom = self.ccsd.ip_eom()
+        ip_moms = eom.moments(5)
+        a = self.data[True]["ip_moms"]
+        b = np.array([scipy.linalg.block_diag(x, x) for x in ip_moms])
+        np.testing.assert_almost_equal(a, b, 6)
+
+    #def test_ip_1mom(self):
+    #    ip_1mom = self.ccsd.make_ip_1mom()
+    #    a = self.data[True]["ip_1mom"]
+    #    b = scipy.linalg.block_diag(ip_1mom, ip_1mom)
+    #    np.testing.assert_almost_equal(a, b, 6)
+
+    #def test_ea_1mom(self):
+    #    ea_1mom = self.ccsd.make_ea_1mom()
+    #    a = self.data[True]["ea_1mom"]
+    #    b = sceay.linalg.block_diag(ea_1mom, ea_1mom)
+    #    np.testing.assert_almost_equal(a, b, 6)
+
 
 class RCCSD_PySCF_Tests(unittest.TestCase):
     """Test RCCSD against the PySCF values.
