@@ -142,8 +142,8 @@ def get_printer(spin):
 
     if spin == "rhf" or spin == "uhf":
         reorder_axes["v"] = (0, 2, 1, 3)
-    for x in ov_2e:
-        reorder_axes["rdm2_f_%s" % x] = (0, 2, 1, 3)
+        for x in ov_2e:
+            reorder_axes["rdm2_f_%s" % x] = (0, 2, 1, 3)
 
     # This should be done earlier and the indices themselves manipulated:
     occ = "ijklmnop"
@@ -388,7 +388,7 @@ def get_function_printer(spin, has_bosons=False):
         class FunctionPrinter_(FunctionPrinter):
             def __init__(self, *args, **kwargs):
                 kwargs["spin_cases"] = {}
-                return FunctionPrinter_.__init__(self, *args, **kwargs)
+                return FunctionPrinter.__init__(self, *args, **kwargs)
 
     if has_bosons:
         class FunctionPrinter__(FunctionPrinter_):

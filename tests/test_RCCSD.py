@@ -81,8 +81,8 @@ class RCCSD_Tests(unittest.TestCase):
 
     def test_ip_moments(self):
         eom = self.ccsd.ip_eom()
-        ip_moms = eom.moments(5)
-        a = self.data[True]["ip_moms"]
+        ip_moms = eom.moments(4)
+        a = self.data[True]["ip_moms"].transpose(2, 0, 1)
         b = np.array([scipy.linalg.block_diag(x, x) for x in ip_moms])
         np.testing.assert_almost_equal(a, b, 6)
 

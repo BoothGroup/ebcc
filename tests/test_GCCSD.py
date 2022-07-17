@@ -93,6 +93,23 @@ class GCCSD_Tests(unittest.TestCase):
         b = self.ccsd.l2
         np.testing.assert_almost_equal(a, b, 6)
 
+    def test_ip_moments(self):
+        eom = self.ccsd.ip_eom()
+        a = self.data[True]["ip_moms"].transpose(2, 0, 1)
+        b = eom.moments(4)
+        for x, y in zip(a, b):
+            print(
+                np.allclose(x[:self.ccsd.nocc, :self.ccsd.nocc], y[:self.ccsd.nocc, :self.ccsd.nocc]),
+                np.allclose(x[self.ccsd.nocc:, :self.ccsd.nocc], y[self.ccsd.nocc:, :self.ccsd.nocc]),
+                np.allclose(x[:self.ccsd.nocc, self.ccsd.nocc:], y[:self.ccsd.nocc, self.ccsd.nocc:]),
+                np.allclose(x[self.ccsd.nocc:, self.ccsd.nocc:], y[self.ccsd.nocc:, self.ccsd.nocc:]),
+            )
+            np.set_printoptions(edgeitems=1000, linewidth=1000, precision=3)
+            print(x[:self.ccsd.nocc,:self.ccsd.nocc])
+            print(y[:self.ccsd.nocc,:self.ccsd.nocc])
+            print(np.abs(x[:self.ccsd.nocc,:self.ccsd.nocc]-y[:self.ccsd.nocc,:self.ccsd.nocc]))
+            np.testing.assert_almost_equal(x, y, 6)
+
 
 class GCCSD_PySCF_Tests(unittest.TestCase):
     """Test GCCSD against the PySCF GCCSD values.

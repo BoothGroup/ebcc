@@ -111,9 +111,6 @@ class GEBCC(rebcc.REBCC):
 
         dm = func(**kwargs)
 
-        # TODO REMOVE ME when GCCSD equations are regenerated!
-        dm = dm.transpose(0, 2, 1, 3)
-
         if hermitise:
             dm = 0.5 * (
                     + dm.transpose(0, 1, 2, 3)
