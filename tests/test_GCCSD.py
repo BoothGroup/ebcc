@@ -105,8 +105,8 @@ class GCCSD_Tests(unittest.TestCase):
                 np.allclose(x[self.ccsd.nocc:, self.ccsd.nocc:], y[self.ccsd.nocc:, self.ccsd.nocc:]),
             )
             np.set_printoptions(edgeitems=1000, linewidth=1000, precision=3)
-            print(x[:self.ccsd.nocc,:self.ccsd.nocc])
-            print(y[:self.ccsd.nocc,:self.ccsd.nocc])
+            #print(x[:self.ccsd.nocc,:self.ccsd.nocc])
+            #print(y[:self.ccsd.nocc,:self.ccsd.nocc])
             print(np.abs(x[:self.ccsd.nocc,:self.ccsd.nocc]-y[:self.ccsd.nocc,:self.ccsd.nocc]))
             np.testing.assert_almost_equal(x, y, 6)
 
