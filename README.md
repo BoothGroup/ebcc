@@ -1,4 +1,4 @@
-# ebcc: Coupled cluster calculation on electron-boson systems
+# ebcc: Coupled cluster calculations on electron-boson systems
 
 The `ebcc`  package implements various coupled cluster (CC) models for application to electron-boson systems, with a focus on generality and model extensibility.
 
