@@ -144,7 +144,7 @@ def get_bra_ea_spaces(rank=("SD", "", ""), occs=None, virs=None, nms=None):
         occ = [Idx(i, "occ") for i in range(n-1)] if occs is None else occs[:n-1]
         vir = [Idx(a, "vir") for a in range(n)] if virs is None else virs[:n]
         operators = [FOperator(i, True) for i in occ] + [FOperator(a, False) for a in vir[::-1]]
-        tensors = [Tensor(occ + vir, "")]
+        tensors = [Tensor(vir + occ, "")]
         bras.append(Expression([Term(1, [], tensors, operators, [])]))
 
     # boson
@@ -157,31 +157,6 @@ def get_bra_ea_spaces(rank=("SD", "", ""), occs=None, virs=None, nms=None):
 
     return tuple(bras)
 
-
-def get_bra_ip_spaces(rank=("SD", "", ""), occs=None, virs=None, nms=None):
-    """Define left IP projection spaces.
-    """
-
-    rank = get_rank(rank)
-    bras = []
-
-    # fermion
-    for n in rank[0]:
-        occ = [Idx(i, "occ") for i in range(n)] if occs is None else occs[:n]
-        vir = [Idx(a, "vir") for a in range(n-1)] if virs is None else virs[:n-1]
-        operators = [FOperator(i, True) for i in occ] + [FOperator(a, False) for a in vir[::-1]]
-        tensors = [Tensor(occ + vir, "")]
-        bras.append(Expression([Term(1, [], tensors, operators, [])]))
-
-    # boson
-    for n in rank[1]:
-        raise NotImplementedError  # TODO
-
-    # fermion-boson coupling
-    for n in rank[2]:
-        raise NotImplementedError  # TODO
-
-    return tuple(bras)
 
 def get_ket_spaces(rank=("SD", "", ""), occs=None, virs=None, nms=None):
     """Define right projection spaces.
@@ -256,7 +231,7 @@ def get_ket_ea_spaces(rank=("SD", "", ""), occs=None, virs=None, nms=None):
         occ = [Idx(i, "occ") for i in range(n-1)] if occs is None else occs[:n-1]
         vir = [Idx(a, "vir") for a in range(n)] if virs is None else virs[:n]
         operators = [FOperator(a, True) for a in vir[::-1]] + [FOperator(i, False) for i in occ]
-        tensors = [Tensor(occ + vir, "")]
+        tensors = [Tensor(vir + occ, "")]
         kets.append(Expression([Term(1, [], tensors, operators, [])]))
 
     # boson

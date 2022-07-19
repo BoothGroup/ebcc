@@ -1596,7 +1596,7 @@ class REBCC:
             Single vector consisting of all the excitations flattened
             and concatenated. Size depends on the ansatz.
         """
-        return excitations_to_vector_ip(vector)
+        return self.excitations_to_vector_ip(*excitations)
 
     def vector_to_excitations_ip(self, vector):
         """Construct all of the excitation amplitudes used in the

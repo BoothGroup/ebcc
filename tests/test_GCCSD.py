@@ -96,18 +96,19 @@ class GCCSD_Tests(unittest.TestCase):
     def test_ip_moments(self):
         eom = self.ccsd.ip_eom()
         a = self.data[True]["ip_moms"].transpose(2, 0, 1)
-        b = eom.moments(4)
+        b = eom.moments(6)
         for x, y in zip(a, b):
-            print(
-                np.allclose(x[:self.ccsd.nocc, :self.ccsd.nocc], y[:self.ccsd.nocc, :self.ccsd.nocc]),
-                np.allclose(x[self.ccsd.nocc:, :self.ccsd.nocc], y[self.ccsd.nocc:, :self.ccsd.nocc]),
-                np.allclose(x[:self.ccsd.nocc, self.ccsd.nocc:], y[:self.ccsd.nocc, self.ccsd.nocc:]),
-                np.allclose(x[self.ccsd.nocc:, self.ccsd.nocc:], y[self.ccsd.nocc:, self.ccsd.nocc:]),
-            )
-            np.set_printoptions(edgeitems=1000, linewidth=1000, precision=3)
-            #print(x[:self.ccsd.nocc,:self.ccsd.nocc])
-            #print(y[:self.ccsd.nocc,:self.ccsd.nocc])
-            print(np.abs(x[:self.ccsd.nocc,:self.ccsd.nocc]-y[:self.ccsd.nocc,:self.ccsd.nocc]))
+            x /= np.max(np.abs(x))
+            y /= np.max(np.abs(y))
+            np.testing.assert_almost_equal(x, y, 6)
+
+    def test_ea_moments(self):
+        eom = self.ccsd.ea_eom()
+        a = self.data[True]["ea_moms"].transpose(2, 0, 1)
+        b = eom.moments(6)
+        for x, y in zip(a, b):
+            x /= np.max(np.abs(x))
+            y /= np.max(np.abs(y))
             np.testing.assert_almost_equal(x, y, 6)
 
 
@@ -169,7 +170,7 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
     def test_ccsd_l2_amplitudes(self):
         a = self.ccsd_ref.l2
         b = self.ccsd.l2.transpose(2, 3, 0, 1)
-        np.testing.assert_almost_equal(a, b, 6)  # FIXME doesn't reach precision
+        np.testing.assert_almost_equal(a, b, 6)
 
     def test_rdm1(self):
         a = self.ccsd_ref.make_rdm1()
@@ -182,12 +183,12 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(a, b, 6, verbose=True)
 
     def test_eom_ip(self):
-        e1, v1 = self.ccsd.eom_ip(nroots=5)
+        e1 = self.ccsd.ip_eom(nroots=5).kernel()
         e2, v2 = self.ccsd_ref.ipccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 8)
 
-    def test_eom_ea(self):
-        e1, v1 = self.ccsd.eom_ea(nroots=5)
+    def test_eom_ea(self):  # FIXME
+        e1 = self.ccsd.ea_eom(nroots=5).kernel()
         e2, v2 = self.ccsd_ref.eaccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 8)
 

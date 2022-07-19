@@ -89,6 +89,8 @@ particles = {
         "s2": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0)),
         "u11": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
         "u12": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
+        "r1": ((codegen.FERMION, 0),),
+        "r2": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0)),
         # Lambda amplitudes:
         "l1": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
         "l2": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
@@ -96,11 +98,6 @@ particles = {
         "ls2": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0)),
         "lu11": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
         "lu12": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
-        # Excitation operators:
-        "r1": ((codegen.FERMION, 0),),
-        "r2": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0)),
-        **{"r1_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 0),) for x in ["o", "v"]},
-        **{"r2_%s" % x: ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)) for x in ["o", "v"]},
         # Updates:
         "t1new": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
         "t2new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
@@ -124,7 +121,12 @@ particles = {
         "rdm1_b": ((codegen.BOSON, 0), (codegen.BOSON, 0)),
         **{"dm_b%s" % x: ((codegen.BOSON, 0),) for x in ("", "_cre", "_des")},
         **{"rdm_eb_%s_%s" % (x, y): ((codegen.BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)) for y in ov_1e for x in ("cre", "des")},
-        # Hbar elements:
+        # Bras and kets:
+        **{"bra1"+tag: ((codegen.FERMION, 0), (codegen.FERMION, 0)) for tag in ("", "_o", "_v")},
+        **{"ket1"+tag: ((codegen.FERMION, 0), (codegen.FERMION, 0)) for tag in ("", "_o", "_v")},
+        **{"bra2"+tag: ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)) for tag in ("", "_o", "_v")},
+        **{"ket2"+tag: ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)) for tag in ("", "_o", "_v")},
+        # Similarity transformed hamiltonian:
         "h11": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
         "h22": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 2), (codegen.FERMION, 3), (codegen.FERMION, 2)),  # FIXME?
 }
