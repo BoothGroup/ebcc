@@ -96,7 +96,7 @@ class GCCSD_Tests(unittest.TestCase):
     def test_ip_moments(self):
         eom = self.ccsd.ip_eom()
         a = self.data[True]["ip_moms"].transpose(2, 0, 1)
-        b = eom.moments(6)
+        b = eom.moments(4)
         for x, y in zip(a, b):
             x /= np.max(np.abs(x))
             y /= np.max(np.abs(y))
@@ -105,7 +105,7 @@ class GCCSD_Tests(unittest.TestCase):
     def test_ea_moments(self):
         eom = self.ccsd.ea_eom()
         a = self.data[True]["ea_moms"].transpose(2, 0, 1)
-        b = eom.moments(6)
+        b = eom.moments(4)
         for x, y in zip(a, b):
             x /= np.max(np.abs(x))
             y /= np.max(np.abs(y))

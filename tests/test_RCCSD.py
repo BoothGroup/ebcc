@@ -84,7 +84,20 @@ class RCCSD_Tests(unittest.TestCase):
         ip_moms = eom.moments(4)
         a = self.data[True]["ip_moms"].transpose(2, 0, 1)
         b = np.array([scipy.linalg.block_diag(x, x) for x in ip_moms])
-        np.testing.assert_almost_equal(a, b, 6)
+        for x, y in zip(a, b):
+            x /= np.max(np.abs(x))
+            y /= np.max(np.abs(y))
+            np.testing.assert_almost_equal(x, y, 6)
+
+    def test_ea_moments(self):
+        eom = self.ccsd.ea_eom()
+        ea_moms = eom.moments(4)
+        a = self.data[True]["ea_moms"].transpose(2, 0, 1)
+        b = np.array([scipy.linalg.block_diag(x, x) for x in ea_moms])
+        for x, y in zip(a, b):
+            x /= np.max(np.abs(x))
+            y /= np.max(np.abs(y))
+            np.testing.assert_almost_equal(x, y, 6)
 
     #def test_ip_1mom(self):
     #    ip_1mom = self.ccsd.make_ip_1mom()
@@ -106,7 +119,7 @@ class RCCSD_PySCF_Tests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         mol = gto.Mole()
-        mol.atom = "O 0 0 0; O 0 0 1"
+        mol.atom = "O 0.0 0.0 0.11779; H 0.0 0.755453 -0.471161; H 0.0 -0.755453 -0.471161"
         mol.basis = "cc-pvdz"
         mol.verbose = 0
         mol.build()
@@ -116,14 +129,12 @@ class RCCSD_PySCF_Tests(unittest.TestCase):
         mf.kernel()
 
         ccsd_ref = cc.CCSD(mf)
-        ccsd_ref.conv_tol = 1e-12
-        ccsd_ref.conv_tol_normt = 1e-12
+        ccsd_ref.conv_tol = 1e-10
         ccsd_ref.kernel()
         ccsd_ref.solve_lambda()
 
         ccsd = REBCC(mf, rank=("SD", "", ""), log=NullLogger())
-        ccsd.options.e_tol = 1e-12
-        ccsd.options.t_tol = 1e-12
+        ccsd.options.e_tol = 1e-10
         eris = ccsd.get_eris()
         ccsd.kernel(eris=eris)
         ccsd.solve_lambda(eris=eris)
@@ -133,6 +144,12 @@ class RCCSD_PySCF_Tests(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         del cls.mf, cls.ccsd_ref, cls.ccsd
+
+    def test_converged(self):
+        self.assertTrue(self.ccsd.converged)
+        self.assertTrue(self.ccsd.converged_lambda)
+        self.assertTrue(self.ccsd_ref.converged)
+        self.assertTrue(self.ccsd_ref.converged_lambda)
 
     def test_energy(self):
         a = self.ccsd_ref.e_tot
