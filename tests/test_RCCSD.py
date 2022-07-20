@@ -39,8 +39,8 @@ class RCCSD_Tests(unittest.TestCase):
         mf.mo_coeff = mo_coeff
 
         ccsd = REBCC(mf, rank=("SD", "", ""), log=NullLogger())
-        ccsd.options.e_tol = 1e-12
-        ccsd.options.t_tol = 1e-12
+        ccsd.options.e_tol = 1e-10
+        ccsd.options.t_tol = 1e-14
         eris = ccsd.get_eris()
         ccsd.kernel(eris=eris)
         ccsd.solve_lambda(eris=eris)
@@ -84,7 +84,20 @@ class RCCSD_Tests(unittest.TestCase):
         ip_moms = eom.moments(4)
         a = self.data[True]["ip_moms"].transpose(2, 0, 1)
         b = np.array([scipy.linalg.block_diag(x, x) for x in ip_moms])
+        b = b[:, self.fsort][:, :, self.fsort]
         for x, y in zip(a, b):
+            print(
+                np.allclose(x[:self.ccsd.nocc*2, :self.ccsd.nocc*2], y[:self.ccsd.nocc*2, :self.ccsd.nocc*2]),
+                np.allclose(x[self.ccsd.nocc*2:, :self.ccsd.nocc*2], y[self.ccsd.nocc*2:, :self.ccsd.nocc*2]),
+                np.allclose(x[:self.ccsd.nocc*2, self.ccsd.nocc*2:], y[:self.ccsd.nocc*2, self.ccsd.nocc*2:]),
+                np.allclose(x[self.ccsd.nocc*2:, self.ccsd.nocc*2:], y[self.ccsd.nocc*2:, self.ccsd.nocc*2:]),
+            )
+            print(
+                np.sum(x[:self.ccsd.nocc*2, :self.ccsd.nocc*2]), np.sum(y[:self.ccsd.nocc*2, :self.ccsd.nocc*2]), "\n",
+                np.sum(x[self.ccsd.nocc*2:, :self.ccsd.nocc*2]), np.sum(y[self.ccsd.nocc*2:, :self.ccsd.nocc*2]), "\n",
+                np.sum(x[:self.ccsd.nocc*2, self.ccsd.nocc*2:]), np.sum(y[:self.ccsd.nocc*2, self.ccsd.nocc*2:]), "\n",
+                np.sum(x[self.ccsd.nocc*2:, self.ccsd.nocc*2:]), np.sum(y[self.ccsd.nocc*2:, self.ccsd.nocc*2:]),
+            )
             x /= np.max(np.abs(x))
             y /= np.max(np.abs(y))
             np.testing.assert_almost_equal(x, y, 6)
@@ -94,7 +107,14 @@ class RCCSD_Tests(unittest.TestCase):
         ea_moms = eom.moments(4)
         a = self.data[True]["ea_moms"].transpose(2, 0, 1)
         b = np.array([scipy.linalg.block_diag(x, x) for x in ea_moms])
+        b = b[:, self.fsort][:, :, self.fsort]
         for x, y in zip(a, b):
+            print(
+                np.allclose(x[:self.ccsd.nocc*2, :self.ccsd.nocc*2], y[:self.ccsd.nocc*2, :self.ccsd.nocc*2]),
+                np.allclose(x[self.ccsd.nocc*2:, :self.ccsd.nocc*2], y[self.ccsd.nocc*2:, :self.ccsd.nocc*2]),
+                np.allclose(x[:self.ccsd.nocc*2, self.ccsd.nocc*2:], y[:self.ccsd.nocc*2, self.ccsd.nocc*2:]),
+                np.allclose(x[self.ccsd.nocc*2:, self.ccsd.nocc*2:], y[self.ccsd.nocc*2:, self.ccsd.nocc*2:]),
+            )
             x /= np.max(np.abs(x))
             y /= np.max(np.abs(y))
             np.testing.assert_almost_equal(x, y, 6)
@@ -120,6 +140,7 @@ class RCCSD_PySCF_Tests(unittest.TestCase):
     def setUpClass(cls):
         mol = gto.Mole()
         mol.atom = "O 0.0 0.0 0.11779; H 0.0 0.755453 -0.471161; H 0.0 -0.755453 -0.471161"
+        #mol.atom = "Li 0 0 0; H 0 0 1.4"
         mol.basis = "cc-pvdz"
         mol.verbose = 0
         mol.build()
@@ -130,11 +151,14 @@ class RCCSD_PySCF_Tests(unittest.TestCase):
 
         ccsd_ref = cc.CCSD(mf)
         ccsd_ref.conv_tol = 1e-10
+        ccsd_ref.conv_tol_normt = 1e-14
+        ccsd_ref.max_cycle = 200
         ccsd_ref.kernel()
         ccsd_ref.solve_lambda()
 
         ccsd = REBCC(mf, rank=("SD", "", ""), log=NullLogger())
         ccsd.options.e_tol = 1e-10
+        ccsd.options.t_tol = 1e-14
         eris = ccsd.get_eris()
         ccsd.kernel(eris=eris)
         ccsd.solve_lambda(eris=eris)
@@ -187,12 +211,14 @@ class RCCSD_PySCF_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(a, b, 6, verbose=True)
 
     def test_eom_ip(self):
-        e1, v1 = self.ccsd.eom_ip(nroots=5)
+        eom = self.ccsd.ip_eom(nroots=5)
+        e1 = eom.kernel()
         e2, v2 = self.ccsd_ref.ipccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 6)
 
     def test_eom_ea(self):
-        e1, v1 = self.ccsd.eom_ea(nroots=5)
+        eom = self.ccsd.ea_eom(nroots=5)
+        e1 = eom.kernel()
         e2, v2 = self.ccsd_ref.eaccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 6)
 
