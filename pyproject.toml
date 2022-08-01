@@ -67,10 +67,12 @@ target-version = [
     "py38",
 ]
 include = "ebcc"
-exclude = [
-    "ebcc/codegen",
-    ".git",
-]
+exclude = """
+/(
+    | ebcc/codegen
+    | .git
+)/
+"""
 
 [tool.isort]
 atomic = true
