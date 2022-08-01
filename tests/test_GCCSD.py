@@ -39,7 +39,11 @@ class GCCSD_Tests(unittest.TestCase):
 
         orbspin = scf.addons.get_ghf_orbspin(mf.mo_energy, mf.mo_occ, True)
 
-        ccsd = GEBCC(mf, rank=("SD", "", ""), log=NullLogger())
+        ccsd = GEBCC(
+                mf,
+                fermion_excitations="SD",
+                log=NullLogger(),
+        )
         ccsd.options.e_tol = 1e-12
         ccsd.options.t_tol = 1e-12
         eris = ccsd.get_eris()
@@ -134,7 +138,11 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
         ccsd_ref.kernel()
         ccsd_ref.solve_lambda()
 
-        ccsd = GEBCC(mf, rank=("SD", "", ""), log=NullLogger())
+        ccsd = GEBCC(
+                mf,
+                fermion_excitations="SD",
+                log=NullLogger(),
+        )
         ccsd.e_tol = 1e-12
         ccsd.t_tol = 1e-12
         eris = ccsd.get_eris()

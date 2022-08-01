@@ -292,7 +292,11 @@ class REBCC:
             self,
             mf,
             log: logging.Logger = None,
-            rank: Tuple[int] = ("SD", "", ""),
+            #rank: Tuple[int] = ("SD", "", 0, 0),
+            fermion_excitations: str = "SD",
+            boson_excitations: str = "",
+            fermion_coupling_rank: int = 0,
+            boson_coupling_rank: int = 0,
             omega: np.ndarray = None,
             g: np.ndarray = None,
             G: np.ndarray = None,
@@ -307,14 +311,26 @@ class REBCC:
 
         self.log = default_log if log is None else log
         self.mf = self._convert_mf(mf)
-        self.rank = rank
+        self.rank = (
+                fermion_excitations,
+                boson_excitations,
+                fermion_coupling_rank,
+                boson_coupling_rank,
+        )
         self._eqns = self._get_eqns()
+
+        if bool(self.rank[2]) != bool(self.rank[3]):
+            raise ValueError(
+                    "Fermionic and bosonic coupling ranks must both be zero, "
+                    "or both non-zero."
+            )
 
         self.log.info("%s", self.name)
         self.log.info("%s", "*" * len(self.name))
-        self.log.info(" > Fermion rank:   %s", self.rank[0])
-        self.log.info(" > Boson rank:     %s", self.rank[1] if len(self.rank[1]) else None)
-        self.log.info(" > Coupling rank:  %s", self.rank[2] if len(self.rank[2]) else None)
+        self.log.info(" > Fermion excitations:    %s", self.rank[0])
+        self.log.info(" > Boson excitations:      %s", self.rank[1] if len(self.rank[1]) else None)
+        self.log.info(" > Fermion coupling rank:  %s", self.rank[2])
+        self.log.info(" > Boson coupling rank:    %s", self.rank[3])
 
         self.omega = omega
         self.bare_G = G
@@ -325,7 +341,7 @@ class REBCC:
         self.lambdas = None
         self.converged_lambda = False
 
-        if not (self.rank[1] == self.rank[2] == ""):
+        if self.rank[1] != "":
             self.g = self.get_g(g)
             self.G = self.get_mean_field_G()
 
@@ -583,12 +599,15 @@ class REBCC:
                 amplitudes["s%d" % n] = np.zeros((self.nbos,) * n)
 
         # Build U amplitudes:
-        for n in self.rank_numeric[2]:
-            if n == 1:
-                e_xia = lib.direct_sum("ia-x->xia", e_ia, self.omega)
-                amplitudes["u1%d" % n] = h.bov / e_xia
-            else:
-                amplitudes["u1%d" % n] = np.zeros((self.nbos,) * n + (self.nocc, self.nvir))
+        for nf in self.rank_numeric[2]:
+            if nf != 1:
+                raise NotImplementedError
+            for nb in self.rank_numeric[3]:
+                if nb == 1:
+                    e_xia = lib.direct_sum("ia-x->xia", e_ia, self.omega)
+                    amplitudes["u%d%d" % (nf, nb)] = h.bov / e_xia
+                else:
+                    amplitudes["u%d%d" % (nf, nb)] = np.zeros((self.nbos,) * nb + (self.nocc, self.nvir))
 
         return amplitudes
 
@@ -622,9 +641,12 @@ class REBCC:
             lambdas["ls%d" % n] = amplitudes["s%d" % n]
 
         # Build LU amplitudes:
-        for n in self.rank_numeric[2]:
-            perm = list(range(n)) + [n+1, n]
-            lambdas["lu1%d" % n] = amplitudes["u1%d" % n].transpose(perm)
+        for nf in self.rank_numeric[2]:
+            if nf != 1:
+                raise NotImplementedError
+            for nb in self.rank_numeric[3]:
+                perm = list(range(nb)) + [nb+1, nb]
+                lambdas["lu%d%d" % (nf, nb)] = amplitudes["u%d%d" % (nf, nb)].transpose(perm)
 
         return lambdas
 
@@ -697,10 +719,13 @@ class REBCC:
             res["s%d" % n] += amplitudes["s%d" % n]
 
         # Divide U amplitudes:
-        for n in self.rank_numeric[2]:
-            d = functools.reduce(np.add.outer, ([-self.omega] * n) + [e_ia])
-            res["u1%d" % n] /= d
-            res["u1%d" % n] += amplitudes["u1%d" % n]
+        for nf in self.rank_numeric[2]:
+            if nf != 1:
+                raise NotImplementedError
+            for nb in self.rank_numeric[3]:
+                d = functools.reduce(np.add.outer, ([-self.omega] * nb) + ([e_ia] * nf))
+                res["u%d%d" % (nf, nb)] /= d
+                res["u%d%d" % (nf, nb)] += amplitudes["u%d%d" % (nf, nb)]
 
         return res
 
@@ -751,10 +776,13 @@ class REBCC:
             res["ls%d" % n] += lambdas["ls%d" % n]
 
         # Divide U amplitudes:
-        for n in self.rank_numeric[2]:
-            d = functools.reduce(np.add.outer, ([-self.omega] * n) + [e_ai])
-            res["lu1%d" % n] /= d
-            res["lu1%d" % n] += lambdas["lu1%d" % n]
+        for nf in self.rank_numeric[2]:
+            if nf != 1:
+                raise NotImplementedError
+            for nb in self.rank_numeric[3]:
+                d = functools.reduce(np.add.outer, ([-self.omega] * nb) + ([e_ai] * nf))
+                res["lu%d%d" % (nf, nb)] /= d
+                res["lu%d%d" % (nf, nb)] += lambdas["lu%d%d" % (nf, nb)]
 
         return res
 
@@ -1509,8 +1537,9 @@ class REBCC:
         for n in self.rank_numeric[1]:
             vectors.append(amplitudes["s%d" % n].ravel())
 
-        for n in self.rank_numeric[2]:
-            vectors.append(amplitudes["u1%d" % n].ravel())
+        for nf in self.rank_numeric[2]:
+            for nb in self.rank_numeric[3]:
+                vectors.append(amplitudes["u%d%d" % (nf, nb)].ravel())
 
         return np.concatenate(vectors)
 
@@ -1545,11 +1574,12 @@ class REBCC:
             amplitudes["s%d" % n] = vector[i0:i0+size].reshape(shape)
             i0 += size
 
-        for n in self.rank_numeric[2]:
-            shape = (self.nbos,) * n + (self.nocc, self.nvir)
-            size = np.prod(shape)
-            amplitudes["u1%d" % n] = vector[i0:i0+size].reshape(shape)
-            i0 += size
+        for nf in self.rank_numeric[2]:
+            for nb in self.rank_numeric[3]:
+                shape = (self.nbos,) * nb + (self.nocc, self.nvir) * nf
+                size = np.prod(shape)
+                amplitudes["u%d%d" % (nf, nb)] = vector[i0:i0+size].reshape(shape)
+                i0 += size
 
         return amplitudes
 
@@ -1578,8 +1608,9 @@ class REBCC:
         for n in self.rank_numeric[1]:
             vectors.append(lambdas["ls%d" % n].ravel())
 
-        for n in self.rank_numeric[2]:
-            vectors.append(lambdas["lu1%d" % n].ravel())
+        for nf in self.rank_numeric[2]:
+            for nb in self.rank_numeric[3]:
+                vectors.append(lambdas["lu%d%d" % (nf, nb)].ravel())
 
         return np.concatenate(vectors)
 
@@ -1614,11 +1645,12 @@ class REBCC:
             lambdas["ls%d" % n] = vector[i0:i0+size].reshape(shape)
             i0 += size
 
-        for n in self.rank_numeric[2]:
-            shape = (self.nbos,) * n + (self.nvir, self.nocc)
-            size = np.prod(shape)
-            lambdas["lu1%d" % n] = vector[i0:i0+size].reshape(shape)
-            i0 += size
+        for nf in self.rank_numeric[2]:
+            for nb in self.rank_numeric[3]:
+                shape = (self.nbos,) * nb + (self.nvir, self.nocc) * nf
+                size = np.prod(shape)
+                lambdas["lu%d%d" % (nf, nb)] = vector[i0:i0+size].reshape(shape)
+                i0 += size
 
         return lambdas
 
@@ -1650,8 +1682,9 @@ class REBCC:
         for n in self.rank_numeric[1]:
             raise NotImplementedError
 
-        for n in self.rank_numeric[2]:
-            raise NotImplementedError
+        for nf in self.rank_numeric[2]:
+            for nb in self.rank_numeric[3]:
+                raise NotImplementedError
 
         return np.concatenate(vectors)
 
@@ -1704,8 +1737,9 @@ class REBCC:
         for n in self.rank_numeric[1]:
             raise NotImplementedError
 
-        for n in self.rank_numeric[2]:
-            raise NotImplementedError
+        for nf in self.rank_numeric[2]:
+            for nb in self.rank_numeric[3]:
+                raise NotImplementedError
 
         return tuple(excitations)
 
@@ -1739,8 +1773,9 @@ class REBCC:
         for n in self.rank_numeric[1]:
             raise NotImplementedError
 
-        for n in self.rank_numeric[2]:
-            raise NotImplementedError
+        for nf in self.rank_numeric[2]:
+            for nb in self.rank_numeric[3]:
+                raise NotImplementedError
 
         return tuple(excitations)
 
@@ -1887,6 +1922,54 @@ class REBCC:
             return 0.0
 
     @property
+    def fermion_excitations(self):
+        """Return a string representation of the fermionic excitations
+        in the ansatz.
+
+        Returns
+        -------
+        fermion_excitations : str
+            String representation of the fermion excitations.
+        """
+        return self.rank[0]
+
+    @property
+    def boson_excitations(self):
+        """Return a string representation of the bosonic excitations
+        in the ansatz.
+
+        Returns
+        -------
+        boson_excitations : str
+            String representation of the boson excitations.
+        """
+        return self.rank[1]
+
+    @property
+    def fermion_coupling_rank(self):
+        """Return the fermionic rank of the fermion-boson coupling
+        in the ansatz.
+
+        Returns
+        -------
+        fermion_coupling_rank : int
+            Integer representation of the fermion coupling rank.
+        """
+        return self.rank[2]
+
+    @property
+    def boson_coupling_rank(self):
+        """Return the bosonic rank of the fermion-boson coupling
+        in the ansatz.
+
+        Returns
+        -------
+        boson_coupling_rank : int
+            Integer representation of the boson coupling rank.
+        """
+        return self.rank[3]
+
+    @property
     def name(self):
         """Get a string with the name of the method.
 
@@ -1895,7 +1978,13 @@ class REBCC:
         name : str
             Name of the method.
         """
-        return "RCC" + "-".join(self.rank).rstrip("-")
+        name = "RCC%s" % self.fermion_excitations
+        if self.boson_excitations:
+            name += "-%s" % self.boson_excitations
+        if self.fermion_coupling_rank or self.boson_coupling_rank:
+            name += "-%d" % self.fermion_coupling_rank
+            name += "-%d" % self.boson_coupling_rank
+        return name
 
     @property
     def rank_numeric(self):
@@ -1912,8 +2001,10 @@ class REBCC:
         values = {"S": 1, "D": 2, "T": 3, "Q": 4}
 
         rank = []
-        for op in self.rank:
+        for op in self.rank[:2]:
             rank.append(tuple(values[char] for char in op))
+        for op in self.rank[2:]:
+            rank += [tuple(range(1, op+1))]
 
         return tuple(rank)
 

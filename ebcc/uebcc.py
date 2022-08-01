@@ -149,23 +149,26 @@ class UEBCC(rebcc.REBCC):
                 amplitudes["s%d" % n] = np.zeros((self.nbos,) * n)
 
         # Build U amplitudes:
-        for n in self.rank_numeric[2]:
-            if n == 1:
-                e_xia = SimpleNamespace(
-                        aa=lib.direct_sum("ia-x->xia", e_ia.aa, self.omega),
-                        bb=lib.direct_sum("ia-x->xia", e_ia.bb, self.omega),
-                )
-                u1n = SimpleNamespace(
-                        aa=h.aa.bov / e_xia.aa,
-                        bb=h.bb.bov / e_xia.bb,
-                )
-                amplitudes["u1%d" % n] = u1n
-            else:
-                u1n = SimpleNamespace(
-                        aa=np.zeros((self.nbos,) * n + (self.nocc[0], self.nvir[0])),
-                        bb=np.zeros((self.nbos,) * n + (self.nocc[1], self.nvir[1])),
-                )
-                amplitudes["u1%d" % n] = u1n
+        for nf in self.rank_numeric[2]:
+            if nf != 1:
+                raise NotImplementedError
+            for nb in self.rank_numeric[3]:
+                if nb == 1:
+                    e_xia = SimpleNamespace(
+                            aa=lib.direct_sum("ia-x->xia", e_ia.aa, self.omega),
+                            bb=lib.direct_sum("ia-x->xia", e_ia.bb, self.omega),
+                    )
+                    u1n = SimpleNamespace(
+                            aa=h.aa.bov / e_xia.aa,
+                            bb=h.bb.bov / e_xia.bb,
+                    )
+                    amplitudes["u%d%d" % (nf, nb)] = u1n
+                else:
+                    u1n = SimpleNamespace(
+                            aa=np.zeros((self.nbos,) * nb + (self.nocc[0], self.nvir[0])),
+                            bb=np.zeros((self.nbos,) * nb + (self.nocc[1], self.nvir[1])),
+                    )
+                    amplitudes["u%d%d" % (nf, nb)] = u1n
 
         return amplitudes
 
@@ -188,12 +191,15 @@ class UEBCC(rebcc.REBCC):
             lambdas["ls%d" % n] = amplitudes["s%d" % n]
 
         # Build LU amplitudes:
-        for n in self.rank_numeric[2]:
-            perm = list(range(n)) + [n+1, n]
-            lambdas["lu1%d" % n] = SimpleNamespace()
-            for key in amplitudes["u1%d" % n].__dict__.keys():
-                lu1n = getattr(amplitudes["u1%d" % n], key).transpose(perm)
-                setattr(lambdas["lu1%d" % n], key, lu1n)
+        for nf in self.rank_numeric[2]:
+            if nf != 1:
+                raise NotImplementedError
+            for nb in self.rank_numeric[3]:
+                perm = list(range(nb)) + [nb+1, nb]
+                lambdas["lu%d%d" % (nf, nb)] = SimpleNamespace()
+                for key in amplitudes["u%d%d" % (nf, nb)].__dict__.keys():
+                    lu1n = getattr(amplitudes["u%d%d" % (nf, nb)], key).transpose(perm)
+                    setattr(lambdas["lu%d%d" % (nf, nb)], key, lu1n)
 
         return lambdas
 
@@ -230,17 +236,20 @@ class UEBCC(rebcc.REBCC):
             res["s%d" % n] += amplitudes["s%d" % n]
 
         # Divide U amplitudes:
-        for n in self.rank_numeric[2]:
-            d = functools.reduce(np.add.outer, ([-self.omega] * n) + [e_ia.aa])
-            tn = res["u1%d" % n].aa
-            tn /= d
-            tn += amplitudes["u1%d" % n].aa
-            d = functools.reduce(np.add.outer, ([-self.omega] * n) + [e_ia.bb])
-            res["u1%d" % n].aa = tn
-            tn = res["u1%d" % n].bb
-            tn /= d
-            tn += amplitudes["u1%d" % n].bb
-            res["u1%d" % n].bb = tn
+        for nf in self.rank_numeric[2]:
+            if nf != 1:
+                raise NotImplementedError
+            for nb in self.rank_numeric[3]:
+                d = functools.reduce(np.add.outer, ([-self.omega] * nb) + ([e_ia.aa] * nf))
+                tn = res["u%d%d" % (nf, nb)].aa
+                tn /= d
+                tn += amplitudes["u%d%d" % (nf, nb)].aa
+                d = functools.reduce(np.add.outer, ([-self.omega] * nb) + ([e_ia.bb] * nf))
+                res["u%d%d" % (nf, nb)].aa = tn
+                tn = res["u%d%d" % (nf, nb)].bb
+                tn /= d
+                tn += amplitudes["u%d%d" % (nf, nb)].bb
+                res["u%d%d" % (nf, nb)].bb = tn
 
         return res
 
@@ -278,17 +287,20 @@ class UEBCC(rebcc.REBCC):
             res["ls%d" % n] += lambdas["ls%d" % n]
 
         # Divide U amplitudes:
-        for n in self.rank_numeric[2]:
-            d = functools.reduce(np.add.outer, ([-self.omega] * n) + [e_ai.aa])
-            tn = res["lu1%d" % n].aa
-            tn /= d
-            tn += lambdas["lu1%d" % n].aa
-            d = functools.reduce(np.add.outer, ([-self.omega] * n) + [e_ai.bb])
-            res["lu1%d" % n].aa = tn
-            tn = res["lu1%d" % n].bb
-            tn /= d
-            tn += lambdas["lu1%d" % n].bb
-            res["lu1%d" % n].bb = tn
+        for nf in self.rank_numeric[2]:
+            if nf != 1:
+                raise NotImplementedError
+            for nb in self.rank_numeric[3]:
+                d = functools.reduce(np.add.outer, ([-self.omega] * nb) + ([e_ai.aa] * nf))
+                tn = res["lu%d%d" % (nf, nb)].aa
+                tn /= d
+                tn += lambdas["lu%d%d" % (nf, nb)].aa
+                d = functools.reduce(np.add.outer, ([-self.omega] * nb) + ([e_ai.bb] * nf))
+                res["lu%d%d" % (nf, nb)].aa = tn
+                tn = res["lu%d%d" % (nf, nb)].bb
+                tn /= d
+                tn += lambdas["lu%d%d" % (nf, nb)].bb
+                res["lu%d%d" % (nf, nb)].bb = tn
 
         return res
 
@@ -471,9 +483,12 @@ class UEBCC(rebcc.REBCC):
         for n in self.rank_numeric[1]:
             vectors.append(amplitudes["s%d" % n].ravel())
 
-        for n in self.rank_numeric[2]:
-            vectors.append(amplitudes["u1%d" % n].aa.ravel())
-            vectors.append(amplitudes["u1%d" % n].bb.ravel())
+        for nf in self.rank_numeric[2]:
+            if nf != 1:
+                raise NotImplementedError
+            for nb in self.rank_numeric[3]:
+                vectors.append(amplitudes["u%d%d" % (nf, nb)].aa.ravel())
+                vectors.append(amplitudes["u%d%d" % (nf, nb)].bb.ravel())
 
         return np.concatenate(vectors)
 
@@ -498,16 +513,19 @@ class UEBCC(rebcc.REBCC):
             amplitudes["s%d" % n] = vector[i0:i0+size].reshape(shape)
             i0 += size
 
-        for n in self.rank_numeric[2]:
-            amplitudes["u1%d" % n] = SimpleNamespace()
-            shape = (self.nbos,) * n + (self.nocc[0], self.nvir[0])
-            size = np.prod(shape)
-            amplitudes["u1%d" % n].aa = vector[i0:i0+size].reshape(shape)
-            i0 += size
-            shape = (self.nbos,) * n + (self.nocc[1], self.nvir[1])
-            size = np.prod(shape)
-            amplitudes["u1%d" % n].bb = vector[i0:i0+size].reshape(shape)
-            i0 += size
+        for nf in self.rank_numeric[2]:
+            if nf != 1:
+                raise NotImplementedError
+            for nb in self.rank_numeric[3]:
+                amplitudes["u%d%d" % (nf, nb)] = SimpleNamespace()
+                shape = (self.nbos,) * nb + (self.nocc[0], self.nvir[0]) * nf
+                size = np.prod(shape)
+                amplitudes["u%d%d" % (nf, nb)].aa = vector[i0:i0+size].reshape(shape)
+                i0 += size
+                shape = (self.nbos,) * nb + (self.nocc[1], self.nvir[1]) * nf
+                size = np.prod(shape)
+                amplitudes["u%d%d" % (nf, nb)].bb = vector[i0:i0+size].reshape(shape)
+                i0 += size
 
         return amplitudes
 
@@ -522,9 +540,12 @@ class UEBCC(rebcc.REBCC):
         for n in self.rank_numeric[1]:
             vectors.append(lambdas["ls%d" % n].ravel())
 
-        for n in self.rank_numeric[2]:
-            vectors.append(lambdas["lu1%d" % n].aa.ravel())
-            vectors.append(lambdas["lu1%d" % n].bb.ravel())
+        for nf in self.rank_numeric[2]:
+            if nf != 1:
+                raise NotImplementedError
+            for nb in self.rank_numeric[3]:
+                vectors.append(lambdas["lu%d%d" % (nf, nb)].aa.ravel())
+                vectors.append(lambdas["lu%d%d" % (nf, nb)].bb.ravel())
 
         return np.concatenate(vectors)
 
@@ -549,16 +570,19 @@ class UEBCC(rebcc.REBCC):
             lambdas["ls%d" % n] = vector[i0:i0+size].reshape(shape)
             i0 += size
 
-        for n in self.rank_numeric[2]:
-            lambdas["lu1%d" % n] = SimpleNamespace()
-            shape = (self.nbos,) * n + (self.nvir[0], self.nocc[0])
-            size = np.prod(shape)
-            lambdas["lu1%d" % n].aa = vector[i0:i0+size].reshape(shape)
-            i0 += size
-            shape = (self.nbos,) * n + (self.nvir[1], self.nocc[1])
-            size = np.prod(shape)
-            lambdas["lu1%d" % n].bb = vector[i0:i0+size].reshape(shape)
-            i0 += size
+        for nf in self.rank_numeric[2]:
+            if nf != 1:
+                raise NotImplementedError
+            for nb in self.rank_numeric[3]:
+                lambdas["lu%d%d" % (nf, nb)] = SimpleNamespace()
+                shape = (self.nbos,) * nb + (self.nvir[0], self.nocc[0]) * nf
+                size = np.prod(shape)
+                lambdas["lu%d%d" % (nf, nb)].aa = vector[i0:i0+size].reshape(shape)
+                i0 += size
+                shape = (self.nbos,) * nb + (self.nvir[1], self.nocc[1]) * nf
+                size = np.prod(shape)
+                lambdas["lu%d%d" % (nf, nb)].bb = vector[i0:i0+size].reshape(shape)
+                i0 += size
 
         return lambdas
 
@@ -574,8 +598,9 @@ class UEBCC(rebcc.REBCC):
         for n in self.rank_numeric[1]:
             raise NotImplementedError
 
-        for n in self.rank_numeric[2]:
-            raise NotImplementedError
+        for nf in self.rank_numeric[2]:
+            for nb in self.rank_numeric[3]:
+                raise NotImplementedError
 
         return np.concatenate(vectors)
 
@@ -594,8 +619,9 @@ class UEBCC(rebcc.REBCC):
         for n in self.rank_numeric[1]:
             raise NotImplementedError
 
-        for n in self.rank_numeric[2]:
-            raise NotImplementedError
+        for nf in self.rank_numeric[2]:
+            for nb in self.rank_numeric[3]:
+                raise NotImplementedError
 
         return tuple(excitations)
 
@@ -614,14 +640,15 @@ class UEBCC(rebcc.REBCC):
         for n in self.rank_numeric[1]:
             raise NotImplementedError
 
-        for n in self.rank_numeric[2]:
-            raise NotImplementedError
+        for nf in self.rank_numeric[2]:
+            for nb in self.rank_numeric[3]:
+                raise NotImplementedError
 
         return tuple(excitations)
 
     @property
     def name(self):
-        return "UCC" + "-".join(self.rank).rstrip("-")
+        return super().name.replace("R", "U", 1)
 
     @property
     def nmo(self):

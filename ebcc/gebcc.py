@@ -92,12 +92,15 @@ class GEBCC(rebcc.REBCC):
                 amplitudes["s%d" % n] = np.zeros((self.nbos,) * n)
 
         # Build U amplitudes:
-        for n in self.rank_numeric[2]:
-            if n == 1:
-                e_xia = lib.direct_sum("ia-x->xia", e_ia, self.omega)
-                amplitudes["u1%d" % n] = h.bov / e_xia
-            else:
-                amplitudes["u1%d" % n] = np.zeros((self.nbos,) * n + (self.nocc, self.nvir))
+        for nf in self.rank_numeric[2]:
+            if nf != 1:
+                raise NotImplementedError
+            for nb in self.rank_numeric[3]:
+                if n == 1:
+                    e_xia = lib.direct_sum("ia-x->xia", e_ia, self.omega)
+                    amplitudes["u%d%d" % (nf, nb)] = h.bov / e_xia
+                else:
+                    amplitudes["u%d%d" % (nf, nb)] = np.zeros((self.nbos,) * nb + (self.nocc, self.nvir))
 
         return amplitudes
 
@@ -140,8 +143,9 @@ class GEBCC(rebcc.REBCC):
         for n in self.rank_numeric[1]:
             raise NotImplementedError
 
-        for n in self.rank_numeric[2]:
-            raise NotImplementedError
+        for nf in self.rank_numeric[2]:
+            for nb in self.rank_numeric[3]:
+                raise NotImplementedError
 
         return np.concatenate(vectors)
 
@@ -162,8 +166,9 @@ class GEBCC(rebcc.REBCC):
         for n in self.rank_numeric[1]:
             raise NotImplementedError
 
-        for n in self.rank_numeric[2]:
-            raise NotImplementedError
+        for nf in self.rank_numeric[2]:
+            for nb in self.rank_numeric[3]:
+                raise NotImplementedError
 
         return np.concatenate(vectors)
 
@@ -190,8 +195,9 @@ class GEBCC(rebcc.REBCC):
         for n in self.rank_numeric[1]:
             raise NotImplementedError
 
-        for n in self.rank_numeric[2]:
-            raise NotImplementedError
+        for nf in self.rank_numeric[2]:
+            for nb in self.rank_numeric[3]:
+                raise NotImplementedError
 
         return tuple(excitations)
 
@@ -218,8 +224,9 @@ class GEBCC(rebcc.REBCC):
         for n in self.rank_numeric[1]:
             raise NotImplementedError
 
-        for n in self.rank_numeric[2]:
-            raise NotImplementedError
+        for nf in self.rank_numeric[2]:
+            for nb in self.rank_numeric[3]:
+                raise NotImplementedError
 
         return tuple(excitations)
 
@@ -248,7 +255,7 @@ class GEBCC(rebcc.REBCC):
 
     @property
     def name(self):
-        return "GCC" + "-".join(self.rank).rstrip("-")
+        return super().name.replace("R", "G", 1)
 
 
 

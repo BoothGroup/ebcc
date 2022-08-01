@@ -1,4 +1,4 @@
-"""Tests for the RCCSD-S-S model.
+"""Tests for the RCCSD-S-1-1 model.
 """
 
 import unittest
@@ -15,8 +15,8 @@ from pyscf import gto, scf, cc, lib
 from ebcc import NullLogger, REBCC
 
 
-class RCCSD_S_S_Tests(unittest.TestCase):
-    """Test RCCSD-S-S against the legacy GCCSD-S-S values with
+class RCCSD_S_1_1_Tests(unittest.TestCase):
+    """Test RCCSD-S-1-1 against the legacy GCCSD-S-1-1 values with
     shift=True.
     """
 
@@ -48,7 +48,17 @@ class RCCSD_S_S_Tests(unittest.TestCase):
         g = 0.5 * (g + g.transpose(0, 2, 1).conj())
         omega = np.random.random((nbos,)) * 5.0
 
-        ccsd = REBCC(mf, rank=("SD", "S", "S"), g=g, omega=omega, shift=cls.shift, log=NullLogger())
+        ccsd = REBCC(
+                mf,
+                fermion_excitations="SD",
+                boson_excitations="S",
+                fermion_coupling_rank=1,
+                boson_coupling_rank=1,
+                g=g,
+                omega=omega,
+                shift=cls.shift,
+                log=NullLogger(),
+        )
         ccsd.options.e_tol = 1e-12
         ccsd.options.t_tol = 1e-12
         eris = ccsd.get_eris()
@@ -138,8 +148,8 @@ class RCCSD_S_S_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(a, b, 6)
 
 
-class RCCSD_S_S_NoShift_Tests(RCCSD_S_S_Tests):
-    """Test RCCSD-S-S against the legacy GCCSD-S-S values with
+class RCCSD_S_1_1_NoShift_Tests(RCCSD_S_1_1_Tests):
+    """Test RCCSD-S-1-1 against the legacy GCCSD-S-1-1 values with
     shift=False.
     """
 
@@ -148,5 +158,5 @@ class RCCSD_S_S_NoShift_Tests(RCCSD_S_S_Tests):
 
 
 if __name__ == "__main__":
-    print("Tests for RCCSD-S-S")
+    print("Tests for RCCSD-S-1-1")
     unittest.main()

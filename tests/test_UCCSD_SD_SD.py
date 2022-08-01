@@ -1,4 +1,4 @@
-"""Tests for the UCCSD-SD-SD model.
+"""Tests for the UCCSD-SD-1-2 model.
 """
 
 import itertools
@@ -15,8 +15,8 @@ from pyscf import gto, scf, cc, lib
 from ebcc import NullLogger, GEBCC, UEBCC
 
 
-class UCCSD_SD_SD_Tests(unittest.TestCase):
-    """Test UCCSD-SD-SD against the legacy GCCSD-SD-SD values with
+class UCCSD_SD_1_2_Tests(unittest.TestCase):
+    """Test UCCSD-SD-1-2 against the legacy GCCSD-SD-SD values with
     shift=True. The system is a singlet.
     """
 
@@ -49,7 +49,17 @@ class UCCSD_SD_SD_Tests(unittest.TestCase):
         g = 0.5 * (g + g.transpose(0, 2, 1).conj())
         omega = np.random.random((nbos,)) * 5.0
 
-        ccsd = UEBCC(mf, rank=("SD", "SD", "SD"), g=g, omega=omega, shift=cls.shift, log=NullLogger())
+        ccsd = UEBCC(
+                mf,
+                fermion_excitations="SD",
+                boson_excitations="SD",
+                fermion_coupling_rank=1,
+                boson_coupling_rank=2,
+                g=g,
+                omega=omega,
+                shift=cls.shift,
+                log=NullLogger(),
+        )
         ccsd.options.e_tol = 1e-12
         ccsd.options.t_tol = 1e-12
         eris = ccsd.get_eris()
@@ -155,8 +165,8 @@ class UCCSD_SD_SD_Tests(unittest.TestCase):
     #    np.testing.assert_almost_equal(a, b, 6)
 
 
-class UCCSD_SD_SD_NoShift_Tests(UCCSD_SD_SD_Tests):
-    """Test UCCSD-SD-SD against the legacy GCCSD-SD-SD values with
+class UCCSD_SD_1_2_NoShift_Tests(UCCSD_SD_1_2_Tests):
+    """Test UCCSD-SD-1-2 against the legacy GCCSD-SD-SD values with
     shift=False. The system is a singlet.
     """
 
@@ -164,5 +174,5 @@ class UCCSD_SD_SD_NoShift_Tests(UCCSD_SD_SD_Tests):
 
 
 if __name__ == "__main__":
-    print("Tests for UCCSD-SD-SD")
+    print("Tests for UCCSD-SD-1-2")
     unittest.main()

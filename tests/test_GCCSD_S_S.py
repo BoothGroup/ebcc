@@ -1,4 +1,4 @@
-"""Tests for the GCCSD-S-S model.
+"""Tests for the GCCSD-S-1-1 model.
 """
 
 import unittest
@@ -14,8 +14,8 @@ from pyscf import gto, scf, cc, lib
 from ebcc import NullLogger, GEBCC
 
 
-class GCCSD_S_S_Tests(unittest.TestCase):
-    """Test GCCSD-S-S against the legacy GCCSD-S-S values with
+class GCCSD_S_1_1_Tests(unittest.TestCase):
+    """Test GCCSD-S-1-1 against the legacy GCCSD-S-1-1 values with
     shift=False.
     """
 
@@ -52,7 +52,17 @@ class GCCSD_S_S_Tests(unittest.TestCase):
         g[np.ix_(range(nbos), orbspin==0, orbspin==0)] = g_
         g[np.ix_(range(nbos), orbspin==1, orbspin==1)] = g_
 
-        ccsd = GEBCC(mf, rank=("SD", "S", "S"), g=g, omega=omega, shift=cls.shift, log=NullLogger())
+        ccsd = GEBCC(
+                mf,
+                fermion_excitations="SD",
+                boson_excitations="S",
+                fermion_coupling_rank=1,
+                boson_coupling_rank=1,
+                g=g,
+                omega=omega,
+                shift=cls.shift,
+                log=NullLogger(),
+        )
         ccsd.options.e_tol = 1e-12
         ccsd.options.t_tol = 1e-12
         eris = ccsd.get_eris()
@@ -158,8 +168,8 @@ class GCCSD_S_S_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(a, b, 6)
 
 
-class GCCSD_S_S_NoShift_Tests(GCCSD_S_S_Tests):
-    """Test GCCSD-S-S against the legacy GCCSD-S-S values with
+class GCCSD_S_1_1_NoShift_Tests(GCCSD_S_1_1_Tests):
+    """Test GCCSD-S-1-1 against the legacy GCCSD-S-1-1 values with
     shift=True.
     """
 
@@ -168,5 +178,5 @@ class GCCSD_S_S_NoShift_Tests(GCCSD_S_S_Tests):
 
 
 if __name__ == "__main__":
-    print("Tests for GCCSD-S-S")
+    print("Tests for GCCSD-S-1-1")
     unittest.main()

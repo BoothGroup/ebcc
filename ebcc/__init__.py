@@ -87,13 +87,33 @@ def EBCC(mf, *args, **kwargs):
     from pyscf import scf
 
     if isinstance(mf, scf.uhf.UHF):
-        return UEBCC(mf)
+        return UEBCC(mf, *args, **kwargs)
     elif isinstance(mf, scf.ghf.GHF):
-        return GEBCC(mf)
+        return GEBCC(mf, *args, **kwargs)
     else:
-        return REBCC(mf)
+        return REBCC(mf, *args, **kwargs)
 
 EBCC.__doc__ = REBCC.__doc__
+
+
+# --- Constructors for boson-free calculations:
+
+def CCSD(mf, **args, **kwargs):
+    from pyscf import scf
+
+    kwargs["fermion_excitations"] = "SD"
+    kwargs["boson_excitations"] = "SD"
+    kwargs["fermion_coupling_rank"] = 0
+    kwargs["boson_coupling_rank"] = 0
+
+    if isinstance(mf, scf.uhf.UHF):
+        return UEBCC(mf, *args, **kwargs)
+    elif isinstance(mf, scf.ghf.GHF):
+        return GEBCC(mf, *args, **kwargs)
+    else:
+        return REBCC(mf, *args, **kwargs)
+
+CCSD.__doc__ = REBCC.__doc__
 
 
 # --- List available methods:

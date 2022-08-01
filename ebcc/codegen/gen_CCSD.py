@@ -57,7 +57,7 @@ particles = common.particles
 # Timer:
 timer = common.Stopwatch()
 
-with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_"))) as file_printer:
+with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
     ## Get energy expression:
     #with FunctionPrinter(
     #        file_printer,

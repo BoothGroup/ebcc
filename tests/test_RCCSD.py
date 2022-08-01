@@ -38,7 +38,11 @@ class RCCSD_Tests(unittest.TestCase):
         mf.kernel()
         mf.mo_coeff = mo_coeff
 
-        ccsd = REBCC(mf, rank=("SD", "", ""), log=NullLogger())
+        ccsd = REBCC(
+                mf,
+                fermion_excitations="SD",
+                log=NullLogger(),
+        )
         ccsd.options.e_tol = 1e-10
         ccsd.options.t_tol = 1e-14
         eris = ccsd.get_eris()
@@ -159,7 +163,11 @@ class RCCSD_PySCF_Tests(unittest.TestCase):
         ccsd_ref.kernel()
         ccsd_ref.solve_lambda()
 
-        ccsd = REBCC(mf, rank=("SD", "", ""), log=NullLogger())
+        ccsd = REBCC(
+                mf,
+                fermion_excitations="SD",
+                log=NullLogger(),
+        )
         ccsd.options.e_tol = 1e-10
         ccsd.options.t_tol = 1e-14
         eris = ccsd.get_eris()

@@ -13,7 +13,7 @@ from ebcc.codegen import common, wick
 from ebcc.codegen.convenience_extra import *
 
 from pyspark import SparkContext
-ctx = SparkContext("local[4]")
+ctx = SparkContext("local[16]")
 #from dummy_spark import SparkContext
 #ctx = SparkContext()
 dr = drudge.Drudge(ctx)
@@ -21,7 +21,7 @@ dr = drudge.Drudge(ctx)
 warnings.simplefilter("ignore", UserWarning)
 
 # Rank of fermion, boson, coupling operators:
-rank = ("SD", "SD", "SD")
+rank = ("SD", "SD", "S")
 
 # Spin setting:
 spin = "uhf"  # {"ghf", "rhf", "uhf"}
@@ -34,8 +34,8 @@ sizes = common.get_sizes(200, 500, 100, spin)
 
 # Tensors
 H, _ = wick.get_hamiltonian(rank=rank)
-bra = bra1, bra2, bra1b, bra2b, bra1b1e, bra2b1e = wick.get_bra_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
-ket = ket1, ket2, ket1b, ket2b, ket1b1e, ket2b1e = wick.get_ket_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
+bra = bra1, bra2, bra1b, bra2b, bra1b1e = wick.get_bra_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
+ket = ket1, ket2, ket1b, ket2b, ket1b1e = wick.get_ket_spaces(rank=rank, occs=occs, virs=virs, nms=nms)
 T, _ = wick.get_excitation_ansatz(rank=rank, occs=occs, virs=virs, nms=nms)
 L, _ = wick.get_deexcitation_ansatz(rank=rank, occs=occs, virs=virs, nms=nms)
 Hbars = wick.construct_hbar(H, T, max_commutator=4)
@@ -54,12 +54,12 @@ particles = common.particles
 # Timer:
 timer = common.Stopwatch()
 
-with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_"))) as file_printer:
+with common.FilePrinter("%sCCSD_SD_1_1" % prefix.upper()) as file_printer:
     # Get energy expression:
     with FunctionPrinter(
             file_printer,
             "energy",
-            ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11", "u12"],
+            ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11"],
             ["e_cc"],
             init_gc=False,
             return_dict=False,
@@ -80,13 +80,12 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
     with FunctionPrinter(
             file_printer,
             "update_amps",
-            ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11", "u12"],
-            ["t1new", "t2new", "s1new", "s2new", "u11new", "u12new"],
+            ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11"],
+            ["t1new", "t2new", "s1new", "s2new", "u11new"],
             spin_cases={
                 "t1new": ["aa", "bb"],
                 "t2new": ["abab", "baba", "aaaa", "bbbb"],
                 "u11new": ["aa", "bb"],
-                "u12new": ["aa", "bb"],
             },
             timer=timer,
     ) as function_printer:
@@ -135,30 +134,20 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
         terms = transform_spin(terms, indices, project_onto=[(None, codegen.ALPHA, codegen.ALPHA)])
         terms_u11 = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
 
-        # U12 residuals:
-        S = bra2b1e * Hbar
-        out = apply_wick(S)
-        out.resolve()
-        expr = AExpression(Ex=out, simplify=True)
-        terms, indices = codegen.wick_to_sympy(expr, particles, return_value="u12new")
-        terms = transform_spin(terms, indices, project_onto=[(None, None, codegen.ALPHA, codegen.ALPHA)])
-        terms_u12 = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
-
-        terms = codegen.spin_integrate._flatten([terms_t1, terms_t2, terms_s1, terms_s2, terms_u11, terms_u12])
+        terms = codegen.spin_integrate._flatten([terms_t1, terms_t2, terms_s1, terms_s2, terms_u11])
         terms = codegen.optimize(terms, sizes=sizes, optimize="trav", verify=False, interm_fmt="x{}")
-        function_printer.write_python(printer.doprint(terms)+"\n", comment="T1, T2, S1, S2, U11 and U12 amplitudes")
+        function_printer.write_python(printer.doprint(terms)+"\n", comment="T1, T2, S1, S2 and U11 amplitudes")
 
     # Get lambda amplitudes function:
     with FunctionPrinter(
             file_printer,
             "update_lams",
-            ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11", "u12", "l1", "l2", "ls1", "ls2", "lu11", "lu12"],
-            ["l1new", "l2new", "ls1new", "ls2new", "lu11new", "lu12new"],
+            ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11", "l1", "l2", "ls1", "ls2", "lu11"],
+            ["l1new", "l2new", "ls1new", "ls2new", "lu11new"],
             spin_cases={
                 "l1new": ["aa", "bb"],
                 "l2new": ["abab", "baba", "aaaa", "bbbb"],
                 "lu11new": ["aa", "bb"],
-                "lu12new": ["aa", "bb"],
             },
             timer=timer,
     ) as function_printer:
@@ -289,52 +278,15 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
         terms = transform_spin(terms, indices, project_onto=[(None, codegen.ALPHA, codegen.ALPHA)])
         terms_lu11 = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
 
-        # TODO: check the following, and truncate Hbar
-
-        # BE2 residuals <0|Hbar|EPS1> (not proportional to lambda)
-        S = Hbar * ket2b1e
-        out = apply_wick(S)
-        out.resolve()
-        expr1 = AExpression(Ex=out)
-        expr1 = expr1.get_connected()
-        expr1.sort_tensors()
-
-        # BE2 residuals <0|L Hbar|EPS1> (connected pieces proportional to lambda)
-        S = L * Hbar * ket2b1e
-        out = apply_wick(S)
-        out.resolve()
-        expr2 = AExpression(Ex=out)
-        expr2 = expr2.get_connected()
-        expr2.sort_tensors()
-
-        # BE2 residuals (disconnected pieces proportional to lambda)
-        P2 = PE2("occ", "vir")
-        S = Hbar * P2 * L * ket2b1e
-        out = apply_wick(S)
-        out.resolve()
-        expr3 = AExpression(Ex=out)
-        expr3.sort_tensors()
-
-        # BE2 residuals (disconnected pieces proportional to lambda, projection onto boson singles)
-        P2b = PB2("nm")
-        S = Hbar * P2 * L * ket2b1e
-        out = apply_wick(S)
-        out.resolve()
-        expr4 = AExpression(Ex=out)
-        expr4.sort_tensors()
-        terms, indices = codegen.wick_to_sympy(expr1+expr2+expr3+expr4, particles, return_value="lu12new")
-        terms = transform_spin(terms, indices, project_onto=[(None, None, codegen.ALPHA, codegen.ALPHA)])
-        terms_lu12 = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
-
-        terms = codegen.spin_integrate._flatten([terms_l1, terms_l2, terms_ls1, terms_ls2, terms_lu11, terms_lu12])
-        terms = codegen.optimize(terms, sizes=sizes, optimize="opt", verify=False, interm_fmt="x{}")
-        function_printer.write_python(printer.doprint(terms)+"\n", comment="L1, L2, LS1, LS2, LU11 and LU12 amplitudes")
+        terms = codegen.spin_integrate._flatten([terms_l1, terms_l2, terms_ls1, terms_ls2, terms_lu11])
+        terms = codegen.optimize(terms, sizes=sizes, optimize="trav", verify=False, interm_fmt="x{}")
+        function_printer.write_python(printer.doprint(terms)+"\n", comment="L1, L2, LS1 , LS2 and LU11 amplitudes")
 
     # Get 1RDM expressions:
     with FunctionPrinter(
             file_printer,
             "make_rdm1_f",
-            ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11", "u12", "l1", "l2", "ls1", "ls2", "lu11", "lu12"],
+            ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11", "l1", "l2", "ls1", "ls2", "lu11"],
             ["rdm1_f"],
             spin_cases={
                 "rdm1_f": ["aa", "bb"],
@@ -360,7 +312,7 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
         def case(i, j, return_value, comment=None):
             ops = [FOperator(j, True), FOperator(i, False)]
             P = Expression([Term(1, [], [Tensor([i, j], "")], ops, [])])
-            mid = wick.bch(P, T, max_commutator=3)[-1]  # FIXME more ranks?
+            mid = wick.bch(P, T, max_commutator=3)[-1]  # FIXME rank?
             full = mid + L * mid
             out = apply_wick(full)
             out.resolve()
@@ -394,7 +346,7 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
     with FunctionPrinter(
             file_printer,
             "make_rdm2_f",
-            ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11", "u12", "l1", "l2", "ls1", "ls2", "lu11", "lu12"],
+            ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11", "l1", "l2", "ls1", "ls2", "lu11"],
             ["rdm2_f"],
             spin_cases={
                 "rdm2_f": ["aaaa", "abab", "baba", "bbbb"],
@@ -420,7 +372,7 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
         def case(i, j, k, l, return_value, comment=None):
             ops = [FOperator(l, True), FOperator(k, True), FOperator(i, False), FOperator(j, False)]
             P = Expression([Term(1, [], [Tensor([i, j, k, l], "")], ops, [])])
-            mid = wick.bch(P, T, max_commutator=4)[-1]  # FIXME more ranks?
+            mid = wick.bch(P, T, max_commutator=4)[-1]
             full = mid + L * mid
             out = apply_wick(full)
             out.resolve()
@@ -468,7 +420,7 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
     with FunctionPrinter(
             file_printer,
             "make_sing_b_dm",
-            ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11", "u12", "l1", "l2", "ls1", "ls2", "lu11", "lu12"],
+            ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11", "l1", "l2", "ls1", "ls2", "lu11"],
             ["dm_b"],
             return_dict=False,
             timer=timer,
@@ -502,7 +454,7 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
     with FunctionPrinter(
             file_printer,
             "make_rdm1_b",
-            ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11", "u12", "l1", "l2", "ls1", "ls2", "lu11", "lu12"],
+            ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11", "l1", "l2", "ls1", "ls2", "lu11"],
             ["rdm1_b"],
             return_dict=False,
             timer=timer,
@@ -526,7 +478,7 @@ with common.FilePrinter("%sCC%s" % (prefix.upper(), "_".join(rank).rstrip("_")))
     with FunctionPrinter(
             file_printer,
             "make_eb_coup_rdm",
-            ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11", "u12", "l1", "l2", "ls1", "ls2", "lu11", "lu12"],
+            ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11", "l1", "l2", "ls1", "ls2", "lu11"],
             ["rdm_eb"],
             spin_cases={
                 "rdm_eb": ["aa", "bb"],
