@@ -128,6 +128,8 @@ particles = {
         **{"ket2"+tag: ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)) for tag in ("", "_o", "_v")},
         # Similarity transformed hamiltonian:
         "h11": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
+        "h12": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
+        "h21": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 2)),
         "h22": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 2), (codegen.FERMION, 3), (codegen.FERMION, 2)),  # FIXME?
 }
 
@@ -243,6 +245,7 @@ def get_printer(spin):
                 **{"u1%d" % n: "{base}{spindelim}{spin}" for n in range(1, 4)},
                 **{"l%d" % n: "{base}{spindelim}{spin}" for n in range(1, 4)},
                 **{"lu1%d" % n: "{base}{spindelim}{spin}" for n in range(1, 4)},
+                **{"r%d" % n: "{base}{spindelim}{spin}" for n in range(1, 4)},
             },
             reorder_axes=reorder_axes,
             remove_spacing=True,
@@ -474,14 +477,14 @@ def pack_2e(*args):
 
     assert len(args) == len(ov_2e)
 
-    nocc = args[0].shape[0]
-    nvir = args[-1].shape[-1]
-    occ = slice(None, nocc)
-    vir = slice(nocc, None)
-    out = np.zeros((nocc+nvir,) * 4)
+    nocc = args[0].shape
+    nvir = args[-1].shape
+    occ = [slice(None, n) for n in nocc]
+    vir = [slice(n, None) for n in nocc]
+    out = np.zeros(tuple(no+nv for no, nv in zip(nocc, nvir)))
 
     for key, arg in zip(ov_2e, args):
-        slices = [occ if x == "o" else vir for x in key]
+        slices = [occ[i] if x == "o" else vir[i] for i, x in enumerate(key)]
         out[tuple(slices)] = arg
 
     return out

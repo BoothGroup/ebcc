@@ -986,6 +986,82 @@ class REBCC:
 
         return dm_eb
 
+    def hbar_ip(self, eris=None, amplitudes=None):
+        """Compute the EOM Hamiltonian for the IP.
+
+        Parameters
+        ----------
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
+
+        Returns
+        -------
+        h : numpy.ndarray
+            EOM Hamiltonian for the IP.
+        """
+        # TODO generalise
+
+        func, kwargs = self._load_function(
+                "hbar_ip",
+                eris=eris,
+                amplitudes=amplitudes,
+        )
+
+        blocks = func(**kwargs)
+        nocc = self.nocc
+        nvir = self.nvir
+
+        h11 = blocks["h11"].reshape(nocc, nocc)
+        h12 = blocks["h12"].reshape(nocc, nocc*nocc*nvir)
+        h21 = blocks["h21"].reshape(nocc*nocc*nvir, nocc)
+        h22 = blocks["h22"].reshape(nocc*nocc*nvir, nocc*nocc*nvir)
+
+        h = np.block([[h11, h12], [h21, h22]])
+
+        return h
+
+    def hbar_ea(self, eris=None, amplitudes=None):
+        """Compute the EOM Hamiltonian for the EA.
+
+        Parameters
+        ----------
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
+
+        Returns
+        -------
+        h : numpy.ndarray
+            EOM Hamiltonian for the EA.
+        """
+        # TODO generalise
+
+        func, kwargs = self._load_function(
+                "hbar_ea",
+                eris=eris,
+                amplitudes=amplitudes,
+        )
+
+        blocks = func(**kwargs)
+        nocc = self.nocc
+        nvir = self.nvir
+
+        h11 = blocks["h11"].reshape(nvir, nvir)
+        h12 = blocks["h12"].reshape(nvir, nvir*nvir*nocc)
+        h21 = blocks["h21"].reshape(nvir*nvir*nocc, nvir)
+        h22 = blocks["h22"].reshape(nvir*nvir*nocc, nvir*nvir*nocc)
+
+        h = np.block([[h11, h12], [h21, h22]])
+
+        return h
+
     def hbar_matvec_ip(self, r1, r2, eris=None, amplitudes=None):
         """Compute the product between a state vector and the EOM
         Hamiltonian for the IP.

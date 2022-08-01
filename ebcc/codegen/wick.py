@@ -230,7 +230,7 @@ def get_ket_ea_spaces(rank=("SD", "", ""), occs=None, virs=None, nms=None):
     for n in rank[0]:
         occ = [Idx(i, "occ") for i in range(n-1)] if occs is None else occs[:n-1]
         vir = [Idx(a, "vir") for a in range(n)] if virs is None else virs[:n]
-        operators = [FOperator(a, True) for a in vir[::-1]] + [FOperator(i, False) for i in occ]
+        operators = [FOperator(a, True) for a in vir] + [FOperator(i, False) for i in occ]
         tensors = [Tensor(vir + occ, "")]
         kets.append(Expression([Term(1, [], tensors, operators, [])]))
 
@@ -260,7 +260,7 @@ def get_r_ip_spaces(rank=("SD", "", ""), occs=None, virs=None, nms=None):
         scalar = get_factor(*occ, *vir)
         sums = [Sigma(i) for i in occ] + [Sigma(a) for a in vir]
         operators = [FOperator(a, True) for a in vir] + [FOperator(i, False) for i in occ[::-1]]
-        tensors = [Tensor(occ + vir, name, sym=TensorSym([[0, 1, 2], [1, 0, 2]], [1, -1]) if n == 2 else TensorSym([], []))]  # FIXME symm
+        tensors = [Tensor(occ + vir, name)]
         rs.append(Expression([Term(scalar, sums, tensors, operators, [])]))
 
     # boson
@@ -289,7 +289,7 @@ def get_r_ea_spaces(rank=("SD", "", ""), occs=None, virs=None, nms=None):
         scalar = get_factor(*occ, *vir)
         sums = [Sigma(a) for a in vir] + [Sigma(i) for i in occ]
         operators = [FOperator(a, True) for a in vir[::-1]] + [FOperator(i, False) for i in occ]
-        tensors = [Tensor(vir + occ, name, sym=TensorSym([[0, 1, 2], [1, 0, 2]], [1, -1]) if n == 2 else TensorSym([], []))]  # FIXME symm
+        tensors = [Tensor(vir + occ, name)]
         rs.append(Expression([Term(scalar, sums, tensors, operators, [])]))
 
     # boson

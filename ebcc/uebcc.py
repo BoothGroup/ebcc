@@ -58,7 +58,7 @@ class ERIs(SimpleNamespace):
         )
 
 
-def generate_spin_combinations(n):
+def generate_spin_combinations(n, excited=False):
     """Generate combinations of spin components for a given number
     of occupied and virtual axes.
 
@@ -66,6 +66,9 @@ def generate_spin_combinations(n):
     ----------
     n : int
         Order of cluster amplitude.
+    excited : bool, optional
+        If True, treat the amplitudes as excited. Default value is
+        `None`.
 
     Yields
     ------
@@ -78,10 +81,15 @@ def generate_spin_combinations(n):
     ['aa', 'bb']
     >>> generate_spin_combinations(2)
     ['aaaa', 'abab', 'baba', 'bbbb']
+    >>> generate_spin_combinations(2, excited=True)
+    ['aaa', 'aba', 'bab', 'bbb']
     """
 
     for tup in itertools.product(("a", "b"), repeat=n):
-        yield "".join(list(tup) * 2)
+        comb = "".join(list(tup) * 2)
+        if excited:
+            comb = comb[:-1]
+        yield comb
 
 
 @util.inherit_docstrings
@@ -311,20 +319,22 @@ class UEBCC(rebcc.REBCC):
         dm = func(**kwargs)
 
         if hermitise:
-            transpose = lambda x: 0.125 * (
-                    + x.transpose(0, 1, 2, 3)
-                    + x.transpose(1, 0, 2, 3)
-                    + x.transpose(0, 1, 3, 2)
-                    + x.transpose(1, 0, 3, 2)
-                    + x.transpose(2, 3, 0, 1)
-                    + x.transpose(2, 3, 1, 0)
-                    + x.transpose(3, 2, 0, 1)
-                    + x.transpose(3, 2, 1, 0)
-            )
-            dm.aaaa = transpose(dm.aaaa)
-            dm.aabb = transpose(dm.aabb)
-            dm.bbaa = transpose(dm.bbaa)
-            dm.bbbb = transpose(dm.bbbb)
+            def transpose1(dm):
+                dm = 0.5 * (
+                        + dm.transpose(0, 1, 2, 3)
+                        + dm.transpose(2, 3, 0, 1)
+                )
+                return dm
+            def transpose2(dm):
+                dm = 0.5 * (
+                        + dm.transpose(0, 1, 2, 3)
+                        + dm.transpose(1, 0, 3, 2)
+                )
+                return dm
+            dm.aaaa = transpose2(transpose1(dm.aaaa))
+            dm.aabb = transpose2(dm.aabb)
+            dm.bbaa = transpose2(dm.bbaa)
+            dm.bbbb = transpose2(transpose1(dm.bbbb))
 
         return dm
 
@@ -352,6 +362,12 @@ class UEBCC(rebcc.REBCC):
             dm_eb.bb -= shift[None]
 
         return dm_eb
+
+    def hbar_matvec_ip(self, r1a, r1b, r2aaa, r2aba, r2bab, r2bbb, eris=None, amplitudes=None):
+        # TODO generalise vectors input
+        r1 = SimpleNamespace(a=r1a, b=r1b)
+        r2 = SimpleNamespace(aaa=r2aaa, aba=r2aba, bab=r2bab, bbb=r2bbb)
+        return super().hbar_matvec_ip(r1, r2, eris=eris, amplitudes=amplitudes)
 
     def get_mean_field_G(self):
         val  = lib.einsum("Ipp->I", self.g.aa.boo)
@@ -545,6 +561,63 @@ class UEBCC(rebcc.REBCC):
             i0 += size
 
         return lambdas
+
+    def excitations_to_vector_ip(self, *excitations):
+        vectors = []
+        m = 0
+
+        for n in self.rank_numeric[0]:
+            for spin in generate_spin_combinations(n, excited=True):
+                vectors.append(getattr(excitations[m], spin).ravel())
+            m += 1
+
+        for n in self.rank_numeric[1]:
+            raise NotImplementedError
+
+        for n in self.rank_numeric[2]:
+            raise NotImplementedError
+
+        return np.concatenate(vectors)
+
+    def vector_to_excitations_ip(self, vector):
+        excitations = []
+        i0 = 0
+
+        for n in self.rank_numeric[0]:
+            for spin in generate_spin_combinations(n, excited=True):
+                inds = ["ab".index(s) for s in spin]
+                shape = [self.nocc[s] for s in inds[:n]] + [self.nvir[s] for s in inds[n:]]
+                size = np.prod(shape)
+                excitations.append(vector[i0:i0+size].reshape(shape))
+                i0 += size
+
+        for n in self.rank_numeric[1]:
+            raise NotImplementedError
+
+        for n in self.rank_numeric[2]:
+            raise NotImplementedError
+
+        return tuple(excitations)
+
+    def vector_to_excitations_ea(self, vector):
+        excitations = []
+        i0 = 0
+
+        for n in self.rank_numeric[0]:
+            for spin in generate_spin_combinations(n, excited=True):
+                inds = ["ab".index(s) for s in spin]
+                shape = [self.nvir[s] for s in inds[:n]] + [self.nocc[s] for s in inds[n:]]
+                size = np.prod(shape)
+                excitations.append(vector[i0:i0+size].reshape(shape))
+                i0 += size
+
+        for n in self.rank_numeric[1]:
+            raise NotImplementedError
+
+        for n in self.rank_numeric[2]:
+            raise NotImplementedError
+
+        return tuple(excitations)
 
     @property
     def name(self):

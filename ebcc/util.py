@@ -5,6 +5,7 @@ import sys
 import logging
 import inspect
 import itertools
+import functools
 import numpy as np
 
 
@@ -28,15 +29,22 @@ def tril_indices_ndim(n, dims, include_diagonal=False):
     """Return lower triangular indices for a multidimensional array.
     """
 
+    ranges = [np.arange(n)] * dims
+
     if dims == 0:
         return tuple()
+    elif dims == 1:
+        return ranges[0],
 
     if include_diagonal:
-        combinations = itertools.combinations_with_replacement
+        tri = functools.reduce(np.greater_equal.outer, ranges)
     else:
-        combinations = itertools.combinations
+        tri = functools.reduce(np.greater.outer, ranges)
 
-    return tuple(list(x) for x in zip(*list(combinations(range(n), dims))))
+    tril = tuple(np.broadcast_to(inds, tri.shape)[tri] \
+            for inds in np.indices(tri.shape, sparse=True))
+
+    return tril
 
 
 def ntril_ndim(n, dims, include_diagonal=False):

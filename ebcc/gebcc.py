@@ -123,6 +123,106 @@ class GEBCC(rebcc.REBCC):
 
         return dm
 
+    def excitations_to_vector_ip(self, *excitations):
+        vectors = []
+        m = 0
+
+        for n in self.rank_numeric[0]:
+            if n == 1:
+                vectors.append(excitations[m].ravel())
+            elif n == 2:
+                oinds = util.tril_indices_ndim(self.nocc, 2, include_diagonal=False)
+                vectors.append(excitations[m][oinds].ravel())
+            else:
+                raise NotImplementedError
+            m += 1
+
+        for n in self.rank_numeric[1]:
+            raise NotImplementedError
+
+        for n in self.rank_numeric[2]:
+            raise NotImplementedError
+
+        return np.concatenate(vectors)
+
+    def excitations_to_vector_ea(self, *excitations):
+        vectors = []
+        m = 0
+
+        for n in self.rank_numeric[0]:
+            if n == 1:
+                vectors.append(excitations[m].ravel())
+            elif n == 2:
+                vinds = util.tril_indices_ndim(self.nvir, 2, include_diagonal=False)
+                vectors.append(excitations[m][vinds].ravel())
+            else:
+                raise NotImplementedError
+            m += 1
+
+        for n in self.rank_numeric[1]:
+            raise NotImplementedError
+
+        for n in self.rank_numeric[2]:
+            raise NotImplementedError
+
+        return np.concatenate(vectors)
+
+    def vector_to_excitations_ip(self, vector):
+        excitations = []
+        i0 = 0
+
+        for n in self.rank_numeric[0]:
+            if n == 1:
+                size = self.nocc
+                r = vector[i0:i0+size].copy()
+            elif n == 2:
+                o1, o2 = util.tril_indices_ndim(self.nocc, 2, include_diagonal=False)
+                r = np.zeros((self.nocc, self.nocc, self.nvir))
+                nocc2 = self.nocc * (self.nocc-1) // 2
+                size = nocc2 * self.nvir
+                r[o1, o2] = vector[i0:i0+size].reshape(nocc2, self.nvir).copy()
+                r[o2, o1] =-vector[i0:i0+size].reshape(nocc2, self.nvir).copy()
+            else:
+                raise NotImplementedError
+            excitations.append(r)
+            i0 += size
+
+        for n in self.rank_numeric[1]:
+            raise NotImplementedError
+
+        for n in self.rank_numeric[2]:
+            raise NotImplementedError
+
+        return tuple(excitations)
+
+    def vector_to_excitations_ea(self, vector):
+        excitations = []
+        i0 = 0
+
+        for n in self.rank_numeric[0]:
+            if n == 1:
+                size = self.nvir
+                r = vector[i0:i0+size].copy()
+            elif n == 2:
+                v1, v2 = util.tril_indices_ndim(self.nvir, 2, include_diagonal=False)
+                r = np.zeros((self.nvir, self.nvir, self.nocc))
+                nvir2 = self.nvir * (self.nvir-1) // 2
+                size = nvir2 * self.nocc
+                r[v1, v2] = vector[i0:i0+size].reshape(nvir2, self.nocc).copy()
+                r[v2, v1] =-vector[i0:i0+size].reshape(nvir2, self.nocc).copy()
+            else:
+                raise NotImplementedError
+            excitations.append(r)
+            i0 += size
+
+        for n in self.rank_numeric[1]:
+            raise NotImplementedError
+
+        for n in self.rank_numeric[2]:
+            raise NotImplementedError
+
+        return tuple(excitations)
+
     def get_mean_field_G(self):
         val = lib.einsum("Ipp->I", self.g.boo)
         val -= self.xi * self.omega
