@@ -98,22 +98,29 @@ EBCC.__doc__ = REBCC.__doc__
 
 # --- Constructors for boson-free calculations:
 
-def CCSD(mf, *args, **kwargs):
-    from pyscf import scf
+def _boson_free_factory(fermion_excitations):
+    def constructor(mf, *args, **kwargs):
+        from pyscf import scf
 
-    kwargs["fermion_excitations"] = "SD"
-    kwargs["boson_excitations"] = "SD"
-    kwargs["fermion_coupling_rank"] = 0
-    kwargs["boson_coupling_rank"] = 0
+        kwargs["fermion_excitations"] = fermion_excitatiions
+        kwargs["boson_excitations"] = ""
+        kwargs["fermion_coupling_rank"] = 0
+        kwargs["boson_coupling_rank"] = 0
 
-    if isinstance(mf, scf.uhf.UHF):
-        return UEBCC(mf, *args, **kwargs)
-    elif isinstance(mf, scf.ghf.GHF):
-        return GEBCC(mf, *args, **kwargs)
-    else:
-        return REBCC(mf, *args, **kwargs)
+        if isinstance(mf, scf.uhf.UHF):
+            cc = UEBCC(mf, *args, **kwargs)
+        elif isinstance(mf, scf.ghf.GHF):
+            cc = GEBCC(mf, *args, **kwargs)
+        else:
+            cc = REBCC(mf, *args, **kwargs)
 
-CCSD.__doc__ = REBCC.__doc__
+        cc.__doc__ = REBCC.__doc__
+
+    return constructor
+
+CCSD = _boson_free_factory("SD")
+
+CC2 = _boson_free_factory("2")
 
 
 # --- List available methods:

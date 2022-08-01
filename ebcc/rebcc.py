@@ -1998,13 +1998,22 @@ class REBCC:
         """
         # TODO this won't support i.e. SDt
 
-        values = {"S": 1, "D": 2, "T": 3, "Q": 4}
-
         rank = []
+
+        standard_notation = {"S": 1, "D": 2, "T": 3, "Q": 4}
+        partial_notation = {"2": [1, 2], "3": [1, 2, 3], "4": [1, 2, 3, 4]}
+
         for op in self.rank[:2]:
-            rank.append(tuple(values[char] for char in op))
+            rank_entry = []
+            for char in op:
+                if char in standard_notation:
+                    rank_entry.append(standard_notation[char])
+                elif char in partial_notation:
+                    rank_entry += partial_notation[char]
+            rank.append(tuple(rank_entry))
+
         for op in self.rank[2:]:
-            rank += [tuple(range(1, op+1))]
+            rank.append(tuple(range(1, op+1)))
 
         return tuple(rank)
 

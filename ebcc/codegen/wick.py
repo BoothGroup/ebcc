@@ -43,14 +43,17 @@ def get_rank(rank=("SD", "", "")):
     return tuple(tuple(values[i] for i in j) for j in rank)
 
 
-def get_hamiltonian(rank=("SD", "", ""), compress=False):
+def get_hamiltonian(rank=("SD", "", ""), compress=False, separate=False):
     """Define the core Hamiltonian.
     """
 
     # fermions
     h1e = one_e("f", ["occ", "vir"], norder=True)
     h2e = two_e("v", ["occ", "vir"], norder=True, compress=compress)
-    h = h1e + h2e
+    if separate:
+        h = [h1e, h2e]
+    else:
+        h = h1e + h2e
 
     particles = {
             "f": ((FERMION, 0), (FERMION, 0)),
@@ -61,7 +64,10 @@ def get_hamiltonian(rank=("SD", "", ""), compress=False):
     if rank[1] or rank[2]:
         hp = two_p("w") + one_p("G")
         hep = ep11("g", ["occ", "vir"], ["nm"], norder=True, name2="gc")
-        h += hp + hep
+        if separate:
+            h += [hp, hep]
+        else:
+            h += hp + hep
 
         particles["G"] = ((SCALAR_BOSON, 0),)
         particles["w"] = ((SCALAR_BOSON, 0), (SCALAR_BOSON, 0))
