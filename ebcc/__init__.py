@@ -98,7 +98,7 @@ EBCC.__doc__ = REBCC.__doc__
 
 # --- Constructors for boson-free calculations:
 
-def CCSD(mf, **args, **kwargs):
+def CCSD(mf, *args, **kwargs):
     from pyscf import scf
 
     kwargs["fermion_excitations"] = "SD"
