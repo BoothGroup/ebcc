@@ -34,10 +34,10 @@ class ERIs(rebcc.ERIs):
     def __init__(self, ebcc, slices=None, mo_coeff=None):
         rebcc.ERIs.__init__(self, ebcc, slices=slices, mo_coeff=mo_coeff)
 
-        mo_a = [mo[:self.mf.mol.nao] for mo in self.mo_coeff]
-        mo_b = [mo[self.mf.mol.nao:] for mo in self.mo_coeff]
+        mo_a = [mo[: self.mf.mol.nao] for mo in self.mo_coeff]
+        mo_b = [mo[self.mf.mol.nao :] for mo in self.mo_coeff]
 
-        eri  = ao2mo.kernel(self.mf._eri, mo_a)
+        eri = ao2mo.kernel(self.mf._eri, mo_a)
         eri += ao2mo.kernel(self.mf._eri, mo_b)
         eri += ao2mo.kernel(self.mf._eri, mo_a[:2] + mo_b[2:])
         eri += ao2mo.kernel(self.mf._eri, mo_b[:2] + mo_a[2:])
@@ -100,29 +100,25 @@ class GEBCC(rebcc.REBCC):
                     e_xia = lib.direct_sum("ia-x->xia", e_ia, self.omega)
                     amplitudes["u%d%d" % (nf, nb)] = h.bov / e_xia
                 else:
-                    amplitudes["u%d%d" % (nf, nb)] = np.zeros((self.nbos,) * nb + (self.nocc, self.nvir))
+                    amplitudes["u%d%d" % (nf, nb)] = np.zeros(
+                        (self.nbos,) * nb + (self.nocc, self.nvir)
+                    )
 
         return amplitudes
 
     def make_rdm2_f(self, eris=None, amplitudes=None, lambdas=None, hermitise=True):
         func, kwargs = self._load_function(
-                "make_rdm2_f",
-                eris=eris,
-                amplitudes=amplitudes,
-                lambdas=lambdas,
+            "make_rdm2_f",
+            eris=eris,
+            amplitudes=amplitudes,
+            lambdas=lambdas,
         )
 
         dm = func(**kwargs)
 
         if hermitise:
-            dm = 0.5 * (
-                    + dm.transpose(0, 1, 2, 3)
-                    + dm.transpose(2, 3, 0, 1)
-            )
-            dm = 0.5 * (
-                    + dm.transpose(0, 1, 2, 3)
-                    + dm.transpose(1, 0, 3, 2)
-            )
+            dm = 0.5 * (+dm.transpose(0, 1, 2, 3) + dm.transpose(2, 3, 0, 1))
+            dm = 0.5 * (+dm.transpose(0, 1, 2, 3) + dm.transpose(1, 0, 3, 2))
 
         return dm
 
@@ -179,14 +175,14 @@ class GEBCC(rebcc.REBCC):
         for n in self.rank_numeric[0]:
             if n == 1:
                 size = self.nocc
-                r = vector[i0:i0+size].copy()
+                r = vector[i0 : i0 + size].copy()
             elif n == 2:
                 o1, o2 = util.tril_indices_ndim(self.nocc, 2, include_diagonal=False)
                 r = np.zeros((self.nocc, self.nocc, self.nvir))
-                nocc2 = self.nocc * (self.nocc-1) // 2
+                nocc2 = self.nocc * (self.nocc - 1) // 2
                 size = nocc2 * self.nvir
-                r[o1, o2] = vector[i0:i0+size].reshape(nocc2, self.nvir).copy()
-                r[o2, o1] =-vector[i0:i0+size].reshape(nocc2, self.nvir).copy()
+                r[o1, o2] = vector[i0 : i0 + size].reshape(nocc2, self.nvir).copy()
+                r[o2, o1] = -vector[i0 : i0 + size].reshape(nocc2, self.nvir).copy()
             else:
                 raise NotImplementedError
             excitations.append(r)
@@ -208,14 +204,14 @@ class GEBCC(rebcc.REBCC):
         for n in self.rank_numeric[0]:
             if n == 1:
                 size = self.nvir
-                r = vector[i0:i0+size].copy()
+                r = vector[i0 : i0 + size].copy()
             elif n == 2:
                 v1, v2 = util.tril_indices_ndim(self.nvir, 2, include_diagonal=False)
                 r = np.zeros((self.nvir, self.nvir, self.nocc))
-                nvir2 = self.nvir * (self.nvir-1) // 2
+                nvir2 = self.nvir * (self.nvir - 1) // 2
                 size = nvir2 * self.nocc
-                r[v1, v2] = vector[i0:i0+size].reshape(nvir2, self.nocc).copy()
-                r[v2, v1] =-vector[i0:i0+size].reshape(nvir2, self.nocc).copy()
+                r[v1, v2] = vector[i0 : i0 + size].reshape(nvir2, self.nocc).copy()
+                r[v2, v1] = -vector[i0 : i0 + size].reshape(nvir2, self.nocc).copy()
             else:
                 raise NotImplementedError
             excitations.append(r)
@@ -256,7 +252,6 @@ class GEBCC(rebcc.REBCC):
     @property
     def name(self):
         return super().name.replace("R", "G", 1)
-
 
 
 if __name__ == "__main__":

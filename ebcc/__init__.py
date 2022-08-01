@@ -57,6 +57,7 @@ import logging
 
 # --- Logging:
 
+
 def output(self, msg, *args, **kwargs):
     if self.isEnabledFor(25):
         self._log(25, msg, args, **kwargs)
@@ -83,6 +84,7 @@ from ebcc.rebcc import REBCC
 from ebcc.uebcc import UEBCC
 from ebcc.gebcc import GEBCC
 
+
 def EBCC(mf, *args, **kwargs):
     from pyscf import scf
 
@@ -93,10 +95,12 @@ def EBCC(mf, *args, **kwargs):
     else:
         return REBCC(mf, *args, **kwargs)
 
+
 EBCC.__doc__ = REBCC.__doc__
 
 
 # --- Constructors for boson-free calculations:
+
 
 def _boson_free_factory(fermion_excitations):
     def constructor(mf, *args, **kwargs):
@@ -118,12 +122,14 @@ def _boson_free_factory(fermion_excitations):
 
     return constructor
 
+
 CCSD = _boson_free_factory("SD")
 
 CC2 = _boson_free_factory("2")
 
 
 # --- List available methods:
+
 
 def available_methods():
     """List available coupled-cluster models for each of general (G),

@@ -24,13 +24,13 @@ omega = np.random.random((nbos,)) * 5.0
 #   __ _ _ _
 # CCSD-S-1-1: One-boson amplitudes and one-boson-one-fermion coupling
 ccsd = EBCC(
-        mf,
-        fermion_excitations="SD",
-        boson_excitations="S",
-        fermion_coupling_rank=1,
-        boson_coupling_rank=1,
-        omega=omega,
-        g=g,
+    mf,
+    fermion_excitations="SD",
+    boson_excitations="S",
+    fermion_coupling_rank=1,
+    boson_coupling_rank=1,
+    omega=omega,
+    g=g,
 )
 ccsd.kernel()
 print("%s correlation energy:" % ccsd.name, ccsd.e_corr)
@@ -43,13 +43,13 @@ print("%s correlation energy:" % ccsd.name, ccsd.e_corr)
 #   __ __ _ _
 # CCSD-SD-1-1: Two-boson amplitudes and one-boson-one-fermion coupling
 ccsd = EBCC(
-        mf,
-        fermion_excitations="SD",
-        boson_excitations="SD",
-        fermion_coupling_rank=1,
-        boson_coupling_rank=1,
-        omega=omega,
-        g=g,
+    mf,
+    fermion_excitations="SD",
+    boson_excitations="SD",
+    fermion_coupling_rank=1,
+    boson_coupling_rank=1,
+    omega=omega,
+    g=g,
 )
 ccsd.kernel()
 print("%s correlation energy:" % ccsd.name, ccsd.e_corr)
@@ -62,13 +62,13 @@ print("%s correlation energy:" % ccsd.name, ccsd.e_corr)
 #   __ __ _ _
 # CCSD-SD-1-2: Two-boson amplitudes and two-boson-one-fermion coupling
 ccsd = EBCC(
-        mf,
-        fermion_excitations="SD",
-        boson_excitations="SD",
-        fermion_coupling_rank=1,
-        boson_coupling_rank=2,
-        omega=omega,
-        g=g,
+    mf,
+    fermion_excitations="SD",
+    boson_excitations="SD",
+    fermion_coupling_rank=1,
+    boson_coupling_rank=2,
+    omega=omega,
+    g=g,
 )
 ccsd.kernel()
 print("%s correlation energy:" % ccsd.name, ccsd.e_corr)

@@ -49,8 +49,7 @@ class ERIs(SimpleNamespace):
             self.slices = [self.slices] * 4
 
     def __getattr__(self, key):
-        """Just-in-time attribute getter.
-        """
+        """Just-in-time attribute getter."""
 
         if key not in self.__dict__:
             coeffs = []
@@ -289,19 +288,19 @@ class REBCC:
     ERIs = ERIs
 
     def __init__(
-            self,
-            mf,
-            log: logging.Logger = None,
-            #rank: Tuple[int] = ("SD", "", 0, 0),
-            fermion_excitations: str = "SD",
-            boson_excitations: str = "",
-            fermion_coupling_rank: int = 0,
-            boson_coupling_rank: int = 0,
-            omega: np.ndarray = None,
-            g: np.ndarray = None,
-            G: np.ndarray = None,
-            options: Options = None,
-            **kwargs,
+        self,
+        mf,
+        log: logging.Logger = None,
+        # rank: Tuple[int] = ("SD", "", 0, 0),
+        fermion_excitations: str = "SD",
+        boson_excitations: str = "",
+        fermion_coupling_rank: int = 0,
+        boson_coupling_rank: int = 0,
+        omega: np.ndarray = None,
+        g: np.ndarray = None,
+        G: np.ndarray = None,
+        options: Options = None,
+        **kwargs,
     ):
         if options is None:
             options = self.Options()
@@ -312,17 +311,16 @@ class REBCC:
         self.log = default_log if log is None else log
         self.mf = self._convert_mf(mf)
         self.rank = (
-                fermion_excitations,
-                boson_excitations,
-                fermion_coupling_rank,
-                boson_coupling_rank,
+            fermion_excitations,
+            boson_excitations,
+            fermion_coupling_rank,
+            boson_coupling_rank,
         )
         self._eqns = self._get_eqns()
 
         if bool(self.rank[2]) != bool(self.rank[3]):
             raise ValueError(
-                    "Fermionic and bosonic coupling ranks must both be zero, "
-                    "or both non-zero."
+                "Fermionic and bosonic coupling ranks must both be zero, " "or both non-zero."
             )
 
         self.log.info("%s", self.name)
@@ -393,13 +391,13 @@ class REBCC:
         self.log.info("%4s %16s %16s %16s", "Iter", "Energy (corr.)", "Δ(Energy)", "Δ(Amplitudes)")
         self.log.info("%4d %16.10f", 0, e_init)
 
-        for niter in range(1, self.options.max_iter+1):
+        for niter in range(1, self.options.max_iter + 1):
             amplitudes_prev = amplitudes
             amplitudes = self.update_amps(amplitudes=amplitudes, eris=eris)
             vector = self.amplitudes_to_vector(amplitudes)
             vector = diis.update(vector)
             amplitudes = self.vector_to_amplitudes(vector)
-            dt = np.linalg.norm(vector - self.amplitudes_to_vector(amplitudes_prev))**2
+            dt = np.linalg.norm(vector - self.amplitudes_to_vector(amplitudes_prev)) ** 2
 
             e_prev = e_cc
             e_cc = self.energy(amplitudes=amplitudes, eris=eris)
@@ -453,13 +451,13 @@ class REBCC:
         self.log.output("Solving for de-excitation (lambda) amplitudes.")
         self.log.info("%4s %16s", "Iter", "Δ(Amplitudes)")
 
-        for niter in range(1, self.options.max_iter+1):
+        for niter in range(1, self.options.max_iter + 1):
             lambdas_prev = lambdas
             lambdas = self.update_lams(amplitudes=amplitudes, lambdas=lambdas, eris=eris)
             vector = self.lambdas_to_vector(lambdas)
             vector = diis.update(vector)
             lambdas = self.vector_to_lambdas(vector)
-            dl = np.linalg.norm(vector - self.lambdas_to_vector(lambdas_prev))**2
+            dl = np.linalg.norm(vector - self.lambdas_to_vector(lambdas_prev)) ** 2
 
             self.log.info("%4d %16.5g", niter, dl)
 
@@ -501,14 +499,14 @@ class REBCC:
         omega = np.diag(self.omega) if self.omega is not None else None
 
         kwargs = dict(
-                f=self.fock,
-                v=eris,
-                g=self.g,
-                G=self.G,
-                w=omega,
-                nocc=self.nocc,
-                nvir=self.nvir,
-                nbos=self.nbos,
+            f=self.fock,
+            v=eris,
+            g=self.g,
+            G=self.G,
+            w=omega,
+            nocc=self.nocc,
+            nvir=self.nvir,
+            nbos=self.nbos,
         )
         for kw in extra_kwargs:
             if kw is not None:
@@ -607,7 +605,9 @@ class REBCC:
                     e_xia = lib.direct_sum("ia-x->xia", e_ia, self.omega)
                     amplitudes["u%d%d" % (nf, nb)] = h.bov / e_xia
                 else:
-                    amplitudes["u%d%d" % (nf, nb)] = np.zeros((self.nbos,) * nb + (self.nocc, self.nvir))
+                    amplitudes["u%d%d" % (nf, nb)] = np.zeros(
+                        (self.nbos,) * nb + (self.nocc, self.nvir)
+                    )
 
         return amplitudes
 
@@ -633,7 +633,7 @@ class REBCC:
 
         # Build L amplitudes:
         for n in self.rank_numeric[0]:
-            perm = list(range(n, 2*n)) + list(range(n))
+            perm = list(range(n, 2 * n)) + list(range(n))
             lambdas["l%d" % n] = amplitudes["t%d" % n].transpose(perm)
 
         # Build LS amplitudes:
@@ -645,7 +645,7 @@ class REBCC:
             if nf != 1:
                 raise NotImplementedError
             for nb in self.rank_numeric[3]:
-                perm = list(range(nb)) + [nb+1, nb]
+                perm = list(range(nb)) + [nb + 1, nb]
                 lambdas["lu%d%d" % (nf, nb)] = amplitudes["u%d%d" % (nf, nb)].transpose(perm)
 
         return lambdas
@@ -669,9 +669,9 @@ class REBCC:
         """
 
         func, kwargs = self._load_function(
-                "energy",
-                eris=eris,
-                amplitudes=amplitudes,
+            "energy",
+            eris=eris,
+            amplitudes=amplitudes,
         )
 
         return func(**kwargs)
@@ -695,9 +695,9 @@ class REBCC:
         """
 
         func, kwargs = self._load_function(
-                "update_amps",
-                eris=eris,
-                amplitudes=amplitudes,
+            "update_amps",
+            eris=eris,
+            amplitudes=amplitudes,
         )
         res = func(**kwargs)
         res = {key.rstrip("new"): val for key, val in res.items()}
@@ -706,7 +706,7 @@ class REBCC:
 
         # Divide T amplitudes:
         for n in self.rank_numeric[0]:
-            perm = list(range(0, n*2, 2)) + list(range(1, n*2, 2))
+            perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
             d = functools.reduce(np.add.outer, [e_ia] * n)
             d = d.transpose(perm)
             res["t%d" % n] /= d
@@ -751,10 +751,10 @@ class REBCC:
         """
 
         func, kwargs = self._load_function(
-                "update_lams",
-                eris=eris,
-                amplitudes=amplitudes,
-                lambdas=lambdas,
+            "update_lams",
+            eris=eris,
+            amplitudes=amplitudes,
+            lambdas=lambdas,
         )
         res = func(**kwargs)
         res = {key.rstrip("new"): val for key, val in res.items()}
@@ -763,7 +763,7 @@ class REBCC:
 
         # Divide T amplitudes:
         for n in self.rank_numeric[0]:
-            perm = list(range(0, n*2, 2)) + list(range(1, n*2, 2))
+            perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
             d = functools.reduce(np.add.outer, [e_ai] * n)
             d = d.transpose(perm)
             res["l%d" % n] /= d
@@ -814,10 +814,10 @@ class REBCC:
         """
 
         func, kwargs = self._load_function(
-                "make_sing_b_dm",
-                eris=eris,
-                amplitudes=amplitudes,
-                lambdas=lambdas,
+            "make_sing_b_dm",
+            eris=eris,
+            amplitudes=amplitudes,
+            lambdas=lambdas,
         )
 
         return func(**kwargs)
@@ -853,10 +853,10 @@ class REBCC:
         """
 
         func, kwargs = self._load_function(
-                "make_rdm1_b",
-                eris=eris,
-                amplitudes=amplitudes,
-                lambdas=lambdas,
+            "make_rdm1_b",
+            eris=eris,
+            amplitudes=amplitudes,
+            lambdas=lambdas,
         )
 
         dm = func(**kwargs)
@@ -867,7 +867,7 @@ class REBCC:
         if unshifted and self.options.shift:
             dm_cre, dm_ann = self.make_sing_b_dm()
             xi = self.xi
-            dm[np.diag_indices_from(dm)] -= xi * (dm_cre + dm_ann) - xi**2
+            dm[np.diag_indices_from(dm)] -= xi * (dm_cre + dm_ann) - xi ** 2
 
         return dm
 
@@ -897,10 +897,10 @@ class REBCC:
         """
 
         func, kwargs = self._load_function(
-                "make_rdm1_f",
-                eris=eris,
-                amplitudes=amplitudes,
-                lambdas=lambdas,
+            "make_rdm1_f",
+            eris=eris,
+            amplitudes=amplitudes,
+            lambdas=lambdas,
         )
 
         dm = func(**kwargs)
@@ -938,27 +938,23 @@ class REBCC:
         """
 
         func, kwargs = self._load_function(
-                "make_rdm2_f",
-                eris=eris,
-                amplitudes=amplitudes,
-                lambdas=lambdas,
+            "make_rdm2_f",
+            eris=eris,
+            amplitudes=amplitudes,
+            lambdas=lambdas,
         )
 
         dm = func(**kwargs)
 
         if hermitise:
-            dm = 0.5 * (
-                    + dm.transpose(0, 1, 2, 3)
-                    + dm.transpose(2, 3, 0, 1)
-            )
-            dm = 0.5 * (
-                    + dm.transpose(0, 1, 2, 3)
-                    + dm.transpose(1, 0, 3, 2)
-            )
+            dm = 0.5 * (+dm.transpose(0, 1, 2, 3) + dm.transpose(2, 3, 0, 1))
+            dm = 0.5 * (+dm.transpose(0, 1, 2, 3) + dm.transpose(1, 0, 3, 2))
 
         return dm
 
-    def make_eb_coup_rdm(self, eris=None, amplitudes=None, lambdas=None, unshifted=True, hermitise=True):
+    def make_eb_coup_rdm(
+        self, eris=None, amplitudes=None, lambdas=None, unshifted=True, hermitise=True
+    ):
         """Build the electron-boson coupling reduced density matrices:
 
         ..math :: \\langle b^+ i^+ j \\rangle
@@ -995,10 +991,10 @@ class REBCC:
         """
 
         func, kwargs = self._load_function(
-                "make_eb_coup_rdm",
-                eris=eris,
-                amplitudes=amplitudes,
-                lambdas=lambdas,
+            "make_eb_coup_rdm",
+            eris=eris,
+            amplitudes=amplitudes,
+            lambdas=lambdas,
         )
 
         dm_eb = func(**kwargs)
@@ -1034,9 +1030,9 @@ class REBCC:
         # TODO generalise
 
         func, kwargs = self._load_function(
-                "hbar_ip",
-                eris=eris,
-                amplitudes=amplitudes,
+            "hbar_ip",
+            eris=eris,
+            amplitudes=amplitudes,
         )
 
         blocks = func(**kwargs)
@@ -1044,9 +1040,9 @@ class REBCC:
         nvir = self.nvir
 
         h11 = blocks["h11"].reshape(nocc, nocc)
-        h12 = blocks["h12"].reshape(nocc, nocc*nocc*nvir)
-        h21 = blocks["h21"].reshape(nocc*nocc*nvir, nocc)
-        h22 = blocks["h22"].reshape(nocc*nocc*nvir, nocc*nocc*nvir)
+        h12 = blocks["h12"].reshape(nocc, nocc * nocc * nvir)
+        h21 = blocks["h21"].reshape(nocc * nocc * nvir, nocc)
+        h22 = blocks["h22"].reshape(nocc * nocc * nvir, nocc * nocc * nvir)
 
         h = np.block([[h11, h12], [h21, h22]])
 
@@ -1072,9 +1068,9 @@ class REBCC:
         # TODO generalise
 
         func, kwargs = self._load_function(
-                "hbar_ea",
-                eris=eris,
-                amplitudes=amplitudes,
+            "hbar_ea",
+            eris=eris,
+            amplitudes=amplitudes,
         )
 
         blocks = func(**kwargs)
@@ -1082,9 +1078,9 @@ class REBCC:
         nvir = self.nvir
 
         h11 = blocks["h11"].reshape(nvir, nvir)
-        h12 = blocks["h12"].reshape(nvir, nvir*nvir*nocc)
-        h21 = blocks["h21"].reshape(nvir*nvir*nocc, nvir)
-        h22 = blocks["h22"].reshape(nvir*nvir*nocc, nvir*nvir*nocc)
+        h12 = blocks["h12"].reshape(nvir, nvir * nvir * nocc)
+        h21 = blocks["h21"].reshape(nvir * nvir * nocc, nvir)
+        h22 = blocks["h22"].reshape(nvir * nvir * nocc, nvir * nvir * nocc)
 
         h = np.block([[h11, h12], [h21, h22]])
 
@@ -1119,11 +1115,11 @@ class REBCC:
         # TODO generalise vectors input
 
         func, kwargs = self._load_function(
-                "hbar_matvec_ip",
-                eris=eris,
-                amplitudes=amplitudes,
-                r1=r1,
-                r2=r2,
+            "hbar_matvec_ip",
+            eris=eris,
+            amplitudes=amplitudes,
+            r1=r1,
+            r2=r2,
         )
 
         return func(**kwargs)
@@ -1156,11 +1152,11 @@ class REBCC:
         """
 
         func, kwargs = self._load_function(
-                "hbar_matvec_ea",
-                eris=eris,
-                amplitudes=amplitudes,
-                r1=r1,
-                r2=r2,
+            "hbar_matvec_ea",
+            eris=eris,
+            amplitudes=amplitudes,
+            r1=r1,
+            r2=r2,
         )
 
         return func(**kwargs)
@@ -1216,9 +1212,9 @@ class REBCC:
         """
 
         func, kwargs = self._load_function(
-                "hbar_diag_ip",
-                eris=eris,
-                amplitudes=amplitudes,
+            "hbar_diag_ip",
+            eris=eris,
+            amplitudes=amplitudes,
         )
 
         return func(**kwargs)
@@ -1245,9 +1241,9 @@ class REBCC:
         """
 
         func, kwargs = self._load_function(
-                "hbar_diag_ea",
-                eris=eris,
-                amplitudes=amplitudes,
+            "hbar_diag_ea",
+            eris=eris,
+            amplitudes=amplitudes,
         )
 
         return func(**kwargs)
@@ -1299,10 +1295,10 @@ class REBCC:
         """
 
         func, kwargs = self._load_function(
-                "make_ip_mom_bras",
-                eris=eris,
-                amplitudes=amplitudes,
-                lambdas=lambdas,
+            "make_ip_mom_bras",
+            eris=eris,
+            amplitudes=amplitudes,
+            lambdas=lambdas,
         )
 
         return func(**kwargs)
@@ -1331,10 +1327,10 @@ class REBCC:
         """
 
         func, kwargs = self._load_function(
-                "make_ea_mom_bras",
-                eris=eris,
-                amplitudes=amplitudes,
-                lambdas=lambdas,
+            "make_ea_mom_bras",
+            eris=eris,
+            amplitudes=amplitudes,
+            lambdas=lambdas,
         )
 
         return func(**kwargs)
@@ -1388,10 +1384,10 @@ class REBCC:
         """
 
         func, kwargs = self._load_function(
-                "make_ip_mom_kets",
-                eris=eris,
-                amplitudes=amplitudes,
-                lambdas=lambdas,
+            "make_ip_mom_kets",
+            eris=eris,
+            amplitudes=amplitudes,
+            lambdas=lambdas,
         )
 
         return func(**kwargs)
@@ -1420,10 +1416,10 @@ class REBCC:
         """
 
         func, kwargs = self._load_function(
-                "make_ea_mom_kets",
-                eris=eris,
-                amplitudes=amplitudes,
-                lambdas=lambdas,
+            "make_ea_mom_kets",
+            eris=eris,
+            amplitudes=amplitudes,
+            lambdas=lambdas,
         )
 
         return func(**kwargs)
@@ -1565,20 +1561,20 @@ class REBCC:
         for n in self.rank_numeric[0]:
             shape = (self.nocc,) * n + (self.nvir,) * n
             size = np.prod(shape)
-            amplitudes["t%d" % n] = vector[i0:i0+size].reshape(shape)
+            amplitudes["t%d" % n] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
         for n in self.rank_numeric[1]:
             shape = (self.nbos,) * n
             size = np.prod(shape)
-            amplitudes["s%d" % n] = vector[i0:i0+size].reshape(shape)
+            amplitudes["s%d" % n] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
         for nf in self.rank_numeric[2]:
             for nb in self.rank_numeric[3]:
                 shape = (self.nbos,) * nb + (self.nocc, self.nvir) * nf
                 size = np.prod(shape)
-                amplitudes["u%d%d" % (nf, nb)] = vector[i0:i0+size].reshape(shape)
+                amplitudes["u%d%d" % (nf, nb)] = vector[i0 : i0 + size].reshape(shape)
                 i0 += size
 
         return amplitudes
@@ -1636,20 +1632,20 @@ class REBCC:
         for n in self.rank_numeric[0]:
             shape = (self.nvir,) * n + (self.nocc,) * n
             size = np.prod(shape)
-            lambdas["l%d" % n] = vector[i0:i0+size].reshape(shape)
+            lambdas["l%d" % n] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
         for n in self.rank_numeric[1]:
             shape = (self.nbos,) * n
             size = np.prod(shape)
-            lambdas["ls%d" % n] = vector[i0:i0+size].reshape(shape)
+            lambdas["ls%d" % n] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
         for nf in self.rank_numeric[2]:
             for nb in self.rank_numeric[3]:
                 shape = (self.nbos,) * nb + (self.nvir, self.nocc) * nf
                 size = np.prod(shape)
-                lambdas["lu%d%d" % (nf, nb)] = vector[i0:i0+size].reshape(shape)
+                lambdas["lu%d%d" % (nf, nb)] = vector[i0 : i0 + size].reshape(shape)
                 i0 += size
 
         return lambdas
@@ -1729,9 +1725,9 @@ class REBCC:
         i0 = 0
 
         for n in self.rank_numeric[0]:
-            shape = (self.nocc,) * n + (self.nvir,) * (n-1)
+            shape = (self.nocc,) * n + (self.nvir,) * (n - 1)
             size = np.prod(shape)
-            excitations.append(vector[i0:i0+size].reshape(shape))
+            excitations.append(vector[i0 : i0 + size].reshape(shape))
             i0 += size
 
         for n in self.rank_numeric[1]:
@@ -1765,9 +1761,9 @@ class REBCC:
         i0 = 0
 
         for n in self.rank_numeric[0]:
-            shape = (self.nvir,) * n + (self.nocc,) * (n-1)
+            shape = (self.nvir,) * n + (self.nocc,) * (n - 1)
             size = np.prod(shape)
-            excitations.append(vector[i0:i0+size].reshape(shape))
+            excitations.append(vector[i0 : i0 + size].reshape(shape))
             i0 += size
 
         for n in self.rank_numeric[1]:
@@ -1815,10 +1811,10 @@ class REBCC:
             is bosonic, occupied or virtual.
         """
 
-        boo = g[:, :self.nocc, :self.nocc]
-        bov = g[:, :self.nocc, self.nocc:]
-        bvo = g[:, self.nocc:, :self.nocc]
-        bvv = g[:, self.nocc:, self.nocc:]
+        boo = g[:, : self.nocc, : self.nocc]
+        bov = g[:, : self.nocc, self.nocc :]
+        bvo = g[:, self.nocc :, : self.nocc]
+        bvv = g[:, self.nocc :, self.nocc :]
 
         g = SimpleNamespace(boo=boo, bov=bov, bvo=bvo, bvv=bvv)
 
@@ -1831,7 +1827,7 @@ class REBCC:
         Returns
         -------
         fock : SimpleNamespace
-            Namespace containing blocks of the Fock matrix. Each 
+            Namespace containing blocks of the Fock matrix. Each
             attribute should be a length-2 string of `o` or `v`
             signifying whether the corresponding axis is occupied or
             virtual.
@@ -1839,10 +1835,10 @@ class REBCC:
 
         fock = self.bare_fock
 
-        oo = fock[:self.nocc, :self.nocc]
-        ov = fock[:self.nocc, self.nocc:]
-        vo = fock[self.nocc:, :self.nocc]
-        vv = fock[self.nocc:, self.nocc:]
+        oo = fock[: self.nocc, : self.nocc]
+        ov = fock[: self.nocc, self.nocc :]
+        vo = fock[self.nocc :, : self.nocc]
+        vv = fock[self.nocc :, self.nocc :]
 
         if self.options.shift:
             xi = self.xi
@@ -1917,7 +1913,7 @@ class REBCC:
             Shift in the energy from moving to polaritonic basis.
         """
         if self.options.shift:
-            return lib.einsum("I,I->", self.omega, self.xi**2)
+            return lib.einsum("I,I->", self.omega, self.xi ** 2)
         else:
             return 0.0
 
@@ -2013,7 +2009,7 @@ class REBCC:
             rank.append(tuple(rank_entry))
 
         for op in self.rank[2:]:
-            rank.append(tuple(range(1, op+1)))
+            rank.append(tuple(range(1, op + 1)))
 
         return tuple(rank)
 
@@ -2143,14 +2139,13 @@ class REBCC:
         return self.lambdas["l2"]
 
 
-
 if __name__ == "__main__":
     from pyscf import gto, scf, cc
     import numpy as np
 
     mol = gto.Mole()
-    #mol.atom = "He 0 0 0"
-    #mol.basis = "cc-pvdz"
+    # mol.atom = "He 0 0 0"
+    # mol.basis = "cc-pvdz"
     mol.atom = "H 0 0 0; F 0 0 1.1"
     mol.basis = "6-31g"
     mol.verbose = 5
@@ -2163,29 +2158,29 @@ if __name__ == "__main__":
     ccsd_ref.kernel()
     ccsd_ref.solve_lambda()
 
-    #ccsd = REBCC(mf, rank=("SD", "", ""))
-    #ccsd.kernel()
-    #ccsd.solve_lambda()
+    # ccsd = REBCC(mf, rank=("SD", "", ""))
+    # ccsd.kernel()
+    # ccsd.solve_lambda()
 
-    #print("e ", np.abs(ccsd.e_corr - ccsd_ref.e_corr))
-    #print("t1", np.max(np.abs(ccsd.t1 - ccsd_ref.t1)))
-    #print("t2", np.max(np.abs(ccsd.t2 - ccsd_ref.t2)))
-    #print("l1", np.max(np.abs(ccsd.l1 - ccsd_ref.l1.T)))
-    #print("l2", np.max(np.abs(ccsd.l2 - ccsd_ref.l2.transpose(2, 3, 0, 1))))
-    #print("rdm1", np.max(np.abs(ccsd.make_rdm1_f() - ccsd_ref.make_rdm1())))
-    #print("rdm2", np.max(np.abs(ccsd.make_rdm2_f() - ccsd_ref.make_rdm2())))
+    # print("e ", np.abs(ccsd.e_corr - ccsd_ref.e_corr))
+    # print("t1", np.max(np.abs(ccsd.t1 - ccsd_ref.t1)))
+    # print("t2", np.max(np.abs(ccsd.t2 - ccsd_ref.t2)))
+    # print("l1", np.max(np.abs(ccsd.l1 - ccsd_ref.l1.T)))
+    # print("l2", np.max(np.abs(ccsd.l2 - ccsd_ref.l2.transpose(2, 3, 0, 1))))
+    # print("rdm1", np.max(np.abs(ccsd.make_rdm1_f() - ccsd_ref.make_rdm1())))
+    # print("rdm2", np.max(np.abs(ccsd.make_rdm2_f() - ccsd_ref.make_rdm2())))
 
     ## Transpose issue I think:
     ##print(ccsd.make_rdm2_f())
     ##print(ccsd_ref.make_rdm2())
 
-    #v1 = np.ones((ccsd.nocc,))
-    #v2 = np.zeros((ccsd.nocc, ccsd.nocc, ccsd.nvir))
+    # v1 = np.ones((ccsd.nocc,))
+    # v2 = np.zeros((ccsd.nocc, ccsd.nocc, ccsd.nvir))
 
-    #ra = ccsd_ref.eomip_method().gen_matvec()[0]([np.concatenate([v1.ravel(), v2.ravel()])])
-    #rb1, rb2 = ccsd.hbar_matvec_ip(r1=v1, r2=v2)
-    #rb = np.concatenate([rb1.ravel(), rb2.ravel()])
-    #print("r", np.allclose(ra, rb/2))
+    # ra = ccsd_ref.eomip_method().gen_matvec()[0]([np.concatenate([v1.ravel(), v2.ravel()])])
+    # rb1, rb2 = ccsd.hbar_matvec_ip(r1=v1, r2=v2)
+    # rb = np.concatenate([rb1.ravel(), rb2.ravel()])
+    # print("r", np.allclose(ra, rb/2))
 
     nbos = 5
     np.random.seed(1)
@@ -2199,9 +2194,9 @@ if __name__ == "__main__":
     ccsd.solve_lambda()
     np.savetxt("tmp2.dat", ccsd.make_rdm1_b())
 
-    #amps = ccsd.init_amps()
-    #amps = ccsd.update_amps(amplitudes=amps)
-    #print(amps["t1"])
-    #print(amps["t2"])
-    #print(amps["s1"])
-    #print(amps["u11"])
+    # amps = ccsd.init_amps()
+    # amps = ccsd.update_amps(amplitudes=amps)
+    # print(amps["t1"])
+    # print(amps["t2"])
+    # print(amps["s1"])
+    # print(amps["u11"])

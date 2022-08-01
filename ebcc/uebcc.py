@@ -37,24 +37,24 @@ class ERIs(SimpleNamespace):
         mo_coeff = self.mf.mo_coeff
 
         self.aaaa = rebcc.ERIs(
-                ebcc,
-                slices=[slices[i] for i in (0, 0, 0, 0)],
-                mo_coeff=[mo_coeff[i] for i in (0, 0, 0, 0)],
+            ebcc,
+            slices=[slices[i] for i in (0, 0, 0, 0)],
+            mo_coeff=[mo_coeff[i] for i in (0, 0, 0, 0)],
         )
         self.aabb = rebcc.ERIs(
-                ebcc,
-                slices=[slices[i] for i in (0, 0, 1, 1)],
-                mo_coeff=[mo_coeff[i] for i in (0, 0, 1, 1)],
+            ebcc,
+            slices=[slices[i] for i in (0, 0, 1, 1)],
+            mo_coeff=[mo_coeff[i] for i in (0, 0, 1, 1)],
         )
         self.bbaa = rebcc.ERIs(
-                ebcc,
-                slices=[slices[i] for i in (1, 1, 0, 0)],
-                mo_coeff=[mo_coeff[i] for i in (1, 1, 0, 0)],
+            ebcc,
+            slices=[slices[i] for i in (1, 1, 0, 0)],
+            mo_coeff=[mo_coeff[i] for i in (1, 1, 0, 0)],
         )
         self.bbbb = rebcc.ERIs(
-                ebcc,
-                slices=[slices[i] for i in (1, 1, 1, 1)],
-                mo_coeff=[mo_coeff[i] for i in (1, 1, 1, 1)],
+            ebcc,
+            slices=[slices[i] for i in (1, 1, 1, 1)],
+            mo_coeff=[mo_coeff[i] for i in (1, 1, 1, 1)],
         )
 
 
@@ -107,30 +107,30 @@ class UEBCC(rebcc.REBCC):
 
         amplitudes = self.Amplitudes()
         e_ia = SimpleNamespace(
-                aa=lib.direct_sum("i-a->ia", self.eo.a, self.ev.a),
-                bb=lib.direct_sum("i-a->ia", self.eo.b, self.ev.b),
+            aa=lib.direct_sum("i-a->ia", self.eo.a, self.ev.a),
+            bb=lib.direct_sum("i-a->ia", self.eo.b, self.ev.b),
         )
 
         # Build T amplitudes
         for n in self.rank_numeric[0]:
             if n == 1:
                 tn = SimpleNamespace(
-                        aa=self.fock.aa.vo.T / e_ia.aa,
-                        bb=self.fock.bb.vo.T / e_ia.bb,
+                    aa=self.fock.aa.vo.T / e_ia.aa,
+                    bb=self.fock.bb.vo.T / e_ia.bb,
                 )
                 amplitudes["t%d" % n] = tn
             elif n == 2:
                 e_ijab = SimpleNamespace(
-                        aaaa=lib.direct_sum("ia,jb->ijab", e_ia.aa, e_ia.aa),
-                        abab=lib.direct_sum("ia,jb->ijab", e_ia.aa, e_ia.bb),
-                        baba=lib.direct_sum("ia,jb->ijab", e_ia.bb, e_ia.aa),
-                        bbbb=lib.direct_sum("ia,jb->ijab", e_ia.bb, e_ia.bb),
+                    aaaa=lib.direct_sum("ia,jb->ijab", e_ia.aa, e_ia.aa),
+                    abab=lib.direct_sum("ia,jb->ijab", e_ia.aa, e_ia.bb),
+                    baba=lib.direct_sum("ia,jb->ijab", e_ia.bb, e_ia.aa),
+                    bbbb=lib.direct_sum("ia,jb->ijab", e_ia.bb, e_ia.bb),
                 )
                 tn = SimpleNamespace(
-                        aaaa=eris.aaaa.ovov.swapaxes(1, 2) / e_ijab.aaaa,
-                        abab=eris.aabb.ovov.swapaxes(1, 2) / e_ijab.abab,
-                        baba=eris.bbaa.ovov.swapaxes(1, 2) / e_ijab.baba,
-                        bbbb=eris.bbbb.ovov.swapaxes(1, 2) / e_ijab.bbbb,
+                    aaaa=eris.aaaa.ovov.swapaxes(1, 2) / e_ijab.aaaa,
+                    abab=eris.aabb.ovov.swapaxes(1, 2) / e_ijab.abab,
+                    baba=eris.bbaa.ovov.swapaxes(1, 2) / e_ijab.baba,
+                    bbbb=eris.bbbb.ovov.swapaxes(1, 2) / e_ijab.bbbb,
                 )
                 amplitudes["t%d" % n] = tn
             else:
@@ -155,18 +155,18 @@ class UEBCC(rebcc.REBCC):
             for nb in self.rank_numeric[3]:
                 if nb == 1:
                     e_xia = SimpleNamespace(
-                            aa=lib.direct_sum("ia-x->xia", e_ia.aa, self.omega),
-                            bb=lib.direct_sum("ia-x->xia", e_ia.bb, self.omega),
+                        aa=lib.direct_sum("ia-x->xia", e_ia.aa, self.omega),
+                        bb=lib.direct_sum("ia-x->xia", e_ia.bb, self.omega),
                     )
                     u1n = SimpleNamespace(
-                            aa=h.aa.bov / e_xia.aa,
-                            bb=h.bb.bov / e_xia.bb,
+                        aa=h.aa.bov / e_xia.aa,
+                        bb=h.bb.bov / e_xia.bb,
                     )
                     amplitudes["u%d%d" % (nf, nb)] = u1n
                 else:
                     u1n = SimpleNamespace(
-                            aa=np.zeros((self.nbos,) * nb + (self.nocc[0], self.nvir[0])),
-                            bb=np.zeros((self.nbos,) * nb + (self.nocc[1], self.nvir[1])),
+                        aa=np.zeros((self.nbos,) * nb + (self.nocc[0], self.nvir[0])),
+                        bb=np.zeros((self.nbos,) * nb + (self.nocc[1], self.nvir[1])),
                     )
                     amplitudes["u%d%d" % (nf, nb)] = u1n
 
@@ -180,7 +180,7 @@ class UEBCC(rebcc.REBCC):
 
         # Build L amplitudes:
         for n in self.rank_numeric[0]:
-            perm = list(range(n, 2*n)) + list(range(n))
+            perm = list(range(n, 2 * n)) + list(range(n))
             lambdas["l%d" % n] = SimpleNamespace()
             for key in amplitudes["t%d" % n].__dict__.keys():
                 ln = getattr(amplitudes["t%d" % n], key).transpose(perm)
@@ -195,7 +195,7 @@ class UEBCC(rebcc.REBCC):
             if nf != 1:
                 raise NotImplementedError
             for nb in self.rank_numeric[3]:
-                perm = list(range(nb)) + [nb+1, nb]
+                perm = list(range(nb)) + [nb + 1, nb]
                 lambdas["lu%d%d" % (nf, nb)] = SimpleNamespace()
                 for key in amplitudes["u%d%d" % (nf, nb)].__dict__.keys():
                     lu1n = getattr(amplitudes["u%d%d" % (nf, nb)], key).transpose(perm)
@@ -205,23 +205,23 @@ class UEBCC(rebcc.REBCC):
 
     def update_amps(self, eris=None, amplitudes=None):
         func, kwargs = self._load_function(
-                "update_amps",
-                eris=eris,
-                amplitudes=amplitudes,
+            "update_amps",
+            eris=eris,
+            amplitudes=amplitudes,
         )
         res = func(**kwargs)
         res = {key.rstrip("new"): val for key, val in res.items()}
 
         e_ia = SimpleNamespace(
-                aa=lib.direct_sum("i-a->ia", self.eo.a, self.ev.a),
-                bb=lib.direct_sum("i-a->ia", self.eo.b, self.ev.b),
+            aa=lib.direct_sum("i-a->ia", self.eo.a, self.ev.a),
+            bb=lib.direct_sum("i-a->ia", self.eo.b, self.ev.b),
         )
 
         # Divide T amplitudes:
         for n in self.rank_numeric[0]:
-            perm = list(range(0, n*2, 2)) + list(range(1, n*2, 2))
+            perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
             for key in generate_spin_combinations(n):
-                es = [getattr(e_ia, key[i]+key[i+n]) for i in range(n)]
+                es = [getattr(e_ia, key[i] + key[i + n]) for i in range(n)]
                 d = functools.reduce(np.add.outer, es)
                 d = d.transpose(perm)
                 tn = getattr(res["t%d" % n], key)
@@ -255,24 +255,24 @@ class UEBCC(rebcc.REBCC):
 
     def update_lams(self, eris=None, amplitudes=None, lambdas=None):
         func, kwargs = self._load_function(
-                "update_lams",
-                eris=eris,
-                amplitudes=amplitudes,
-                lambdas=lambdas,
+            "update_lams",
+            eris=eris,
+            amplitudes=amplitudes,
+            lambdas=lambdas,
         )
         res = func(**kwargs)
         res = {key.rstrip("new"): val for key, val in res.items()}
 
         e_ai = SimpleNamespace(
-                aa=lib.direct_sum("i-a->ai", self.eo.a, self.ev.a),
-                bb=lib.direct_sum("i-a->ai", self.eo.b, self.ev.b),
+            aa=lib.direct_sum("i-a->ai", self.eo.a, self.ev.a),
+            bb=lib.direct_sum("i-a->ai", self.eo.b, self.ev.b),
         )
 
         # Divide T amplitudes:
         for n in self.rank_numeric[0]:
-            perm = list(range(0, n*2, 2)) + list(range(1, n*2, 2))
+            perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
             for key in generate_spin_combinations(n):
-                es = [getattr(e_ai, key[i]+key[i+n]) for i in range(n)]
+                es = [getattr(e_ai, key[i] + key[i + n]) for i in range(n)]
                 d = functools.reduce(np.add.outer, es)
                 d = d.transpose(perm)
                 tn = getattr(res["l%d" % n], key)
@@ -306,10 +306,10 @@ class UEBCC(rebcc.REBCC):
 
     def make_rdm1_f(self, eris=None, amplitudes=None, lambdas=None, hermitise=True):
         func, kwargs = self._load_function(
-                "make_rdm1_f",
-                eris=eris,
-                amplitudes=amplitudes,
-                lambdas=lambdas,
+            "make_rdm1_f",
+            eris=eris,
+            amplitudes=amplitudes,
+            lambdas=lambdas,
         )
 
         dm = func(**kwargs)
@@ -322,27 +322,24 @@ class UEBCC(rebcc.REBCC):
 
     def make_rdm2_f(self, eris=None, amplitudes=None, lambdas=None, hermitise=True):
         func, kwargs = self._load_function(
-                "make_rdm2_f",
-                eris=eris,
-                amplitudes=amplitudes,
-                lambdas=lambdas,
+            "make_rdm2_f",
+            eris=eris,
+            amplitudes=amplitudes,
+            lambdas=lambdas,
         )
 
         dm = func(**kwargs)
 
         if hermitise:
+
             def transpose1(dm):
-                dm = 0.5 * (
-                        + dm.transpose(0, 1, 2, 3)
-                        + dm.transpose(2, 3, 0, 1)
-                )
+                dm = 0.5 * (+dm.transpose(0, 1, 2, 3) + dm.transpose(2, 3, 0, 1))
                 return dm
+
             def transpose2(dm):
-                dm = 0.5 * (
-                        + dm.transpose(0, 1, 2, 3)
-                        + dm.transpose(1, 0, 3, 2)
-                )
+                dm = 0.5 * (+dm.transpose(0, 1, 2, 3) + dm.transpose(1, 0, 3, 2))
                 return dm
+
             dm.aaaa = transpose2(transpose1(dm.aaaa))
             dm.aabb = transpose2(dm.aabb)
             dm.bbaa = transpose2(dm.bbaa)
@@ -350,12 +347,14 @@ class UEBCC(rebcc.REBCC):
 
         return dm
 
-    def make_eb_coup_rdm(self, eris=None, amplitudes=None, lambdas=None, unshifted=True, hermitise=True):
+    def make_eb_coup_rdm(
+        self, eris=None, amplitudes=None, lambdas=None, unshifted=True, hermitise=True
+    ):
         func, kwargs = self._load_function(
-                "make_eb_coup_rdm",
-                eris=eris,
-                amplitudes=amplitudes,
-                lambdas=lambdas,
+            "make_eb_coup_rdm",
+            eris=eris,
+            amplitudes=amplitudes,
+            lambdas=lambdas,
         )
 
         dm_eb = func(**kwargs)
@@ -382,7 +381,7 @@ class UEBCC(rebcc.REBCC):
         return super().hbar_matvec_ip(r1, r2, eris=eris, amplitudes=amplitudes)
 
     def get_mean_field_G(self):
-        val  = lib.einsum("Ipp->I", self.g.aa.boo)
+        val = lib.einsum("Ipp->I", self.g.aa.boo)
         val += lib.einsum("Ipp->I", self.g.bb.boo)
         val -= self.xi * self.omega
 
@@ -399,30 +398,32 @@ class UEBCC(rebcc.REBCC):
 
         gs = SimpleNamespace()
 
-        boo = g[0][:, :self.nocc[0], :self.nocc[0]]
-        bov = g[0][:, :self.nocc[0], self.nocc[0]:]
-        bvo = g[0][:, self.nocc[0]:, :self.nocc[0]]
-        bvv = g[0][:, self.nocc[0]:, self.nocc[0]:]
+        boo = g[0][:, : self.nocc[0], : self.nocc[0]]
+        bov = g[0][:, : self.nocc[0], self.nocc[0] :]
+        bvo = g[0][:, self.nocc[0] :, : self.nocc[0]]
+        bvv = g[0][:, self.nocc[0] :, self.nocc[0] :]
         gs.aa = SimpleNamespace(boo=boo, bov=bov, bvo=bvo, bvv=bvv)
 
-        boo = g[1][:, :self.nocc[1], :self.nocc[1]]
-        bov = g[1][:, :self.nocc[1], self.nocc[1]:]
-        bvo = g[1][:, self.nocc[1]:, :self.nocc[1]]
-        bvv = g[1][:, self.nocc[1]:, self.nocc[1]:]
+        boo = g[1][:, : self.nocc[1], : self.nocc[1]]
+        bov = g[1][:, : self.nocc[1], self.nocc[1] :]
+        bvo = g[1][:, self.nocc[1] :, : self.nocc[1]]
+        bvv = g[1][:, self.nocc[1] :, self.nocc[1] :]
         gs.bb = SimpleNamespace(boo=boo, bov=bov, bvo=bvo, bvv=bvv)
 
         return gs
 
     @property
     def bare_fock(self):
-        fock = lib.einsum("npq,npi,nqj->nij", self.mf.get_fock(), self.mf.mo_coeff, self.mf.mo_coeff)
+        fock = lib.einsum(
+            "npq,npi,nqj->nij", self.mf.get_fock(), self.mf.mo_coeff, self.mf.mo_coeff
+        )
         fock = SimpleNamespace(aa=fock[0], bb=fock[1])
         return fock
 
     @property
     def xi(self):
         if self.options.shift:
-            xi  = lib.einsum("Iii->I", self.g.aa.boo)
+            xi = lib.einsum("Iii->I", self.g.aa.boo)
             xi += lib.einsum("Iii->I", self.g.bb.boo)
             xi /= self.omega
             if self.bare_G is not None:
@@ -439,10 +440,10 @@ class UEBCC(rebcc.REBCC):
 
         f = SimpleNamespace()
 
-        oo = fock.aa[:self.nocc[0], :self.nocc[0]]
-        ov = fock.aa[:self.nocc[0], self.nocc[0]:]
-        vo = fock.aa[self.nocc[0]:, :self.nocc[0]]
-        vv = fock.aa[self.nocc[0]:, self.nocc[0]:]
+        oo = fock.aa[: self.nocc[0], : self.nocc[0]]
+        ov = fock.aa[: self.nocc[0], self.nocc[0] :]
+        vo = fock.aa[self.nocc[0] :, : self.nocc[0]]
+        vv = fock.aa[self.nocc[0] :, self.nocc[0] :]
 
         if self.options.shift:
             g = self.g
@@ -453,10 +454,10 @@ class UEBCC(rebcc.REBCC):
 
         f.aa = SimpleNamespace(oo=oo, ov=ov, vo=vo, vv=vv)
 
-        oo = fock.bb[:self.nocc[1], :self.nocc[1]]
-        ov = fock.bb[:self.nocc[1], self.nocc[1]:]
-        vo = fock.bb[self.nocc[1]:, :self.nocc[1]]
-        vv = fock.bb[self.nocc[1]:, self.nocc[1]:]
+        oo = fock.bb[: self.nocc[1], : self.nocc[1]]
+        ov = fock.bb[: self.nocc[1], self.nocc[1] :]
+        vo = fock.bb[self.nocc[1] :, : self.nocc[1]]
+        vv = fock.bb[self.nocc[1] :, self.nocc[1] :]
 
         if self.options.shift:
             g = self.g
@@ -500,17 +501,18 @@ class UEBCC(rebcc.REBCC):
         for n in self.rank_numeric[0]:
             amplitudes["t%d" % n] = SimpleNamespace()
             for key in generate_spin_combinations(n):
-                shape = tuple(self.nocc[spin_indices[s]] for s in key[:n]) \
-                        + tuple(self.nvir[spin_indices[s]] for s in key[n:])
+                shape = tuple(self.nocc[spin_indices[s]] for s in key[:n]) + tuple(
+                    self.nvir[spin_indices[s]] for s in key[n:]
+                )
                 size = np.prod(shape)
-                tn = vector[i0:i0+size].reshape(shape)
+                tn = vector[i0 : i0 + size].reshape(shape)
                 setattr(amplitudes["t%d" % n], key, tn)
                 i0 += size
 
         for n in self.rank_numeric[1]:
             shape = (self.nbos,) * n
             size = np.prod(shape)
-            amplitudes["s%d" % n] = vector[i0:i0+size].reshape(shape)
+            amplitudes["s%d" % n] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
         for nf in self.rank_numeric[2]:
@@ -520,11 +522,11 @@ class UEBCC(rebcc.REBCC):
                 amplitudes["u%d%d" % (nf, nb)] = SimpleNamespace()
                 shape = (self.nbos,) * nb + (self.nocc[0], self.nvir[0]) * nf
                 size = np.prod(shape)
-                amplitudes["u%d%d" % (nf, nb)].aa = vector[i0:i0+size].reshape(shape)
+                amplitudes["u%d%d" % (nf, nb)].aa = vector[i0 : i0 + size].reshape(shape)
                 i0 += size
                 shape = (self.nbos,) * nb + (self.nocc[1], self.nvir[1]) * nf
                 size = np.prod(shape)
-                amplitudes["u%d%d" % (nf, nb)].bb = vector[i0:i0+size].reshape(shape)
+                amplitudes["u%d%d" % (nf, nb)].bb = vector[i0 : i0 + size].reshape(shape)
                 i0 += size
 
         return amplitudes
@@ -557,17 +559,18 @@ class UEBCC(rebcc.REBCC):
         for n in self.rank_numeric[0]:
             lambdas["l%d" % n] = SimpleNamespace()
             for key in generate_spin_combinations(n):
-                shape = tuple(self.nvir[spin_indices[s]] for s in key[:n]) \
-                        + tuple(self.nocc[spin_indices[s]] for s in key[n:])
+                shape = tuple(self.nvir[spin_indices[s]] for s in key[:n]) + tuple(
+                    self.nocc[spin_indices[s]] for s in key[n:]
+                )
                 size = np.prod(shape)
-                tn = vector[i0:i0+size].reshape(shape)
+                tn = vector[i0 : i0 + size].reshape(shape)
                 setattr(lambdas["l%d" % n], key, tn)
                 i0 += size
 
         for n in self.rank_numeric[1]:
             shape = (self.nbos,) * n
             size = np.prod(shape)
-            lambdas["ls%d" % n] = vector[i0:i0+size].reshape(shape)
+            lambdas["ls%d" % n] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
         for nf in self.rank_numeric[2]:
@@ -577,11 +580,11 @@ class UEBCC(rebcc.REBCC):
                 lambdas["lu%d%d" % (nf, nb)] = SimpleNamespace()
                 shape = (self.nbos,) * nb + (self.nvir[0], self.nocc[0]) * nf
                 size = np.prod(shape)
-                lambdas["lu%d%d" % (nf, nb)].aa = vector[i0:i0+size].reshape(shape)
+                lambdas["lu%d%d" % (nf, nb)].aa = vector[i0 : i0 + size].reshape(shape)
                 i0 += size
                 shape = (self.nbos,) * nb + (self.nvir[1], self.nocc[1]) * nf
                 size = np.prod(shape)
-                lambdas["lu%d%d" % (nf, nb)].bb = vector[i0:i0+size].reshape(shape)
+                lambdas["lu%d%d" % (nf, nb)].bb = vector[i0 : i0 + size].reshape(shape)
                 i0 += size
 
         return lambdas
@@ -613,7 +616,7 @@ class UEBCC(rebcc.REBCC):
                 inds = ["ab".index(s) for s in spin]
                 shape = [self.nocc[s] for s in inds[:n]] + [self.nvir[s] for s in inds[n:]]
                 size = np.prod(shape)
-                excitations.append(vector[i0:i0+size].reshape(shape))
+                excitations.append(vector[i0 : i0 + size].reshape(shape))
                 i0 += size
 
         for n in self.rank_numeric[1]:
@@ -634,7 +637,7 @@ class UEBCC(rebcc.REBCC):
                 inds = ["ab".index(s) for s in spin]
                 shape = [self.nvir[s] for s in inds[:n]] + [self.nocc[s] for s in inds[n:]]
                 size = np.prod(shape)
-                excitations.append(vector[i0:i0+size].reshape(shape))
+                excitations.append(vector[i0 : i0 + size].reshape(shape))
                 i0 += size
 
         for n in self.rank_numeric[1]:
@@ -666,19 +669,18 @@ class UEBCC(rebcc.REBCC):
     @property
     def eo(self):
         eo = SimpleNamespace(
-                a=np.diag(self.fock.aa.oo),
-                b=np.diag(self.fock.bb.oo),
+            a=np.diag(self.fock.aa.oo),
+            b=np.diag(self.fock.bb.oo),
         )
         return eo
 
     @property
     def ev(self):
         ev = SimpleNamespace(
-                a=np.diag(self.fock.aa.vv),
-                b=np.diag(self.fock.bb.vv),
+            a=np.diag(self.fock.aa.vv),
+            b=np.diag(self.fock.bb.vv),
         )
         return ev
-
 
 
 if __name__ == "__main__":
