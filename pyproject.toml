@@ -1,0 +1,86 @@
+[project]
+name = "ebcc"
+version = "1.0.0a"
+description = "Coupled cluster calculations on electron-boson systems"
+download = "https://github.com/BoothGroup/ebcc"
+keywords = [
+    "quantum", "chemistry",
+    "electronic", "structure",
+    "coupled", "cluster",
+    "electron", "boson",
+    "ccsd",
+]
+readme = "README.md"
+author = [
+    "O. J. Backhouse",
+    "G. H. Booth",
+    "C. J. C. Scott",
+]
+author-email = "vayesta.embedding@gmail.com"
+license = "Apache License 2.0"
+platforms = [
+    "Linux",
+    "Mac OS-X",
+]
+python-requires = ">=3.7"
+classifiers = [
+        "Development Status :: 2 - Pre-Alpha",
+        "License :: OSI Approved :: Apache Software License",  # TODO
+        "Intended Audience :: Science/Research",
+        "Intended Audience :: Developers",
+        "Topic :: Scientific/Engineering",
+        "Topic :: Software Development",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Operating System :: MacOS :: MacOS X",
+        "Operating System :: POSIX :: Linux",
+]
+install-requires = [
+    "numpy>=1.19.0",
+    "pyscf>=2.0.0",
+]
+tests-require = [
+    "pytest",
+    "pytest-cov",
+]
+
+[build-system]
+requires = [
+    "setuptools",
+]
+build-backend = "setuptools.build_meta"
+
+[project.optional-dependencies]
+dev = [
+    "black>=18.3.0",
+    "isort>=5.0.0",
+]
+
+[tool.black]
+line-length = 100
+target-version = [
+    "py36",
+    "py37",
+    "py38",
+]
+include = "ebcc"
+exclude = [
+    "ebcc/codegen",
+    ".git",
+]
+
+[tool.isort]
+atomic = true
+profile = "black"
+line_length = 100
+src_paths = [
+    "ebcc",
+]
+skip_glob = [
+    "ebcc/codegen/*",
+]
+
+[tool.pytest.ini_options]
