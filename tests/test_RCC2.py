@@ -1,18 +1,17 @@
 """Tests for the RCC2 model.
 """
 
-import unittest
-import pytest
 import itertools
-import pickle
 import os
+import pickle
+import unittest
 
 import numpy as np
+import pytest
 import scipy.linalg
+from pyscf import cc, gto, lib, scf
 
-from pyscf import gto, scf, cc, lib
-
-from ebcc import NullLogger, REBCC
+from ebcc import REBCC, NullLogger
 
 
 class RCC2_PySCF_Tests(unittest.TestCase):

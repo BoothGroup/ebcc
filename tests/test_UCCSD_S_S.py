@@ -2,17 +2,16 @@
 """
 
 import itertools
-import unittest
-import pytest
-import pickle
 import os
+import pickle
+import unittest
 
 import numpy as np
+import pytest
 import scipy.linalg
+from pyscf import cc, gto, lib, scf
 
-from pyscf import gto, scf, cc, lib
-
-from ebcc import NullLogger, GEBCC, UEBCC
+from ebcc import GEBCC, UEBCC, NullLogger
 
 
 class UCCSD_S_1_1_Tests(unittest.TestCase):

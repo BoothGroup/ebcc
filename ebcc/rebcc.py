@@ -1,15 +1,17 @@
 """Restricted electron-boson coupled cluster.
 """
 
-import logging
+import dataclasses
 import functools
 import importlib
-import dataclasses
-from typing import Tuple
+import logging
 from types import SimpleNamespace
+from typing import Tuple
+
 import numpy as np
-from pyscf import lib, ao2mo
-from ebcc import default_log, util, eom
+from pyscf import ao2mo, lib
+
+from ebcc import default_log, eom, util
 
 # TODO math in docstrings
 # TODO resolve G vs bare_G confusion
@@ -2140,8 +2142,8 @@ class REBCC:
 
 
 if __name__ == "__main__":
-    from pyscf import gto, scf, cc
     import numpy as np
+    from pyscf import cc, gto, scf
 
     mol = gto.Mole()
     # mol.atom = "He 0 0 0"

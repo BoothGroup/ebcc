@@ -1,17 +1,16 @@
 """Tests for the GCCSD-SD-1-2 model.
 """
 
-import unittest
-import pytest
-import pickle
 import os
+import pickle
+import unittest
 
 import numpy as np
+import pytest
 import scipy.linalg
+from pyscf import cc, gto, lib, scf
 
-from pyscf import gto, scf, cc, lib
-
-from ebcc import NullLogger, GEBCC
+from ebcc import GEBCC, NullLogger
 
 
 class GCCSD_SD_1_2_Tests(unittest.TestCase):

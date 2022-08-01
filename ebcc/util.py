@@ -1,11 +1,12 @@
 """Utilities.
 """
 
-import sys
-import logging
+import functools
 import inspect
 import itertools
-import functools
+import logging
+import sys
+
 import numpy as np
 
 

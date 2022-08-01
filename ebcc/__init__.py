@@ -50,10 +50,9 @@ common subexpressions and contraction order achieved using
 
 __version__ = "1.0.0a"
 
+import logging
 import os
 import sys
-import logging
-
 
 # --- Logging:
 
@@ -80,9 +79,9 @@ class NullLogger(logging.Logger):
 
 # --- General constructor:
 
+from ebcc.gebcc import GEBCC
 from ebcc.rebcc import REBCC
 from ebcc.uebcc import UEBCC
-from ebcc.gebcc import GEBCC
 
 
 def EBCC(mf, *args, **kwargs):

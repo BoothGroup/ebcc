@@ -2,7 +2,8 @@
 
 import os
 import shlex
-from setuptools import setup, find_packages
+
+from setuptools import find_packages, setup
 from setuptools.command.test import test
 
 src = os.path.abspath(os.path.join(__file__, ".."))

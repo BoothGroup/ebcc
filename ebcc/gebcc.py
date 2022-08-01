@@ -3,12 +3,14 @@
 
 import functools
 import itertools
+from types import SimpleNamespace
+from typing import Tuple
+
 import numpy as np
 import scipy.linalg
-from typing import Tuple
-from types import SimpleNamespace
-from pyscf import lib, ao2mo
-from ebcc import util, rebcc
+from pyscf import ao2mo, lib
+
+from ebcc import rebcc, util
 
 
 class Amplitudes(rebcc.Amplitudes):

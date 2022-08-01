@@ -1,12 +1,14 @@
 """Unrestricted electron-boson coupled cluster.
 """
 
-import itertools
 import functools
+import itertools
 from types import SimpleNamespace
+
 import numpy as np
 from pyscf import ao2mo, lib
-from ebcc import util, rebcc
+
+from ebcc import rebcc, util
 
 
 class Amplitudes(rebcc.Amplitudes):

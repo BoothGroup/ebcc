@@ -1,5 +1,6 @@
 import numpy as np
 from pyscf import gto, scf
+
 from ebcc import EBCC
 
 mol = gto.Mole()
