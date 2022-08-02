@@ -293,7 +293,6 @@ class REBCC:
         self,
         mf,
         log: logging.Logger = None,
-        # rank: Tuple[int] = ("SD", "", 0, 0),
         fermion_excitations: str = "SD",
         boson_excitations: str = "",
         fermion_coupling_rank: int = 0,
@@ -333,6 +332,7 @@ class REBCC:
         self.log.info(" > Boson coupling rank:    %s", self.rank[3])
 
         self.omega = omega
+        self.bare_g = g
         self.bare_G = G
 
         self.e_corr = None
@@ -382,9 +382,12 @@ class REBCC:
         if eris is None:
             eris = self.get_eris()
 
-        amplitudes = self.init_amps(eris=eris)
+        if self.amplitudes is None:
+            amplitudes = self.init_amps(eris=eris)
+        else:
+            amplitudes = self.amplitudes
+
         e_cc = e_init = self.energy(amplitudes=amplitudes, eris=eris)
-        converged = False
 
         diis = lib.diis.DIIS()
         diis.space = self.options.diis_space
@@ -393,6 +396,7 @@ class REBCC:
         self.log.info("%4s %16s %16s %16s", "Iter", "Energy (corr.)", "Δ(Energy)", "Δ(Amplitudes)")
         self.log.info("%4d %16.10f", 0, e_init)
 
+        converged = False
         for niter in range(1, self.options.max_iter + 1):
             amplitudes_prev = amplitudes
             amplitudes = self.update_amps(amplitudes=amplitudes, eris=eris)
@@ -444,8 +448,10 @@ class REBCC:
         if amplitudes is None:
             amplitudes = self.init_amps(eris=eris)  # TODO warn?
 
-        lambdas = self.init_lams(amplitudes=amplitudes)
-        converged = False
+        if self.lambdas is None:
+            lambdas = self.init_lams(amplitudes=amplitudes)
+        else:
+            lambdas = self.lambdas
 
         diis = lib.diis.DIIS()
         diis.space = self.options.diis_space
@@ -453,6 +459,7 @@ class REBCC:
         self.log.output("Solving for de-excitation (lambda) amplitudes.")
         self.log.info("%4s %16s", "Iter", "Δ(Amplitudes)")
 
+        converged = False
         for niter in range(1, self.options.max_iter + 1):
             lambdas_prev = lambdas
             lambdas = self.update_lams(amplitudes=amplitudes, lambdas=lambdas, eris=eris)

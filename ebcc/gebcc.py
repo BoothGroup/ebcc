@@ -8,9 +8,9 @@ from typing import Tuple
 
 import numpy as np
 import scipy.linalg
-from pyscf import ao2mo, lib
+from pyscf import ao2mo, lib, scf
 
-from ebcc import rebcc, util
+from ebcc import rebcc, uebcc, util
 
 
 class Amplitudes(rebcc.Amplitudes):
@@ -63,6 +63,135 @@ class GEBCC(rebcc.REBCC):
     @staticmethod
     def _convert_mf(mf):
         return mf.to_ghf()
+
+    @classmethod
+    def from_uebcc(cls, ucc):
+        """Initialise a GEBCC object from an UEBCC object."""
+
+        raise NotImplementedError("UEBCC -> GEBCC conversion is a work in progress.")
+
+        orbspin = scf.addons.get_ghf_orbspin(ucc.mf.mo_energy, ucc.mf.mo_occ, False)
+        nocc = ucc.nocc[0] + ucc.nocc[1]
+        slices = {"a": np.where(orbspin == 0)[0], "b": np.where(orbspin == 1)[0]}
+        occs = {"a": np.where(orbspin[:nocc] == 0)[0], "b": np.where(orbspin[:nocc] == 1)[0]}
+        virs = {"a": np.where(orbspin[nocc:] == 0)[0], "b": np.where(orbspin[nocc:] == 1)[0]}
+
+        if ucc.bare_g is not None:
+            if np.asarray(ucc.bare_g).ndim == 3:
+                bare_g_a = bare_g_b = ucc.bare_g
+            else:
+                bare_g_a, bare_g_b = ucc.bare_g
+            g = np.zeros((ucc.nbos, ucc.nmo * 2, ucc.nmo * 2))
+            g[np.ix_(range(ucc.nbos), slices["a"], slices["a"])] = bare_g_a.copy()
+            g[np.ix_(range(ucc.nbos), slices["b"], slices["b"])] = bare_g_b.copy()
+        else:
+            g = None
+
+        gcc = cls(
+            ucc.mf,
+            log=ucc.log,
+            fermion_excitations=ucc.fermion_excitations,
+            boson_excitations=ucc.boson_excitations,
+            fermion_coupling_rank=ucc.fermion_coupling_rank,
+            boson_coupling_rank=ucc.boson_coupling_rank,
+            omega=ucc.omega,
+            g=g,
+            G=ucc.bare_G,
+            options=ucc.options,
+        )
+
+        gcc.e_corr = ucc.e_corr
+        gcc.converged = ucc.converged
+        gcc.converged_lambda = ucc.converged_lambda
+
+        has_amps = ucc.amplitudes is not None
+        has_lams = ucc.lambdas is not None
+
+        if has_amps:
+            Amplitudes = cls.Amplitudes()
+
+            for n in ucc.rank_numeric[0]:
+                for comb in uebcc.generate_spin_combinations(n):
+                    done = set()
+                    for perm, sign in util.permutations_with_signs(tuple(range(n))):
+                        combn = util.permute_string(comb[:n], perm) + comb[n:]
+                        if combn in done:
+                            continue
+                        mask = np.ix_(
+                            *([occs[c] for c in combn[:n]] + [virs[c] for c in combn[n:]])
+                        )
+                        transpose = tuple(perm) + tuple(range(n, 2 * n))
+                        amplitudes["t%d" % n][mask] = (
+                            getattr(ucc.amplitudes["t%d" % n], comb).transpose(transpose).copy()
+                            * sign
+                        )
+                        done.add(combn)
+
+            # from pyscf.cc.addons import spatial2spin
+            # ta = amplitudes["t1"]
+            # tb = spatial2spin((ucc.amplitudes["t1"].aa, ucc.amplitudes["t1"].bb), orbspin=orbspin)
+            # assert np.allclose(ta, tb)
+            # ta = amplitudes["t2"]
+            # tb = spatial2spin((ucc.amplitudes["t2"].aaaa, ucc.amplitudes["t2"].abab, ucc.amplitudes["t2"].bbbb), orbspin=orbspin)
+            # assert np.allclose(ta, tb)
+
+            for n in ucc.rank_numeric[1]:
+                amplitudes["s%d" % n] = ucc.amplitudes["s%d" % n].copy()
+
+            for nf in ucc.rank_numeric[2]:
+                for nb in ucc.rank_numeric[3]:
+                    for comb in uebcc.generate_spin_combinations(nf):
+                        bmasks = [range(ucc.nbos)] * nb
+                        fmasks = [occs[c] for c in comb[:nf]] + [virs[c] for c in comb[nf:]]
+                        mask = np.ix_(*bmasks, *fmasks)
+                        amplitudes["u%d%d" % (nf, nb)][mask] = getattr(
+                            ucc.amplitudes["u%d%d" % (nf, nb)], comb
+                        ).copy()
+                    amplitudes["u%d%d" % (nf, nb)] = util.antisymmetrise_array(
+                        amplitudes["u%d%d" % (nf, nb)], axes=tuple(range(nb, nb + nf))
+                    )
+
+            gcc.amplitudes = amplitudes
+
+        if has_lams:
+            lambas = gcc.init_lams()  # Easier this way - but have to build ERIs...
+
+            for n in ucc.rank_numeric[0]:
+                for comb in uebcc.generate_spin_combinations(n):
+                    mask = np.ix_(*([virs[c] for c in comb[:n]] + [occs[c] for c in comb[n:]]))
+                    lambdas["l%d" % n][mask] = getattr(ucc.lambdas["l%d" % n], comb).copy()
+                lambdas["l%d" % n] = util.antisymmetrise_array(
+                    lambdas["l%d" % n], axes=tuple(range(n))
+                )
+
+            for n in ucc.rank_numeric[1]:
+                lambdas["ls%d" % n] = ucc.lambdas["ls%d" % n].copy()
+
+            for nf in rcc.rank_numeric[2]:
+                for nb in rcc.rank_numeric[3]:
+                    for comb in uebcc.generate_spin_combinations(nf):
+                        bmasks = [range(ucc.nbos)] * nb
+                        fmasks = [virs[c] for c in comb[:nf]] + [occs[c] for c in comb[nf:]]
+                        mask = np.ix_(*bmasks, *fmasks)
+                        lambdas["lu%d%d" % (nf, nb)][mask] = getattr(
+                            ucc.lambdas["lu%d%d" % (nf, nb)], comb
+                        ).copy()
+                    lambdas["lu%d%d" % (nf, nb)] = util.antisymmetrise_array(
+                        lambdas["lu%d%d" % (nf, nb)], axes=tuple(range(nb, nb + nf))
+                    )
+
+            gcc.lambdas = lambdas
+
+        return gcc
+
+    @classmethod
+    def from_rebcc(cls, rcc):
+        """Initialise a GEBCC object from an REBCC object."""
+
+        ucc = uebcc.UEBCC.from_rebcc(rcc)
+        gcc = cls.from_uebcc(ucc)
+
+        return gcc
 
     def init_amps(self, eris=None):
         if eris is None:

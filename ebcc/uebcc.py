@@ -103,6 +103,78 @@ class UEBCC(rebcc.REBCC):
     def _convert_mf(mf):
         return mf.to_uhf()
 
+    @classmethod
+    def from_rebcc(cls, rcc):
+        """Initialise an UEBCC object from an REBCC object."""
+
+        ucc = cls(
+            rcc.mf,
+            log=rcc.log,
+            fermion_excitations=rcc.fermion_excitations,
+            boson_excitations=rcc.boson_excitations,
+            fermion_coupling_rank=rcc.fermion_coupling_rank,
+            boson_coupling_rank=rcc.boson_coupling_rank,
+            omega=rcc.omega,
+            g=rcc.bare_g,
+            G=rcc.bare_G,
+            options=rcc.options,
+        )
+
+        ucc.e_corr = rcc.e_corr
+        ucc.converged = rcc.converged
+        ucc.converged_lambda = rcc.converged_lambda
+
+        has_amps = rcc.amplitudes is not None
+        has_lams = rcc.lambdas is not None
+
+        if has_amps:
+            amplitudes = cls.Amplitudes()
+
+            for n in rcc.rank_numeric[0]:
+                amplitudes["t%d" % n] = SimpleNamespace()
+                for comb in generate_spin_combinations(n):
+                    setattr(amplitudes["t%d" % n], comb, rcc.amplitudes["t%d" % n].copy())
+
+            for n in rcc.rank_numeric[1]:
+                amplitudes["s%d" % n] = rcc.amplitudes["s%d" % n].copy()
+
+            for nf in rcc.rank_numeric[2]:
+                for nb in rcc.rank_numeric[3]:
+                    amplitudes["u%d%d" % (nf, nb)] = SimpleNamespace()
+                    for comb in generate_spin_combinations(nf):
+                        setattr(
+                            amplitudes["u%d%d" % (nf, nb)],
+                            comb,
+                            rcc.amplitudes["u%d%d" % (nf, nb)].copy(),
+                        )
+
+            ucc.amplitudes = amplitudes
+
+        if has_lams:
+            lambdas = cls.Amplitudes()
+
+            for n in rcc.rank_numeric[0]:
+                lambdas["l%d" % n] = SimpleNamespace()
+                for comb in generate_spin_combinations(n):
+                    setattr(lambdas["l%d" % n], comb, rcc.lambdas["l%d" % n].copy())
+
+            for n in rcc.rank_numeric[1]:
+                lambdas["ls%d" % n] = rcc.lambdas["ls%d" % n].copy()
+
+            for nf in rcc.rank_numeric[2]:
+                for nb in rcc.rank_numeric[3]:
+                    lambdas["lu%d%d" % (nf, nb)] = SimpleNamespace()
+                    for comb in generate_spin_combinations(n):
+                        setattr(
+                            lambdas["lu%d%d" % (nf, nb)],
+                            comb,
+                            rcc.lambdas["lu%d%d" % (nf, nb)].copy(),
+                        )
+
+            ucc.lambdas = lambdas
+
+        return ucc
+
     def init_amps(self, eris=None):
         if eris is None:
             eris = self.get_eris()

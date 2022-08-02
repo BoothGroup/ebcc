@@ -26,6 +26,11 @@ def factorial(n):
         return n * factorial(n - 1)
 
 
+def permute_string(string, permutation):
+    """Permute a string."""
+    return "".join([string[i] for i in permutation])
+
+
 def tril_indices_ndim(n, dims, include_diagonal=False):
     """Return lower triangular indices for a multidimensional array."""
 
@@ -123,3 +128,19 @@ def inherit_docstrings(cls):
                     func.__doc__ = getattr(parent, name).__doc__
 
     return cls
+
+
+def antisymmetrise_array(v, axes=(0, 1)):
+    """Antisymmetrise an array."""
+
+    v_as = np.zeros_like(v)
+
+    for perm, sign in permutations_with_signs(axes):
+        transpose = list(range(v.ndim))
+        for i, ax in enumerate(transpose):
+            if ax in axes:
+                j = axes.index(ax)
+                transpose[i] = perm[j]
+        v_as += sign * v.transpose(transpose).copy()
+
+    return v_as
