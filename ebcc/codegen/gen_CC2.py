@@ -1,4 +1,4 @@
-"""Script to generate equations for the CCSD model.
+"""Script to generate equations for the CC2 model.
 """
 
 import warnings
