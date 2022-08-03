@@ -33,10 +33,11 @@ class ERIs(SimpleNamespace):
     whether the corresponding dimension is occupied or virtual.
     """
 
-    def __init__(self, ebcc, slices=None, mo_coeff=None):
+    def __init__(self, ebcc, array=None, slices=None, mo_coeff=None):
         self.mf = ebcc.mf
         self.slices = slices
         self.mo_coeff = mo_coeff
+        self.array = array
 
         if self.mo_coeff is None:
             self.mo_coeff = self.mf.mo_coeff
@@ -53,15 +54,22 @@ class ERIs(SimpleNamespace):
     def __getattr__(self, key):
         """Just-in-time attribute getter."""
 
-        if key not in self.__dict__:
-            coeffs = []
-            for i, k in enumerate(key):
-                coeffs.append(self.mo_coeff[i][:, self.slices[i][k]])
-            block = ao2mo.incore.general(self.mf._eri, coeffs, compact=False)
-            block = block.reshape([c.shape[-1] for c in coeffs])
-            self.__dict__[key] = block
+        if self.array is None:
+            if key not in self.__dict__:
+                coeffs = []
+                for i, k in enumerate(key):
+                    coeffs.append(self.mo_coeff[i][:, self.slices[i][k]])
+                block = ao2mo.incore.general(self.mf._eri, coeffs, compact=False)
+                block = block.reshape([c.shape[-1] for c in coeffs])
+                self.__dict__[key] = block
 
-        return self.__dict__[key]
+            return self.__dict__[key]
+        else:
+            slices = []
+            for i, k in enumerate(key):
+                slices.append(self.slices[i][k])
+            block = self.array[tuple(slices)]
+            return block
 
 
 @dataclasses.dataclass
@@ -379,8 +387,7 @@ class REBCC:
             Correlation energy.
         """
 
-        if eris is None:
-            eris = self.get_eris()
+        eris = self.get_eris(eris)
 
         if self.amplitudes is None:
             amplitudes = self.init_amps(eris=eris)
@@ -440,8 +447,7 @@ class REBCC:
             `self.init_amps()`.
         """
 
-        if eris is None:
-            eris = self.get_eris()
+        eris = self.get_eris(eris)
 
         if amplitudes is None:
             amplitudes = self.amplitudes
@@ -502,8 +508,7 @@ class REBCC:
         into a dictionary.
         """
 
-        if eris is None:
-            eris = self.get_eris()
+        eris = self.get_eris(eris)
 
         omega = np.diag(self.omega) if self.omega is not None else None
 
@@ -529,8 +534,7 @@ class REBCC:
         """
 
         if not (eris is False):
-            if eris is None:
-                eris = self.get_eris()
+            eris = self.get_eris(eris)
         else:
             eris = None
 
@@ -577,8 +581,7 @@ class REBCC:
             Cluster amplitudes.
         """
 
-        if eris is None:
-            eris = self.get_eris()
+        eris = self.get_eris(eris)
 
         amplitudes = self.Amplitudes()
         e_ia = lib.direct_sum("i-a->ia", self.eo, self.ev)
@@ -1860,17 +1863,25 @@ class REBCC:
 
         return f
 
-    def get_eris(self):
+    def get_eris(self, eris=None):
         """Get blocks of the ERIs.
+
+        Parameters
+        ----------
+        eris : np.ndarray or ERIs, optional.
+            Electronic repulsion integrals, either in the form of a
+            dense array or an ERIs object. Default value is `None`.
 
         Returns
         -------
         eris : ERIs, optional
             Electronic repulsion integrals. Default value is generated
-            using `self.get_eris()`.
+            using `self.ERIs()`.
         """
-
-        return self.ERIs(self)
+        if (eris is None) or isinstance(eris, np.ndarray):
+            return self.ERIs(self, array=eris)
+        else:
+            return eris
 
     @property
     def bare_fock(self):
