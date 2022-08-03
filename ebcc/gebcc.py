@@ -33,20 +33,24 @@ class ERIs(rebcc.ERIs):
     corresponding dimension is occupied or virtual.
     """
 
-    def __init__(self, ebcc, slices=None, mo_coeff=None):
-        rebcc.ERIs.__init__(self, ebcc, slices=slices, mo_coeff=mo_coeff)
+    def __init__(self, ebcc, array=None, slices=None, mo_coeff=None):
 
-        mo_a = [mo[: self.mf.mol.nao] for mo in self.mo_coeff]
-        mo_b = [mo[self.mf.mol.nao :] for mo in self.mo_coeff]
+        if array is None:
+            rebcc.ERIs.__init__(self, ebcc, slices=slices, mo_coeff=mo_coeff)
 
-        eri = ao2mo.kernel(self.mf._eri, mo_a)
-        eri += ao2mo.kernel(self.mf._eri, mo_b)
-        eri += ao2mo.kernel(self.mf._eri, mo_a[:2] + mo_b[2:])
-        eri += ao2mo.kernel(self.mf._eri, mo_b[:2] + mo_a[2:])
+            mo_a = [mo[: self.mf.mol.nao] for mo in self.mo_coeff]
+            mo_b = [mo[self.mf.mol.nao:] for mo in self.mo_coeff]
 
-        eri = ao2mo.addons.restore(1, eri, ebcc.nmo)
-        eri = eri.reshape((ebcc.nmo,) * 4)
-        eri = eri.transpose(0, 2, 1, 3) - eri.transpose(0, 2, 3, 1)
+            eri = ao2mo.kernel(self.mf._eri, mo_a)
+            eri += ao2mo.kernel(self.mf._eri, mo_b)
+            eri += ao2mo.kernel(self.mf._eri, mo_a[:2] + mo_b[2:])
+            eri += ao2mo.kernel(self.mf._eri, mo_b[:2] + mo_a[2:])
+
+            eri = ao2mo.addons.restore(1, eri, ebcc.nmo)
+            eri = eri.reshape((ebcc.nmo,) * 4)
+            eri = eri.transpose(0, 2, 1, 3) - eri.transpose(0, 2, 3, 1)
+        else:
+            eri = array
 
         self.eri = eri
 
@@ -249,8 +253,8 @@ class GEBCC(rebcc.REBCC):
         return gcc
 
     def init_amps(self, eris=None):
-        if eris is None:
-            eris = self.get_eris()
+
+        eris = self.get_eris(eris)
 
         amplitudes = self.Amplitudes()
         e_ia = lib.direct_sum("i-a->ia", self.eo, self.ev)
@@ -419,8 +423,25 @@ class GEBCC(rebcc.REBCC):
 
         return val
 
-    def get_eris(self):
-        return self.ERIs(self)
+    def get_eris(self, eris=None):
+        """Get blocks of the ERIs.
+
+        Parameters
+        ----------
+        eris : np.ndarray or ERIs, optional.
+            Electronic repulsion integrals, either in the form of a
+            dense array or an ERIs object. Default value is `None`.
+
+        Returns
+        -------
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.ERIs()`.
+        """
+        if (eris is None) or isinstance(eris, np.ndarray):
+            self.ERIs(self, array=eris)
+        else:
+            return eris
 
     def ip_eom(self, options=None, **kwargs):
         return geom.IP_GEOM(self, options=options, **kwargs)

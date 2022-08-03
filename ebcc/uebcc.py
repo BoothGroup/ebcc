@@ -31,30 +31,39 @@ class ERIs(SimpleNamespace):
     spin, and values are of type `rebcc.ERIs`.
     """
 
-    def __init__(self, ebcc):
+    def __init__(self, ebcc, array=None):
         self.mf = ebcc.mf
         o = [slice(None, n) for n in ebcc.nocc]
         v = [slice(n, None) for n in ebcc.nocc]
         slices = [{"o": o1, "v": v1} for o1, v1 in zip(o, v)]
         mo_coeff = self.mf.mo_coeff
 
+        if array is None:
+            arrays = (None, None, None, None)
+        else:
+            arrays = (array[0], array[1], array[1].transpose(2, 3, 0, 1), array[2])
+
         self.aaaa = rebcc.ERIs(
             ebcc,
+            arrays[0],
             slices=[slices[i] for i in (0, 0, 0, 0)],
             mo_coeff=[mo_coeff[i] for i in (0, 0, 0, 0)],
         )
         self.aabb = rebcc.ERIs(
             ebcc,
+            arrays[1],
             slices=[slices[i] for i in (0, 0, 1, 1)],
             mo_coeff=[mo_coeff[i] for i in (0, 0, 1, 1)],
         )
         self.bbaa = rebcc.ERIs(
             ebcc,
+            arrays[2],
             slices=[slices[i] for i in (1, 1, 0, 0)],
             mo_coeff=[mo_coeff[i] for i in (1, 1, 0, 0)],
         )
         self.bbbb = rebcc.ERIs(
             ebcc,
+            arrays[3],
             slices=[slices[i] for i in (1, 1, 1, 1)],
             mo_coeff=[mo_coeff[i] for i in (1, 1, 1, 1)],
         )
@@ -142,8 +151,7 @@ class UEBCC(rebcc.REBCC):
         return ucc
 
     def init_amps(self, eris=None):
-        if eris is None:
-            eris = self.get_eris()
+        eris = self.get_eris(eris)
 
         amplitudes = self.Amplitudes()
         e_ia = SimpleNamespace(
@@ -511,8 +519,26 @@ class UEBCC(rebcc.REBCC):
 
         return f
 
-    def get_eris(self):
-        return self.ERIs(self)
+    def get_eris(self, eris=None):
+        """Get blocks of the ERIs.
+
+        Parameters
+        ----------
+        eris : tuple of np.ndarray or ERIs, optional.
+            Electronic repulsion integrals, either in the form of a
+            dense array for each spin channel or an ERIs object.
+            Default value is `None`.
+
+        Returns
+        -------
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.ERIs()`.
+        """
+        if (eris is None) or isinstance(eris, tuple):
+            return self.ERIs(self, array=eris)
+        else:
+            return eris
 
     def ip_eom(self, options=None, **kwargs):
         return ueom.IP_UEOM(self, options=options, **kwargs)
