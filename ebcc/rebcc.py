@@ -141,6 +141,14 @@ class REBCC:
     rank : tuple(str)
         Rank of (fermionic, bosonic, fermion-boson coupling) cluster
         operators.
+    fermion_excitations : str, optional
+        Rank of fermionic excitations. Default value is "SD".
+    boson_excitations : str, optional
+        Rank of bosonic excitations. Default is "".
+    fermion_coupling_rank : int, optional
+        Rank of fermionic term in coupling. Default is 0.
+    boson_coupling_rank : int, optional
+        Rank of bosonic term in coupling. Default is 0.
     e_corr : float
         Correlation energy.
     amplitudes : Amplitudes
