@@ -255,7 +255,7 @@ class IP_EOM(EOM):
         k1, k2 = self.vector_to_amplitudes(ket)
         # TODO move factor to bra
         fac = 0.5 if self.ebcc.name.startswith("G") else 1.0
-        out = +1.0 * np.dot(b1, k1) + fac * np.einsum("ija,ija->", b2, k2)
+        out = 1.0 * np.dot(b1, k1) + fac * np.einsum("ija,ija->", b2, k2)
         return out
 
     @property
