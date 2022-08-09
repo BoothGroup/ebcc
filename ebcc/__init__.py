@@ -130,7 +130,7 @@ CC2 = _boson_free_factory("2")
 # --- List available methods:
 
 
-def available_methods():
+def available_models(verbose=True):
     """List available coupled-cluster models for each of general (G),
     restricted (R) and unrestricted (U) Hartree--Fock references.
     """
@@ -157,5 +157,10 @@ def available_methods():
     rhf = sorted(rhf)
     uhf = sorted(uhf)
     ghf = sorted(ghf)
+
+    if verbose:
+        sys.stderr.write("RHF:\n  %s" % ", ".join(rhf))
+        sys.stderr.write("UHF:\n  %s" % ", ".join(uhf))
+        sys.stderr.write("GHF:\n  %s" % ", ".join(ghf))
 
     return tuple(rhf), tuple(uhf), tuple(ghf)
