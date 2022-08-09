@@ -126,7 +126,9 @@ class GEBCC(rebcc.REBCC):
                         for perm, sign in util.permutations_with_signs(tuple(range(n))):
                             transpose = tuple(perm) + tuple(range(n, 2 * n))
                             if util.permute_string(comb[:n], perm) == comb[:n]:
-                                amplitudes["t%d" % n][mask] += amp.transpose(transpose).copy() * sign
+                                amplitudes["t%d" % n][mask] += (
+                                    amp.transpose(transpose).copy() * sign
+                                )
                         done.add(combn)
 
             for n in ucc.rank_numeric[1]:
@@ -134,7 +136,9 @@ class GEBCC(rebcc.REBCC):
 
             for nf in ucc.rank_numeric[2]:
                 for nb in ucc.rank_numeric[3]:
-                    amplitudes["u%d%d" % (nf, nb)] = np.zeros((nbos,) * nb + (nocc,) * nf + (nvir,) * nf)
+                    amplitudes["u%d%d" % (nf, nb)] = np.zeros(
+                        (nbos,) * nb + (nocc,) * nf + (nvir,) * nf
+                    )
                     for comb in uebcc.generate_spin_combinations(nf):
                         done = set()
                         for perm, sign in util.permutations_with_signs(tuple(range(nf))):
@@ -143,14 +147,29 @@ class GEBCC(rebcc.REBCC):
                                 continue
                             mask = np.ix_(
                                 *([range(nbos)] * nb),
-                                *([occs[c] for c in combn[:nf]] + [virs[c] for c in combn[nf:]])
+                                *([occs[c] for c in combn[:nf]] + [virs[c] for c in combn[nf:]]),
                             )
-                            transpose = tuple(range(nb)) + tuple(p + nb for p in perm) + tuple(p + nb + nf for p in perm)
-                            amp = getattr(ucc.amplitudes["u%d%d" % (nf, nb)], comb).transpose(transpose) * sign
+                            transpose = (
+                                tuple(range(nb))
+                                + tuple(p + nb for p in perm)
+                                + tuple(p + nb + nf for p in perm)
+                            )
+                            amp = (
+                                getattr(ucc.amplitudes["u%d%d" % (nf, nb)], comb).transpose(
+                                    transpose
+                                )
+                                * sign
+                            )
                             for perm, sign in util.permutations_with_signs(tuple(range(nf))):
-                                transpose = tuple(range(nb)) + tuple(p + nb for p in perm) + tuple(range(nb + nf, nb + 2 * nf))
+                                transpose = (
+                                    tuple(range(nb))
+                                    + tuple(p + nb for p in perm)
+                                    + tuple(range(nb + nf, nb + 2 * nf))
+                                )
                                 if util.permute_string(comb[:nf], perm) == comb[:nf]:
-                                    amplitudes["u%d%d" % (nf, nb)][mask] += amp.transpose(transpose).copy() * sign
+                                    amplitudes["u%d%d" % (nf, nb)][mask] += (
+                                        amp.transpose(transpose).copy() * sign
+                                    )
                             done.add(combn)
 
             gcc.amplitudes = amplitudes
@@ -182,7 +201,9 @@ class GEBCC(rebcc.REBCC):
 
             for nf in ucc.rank_numeric[2]:
                 for nb in ucc.rank_numeric[3]:
-                    lambdas["lu%d%d" % (nf, nb)] = np.zeros((nbos,) * nb + (nvir,) * nf + (nocc,) * nf)
+                    lambdas["lu%d%d" % (nf, nb)] = np.zeros(
+                        (nbos,) * nb + (nvir,) * nf + (nocc,) * nf
+                    )
                     for comb in uebcc.generate_spin_combinations(nf):
                         done = set()
                         for perm, sign in util.permutations_with_signs(tuple(range(nf))):
@@ -191,14 +212,27 @@ class GEBCC(rebcc.REBCC):
                                 continue
                             mask = np.ix_(
                                 *([range(nbos)] * nb),
-                                *([virs[c] for c in combn[:nf]] + [occs[c] for c in combn[nf:]])
+                                *([virs[c] for c in combn[:nf]] + [occs[c] for c in combn[nf:]]),
                             )
-                            transpose = tuple(range(nb)) + tuple(p + nb for p in perm) + tuple(p + nb + nf for p in perm)
-                            amp = getattr(ucc.lambdas["lu%d%d" % (nf, nb)], comb).transpose(transpose) * sign
+                            transpose = (
+                                tuple(range(nb))
+                                + tuple(p + nb for p in perm)
+                                + tuple(p + nb + nf for p in perm)
+                            )
+                            amp = (
+                                getattr(ucc.lambdas["lu%d%d" % (nf, nb)], comb).transpose(transpose)
+                                * sign
+                            )
                             for perm, sign in util.permutations_with_signs(tuple(range(nf))):
-                                transpose = tuple(range(nb)) + tuple(p + nb for p in perm) + tuple(range(nb + nf, nb + 2 * nf))
+                                transpose = (
+                                    tuple(range(nb))
+                                    + tuple(p + nb for p in perm)
+                                    + tuple(range(nb + nf, nb + 2 * nf))
+                                )
                                 if util.permute_string(comb[:nf], perm) == comb[:nf]:
-                                    lambdas["lu%d%d" % (nf, nb)][mask] += amp.transpose(transpose).copy() * sign
+                                    lambdas["lu%d%d" % (nf, nb)][mask] += (
+                                        amp.transpose(transpose).copy() * sign
+                                    )
                             done.add(combn)
 
             gcc.lambdas = lambdas
@@ -412,8 +446,8 @@ if __name__ == "__main__":
     mol = gto.M(atom="H 0 0 0; F 0 0 1.1", basis="6-31g", verbose=0)
     mf = scf.RHF(mol).run()
 
-    #ccsd = GEBCC(mf)
-    #ccsd.kernel()
+    # ccsd = GEBCC(mf)
+    # ccsd.kernel()
 
     nbos = 5
     np.random.seed(1)
@@ -422,7 +456,16 @@ if __name__ == "__main__":
     omega = np.random.random((nbos)) * 0.5
 
     from ebcc import REBCC, UEBCC
-    ccsd = UEBCC(mf, g=g, omega=omega, e_tol=1e-10, boson_excitations="S", fermion_coupling_rank=1, boson_coupling_rank=1)
+
+    ccsd = UEBCC(
+        mf,
+        g=g,
+        omega=omega,
+        e_tol=1e-10,
+        boson_excitations="S",
+        fermion_coupling_rank=1,
+        boson_coupling_rank=1,
+    )
     ccsd.kernel()
     ccsd.solve_lambda()
 
