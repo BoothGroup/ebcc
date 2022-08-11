@@ -3,7 +3,6 @@
 
 import os
 import pickle
-import pytest
 import unittest
 
 import numpy as np
@@ -14,6 +13,7 @@ from pyscf import cc, gto, lib, scf
 from ebcc import GEBCC, NullLogger
 
 
+@pytest.mark.reference
 class GCCSD_Tests(unittest.TestCase):
     """Test GCCSD against the legacy GCCSD values.
     """
@@ -126,6 +126,7 @@ class GCCSD_Tests(unittest.TestCase):
             np.testing.assert_almost_equal(x, y, 6)
 
 
+@pytest.mark.reference
 class GCCSD_PySCF_Tests(unittest.TestCase):
     """Test GCCSD against the PySCF GCCSD values.
     """

@@ -14,6 +14,7 @@ from pyscf import cc, gto, lib, scf
 from ebcc import REBCC, NullLogger
 
 
+@pytest.mark.reference
 class RCCSD_S_1_1_Tests(unittest.TestCase):
     """Test RCCSD-S-1-1 against the legacy GCCSD-S-1-1 values with
     shift=True.
@@ -147,6 +148,7 @@ class RCCSD_S_1_1_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(a, b, 6)
 
 
+@pytest.mark.reference
 class RCCSD_S_1_1_NoShift_Tests(RCCSD_S_1_1_Tests):
     """Test RCCSD-S-1-1 against the legacy GCCSD-S-1-1 values with
     shift=False.

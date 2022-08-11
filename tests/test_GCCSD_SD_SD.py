@@ -13,6 +13,7 @@ from pyscf import cc, gto, lib, scf
 from ebcc import GEBCC, NullLogger
 
 
+@pytest.mark.reference
 class GCCSD_SD_1_2_Tests(unittest.TestCase):
     """Test GCCSD-SD-1-2 against the legacy GCCSD-SD-1-2 values with
     shift=True.
@@ -179,6 +180,7 @@ class GCCSD_SD_1_2_Tests(unittest.TestCase):
     #    np.testing.assert_almost_equal(a, b, 6)
 
 
+@pytest.mark.reference
 class GCCSD_SD_1_2_NoShift_Tests(GCCSD_SD_1_2_Tests):
     """Test GCCSD-SD-1-2 against the legacy GCCSD-SD-1-2 values with
     shift=False.

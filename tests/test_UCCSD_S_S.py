@@ -14,6 +14,7 @@ from pyscf import cc, gto, lib, scf
 from ebcc import GEBCC, UEBCC, NullLogger
 
 
+@pytest.mark.reference
 class UCCSD_S_1_1_Tests(unittest.TestCase):
     """Test UCCSD-S-1-1 against the legacy GCCSD-S-1-1 values with
     shift=True. The system is a singlet.
@@ -154,6 +155,7 @@ class UCCSD_S_1_1_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(a, b, 6)
 
 
+@pytest.mark.reference
 class UCCSD_S_1_1_NoShift_Tests(UCCSD_S_1_1_Tests):
     """Test UCCSD-S-1-1 against the legacy GCCSD-S-1-1 values with
     shift=False. The system is a singlet.

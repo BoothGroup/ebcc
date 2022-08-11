@@ -354,20 +354,29 @@ class EE_EOM(EOM):
         kets = list(self.kets(eris=eris))
 
         bras = np.array(
-            [[self.amplitudes_to_vector(*[b[i, j] for b in bras]) for j in range(self.ebcc.nmo)] for i in range(self.ebcc.nmo)]
+            [
+                [self.amplitudes_to_vector(*[b[i, j] for b in bras]) for j in range(self.ebcc.nmo)]
+                for i in range(self.ebcc.nmo)
+            ]
         )
         kets = np.array(
-            [[self.amplitudes_to_vector(*[k[..., i, j] for k in kets]) for j in range(self.ebcc.nmo)] for i in range(self.ebcc.nmo)]
+            [
+                [
+                    self.amplitudes_to_vector(*[k[..., i, j] for k in kets])
+                    for j in range(self.ebcc.nmo)
+                ]
+                for i in range(self.ebcc.nmo)
+            ]
         )
 
         moments = np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo))
 
         for k in range(self.nmo):
-            for l in ([k] if diagonal_only else range(self.nmo)):
+            for l in [k] if diagonal_only else range(self.nmo):
                 ket = kets[k, l]
                 for n in range(nmom):
                     for i in range(self.nmo):
-                        for j in ([i] if diagonal_only else range(self.nmo)):
+                        for j in [i] if diagonal_only else range(self.nmo):
                             bra = bras[i, j]
                             moments[n, i, j, k, l] = self.dot_braket(bra, ket)
                     if n != (nmom - 1):

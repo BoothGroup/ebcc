@@ -57,6 +57,7 @@ build-backend = "setuptools.build_meta"
 dev = [
     "black>=18.3.0",
     "isort>=5.0.0",
+    "coverage[toml]",
 ]
 
 [tool.black]
@@ -85,7 +86,39 @@ skip_glob = [
     "ebcc/codegen/*",
 ]
 
+[tool.coverage.run]
+branch = true
+source = [
+    "ebcc",
+]
+omit = [
+    "ebcc/codegen/gen_*.py",
+    "ebcc/codegen/wick.py",
+    "ebcc/codegen/common.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "def __str__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+
+[tool.coverage.html]
+directory = "cov_html"
+
 [tool.pytest.ini_options]
-addopts = -m "not slow"
-markers =
-    slow: Marks tests as slow.
+addopts = "-m 'not slow'"
+testpaths = [
+    "tests",
+]
+markers = [
+    # Slow tests:
+    "slow",
+    # Tests compared to another code:
+    "reference",
+    # Tests compared to another `ebcc` version:
+    "regression",
+]

@@ -14,6 +14,7 @@ from pyscf import cc, gto, lib, scf
 from ebcc import REBCC, NullLogger
 
 
+@pytest.mark.reference
 class RCC2_PySCF_Tests(unittest.TestCase):
     """Test RCC2 against the PySCF values.
     """

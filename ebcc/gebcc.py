@@ -364,8 +364,9 @@ class GEBCC(rebcc.REBCC):
             elif n == 2:
                 # FIXME
                 from pyscf.cc.ccsd import amplitudes_to_vector_s4
+
                 v = amplitudes_to_vector_s4(np.zeros((self.nocc, self.nvir)), excitations[m])
-                vectors.append(v[self.nocc*self.nvir:])
+                vectors.append(v[self.nocc * self.nvir :])
             else:
                 raise NotImplementedError
             m += 1
@@ -451,7 +452,10 @@ class GEBCC(rebcc.REBCC):
                 nvir2 = self.nvir * (self.nvir - 1) // 2
                 size = nocc2 * nvir2
                 from pyscf.cc.ccsd import vector_to_amplitudes_s4
-                v = np.concatenate((np.zeros((self.nocc*self.nvir)), vector[i0:i0+size]), axis=0)
+
+                v = np.concatenate(
+                    (np.zeros((self.nocc * self.nvir)), vector[i0 : i0 + size]), axis=0
+                )
                 r = vector_to_amplitudes_s4(v, self.nmo, self.nocc)[1]
             else:
                 raise NotImplementedError
@@ -514,12 +518,12 @@ if __name__ == "__main__":
 
     ccsd = UEBCC(
         mf,
-        #g=g,
-        #omega=omega,
+        # g=g,
+        # omega=omega,
         e_tol=1e-10,
-        #boson_excitations="S",
-        #fermion_coupling_rank=1,
-        #boson_coupling_rank=1,
+        # boson_excitations="S",
+        # fermion_coupling_rank=1,
+        # boson_coupling_rank=1,
     )
     ccsd.kernel()
     ccsd.solve_lambda()
