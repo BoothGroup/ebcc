@@ -238,20 +238,20 @@ class REBCC:
         Compute the diagonal of the EOM Hamiltonian for the IP.
     hbar_diag_ea(eris=None, amplitudes=None)
         Compute the diagonal of the EOM Hamiltonian for the EA.
-    hbar_diag_dd(eris=None, amplitudes=None)
-        Compute the diagonal of the EOM Hamiltonian for the DD.
+    hbar_diag_ee(eris=None, amplitudes=None)
+        Compute the diagonal of the EOM Hamiltonian for the EE.
     make_ip_mom_bras(eris=None, amplitudes=None, lambdas=None)
         Get the bra IP vectors to construct EOM moments.
     make_ea_mom_bras(eris=None, amplitudes=None, lambdas=None)
         Get the bra EA vectors to construct EOM moments.
-    make_dd_mom_bras(eris=None, amplitudes=None, lambdas=None)
-        Get the bra DD vectors to construct EOM moments.
+    make_ee_mom_bras(eris=None, amplitudes=None, lambdas=None)
+        Get the bra EE vectors to construct EOM moments.
     make_ip_mom_kets(eris=None, amplitudes=None, lambdas=None)
         Get the ket IP vectors to construct EOM moments.
     make_ea_mom_kets(eris=None, amplitudes=None, lambdas=None)
         Get the ket EA vectors to construct EOM moments.
-    make_dd_mom_kets(eris=None, amplitudes=None, lambdas=None)
-        Get the ket DD vectors to construct EOM moments.
+    make_ee_mom_kets(eris=None, amplitudes=None, lambdas=None)
+        Get the ket EE vectors to construct EOM moments.
     make_ip_1mom(eris=None, amplitudes=None, lambdas=None)
         Build the first fermionic hole single-particle moment.
     make_ea_1mom(eris=None, amplitudes=None, lambdas=None)
@@ -274,12 +274,18 @@ class REBCC:
     excitations_to_vector_ea(*excitations)
         Construct a vector containing all of the excitation amplitudes
         used in the given ansatz for the EA.
+    excitations_to_vector_ee(*excitations)
+        Construct a vector containing all of the excitation amplitudes
+        used in the given ansatz for the EE.
     vector_to_excitations_ip(vector)
         Construct all of the excitation amplitudes used in the given
         ansatz from a vector for the IP.
     vector_to_excitations_ea(vector)
         Construct a vector containing all of the excitation amplitudes
         used in the given ansatz for the EA.
+    vector_to_excitations_ee(vector)
+        Construct a vector containing all of the excitation amplitudes
+        used in the given ansatz for the EE.
     get_mean_field_G()
         Get the mean-field boson non-conserving term of the
         Hamiltonian.
@@ -1178,9 +1184,9 @@ class REBCC:
 
         return func(**kwargs)
 
-    def hbar_matvec_dd(self, r1, r2, eris=None, amplitudes=None):
+    def hbar_matvec_ee(self, r1, r2, eris=None, amplitudes=None):
         """Compute the product between a state vector and the EOM
-        Hamiltonian for the DD.
+        Hamiltonian for the EE.
 
         Parameters
         ----------
@@ -1205,7 +1211,15 @@ class REBCC:
             sector.
         """
 
-        raise NotImplementedError  # TODO
+        func, kwargs = self._load_function(
+            "hbar_matvec_ee",
+            eris=eris,
+            amplitudes=amplitudes,
+            r1=r1,
+            r2=r2,
+        )
+
+        return func(**kwargs)
 
     def hbar_diag_ip(self, eris=None, amplitudes=None):
         """Compute the diagonal of the EOM Hamiltonian for the IP.
@@ -1265,8 +1279,8 @@ class REBCC:
 
         return func(**kwargs)
 
-    def hbar_diag_dd(self, eris=None, amplitudes=None):
-        """Compute the of the EOM Hamiltonian for the DD.
+    def hbar_diag_ee(self, eris=None, amplitudes=None):
+        """Compute the of the EOM Hamiltonian for the EE.
 
         Parameters
         ----------
@@ -1286,7 +1300,13 @@ class REBCC:
             particular sector.
         """
 
-        raise NotImplementedError  # TODO
+        func, kwargs = self._load_function(
+            "hbar_diag_ee",
+            eris=eris,
+            amplitudes=amplitudes,
+        )
+
+        return func(**kwargs)
 
     def make_ip_mom_bras(self, eris=None, amplitudes=None, lambdas=None):
         """Get the bra IP vectors to construct EOM moments.
@@ -1352,8 +1372,8 @@ class REBCC:
 
         return func(**kwargs)
 
-    def make_dd_mom_bras(self, eris=None, amplitudes=None, lambdas=None):
-        """Get the bra DD vectors to construct EOM moments.
+    def make_ee_mom_bras(self, eris=None, amplitudes=None, lambdas=None):
+        """Get the bra EE vectors to construct EOM moments.
 
         Parameters
         ----------
@@ -1375,7 +1395,14 @@ class REBCC:
             arrays whose dimension depends on the particular sector.
         """
 
-        raise NotImplementedError  # TODO
+        func, kwargs = self._load_function(
+            "make_ee_mom_bras",
+            eris=eris,
+            amplitudes=amplitudes,
+            lambdas=lambdas,
+        )
+
+        return func(**kwargs)
 
     def make_ip_mom_kets(self, eris=None, amplitudes=None, lambdas=None):
         """Get the ket IP vectors to construct EOM moments.
@@ -1441,8 +1468,8 @@ class REBCC:
 
         return func(**kwargs)
 
-    def make_dd_mom_kets(self, eris=None, amplitudes=None, lambdas=None):
-        """Get the ket DD vectors to construct EOM moments.
+    def make_ee_mom_kets(self, eris=None, amplitudes=None, lambdas=None):
+        """Get the ket EE vectors to construct EOM moments.
 
         Parameters
         ----------
@@ -1464,7 +1491,14 @@ class REBCC:
             arrays whose dimension depends on the particular sector.
         """
 
-        raise NotImplementedError  # TODO
+        func, kwargs = self._load_function(
+            "make_ee_mom_kets",
+            eris=eris,
+            amplitudes=amplitudes,
+            lambdas=lambdas,
+        )
+
+        return func(**kwargs)
 
     def make_ip_1mom(self, eris=None, amplitudes=None, lambdas=None):
         """Build the first fermionic hole single-particle moment.
@@ -1720,6 +1754,25 @@ class REBCC:
         """
         return self.excitations_to_vector_ip(*excitations)
 
+    def excitations_to_vector_ee(self, *excitations):
+        """Construct a vector containing all of the excitation
+        amplitudes used in the given ansatz for the EE.
+
+        Parameters
+        ----------
+        *excitations : iterable of numpy.ndarray
+            Dictionary containing the excitations. Keys are strings of
+            the name of each excitations, and values are arrays whose
+            dimension depends on the particular excitation amplitude.
+
+        Returns
+        -------
+        vector : numpy.ndarray
+            Single vector consisting of all the excitations flattened
+            and concatenated. Size depends on the ansatz.
+        """
+        return self.excitations_to_vector_ip(*excitations)
+
     def vector_to_excitations_ip(self, vector):
         """Construct all of the excitation amplitudes used in the
         given ansatz from a vector for the IP.
@@ -1762,16 +1815,16 @@ class REBCC:
 
         Parameters
         ----------
-        *excitations : iterable of numpy.ndarray
-            Dictionary containing the excitations. Keys are strings of
-            the name of each excitations, and values are arrays whose
-            dimension depends on the particular excitation amplitude.
-
-        Returns
-        -------
         vector : numpy.ndarray
             Single vector consisting of all the excitations flattened
             and concatenated. Size depends on the ansatz.
+
+        Returns
+        -------
+        excitations : tuple of numpy.ndarray
+            Dictionary containing the excitations. Keys are strings of
+            the name of each excitations, and values are arrays whose
+            dimension depends on the particular excitation amplitude.
         """
 
         excitations = []
@@ -1779,6 +1832,42 @@ class REBCC:
 
         for n in self.rank_numeric[0]:
             shape = (self.nvir,) * n + (self.nocc,) * (n - 1)
+            size = np.prod(shape)
+            excitations.append(vector[i0 : i0 + size].reshape(shape))
+            i0 += size
+
+        for n in self.rank_numeric[1]:
+            raise NotImplementedError
+
+        for nf in self.rank_numeric[2]:
+            for nb in self.rank_numeric[3]:
+                raise NotImplementedError
+
+        return tuple(excitations)
+
+    def vector_to_excitations_ee(self, vector):
+        """Construct a vector containing all of the excitation
+        amplitudes used in the given ansatz for the EE.
+
+        Parameters
+        ----------
+        vector : numpy.ndarray
+            Single vector consisting of all the excitations flattened
+            and concatenated. Size depends on the ansatz.
+
+        Returns
+        -------
+        excitations : tuple of numpy.ndarray
+            Dictionary containing the excitations. Keys are strings of
+            the name of each excitations, and values are arrays whose
+            dimension depends on the particular excitation amplitude.
+        """
+
+        excitations = []
+        i0 = 0
+
+        for n in self.rank_numeric[0]:
+            shape = (self.nocc,) * n + (self.nvir,) * n
             size = np.prod(shape)
             excitations.append(vector[i0 : i0 + size].reshape(shape))
             i0 += size

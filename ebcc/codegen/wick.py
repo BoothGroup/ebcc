@@ -309,6 +309,35 @@ def get_r_ea_spaces(rank=("SD", "", ""), occs=None, virs=None, nms=None):
     return tuple(rs)
 
 
+def get_r_ee_spaces(rank=("SD", "", ""), occs=None, virs=None, nms=None):
+    """Define space of trial vector to apply an EE hamiltonian to.
+    """
+
+    rank = get_rank(rank)
+    rs = []
+
+    # fermion
+    for n in rank[0]:
+        occ = [Idx(i, "occ") for i in range(n)] if occs is None else occs[:n]
+        vir = [Idx(a, "vir") for a in range(n)] if virs is None else virs[:n]
+        name = "ree{n}".format(n=n)
+        scalar = get_factor(*occ, *vir)
+        sums = [Sigma(i) for i in occ] + [Sigma(a) for a in vir]
+        operators = [FOperator(a, True) for a in vir[::-1]] + [FOperator(i, False) for i in occ]
+        tensors = [Tensor(occ + vir, name)]
+        rs.append(Expression([Term(scalar, sums, tensors, operators, [])]))
+
+    # boson
+    for n in rank[1]:
+        raise NotImplementedError  # TODO
+
+    # fermion-boson coupling
+    for n in rank[2]:
+        raise NotImplementedError  # TODO
+
+    return tuple(rs)
+
+
 def get_symm(particles):
     raise NotImplementedError
 

@@ -2,6 +2,7 @@
 """
 
 import dataclasses
+import warnings
 
 import numpy as np
 from pyscf import lib
@@ -295,7 +296,7 @@ class EA_EOM(EOM):
         k1, k2 = self.vector_to_amplitudes(ket)
         # TODO move factor to bra
         fac = 0.5 if self.ebcc.name.startswith("G") else 1.0
-        out = +1.0 * np.dot(b1, k1) + fac * np.einsum("abi,abi->", b2, k2)
+        out = 1.0 * np.dot(b1, k1) + fac * np.einsum("abi,abi->", b2, k2)
         return out
 
     @property
@@ -328,6 +329,54 @@ class EE_EOM(EOM):
 
     def kets(self, eris=None):
         return self.ebcc.make_ee_mom_kets(eris=eris)
+
+    def dot_braket(self, bra, ket):
+        # TODO generalise
+        b1, b2 = self.vector_to_amplitudes(bra)
+        k1, k2 = self.vector_to_amplitudes(ket)
+        # TODO move factor to bra
+        fac2 = 0.25 if self.ebcc.name.startswith("G") else 1.0
+        out = np.einsum("ia,ia->", b1, k1) + fac2 * np.einsum("ijab,ijab->", b2, k2)
+        return out
+
+    def moments(self, nmom, eris=None, amplitudes=None, hermitise=True, diagonal_only=True):
+        """Construct the moments of the EOM Hamiltonian."""
+
+        if not diagonal_only:
+            warnings.warn("Constructing EE moments with `diagonal_only=False` will be very slow.")
+
+        if eris is None:
+            eris = self.ebcc.get_eris()
+        if amplitudes is None:
+            amplitudes = self.ebcc.amplitudes
+
+        bras = list(self.bras(eris=eris))
+        kets = list(self.kets(eris=eris))
+
+        bras = np.array(
+            [[self.amplitudes_to_vector(*[b[i, j] for b in bras]) for j in range(self.ebcc.nmo)] for i in range(self.ebcc.nmo)]
+        )
+        kets = np.array(
+            [[self.amplitudes_to_vector(*[k[..., i, j] for k in kets]) for j in range(self.ebcc.nmo)] for i in range(self.ebcc.nmo)]
+        )
+
+        moments = np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo))
+
+        for k in range(self.nmo):
+            for l in ([k] if diagonal_only else range(self.nmo)):
+                ket = kets[k, l]
+                for n in range(nmom):
+                    for i in range(self.nmo):
+                        for j in ([i] if diagonal_only else range(self.nmo)):
+                            bra = bras[i, j]
+                            moments[n, i, j, k, l] = self.dot_braket(bra, ket)
+                    if n != (nmom - 1):
+                        ket = self.matvec(ket, eris=eris)
+
+        if hermitise:
+            moments = 0.5 * (moments + moments.transpose(0, 3, 4, 1, 2))
+
+        return moments
 
     @property
     def excitation_type(self):

@@ -3,6 +3,7 @@
 
 import os
 import pickle
+import pytest
 import unittest
 
 import numpy as np
@@ -114,6 +115,16 @@ class GCCSD_Tests(unittest.TestCase):
             y /= np.max(np.abs(y))
             np.testing.assert_almost_equal(x, y, 6)
 
+    def test_ee_moments_diag(self):
+        eom = self.ccsd.ee_eom()
+        a = self.data[True]["dd_moms"].transpose(4, 0, 1, 2, 3)
+        a = np.einsum("npqrs,pq,rs->npqrs", a, np.eye(self.ccsd.nmo), np.eye(self.ccsd.nmo))
+        b = eom.moments(4, diagonal_only=True)
+        for x, y in zip(a, b):
+            x /= np.max(np.abs(x))
+            y /= np.max(np.abs(y))
+            np.testing.assert_almost_equal(x, y, 6)
+
 
 class GCCSD_PySCF_Tests(unittest.TestCase):
     """Test GCCSD against the PySCF GCCSD values.
@@ -192,12 +203,17 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
     def test_eom_ip(self):
         e1 = self.ccsd.ip_eom(nroots=5).kernel()
         e2, v2 = self.ccsd_ref.ipccsd(nroots=5)
-        self.assertAlmostEqual(e1[0], e2[0], 6)  # FIXME precision
+        self.assertAlmostEqual(e1[0], e2[0], 6)
 
     def test_eom_ea(self):
         e1 = self.ccsd.ea_eom(nroots=5).kernel()
         e2, v2 = self.ccsd_ref.eaccsd(nroots=5)
-        self.assertAlmostEqual(e1[0], e2[0], 8)
+        self.assertAlmostEqual(e1[0], e2[0], 6)
+
+    def test_eom_ee(self):
+        e1 = self.ccsd.ee_eom(nroots=5).kernel()
+        e2, v2 = self.ccsd_ref.eeccsd(nroots=5)
+        self.assertAlmostEqual(e1[0], e2[0], 6)
 
 
 if __name__ == "__main__":

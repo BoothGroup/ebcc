@@ -354,6 +354,31 @@ class GEBCC(rebcc.REBCC):
 
         return np.concatenate(vectors)
 
+    def excitations_to_vector_ee(self, *excitations):
+        vectors = []
+        m = 0
+
+        for n in self.rank_numeric[0]:
+            if n == 1:
+                vectors.append(excitations[m].ravel())
+            elif n == 2:
+                # FIXME
+                from pyscf.cc.ccsd import amplitudes_to_vector_s4
+                v = amplitudes_to_vector_s4(np.zeros((self.nocc, self.nvir)), excitations[m])
+                vectors.append(v[self.nocc*self.nvir:])
+            else:
+                raise NotImplementedError
+            m += 1
+
+        for n in self.rank_numeric[1]:
+            raise NotImplementedError
+
+        for nf in self.rank_numeric[2]:
+            for nb in self.rank_numeric[3]:
+                raise NotImplementedError
+
+        return np.concatenate(vectors)
+
     def vector_to_excitations_ip(self, vector):
         excitations = []
         i0 = 0
@@ -398,6 +423,36 @@ class GEBCC(rebcc.REBCC):
                 size = nvir2 * self.nocc
                 r[v1, v2] = vector[i0 : i0 + size].reshape(nvir2, self.nocc).copy()
                 r[v2, v1] = -vector[i0 : i0 + size].reshape(nvir2, self.nocc).copy()
+            else:
+                raise NotImplementedError
+            excitations.append(r)
+            i0 += size
+
+        for n in self.rank_numeric[1]:
+            raise NotImplementedError
+
+        for nf in self.rank_numeric[2]:
+            for nb in self.rank_numeric[3]:
+                raise NotImplementedError
+
+        return tuple(excitations)
+
+    def vector_to_excitations_ee(self, vector):
+        excitations = []
+        i0 = 0
+
+        for n in self.rank_numeric[0]:
+            if n == 1:
+                size = self.nocc * self.nvir
+                r = vector[i0 : i0 + size].reshape(self.nocc, self.nvir).copy()
+            elif n == 2:
+                # FIXME
+                nocc2 = self.nocc * (self.nocc - 1) // 2
+                nvir2 = self.nvir * (self.nvir - 1) // 2
+                size = nocc2 * nvir2
+                from pyscf.cc.ccsd import vector_to_amplitudes_s4
+                v = np.concatenate((np.zeros((self.nocc*self.nvir)), vector[i0:i0+size]), axis=0)
+                r = vector_to_amplitudes_s4(v, self.nmo, self.nocc)[1]
             else:
                 raise NotImplementedError
             excitations.append(r)
@@ -459,12 +514,12 @@ if __name__ == "__main__":
 
     ccsd = UEBCC(
         mf,
-        g=g,
-        omega=omega,
+        #g=g,
+        #omega=omega,
         e_tol=1e-10,
-        boson_excitations="S",
-        fermion_coupling_rank=1,
-        boson_coupling_rank=1,
+        #boson_excitations="S",
+        #fermion_coupling_rank=1,
+        #boson_coupling_rank=1,
     )
     ccsd.kernel()
     ccsd.solve_lambda()
@@ -472,3 +527,6 @@ if __name__ == "__main__":
     ccsd = GEBCC.from_uebcc(ccsd)
     ccsd.kernel()
     ccsd.solve_lambda()
+
+    geom = ccsd.ee_eom()
+    t = geom.moments(2, diagonal_only=True)

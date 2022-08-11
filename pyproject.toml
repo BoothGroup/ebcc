@@ -86,3 +86,6 @@ skip_glob = [
 ]
 
 [tool.pytest.ini_options]
+addopts = -m "not slow"
+markers =
+    slow: Marks tests as slow.
