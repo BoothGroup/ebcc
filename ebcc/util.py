@@ -42,12 +42,20 @@ def tril_indices_ndim(n, dims, include_diagonal=False):
         return (ranges[0],)
 
     if include_diagonal:
-        tri = functools.reduce(np.greater_equal.outer, ranges)
+        func = np.greater_equal
     else:
-        tri = functools.reduce(np.greater.outer, ranges)
+        func = np.greater
+
+    slices = [
+        tuple(slice(None) if i == j else np.newaxis for i in range(dims))
+        for j in range(dims)
+    ]
+
+    casted = [rng[ind] for rng, ind in zip(ranges, slices)]
+    mask = functools.reduce(np.logical_and, [func(a, b) for a, b in zip(casted[:-1], casted[1:])])
 
     tril = tuple(
-        np.broadcast_to(inds, tri.shape)[tri] for inds in np.indices(tri.shape, sparse=True)
+        np.broadcast_to(inds, mask.shape)[mask] for inds in np.indices(mask.shape, sparse=True)
     )
 
     return tril
@@ -56,14 +64,19 @@ def tril_indices_ndim(n, dims, include_diagonal=False):
 def ntril_ndim(n, dims, include_diagonal=False):
     """Return the number of elements in an n-dimensional lower triangle."""
 
-    offset = 0 if include_diagonal else -1
+    assert dims < n
 
-    out = n + offset
-    offset += 1
+    #if include_diagonal:
+    #    return sum(1 for tup in itertools.combinations_with_replacements(range(n), dims))
+    #else:
+    #    return sum(1 for tup in itertools.combinations(range(n), dims))
 
-    for i in range(1, dims):
-        out *= n + offset
-        offset += 1
+    offset = int(include_diagonal)
+    out = 1
+
+    for i in range(dims):
+        out *= (n+offset)
+        offset -= 1
 
     out //= factorial(dims)
 
