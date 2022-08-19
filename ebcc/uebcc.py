@@ -60,40 +60,6 @@ class ERIs(SimpleNamespace):
         )
 
 
-def generate_spin_combinations(n, excited=False):
-    """Generate combinations of spin components for a given number
-    of occupied and virtual axes.
-
-    Parameters
-    ----------
-    n : int
-        Order of cluster amplitude.
-    excited : bool, optional
-        If True, treat the amplitudes as excited. Default value is
-        `None`.
-
-    Yields
-    ------
-    spin : str
-        String of spin combination.
-
-    Examples
-    --------
-    >>> generate_spin_combinations(1)
-    ['aa', 'bb']
-    >>> generate_spin_combinations(2)
-    ['aaaa', 'abab', 'baba', 'bbbb']
-    >>> generate_spin_combinations(2, excited=True)
-    ['aaa', 'aba', 'bab', 'bbb']
-    """
-
-    for tup in itertools.product(("a", "b"), repeat=n):
-        comb = "".join(list(tup) * 2)
-        if excited:
-            comb = comb[:-1]
-        yield comb
-
-
 @util.inherit_docstrings
 class UEBCC(rebcc.REBCC):
     Amplitudes = Amplitudes
@@ -132,7 +98,7 @@ class UEBCC(rebcc.REBCC):
 
             for n in rcc.rank_numeric[0]:
                 amplitudes["t%d" % n] = SimpleNamespace()
-                for comb in generate_spin_combinations(n):
+                for comb in util.generate_spin_combinations(n):
                     setattr(amplitudes["t%d" % n], comb, rcc.amplitudes["t%d" % n].copy())
 
             for n in rcc.rank_numeric[1]:
@@ -141,7 +107,7 @@ class UEBCC(rebcc.REBCC):
             for nf in rcc.rank_numeric[2]:
                 for nb in rcc.rank_numeric[3]:
                     amplitudes["u%d%d" % (nf, nb)] = SimpleNamespace()
-                    for comb in generate_spin_combinations(nf):
+                    for comb in util.generate_spin_combinations(nf):
                         setattr(
                             amplitudes["u%d%d" % (nf, nb)],
                             comb,
@@ -155,7 +121,7 @@ class UEBCC(rebcc.REBCC):
 
             for n in rcc.rank_numeric[0]:
                 lambdas["l%d" % n] = SimpleNamespace()
-                for comb in generate_spin_combinations(n):
+                for comb in util.generate_spin_combinations(n):
                     setattr(lambdas["l%d" % n], comb, rcc.lambdas["l%d" % n].copy())
 
             for n in rcc.rank_numeric[1]:
@@ -164,7 +130,7 @@ class UEBCC(rebcc.REBCC):
             for nf in rcc.rank_numeric[2]:
                 for nb in rcc.rank_numeric[3]:
                     lambdas["lu%d%d" % (nf, nb)] = SimpleNamespace()
-                    for comb in generate_spin_combinations(n):
+                    for comb in util.generate_spin_combinations(n):
                         setattr(
                             lambdas["lu%d%d" % (nf, nb)],
                             comb,
@@ -206,6 +172,9 @@ class UEBCC(rebcc.REBCC):
                     baba=eris.bbaa.ovov.swapaxes(1, 2) / e_ijab.baba,
                     bbbb=eris.bbbb.ovov.swapaxes(1, 2) / e_ijab.bbbb,
                 )
+                # TODO generalise:
+                tn.aaaa = tn.aaaa - tn.aaaa.swapaxes(0, 1)
+                tn.bbbb = tn.bbbb - tn.bbbb.swapaxes(0, 1)
                 amplitudes["t%d" % n] = tn
             else:
                 raise NotImplementedError  # TODO
@@ -294,7 +263,7 @@ class UEBCC(rebcc.REBCC):
         # Divide T amplitudes:
         for n in self.rank_numeric[0]:
             perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
-            for key in generate_spin_combinations(n):
+            for key in util.generate_spin_combinations(n):
                 es = [getattr(e_ia, key[i] + key[i + n]) for i in range(n)]
                 d = functools.reduce(np.add.outer, es)
                 d = d.transpose(perm)
@@ -302,6 +271,10 @@ class UEBCC(rebcc.REBCC):
                 tn /= d
                 tn += getattr(amplitudes["t%d" % n], key)
                 setattr(res["t%d" % n], key, tn)
+                if key in ("aaaa", "bbbb"):
+                    # TODO: generalise
+                    tn = tn - tn.swapaxes(0, 1)
+                    tn = tn - tn.swapaxes(2, 3)
 
         # Divide S amplitudes:
         for n in self.rank_numeric[1]:
@@ -345,7 +318,7 @@ class UEBCC(rebcc.REBCC):
         # Divide T amplitudes:
         for n in self.rank_numeric[0]:
             perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
-            for key in generate_spin_combinations(n):
+            for key in util.generate_spin_combinations(n):
                 es = [getattr(e_ai, key[i] + key[i + n]) for i in range(n)]
                 d = functools.reduce(np.add.outer, es)
                 d = d.transpose(perm)
@@ -407,11 +380,11 @@ class UEBCC(rebcc.REBCC):
         if hermitise:
 
             def transpose1(dm):
-                dm = 0.5 * (+dm.transpose(0, 1, 2, 3) + dm.transpose(2, 3, 0, 1))
+                dm = 0.5 * (dm.transpose(0, 1, 2, 3) + dm.transpose(2, 3, 0, 1))
                 return dm
 
             def transpose2(dm):
-                dm = 0.5 * (+dm.transpose(0, 1, 2, 3) + dm.transpose(1, 0, 3, 2))
+                dm = 0.5 * (dm.transpose(0, 1, 2, 3) + dm.transpose(1, 0, 3, 2))
                 return dm
 
             dm.aaaa = transpose2(transpose1(dm.aaaa))
@@ -447,12 +420,6 @@ class UEBCC(rebcc.REBCC):
             dm_eb.bb -= shift[None]
 
         return dm_eb
-
-    def hbar_matvec_ip(self, r1a, r1b, r2aaa, r2aba, r2bab, r2bbb, eris=None, amplitudes=None):
-        # TODO generalise vectors input
-        r1 = SimpleNamespace(a=r1a, b=r1b)
-        r2 = SimpleNamespace(aaa=r2aaa, aba=r2aba, bab=r2bab, bbb=r2bbb)
-        return super().hbar_matvec_ip(r1, r2, eris=eris, amplitudes=amplitudes)
 
     def get_mean_field_G(self):
         val = lib.einsum("Ipp->I", self.g.aa.boo)
@@ -551,9 +518,10 @@ class UEBCC(rebcc.REBCC):
         vectors = []
 
         for n in self.rank_numeric[0]:
-            for key in generate_spin_combinations(n):
-                tn = getattr(amplitudes["t%d" % n], key)
-                vectors.append(tn.ravel())
+            for spin in util.generate_spin_combinations(n):
+                tn = getattr(amplitudes["t%d" % n], spin)
+                subscript = spin[:n] + spin[n:].upper()
+                vectors.append(util.compress_axes(subscript, tn).ravel())
 
         for n in self.rank_numeric[1]:
             vectors.append(amplitudes["s%d" % n].ravel())
@@ -570,17 +538,19 @@ class UEBCC(rebcc.REBCC):
     def vector_to_amplitudes(self, vector):
         amplitudes = self.Amplitudes()
         i0 = 0
-        spin_indices = {"a": 0, "b": 1}
 
         for n in self.rank_numeric[0]:
             amplitudes["t%d" % n] = SimpleNamespace()
-            for key in generate_spin_combinations(n):
-                shape = tuple(self.nocc[spin_indices[s]] for s in key[:n]) + tuple(
-                    self.nvir[spin_indices[s]] for s in key[n:]
-                )
-                size = np.prod(shape)
-                tn = vector[i0 : i0 + size].reshape(shape)
-                setattr(amplitudes["t%d" % n], key, tn)
+            for spin in util.generate_spin_combinations(n):
+                subscript = spin[:n] + spin[n:].upper()
+                size = util.get_compressed_size(subscript, a=self.nocc[0], b=self.nocc[1], A=self.nvir[0], B=self.nvir[1])
+                shape = tuple([
+                    *[self.nocc["ab".index(s)] for s in spin[:n]],
+                    *[self.nvir["ab".index(s)] for s in spin[n:]],
+                ])
+                tn_tril = vector[i0 : i0 + size]
+                tn = util.decompress_axes(subscript, tn_tril, shape=shape)
+                setattr(amplitudes["t%d" % n], spin, tn)
                 i0 += size
 
         for n in self.rank_numeric[1]:
@@ -603,15 +573,18 @@ class UEBCC(rebcc.REBCC):
                 amplitudes["u%d%d" % (nf, nb)].bb = vector[i0 : i0 + size].reshape(shape)
                 i0 += size
 
+        assert i0 == len(vector)
+
         return amplitudes
 
     def lambdas_to_vector(self, lambdas):
         vectors = []
 
         for n in self.rank_numeric[0]:
-            for key in generate_spin_combinations(n):
-                tn = getattr(lambdas["l%d" % n], key)
-                vectors.append(tn.ravel())
+            for spin in util.generate_spin_combinations(n):
+                tn = getattr(lambdas["l%d" % n], spin)
+                subscript = spin[:n] + spin[n:].upper()
+                vectors.append(util.compress_axes(subscript, tn).ravel())
 
         for n in self.rank_numeric[1]:
             vectors.append(lambdas["ls%d" % n].ravel())
@@ -632,13 +605,16 @@ class UEBCC(rebcc.REBCC):
 
         for n in self.rank_numeric[0]:
             lambdas["l%d" % n] = SimpleNamespace()
-            for key in generate_spin_combinations(n):
-                shape = tuple(self.nvir[spin_indices[s]] for s in key[:n]) + tuple(
-                    self.nocc[spin_indices[s]] for s in key[n:]
-                )
-                size = np.prod(shape)
-                tn = vector[i0 : i0 + size].reshape(shape)
-                setattr(lambdas["l%d" % n], key, tn)
+            for spin in util.generate_spin_combinations(n):
+                subscript = spin[:n] + spin[n:].upper()
+                size = util.get_compressed_size(subscript, a=self.nvir[0], b=self.nvir[1], A=self.nocc[0], B=self.nocc[1])
+                shape = tuple([
+                    *[self.nvir["ab".index(s)] for s in spin[:n]],
+                    *[self.nocc["ab".index(s)] for s in spin[n:]],
+                ])
+                tn_tril = vector[i0 : i0 + size]
+                tn = util.decompress_axes(subscript, tn_tril, shape=shape)
+                setattr(lambdas["l%d" % n], spin, tn)
                 i0 += size
 
         for n in self.rank_numeric[1]:
@@ -661,6 +637,8 @@ class UEBCC(rebcc.REBCC):
                 lambdas["lu%d%d" % (nf, nb)].bb = vector[i0 : i0 + size].reshape(shape)
                 i0 += size
 
+        assert i0 == len(vector)
+
         return lambdas
 
     def excitations_to_vector_ip(self, *excitations):
@@ -668,8 +646,30 @@ class UEBCC(rebcc.REBCC):
         m = 0
 
         for n in self.rank_numeric[0]:
-            for spin in generate_spin_combinations(n, excited=True):
-                vectors.append(getattr(excitations[m], spin).ravel())
+            for spin in util.generate_spin_combinations(n, excited=True):
+                vn = getattr(excitations[m], spin)
+                subscript = spin[:n] + spin[n:].upper()
+                vectors.append(util.compress_axes(subscript, vn).ravel())
+            m += 1
+
+        for n in self.rank_numeric[1]:
+            raise NotImplementedError
+
+        for nf in self.rank_numeric[2]:
+            for nb in self.rank_numeric[3]:
+                raise NotImplementedError
+
+        return np.concatenate(vectors)
+
+    def excitations_to_vector_ee(self, *excitations):
+        vectors = []
+        m = 0
+
+        for n in self.rank_numeric[0]:
+            for spin in util.generate_spin_combinations(n):
+                vn = getattr(excitations[m], spin)
+                subscript = spin[:n] + spin[n:].upper()
+                vectors.append(util.compress_axes(subscript, vn).ravel())
             m += 1
 
         for n in self.rank_numeric[1]:
@@ -686,12 +686,20 @@ class UEBCC(rebcc.REBCC):
         i0 = 0
 
         for n in self.rank_numeric[0]:
-            for spin in generate_spin_combinations(n, excited=True):
-                inds = ["ab".index(s) for s in spin]
-                shape = [self.nocc[s] for s in inds[:n]] + [self.nvir[s] for s in inds[n:]]
-                size = np.prod(shape)
-                excitations.append(vector[i0 : i0 + size].reshape(shape))
+            amp = SimpleNamespace()
+            for spin in util.generate_spin_combinations(n, excited=True):
+                subscript = spin[:n] + spin[n:].upper()
+                size = util.get_compressed_size(subscript, a=self.nocc[0], b=self.nocc[1], A=self.nvir[0], B=self.nvir[1])
+                shape = tuple([
+                    *[self.nocc["ab".index(s)] for s in spin[:n]],
+                    *[self.nvir["ab".index(s)] for s in spin[n:]],
+                ])
+                vn_tril = vector[i0 : i0 + size]
+                vn = util.decompress_axes(subscript, vn_tril, shape=shape)
+                setattr(amp, spin, vn)
                 i0 += size
+
+            excitations.append(amp)
 
         for n in self.rank_numeric[1]:
             raise NotImplementedError
@@ -699,6 +707,8 @@ class UEBCC(rebcc.REBCC):
         for nf in self.rank_numeric[2]:
             for nb in self.rank_numeric[3]:
                 raise NotImplementedError
+
+        assert i0 == len(vector)
 
         return tuple(excitations)
 
@@ -707,12 +717,21 @@ class UEBCC(rebcc.REBCC):
         i0 = 0
 
         for n in self.rank_numeric[0]:
-            for spin in generate_spin_combinations(n, excited=True):
-                inds = ["ab".index(s) for s in spin]
-                shape = [self.nvir[s] for s in inds[:n]] + [self.nocc[s] for s in inds[n:]]
-                size = np.prod(shape)
-                excitations.append(vector[i0 : i0 + size].reshape(shape))
+            amp = SimpleNamespace()
+            for spin in util.generate_spin_combinations(n, excited=True):
+                subscript = spin[:n] + spin[n:].upper()
+                size = util.get_compressed_size(subscript, a=self.nvir[0], b=self.nvir[1], A=self.nocc[0], B=self.nocc[1])
+                shape = tuple([
+                    *[self.nvir["ab".index(s)] for s in spin[:n]],
+                    *[self.nocc["ab".index(s)] for s in spin[n:]],
+                ])
+                vn_tril = vector[i0 : i0 + size]
+                factor = max(spin[:n].count(s) for s in set(spin[:n]))  # FIXME why? untested for n > 2
+                vn = util.decompress_axes(subscript, vn_tril, shape=shape) / factor
+                setattr(amp, spin, vn)
                 i0 += size
+
+            excitations.append(amp)
 
         for n in self.rank_numeric[1]:
             raise NotImplementedError
@@ -720,6 +739,39 @@ class UEBCC(rebcc.REBCC):
         for nf in self.rank_numeric[2]:
             for nb in self.rank_numeric[3]:
                 raise NotImplementedError
+
+        assert i0 == len(vector)
+
+        return tuple(excitations)
+
+    def vector_to_excitations_ee(self, vector):
+        excitations = []
+        i0 = 0
+
+        for n in self.rank_numeric[0]:
+            amp = SimpleNamespace()
+            for spin in util.generate_spin_combinations(n):
+                subscript = spin[:n] + spin[n:].upper()
+                size = util.get_compressed_size(subscript, a=self.nocc[0], b=self.nocc[1], A=self.nvir[0], B=self.nvir[1])
+                shape = tuple([
+                    *[self.nocc["ab".index(s)] for s in spin[:n]],
+                    *[self.nvir["ab".index(s)] for s in spin[n:]],
+                ])
+                vn_tril = vector[i0 : i0 + size]
+                vn = util.decompress_axes(subscript, vn_tril, shape=shape)
+                setattr(amp, spin, vn)
+                i0 += size
+
+            excitations.append(amp)
+
+        for n in self.rank_numeric[1]:
+            raise NotImplementedError
+
+        for nf in self.rank_numeric[2]:
+            for nb in self.rank_numeric[3]:
+                raise NotImplementedError
+
+        assert i0 == len(vector)
 
         return tuple(excitations)
 

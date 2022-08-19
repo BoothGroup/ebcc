@@ -85,15 +85,19 @@ particles = {
         # Amplitudes:
         "t1": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
         "t2": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
+        "t3": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 2), (codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 2)),
         "s1": ((codegen.SCALAR_BOSON, 0),),
         "s2": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0)),
         "u11": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
         "u12": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
         "r1": ((codegen.FERMION, 0),),
         "r2": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0)),
+        "ree1": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
+        "ree2": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
         # Lambda amplitudes:
         "l1": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
         "l2": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
+        "l3": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 2), (codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 2)),
         "ls1": ((codegen.SCALAR_BOSON, 0),),
         "ls2": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0)),
         "lu11": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
@@ -101,18 +105,22 @@ particles = {
         # Updates:
         "t1new": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
         "t2new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
+        "t3new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 2), (codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 2)),
         "s1new": ((codegen.SCALAR_BOSON, 0),),
         "s2new": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0)),
         "u11new": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
         "u12new": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
         "l1new": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
         "l2new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
+        "l3new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 2), (codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 2)),
         "ls1new": ((codegen.SCALAR_BOSON, 0),),
         "ls2new": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0)),
         "lu11new": ((codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
         "lu12new": ((codegen.SCALAR_BOSON, 0), (codegen.SCALAR_BOSON, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)),
         "r1new": ((codegen.FERMION, 0),),
         "r2new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0)),
+        "ree1new": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
+        "ree2new": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
         # Delta function:
         "delta": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
         # Density matrices:
@@ -126,11 +134,20 @@ particles = {
         **{"ket1"+tag: ((codegen.FERMION, 0), (codegen.FERMION, 0)) for tag in ("", "_o", "_v")},
         **{"bra2"+tag: ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)) for tag in ("", "_o", "_v")},
         **{"ket2"+tag: ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)) for tag in ("", "_o", "_v")},
+        **{"braee1"+tag: ((codegen.FERMION, 0), (codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)) for tag in ("", "_oo", "_ov", "_vo", "_vv")},
+        **{"ketee1"+tag: ((codegen.FERMION, 0), (codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)) for tag in ("", "_oo", "_ov", "_vo", "_vv")},
+        # FIXME these are almost certainly wrong:
+        **{"braee2"+tag: ((codegen.FERMION, 0), (codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 2), (codegen.FERMION, 1), (codegen.FERMION, 2)) for tag in ("", "_oo", "_ov", "_vo", "_vv")},
+        **{"ketee2"+tag: ((codegen.FERMION, 1), (codegen.FERMION, 2), (codegen.FERMION, 1), (codegen.FERMION, 2), (codegen.FERMION, 0), (codegen.FERMION, 0)) for tag in ("", "_oo", "_ov", "_vo", "_vv")},
         # Similarity transformed hamiltonian:
         "h11": ((codegen.FERMION, 0), (codegen.FERMION, 0)),
         "h12": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
         "h21": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 2)),
         "h22": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 2), (codegen.FERMION, 3), (codegen.FERMION, 2)),  # FIXME?
+        "hee11": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)),
+        "hee12": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 2), (codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 2)),
+        "hee21": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 2), (codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 2)),
+        "hee22": ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 2), (codegen.FERMION, 3), (codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 2), (codegen.FERMION, 3)),  # FIXME?
 }
 
 
@@ -246,6 +263,7 @@ def get_printer(spin):
                 **{"l%d" % n: "{base}{spindelim}{spin}" for n in range(1, 4)},
                 **{"lu1%d" % n: "{base}{spindelim}{spin}" for n in range(1, 4)},
                 **{"r%d" % n: "{base}{spindelim}{spin}" for n in range(1, 4)},
+                **{"ree%d" % n: "r%d{spindelim}{spin}"%n for n in range(1, 4)},
             },
             reorder_axes=reorder_axes,
             remove_spacing=True,

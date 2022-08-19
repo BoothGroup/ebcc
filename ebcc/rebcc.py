@@ -231,9 +231,9 @@ class REBCC:
     hbar_matvec_ea(r1, r2, eris=None, amplitudes=None)
         Compute the product between a state vector and the EOM
         Hamiltonian for the EA.
-    hbar_matvec_dd(r1, r2, eris=None, amplitudes=None)
+    hbar_matvec_ee(r1, r2, eris=None, amplitudes=None)
         Compute the product between a state vector and the EOM
-        Hamiltonian for the DD.
+        Hamiltonian for the EE.
     hbar_diag_ip(eris=None, amplitudes=None)
         Compute the diagonal of the EOM Hamiltonian for the IP.
     hbar_diag_ea(eris=None, amplitudes=None)
@@ -417,6 +417,7 @@ class REBCC:
             vector = self.amplitudes_to_vector(amplitudes)
             vector = diis.update(vector)
             amplitudes = self.vector_to_amplitudes(vector)
+            test = self.vector_to_amplitudes(self.amplitudes_to_vector(amplitudes))
             dt = np.linalg.norm(vector - self.amplitudes_to_vector(amplitudes_prev)) ** 2
 
             e_prev = e_cc

@@ -64,8 +64,6 @@ def tril_indices_ndim(n, dims, include_diagonal=False):
 def ntril_ndim(n, dims, include_diagonal=False):
     """Return the number of elements in an n-dimensional lower triangle."""
 
-    assert dims < n
-
     #if include_diagonal:
     #    return sum(1 for tup in itertools.combinations_with_replacements(range(n), dims))
     #else:
@@ -344,7 +342,8 @@ def decompress_axes(subscript, array_flat, shape=None, include_diagonal=False, s
                 ind[tuple(np.newaxis if i != j else slice(None) for i in range(len(indices_perm)))]
                 for j, ind in enumerate(indices_perm)
         ]
-        array[tuple(indices_perm)] = array_flat * np.prod(signs)
+        shape = array[tuple(indices_perm)].shape
+        array[tuple(indices_perm)] = array_flat.reshape(shape) * np.prod(signs)
 
     # Reshape array to non-flattened format
     array = array.reshape(sum([(sizes[char],) * subscript.count(char) for char in sorted(set(subscript))], tuple()))
@@ -354,3 +353,20 @@ def decompress_axes(subscript, array_flat, shape=None, include_diagonal=False, s
     array = array.transpose(arg)
 
     return array
+
+
+def get_compressed_size(subscript, **sizes):
+    """Get the size of a compressed representation of a matrix
+    based on the subscript input to `compressed_axes` and the
+    sizes of each character.
+
+    >>> get_compressed_shape("iiaa", i=5, a=3)
+    30
+    """
+
+    n = 1
+    for char in set(subscript):
+        dims = subscript.count(char)
+        n *= ntril_ndim(sizes[char], dims)
+
+    return n

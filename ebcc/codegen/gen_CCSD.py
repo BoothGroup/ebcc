@@ -22,7 +22,7 @@ warnings.simplefilter("ignore", UserWarning)
 rank = ("SD", "", "")
 
 # Spin setting:
-spin = "ghf"  # {"ghf", "rhf", "uhf"}
+spin = "uhf"  # {"ghf", "rhf", "uhf"}
 
 # Indices
 occs = i, j, k, l = [Idx(n, "occ") for n in range(4)]
@@ -320,7 +320,7 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
     #    if spin == "ghf":
     #        function_printer.write_python("    rdm2_f = rdm2_f.transpose(0, 2, 1, 3)\n")
 
-    if spin == "ghf":
+    if spin == "ghf" or spin == "uhf":
         ## Get IP and EA moment expressions:
         #for is_ket, ket_name in [(True, "ket"), (False, "bra")]:
         #    for ip, ip_name in [(True, "ip"), (False, "ea")]:
@@ -367,9 +367,6 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
         #                    else:
         #                        full = (L * mid + mid) * space
 
-        #                    if spin != "ghf":
-        #                        full *= Fraction(1, 2)  # FIXME find where I lost this factor!!
-
         #                    out = wick.apply_wick(full)
         #                    out.resolve()
         #                    expr = AExpression(Ex=out)
@@ -406,24 +403,27 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
 
         #            if spin != "uhf":
         #                function_printer.write_python(""
-        #                        + "    %s1 = np.concatenate([%s1_o, %s1_v], axis=%d)\n" % ((ket_name,) * 3 + ((1 if ket else 0),))
-        #                        + "    %s2 = np.concatenate([%s2_o, %s2_v], axis=%d)\n" % ((ket_name,) * 3 + ((3 if ket else 0),))
+        #                        + "    %s1 = np.concatenate([%s1_o, %s1_v], axis=%d)\n" % ((ket_name,) * 3 + ((1 if is_ket else 0),))
+        #                        + "    %s2 = np.concatenate([%s2_o, %s2_v], axis=%d)\n" % ((ket_name,) * 3 + ((3 if is_ket else 0),))
         #                )
         #            else:
         #                function_printer.write_python(""
-        #                        + "    %s1_aa = np.concatenate([%s1_o_aa, %s1_v_aa], axis=%d)\n" % ((ket_name,) * 3 + ((1 if ket else 0),))
-        #                        + "    %s1_bb = np.concatenate([%s1_o_bb, %s1_v_bb], axis=%d)\n" % ((ket_name,) * 3 + ((1 if ket else 0),))
-        #                        + "    %s2_aaaa = np.concatenate([%s2_o_aaaa, %s2_v_aaaa], axis=%d)\n" % ((ket_name,) * 3 + ((3 if ket else 0),))
-        #                        + "    %s2_abab = np.concatenate([%s2_o_abab, %s2_v_abab], axis=%d)\n" % ((ket_name,) * 3 + ((3 if ket else 0),))
-        #                        + "    %s2_baba = np.concatenate([%s2_o_baba, %s2_v_baba], axis=%d)\n" % ((ket_name,) * 3 + ((3 if ket else 0),))
-        #                        + "    %s2_bbbb = np.concatenate([%s2_o_bbbb, %s2_v_bbbb], axis=%d)\n" % ((ket_name,) * 3 + ((3 if ket else 0),))
+        #                        + "    %s1_aa = np.concatenate([%s1_o_aa, %s1_v_aa], axis=%d)\n" % ((ket_name,) * 3 + ((1 if is_ket else 0),))
+        #                        + "    %s1_bb = np.concatenate([%s1_o_bb, %s1_v_bb], axis=%d)\n" % ((ket_name,) * 3 + ((1 if is_ket else 0),))
+        #                        + "    %s2_aaaa = np.concatenate([%s2_o_aaaa, %s2_v_aaaa], axis=%d)\n" % ((ket_name,) * 3 + ((3 if is_ket else 0),))
+        #                        + "    %s2_abab = np.concatenate([%s2_o_abab, %s2_v_abab], axis=%d)\n" % ((ket_name,) * 3 + ((3 if is_ket else 0),))
+        #                        + "    %s2_baba = np.concatenate([%s2_o_baba, %s2_v_baba], axis=%d)\n" % ((ket_name,) * 3 + ((3 if is_ket else 0),))
+        #                        + "    %s2_bbbb = np.concatenate([%s2_o_bbbb, %s2_v_bbbb], axis=%d)\n" % ((ket_name,) * 3 + ((3 if is_ket else 0),))
         #                )
 
-        #            if not ip:
-        #                if is_ket:
-        #                    function_printer.write_python("    ket2 = ket2.transpose(1, 0, 2, 3)\n")
-        #                else:
-        #                    function_printer.write_python("    bra2 = bra2.transpose(0, 2, 1, 3)\n")
+        #            if spin == "uhf" and not ip:
+        #                # FIXME why?
+        #                function_printer.write_python(""
+        #                        + "    %s2_aaaa *= -1\n" % ket_name
+        #                        + "    %s2_abab *= -1\n" % ket_name
+        #                        + "    %s2_baba *= -1\n" % ket_name
+        #                        + "    %s2_bbbb *= -1\n" % ket_name
+        #                )
 
         ## Get the diagonal of the IP and EA EOM hamiltonians:
         #for ip, ip_name in [(True, "ip"), (False, "ea")]:
@@ -435,10 +435,20 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
         #            return_dict=False,
         #            timer=timer,
         #    ) as function_printer:
-        #        function_printer.write_python(
-        #                "    delta_oo = np.eye(nocc)\n"
-        #                "    delta_vv = np.eye(nvir)\n"
-        #        )
+        #        if spin != "uhf":
+        #            function_printer.write_python(
+        #                    "    delta_oo = np.eye(nocc)\n"
+        #                    "    delta_vv = np.eye(nvir)\n"
+        #            )
+        #        else:
+        #            function_printer.write_python(
+        #                    "    delta_oo = SimpleNamespace()\n"
+        #                    "    delta_oo.aa = np.eye(nocc[0])\n"
+        #                    "    delta_oo.bb = np.eye(nocc[1])\n"
+        #                    "    delta_vv = SimpleNamespace()\n"
+        #                    "    delta_vv.aa = np.eye(nvir[0])\n"
+        #                    "    delta_vv.bb = np.eye(nvir[1])\n"
+        #            )
 
         #        E0 = wick.apply_wick(Hbars[-1])
         #        E0.resolve()
@@ -473,6 +483,12 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
         #            # appear once:
         #            lines = []
         #            for line in einsums.split("\n"):
+        #                # Ignore parts that aren't diagonal w.r.t spin
+        #                if line.strip().startswith("r2"):
+        #                    sa = line.strip()[3:6]
+        #                    sb = line.strip()[6:9]
+        #                    if sa != sb:
+        #                        continue
         #                if printer._einsum in line:
         #                    subscript = line.split("\"")[1]
         #                    inp, out = subscript.split("->")
@@ -496,7 +512,20 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
         #            lines = "\n".join(lines)
         #            function_printer.write_python(lines+"\n")
 
-        #        function_printer.write_python("    r2 = r2.transpose(1, 0, 2)\n")
+        #        if spin == "uhf":
+        #            function_printer.write_python(
+        #                    "    r1 = SimpleNamespace(a=r1_aa, b=r1_bb)\n"
+        #                    "    r2 = SimpleNamespace(aaa=r2_aaaaaa, aba=r2_abaaba, bab=r2_babbab, bbb=r2_bbbbbb)\n"
+        #            )
+
+        #        if spin == "uhf" and not ip:
+        #            # FIXME why?
+        #            function_printer.write_python(
+        #                    "    r2.aaa *= -1\n"
+        #                    "    r2.aba *= -1\n"
+        #                    "    r2.bab *= -1\n"
+        #                    "    r2.bbb *= -1\n"
+        #            )
 
         ## Get IP and EA EOM hamiltonian-vector product expressions:
         #for ip, ip_name in [(True, "ip"), (False, "ea")]:
@@ -544,7 +573,20 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
         #        all_terms = codegen.optimize(all_terms, sizes=sizes, optimize="exhaust", verify=False, interm_fmt="x{}")
         #        function_printer.write_python(printer.doprint(all_terms)+"\n")
 
-        #        function_printer.write_python("    r2new = r2new.transpose(1, 0, 2)\n")
+        #        if spin == "uhf":
+        #            function_printer.write_python(
+        #                    "    r1new = SimpleNamespace(a=r1new_a, b=r1new_b)\n"
+        #                    "    r2new = SimpleNamespace(aaa=r2new_aaa, aba=r2new_aba, bab=r2new_bab, bbb=r2new_bbb)\n"
+        #            )
+
+        #        if spin == "uhf" and not ip:
+        #            # FIXME why?
+        #            function_printer.write_python(
+        #                    "    r2new.aaa *= -1\n"
+        #                    "    r2new.aba *= -1\n"
+        #                    "    r2new.bab *= -1\n"
+        #                    "    r2new.bbb *= -1\n"
+        #            )
 
         ## Get the IP and EA EOM Hamiltonians
         #for ip, ip_name in [(True, "ip"), (False, "ea")]:
@@ -591,7 +633,7 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
         #                all_terms.append(terms)
 
         #        all_terms = codegen.spin_integrate._flatten(all_terms)
-        #        all_terms = codegen.optimize(all_terms, sizes=sizes, optimize="exhaust", verify=False, interm_fmt="x{}")
+        #        all_terms = codegen.optimize(all_terms, sizes=sizes, optimize="greedy", verify=False, interm_fmt="x{}")
         #        function_printer.write_python(printer.doprint(all_terms)+"\n")
 
         # Get EE moment expressions:
@@ -606,10 +648,20 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
             ) as function_printer:
                 spaces = bra if is_ket else ket
 
-                function_printer.write_python(
-                        "    delta_oo = np.eye(nocc)\n"
-                        "    delta_vv = np.eye(nvir)\n"
-                )
+                if spin != "uhf":
+                    function_printer.write_python(
+                            "    delta_oo = np.eye(nocc)\n"
+                            "    delta_vv = np.eye(nvir)\n"
+                    )
+                else:
+                    function_printer.write_python(
+                            "    delta_oo = SimpleNamespace()\n"
+                            "    delta_oo.aa = np.eye(nocc[0])\n"
+                            "    delta_oo.bb = np.eye(nocc[1])\n"
+                            "    delta_vv = SimpleNamespace()\n"
+                            "    delta_vv.aa = np.eye(nvir[0])\n"
+                            "    delta_vv.bb = np.eye(nvir[1])\n"
+                    )
 
                 all_terms = []
                 for space_no, space in enumerate(spaces):
@@ -634,190 +686,252 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
                         out.resolve()
                         expr = AExpression(Ex=out)
 
-                        if len(expr.terms) == 0:
-                            # Bit of a hack to make sure the term definition remains  TODO as a function
-                            term = Term(0, [], empty_tensors, [], [])
-                            expr = AExpression(terms=[ATerm(term)], simplify=False)
-
-                        terms, indices = codegen.wick_to_sympy(expr, particles, return_value=return_value, skip_symmetry={"%see%s%s" % (xx, yy, zz) for xx in ("ket", "bra") for yy in ("1", "2") for zz in ("", "_oo", "_ov", "_vo", "vv")})
-                        if all(all(f == 0 for f in term.rhs) for term in terms):
-                            name = terms[0].lhs.base.name
-                            shape = []
-                            for index in terms[0].lhs.external_indices:
-                                shape.append("nocc" if index.space is codegen.OCCUPIED else "nvir" if index.space is codegen.VIRTUAL else "nbos")
-                            function_printer.write_python("    %s = %s((%s), dtype=%s)" % (name, printer._zeros, ", ".join(shape), printer._dtype))
-                        else:
+                        if len(expr.terms):
+                            terms, indices = codegen.wick_to_sympy(expr, particles, return_value=return_value, skip_symmetry={"%see%s%s" % (xx, yy, zz) for xx in ("ket", "bra") for yy in ("1", "2") for zz in ("", "_oo", "_ov", "_vo", "vv")})
                             terms = transform_spin(terms, indices)
-                            terms = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf", skip_symmetry={"%see%s%s" % (xx, yy, zz) for xx in ("ket", "bra") for yy in ("1", "2") for zz in ("", "_oo", "_ov", "_vo", "vv")}) for group in terms]
-                            all_terms.append(terms)
+                            if len(terms):
+                                terms = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf", skip_symmetry={"%see%s%s" % (xx, yy, zz) for xx in ("ket", "bra") for yy in ("1", "2") for zz in ("", "_oo", "_ov", "_vo", "vv")}) for group in terms]
+                                all_terms.append(terms)
 
                 all_terms = codegen.spin_integrate._flatten(all_terms)
                 all_terms = codegen.optimize(all_terms, sizes=sizes, optimize="exhaust", verify=False, interm_fmt="x{}")
                 function_printer.write_python(printer.doprint(all_terms)+"\n")
 
-                function_printer.write_python(""
-                        + "    {name}ee1 = np.concatenate([np.concatenate([{name}ee1_oo, {name}ee1_ov], axis={axis1}), np.concatenate([{name}ee1_vo, {name}ee1_vv], axis={axis1})], axis={axis2})\n".format(name=ket_name, axis1=-1 if is_ket else 1, axis2=-2 if is_ket else 0)
-                        + "    {name}ee2 = np.concatenate([np.concatenate([{name}ee2_oo, {name}ee2_ov], axis={axis1}), np.concatenate([{name}ee2_vo, {name}ee2_vv], axis={axis1})], axis={axis2})\n".format(name=ket_name, axis1=-1 if is_ket else 1, axis2=-2 if is_ket else 0)
-                )
+                # Check if any tensors haven't been initialised
+                defined = set()
+                for term in all_terms:
+                    name = term.base.name + "_" + "".join([{"α": "a", "β": "b"}[ind[0].name[1]] for ind in term.exts])
+                    defined.add(name)
+                for space_no, space in enumerate(spaces):
+                    for inds_name in ["oo", "ov", "vo", "vv"]:
+                        spins = [
+                            [(0, 0, 0, 0), (0, 1, 0, 1), (1, 0, 1, 0), (1, 1, 1, 1)],
+                            [(0,0,0,0,0,0), (0,0,0,1,0,1), (0,0,1,0,1,0), (0,0,1,1,1,1), (1,1,0,0,0,0), (1,1,0,1,0,1), (1,1,1,0,1,0), (1,1,1,1,1,1)]
+                        ][space_no]
+                        for sps in spins:
+                            if is_ket:
+                                sps = sps[2:] + sps[:2]
+                            spin_name = "".join(["ab"[sp] for sp in sps])
+                            name = "%see%d_%s_%s" % (ket_name, space_no+1, inds_name, spin_name)
+                            if name not in defined:
+                                shape = [index[1].size.name for index in term.exts]
+                                if space_no == 0:
+                                    perm = inds_name + "ov" if not is_ket else "ov" + inds_name
+                                else:
+                                    perm = inds_name + "oovv" if not is_ket else "oovv" + inds_name
+                                shape = ["%s[%d]" % ({"o": "nocc", "v": "nvir", "b": "nbos"}[pe], sp) for pe, sp in zip(perm, sps)]
+                                function_printer.write_python("    %s = %s((%s), dtype=%s)" % (name, printer._zeros, ", ".join(shape), printer._dtype))
 
-        # Get the diagonal of the EE EOM hamiltonians:
-        with FunctionPrinter(
-                file_printer,
-                "hbar_diag_ee",
-                ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2"],
-                ["ree1", "ree2"],
-                return_dict=False,
-                timer=timer,
-        ) as function_printer:
-            function_printer.write_python(
-                    "    delta_oo = np.eye(nocc)\n"
-                    "    delta_vv = np.eye(nvir)\n"
-            )
+                function_printer.write_python("")
 
-            E0 = wick.apply_wick(Hbars[-1])
-            E0.resolve()
-            bras = bra
-            kets = ket
-
-            def _subs_indices(tensor, subs):
-                if not isinstance(tensor, codegen.Tensor):
-                    return tensor
-                indices = tuple(subs.get(i, i) for i in tensor.indices)
-                return tensor.copy(indices=indices)
-
-            all_terms = []
-            for space_no, (bra_space, ket_space) in enumerate(zip(bras, kets)):
-                return_value = "hee%d%d" % ((space_no + 1,) * 2)
-                diag_return_value = "ree%d" % (space_no + 1)
-
-                full = bra_space * (Hbars[-1] - E0) * ket_space
-                out = wick.apply_wick(full)
-                out.resolve()
-                expr = AExpression(Ex=out, simplify=True)
-
-                terms, indices = codegen.wick_to_sympy(expr, particles, return_value=return_value)
-                terms = transform_spin(terms, indices)
-                terms = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
-                terms = codegen.spin_integrate._flatten([terms])
-                einsums = printer.doprint(terms)
-
-                # Convert the einsums to diagonal of the hamiltonian,
-                # this is actually kind of difficult algebraically
-                # because most tools assume external indices only
-                # appear once:
-                lines = []
-                for line in einsums.split("\n"):
-                    if printer._einsum in line:
-                        subscript = line.split("\"")[1]
-                        inp, out = subscript.split("->")
-                        subs = dict(zip(out[len(out)//2:], out[:len(out)//2]))
-                        for key, val in subs.items():
-                            out = out.replace(key, val)
-                        new_subscript = inp + "->" + out[:len(out)//2]
-                        einsum = line.replace(return_value, diag_return_value, 1)
-                        einsum = einsum.replace(subscript, new_subscript)
-                        lines.append(einsum)
-                    elif printer._zeros in line:
-                        shape = line.replace("(", ")").split(")")[2]
-                        new_shape = shape.split(",")
-                        new_shape = ", ".join(new_shape[:len(new_shape)//2])
-                        zeros = line.replace(return_value, diag_return_value, 1)
-                        zeros = zeros.replace(shape, new_shape)
-                        lines.append(zeros)
-                    else:
-                        lines.append(line)
-
-                lines = "\n".join(lines)
-                function_printer.write_python(lines+"\n")
-
-        # Get EE EOM hamiltonian-vector product expressions:
-        with FunctionPrinter(
-                file_printer,
-                "hbar_matvec_ee",
-                ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2", "r1", "r2"],
-                ["ree1new", "ree2new"],
-                return_dict=False,
-                timer=timer,
-        ) as function_printer:
-            E0 = wick.apply_wick(Hbars[-1])
-            E0.resolve()
-            spaces = bra
-            excitations = ree
-            excitation = Expression(sum([ex.terms for ex in excitations], []))
-
-            all_terms = []
-            for space_no, space in enumerate(spaces):
-                return_value = "ree%dnew" % (space_no + 1)
-
-                full = space * (Hbars[-1] - E0) * excitation
-                out = wick.apply_wick(full)
-                out.resolve()
-                expr = AExpression(Ex=out, simplify=True)
-
-                terms, indices = codegen.wick_to_sympy(
-                        expr,
-                        particles,
-                        return_value=return_value,
-                )
-                terms = transform_spin(
-                        terms,
-                        indices,
-                )
-                terms = [codegen.sympy_to_drudge(
-                        group,
-                        indices,
-                        dr=dr,
-                        restricted=spin!="uhf",
-                ) for group in terms]
-                all_terms.append(terms)
-
-            all_terms = codegen.spin_integrate._flatten(all_terms)
-            all_terms = codegen.optimize(all_terms, sizes=sizes, optimize="exhaust", verify=False, interm_fmt="x{}")
-            function_printer.write_python(printer.doprint(all_terms)+"\n")
-
-        # Get the EE EOM Hamiltonians
-        with FunctionPrinter(
-                file_printer,
-                "hbar_ee",
-                ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2"],
-                ["hee11", "hee12", "hee21", "hee22"],
-                return_dict=True,
-                timer=timer,
-        ) as function_printer:
-            function_printer.write_python(
-                    "    delta_oo = np.eye(nocc)\n"
-                    "    delta_vv = np.eye(nvir)\n"
-            )
-
-            E0 = wick.apply_wick(Hbars[-1])
-            E0.resolve()
-            bra_spaces = bra
-            ket_spaces = ket
-
-            all_terms = []
-            for bra_no, bra_space in enumerate(bra_spaces):
-                for ket_no, ket_space in enumerate(ket_spaces):
-                    return_value = "hee%d%d" % (bra_no+1, ket_no+1)
-
-                    full = bra_space * (Hbars[-1] - E0) * ket_space
-                    out = wick.apply_wick(full)
-                    out.resolve()
-                    expr = AExpression(Ex=out, simplify=True)
-
-                    terms, indices = codegen.wick_to_sympy(
-                            expr,
-                            particles,
-                            return_value=return_value,
+                if spin != "uhf":
+                    function_printer.write_python(""
+                            + "    {name}ee1 = np.concatenate([np.concatenate([{name}ee1_oo, {name}ee1_ov], axis={ax1}), np.concatenate([{name}ee1_vo, {name}ee1_vv], axis={ax1})], axis={ax2})\n".format(name=ket_name, ax1=-1 if is_ket else 1, ax2=-2 if is_ket else 0)
+                            + "    {name}ee2 = np.concatenate([np.concatenate([{name}ee2_oo, {name}ee2_ov], axis={ax1}), np.concatenate([{name}ee2_vo, {name}ee2_vv], axis={ax1})], axis={ax2})\n".format(name=ket_name, ax1=-1 if is_ket else 1, ax2=-2 if is_ket else 0)
                     )
-                    terms = transform_spin(terms, indices)
-                    terms = [codegen.sympy_to_drudge(
-                            group,
-                            indices,
-                            dr=dr,
-                            restricted=spin!="uhf",
-                    ) for group in terms]
-                    all_terms.append(terms)
+                else:
+                    part = ""
+                    for sp in ("aaaa", "abab", "baba", "bbbb"):
+                        part += "    {name}ee1_{sp} = np.concatenate([np.concatenate([{name}ee1_oo_{sp}, {name}ee1_ov_{sp}], axis={ax1}), np.concatenate([{name}ee1_vo_{sp}, {name}ee1_vv_{sp}], axis={ax1})], axis={ax2})\n".format(name=ket_name, sp=sp, ax1=-1 if is_ket else 1, ax2=-2 if is_ket else 0)
+                    for sp1 in ("aa", "bb"):
+                        for sp2 in ("aaaa", "abab", "baba", "bbbb"):
+                            part += "    {name}ee2_{sp1}{sp2} = np.concatenate([np.concatenate([{name}ee2_oo_{sp1}{sp2}, {name}ee2_ov_{sp1}{sp2}], axis={ax1}), np.concatenate([{name}ee2_vo_{sp1}{sp2}, {name}ee2_vv_{sp1}{sp2}], axis={ax1})], axis={ax2})\n".format(name=ket_name, sp1=sp2 if is_ket else sp1, sp2=sp1 if is_ket else sp2, ax1=-1 if is_ket else 1, ax2=-2 if is_ket else 0)
+                    function_printer.write_python(part)
+                    function_printer.write_python(""
+                            + "    {name}ee1 = SimpleNamespace(aaaa={name}ee1_aaaa, abab={name}ee1_abab, baba={name}ee1_baba, bbbb={name}ee1_bbbb)\n".format(name=ket_name)
+                            + "    {name}ee2 = SimpleNamespace({a1}aaaa{a2}={name}ee2_{a1}aaaa{a2}, {a1}abab{a2}={name}ee2_{a1}abab{a2}, {a1}baba{a2}={name}ee2_{a1}baba{a2}, {a1}bbbb{a2}={name}ee2_{a1}bbbb{a2}, {b1}aaaa{b2}={name}ee2_{b1}aaaa{b2}, {b1}abab{b2}={name}ee2_{b1}abab{b2}, {b1}baba{b2}={name}ee2_{b1}baba{b2}, {b1}bbbb{b2}={name}ee2_{b1}bbbb{b2})\n".format(name=ket_name, a1="" if is_ket else "aa", a2="aa" if is_ket else "", b1="" if is_ket else "bb", b2="bb" if is_ket else "")
+                    )
 
-            all_terms = codegen.spin_integrate._flatten(all_terms)
-            all_terms = codegen.optimize(all_terms, sizes=sizes, optimize="exhaust", verify=False, interm_fmt="x{}")
-            function_printer.write_python(printer.doprint(all_terms)+"\n")
+        ## Get the diagonal of the EE EOM hamiltonians:
+        #with FunctionPrinter(
+        #        file_printer,
+        #        "hbar_diag_ee",
+        #        ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2"],
+        #        ["ree1", "ree2"],
+        #        return_dict=False,
+        #        timer=timer,
+        #) as function_printer:
+        #    if spin != "uhf":
+        #        function_printer.write_python(
+        #                "    delta_oo = np.eye(nocc)\n"
+        #                "    delta_vv = np.eye(nvir)\n"
+        #        )
+        #    else:
+        #        function_printer.write_python(
+        #                "    delta_oo = SimpleNamespace()\n"
+        #                "    delta_oo.aa = np.eye(nocc[0])\n"
+        #                "    delta_oo.bb = np.eye(nocc[1])\n"
+        #                "    delta_vv = SimpleNamespace()\n"
+        #                "    delta_vv.aa = np.eye(nvir[0])\n"
+        #                "    delta_vv.bb = np.eye(nvir[1])\n"
+        #        )
+
+        #    E0 = wick.apply_wick(Hbars[-1])
+        #    E0.resolve()
+        #    bras = bra
+        #    kets = ket
+
+        #    def _subs_indices(tensor, subs):
+        #        if not isinstance(tensor, codegen.Tensor):
+        #            return tensor
+        #        indices = tuple(subs.get(i, i) for i in tensor.indices)
+        #        return tensor.copy(indices=indices)
+
+        #    all_terms = []
+        #    for space_no, (bra_space, ket_space) in enumerate(zip(bras, kets)):
+        #        return_value = "hee%d%d" % ((space_no + 1,) * 2)
+        #        diag_return_value = "ree%d" % (space_no + 1)
+
+        #        full = bra_space * (Hbars[-1] - E0) * ket_space
+        #        out = wick.apply_wick(full)
+        #        out.resolve()
+        #        expr = AExpression(Ex=out, simplify=True)
+
+        #        terms, indices = codegen.wick_to_sympy(expr, particles, return_value=return_value)
+        #        terms = transform_spin(terms, indices)
+        #        terms = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
+        #        terms = codegen.spin_integrate._flatten([terms])
+        #        einsums = printer.doprint(terms)
+
+        #        # Convert the einsums to diagonal of the hamiltonian,
+        #        # this is actually kind of difficult algebraically
+        #        # because most tools assume external indices only
+        #        # appear once:
+        #        lines = []
+        #        for line in einsums.split("\n"):
+        #            if printer._einsum in line:
+        #                subscript = line.split("\"")[1]
+        #                inp, out = subscript.split("->")
+        #                subs = dict(zip(out[len(out)//2:], out[:len(out)//2]))
+        #                for key, val in subs.items():
+        #                    out = out.replace(key, val)
+        #                new_subscript = inp + "->" + out[:len(out)//2]
+        #                einsum = line.replace(return_value, diag_return_value, 1)
+        #                einsum = einsum.replace(subscript, new_subscript)
+        #                lines.append(einsum)
+        #            elif printer._zeros in line:
+        #                shape = line.replace("(", ")").split(")")[2]
+        #                new_shape = shape.split(",")
+        #                new_shape = ", ".join(new_shape[:len(new_shape)//2])
+        #                zeros = line.replace(return_value, diag_return_value, 1)
+        #                zeros = zeros.replace(shape, new_shape)
+        #                lines.append(zeros)
+        #            else:
+        #                lines.append(line)
+
+        #        lines = "\n".join(lines)
+        #        function_printer.write_python(lines+"\n")
+
+        #    if spin == "uhf":
+        #        function_printer.write_python(""
+        #                + "    ree1 = SimpleNamespace(%s)\n" % ", ".join(["%s=ree1_%s%s" % ((a+b,) * 3) for a in "ab" for b in "ab"])
+        #                + "    ree2 = SimpleNamespace(%s)\n" % ", ".join(["%s=ree2_%s%s" % ((a+b+c+d,) * 3) for a in "ab" for b in "ab" for c in "ab" for d in "ab"])
+        #        )
+
+        ## Get EE EOM hamiltonian-vector product expressions:
+        #with FunctionPrinter(
+        #        file_printer,
+        #        "hbar_matvec_ee",
+        #        ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2", "r1", "r2"],
+        #        ["ree1new", "ree2new"],
+        #        return_dict=False,
+        #        timer=timer,
+        #) as function_printer:
+        #    E0 = wick.apply_wick(Hbars[-1])
+        #    E0.resolve()
+        #    spaces = bra
+        #    excitations = ree
+        #    excitation = Expression(sum([ex.terms for ex in excitations], []))
+
+        #    all_terms = []
+        #    for space_no, space in enumerate(spaces):
+        #        return_value = "ree%dnew" % (space_no + 1)
+
+        #        full = space * (Hbars[-1] - E0) * excitation
+        #        out = wick.apply_wick(full)
+        #        out.resolve()
+        #        expr = AExpression(Ex=out, simplify=True)
+
+        #        terms, indices = codegen.wick_to_sympy(
+        #                expr,
+        #                particles,
+        #                return_value=return_value,
+        #        )
+        #        terms = transform_spin(
+        #                terms,
+        #                indices,
+        #        )
+        #        terms = [codegen.sympy_to_drudge(
+        #                group,
+        #                indices,
+        #                dr=dr,
+        #                restricted=spin!="uhf",
+        #        ) for group in terms]
+        #        all_terms.append(terms)
+
+        #    all_terms = codegen.spin_integrate._flatten(all_terms)
+        #    all_terms = codegen.optimize(all_terms, sizes=sizes, optimize="greedy", verify=False, interm_fmt="x{}")
+        #    function_printer.write_python(printer.doprint(all_terms)+"\n")
+
+        #    if spin == "uhf":
+        #        function_printer.write_python(""
+        #                + "    ree1new = SimpleNamespace(%s)\n" % ", ".join(["%s=ree1new_%s%s" % ((a+b,) * 3) for a in "ab" for b in "ab"])
+        #                + "    ree2new = SimpleNamespace(%s)\n" % ", ".join(["%s=ree2new_%s%s" % ((a+b+c+d,) * 3) for a in "ab" for b in "ab" for c in "ab" for d in "ab"])
+        #        )
+
+        ## Get the EE EOM Hamiltonians
+        #with FunctionPrinter(
+        #        file_printer,
+        #        "hbar_ee",
+        #        ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2"],
+        #        ["hee11", "hee12", "hee21", "hee22"],
+        #        return_dict=True,
+        #        timer=timer,
+        #) as function_printer:
+        #    if spin != "uhf":
+        #        function_printer.write_python(
+        #                "    delta_oo = np.eye(nocc)\n"
+        #                "    delta_vv = np.eye(nvir)\n"
+        #        )
+        #    else:
+        #        function_printer.write_python(
+        #                "    delta_oo = SimpleNamespace()\n"
+        #                "    delta_oo.aa = np.eye(nocc[0])\n"
+        #                "    delta_oo.bb = np.eye(nocc[1])\n"
+        #                "    delta_vv = SimpleNamespace()\n"
+        #                "    delta_vv.aa = np.eye(nvir[0])\n"
+        #                "    delta_vv.bb = np.eye(nvir[1])\n"
+        #        )
+
+        #    E0 = wick.apply_wick(Hbars[-1])
+        #    E0.resolve()
+        #    bra_spaces = bra
+        #    ket_spaces = ket
+
+        #    all_terms = []
+        #    for bra_no, bra_space in enumerate(bra_spaces):
+        #        for ket_no, ket_space in enumerate(ket_spaces):
+        #            return_value = "hee%d%d" % (bra_no+1, ket_no+1)
+
+        #            full = bra_space * (Hbars[-1] - E0) * ket_space
+        #            out = wick.apply_wick(full)
+        #            out.resolve()
+        #            expr = AExpression(Ex=out, simplify=True)
+
+        #            terms, indices = codegen.wick_to_sympy(
+        #                    expr,
+        #                    particles,
+        #                    return_value=return_value,
+        #            )
+        #            terms = transform_spin(terms, indices)
+        #            terms = [codegen.sympy_to_drudge(
+        #                    group,
+        #                    indices,
+        #                    dr=dr,
+        #                    restricted=spin!="uhf",
+        #            ) for group in terms]
+        #            all_terms.append(terms)
+
+        #    all_terms = codegen.spin_integrate._flatten(all_terms)
+        #    all_terms = codegen.optimize(all_terms, sizes=sizes, optimize="greedy", verify=False, interm_fmt="x{}")
+        #    function_printer.write_python(printer.doprint(all_terms)+"\n")

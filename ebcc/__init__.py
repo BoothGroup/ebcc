@@ -159,8 +159,8 @@ def available_models(verbose=True):
     ghf = sorted(ghf)
 
     if verbose:
-        sys.stderr.write("RHF:\n  %s" % ", ".join(rhf))
-        sys.stderr.write("UHF:\n  %s" % ", ".join(uhf))
-        sys.stderr.write("GHF:\n  %s" % ", ".join(ghf))
+        sys.stderr.write("RHF:\n  %s\n" % ", ".join(rhf))
+        sys.stderr.write("UHF:\n  %s\n" % ", ".join(uhf))
+        sys.stderr.write("GHF:\n  %s\n" % ", ".join(ghf))
 
     return tuple(rhf), tuple(uhf), tuple(ghf)

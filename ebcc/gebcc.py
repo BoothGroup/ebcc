@@ -112,7 +112,7 @@ class GEBCC(rebcc.REBCC):
 
             for n in ucc.rank_numeric[0]:
                 amplitudes["t%d" % n] = np.zeros((nocc,) * n + (nvir,) * n)
-                for comb in uebcc.generate_spin_combinations(n):
+                for comb in util.generate_spin_combinations(n):
                     done = set()
                     for perm, sign in util.permutations_with_signs(tuple(range(n))):
                         combn = util.permute_string(comb[:n], perm) + comb[n:]
@@ -139,7 +139,7 @@ class GEBCC(rebcc.REBCC):
                     amplitudes["u%d%d" % (nf, nb)] = np.zeros(
                         (nbos,) * nb + (nocc,) * nf + (nvir,) * nf
                     )
-                    for comb in uebcc.generate_spin_combinations(nf):
+                    for comb in util.generate_spin_combinations(nf):
                         done = set()
                         for perm, sign in util.permutations_with_signs(tuple(range(nf))):
                             combn = util.permute_string(comb[:nf], perm) + comb[nf:]
@@ -179,7 +179,7 @@ class GEBCC(rebcc.REBCC):
 
             for n in ucc.rank_numeric[0]:
                 lambdas["l%d" % n] = np.zeros((nvir,) * n + (nocc,) * n)
-                for comb in uebcc.generate_spin_combinations(n):
+                for comb in util.generate_spin_combinations(n):
                     done = set()
                     for perm, sign in util.permutations_with_signs(tuple(range(n))):
                         combn = util.permute_string(comb[:n], perm) + comb[n:]
@@ -204,7 +204,7 @@ class GEBCC(rebcc.REBCC):
                     lambdas["lu%d%d" % (nf, nb)] = np.zeros(
                         (nbos,) * nb + (nvir,) * nf + (nocc,) * nf
                     )
-                    for comb in uebcc.generate_spin_combinations(nf):
+                    for comb in util.generate_spin_combinations(nf):
                         done = set()
                         for perm, sign in util.permutations_with_signs(tuple(range(nf))):
                             combn = util.permute_string(comb[:nf], perm) + comb[nf:]
@@ -313,36 +313,8 @@ class GEBCC(rebcc.REBCC):
         m = 0
 
         for n in self.rank_numeric[0]:
-            if n == 1:
-                vectors.append(excitations[m].ravel())
-            elif n == 2:
-                oinds = util.tril_indices_ndim(self.nocc, 2, include_diagonal=False)
-                vectors.append(excitations[m][oinds].ravel())
-            else:
-                raise NotImplementedError
-            m += 1
-
-        for n in self.rank_numeric[1]:
-            raise NotImplementedError
-
-        for nf in self.rank_numeric[2]:
-            for nb in self.rank_numeric[3]:
-                raise NotImplementedError
-
-        return np.concatenate(vectors)
-
-    def excitations_to_vector_ea(self, *excitations):
-        vectors = []
-        m = 0
-
-        for n in self.rank_numeric[0]:
-            if n == 1:
-                vectors.append(excitations[m].ravel())
-            elif n == 2:
-                vinds = util.tril_indices_ndim(self.nvir, 2, include_diagonal=False)
-                vectors.append(excitations[m][vinds].ravel())
-            else:
-                raise NotImplementedError
+            subscript = "i" * n + "a" * (n-1)
+            vectors.append(util.compress_axes(subscript, excitations[m]).ravel())
             m += 1
 
         for n in self.rank_numeric[1]:
@@ -359,16 +331,8 @@ class GEBCC(rebcc.REBCC):
         m = 0
 
         for n in self.rank_numeric[0]:
-            if n == 1:
-                vectors.append(excitations[m].ravel())
-            elif n == 2:
-                # FIXME
-                from pyscf.cc.ccsd import amplitudes_to_vector_s4
-
-                v = amplitudes_to_vector_s4(np.zeros((self.nocc, self.nvir)), excitations[m])
-                vectors.append(v[self.nocc * self.nvir :])
-            else:
-                raise NotImplementedError
+            subscript = "i" * n + "a" * n
+            vectors.append(util.compress_axes(subscript, excitations[m]).ravel())
             m += 1
 
         for n in self.rank_numeric[1]:
@@ -385,19 +349,12 @@ class GEBCC(rebcc.REBCC):
         i0 = 0
 
         for n in self.rank_numeric[0]:
-            if n == 1:
-                size = self.nocc
-                r = vector[i0 : i0 + size].copy()
-            elif n == 2:
-                o1, o2 = util.tril_indices_ndim(self.nocc, 2, include_diagonal=False)
-                r = np.zeros((self.nocc, self.nocc, self.nvir))
-                nocc2 = self.nocc * (self.nocc - 1) // 2
-                size = nocc2 * self.nvir
-                r[o1, o2] = vector[i0 : i0 + size].reshape(nocc2, self.nvir).copy()
-                r[o2, o1] = -vector[i0 : i0 + size].reshape(nocc2, self.nvir).copy()
-            else:
-                raise NotImplementedError
-            excitations.append(r)
+            subscript = "i" * n + "a" * (n-1)
+            size = util.get_compressed_size(subscript, i=self.nocc, a=self.nvir)
+            shape = tuple([self.nocc] * n + [self.nvir] * (n-1))
+            vn_tril = vector[i0 : i0 + size]
+            vn = util.decompress_axes(subscript, vn_tril, shape=shape)
+            excitations.append(vn)
             i0 += size
 
         for n in self.rank_numeric[1]:
@@ -414,19 +371,12 @@ class GEBCC(rebcc.REBCC):
         i0 = 0
 
         for n in self.rank_numeric[0]:
-            if n == 1:
-                size = self.nvir
-                r = vector[i0 : i0 + size].copy()
-            elif n == 2:
-                v1, v2 = util.tril_indices_ndim(self.nvir, 2, include_diagonal=False)
-                r = np.zeros((self.nvir, self.nvir, self.nocc))
-                nvir2 = self.nvir * (self.nvir - 1) // 2
-                size = nvir2 * self.nocc
-                r[v1, v2] = vector[i0 : i0 + size].reshape(nvir2, self.nocc).copy()
-                r[v2, v1] = -vector[i0 : i0 + size].reshape(nvir2, self.nocc).copy()
-            else:
-                raise NotImplementedError
-            excitations.append(r)
+            subscript = "a" * n + "i" * (n-1)
+            size = util.get_compressed_size(subscript, i=self.nocc, a=self.nvir)
+            shape = tuple([self.nvir] * n + [self.nocc] * (n-1))
+            vn_tril = vector[i0 : i0 + size]
+            vn = util.decompress_axes(subscript, vn_tril, shape=shape)
+            excitations.append(vn)
             i0 += size
 
         for n in self.rank_numeric[1]:
@@ -443,23 +393,12 @@ class GEBCC(rebcc.REBCC):
         i0 = 0
 
         for n in self.rank_numeric[0]:
-            if n == 1:
-                size = self.nocc * self.nvir
-                r = vector[i0 : i0 + size].reshape(self.nocc, self.nvir).copy()
-            elif n == 2:
-                # FIXME
-                nocc2 = self.nocc * (self.nocc - 1) // 2
-                nvir2 = self.nvir * (self.nvir - 1) // 2
-                size = nocc2 * nvir2
-                from pyscf.cc.ccsd import vector_to_amplitudes_s4
-
-                v = np.concatenate(
-                    (np.zeros((self.nocc * self.nvir)), vector[i0 : i0 + size]), axis=0
-                )
-                r = vector_to_amplitudes_s4(v, self.nmo, self.nocc)[1]
-            else:
-                raise NotImplementedError
-            excitations.append(r)
+            subscript = "i" * n + "a" * n
+            size = util.get_compressed_size(subscript, i=self.nocc, a=self.nvir)
+            shape = tuple([self.nocc] * n + [self.nvir] * n)
+            vn_tril = vector[i0 : i0 + size]
+            vn = util.decompress_axes(subscript, vn_tril, shape=shape)
+            excitations.append(vn)
             i0 += size
 
         for n in self.rank_numeric[1]:
