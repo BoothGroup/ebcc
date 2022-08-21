@@ -105,7 +105,7 @@ def _boson_free_factory(fermion_excitations):
     def constructor(mf, *args, **kwargs):
         from pyscf import scf
 
-        kwargs["fermion_excitations"] = fermion_excitatiions
+        kwargs["fermion_excitations"] = fermion_excitations
         kwargs["boson_excitations"] = ""
         kwargs["fermion_coupling_rank"] = 0
         kwargs["boson_coupling_rank"] = 0
@@ -118,6 +118,8 @@ def _boson_free_factory(fermion_excitations):
             cc = REBCC(mf, *args, **kwargs)
 
         cc.__doc__ = REBCC.__doc__
+
+        return cc
 
     return constructor
 

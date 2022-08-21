@@ -3,7 +3,7 @@
 import numpy as np
 from pyscf import lib
 from types import SimpleNamespace
-from ebcc.codegen import common
+from ebcc.util import pack_2e
 
 def energy(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, **kwargs):
     # energy
@@ -3386,10 +3386,10 @@ def make_rdm2_f(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=None,
     rdm2_f_vovo_aabb = np.zeros((nvir[0], nocc[0], nvir[1], nocc[1]), dtype=np.float64)
     rdm2_f_vovo_aabb += lib.einsum("abij->aibj", l2.abab)
 
-    rdm2_f_aaaa = common.pack_2e(rdm2_f_oooo_aaaa, rdm2_f_ooov_aaaa, rdm2_f_oovo_aaaa, rdm2_f_ovoo_aaaa, rdm2_f_vooo_aaaa, rdm2_f_oovv_aaaa, rdm2_f_ovov_aaaa, rdm2_f_ovvo_aaaa, rdm2_f_voov_aaaa, rdm2_f_vovo_aaaa, rdm2_f_vvoo_aaaa, rdm2_f_ovvv_aaaa, rdm2_f_vovv_aaaa, rdm2_f_vvov_aaaa, rdm2_f_vvvo_aaaa, rdm2_f_vvvv_aaaa)
-    rdm2_f_aabb = common.pack_2e(rdm2_f_oooo_aabb, rdm2_f_ooov_aabb, rdm2_f_oovo_aabb, rdm2_f_ovoo_aabb, rdm2_f_vooo_aabb, rdm2_f_oovv_aabb, rdm2_f_ovov_aabb, rdm2_f_ovvo_aabb, rdm2_f_voov_aabb, rdm2_f_vovo_aabb, rdm2_f_vvoo_aabb, rdm2_f_ovvv_aabb, rdm2_f_vovv_aabb, rdm2_f_vvov_aabb, rdm2_f_vvvo_aabb, rdm2_f_vvvv_aabb)
-    rdm2_f_bbaa = common.pack_2e(rdm2_f_oooo_bbaa, rdm2_f_ooov_bbaa, rdm2_f_oovo_bbaa, rdm2_f_ovoo_bbaa, rdm2_f_vooo_bbaa, rdm2_f_oovv_bbaa, rdm2_f_ovov_bbaa, rdm2_f_ovvo_bbaa, rdm2_f_voov_bbaa, rdm2_f_vovo_bbaa, rdm2_f_vvoo_bbaa, rdm2_f_ovvv_bbaa, rdm2_f_vovv_bbaa, rdm2_f_vvov_bbaa, rdm2_f_vvvo_bbaa, rdm2_f_vvvv_bbaa)
-    rdm2_f_bbbb = common.pack_2e(rdm2_f_oooo_bbbb, rdm2_f_ooov_bbbb, rdm2_f_oovo_bbbb, rdm2_f_ovoo_bbbb, rdm2_f_vooo_bbbb, rdm2_f_oovv_bbbb, rdm2_f_ovov_bbbb, rdm2_f_ovvo_bbbb, rdm2_f_voov_bbbb, rdm2_f_vovo_bbbb, rdm2_f_vvoo_bbbb, rdm2_f_ovvv_bbbb, rdm2_f_vovv_bbbb, rdm2_f_vvov_bbbb, rdm2_f_vvvo_bbbb, rdm2_f_vvvv_bbbb)
+    rdm2_f_aaaa = pack_2e(rdm2_f_oooo_aaaa, rdm2_f_ooov_aaaa, rdm2_f_oovo_aaaa, rdm2_f_ovoo_aaaa, rdm2_f_vooo_aaaa, rdm2_f_oovv_aaaa, rdm2_f_ovov_aaaa, rdm2_f_ovvo_aaaa, rdm2_f_voov_aaaa, rdm2_f_vovo_aaaa, rdm2_f_vvoo_aaaa, rdm2_f_ovvv_aaaa, rdm2_f_vovv_aaaa, rdm2_f_vvov_aaaa, rdm2_f_vvvo_aaaa, rdm2_f_vvvv_aaaa)
+    rdm2_f_aabb = pack_2e(rdm2_f_oooo_aabb, rdm2_f_ooov_aabb, rdm2_f_oovo_aabb, rdm2_f_ovoo_aabb, rdm2_f_vooo_aabb, rdm2_f_oovv_aabb, rdm2_f_ovov_aabb, rdm2_f_ovvo_aabb, rdm2_f_voov_aabb, rdm2_f_vovo_aabb, rdm2_f_vvoo_aabb, rdm2_f_ovvv_aabb, rdm2_f_vovv_aabb, rdm2_f_vvov_aabb, rdm2_f_vvvo_aabb, rdm2_f_vvvv_aabb)
+    rdm2_f_bbaa = pack_2e(rdm2_f_oooo_bbaa, rdm2_f_ooov_bbaa, rdm2_f_oovo_bbaa, rdm2_f_ovoo_bbaa, rdm2_f_vooo_bbaa, rdm2_f_oovv_bbaa, rdm2_f_ovov_bbaa, rdm2_f_ovvo_bbaa, rdm2_f_voov_bbaa, rdm2_f_vovo_bbaa, rdm2_f_vvoo_bbaa, rdm2_f_ovvv_bbaa, rdm2_f_vovv_bbaa, rdm2_f_vvov_bbaa, rdm2_f_vvvo_bbaa, rdm2_f_vvvv_bbaa)
+    rdm2_f_bbbb = pack_2e(rdm2_f_oooo_bbbb, rdm2_f_ooov_bbbb, rdm2_f_oovo_bbbb, rdm2_f_ovoo_bbbb, rdm2_f_vooo_bbbb, rdm2_f_oovv_bbbb, rdm2_f_ovov_bbbb, rdm2_f_ovvo_bbbb, rdm2_f_voov_bbbb, rdm2_f_vovo_bbbb, rdm2_f_vvoo_bbbb, rdm2_f_ovvv_bbbb, rdm2_f_vovv_bbbb, rdm2_f_vvov_bbbb, rdm2_f_vvvo_bbbb, rdm2_f_vvvv_bbbb)
 
     rdm2_f.aaaa = rdm2_f_aaaa
     rdm2_f.abab = rdm2_f_abab

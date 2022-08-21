@@ -417,7 +417,6 @@ class REBCC:
             vector = self.amplitudes_to_vector(amplitudes)
             vector = diis.update(vector)
             amplitudes = self.vector_to_amplitudes(vector)
-            test = self.vector_to_amplitudes(self.amplitudes_to_vector(amplitudes))
             dt = np.linalg.norm(vector - self.amplitudes_to_vector(amplitudes_prev)) ** 2
 
             e_prev = e_cc

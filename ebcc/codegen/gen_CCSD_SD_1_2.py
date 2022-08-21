@@ -9,7 +9,7 @@ from qwick.expression import AExpression
 from qwick.wick import apply_wick
 from qwick.convenience import *
 from qwick import codegen
-from ebcc.codegen import common, wick
+from ebcc.util import pack_2e, wick
 from ebcc.codegen.convenience_extra import *
 
 from pyspark import SparkContext
@@ -455,13 +455,13 @@ with common.FilePrinter("%sCCSD_SD_1_2" % prefix.upper()) as file_printer:
         function_printer.write_python(printer.doprint(terms)+"\n", comment="2RDM")
 
         if spin != "uhf":
-            function_printer.write_python("    rdm2_f = common.pack_2e(%s)\n" % ", ".join(["rdm2_f_%s" % x for x in common.ov_2e]))
+            function_printer.write_python("    rdm2_f = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s" % x for x in common.ov_2e]))
         else:
             function_printer.write_python(""
-                    + "    rdm2_f_aaaa = common.pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_aaaa" % x for x in common.ov_2e])
-                    + "    rdm2_f_abab = common.pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_abab" % x for x in common.ov_2e])
-                    + "    rdm2_f_baba = common.pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_baba" % x for x in common.ov_2e])
-                    + "    rdm2_f_bbbb = common.pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_bbbb" % x for x in common.ov_2e])
+                    + "    rdm2_f_aaaa = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_aaaa" % x for x in common.ov_2e])
+                    + "    rdm2_f_abab = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_abab" % x for x in common.ov_2e])
+                    + "    rdm2_f_baba = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_baba" % x for x in common.ov_2e])
+                    + "    rdm2_f_bbbb = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_bbbb" % x for x in common.ov_2e])
             )
 
     # Get single boson DM expressions:
