@@ -283,7 +283,7 @@ def get_transformation_function(spin):
         prefix = "r"
         def transform_spin(terms, indices, **kwargs):
             project_onto = kwargs.pop("project_rhf", None)
-            return codegen.ghf_to_rhf(terms, indices, **kwargs)
+            return codegen.ghf_to_rhf(terms, indices, project_onto=project_onto, **kwargs)
     elif spin == "uhf":
         prefix = "u"
         def transform_spin(terms, indices, **kwargs):
@@ -411,7 +411,7 @@ def get_function_printer(spin, has_bosons=False):
         class FunctionPrinter_(FunctionPrinter):
             def __init__(self, *args, **kwargs):
                 kwargs["spin_cases"] = {}
-                return FunctionPrinter.__init__(self, *args, **kwargs)
+                FunctionPrinter.__init__(self, *args, **kwargs)
 
     if has_bosons:
         class FunctionPrinter__(FunctionPrinter_):

@@ -372,6 +372,8 @@ def get_compressed_size(subscript, **sizes):
     return n
 
 
+ov_2e = ["oooo", "ooov", "oovo", "ovoo", "vooo", "oovv", "ovov", "ovvo", "voov", "vovo", "vvoo", "ovvv", "vovv", "vvov", "vvvo", "vvvv"]
+
 def pack_2e(*args):
     # TODO remove
     # args should be in the order of ov_2e
