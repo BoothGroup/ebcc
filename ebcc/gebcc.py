@@ -455,21 +455,29 @@ if __name__ == "__main__":
 
     from ebcc import REBCC, UEBCC
 
-    ccsd = UEBCC(
-        mf,
-        # g=g,
-        # omega=omega,
-        e_tol=1e-10,
-        # boson_excitations="S",
-        # fermion_coupling_rank=1,
-        # boson_coupling_rank=1,
-    )
+    ccsd = REBCC(mf, e_tol=1e-10)
     ccsd.kernel()
-    ccsd.solve_lambda()
+    #ccsd.solve_lambda()
 
-    ccsd = GEBCC.from_uebcc(ccsd)
+    ccsd = UEBCC.from_rebcc(ccsd)
     ccsd.kernel()
-    ccsd.solve_lambda()
+    #ccsd.solve_lambda()
 
-    geom = ccsd.ee_eom()
-    t = geom.moments(2, diagonal_only=True)
+    #ccsd = UEBCC(
+    #    mf,
+    #    # g=g,
+    #    # omega=omega,
+    #    e_tol=1e-10,
+    #    # boson_excitations="S",
+    #    # fermion_coupling_rank=1,
+    #    # boson_coupling_rank=1,
+    #)
+    #ccsd.kernel()
+    #ccsd.solve_lambda()
+
+    #ccsd = GEBCC.from_uebcc(ccsd)
+    #ccsd.kernel()
+    #ccsd.solve_lambda()
+
+    #geom = ccsd.ee_eom()
+    #t = geom.moments(2, diagonal_only=True)

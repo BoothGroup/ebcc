@@ -99,7 +99,10 @@ class UEBCC(rebcc.REBCC):
             for n in rcc.rank_numeric[0]:
                 amplitudes["t%d" % n] = SimpleNamespace()
                 for comb in util.generate_spin_combinations(n):
-                    setattr(amplitudes["t%d" % n], comb, rcc.amplitudes["t%d" % n].copy())
+                    subscript = comb[:n] + comb[n:].upper()
+                    tn = rcc.amplitudes["t%d" % n]
+                    tn = util.symmetrise(subscript, tn, symmetry="-"*2*n)
+                    setattr(amplitudes["t%d" % n], comb, tn)
 
             for n in rcc.rank_numeric[1]:
                 amplitudes["s%d" % n] = rcc.amplitudes["s%d" % n].copy()
@@ -108,11 +111,8 @@ class UEBCC(rebcc.REBCC):
                 for nb in rcc.rank_numeric[3]:
                     amplitudes["u%d%d" % (nf, nb)] = SimpleNamespace()
                     for comb in util.generate_spin_combinations(nf):
-                        setattr(
-                            amplitudes["u%d%d" % (nf, nb)],
-                            comb,
-                            rcc.amplitudes["u%d%d" % (nf, nb)].copy(),
-                        )
+                        tn = rcc.amplitudes["u%d%d" % (nf, nb)]
+                        setattr(amplitudes["u%d%d" % (nf, nb)], comb, tn)
 
             ucc.amplitudes = amplitudes
 
@@ -122,7 +122,9 @@ class UEBCC(rebcc.REBCC):
             for n in rcc.rank_numeric[0]:
                 lambdas["l%d" % n] = SimpleNamespace()
                 for comb in util.generate_spin_combinations(n):
-                    setattr(lambdas["l%d" % n], comb, rcc.lambdas["l%d" % n].copy())
+                    tn = rcc.lambdas["l%d" % n]
+                    tn = util.symmetrise(subscript, tn, symmetry="-"*2*n)
+                    setattr(lambdas["l%d" % n], comb, tn)
 
             for n in rcc.rank_numeric[1]:
                 lambdas["ls%d" % n] = rcc.lambdas["ls%d" % n].copy()
@@ -131,11 +133,8 @@ class UEBCC(rebcc.REBCC):
                 for nb in rcc.rank_numeric[3]:
                     lambdas["lu%d%d" % (nf, nb)] = SimpleNamespace()
                     for comb in util.generate_spin_combinations(n):
-                        setattr(
-                            lambdas["lu%d%d" % (nf, nb)],
-                            comb,
-                            rcc.lambdas["lu%d%d" % (nf, nb)].copy(),
-                        )
+                        tn = rcc.lambdas["lu%d%d" % (nf, nb)]
+                        setattr(lambdas["lu%d%d" % (nf, nb)], comb, tn)
 
             ucc.lambdas = lambdas
 
@@ -263,18 +262,16 @@ class UEBCC(rebcc.REBCC):
         # Divide T amplitudes:
         for n in self.rank_numeric[0]:
             perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
-            for key in util.generate_spin_combinations(n):
-                es = [getattr(e_ia, key[i] + key[i + n]) for i in range(n)]
+            for comb in util.generate_spin_combinations(n):
+                subscript = comb[:n] + comb[n:].upper()
+                es = [getattr(e_ia, comb[i] + comb[i + n]) for i in range(n)]
                 d = functools.reduce(np.add.outer, es)
                 d = d.transpose(perm)
-                tn = getattr(res["t%d" % n], key)
+                tn = getattr(res["t%d" % n], comb)
                 tn /= d
-                tn += getattr(amplitudes["t%d" % n], key)
-                setattr(res["t%d" % n], key, tn)
-                if key in ("aaaa", "bbbb"):
-                    # TODO: generalise
-                    tn = tn - tn.swapaxes(0, 1)
-                    tn = tn - tn.swapaxes(2, 3)
+                tn += getattr(amplitudes["t%d" % n], comb)
+                tn = util.symmetrise(subscript, tn, symmetry="-"*(2*n))
+                setattr(res["t%d" % n], comb, tn)
 
         # Divide S amplitudes:
         for n in self.rank_numeric[1]:
@@ -325,6 +322,7 @@ class UEBCC(rebcc.REBCC):
                 tn = getattr(res["l%d" % n], key)
                 tn /= d
                 tn += getattr(lambdas["l%d" % n], key)
+                tn = util.symmetrise(subscript, tn, symmetry="-"*(2*n))
                 setattr(res["l%d" % n], key, tn)
 
         # Divide S amplitudes:

@@ -117,7 +117,7 @@ def generate_spin_combinations(n, excited=False):
         Order of cluster amplitude.
     excited : bool, optional
         If True, treat the amplitudes as excited. Default value is
-        `None`.
+        `False`.
 
     Yields
     ------
@@ -183,7 +183,7 @@ def get_symmetry_factor(*numbers):
     """
 
     ntot = 0
-    for n in (nocc, nvir, nbos):
+    for n in numbers:
         ntot += max(0, n-1)
 
     return 1.0 / (2.0**ntot)
@@ -235,9 +235,11 @@ def compress_axes(subscript, array, include_diagonal=False, out=None):
 
     # Substitute the input characters so that they are ordered:
     subs = {}
-    for i, char in enumerate(subscript):
+    i = 0
+    for char in subscript:
         if char not in subs:
             subs[char] = chr(97+i)
+            i += 1
     subscript = "".join([subs[s] for s in subscript])
 
     # Reshape array so that all axes of the same character are adjacent:
@@ -279,6 +281,8 @@ def decompress_axes(subscript, array_flat, shape=None, include_diagonal=False, s
     same. The input symmetry is a string of the same length as
     subscript, with a "+" indicating symmetry and "-" antisymmetry.
     """
+    # FIXME: if you pass out=array here, it doesn't work - it's not touching all parts of the array??
+    #        --> I guess the diagonals actually!! set out to zero first if used as input.
 
     assert "->" not in subscript
     assert shape is not None or out is not None
@@ -295,9 +299,11 @@ def decompress_axes(subscript, array_flat, shape=None, include_diagonal=False, s
 
     # Substitute the input characters so that they are ordered:
     subs = {}
-    for i, char in enumerate(subscript):
+    i = 0
+    for char in subscript:
         if char not in subs:
             subs[char] = chr(97+i)
+            i += 1
     subscript = "".join([subs[s] for s in subscript])
 
     # Reshape array so that all axes of the same character are adjacent:
@@ -370,6 +376,47 @@ def get_compressed_size(subscript, **sizes):
         n *= ntril_ndim(sizes[char], dims)
 
     return n
+
+
+def symmetrise(subscript, array, symmetry=None):
+    """Enforce a symmetry in an array. `subscript` and `symmetry` are
+    as `decompress_axes`.
+    """
+
+    # Substitute the input characters so that they are ordered:
+    subs = {}
+    i = 0
+    for char in subscript:
+        if char not in subs:
+            subs[char] = chr(97+i)
+            i += 1
+    subscript = "".join([subs[s] for s in subscript])
+
+    # Check the symmetry string, and compress it:
+    n = 0
+    symmetry_compressed = ""
+    for char in sorted(set(subscript)):
+        assert len(set(symmetry[n:n+subscript.count(char)])) == 1
+        symmetry_compressed += symmetry[n]
+        n += subscript.count(char)
+
+    # Iterate over permutations with signs:
+    for char, symm in zip(sorted(set(subscript)), symmetry_compressed):
+        mask = [s == char for s in subscript]
+        inds = np.arange(len(subscript))
+        for perm_part, sign in permutations_with_signs(inds[mask]):
+            if tuple(perm_part) == tuple(inds[mask]):
+                continue
+            perm = inds.copy()
+            perm[mask] = perm_part
+            sign = sign if symm == "-" else 1
+            array = array + sign * array.transpose(perm)
+
+    # Apply factor
+    sizes = [subscript.count(s) for s in sorted(set(subscript))]
+    array *= get_symmetry_factor(*sizes)
+
+    return array
 
 
 ov_2e = ["oooo", "ooov", "oovo", "ovoo", "vooo", "oovv", "ovov", "ovvo", "voov", "vovo", "vvoo", "ovvv", "vovv", "vvov", "vvvo", "vvvv"]
