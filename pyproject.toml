@@ -61,6 +61,7 @@ include = "ebcc"
 exclude = """
 /(
     | ebcc/codegen
+    | ebcc/__pycache__
     | .git
 )/
 """
@@ -73,6 +74,7 @@ src_paths = [
     "ebcc",
 ]
 skip_glob = [
+    "ebcc/__pycache__/*",
     "ebcc/codegen/*",
 ]
 
