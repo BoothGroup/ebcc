@@ -17,7 +17,6 @@ author = [
     "C. J. C. Scott",
 ]
 author-email = "vayesta.embedding@gmail.com"
-license = "Apache License 2.0"
 platforms = [
     "Linux",
     "Mac OS-X",
@@ -25,7 +24,6 @@ platforms = [
 python-requires = ">=3.7"
 classifiers = [
         "Development Status :: 2 - Pre-Alpha",
-        "License :: OSI Approved :: Apache Software License",  # TODO
         "Intended Audience :: Science/Research",
         "Intended Audience :: Developers",
         "Topic :: Scientific/Engineering",
