@@ -36,5 +36,5 @@ jobs:
           pytest tests/
       - name: Linting
         run: |
-          python -m black --check --verbose
-          python -m isort --check-only --verbose
+          python -m black ebcc/ --check --verbose
+          python -m isort ebcc/ --check-only --verbose
