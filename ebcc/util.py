@@ -185,7 +185,7 @@ def get_symmetry_factor(*numbers):
     for n in numbers:
         ntot += max(0, n - 1)
 
-    return 1.0 / (2.0 ** ntot)
+    return 1.0 / (2.0**ntot)
 
 
 def inherit_docstrings(cls):

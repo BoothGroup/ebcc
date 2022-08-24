@@ -890,7 +890,7 @@ class REBCC:
         if unshifted and self.options.shift:
             dm_cre, dm_ann = self.make_sing_b_dm()
             xi = self.xi
-            dm[np.diag_indices_from(dm)] -= xi * (dm_cre + dm_ann) - xi ** 2
+            dm[np.diag_indices_from(dm)] -= xi * (dm_cre + dm_ann) - xi**2
 
         return dm
 
@@ -2019,7 +2019,7 @@ class REBCC:
             Shift in the energy from moving to polaritonic basis.
         """
         if self.options.shift:
-            return lib.einsum("I,I->", self.omega, self.xi ** 2)
+            return lib.einsum("I,I->", self.omega, self.xi**2)
         else:
             return 0.0
 
