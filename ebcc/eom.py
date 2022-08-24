@@ -115,7 +115,7 @@ class EOM:
         if use_mean_field:
             r_mf = self.vector_to_amplitudes(diag)[0]
             size = (r_mf.a.size + r_mf.b.size) if self.ebcc.name.startswith("U") else r_mf.size
-            arg = np.argsort(np.diag(diag[: size]))
+            arg = np.argsort(np.diag(diag[:size]))
         else:
             arg = np.argsort(diag)
 
@@ -210,8 +210,8 @@ class EOM:
 
         else:
             moments = SimpleNamespace(
-                    aa=np.zeros((nmom, self.nmo, self.nmo)),
-                    bb=np.zeros((nmom, self.nmo, self.nmo)),
+                aa=np.zeros((nmom, self.nmo, self.nmo)),
+                bb=np.zeros((nmom, self.nmo, self.nmo)),
             )
 
             for spin in util.generate_spin_combinations(1):
@@ -281,7 +281,7 @@ class IP_EOM(EOM):
         bras_raw = list(self._bras(eris=eris))
         if not self.ebcc.name.startswith("U"):
             bras = np.array(
-                    [self.amplitudes_to_vector(*[b[i] for b in bras_raw]) for i in range(self.nmo)]
+                [self.amplitudes_to_vector(*[b[i] for b in bras_raw]) for i in range(self.nmo)]
             )
         else:
             bras = SimpleNamespace(a=[], b=[])
@@ -295,9 +295,15 @@ class IP_EOM(EOM):
                     amp_a = SimpleNamespace()
                     amp_b = SimpleNamespace()
                     for spin in util.generate_spin_combinations(n, excited=True):
-                        shape = tuple(self.nocc["ab".index(s)] for s in spin[:n]) + tuple(self.nvir["ab".index(s)] for s in spin[n:])
-                        setattr(amp_a, spin, getattr(bras_raw[m], "a"+spin, {i: np.zeros(shape)})[i])
-                        setattr(amp_b, spin, getattr(bras_raw[m], "b"+spin, {i: np.zeros(shape)})[i])
+                        shape = tuple(self.nocc["ab".index(s)] for s in spin[:n]) + tuple(
+                            self.nvir["ab".index(s)] for s in spin[n:]
+                        )
+                        setattr(
+                            amp_a, spin, getattr(bras_raw[m], "a" + spin, {i: np.zeros(shape)})[i]
+                        )
+                        setattr(
+                            amp_b, spin, getattr(bras_raw[m], "b" + spin, {i: np.zeros(shape)})[i]
+                        )
                     amps_a.append(amp_a)
                     amps_b.append(amp_b)
                     m += 1
@@ -321,7 +327,7 @@ class IP_EOM(EOM):
         kets_raw = list(self._kets(eris=eris))
         if not self.ebcc.name.startswith("U"):
             kets = np.array(
-                    [self.amplitudes_to_vector(*[b[..., i] for b in kets_raw]) for i in range(self.nmo)]
+                [self.amplitudes_to_vector(*[b[..., i] for b in kets_raw]) for i in range(self.nmo)]
             )
         else:
             kets = SimpleNamespace(a=[], b=[])
@@ -336,9 +342,15 @@ class IP_EOM(EOM):
                     amp_a = SimpleNamespace()
                     amp_b = SimpleNamespace()
                     for spin in util.generate_spin_combinations(n, excited=True):
-                        shape = tuple(self.nocc["ab".index(s)] for s in spin[:n]) + tuple(self.nvir["ab".index(s)] for s in spin[n:])
-                        setattr(amp_a, spin, getattr(kets_raw[m], spin+"a", {j: np.zeros(shape)})[j])
-                        setattr(amp_b, spin, getattr(kets_raw[m], spin+"b", {j: np.zeros(shape)})[j])
+                        shape = tuple(self.nocc["ab".index(s)] for s in spin[:n]) + tuple(
+                            self.nvir["ab".index(s)] for s in spin[n:]
+                        )
+                        setattr(
+                            amp_a, spin, getattr(kets_raw[m], spin + "a", {j: np.zeros(shape)})[j]
+                        )
+                        setattr(
+                            amp_b, spin, getattr(kets_raw[m], spin + "b", {j: np.zeros(shape)})[j]
+                        )
                     amps_a.append(amp_a)
                     amps_b.append(amp_b)
                     m += 1
@@ -396,7 +408,7 @@ class EA_EOM(EOM):
         bras_raw = list(self._bras(eris=eris))
         if not self.ebcc.name.startswith("U"):
             bras = np.array(
-                    [self.amplitudes_to_vector(*[b[i] for b in bras_raw]) for i in range(self.nmo)]
+                [self.amplitudes_to_vector(*[b[i] for b in bras_raw]) for i in range(self.nmo)]
             )
         else:
             bras = SimpleNamespace(a=[], b=[])
@@ -410,9 +422,15 @@ class EA_EOM(EOM):
                     amp_a = SimpleNamespace()
                     amp_b = SimpleNamespace()
                     for spin in util.generate_spin_combinations(n, excited=True):
-                        shape = tuple(self.nvir["ab".index(s)] for s in spin[:n]) + tuple(self.nocc["ab".index(s)] for s in spin[n:])
-                        setattr(amp_a, spin, getattr(bras_raw[m], "a"+spin, {i: np.zeros(shape)})[i])
-                        setattr(amp_b, spin, getattr(bras_raw[m], "b"+spin, {i: np.zeros(shape)})[i])
+                        shape = tuple(self.nvir["ab".index(s)] for s in spin[:n]) + tuple(
+                            self.nocc["ab".index(s)] for s in spin[n:]
+                        )
+                        setattr(
+                            amp_a, spin, getattr(bras_raw[m], "a" + spin, {i: np.zeros(shape)})[i]
+                        )
+                        setattr(
+                            amp_b, spin, getattr(bras_raw[m], "b" + spin, {i: np.zeros(shape)})[i]
+                        )
                     amps_a.append(amp_a)
                     amps_b.append(amp_b)
                     m += 1
@@ -436,7 +454,7 @@ class EA_EOM(EOM):
         kets_raw = list(self._kets(eris=eris))
         if not self.ebcc.name.startswith("U"):
             kets = np.array(
-                    [self.amplitudes_to_vector(*[b[..., i] for b in kets_raw]) for i in range(self.nmo)]
+                [self.amplitudes_to_vector(*[b[..., i] for b in kets_raw]) for i in range(self.nmo)]
             )
         else:
             kets = SimpleNamespace(a=[], b=[])
@@ -451,9 +469,15 @@ class EA_EOM(EOM):
                     amp_a = SimpleNamespace()
                     amp_b = SimpleNamespace()
                     for spin in util.generate_spin_combinations(n, excited=True):
-                        shape = tuple(self.nvir["ab".index(s)] for s in spin[:n]) + tuple(self.nocc["ab".index(s)] for s in spin[n:])
-                        setattr(amp_a, spin, getattr(kets_raw[m], spin+"a", {j: np.zeros(shape)})[j])
-                        setattr(amp_b, spin, getattr(kets_raw[m], spin+"b", {j: np.zeros(shape)})[j])
+                        shape = tuple(self.nvir["ab".index(s)] for s in spin[:n]) + tuple(
+                            self.nocc["ab".index(s)] for s in spin[n:]
+                        )
+                        setattr(
+                            amp_a, spin, getattr(kets_raw[m], spin + "a", {j: np.zeros(shape)})[j]
+                        )
+                        setattr(
+                            amp_b, spin, getattr(kets_raw[m], spin + "b", {j: np.zeros(shape)})[j]
+                        )
                     amps_a.append(amp_a)
                     amps_b.append(amp_b)
                     m += 1
@@ -506,8 +530,10 @@ class EE_EOM(EOM):
         if not self.ebcc.name.startswith("U"):
             bras = np.array(
                 [
-                    [self.amplitudes_to_vector(*[b[i, j] for b in bras_raw])
-                    for j in range(self.nmo)]
+                    [
+                        self.amplitudes_to_vector(*[b[i, j] for b in bras_raw])
+                        for j in range(self.nmo)
+                    ]
                     for i in range(self.nmo)
                 ]
             )
@@ -524,12 +550,22 @@ class EE_EOM(EOM):
                         amp_aa = SimpleNamespace()
                         amp_bb = SimpleNamespace()
                         for spin in util.generate_spin_combinations(n):
-                            shape = tuple([
-                                *[self.nocc["ab".index(s)] for s in spin[:n]],
-                                *[self.nvir["ab".index(s)] for s in spin[n:]],
-                            ])
-                            setattr(amp_aa, spin, getattr(bras_raw[m], "aa"+spin, {(i, j): np.zeros(shape)})[i, j])
-                            setattr(amp_bb, spin, getattr(bras_raw[m], "bb"+spin, {(i, j): np.zeros(shape)})[i, j])
+                            shape = tuple(
+                                [
+                                    *[self.nocc["ab".index(s)] for s in spin[:n]],
+                                    *[self.nvir["ab".index(s)] for s in spin[n:]],
+                                ]
+                            )
+                            setattr(
+                                amp_aa,
+                                spin,
+                                getattr(bras_raw[m], "aa" + spin, {(i, j): np.zeros(shape)})[i, j],
+                            )
+                            setattr(
+                                amp_bb,
+                                spin,
+                                getattr(bras_raw[m], "bb" + spin, {(i, j): np.zeros(shape)})[i, j],
+                            )
                         amps_aa.append(amp_aa)
                         amps_bb.append(amp_bb)
                         m += 1
@@ -557,8 +593,10 @@ class EE_EOM(EOM):
         if not self.ebcc.name.startswith("U"):
             kets = np.array(
                 [
-                    [self.amplitudes_to_vector(*[k[..., i, j] for k in kets_raw])
-                    for j in range(self.nmo)]
+                    [
+                        self.amplitudes_to_vector(*[k[..., i, j] for k in kets_raw])
+                        for j in range(self.nmo)
+                    ]
                     for i in range(self.nmo)
                 ]
             )
@@ -576,12 +614,22 @@ class EE_EOM(EOM):
                         amp_aa = SimpleNamespace()
                         amp_bb = SimpleNamespace()
                         for spin in util.generate_spin_combinations(n):
-                            shape = tuple([
-                                *[self.nocc["ab".index(s)] for s in spin[:n]],
-                                *[self.nvir["ab".index(s)] for s in spin[n:]],
-                            ])
-                            setattr(amp_aa, spin, getattr(kets_raw[m], spin+"aa", {k: np.zeros(shape)})[k])
-                            setattr(amp_bb, spin, getattr(kets_raw[m], spin+"bb", {k: np.zeros(shape)})[k])
+                            shape = tuple(
+                                [
+                                    *[self.nocc["ab".index(s)] for s in spin[:n]],
+                                    *[self.nvir["ab".index(s)] for s in spin[n:]],
+                                ]
+                            )
+                            setattr(
+                                amp_aa,
+                                spin,
+                                getattr(kets_raw[m], spin + "aa", {k: np.zeros(shape)})[k],
+                            )
+                            setattr(
+                                amp_bb,
+                                spin,
+                                getattr(kets_raw[m], spin + "bb", {k: np.zeros(shape)})[k],
+                            )
                         amps_aa.append(amp_aa)
                         amps_bb.append(amp_bb)
                         m += 1
@@ -640,10 +688,10 @@ class EE_EOM(EOM):
 
         else:
             moments = SimpleNamespace(
-                    aaaa=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo)),
-                    aabb=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo)),
-                    bbaa=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo)),
-                    bbbb=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo)),
+                aaaa=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo)),
+                aabb=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo)),
+                bbaa=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo)),
+                bbbb=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo)),
             )
 
             for spin in util.generate_spin_combinations(2):
@@ -655,7 +703,9 @@ class EE_EOM(EOM):
                             for i in range(self.nmo):
                                 for j in [i] if diagonal_only else range(self.nmo):
                                     bra = getattr(bras, spin[:2])[i, j]
-                                    getattr(moments, spin)[n, i, j, k, l] = self.dot_braket(bra, ket)
+                                    getattr(moments, spin)[n, i, j, k, l] = self.dot_braket(
+                                        bra, ket
+                                    )
                             if n != (nmom - 1):
                                 ket = self.matvec(ket, eris=eris)
 

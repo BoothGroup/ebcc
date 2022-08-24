@@ -47,8 +47,7 @@ def tril_indices_ndim(n, dims, include_diagonal=False):
         func = np.greater
 
     slices = [
-        tuple(slice(None) if i == j else np.newaxis for i in range(dims))
-        for j in range(dims)
+        tuple(slice(None) if i == j else np.newaxis for i in range(dims)) for j in range(dims)
     ]
 
     casted = [rng[ind] for rng, ind in zip(ranges, slices)]
@@ -64,16 +63,16 @@ def tril_indices_ndim(n, dims, include_diagonal=False):
 def ntril_ndim(n, dims, include_diagonal=False):
     """Return the number of elements in an n-dimensional lower triangle."""
 
-    #if include_diagonal:
+    # if include_diagonal:
     #    return sum(1 for tup in itertools.combinations_with_replacements(range(n), dims))
-    #else:
+    # else:
     #    return sum(1 for tup in itertools.combinations(range(n), dims))
 
     offset = int(include_diagonal)
     out = 1
 
     for i in range(dims):
-        out *= (n+offset)
+        out *= n + offset
         offset -= 1
 
     out //= factorial(dims)
@@ -184,9 +183,9 @@ def get_symmetry_factor(*numbers):
 
     ntot = 0
     for n in numbers:
-        ntot += max(0, n-1)
+        ntot += max(0, n - 1)
 
-    return 1.0 / (2.0**ntot)
+    return 1.0 / (2.0 ** ntot)
 
 
 def inherit_docstrings(cls):
@@ -238,7 +237,7 @@ def compress_axes(subscript, array, include_diagonal=False, out=None):
     i = 0
     for char in subscript:
         if char not in subs:
-            subs[char] = chr(97+i)
+            subs[char] = chr(97 + i)
             i += 1
     subscript = "".join([subs[s] for s in subscript])
 
@@ -258,25 +257,27 @@ def compress_axes(subscript, array, include_diagonal=False, out=None):
 
     # For each axis type, get the necessary lower-triangular indices:
     indices = [
-            tril_indices_ndim(sizes[char], subscript.count(char), include_diagonal=include_diagonal)
-            for char in sorted(set(subscript))
+        tril_indices_ndim(sizes[char], subscript.count(char), include_diagonal=include_diagonal)
+        for char in sorted(set(subscript))
     ]
     indices = [
-            np.ravel_multi_index(ind, (sizes[char],) * subscript.count(char))
-            for ind, char in zip(indices, sorted(set(subscript)))
+        np.ravel_multi_index(ind, (sizes[char],) * subscript.count(char))
+        for ind, char in zip(indices, sorted(set(subscript)))
     ]
 
     # Apply the indices:
     indices = [
-            ind[tuple(np.newaxis if i != j else slice(None) for i in range(len(indices)))]
-            for j, ind in enumerate(indices)
+        ind[tuple(np.newaxis if i != j else slice(None) for i in range(len(indices)))]
+        for j, ind in enumerate(indices)
     ]
     array_flat = array[tuple(indices)]
 
     return array_flat
 
 
-def decompress_axes(subscript, array_flat, shape=None, include_diagonal=False, symmetry=None, out=None):
+def decompress_axes(
+    subscript, array_flat, shape=None, include_diagonal=False, symmetry=None, out=None
+):
     """Reverse operation of `compress_axes`, subscript input is the
     same. The input symmetry is a string of the same length as
     subscript, with a "+" indicating symmetry and "-" antisymmetry.
@@ -302,7 +303,7 @@ def decompress_axes(subscript, array_flat, shape=None, include_diagonal=False, s
     i = 0
     for char in subscript:
         if char not in subs:
-            subs[char] = chr(97+i)
+            subs[char] = chr(97 + i)
             i += 1
     subscript = "".join([subs[s] for s in subscript])
 
@@ -324,14 +325,14 @@ def decompress_axes(subscript, array_flat, shape=None, include_diagonal=False, s
     n = 0
     symmetry_compressed = ""
     for char in sorted(set(subscript)):
-        assert len(set(symmetry[n:n+subscript.count(char)])) == 1
+        assert len(set(symmetry[n : n + subscript.count(char)])) == 1
         symmetry_compressed += symmetry[n]
         n += subscript.count(char)
 
     # For each axis type, get the necessary lower-triangular indices:
     indices = [
-            tril_indices_ndim(sizes[char], subscript.count(char), include_diagonal=include_diagonal)
-            for char in sorted(set(subscript))
+        tril_indices_ndim(sizes[char], subscript.count(char), include_diagonal=include_diagonal)
+        for char in sorted(set(subscript))
     ]
 
     # Iterate over permutations with signs:
@@ -341,18 +342,20 @@ def decompress_axes(subscript, array_flat, shape=None, include_diagonal=False, s
 
         # Apply the indices:
         indices_perm = [
-                np.ravel_multi_index(ind, (sizes[char],) * subscript.count(char))
-                for ind, char in zip(indices_perm, sorted(set(subscript)))
+            np.ravel_multi_index(ind, (sizes[char],) * subscript.count(char))
+            for ind, char in zip(indices_perm, sorted(set(subscript)))
         ]
         indices_perm = [
-                ind[tuple(np.newaxis if i != j else slice(None) for i in range(len(indices_perm)))]
-                for j, ind in enumerate(indices_perm)
+            ind[tuple(np.newaxis if i != j else slice(None) for i in range(len(indices_perm)))]
+            for j, ind in enumerate(indices_perm)
         ]
         shape = array[tuple(indices_perm)].shape
         array[tuple(indices_perm)] = array_flat.reshape(shape) * np.prod(signs)
 
     # Reshape array to non-flattened format
-    array = array.reshape(sum([(sizes[char],) * subscript.count(char) for char in sorted(set(subscript))], tuple()))
+    array = array.reshape(
+        sum([(sizes[char],) * subscript.count(char) for char in sorted(set(subscript))], tuple())
+    )
 
     # Undo transpose:
     arg = np.argsort(arg)
@@ -388,7 +391,7 @@ def symmetrise(subscript, array, symmetry=None):
     i = 0
     for char in subscript:
         if char not in subs:
-            subs[char] = chr(97+i)
+            subs[char] = chr(97 + i)
             i += 1
     subscript = "".join([subs[s] for s in subscript])
 
@@ -396,7 +399,7 @@ def symmetrise(subscript, array, symmetry=None):
     n = 0
     symmetry_compressed = ""
     for char in sorted(set(subscript)):
-        assert len(set(symmetry[n:n+subscript.count(char)])) == 1
+        assert len(set(symmetry[n : n + subscript.count(char)])) == 1
         symmetry_compressed += symmetry[n]
         n += subscript.count(char)
 
@@ -419,7 +422,25 @@ def symmetrise(subscript, array, symmetry=None):
     return array
 
 
-ov_2e = ["oooo", "ooov", "oovo", "ovoo", "vooo", "oovv", "ovov", "ovvo", "voov", "vovo", "vvoo", "ovvv", "vovv", "vvov", "vvvo", "vvvv"]
+ov_2e = [
+    "oooo",
+    "ooov",
+    "oovo",
+    "ovoo",
+    "vooo",
+    "oovv",
+    "ovov",
+    "ovvo",
+    "voov",
+    "vovo",
+    "vvoo",
+    "ovvv",
+    "vovv",
+    "vvov",
+    "vvvo",
+    "vvvv",
+]
+
 
 def pack_2e(*args):
     # TODO remove
@@ -431,7 +452,7 @@ def pack_2e(*args):
     nvir = args[-1].shape
     occ = [slice(None, n) for n in nocc]
     vir = [slice(n, None) for n in nocc]
-    out = np.zeros(tuple(no+nv for no, nv in zip(nocc, nvir)))
+    out = np.zeros(tuple(no + nv for no, nv in zip(nocc, nvir)))
 
     for key, arg in zip(ov_2e, args):
         slices = [occ[i] if x == "o" else vir[i] for i, x in enumerate(key)]

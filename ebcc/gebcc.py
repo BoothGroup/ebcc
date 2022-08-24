@@ -313,7 +313,7 @@ class GEBCC(rebcc.REBCC):
         m = 0
 
         for n in self.rank_numeric[0]:
-            subscript = "i" * n + "a" * (n-1)
+            subscript = "i" * n + "a" * (n - 1)
             vectors.append(util.compress_axes(subscript, excitations[m]).ravel())
             m += 1
 
@@ -349,9 +349,9 @@ class GEBCC(rebcc.REBCC):
         i0 = 0
 
         for n in self.rank_numeric[0]:
-            subscript = "i" * n + "a" * (n-1)
+            subscript = "i" * n + "a" * (n - 1)
             size = util.get_compressed_size(subscript, i=self.nocc, a=self.nvir)
-            shape = tuple([self.nocc] * n + [self.nvir] * (n-1))
+            shape = tuple([self.nocc] * n + [self.nvir] * (n - 1))
             vn_tril = vector[i0 : i0 + size]
             vn = util.decompress_axes(subscript, vn_tril, shape=shape)
             excitations.append(vn)
@@ -371,9 +371,9 @@ class GEBCC(rebcc.REBCC):
         i0 = 0
 
         for n in self.rank_numeric[0]:
-            subscript = "a" * n + "i" * (n-1)
+            subscript = "a" * n + "i" * (n - 1)
             size = util.get_compressed_size(subscript, i=self.nocc, a=self.nvir)
-            shape = tuple([self.nvir] * n + [self.nocc] * (n-1))
+            shape = tuple([self.nvir] * n + [self.nocc] * (n - 1))
             vn_tril = vector[i0 : i0 + size]
             vn = util.decompress_axes(subscript, vn_tril, shape=shape)
             excitations.append(vn)
@@ -457,13 +457,13 @@ if __name__ == "__main__":
 
     ccsd = REBCC(mf, e_tol=1e-10)
     ccsd.kernel()
-    #ccsd.solve_lambda()
+    # ccsd.solve_lambda()
 
     ccsd = UEBCC.from_rebcc(ccsd)
     ccsd.kernel()
-    #ccsd.solve_lambda()
+    # ccsd.solve_lambda()
 
-    #ccsd = UEBCC(
+    # ccsd = UEBCC(
     #    mf,
     #    # g=g,
     #    # omega=omega,
@@ -471,13 +471,13 @@ if __name__ == "__main__":
     #    # boson_excitations="S",
     #    # fermion_coupling_rank=1,
     #    # boson_coupling_rank=1,
-    #)
-    #ccsd.kernel()
-    #ccsd.solve_lambda()
+    # )
+    # ccsd.kernel()
+    # ccsd.solve_lambda()
 
-    #ccsd = GEBCC.from_uebcc(ccsd)
-    #ccsd.kernel()
-    #ccsd.solve_lambda()
+    # ccsd = GEBCC.from_uebcc(ccsd)
+    # ccsd.kernel()
+    # ccsd.solve_lambda()
 
-    #geom = ccsd.ee_eom()
-    #t = geom.moments(2, diagonal_only=True)
+    # geom = ccsd.ee_eom()
+    # t = geom.moments(2, diagonal_only=True)
