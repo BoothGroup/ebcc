@@ -1,6 +1,5 @@
 [project]
 name = "ebcc"
-version = "1.0.0a"
 description = "Coupled cluster calculations on electron-boson systems"
 download = "https://github.com/BoothGroup/ebcc"
 keywords = [
@@ -16,12 +15,11 @@ author = [
     "G. H. Booth",
     "C. J. C. Scott",
 ]
-author-email = "vayesta.embedding@gmail.com"
 platforms = [
     "Linux",
     "Mac OS-X",
 ]
-python-requires = ">=3.7"
+requires-python = ">=3.7"
 classifiers = [
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Science/Research",
@@ -44,6 +42,9 @@ tests-require = [
     "pytest",
     "pytest-cov",
 ]
+
+[tools.setuptools.dynamic]
+version = {attr = "ebcc.__version__"}
 
 [build-system]
 requires = [
