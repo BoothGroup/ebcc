@@ -1,7 +1,6 @@
 [project]
 name = "ebcc"
 description = "Coupled cluster calculations on electron-boson systems"
-download = "https://github.com/BoothGroup/ebcc"
 keywords = [
     "quantum", "chemistry",
     "electronic", "structure",
@@ -10,15 +9,6 @@ keywords = [
     "ccsd",
 ]
 readme = "README.md"
-author = [
-    "O. J. Backhouse",
-    "G. H. Booth",
-    "C. J. C. Scott",
-]
-platforms = [
-    "Linux",
-    "Mac OS-X",
-]
 requires-python = ">=3.7"
 classifiers = [
         "Development Status :: 2 - Pre-Alpha",
@@ -34,13 +24,12 @@ classifiers = [
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: POSIX :: Linux",
 ]
-install-requires = [
+dependencies = [
     "numpy>=1.19.0",
     "pyscf>=2.0.0",
 ]
-tests-require = [
-    "pytest",
-    "pytest-cov",
+dynamic = [
+    "version",
 ]
 
 [tools.setuptools.dynamic]
@@ -57,6 +46,8 @@ dev = [
     "black>=18.3.0",
     "isort>=5.0.0",
     "coverage[toml]",
+    "pytest",
+    "pytest-cov",
 ]
 
 [tool.black]
