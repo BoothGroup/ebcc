@@ -315,15 +315,16 @@ class UEBCC(rebcc.REBCC):
         # Divide T amplitudes:
         for n in self.rank_numeric[0]:
             perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
-            for key in util.generate_spin_combinations(n):
-                es = [getattr(e_ai, key[i] + key[i + n]) for i in range(n)]
+            for comb in util.generate_spin_combinations(n):
+                subscript = comb[:n] + comb[n:].upper()
+                es = [getattr(e_ai, comb[i] + comb[i + n]) for i in range(n)]
                 d = functools.reduce(np.add.outer, es)
                 d = d.transpose(perm)
-                tn = getattr(res["l%d" % n], key)
+                tn = getattr(res["l%d" % n], comb)
                 tn /= d
-                tn += getattr(lambdas["l%d" % n], key)
+                tn += getattr(lambdas["l%d" % n], comb)
                 tn = util.symmetrise(subscript, tn, symmetry="-"*(2*n))
-                setattr(res["l%d" % n], key, tn)
+                setattr(res["l%d" % n], comb, tn)
 
         # Divide S amplitudes:
         for n in self.rank_numeric[1]:
