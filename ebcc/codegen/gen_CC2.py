@@ -10,7 +10,7 @@ from qwick.operator import FOperator
 from qwick.expression import *
 from qwick.convenience import *
 from qwick import codegen
-from ebcc.util import pack_2e, wick
+from ebcc.util import pack_2e, einsum, wick
 
 from dummy_spark import SparkContext
 ctx = SparkContext()

@@ -20,6 +20,9 @@ Inherited = InheritedType()
 
 def einsum(*args, **kwargs):
     """Dispatch an einsum."""
+    globals()["__count"] = globals().get("__count", 0) + 1
+    if globals()["__count"] % 100:
+        print(globals()["__count"])
 
     return pyscf_einsum(*args, **kwargs)
 

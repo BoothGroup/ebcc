@@ -9,7 +9,7 @@ from qwick.expression import AExpression
 from qwick.wick import apply_wick
 from qwick.convenience import *
 from qwick import codegen
-from ebcc.util import pack_2e, wick
+from ebcc.util import pack_2e, einsum, wick
 from ebcc.codegen.convenience_extra import *
 
 from pyspark import SparkContext

@@ -11,7 +11,7 @@ from qwick.expression import *
 from qwick.convenience import *
 from qwick import codegen
 from ebcc.codegen import common, wick
-from ebcc.util import pack_2e
+from ebcc.util import pack_2e, einsum
 
 from dummy_spark import SparkContext
 ctx = SparkContext()
