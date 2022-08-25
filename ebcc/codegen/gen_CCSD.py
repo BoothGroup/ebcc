@@ -23,7 +23,7 @@ warnings.simplefilter("ignore", UserWarning)
 rank = ("SD", "", "")
 
 # Spin setting:
-spin = "rhf"  # {"ghf", "rhf", "uhf"}
+spin = "ghf"  # {"ghf", "rhf", "uhf"}
 
 # Indices
 occs = i, j, k, l = [Idx(n, "occ") for n in range(4)]

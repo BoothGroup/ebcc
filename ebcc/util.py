@@ -8,6 +8,7 @@ import logging
 import sys
 
 import numpy as np
+from pyscf.lib import einsum as pyscf_einsum
 
 
 class InheritedType:
@@ -15,6 +16,12 @@ class InheritedType:
 
 
 Inherited = InheritedType()
+
+
+def einsum(*args, **kwargs):
+    """Dispatch an einsum."""
+
+    return pyscf_einsum(*args, **kwargs)
 
 
 def factorial(n):
