@@ -243,7 +243,7 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
             ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2"],
             ["rdm2_f"],
             spin_cases={
-                "rdm2_f": ["aaaa", "abab", "baba", "bbbb"],
+                "rdm2_f": ["aaaa", "abab", "baba", "bbbb"] if spin != "ghf" else ["aaaa", "aabb", "bbaa", "bbbb"],
             },
             return_dict=False,
             timer=timer,
@@ -544,6 +544,9 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
                 excitations = rip if ip else rea
                 excitation = Expression(sum([ex.terms for ex in excitations], []))
 
+                if spin == "ghf" and not ip:
+                    function_printer.write_python("    r2 = -r2\n")  # FIXME why?
+
                 all_terms = []
                 for space_no, space in enumerate(spaces):
                     return_value = "r%dnew" % (space_no + 1)
@@ -699,28 +702,44 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
                 function_printer.write_python(printer.doprint(all_terms)+"\n")
 
                 # Check if any tensors haven't been initialised
-                defined = set()
-                for term in all_terms:
-                    name = term.base.name + "_" + "".join([{"α": "a", "β": "b"}[ind[0].name[1]] for ind in term.exts])
-                    defined.add(name)
-                for space_no, space in enumerate(spaces):
-                    for inds_name in ["oo", "ov", "vo", "vv"]:
-                        spins = [
-                            [(0, 0, 0, 0), (0, 1, 0, 1), (1, 0, 1, 0), (1, 1, 1, 1)],
-                            [(0,0,0,0,0,0), (0,0,0,1,0,1), (0,0,1,0,1,0), (0,0,1,1,1,1), (1,1,0,0,0,0), (1,1,0,1,0,1), (1,1,1,0,1,0), (1,1,1,1,1,1)]
-                        ][space_no]
-                        for sps in spins:
-                            if is_ket:
-                                sps = sps[2:] + sps[:2]
-                            spin_name = "".join(["ab"[sp] for sp in sps])
-                            name = "%see%d_%s_%s" % (ket_name, space_no+1, inds_name, spin_name)
+                if spin == "uhf":
+                    defined = set()
+                    for term in all_terms:
+                        name = term.base.name + "_" + "".join([{"α": "a", "β": "b"}[ind[0].name[1]] for ind in term.exts])
+                        defined.add(name)
+                    for space_no, space in enumerate(spaces):
+                        for inds_name in ["oo", "ov", "vo", "vv"]:
+                            spins = [
+                                [(0, 0, 0, 0), (0, 1, 0, 1), (1, 0, 1, 0), (1, 1, 1, 1)],
+                                [(0,0,0,0,0,0), (0,0,0,1,0,1), (0,0,1,0,1,0), (0,0,1,1,1,1), (1,1,0,0,0,0), (1,1,0,1,0,1), (1,1,1,0,1,0), (1,1,1,1,1,1)]
+                            ][space_no]
+                            for sps in spins:
+                                if is_ket:
+                                    sps = sps[2:] + sps[:2]
+                                spin_name = "".join(["ab"[sp] for sp in sps])
+                                name = "%see%d_%s_%s" % (ket_name, space_no+1, inds_name, spin_name)
+                                if name not in defined:
+                                    shape = [index[1].size.name for index in term.exts]
+                                    if space_no == 0:
+                                        perm = inds_name + "ov" if not is_ket else "ov" + inds_name
+                                    else:
+                                        perm = inds_name + "oovv" if not is_ket else "oovv" + inds_name
+                                    shape = ["%s[%d]" % ({"o": "nocc", "v": "nvir", "b": "nbos"}[pe], sp) for pe, sp in zip(perm, sps)]
+                                    function_printer.write_python("    %s = %s((%s), dtype=%s)" % (name, printer._zeros, ", ".join(shape), printer._dtype))
+                else:
+                    defined = set()
+                    for term in all_terms:
+                        defined.add(term.base.name)
+                    for space_no, space in enumerate(spaces):
+                        for inds_name in ["oo", "ov", "vo", "vv"]:
+                            name = "%see%d_%s" % (ket_name, space_no+1, inds_name)
                             if name not in defined:
                                 shape = [index[1].size.name for index in term.exts]
                                 if space_no == 0:
                                     perm = inds_name + "ov" if not is_ket else "ov" + inds_name
                                 else:
                                     perm = inds_name + "oovv" if not is_ket else "oovv" + inds_name
-                                shape = ["%s[%d]" % ({"o": "nocc", "v": "nvir", "b": "nbos"}[pe], sp) for pe, sp in zip(perm, sps)]
+                                shape = [{"o": "nocc", "v": "nvir", "b": "nbos"}[pe] for pe in perm]
                                 function_printer.write_python("    %s = %s((%s), dtype=%s)" % (name, printer._zeros, ", ".join(shape), printer._dtype))
 
                 function_printer.write_python("")
@@ -879,60 +898,3 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
                         + "    ree1new = SimpleNamespace(%s)\n" % ", ".join(["%s=ree1new_%s%s" % ((a+b,) * 3) for a in "ab" for b in "ab"])
                         + "    ree2new = SimpleNamespace(%s)\n" % ", ".join(["%s=ree2new_%s%s" % ((a+b+c+d,) * 3) for a in "ab" for b in "ab" for c in "ab" for d in "ab"])
                 )
-
-        # Get the EE EOM Hamiltonians
-        with FunctionPrinter(
-                file_printer,
-                "hbar_ee",
-                ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2"],
-                ["hee11", "hee12", "hee21", "hee22"],
-                return_dict=True,
-                timer=timer,
-        ) as function_printer:
-            if spin != "uhf":
-                function_printer.write_python(
-                        "    delta_oo = np.eye(nocc)\n"
-                        "    delta_vv = np.eye(nvir)\n"
-                )
-            else:
-                function_printer.write_python(
-                        "    delta_oo = SimpleNamespace()\n"
-                        "    delta_oo.aa = np.eye(nocc[0])\n"
-                        "    delta_oo.bb = np.eye(nocc[1])\n"
-                        "    delta_vv = SimpleNamespace()\n"
-                        "    delta_vv.aa = np.eye(nvir[0])\n"
-                        "    delta_vv.bb = np.eye(nvir[1])\n"
-                )
-
-            E0 = wick.apply_wick(Hbars[-1])
-            E0.resolve()
-            bra_spaces = bra
-            ket_spaces = ket
-
-            all_terms = []
-            for bra_no, bra_space in enumerate(bra_spaces):
-                for ket_no, ket_space in enumerate(ket_spaces):
-                    return_value = "hee%d%d" % (bra_no+1, ket_no+1)
-
-                    full = bra_space * (Hbars[-1] - E0) * ket_space
-                    out = wick.apply_wick(full)
-                    out.resolve()
-                    expr = AExpression(Ex=out, simplify=True)
-
-                    terms, indices = codegen.wick_to_sympy(
-                            expr,
-                            particles,
-                            return_value=return_value,
-                    )
-                    terms = transform_spin(terms, indices)
-                    terms = [codegen.sympy_to_drudge(
-                            group,
-                            indices,
-                            dr=dr,
-                            restricted=spin!="uhf",
-                    ) for group in terms]
-                    all_terms.append(terms)
-
-            all_terms = codegen.spin_integrate._flatten(all_terms)
-            all_terms = codegen.optimize(all_terms, sizes=sizes, optimize="greedy", verify=False, interm_fmt="x{}")
-            function_printer.write_python(printer.doprint(all_terms)+"\n")
