@@ -18,15 +18,6 @@ class InheritedType:
 Inherited = InheritedType()
 
 
-def einsum(*args, **kwargs):
-    """Dispatch an einsum."""
-    globals()["__count"] = globals().get("__count", 0) + 1
-    if globals()["__count"] % 100:
-        print(globals()["__count"])
-
-    return pyscf_einsum(*args, **kwargs)
-
-
 def factorial(n):
     """Return the factorial of n."""
 
@@ -183,11 +174,11 @@ def get_symmetry_factor(*numbers):
 
     Examples
     --------
-    >>> build_factor_array(1, 1, 0)
+    >>> build_symmetry_factor(1, 1)
     1.0
-    >>> build_factor_array(2, 2, 0)
+    >>> build_symmetry_factor(2, 2)
     0.25
-    >>> build_factor_array(3, 2, 1)
+    >>> build_symmetry_factor(3, 2, 1)
     0.125
     """
 
@@ -239,6 +230,7 @@ def compress_axes(subscript, array, include_diagonal=False, out=None):
     (6, 45)
     """
     # TODO out
+    # TODO can this be OpenMP parallel?
 
     assert "->" not in subscript
 
@@ -469,3 +461,88 @@ def pack_2e(*args):
         out[tuple(slices)] = arg
 
     return out
+
+
+def einsum(subscript, *args, symmetry=False, **kwargs):
+    """Dispatch an einsum. If `symmetry`, then assume that all arrays
+    are totally symmetric within occupied, virtual and bosonic
+    sectors. If `symmetry` is an iterable, then it should provide
+    permutations corresponding to each input array which give the
+    desired symmetry.
+    """
+    # TODO custom symmetry
+    # TODO assert the symmetry?
+
+    if not symmetry:
+        return pyscf_einsum(subscript, *args, **kwargs)
+
+    try:
+        # Two input arrays only:
+        assert len(args) == 2
+        assert subscript.count(",") == 1
+
+        array1, array2 = args
+        indices = set(subscript) - {",", "-", ">"}
+        lhs1, lhs2, rhs = subscript.replace("->", ",").split(",")
+
+        # No internal traces:
+        assert len(lhs1) == len(set(lhs1))
+        assert len(lhs2) == len(set(lhs2))
+
+        # No repeated external indices, and no free indices:
+        for index in lhs1 + lhs2:
+            if index in rhs:
+                assert (int(index in lhs1) + int(index in lhs2)) == 1
+            else:
+                assert index in lhs1 and index in lhs2
+
+    except AssertionError:
+        return pyscf_einsum(subscript, *args, **kwargs)
+
+    # Categorise the indices:
+    categories = {}
+    sizes = {}
+    for index in indices:
+        category = 0 if index not in rhs else (1 if index in lhs1 else 2)
+        sector = 0 if index in "ijklmnop" else (1 if index in "abcdefgh" else 2)
+        categories[index] = category * 3 + sector
+        sizes[index] = (array1.shape + array2.shape)[(lhs1 + lhs2).index(index)]
+
+    # Get compressed and flattened subscripts:
+    lhs1_comp = "".join([chr(97 + categories[i]) for i in lhs1])
+    lhs2_comp = "".join([chr(97 + categories[i]) for i in lhs2])
+    rhs_comp = "".join([chr(97 + categories[i]) for i in rhs])
+    lhs1_flat = "".join(list(dict.fromkeys(lhs1_comp)))
+    lhs2_flat = "".join(list(dict.fromkeys(lhs2_comp)))
+    rhs_flat = "".join(list(dict.fromkeys(rhs_comp)))
+
+    # Apply a factor depending on the symmetry of the dummies:
+    dummies = set(i_comp for i, i_comp in zip(lhs1, lhs1_comp) if categories[i] < 3)
+    for index in set(lhs1_comp):
+        if index in dummies:
+            mask = [i == index for i in lhs1_comp]
+            factor = np.zeros(np.array(array1.shape)[mask])
+            inds = tril_indices_ndim(factor.shape[0], factor.ndim, include_diagonal=True)
+            for perm, _ in permutations_with_signs(inds):
+                factor[tuple(perm)] += 1
+            factor = 2 ** (factor.ndim - factor)
+            lhs_factor = "".join([i for i in lhs1 if categories[i] < 3])
+            subscript = lhs1 + "," + lhs_factor + "->" + lhs1
+            array1 = pyscf_einsum(subscript, array1, factor)
+
+    # Compress the arrays:
+    array1_flat = compress_axes(lhs1_comp, array1, include_diagonal=True)
+    array2_flat = compress_axes(lhs2_comp, array2, include_diagonal=True)
+
+    # Dispatch the einsum:
+    subscript_flat = "{lhs1},{lhs2}->{rhs}".format(lhs1=lhs1_flat, lhs2=lhs2_flat, rhs=rhs_flat)
+    output_flat = pyscf_einsum(subscript_flat, array1_flat, array2_flat, **kwargs)
+
+    # Decompress the output:
+    rank = len(rhs_comp)
+    shape = tuple(sizes[i] for i in rhs)
+    output = decompress_axes(
+        rhs_comp, output_flat, include_diagonal=True, shape=shape, symmetry="+" * rank
+    )
+
+    return output
