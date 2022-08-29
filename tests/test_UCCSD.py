@@ -85,6 +85,18 @@ class UCCSD_Tests(unittest.TestCase):
         b = scipy.linalg.block_diag(self.ccsd.l1.aa, self.ccsd.l1.bb)[self.vsort][:, self.osort]
         np.testing.assert_almost_equal(a, b, 6)
 
+    def test_from_rebcc(self):
+        rebcc = REBCC(
+                self.mf,
+                fermion_excitations="SD",
+                log=NullLogger(),
+        )
+        rebcc.options.e_tol = 1e-12
+        rebcc.kernel()
+        uebcc = UEBCC.from_rebcc(rebcc)
+        # FIXME seem test_GCCSD.GCCSD_Tests.test_from_uebcc
+        self.assertAlmostEqual(self.ccsd.energy(), uebcc.energy(), 8)
+
 
 @pytest.mark.reference
 class UCCSD_PySCF_Tests(unittest.TestCase):
@@ -157,18 +169,6 @@ class UCCSD_PySCF_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(a[0], b.aaaa, 6)
         np.testing.assert_almost_equal(a[1], b.aabb, 6)
         np.testing.assert_almost_equal(a[2], b.bbbb, 6)
-
-    def test_from_rebcc(self):
-        rebcc = REBCC(
-                self.mf,
-                fermion_excitations="SD",
-                log=NullLogger(),
-        )
-        rebcc.options.e_tol = 1e-12
-        rebcc.kernel()
-        uebcc = UEBCC.from_rebcc(rebcc)
-        # FIXME seem test_GCCSD.GCCSD_Tests.test_from_uebcc
-        self.assertAlmostEqual(self.ccsd.energy(), uebcc.energy(), 8)
 
 
 if __name__ == "__main__":
