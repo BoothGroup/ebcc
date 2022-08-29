@@ -166,9 +166,9 @@ class UCCSD_PySCF_Tests(unittest.TestCase):
         )
         rebcc.options.e_tol = 1e-12
         rebcc.kernel()
-        gebcc = GEBCC.from_rebcc(rebcc)
+        uebcc = UEBCC.from_rebcc(rebcc)
         # FIXME seem test_GCCSD.GCCSD_Tests.test_from_uebcc
-        self.assertAlmostEqual(self.ccsd.energy(), gebcc.energy(), 8)
+        self.assertAlmostEqual(self.ccsd.energy(), uebcc.energy(), 8)
 
 
 if __name__ == "__main__":
