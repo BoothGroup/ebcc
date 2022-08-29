@@ -77,6 +77,17 @@ class NullLogger(logging.Logger):
         pass
 
 
+HEADER = """
+        _
+       | |
+   ___ | |__    ___   ___
+  / _ \| '_ \  / __| / __|
+ |  __/| |_) || (__ | (__
+  \___||_.__/  \___| \___|
+
+"""
+
+
 # --- General constructor:
 
 from ebcc.gebcc import GEBCC

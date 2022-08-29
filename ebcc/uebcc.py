@@ -122,6 +122,7 @@ class UEBCC(rebcc.REBCC):
             for n in rcc.rank_numeric[0]:
                 lambdas["l%d" % n] = SimpleNamespace()
                 for comb in util.generate_spin_combinations(n):
+                    subscript = comb[:n] + comb[n:].upper()
                     tn = rcc.lambdas["l%d" % n]
                     tn = util.symmetrise(subscript, tn, symmetry="-" * 2 * n)
                     setattr(lambdas["l%d" % n], comb, tn)

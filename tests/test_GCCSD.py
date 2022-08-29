@@ -8,9 +8,10 @@ import unittest
 import numpy as np
 import pytest
 import scipy.linalg
+from types import SimpleNamespace
 from pyscf import cc, gto, lib, scf
 
-from ebcc import GEBCC, NullLogger
+from ebcc import REBCC, UEBCC, GEBCC, NullLogger
 
 
 @pytest.mark.reference
@@ -36,8 +37,6 @@ class GCCSD_Tests(unittest.TestCase):
         mf.conv_tol = 1e-12
         mf.kernel()
         mf.mo_coeff = mo_coeff
-
-        orbspin = scf.addons.get_ghf_orbspin(mf.mo_energy, mf.mo_occ, True)
 
         ccsd = GEBCC(
                 mf,
@@ -125,6 +124,65 @@ class GCCSD_Tests(unittest.TestCase):
             y /= np.max(np.abs(y))
             np.testing.assert_almost_equal(x, y, 6)
 
+    def _test_from_rebcc(self):
+        rebcc = REBCC(
+                self.mf,
+                fermion_excitations="SD",
+                log=NullLogger(),
+        )
+        rebcc.options.e_tol = 1e-12
+        rebcc.options.t_tol = 1e-12
+        eris = rebcc.get_eris()
+        rebcc.kernel(eris=eris)
+        rebcc.solve_lambda(eris=eris)
+        gebcc = GEBCC.from_rebcc(rebcc)
+        self.assertAlmostEqual(self.ccsd.energy(), gebcc.energy())
+
+    def test_from_uebcc(self):
+        uebcc = UEBCC(
+                self.mf,
+                fermion_excitations="SD",
+                log=NullLogger(),
+        )
+        #orbspin = np.array([0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1])
+        #nocc = sum(uebcc.nocc)
+        #occs = {"a": np.where(orbspin[:nocc] == 0)[0], "b": np.where(orbspin[:nocc] == 1)[0]}
+        #virs = {"a": np.where(orbspin[nocc:] == 0)[0], "b": np.where(orbspin[nocc:] == 1)[0]}
+        #uebcc.amplitudes = UEBCC.Amplitudes()
+        #uebcc.amplitudes["t1"] = SimpleNamespace(
+        #        aa=self.ccsd.t1[occs["a"]][:, virs["a"]],
+        #        bb=self.ccsd.t1[occs["b"]][:, virs["b"]],
+        #)
+        #uebcc.amplitudes["t2"] = SimpleNamespace(
+        #        aaaa=self.ccsd.t2[occs["a"]][:, occs["a"]][:, :, virs["a"]][:, :, :, virs["a"]],
+        #        abab=self.ccsd.t2[occs["a"]][:, occs["b"]][:, :, virs["a"]][:, :, :, virs["b"]],
+        #        baba=self.ccsd.t2[occs["b"]][:, occs["a"]][:, :, virs["b"]][:, :, :, virs["a"]],
+        #        bbbb=self.ccsd.t2[occs["b"]][:, occs["b"]][:, :, virs["b"]][:, :, :, virs["b"]],
+        #)
+        #uebcc.lambdas = UEBCC.Amplitudes()
+        #uebcc.lambdas["l1"] = SimpleNamespace(
+        #        aa=self.ccsd.l1[virs["a"]][:, occs["a"]],
+        #        bb=self.ccsd.l1[virs["b"]][:, occs["b"]],
+        #)
+        #uebcc.lambdas["l2"] = SimpleNamespace(
+        #        aaaa=self.ccsd.l2[virs["a"]][:, virs["a"]][:, :, occs["a"]][:, :, :, occs["a"]],
+        #        baba=self.ccsd.l2[virs["a"]][:, virs["b"]][:, :, occs["a"]][:, :, :, occs["b"]],
+        #        abab=self.ccsd.l2[virs["b"]][:, virs["a"]][:, :, occs["b"]][:, :, :, occs["a"]],
+        #        bbbb=self.ccsd.l2[virs["b"]][:, virs["b"]][:, :, occs["b"]][:, :, :, occs["b"]],
+        #)
+        uebcc.options.e_tol = 1e-12
+        uebcc.kernel()
+        gebcc = GEBCC.from_uebcc(uebcc)
+        # FIXME:
+        # Not true, I believe because the GCCSD have spin-forbidden
+        # elements of the ERIs not zeroed because of the 8-fold
+        # storage of the AO integrals?
+        #np.testing.assert_almost_equal(self.ccsd.t1, gebcc.t1)
+        #np.testing.assert_almost_equal(self.ccsd.t2, gebcc.t2)
+        #np.testing.assert_almost_equal(self.ccsd.l1, gebcc.l1)
+        #np.testing.assert_almost_equal(self.ccsd.l2, gebcc.l2)
+        self.assertAlmostEqual(self.ccsd.energy(), gebcc.energy(), 8)
+
 
 @pytest.mark.reference
 class GCCSD_PySCF_Tests(unittest.TestCase):
@@ -201,22 +259,20 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
         b = self.ccsd.make_rdm2_f(eris=self.eris)
         np.testing.assert_almost_equal(a, b, 6, verbose=True)
 
-    # TODO too flakey, I think because Hbar diag is broken
+    def test_eom_ip(self):
+        e1 = self.ccsd.ip_eom(nroots=5, koopmans=True).kernel()
+        e2, v2 = self.ccsd_ref.ipccsd(nroots=5)
+        self.assertAlmostEqual(e1[0], e2[0], 6)
 
-    #def test_eom_ip(self):
-    #    e1 = self.ccsd.ip_eom(nroots=5).kernel()
-    #    e2, v2 = self.ccsd_ref.ipccsd(nroots=5)
-    #    self.assertAlmostEqual(e1[0], e2[0], 6)
+    def test_eom_ea(self):
+        e1 = self.ccsd.ea_eom(nroots=5, koopmans=True).kernel()
+        e2, v2 = self.ccsd_ref.eaccsd(nroots=5)
+        self.assertAlmostEqual(e1[0], e2[0], 6)
 
-    #def test_eom_ea(self):
-    #    e1 = self.ccsd.ea_eom(nroots=5).kernel()
-    #    e2, v2 = self.ccsd_ref.eaccsd(nroots=5)
-    #    self.assertAlmostEqual(e1[0], e2[0], 6)
-
-    #def test_eom_ee(self):
-    #    e1 = self.ccsd.ee_eom(nroots=5).kernel()
-    #    e2, v2 = self.ccsd_ref.eeccsd(nroots=5)
-    #    self.assertAlmostEqual(e1[0], e2[0], 6)
+    def test_eom_ee(self):
+        e1 = self.ccsd.ee_eom(nroots=5, koopmans=True).kernel()
+        e2, v2 = self.ccsd_ref.eeccsd(nroots=5)
+        self.assertAlmostEqual(e1[0], e2[0], 6)
 
 
 if __name__ == "__main__":

@@ -603,7 +603,7 @@ class REBCC:
                 amplitudes["t%d" % n] = self.fock.vo.T / e_ia
             elif n == 2:
                 e_ijab = lib.direct_sum("ia,jb->ijab", e_ia, e_ia)
-                amplitudes["t%d" % n] = eris.ovov.swapaxes(1, 2) / e_ijab
+                amplitudes["t%d" % n] = eris.oovv / e_ijab
             else:
                 amplitudes["t%d" % n] = np.zeros((self.nocc,) * n + (self.nvir,) * n)
 

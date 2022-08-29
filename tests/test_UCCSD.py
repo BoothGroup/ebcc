@@ -158,6 +158,18 @@ class UCCSD_PySCF_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(a[1], b.aabb, 6)
         np.testing.assert_almost_equal(a[2], b.bbbb, 6)
 
+    def test_from_rebcc(self):
+        rebcc = REBCC(
+                self.mf,
+                fermion_excitations="SD",
+                log=NullLogger(),
+        )
+        rebcc.options.e_tol = 1e-12
+        rebcc.kernel()
+        gebcc = GEBCC.from_rebcc(rebcc)
+        # FIXME seem test_GCCSD.GCCSD_Tests.test_from_uebcc
+        self.assertAlmostEqual(self.ccsd.energy(), gebcc.energy(), 8)
+
 
 if __name__ == "__main__":
     print("Tests for UCCSD")
