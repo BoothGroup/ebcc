@@ -11,7 +11,7 @@ import pytest
 import scipy.linalg
 from pyscf import cc, gto, lib, scf
 
-from ebcc import GEBCC, UEBCC, NullLogger
+from ebcc import REBCC, UEBCC, GEBCC, NullLogger
 
 
 @pytest.mark.reference
