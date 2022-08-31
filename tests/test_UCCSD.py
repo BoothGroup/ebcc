@@ -97,6 +97,32 @@ class UCCSD_Tests(unittest.TestCase):
         # FIXME seem test_GCCSD.GCCSD_Tests.test_from_uebcc
         self.assertAlmostEqual(self.ccsd.energy(), uebcc.energy(), 8)
 
+    def test_ip_moments(self):
+        eom = self.ccsd.ip_eom()
+        a = self.data[True]["ip_moms"].transpose(2, 0, 1)
+        b = eom.moments(4)
+        b = np.array([scipy.linalg.block_diag(x, y) for x, y in zip(b.aa, b.bb)])
+        b = b[:, self.fsort][:, :, self.fsort]
+        for i, (x, y) in enumerate(zip(a, b)):
+            x /= np.max(np.abs(x))
+            y /= np.max(np.abs(y))
+            print(i, "oo", np.allclose(x[:sum(self.ccsd.nocc), :sum(self.ccsd.nocc)], y[:sum(self.ccsd.nocc), :sum(self.ccsd.nocc)]), np.max(np.abs(x[:sum(self.ccsd.nocc), :sum(self.ccsd.nocc)]-y[:sum(self.ccsd.nocc), :sum(self.ccsd.nocc)])))
+            print(i, "ov", np.allclose(x[:sum(self.ccsd.nocc), sum(self.ccsd.nocc):], y[:sum(self.ccsd.nocc), sum(self.ccsd.nocc):]), np.max(np.abs(x[:sum(self.ccsd.nocc), sum(self.ccsd.nocc):]-y[:sum(self.ccsd.nocc), sum(self.ccsd.nocc):])))
+            print(i, "vo", np.allclose(x[sum(self.ccsd.nocc):, :sum(self.ccsd.nocc)], y[sum(self.ccsd.nocc):, :sum(self.ccsd.nocc)]), np.max(np.abs(x[sum(self.ccsd.nocc):, :sum(self.ccsd.nocc)]-y[sum(self.ccsd.nocc):, :sum(self.ccsd.nocc)])))
+            print(i, "vv", np.allclose(x[sum(self.ccsd.nocc):, sum(self.ccsd.nocc):], y[sum(self.ccsd.nocc):, sum(self.ccsd.nocc):]), np.max(np.abs(x[sum(self.ccsd.nocc):, sum(self.ccsd.nocc):]-y[sum(self.ccsd.nocc):, sum(self.ccsd.nocc):])))
+            np.testing.assert_almost_equal(x, y, 6)
+
+    def test_ea_moments(self):
+        eom = self.ccsd.ea_eom()
+        a = self.data[True]["ea_moms"].transpose(2, 0, 1)
+        b = eom.moments(4)
+        b = np.array([scipy.linalg.block_diag(x, y) for x, y in zip(b.aa, b.bb)])
+        b = b[:, self.fsort][:, :, self.fsort]
+        for i, (x, y) in enumerate(zip(a, b)):
+            x /= np.max(np.abs(x))
+            y /= np.max(np.abs(y))
+            np.testing.assert_almost_equal(x, y, 6)
+
 
 @pytest.mark.reference
 class UCCSD_PySCF_Tests(unittest.TestCase):
@@ -108,6 +134,8 @@ class UCCSD_PySCF_Tests(unittest.TestCase):
         mol = gto.Mole()
         mol.atom = "O 0 0 0; O 0 0 1"
         mol.basis = "cc-pvdz"
+        mol.atom = "H 0 0 0; Li 0 0 1.64"
+        mol.basis = "sto3g"
         mol.spin = 2
         mol.verbose = 0
         mol.build()
@@ -169,6 +197,16 @@ class UCCSD_PySCF_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(a[0], b.aaaa, 6)
         np.testing.assert_almost_equal(a[1], b.aabb, 6)
         np.testing.assert_almost_equal(a[2], b.bbbb, 6)
+
+    def test_eom_ip(self):
+        e1 = self.ccsd.ip_eom(nroot=5).kernel()
+        e2, v2 = self.ccsd_ref.ipccsd(nroots=5)
+        self.assertAlmostEqual(e1[0], e2[0], 5)
+
+    def test_eom_ea(self):
+        e1 = self.ccsd.ea_eom(nroots=5).kernel()
+        e2, v2 = self.ccsd_ref.eaccsd(nroots=5)
+        self.assertAlmostEqual(e1[0], e2[0], 5)
 
 
 if __name__ == "__main__":

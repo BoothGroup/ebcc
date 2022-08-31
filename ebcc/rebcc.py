@@ -11,8 +11,9 @@ from typing import Tuple
 import numpy as np
 from pyscf import ao2mo, lib
 
-from ebcc import default_log, eom, util
+from ebcc import default_log, reom, util
 
+# TODO nuke hbar
 # TODO math in docstrings
 # TODO resolve G vs bare_G confusion
 
@@ -234,12 +235,6 @@ class REBCC:
     hbar_matvec_ee(r1, r2, eris=None, amplitudes=None)
         Compute the product between a state vector and the EOM
         Hamiltonian for the EE.
-    hbar_diag_ip(eris=None, amplitudes=None)
-        Compute the diagonal of the EOM Hamiltonian for the IP.
-    hbar_diag_ea(eris=None, amplitudes=None)
-        Compute the diagonal of the EOM Hamiltonian for the EA.
-    hbar_diag_ee(eris=None, amplitudes=None)
-        Compute the diagonal of the EOM Hamiltonian for the EE.
     make_ip_mom_bras(eris=None, amplitudes=None, lambdas=None)
         Get the bra IP vectors to construct EOM moments.
     make_ea_mom_bras(eris=None, amplitudes=None, lambdas=None)
@@ -1033,82 +1028,6 @@ class REBCC:
 
         return dm_eb
 
-    def hbar_ip(self, eris=None, amplitudes=None):
-        """Compute the EOM Hamiltonian for the IP.
-
-        Parameters
-        ----------
-        eris : ERIs, optional
-            Electronic repulsion integrals. Default value is generated
-            using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
-            Cluster amplitudes. Default value is generated using
-            `self.init_amps()`.
-
-        Returns
-        -------
-        h : numpy.ndarray
-            EOM Hamiltonian for the IP.
-        """
-        # TODO generalise
-
-        func, kwargs = self._load_function(
-            "hbar_ip",
-            eris=eris,
-            amplitudes=amplitudes,
-        )
-
-        blocks = func(**kwargs)
-        nocc = self.nocc
-        nvir = self.nvir
-
-        h11 = blocks["h11"].reshape(nocc, nocc)
-        h12 = blocks["h12"].reshape(nocc, nocc * nocc * nvir)
-        h21 = blocks["h21"].reshape(nocc * nocc * nvir, nocc)
-        h22 = blocks["h22"].reshape(nocc * nocc * nvir, nocc * nocc * nvir)
-
-        h = np.block([[h11, h12], [h21, h22]])
-
-        return h
-
-    def hbar_ea(self, eris=None, amplitudes=None):
-        """Compute the EOM Hamiltonian for the EA.
-
-        Parameters
-        ----------
-        eris : ERIs, optional
-            Electronic repulsion integrals. Default value is generated
-            using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
-            Cluster amplitudes. Default value is generated using
-            `self.init_amps()`.
-
-        Returns
-        -------
-        h : numpy.ndarray
-            EOM Hamiltonian for the EA.
-        """
-        # TODO generalise
-
-        func, kwargs = self._load_function(
-            "hbar_ea",
-            eris=eris,
-            amplitudes=amplitudes,
-        )
-
-        blocks = func(**kwargs)
-        nocc = self.nocc
-        nvir = self.nvir
-
-        h11 = blocks["h11"].reshape(nvir, nvir)
-        h12 = blocks["h12"].reshape(nvir, nvir * nvir * nocc)
-        h21 = blocks["h21"].reshape(nvir * nvir * nocc, nvir)
-        h22 = blocks["h22"].reshape(nvir * nvir * nocc, nvir * nvir * nocc)
-
-        h = np.block([[h11, h12], [h21, h22]])
-
-        return h
-
     def hbar_matvec_ip(self, r1, r2, eris=None, amplitudes=None):
         """Compute the product between a state vector and the EOM
         Hamiltonian for the IP.
@@ -1217,93 +1136,6 @@ class REBCC:
             amplitudes=amplitudes,
             r1=r1,
             r2=r2,
-        )
-
-        return func(**kwargs)
-
-    def hbar_diag_ip(self, eris=None, amplitudes=None):
-        """Compute the diagonal of the EOM Hamiltonian for the IP.
-
-        Parameters
-        ----------
-        eris : ERIs, optional
-            Electronic repulsion integrals. Default value is generated
-            using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
-            Cluster amplitudes. Default value is generated using
-            `self.init_amps()`.
-
-        Returns
-        -------
-        diag : dict of (str, numpy.ndarray)
-            Dictionary containing the diagonal in each sector of the
-            matrix. Keys are strings of the name of each vector, and
-            values are arrays whose dimension depends on the
-            particular sector.
-        """
-
-        func, kwargs = self._load_function(
-            "hbar_diag_ip",
-            eris=eris,
-            amplitudes=amplitudes,
-        )
-
-        return func(**kwargs)
-
-    def hbar_diag_ea(self, eris=None, amplitudes=None):
-        """Compute the diagonal of the EOM Hamiltonian for the EA.
-
-        Parameters
-        ----------
-        eris : ERIs, optional
-            Electronic repulsion integrals. Default value is generated
-            using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
-            Cluster amplitudes. Default value is generated using
-            `self.init_amps()`.
-
-        Returns
-        -------
-        diag : dict of (str, numpy.ndarray)
-            Dictionary containing the diagonal in each sector of the
-            matrix. Keys are strings of the name of each vector, and
-            values are arrays whose dimension depends on the
-            particular sector.
-        """
-
-        func, kwargs = self._load_function(
-            "hbar_diag_ea",
-            eris=eris,
-            amplitudes=amplitudes,
-        )
-
-        return func(**kwargs)
-
-    def hbar_diag_ee(self, eris=None, amplitudes=None):
-        """Compute the of the EOM Hamiltonian for the EE.
-
-        Parameters
-        ----------
-        eris : ERIs, optional
-            Electronic repulsion integrals. Default value is generated
-            using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
-            Cluster amplitudes. Default value is generated using
-            `self.init_amps()`.
-
-        Returns
-        -------
-        diag : dict of (str, numpy.ndarray)
-            Dictionary containing the diagonal in each sector of the
-            matrix. Keys are strings of the name of each vector, and
-            values are arrays whose dimension depends on the
-            particular sector.
-        """
-
-        func, kwargs = self._load_function(
-            "hbar_diag_ee",
-            eris=eris,
-            amplitudes=amplitudes,
         )
 
         return func(**kwargs)
@@ -1551,13 +1383,13 @@ class REBCC:
         raise NotImplementedError  # TODO
 
     def ip_eom(self, options=None, **kwargs):
-        return eom.IP_EOM(self, options=options, **kwargs)
+        return reom.IP_REOM(self, options=options, **kwargs)
 
     def ea_eom(self, options=None, **kwargs):
-        return eom.EA_EOM(self, options=options, **kwargs)
+        return reom.EA_REOM(self, options=options, **kwargs)
 
     def ee_eom(self, options=None, **kwargs):
-        return eom.EE_EOM(self, options=options, **kwargs)
+        return reom.EE_REOM(self, options=options, **kwargs)
 
     def amplitudes_to_vector(self, amplitudes):
         """Construct a vector containing all of the amplitudes used in

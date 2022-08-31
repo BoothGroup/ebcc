@@ -8,7 +8,7 @@ from types import SimpleNamespace
 import numpy as np
 from pyscf import ao2mo, lib
 
-from ebcc import rebcc, util
+from ebcc import rebcc, ueom, util
 
 
 class Amplitudes(rebcc.Amplitudes):
@@ -514,6 +514,15 @@ class UEBCC(rebcc.REBCC):
     def get_eris(self):
         return self.ERIs(self)
 
+    def ip_eom(self, options=None, **kwargs):
+        return ueom.IP_UEOM(self, options=options, **kwargs)
+
+    def ea_eom(self, options=None, **kwargs):
+        return ueom.EA_UEOM(self, options=options, **kwargs)
+
+    def ee_eom(self, options=None, **kwargs):
+        return ueom.EE_UEOM(self, options=options, **kwargs)
+
     def amplitudes_to_vector(self, amplitudes):
         vectors = []
 
@@ -707,7 +716,10 @@ class UEBCC(rebcc.REBCC):
                     ]
                 )
                 vn_tril = vector[i0 : i0 + size]
-                vn = util.decompress_axes(subscript, vn_tril, shape=shape)
+                factor = max(
+                    spin[:n].count(s) for s in set(spin[:n])
+                )  # FIXME why? untested for n > 2
+                vn = util.decompress_axes(subscript, vn_tril, shape=shape) / factor
                 setattr(amp, spin, vn)
                 i0 += size
 

@@ -10,7 +10,7 @@ import numpy as np
 import scipy.linalg
 from pyscf import ao2mo, lib, scf
 
-from ebcc import rebcc, uebcc, util
+from ebcc import rebcc, uebcc, geom, util
 
 
 class Amplitudes(rebcc.Amplitudes):
@@ -421,6 +421,15 @@ class GEBCC(rebcc.REBCC):
 
     def get_eris(self):
         return self.ERIs(self)
+
+    def ip_eom(self, options=None, **kwargs):
+        return geom.IP_GEOM(self, options=options, **kwargs)
+
+    def ea_eom(self, options=None, **kwargs):
+        return geom.EA_GEOM(self, options=options, **kwargs)
+
+    def ee_eom(self, options=None, **kwargs):
+        return geom.EE_GEOM(self, options=options, **kwargs)
 
     @property
     def xi(self):
