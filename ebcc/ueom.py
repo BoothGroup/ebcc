@@ -9,7 +9,7 @@ from types import SimpleNamespace
 import numpy as np
 from pyscf import lib
 
-from ebcc import util, reom
+from ebcc import reom, util
 
 
 @util.inherit_docstrings
@@ -19,7 +19,7 @@ class UEOM(reom.REOM):
     def _argsort_guess(self, diag):
         if self.options.koopmans:
             r_mf = self.vector_to_amplitudes(diag)[0]
-            size = (r_mf.a.size + r_mf.b.size)
+            size = r_mf.a.size + r_mf.b.size
             arg = np.argsort(np.diag(diag[:size]))
         else:
             arg = np.argsort(diag)
@@ -27,7 +27,7 @@ class UEOM(reom.REOM):
         return arg
 
     def _quasiparticle_weight(self, r1):
-        return np.linalg.norm(r1.a)**2 + np.linalg.norm(r1.b)**2
+        return np.linalg.norm(r1.a) ** 2 + np.linalg.norm(r1.b) ** 2
 
     def moments(self, nmom, eris=None, amplitudes=None, hermitise=True):
         if eris is None:
@@ -71,8 +71,8 @@ class IP_UEOM(UEOM, reom.IP_REOM):
     def diag(self, eris=None):
         parts = []
         e_ia = SimpleNamespace(
-                aa=lib.direct_sum("i-a->ia", self.ebcc.eo.a, self.ebcc.ev.a),
-                bb=lib.direct_sum("i-a->ia", self.ebcc.eo.b, self.ebcc.ev.b),
+            aa=lib.direct_sum("i-a->ia", self.ebcc.eo.a, self.ebcc.ev.a),
+            bb=lib.direct_sum("i-a->ia", self.ebcc.eo.b, self.ebcc.ev.b),
         )
         e_i = self.ebcc.eo
 
@@ -81,11 +81,11 @@ class IP_UEOM(UEOM, reom.IP_REOM):
             for comb in util.generate_spin_combinations(n, excited=True):
                 tensors = []
                 for i, s in enumerate(comb[:n]):
-                    if i == (n-1):
+                    if i == (n - 1):
                         tensors.append(getattr(e_i, s))
                     else:
-                        tensors.append(getattr(e_ia, s+s))
-                perm = list(range(0, n * 2, 2)) + list(range(1, (n-1) * 2, 2))
+                        tensors.append(getattr(e_ia, s + s))
+                perm = list(range(0, n * 2, 2)) + list(range(1, (n - 1) * 2, 2))
                 d = functools.reduce(np.add.outer, tensors)
                 d = d.transpose(perm)
                 setattr(spin_part, comb, d)
@@ -112,12 +112,8 @@ class IP_UEOM(UEOM, reom.IP_REOM):
                     shape = tuple(self.nocc["ab".index(s)] for s in spin[:n]) + tuple(
                         self.nvir["ab".index(s)] for s in spin[n:]
                     )
-                    setattr(
-                        amp_a, spin, getattr(bras_raw[m], "a" + spin, {i: np.zeros(shape)})[i]
-                    )
-                    setattr(
-                        amp_b, spin, getattr(bras_raw[m], "b" + spin, {i: np.zeros(shape)})[i]
-                    )
+                    setattr(amp_a, spin, getattr(bras_raw[m], "a" + spin, {i: np.zeros(shape)})[i])
+                    setattr(amp_b, spin, getattr(bras_raw[m], "b" + spin, {i: np.zeros(shape)})[i])
                 amps_a.append(amp_a)
                 amps_b.append(amp_b)
                 m += 1
@@ -154,12 +150,8 @@ class IP_UEOM(UEOM, reom.IP_REOM):
                     shape = tuple(self.nocc["ab".index(s)] for s in spin[:n]) + tuple(
                         self.nvir["ab".index(s)] for s in spin[n:]
                     )
-                    setattr(
-                        amp_a, spin, getattr(kets_raw[m], spin + "a", {j: np.zeros(shape)})[j]
-                    )
-                    setattr(
-                        amp_b, spin, getattr(kets_raw[m], spin + "b", {j: np.zeros(shape)})[j]
-                    )
+                    setattr(amp_a, spin, getattr(kets_raw[m], spin + "a", {j: np.zeros(shape)})[j])
+                    setattr(amp_b, spin, getattr(kets_raw[m], spin + "b", {j: np.zeros(shape)})[j])
                 amps_a.append(amp_a)
                 amps_b.append(amp_b)
                 m += 1
@@ -187,8 +179,8 @@ class EA_UEOM(UEOM, reom.EA_REOM):
     def diag(self, eris=None):
         parts = []
         e_ai = SimpleNamespace(
-                aa=lib.direct_sum("a-i->ai", self.ebcc.ev.a, self.ebcc.eo.a),
-                bb=lib.direct_sum("a-i->ai", self.ebcc.ev.b, self.ebcc.eo.b),
+            aa=lib.direct_sum("a-i->ai", self.ebcc.ev.a, self.ebcc.eo.a),
+            bb=lib.direct_sum("a-i->ai", self.ebcc.ev.b, self.ebcc.eo.b),
         )
         e_a = self.ebcc.ev
 
@@ -197,11 +189,11 @@ class EA_UEOM(UEOM, reom.EA_REOM):
             for comb in util.generate_spin_combinations(n, excited=True):
                 tensors = []
                 for i, s in enumerate(comb[:n]):
-                    if i == (n-1):
+                    if i == (n - 1):
                         tensors.append(getattr(e_a, s))
                     else:
-                        tensors.append(getattr(e_ai, s+s))
-                perm = list(range(0, n * 2, 2)) + list(range(1, (n-1) * 2, 2))
+                        tensors.append(getattr(e_ai, s + s))
+                perm = list(range(0, n * 2, 2)) + list(range(1, (n - 1) * 2, 2))
                 d = functools.reduce(np.add.outer, tensors)
                 d = d.transpose(perm)
                 setattr(spin_part, comb, d)
@@ -228,12 +220,8 @@ class EA_UEOM(UEOM, reom.EA_REOM):
                     shape = tuple(self.nvir["ab".index(s)] for s in spin[:n]) + tuple(
                         self.nocc["ab".index(s)] for s in spin[n:]
                     )
-                    setattr(
-                        amp_a, spin, getattr(bras_raw[m], "a" + spin, {i: np.zeros(shape)})[i]
-                    )
-                    setattr(
-                        amp_b, spin, getattr(bras_raw[m], "b" + spin, {i: np.zeros(shape)})[i]
-                    )
+                    setattr(amp_a, spin, getattr(bras_raw[m], "a" + spin, {i: np.zeros(shape)})[i])
+                    setattr(amp_b, spin, getattr(bras_raw[m], "b" + spin, {i: np.zeros(shape)})[i])
                 amps_a.append(amp_a)
                 amps_b.append(amp_b)
                 m += 1
@@ -270,12 +258,8 @@ class EA_UEOM(UEOM, reom.EA_REOM):
                     shape = tuple(self.nvir["ab".index(s)] for s in spin[:n]) + tuple(
                         self.nocc["ab".index(s)] for s in spin[n:]
                     )
-                    setattr(
-                        amp_a, spin, getattr(kets_raw[m], spin + "a", {j: np.zeros(shape)})[j]
-                    )
-                    setattr(
-                        amp_b, spin, getattr(kets_raw[m], spin + "b", {j: np.zeros(shape)})[j]
-                    )
+                    setattr(amp_a, spin, getattr(kets_raw[m], spin + "a", {j: np.zeros(shape)})[j])
+                    setattr(amp_b, spin, getattr(kets_raw[m], spin + "b", {j: np.zeros(shape)})[j])
                 amps_a.append(amp_a)
                 amps_b.append(amp_b)
                 m += 1
@@ -303,8 +287,8 @@ class EE_UEOM(UEOM, reom.EE_REOM):
     def diag(self, eris=None):
         parts = []
         e_ia = SimpleNamespace(
-                aa=lib.direct_sum("i-a->ia", self.ebcc.eo.a, self.ebcc.ev.a),
-                bb=lib.direct_sum("i-a->ia", self.ebcc.eo.b, self.ebcc.ev.b),
+            aa=lib.direct_sum("i-a->ia", self.ebcc.eo.a, self.ebcc.ev.a),
+            bb=lib.direct_sum("i-a->ia", self.ebcc.eo.b, self.ebcc.ev.b),
         )
 
         for n in self.rank_numeric[0]:
@@ -312,7 +296,7 @@ class EE_UEOM(UEOM, reom.EE_REOM):
             for comb in util.generate_spin_combinations(n):
                 tensors = []
                 for i, s in enumerate(comb[:n]):
-                    tensors.append(getattr(e_ia, s+s))
+                    tensors.append(getattr(e_ia, s + s))
                 perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
                 d = functools.reduce(np.add.outer, tensors)
                 d = d.transpose(perm)

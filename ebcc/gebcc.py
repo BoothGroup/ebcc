@@ -10,7 +10,7 @@ import numpy as np
 import scipy.linalg
 from pyscf import ao2mo, lib, scf
 
-from ebcc import rebcc, uebcc, geom, util
+from ebcc import geom, rebcc, uebcc, util
 
 
 class Amplitudes(rebcc.Amplitudes):

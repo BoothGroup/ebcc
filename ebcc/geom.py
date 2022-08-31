@@ -1,7 +1,7 @@
 """Generalised equation-of-motion solver.
 """
 
-from ebcc import util, reom
+from ebcc import reom, util
 
 
 @util.inherit_docstrings

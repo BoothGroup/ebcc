@@ -144,7 +144,7 @@ class REOM:
         pass
 
     def _quasiparticle_weight(self, r1):
-        return np.linalg.norm(r1)**2
+        return np.linalg.norm(r1) ** 2
 
     def davidson(self, guesses=None):
         """Solve the EOM Hamiltonian using the Davidson solver."""
@@ -268,8 +268,8 @@ class IP_REOM(REOM):
         e_i = self.ebcc.eo
 
         for n in self.rank_numeric[0]:
-            perm = list(range(0, n * 2, 2)) + list(range(1, (n-1) * 2, 2))
-            d = functools.reduce(np.add.outer, [e_ia] * (n-1) + [e_i])
+            perm = list(range(0, n * 2, 2)) + list(range(1, (n - 1) * 2, 2))
+            d = functools.reduce(np.add.outer, [e_ia] * (n - 1) + [e_i])
             d = d.transpose(perm)
             parts.append(d)
 
@@ -327,8 +327,8 @@ class EA_REOM(REOM):
         e_a = self.ebcc.ev
 
         for n in self.rank_numeric[0]:
-            perm = list(range(0, n * 2, 2)) + list(range(1, (n-1) * 2, 2))
-            d = functools.reduce(np.add.outer, [e_ai] * (n-1) + [e_a])
+            perm = list(range(0, n * 2, 2)) + list(range(1, (n - 1) * 2, 2))
+            d = functools.reduce(np.add.outer, [e_ai] * (n - 1) + [e_a])
             d = d.transpose(perm)
             parts.append(d)
 
@@ -399,10 +399,7 @@ class EE_REOM(REOM):
         bras_raw = list(self.ebcc.make_ee_mom_bras(eris=eris))
         bras = np.array(
             [
-                [
-                    self.amplitudes_to_vector(*[b[i, j] for b in bras_raw])
-                    for j in range(self.nmo)
-                ]
+                [self.amplitudes_to_vector(*[b[i, j] for b in bras_raw]) for j in range(self.nmo)]
                 for i in range(self.nmo)
             ]
         )
