@@ -143,7 +143,7 @@ CC2 = _boson_free_factory("2")
 # --- List available methods:
 
 
-def available_models(verbose=True):  # pragma: noqa
+def available_models(verbose=True):  # pragma: no cover
     """List available coupled-cluster models for each of general (G),
     restricted (R) and unrestricted (U) Hartree--Fock references.
     """
