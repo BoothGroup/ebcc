@@ -284,6 +284,9 @@ class EA_UEOM(UEOM, reom.EA_REOM):
 class EE_UEOM(UEOM, reom.EE_REOM):
     """Unrestricted equation-of-motion class for neutral excitations."""
 
+    def _quasiparticle_weight(self, r1):
+        return np.linalg.norm(r1.aa) ** 2 + np.linalg.norm(r1.bb) ** 2
+
     def diag(self, eris=None):
         parts = []
         e_ia = SimpleNamespace(
