@@ -93,9 +93,21 @@ class UCCSD_Tests(unittest.TestCase):
         )
         rebcc.options.e_tol = 1e-12
         rebcc.kernel()
+        rebcc.solve_lambda()
         uebcc = UEBCC.from_rebcc(rebcc)
-        # FIXME seem test_GCCSD.GCCSD_Tests.test_from_uebcc
         self.assertAlmostEqual(self.ccsd.energy(), uebcc.energy(), 8)
+        np.testing.assert_almost_equal(self.ccsd.t1.aa, uebcc.t1.aa, 6)
+        np.testing.assert_almost_equal(self.ccsd.t1.bb, uebcc.t1.bb, 6)
+        np.testing.assert_almost_equal(self.ccsd.t2.aaaa, uebcc.t2.aaaa, 6)
+        np.testing.assert_almost_equal(self.ccsd.t2.abab, uebcc.t2.abab, 6)
+        np.testing.assert_almost_equal(self.ccsd.t2.baba, uebcc.t2.baba, 6)
+        np.testing.assert_almost_equal(self.ccsd.t2.bbbb, uebcc.t2.bbbb, 6)
+        np.testing.assert_almost_equal(self.ccsd.l1.aa, uebcc.l1.aa, 5)
+        np.testing.assert_almost_equal(self.ccsd.l1.bb, uebcc.l1.bb, 5)
+        np.testing.assert_almost_equal(self.ccsd.l2.aaaa, uebcc.l2.aaaa, 5)
+        np.testing.assert_almost_equal(self.ccsd.l2.abab, uebcc.l2.abab, 5)
+        np.testing.assert_almost_equal(self.ccsd.l2.baba, uebcc.l2.baba, 5)
+        np.testing.assert_almost_equal(self.ccsd.l2.bbbb, uebcc.l2.bbbb, 5)
 
     def test_ip_moments(self):
         eom = self.ccsd.ip_eom()
