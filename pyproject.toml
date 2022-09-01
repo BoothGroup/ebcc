@@ -87,6 +87,7 @@ omit = [
     "ebcc/codegen/gen_*.py",
     "ebcc/codegen/wick.py",
     "ebcc/codegen/common.py",
+    "ebcc/codegen/convenience_extra.py",
 ]
 
 [tool.coverage.report]
