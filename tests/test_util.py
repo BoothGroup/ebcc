@@ -4,9 +4,11 @@
 import unittest
 import itertools
 
+from pyscf import gto, scf
 import numpy as np
 import pytest
 
+import ebcc
 from ebcc import util
 
 
@@ -116,6 +118,29 @@ class Util_Tests(unittest.TestCase):
 
     def test_symmetrise(self):
         pass  # Covered by methods
+
+    def test_constructors(self):
+        # Tests the constructors in the main __init__.py
+        mol = gto.M(atom="H 0 0 0; Li 0 0 1.64", basis="6-31g", verbose=0)
+        rhf = scf.RHF(mol).run()
+        uhf = rhf.to_uhf()
+        ghf = uhf.to_ghf()
+        log = ebcc.NullLogger()
+        e_ccsd_r = ebcc.REBCC(rhf, fermion_excitations="SD", e_tol=1e-10, log=log).kernel()
+        e_ccsd_u = ebcc.UEBCC(uhf, fermion_excitations="SD", e_tol=1e-10, log=log).kernel()
+        e_ccsd_g = ebcc.GEBCC(ghf, fermion_excitations="SD", e_tol=1e-10, log=log).kernel()
+        self.assertAlmostEqual(ebcc.EBCC(rhf, e_tol=1e-10, log=log).kernel(), e_ccsd_r, 8)
+        self.assertAlmostEqual(ebcc.EBCC(uhf, e_tol=1e-10, log=log).kernel(), e_ccsd_u, 8)
+        self.assertAlmostEqual(ebcc.EBCC(ghf, e_tol=1e-10, log=log).kernel(), e_ccsd_g, 8)
+        self.assertAlmostEqual(ebcc.CCSD(rhf, e_tol=1e-10, log=log).kernel(), e_ccsd_r, 8)
+        self.assertAlmostEqual(ebcc.CCSD(uhf, e_tol=1e-10, log=log).kernel(), e_ccsd_u, 8)
+        self.assertAlmostEqual(ebcc.CCSD(ghf, e_tol=1e-10, log=log).kernel(), e_ccsd_g, 8)
+        e_cc2_r = ebcc.REBCC(rhf, fermion_excitations="2", e_tol=1e-10, log=log).kernel()
+        e_cc2_u = ebcc.UEBCC(uhf, fermion_excitations="2", e_tol=1e-10, log=log).kernel()
+        e_cc2_g = ebcc.GEBCC(ghf, fermion_excitations="2", e_tol=1e-10, log=log).kernel()
+        self.assertAlmostEqual(ebcc.CC2(rhf, e_tol=1e-10, log=log).kernel(), e_cc2_r, 8)
+        self.assertAlmostEqual(ebcc.CC2(uhf, e_tol=1e-10, log=log).kernel(), e_cc2_u, 8)
+        self.assertAlmostEqual(ebcc.CC2(ghf, e_tol=1e-10, log=log).kernel(), e_cc2_g, 8)
 
 
 
