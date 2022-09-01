@@ -412,3 +412,41 @@ class EE_UEOM(UEOM, reom.EE_REOM):
         kets.bb = kets.bb.reshape(self.nmo, self.nmo, *kets.bb.shape[1:])
 
         return kets
+
+    def moments(self, nmom, eris=None, amplitudes=None, hermitise=True, diagonal_only=True):
+        if not diagonal_only:
+            warnings.warn("Constructing EE moments with `diagonal_only=False` will be very slow.")
+
+        if eris is None:
+            eris = self.ebcc.get_eris()
+        if amplitudes is None:
+            amplitudes = self.ebcc.amplitudes
+
+        bras = self.bras(eris=eris)
+        kets = self.kets(eris=eris)
+
+        moments = SimpleNamespace(
+            aaaa=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo)),
+            aabb=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo)),
+            bbaa=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo)),
+            bbbb=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo)),
+        )
+
+        for spin in util.generate_spin_combinations(2):
+            spin = util.permute_string(spin, (0, 2, 1, 3))
+            for k in range(self.nmo):
+                for l in [k] if diagonal_only else range(self.nmo):
+                    ket = getattr(kets, spin[2:])[k, l]
+                    for n in range(nmom):
+                        for i in range(self.nmo):
+                            for j in [i] if diagonal_only else range(self.nmo):
+                                bra = getattr(bras, spin[:2])[i, j]
+                                getattr(moments, spin)[n, i, j, k, l] = self.dot_braket(bra, ket)
+                        if n != (nmom - 1):
+                            ket = self.matvec(ket, eris=eris)
+
+            if hermitise:
+                m = getattr(moments, spin)
+                setattr(moments, spin, 0.5 * (m + m.transpose(0, 3, 4, 1, 2)))
+
+        return moments

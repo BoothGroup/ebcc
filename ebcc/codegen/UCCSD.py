@@ -8789,7 +8789,7 @@ def hbar_matvec_ee(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=No
     ree2new_bbbb += einsum("ia,jb->jiab", r1.bb, x504)
     del x504
 
-    ree1new = SimpleNamespace(aa=ree1new_aaaa, ab=ree1new_abab, ba=ree1new_baba, bb=ree1new_bbbb)
-    ree2new = SimpleNamespace(aaaa=ree2new_aaaaaaaa, aaab=ree2new_aaabaaab, aaba=ree2new_aabaaaba, aabb=ree2new_aabbaabb, abaa=ree2new_abaaabaa, abab=ree2new_abababab, abba=ree2new_abbaabba, abbb=ree2new_abbbabbb, baaa=ree2new_baaabaaa, baab=ree2new_baabbaab, baba=ree2new_babababa, babb=ree2new_babbbabb, bbaa=ree2new_bbaabbaa, bbab=ree2new_bbabbbab, bbba=ree2new_bbbabbba, bbbb=ree2new_bbbbbbbb)
+    ree1new = SimpleNamespace(aa=ree1new_aa, bb=ree1new_bb)
+    ree2new = SimpleNamespace(aaaa=ree2new_aaaa, abab=ree2new_abab, baba=ree2new_baba, bbbb=ree2new_bbbb)
 
     return ree1new, ree2new

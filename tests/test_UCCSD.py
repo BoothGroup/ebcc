@@ -106,10 +106,6 @@ class UCCSD_Tests(unittest.TestCase):
         for i, (x, y) in enumerate(zip(a, b)):
             x /= np.max(np.abs(x))
             y /= np.max(np.abs(y))
-            print(i, "oo", np.allclose(x[:sum(self.ccsd.nocc), :sum(self.ccsd.nocc)], y[:sum(self.ccsd.nocc), :sum(self.ccsd.nocc)]), np.max(np.abs(x[:sum(self.ccsd.nocc), :sum(self.ccsd.nocc)]-y[:sum(self.ccsd.nocc), :sum(self.ccsd.nocc)])))
-            print(i, "ov", np.allclose(x[:sum(self.ccsd.nocc), sum(self.ccsd.nocc):], y[:sum(self.ccsd.nocc), sum(self.ccsd.nocc):]), np.max(np.abs(x[:sum(self.ccsd.nocc), sum(self.ccsd.nocc):]-y[:sum(self.ccsd.nocc), sum(self.ccsd.nocc):])))
-            print(i, "vo", np.allclose(x[sum(self.ccsd.nocc):, :sum(self.ccsd.nocc)], y[sum(self.ccsd.nocc):, :sum(self.ccsd.nocc)]), np.max(np.abs(x[sum(self.ccsd.nocc):, :sum(self.ccsd.nocc)]-y[sum(self.ccsd.nocc):, :sum(self.ccsd.nocc)])))
-            print(i, "vv", np.allclose(x[sum(self.ccsd.nocc):, sum(self.ccsd.nocc):], y[sum(self.ccsd.nocc):, sum(self.ccsd.nocc):]), np.max(np.abs(x[sum(self.ccsd.nocc):, sum(self.ccsd.nocc):]-y[sum(self.ccsd.nocc):, sum(self.ccsd.nocc):])))
             np.testing.assert_almost_equal(x, y, 6)
 
     def test_ea_moments(self):
@@ -119,6 +115,23 @@ class UCCSD_Tests(unittest.TestCase):
         b = np.array([scipy.linalg.block_diag(x, y) for x, y in zip(b.aa, b.bb)])
         b = b[:, self.fsort][:, :, self.fsort]
         for i, (x, y) in enumerate(zip(a, b)):
+            x /= np.max(np.abs(x))
+            y /= np.max(np.abs(y))
+            np.testing.assert_almost_equal(x, y, 6)
+
+    def _test_ee_moments_diag(self):
+        # FIXME broken
+        eom = self.ccsd.ee_eom()
+        a = self.data[True]["dd_moms"].transpose(4, 0, 1, 2, 3)
+        a = a[:, :eom.nmo, :eom.nmo, :eom.nmo, :eom.nmo]
+        a = np.einsum("npqrs,pq,rs->npqrs", a, np.eye(self.ccsd.nmo), np.eye(self.ccsd.nmo))
+        b = eom.moments(4, diagonal_only=True)
+        print(a[0, 0, 0, 0, 0])
+        print(b.aaaa[0, 0, 0, 0, 0])
+        print(b.aabb[0, 0, 0, 0, 0])
+        print(self.ccsd.make_rdm2_f().aaaa[0, 0, 0, 0])
+        print(self.ccsd.make_rdm2_f().aabb[0, 0, 0, 0])
+        for x, y in zip(a, b.aabb):
             x /= np.max(np.abs(x))
             y /= np.max(np.abs(y))
             np.testing.assert_almost_equal(x, y, 6)
@@ -134,8 +147,6 @@ class UCCSD_PySCF_Tests(unittest.TestCase):
         mol = gto.Mole()
         mol.atom = "O 0 0 0; O 0 0 1"
         mol.basis = "cc-pvdz"
-        mol.atom = "H 0 0 0; Li 0 0 1.64"
-        mol.basis = "sto3g"
         mol.spin = 2
         mol.verbose = 0
         mol.build()

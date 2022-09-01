@@ -658,6 +658,6 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
 
             if spin == "uhf":
                 function_printer.write_python(""
-                        + "    ree1new = SimpleNamespace(%s)\n" % ", ".join(["%s=ree1new_%s%s" % ((a+b,) * 3) for a in "ab" for b in "ab"])
-                        + "    ree2new = SimpleNamespace(%s)\n" % ", ".join(["%s=ree2new_%s%s" % ((a+b+c+d,) * 3) for a in "ab" for b in "ab" for c in "ab" for d in "ab"])
+                        + "    ree1new = SimpleNamespace(aa=ree1new_aa, bb=ree1new_bb)\n"
+                        + "    ree2new = SimpleNamespace(aaaa=ree2new_aaaa, abab=ree2new_abab, baba=ree2new_baba, bbbb=ree2new_bbbb)\n"
                 )
