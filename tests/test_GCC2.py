@@ -1,22 +1,20 @@
-"""Tests for the RCC2 model.
+"""Tests for the GCC2 model.
 """
 
-import itertools
-import os
-import pickle
 import unittest
+import itertools
 
+from pyscf import gto, scf, cc, lib
 import numpy as np
-import pytest
 import scipy.linalg
-from pyscf import cc, gto, lib, scf
+import pytest
 
-from ebcc import REBCC, NullLogger, util
+from ebcc import GEBCC, NullLogger, util
 
 
 @pytest.mark.reference
-class RCC2_PySCF_Tests(unittest.TestCase):
-    """Test RCC2 against the PySCF values.
+class GCC2_PySCF_Tests(unittest.TestCase):
+    """Test GCC2 against the PySCF values.
     """
 
     @classmethod
@@ -39,7 +37,7 @@ class RCC2_PySCF_Tests(unittest.TestCase):
         ccsd_ref.kernel()
         ccsd_ref.solve_lambda()
 
-        ccsd = REBCC(
+        ccsd = GEBCC(
                 mf,
                 fermion_excitations="2",
                 log=NullLogger(),
@@ -50,11 +48,18 @@ class RCC2_PySCF_Tests(unittest.TestCase):
         ccsd.kernel(eris=eris)
         ccsd.solve_lambda(eris=eris)
 
+        nmo, nocc, nvir = ccsd_ref.nmo, ccsd_ref.nocc, ccsd_ref.nmo-ccsd_ref.nocc
+        osort = list(itertools.chain(*zip(range(nocc), range(nocc, 2*nocc))))
+        vsort = list(itertools.chain(*zip(range(nvir), range(nvir, 2*nvir))))
+        fsort = list(itertools.chain(*zip(range(nmo), range(nmo, 2*nmo))))
+
         cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris = mf, ccsd_ref, ccsd, eris
+        cls.osort, cls.vsort, cls.fsort = osort, vsort, fsort
 
     @classmethod
     def tearDownClass(cls):
-        del cls.mf, cls.ccsd_ref, cls.ccsd
+        del cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris
+        del cls.osort, cls.vsort, cls.fsort
 
     def test_converged(self):
         self.assertTrue(self.ccsd.converged)
@@ -68,19 +73,14 @@ class RCC2_PySCF_Tests(unittest.TestCase):
         self.assertAlmostEqual(a, b, 7)
 
     def test_t1_amplitudes(self):
-        a = self.ccsd_ref.t1
+        a = scipy.linalg.block_diag(self.ccsd_ref.t1, self.ccsd_ref.t1)[self.osort][:, self.vsort]
         b = self.ccsd.t1
-        np.testing.assert_almost_equal(a, b, 6)
-
-    def test_t2_amplitudes(self):
-        a = self.ccsd_ref.t2
-        b = self.ccsd.t2
         np.testing.assert_almost_equal(a, b, 6)
 
 
 @pytest.mark.regression
-class RCC2_Tests(unittest.TestCase):
-    """Test RCC2 against regression.
+class GCC2_Tests(unittest.TestCase):
+    """Test GCC2 against regression.
     """
 
     @classmethod
@@ -95,7 +95,7 @@ class RCC2_Tests(unittest.TestCase):
         mf.conv_tol = 1e-12
         mf.kernel()
 
-        ccsd = REBCC(
+        ccsd = GEBCC(
                 mf,
                 fermion_excitations="2",
                 log=NullLogger(),
@@ -114,17 +114,17 @@ class RCC2_Tests(unittest.TestCase):
 
     def test_rdm1_f(self):
         dm = self.ccsd.make_rdm1_f()
-        c = self.mf.mo_coeff
+        c = self.ccsd.mf.mo_coeff
         dm = util.einsum("ij,pi,qj->pq", dm, c, c)
-        self.assertAlmostEqual(lib.fp(dm), 3.572563325863767, 8)
+        self.assertAlmostEqual(lib.fp(dm), 1.672795023689995, 8)
 
     def test_rdm2_f(self):
         dm = self.ccsd.make_rdm2_f()
-        c = self.mf.mo_coeff
+        c = self.ccsd.mf.mo_coeff
         dm = util.einsum("ijkl,pi,qj,rk,sl->pqrs", dm, c, c, c, c)
-        self.assertAlmostEqual(lib.fp(dm), 6.475456720894991, 8)
+        self.assertAlmostEqual(lib.fp(dm), 2.491733293012602, 8)
 
 
 if __name__ == "__main__":
-    print("Tests for RCC2")
+    print("Tests for GCC2")
     unittest.main()

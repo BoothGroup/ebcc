@@ -3392,8 +3392,8 @@ def make_rdm2_f(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=None,
     rdm2_f_bbbb = pack_2e(rdm2_f_oooo_bbbb, rdm2_f_ooov_bbbb, rdm2_f_oovo_bbbb, rdm2_f_ovoo_bbbb, rdm2_f_vooo_bbbb, rdm2_f_oovv_bbbb, rdm2_f_ovov_bbbb, rdm2_f_ovvo_bbbb, rdm2_f_voov_bbbb, rdm2_f_vovo_bbbb, rdm2_f_vvoo_bbbb, rdm2_f_ovvv_bbbb, rdm2_f_vovv_bbbb, rdm2_f_vvov_bbbb, rdm2_f_vvvo_bbbb, rdm2_f_vvvv_bbbb)
 
     rdm2_f.aaaa = rdm2_f_aaaa
-    rdm2_f.abab = rdm2_f_abab
-    rdm2_f.baba = rdm2_f_baba
+    rdm2_f.aabb = rdm2_f_aabb
+    rdm2_f.bbaa = rdm2_f_bbaa
     rdm2_f.bbbb = rdm2_f_bbbb
 
     return rdm2_f
