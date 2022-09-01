@@ -66,9 +66,9 @@ def ntril_ndim(n, dims, include_diagonal=False):
 
     # FIXME hack until this function is fixed:
     if include_diagonal:
-       return sum(1 for tup in itertools.combinations_with_replacement(range(n), dims))
+        return sum(1 for tup in itertools.combinations_with_replacement(range(n), dims))
     else:
-       return sum(1 for tup in itertools.combinations(range(n), dims))
+        return sum(1 for tup in itertools.combinations(range(n), dims))
 
     offset = int(include_diagonal)
     out = 1
