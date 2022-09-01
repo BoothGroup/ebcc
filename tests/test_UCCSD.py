@@ -146,7 +146,7 @@ class UCCSD_PySCF_Tests(unittest.TestCase):
     def setUpClass(cls):
         mol = gto.Mole()
         mol.atom = "O 0 0 0; O 0 0 1"
-        mol.basis = "cc-pvdz"
+        mol.basis = "6-31g"
         mol.spin = 2
         mol.verbose = 0
         mol.build()
@@ -217,6 +217,11 @@ class UCCSD_PySCF_Tests(unittest.TestCase):
     def test_eom_ea(self):
         e1 = self.ccsd.ea_eom(nroots=5).kernel()
         e2, v2 = self.ccsd_ref.eaccsd(nroots=5)
+        self.assertAlmostEqual(e1[0], e2[0], 5)
+
+    def test_eom_ee(self):
+        e1 = self.ccsd.ee_eom(nroots=5).kernel()
+        e2, v2 = self.ccsd_ref.eeccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
 
