@@ -64,10 +64,11 @@ def tril_indices_ndim(n, dims, include_diagonal=False):
 def ntril_ndim(n, dims, include_diagonal=False):
     """Return the number of elements in an n-dimensional lower triangle."""
 
-    # if include_diagonal:
-    #    return sum(1 for tup in itertools.combinations_with_replacements(range(n), dims))
-    # else:
-    #    return sum(1 for tup in itertools.combinations(range(n), dims))
+    # FIXME hack until this function is fixed:
+    if include_diagonal:
+       return sum(1 for tup in itertools.combinations_with_replacement(range(n), dims))
+    else:
+       return sum(1 for tup in itertools.combinations(range(n), dims))
 
     offset = int(include_diagonal)
     out = 1
@@ -79,32 +80,6 @@ def ntril_ndim(n, dims, include_diagonal=False):
     out //= factorial(dims)
 
     return out
-
-
-def minimum_swaps(lst):
-    """Find the minimum number of swaps needed to sort lst."""
-
-    lst = np.argsort(np.argsort(lst))
-    n = 0
-    i = 0
-
-    while i < (len(lst) - 1):
-        while lst[i] != (i + 1):
-            lst[lst[i] - 1], lst[i] = lst[i], lst[lst[i] - 1]
-            n += 1
-        i += 1
-
-    return n
-
-
-def index_axes(arr, *inds):
-    """Apply each of inds over the dimensions of arr."""
-
-    null = slice(None)
-    for n, ind in enumerate(inds):
-        arr = arr[(null,) * n + (ind,)]
-
-    return arr
 
 
 def generate_spin_combinations(n, excited=False):
@@ -463,7 +438,7 @@ def pack_2e(*args):
     return out
 
 
-def einsum(subscript, *args, symmetry=False, **kwargs):
+def einsum(subscript, *args, symmetry=False, **kwargs):  # pragma: no cover
     """Dispatch an einsum. If `symmetry`, then assume that all arrays
     are totally symmetric within occupied, virtual and bosonic
     sectors. If `symmetry` is an iterable, then it should provide
@@ -475,6 +450,8 @@ def einsum(subscript, *args, symmetry=False, **kwargs):
 
     if not symmetry:
         return pyscf_einsum(subscript, *args, **kwargs)
+
+    raise NotImplementedError("Work in progress")
 
     try:
         # Two input arrays only:
