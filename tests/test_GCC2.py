@@ -116,13 +116,13 @@ class GCC2_Tests(unittest.TestCase):
         dm = self.ccsd.make_rdm1_f()
         c = self.ccsd.mf.mo_coeff
         dm = util.einsum("ij,pi,qj->pq", dm, c, c)
-        self.assertAlmostEqual(lib.fp(dm), 1.672795023689995, 8)
+        self.assertAlmostEqual(lib.fp(dm), 1.672795023689995, 6)
 
     def test_rdm2_f(self):
         dm = self.ccsd.make_rdm2_f()
         c = self.ccsd.mf.mo_coeff
         dm = util.einsum("ijkl,pi,qj,rk,sl->pqrs", dm, c, c, c, c)
-        self.assertAlmostEqual(lib.fp(dm), 2.491733293012602, 8)
+        self.assertAlmostEqual(lib.fp(dm), 2.491733293012602, 6)
 
 
 if __name__ == "__main__":
