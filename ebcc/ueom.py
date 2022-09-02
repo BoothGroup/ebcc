@@ -311,7 +311,9 @@ class EE_UEOM(UEOM, reom.EE_REOM):
 
         return self.amplitudes_to_vector(*parts)
 
-    def bras(self, eris=None):
+    def bras(self, eris=None):  # pragma: no cover
+        raise NotImplementedError("EE moments for UEBCC not working.")
+
         bras_raw = list(self.ebcc.make_ee_mom_bras(eris=eris))
         bras = SimpleNamespace(aa=[], bb=[])
 
@@ -363,7 +365,9 @@ class EE_UEOM(UEOM, reom.EE_REOM):
 
         return bras
 
-    def kets(self, eris=None):
+    def kets(self, eris=None):  # pragma: no cover
+        raise NotImplementedError("EE moments for UEBCC not working.")
+
         kets_raw = list(self.ebcc.make_ee_mom_kets(eris=eris))
         kets = SimpleNamespace(aa=[], bb=[])
 
@@ -416,7 +420,7 @@ class EE_UEOM(UEOM, reom.EE_REOM):
 
         return kets
 
-    def moments(self, nmom, eris=None, amplitudes=None, hermitise=True, diagonal_only=True):
+    def moments(self, nmom, eris=None, amplitudes=None, hermitise=True, diagonal_only=True):  # pragma: no cover
         raise NotImplementedError("EE moments for UEBCC not working.")
 
         if not diagonal_only:
