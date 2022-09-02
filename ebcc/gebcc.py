@@ -439,7 +439,7 @@ class GEBCC(rebcc.REBCC):
             using `self.ERIs()`.
         """
         if (eris is None) or isinstance(eris, np.ndarray):
-            self.ERIs(self, array=eris)
+            return self.ERIs(self, array=eris)
         else:
             return eris
 
