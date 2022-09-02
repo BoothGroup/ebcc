@@ -420,7 +420,9 @@ class EE_UEOM(UEOM, reom.EE_REOM):
 
         return kets
 
-    def moments(self, nmom, eris=None, amplitudes=None, hermitise=True, diagonal_only=True):  # pragma: no cover
+    def moments(
+        self, nmom, eris=None, amplitudes=None, hermitise=True, diagonal_only=True
+    ):  # pragma: no cover
         raise NotImplementedError("EE moments for UEBCC not working.")
 
         if not diagonal_only:

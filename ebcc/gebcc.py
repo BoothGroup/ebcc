@@ -39,7 +39,7 @@ class ERIs(rebcc.ERIs):
             rebcc.ERIs.__init__(self, ebcc, slices=slices, mo_coeff=mo_coeff)
 
             mo_a = [mo[: self.mf.mol.nao] for mo in self.mo_coeff]
-            mo_b = [mo[self.mf.mol.nao:] for mo in self.mo_coeff]
+            mo_b = [mo[self.mf.mol.nao :] for mo in self.mo_coeff]
 
             eri = ao2mo.kernel(self.mf._eri, mo_a)
             eri += ao2mo.kernel(self.mf._eri, mo_b)
