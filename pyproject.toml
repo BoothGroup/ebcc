@@ -1,8 +1,6 @@
 [project]
 name = "ebcc"
-version = "1.0.0a"
 description = "Coupled cluster calculations on electron-boson systems"
-download = "https://github.com/BoothGroup/ebcc"
 keywords = [
     "quantum", "chemistry",
     "electronic", "structure",
@@ -11,21 +9,9 @@ keywords = [
     "ccsd",
 ]
 readme = "README.md"
-author = [
-    "O. J. Backhouse",
-    "G. H. Booth",
-    "C. J. C. Scott",
-]
-author-email = "vayesta.embedding@gmail.com"
-license = "Apache License 2.0"
-platforms = [
-    "Linux",
-    "Mac OS-X",
-]
-python-requires = ">=3.7"
+requires-python = ">=3.7"
 classifiers = [
         "Development Status :: 2 - Pre-Alpha",
-        "License :: OSI Approved :: Apache Software License",  # TODO
         "Intended Audience :: Science/Research",
         "Intended Audience :: Developers",
         "Topic :: Scientific/Engineering",
@@ -38,25 +24,30 @@ classifiers = [
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: POSIX :: Linux",
 ]
-install-requires = [
+dependencies = [
     "numpy>=1.19.0",
     "pyscf>=2.0.0",
 ]
-tests-require = [
-    "pytest",
-    "pytest-cov",
+dynamic = [
+    "version",
 ]
+
+[tools.setuptools.dynamic]
+version = {attr = "ebcc.__version__"}
 
 [build-system]
 requires = [
-    "setuptools",
+    "setuptools>=46.1.0",
 ]
 build-backend = "setuptools.build_meta"
 
 [project.optional-dependencies]
 dev = [
-    "black>=18.3.0",
-    "isort>=5.0.0",
+    "black>=22.6.0",
+    "isort>=5.10.1",
+    "coverage[toml]",
+    "pytest",
+    "pytest-cov",
 ]
 
 [tool.black]
@@ -70,6 +61,7 @@ include = "ebcc"
 exclude = """
 /(
     | ebcc/codegen
+    | ebcc/__pycache__
     | .git
 )/
 """
@@ -82,7 +74,44 @@ src_paths = [
     "ebcc",
 ]
 skip_glob = [
+    "ebcc/__pycache__/*",
     "ebcc/codegen/*",
 ]
 
+[tool.coverage.run]
+branch = true
+source = [
+    "ebcc",
+]
+omit = [
+    "ebcc/codegen/gen_*.py",
+    "ebcc/codegen/wick.py",
+    "ebcc/codegen/common.py",
+    "ebcc/codegen/convenience_extra.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "def __str__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
+
+[tool.coverage.html]
+directory = "cov_html"
+
 [tool.pytest.ini_options]
+addopts = "-m 'not slow'"
+testpaths = [
+    "tests",
+]
+markers = [
+    # Slow tests:
+    "slow",
+    # Tests compared to another code:
+    "reference",
+    # Tests compared to another `ebcc` version:
+    "regression",
+]

@@ -77,6 +77,17 @@ class NullLogger(logging.Logger):
         pass
 
 
+HEADER = """
+        _
+       | |
+   ___ | |__    ___   ___
+  / _ \| '_ \  / __| / __|
+ |  __/| |_) || (__ | (__
+  \___||_.__/  \___| \___|
+
+"""
+
+
 # --- General constructor:
 
 from ebcc.gebcc import GEBCC
@@ -105,7 +116,7 @@ def _boson_free_factory(fermion_excitations):
     def constructor(mf, *args, **kwargs):
         from pyscf import scf
 
-        kwargs["fermion_excitations"] = fermion_excitatiions
+        kwargs["fermion_excitations"] = fermion_excitations
         kwargs["boson_excitations"] = ""
         kwargs["fermion_coupling_rank"] = 0
         kwargs["boson_coupling_rank"] = 0
@@ -119,6 +130,8 @@ def _boson_free_factory(fermion_excitations):
 
         cc.__doc__ = REBCC.__doc__
 
+        return cc
+
     return constructor
 
 
@@ -130,7 +143,7 @@ CC2 = _boson_free_factory("2")
 # --- List available methods:
 
 
-def available_methods():
+def available_models(verbose=True):  # pragma: no cover
     """List available coupled-cluster models for each of general (G),
     restricted (R) and unrestricted (U) Hartree--Fock references.
     """
@@ -157,5 +170,10 @@ def available_methods():
     rhf = sorted(rhf)
     uhf = sorted(uhf)
     ghf = sorted(ghf)
+
+    if verbose:
+        sys.stderr.write("RHF:\n  %s\n" % ", ".join(rhf))
+        sys.stderr.write("UHF:\n  %s\n" % ", ".join(uhf))
+        sys.stderr.write("GHF:\n  %s\n" % ", ".join(ghf))
 
     return tuple(rhf), tuple(uhf), tuple(ghf)

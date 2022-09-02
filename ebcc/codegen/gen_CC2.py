@@ -1,4 +1,4 @@
-"""Script to generate equations for the CCSD model.
+"""Script to generate equations for the CC2 model.
 """
 
 import warnings
@@ -10,7 +10,7 @@ from qwick.operator import FOperator
 from qwick.expression import *
 from qwick.convenience import *
 from qwick import codegen
-from ebcc.codegen import common, wick
+from ebcc.util import pack_2e, einsum, wick
 
 from dummy_spark import SparkContext
 ctx = SparkContext()
@@ -22,7 +22,7 @@ warnings.simplefilter("ignore", UserWarning)
 rank = ("SD", "", "")
 
 # Spin setting:
-spin = "uhf"  # {"ghf", "rhf", "uhf"}
+spin = "ghf"  # {"ghf", "rhf", "uhf"}
 
 # Indices
 occs = i, j, k, l = [Idx(n, "occ") for n in range(4)]
@@ -250,7 +250,7 @@ with common.FilePrinter("%sCC2" % prefix.upper()) as file_printer:
             ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2"],
             ["rdm2_f"],
             spin_cases={
-                "rdm2_f": ["aaaa", "abab", "baba", "bbbb"],
+                "rdm2_f": ["aaaa", "aabb", "bbaa", "bbbb"],
             },
             return_dict=False,
             timer=timer,
@@ -315,13 +315,13 @@ with common.FilePrinter("%sCC2" % prefix.upper()) as file_printer:
         function_printer.write_python(printer.doprint(terms)+"\n", comment="2RDM")
 
         if spin != "uhf":
-            function_printer.write_python("    rdm2_f = common.pack_2e(%s)\n" % ", ".join(["rdm2_f_%s" % x for x in common.ov_2e]))
+            function_printer.write_python("    rdm2_f = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s" % x for x in common.ov_2e]))
         else:
             function_printer.write_python(""
-                    + "    rdm2_f_aaaa = common.pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_aaaa" % x for x in common.ov_2e])
-                    + "    rdm2_f_aabb = common.pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_aabb" % x for x in common.ov_2e])
-                    + "    rdm2_f_bbaa = common.pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_bbaa" % x for x in common.ov_2e])
-                    + "    rdm2_f_bbbb = common.pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_bbbb" % x for x in common.ov_2e])
+                    + "    rdm2_f_aaaa = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_aaaa" % x for x in common.ov_2e])
+                    + "    rdm2_f_aabb = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_aabb" % x for x in common.ov_2e])
+                    + "    rdm2_f_bbaa = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_bbaa" % x for x in common.ov_2e])
+                    + "    rdm2_f_bbbb = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_bbbb" % x for x in common.ov_2e])
             )
 
         # TODO fix

@@ -1,6 +1,7 @@
-"""Tests for the GCCSD-S-1-1 model.
+"""Tests for the UCCSD-S-1-1 model.
 """
 
+import itertools
 import os
 import pickle
 import unittest
@@ -10,12 +11,13 @@ import pytest
 import scipy.linalg
 from pyscf import cc, gto, lib, scf
 
-from ebcc import GEBCC, NullLogger
+from ebcc import GEBCC, UEBCC, NullLogger
 
 
-class GCCSD_S_1_1_Tests(unittest.TestCase):
-    """Test GCCSD-S-1-1 against the legacy GCCSD-S-1-1 values with
-    shift=False.
+@pytest.mark.reference
+class UCCSD_S_1_1_Tests(unittest.TestCase):
+    """Test UCCSD-S-1-1 against the legacy GCCSD-S-1-1 values with
+    shift=True. The system is a singlet.
     """
 
     shift = True
@@ -38,20 +40,16 @@ class GCCSD_S_1_1_Tests(unittest.TestCase):
         mf.conv_tol = 1e-12
         mf.kernel()
         mf.mo_coeff = mo_coeff
+        mf = mf.to_uhf()
 
-        nmo = mf.mo_occ.size
+        nmo = mf.mo_occ[0].size
         nbos = 5
         np.random.seed(12345)
-        g_ = np.random.random((nbos, nmo, nmo)) * 0.02
-        g_ = 0.5 * (g_ + g_.transpose(0, 2, 1).conj())
+        g = np.random.random((nbos, nmo, nmo)) * 0.02
+        g = 0.5 * (g + g.transpose(0, 2, 1).conj())
         omega = np.random.random((nbos,)) * 5.0
 
-        orbspin = scf.addons.get_ghf_orbspin(mf.mo_energy, mf.mo_occ, True)
-        g = np.zeros((nbos, nmo*2, nmo*2))
-        g[np.ix_(range(nbos), orbspin==0, orbspin==0)] = g_
-        g[np.ix_(range(nbos), orbspin==1, orbspin==1)] = g_
-
-        ccsd = GEBCC(
+        ccsd = UEBCC(
                 mf,
                 fermion_excitations="SD",
                 boson_excitations="S",
@@ -68,11 +66,17 @@ class GCCSD_S_1_1_Tests(unittest.TestCase):
         ccsd.kernel(eris=eris)
         ccsd.solve_lambda(eris=eris)
 
+        osort = list(itertools.chain(*zip(range(ccsd.nocc[0]), range(ccsd.nocc[0], ccsd.nocc[0]+ccsd.nocc[1]))))
+        vsort = list(itertools.chain(*zip(range(ccsd.nvir[1]), range(ccsd.nvir[0], ccsd.nvir[0]+ccsd.nvir[1]))))
+        fsort = list(itertools.chain(*zip(range(ccsd.nmo), range(ccsd.nmo, 2*ccsd.nmo))))
+
         cls.mf, cls.ccsd, cls.eris, cls.data = mf, ccsd, eris, data
+        cls.osort, cls.vsort, cls.fsort = osort, vsort, fsort
 
     @classmethod
     def tearDownClass(cls):
         del cls.mf, cls.ccsd, cls.eris, cls.data
+        del cls.osort, cls.vsort
 
     def test_const(self):
         a = self.data[self.shift]["const"]
@@ -84,18 +88,6 @@ class GCCSD_S_1_1_Tests(unittest.TestCase):
         b = self.ccsd.xi
         np.testing.assert_almost_equal(a, b, 7)
 
-    def test_fock(self):
-        for tag in ("oo", "ov", "vo", "vv"):
-            a = self.data[self.shift]["f"+tag]
-            b = getattr(self.ccsd.fock, tag)
-            np.testing.assert_almost_equal(a, b, 7)
-
-    def test_g(self):
-        for tag in ("oo", "ov", "vo", "vv"):
-            a = self.data[self.shift]["gb"+tag]
-            b = getattr(self.ccsd.g, "b"+tag)
-            np.testing.assert_almost_equal(a, b, 7)
-
     def test_energy(self):
         a = self.data[self.shift]["e_corr"]
         b = self.ccsd.e_corr
@@ -103,12 +95,7 @@ class GCCSD_S_1_1_Tests(unittest.TestCase):
 
     def test_t1_amplitudes(self):
         a = self.data[self.shift]["t1"]
-        b = self.ccsd.t1
-        np.testing.assert_almost_equal(a, b, 6)
-
-    def test_t2_amplitudes(self):
-        a = self.data[self.shift]["t2"]
-        b = self.ccsd.t2
+        b = scipy.linalg.block_diag(self.ccsd.t1.aa, self.ccsd.t1.bb)[self.osort][:, self.vsort]
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_s1_amplitudes(self):
@@ -119,16 +106,13 @@ class GCCSD_S_1_1_Tests(unittest.TestCase):
     def test_u11_amplitudes(self):
         a = self.data[self.shift]["u11"]
         b = self.ccsd.amplitudes["u11"]
+        b = np.array([scipy.linalg.block_diag(x, y) for x, y in zip(b.aa, b.bb)])
+        b = b[:, self.osort][:, :, self.vsort]
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_l1_amplitudes(self):
         a = self.data[self.shift]["l1"]
-        b = self.ccsd.l1
-        np.testing.assert_almost_equal(a, b, 6)
-
-    def test_l2_amplitudes(self):
-        a = self.data[self.shift]["l2"]
-        b = self.ccsd.l2
+        b = scipy.linalg.block_diag(self.ccsd.l1.aa, self.ccsd.l1.bb)[self.vsort][:, self.osort]
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_ls1_amplitudes(self):
@@ -139,16 +123,15 @@ class GCCSD_S_1_1_Tests(unittest.TestCase):
     def test_lu11_amplitudes(self):
         a = self.data[self.shift]["lu11"]
         b = self.ccsd.lambdas["lu11"]
+        b = np.array([scipy.linalg.block_diag(x, y) for x, y in zip(b.aa, b.bb)])
+        b = b[:, self.vsort][:, :, self.osort]
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_rdm1_f(self):
+        rdm1_f = self.ccsd.make_rdm1_f()
         a = self.data[self.shift]["rdm1_f"]
-        b = self.ccsd.make_rdm1_f()
-        np.testing.assert_almost_equal(a, b, 6)
-
-    def test_rdm2_f(self):
-        a = self.data[self.shift]["rdm1_f"]
-        b = self.ccsd.make_rdm1_f()
+        b = scipy.linalg.block_diag(rdm1_f.aa, rdm1_f.bb)
+        b = b[self.fsort][:, self.fsort]
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_rdm1_b(self):
@@ -162,20 +145,25 @@ class GCCSD_S_1_1_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_rdm_eb(self):
-        a = self.data[self.shift]["rdm_eb"]
+        a = np.array(self.data[self.shift]["rdm_eb"])
         b = self.ccsd.make_eb_coup_rdm()
+        b = np.array([
+            [scipy.linalg.block_diag(x, y) for x, y in zip(b.aa[0], b.bb[0])],
+            [scipy.linalg.block_diag(x, y) for x, y in zip(b.aa[1], b.bb[1])],
+        ])
+        b = b[:, :, self.fsort][:, :, :, self.fsort]
         np.testing.assert_almost_equal(a, b, 6)
 
 
-class GCCSD_S_1_1_NoShift_Tests(GCCSD_S_1_1_Tests):
-    """Test GCCSD-S-1-1 against the legacy GCCSD-S-1-1 values with
-    shift=True.
+@pytest.mark.reference
+class UCCSD_S_1_1_NoShift_Tests(UCCSD_S_1_1_Tests):
+    """Test UCCSD-S-1-1 against the legacy GCCSD-S-1-1 values with
+    shift=False. The system is a singlet.
     """
 
     shift = False
 
 
-
 if __name__ == "__main__":
-    print("Tests for GCCSD-S-1-1")
+    print("Tests for UCCSD-S-1-1")
     unittest.main()

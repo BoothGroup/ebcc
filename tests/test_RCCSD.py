@@ -14,6 +14,7 @@ from pyscf import cc, gto, lib, scf
 from ebcc import REBCC, NullLogger
 
 
+@pytest.mark.reference
 class RCCSD_Tests(unittest.TestCase):
     """Test RCCSD against the legacy GCCSD values.
     """
@@ -138,6 +139,7 @@ class RCCSD_Tests(unittest.TestCase):
     #    np.testing.assert_almost_equal(a, b, 6)
 
 
+@pytest.mark.reference
 class RCCSD_PySCF_Tests(unittest.TestCase):
     """Test RCCSD against the PySCF values.
     """

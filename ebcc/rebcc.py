@@ -11,10 +11,12 @@ from typing import Tuple
 import numpy as np
 from pyscf import ao2mo, lib
 
-from ebcc import default_log, eom, util
+from ebcc import default_log, reom, util
 
+# TODO nuke hbar
 # TODO math in docstrings
 # TODO resolve G vs bare_G confusion
+# TODO warnings if amplitudes/lambdas are not converged when calling i.e. DM funcs
 
 
 class Amplitudes(dict):
@@ -149,6 +151,14 @@ class REBCC:
     rank : tuple(str)
         Rank of (fermionic, bosonic, fermion-boson coupling) cluster
         operators.
+    fermion_excitations : str, optional
+        Rank of fermionic excitations. Default value is "SD".
+    boson_excitations : str, optional
+        Rank of bosonic excitations. Default is "".
+    fermion_coupling_rank : int, optional
+        Rank of fermionic term in coupling. Default is 0.
+    boson_coupling_rank : int, optional
+        Rank of bosonic term in coupling. Default is 0.
     e_corr : float
         Correlation energy.
     amplitudes : Amplitudes
@@ -231,27 +241,21 @@ class REBCC:
     hbar_matvec_ea(r1, r2, eris=None, amplitudes=None)
         Compute the product between a state vector and the EOM
         Hamiltonian for the EA.
-    hbar_matvec_dd(r1, r2, eris=None, amplitudes=None)
+    hbar_matvec_ee(r1, r2, eris=None, amplitudes=None)
         Compute the product between a state vector and the EOM
-        Hamiltonian for the DD.
-    hbar_diag_ip(eris=None, amplitudes=None)
-        Compute the diagonal of the EOM Hamiltonian for the IP.
-    hbar_diag_ea(eris=None, amplitudes=None)
-        Compute the diagonal of the EOM Hamiltonian for the EA.
-    hbar_diag_dd(eris=None, amplitudes=None)
-        Compute the diagonal of the EOM Hamiltonian for the DD.
+        Hamiltonian for the EE.
     make_ip_mom_bras(eris=None, amplitudes=None, lambdas=None)
         Get the bra IP vectors to construct EOM moments.
     make_ea_mom_bras(eris=None, amplitudes=None, lambdas=None)
         Get the bra EA vectors to construct EOM moments.
-    make_dd_mom_bras(eris=None, amplitudes=None, lambdas=None)
-        Get the bra DD vectors to construct EOM moments.
+    make_ee_mom_bras(eris=None, amplitudes=None, lambdas=None)
+        Get the bra EE vectors to construct EOM moments.
     make_ip_mom_kets(eris=None, amplitudes=None, lambdas=None)
         Get the ket IP vectors to construct EOM moments.
     make_ea_mom_kets(eris=None, amplitudes=None, lambdas=None)
         Get the ket EA vectors to construct EOM moments.
-    make_dd_mom_kets(eris=None, amplitudes=None, lambdas=None)
-        Get the ket DD vectors to construct EOM moments.
+    make_ee_mom_kets(eris=None, amplitudes=None, lambdas=None)
+        Get the ket EE vectors to construct EOM moments.
     make_ip_1mom(eris=None, amplitudes=None, lambdas=None)
         Build the first fermionic hole single-particle moment.
     make_ea_1mom(eris=None, amplitudes=None, lambdas=None)
@@ -274,12 +278,18 @@ class REBCC:
     excitations_to_vector_ea(*excitations)
         Construct a vector containing all of the excitation amplitudes
         used in the given ansatz for the EA.
+    excitations_to_vector_ee(*excitations)
+        Construct a vector containing all of the excitation amplitudes
+        used in the given ansatz for the EE.
     vector_to_excitations_ip(vector)
         Construct all of the excitation amplitudes used in the given
         ansatz from a vector for the IP.
     vector_to_excitations_ea(vector)
         Construct a vector containing all of the excitation amplitudes
         used in the given ansatz for the EA.
+    vector_to_excitations_ee(vector)
+        Construct a vector containing all of the excitation amplitudes
+        used in the given ansatz for the EE.
     get_mean_field_G()
         Get the mean-field boson non-conserving term of the
         Hamiltonian.
@@ -592,7 +602,7 @@ class REBCC:
                 amplitudes["t%d" % n] = self.fock.vo.T / e_ia
             elif n == 2:
                 e_ijab = lib.direct_sum("ia,jb->ijab", e_ia, e_ia)
-                amplitudes["t%d" % n] = eris.ovov.swapaxes(1, 2) / e_ijab
+                amplitudes["t%d" % n] = eris.oovv / e_ijab
             else:
                 amplitudes["t%d" % n] = np.zeros((self.nocc,) * n + (self.nvir,) * n)
 
@@ -879,7 +889,7 @@ class REBCC:
         if unshifted and self.options.shift:
             dm_cre, dm_ann = self.make_sing_b_dm()
             xi = self.xi
-            dm[np.diag_indices_from(dm)] -= xi * (dm_cre + dm_ann) - xi ** 2
+            dm[np.diag_indices_from(dm)] -= xi * (dm_cre + dm_ann) - xi**2
 
         return dm
 
@@ -1022,82 +1032,6 @@ class REBCC:
 
         return dm_eb
 
-    def hbar_ip(self, eris=None, amplitudes=None):
-        """Compute the EOM Hamiltonian for the IP.
-
-        Parameters
-        ----------
-        eris : ERIs, optional
-            Electronic repulsion integrals. Default value is generated
-            using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
-            Cluster amplitudes. Default value is generated using
-            `self.init_amps()`.
-
-        Returns
-        -------
-        h : numpy.ndarray
-            EOM Hamiltonian for the IP.
-        """
-        # TODO generalise
-
-        func, kwargs = self._load_function(
-            "hbar_ip",
-            eris=eris,
-            amplitudes=amplitudes,
-        )
-
-        blocks = func(**kwargs)
-        nocc = self.nocc
-        nvir = self.nvir
-
-        h11 = blocks["h11"].reshape(nocc, nocc)
-        h12 = blocks["h12"].reshape(nocc, nocc * nocc * nvir)
-        h21 = blocks["h21"].reshape(nocc * nocc * nvir, nocc)
-        h22 = blocks["h22"].reshape(nocc * nocc * nvir, nocc * nocc * nvir)
-
-        h = np.block([[h11, h12], [h21, h22]])
-
-        return h
-
-    def hbar_ea(self, eris=None, amplitudes=None):
-        """Compute the EOM Hamiltonian for the EA.
-
-        Parameters
-        ----------
-        eris : ERIs, optional
-            Electronic repulsion integrals. Default value is generated
-            using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
-            Cluster amplitudes. Default value is generated using
-            `self.init_amps()`.
-
-        Returns
-        -------
-        h : numpy.ndarray
-            EOM Hamiltonian for the EA.
-        """
-        # TODO generalise
-
-        func, kwargs = self._load_function(
-            "hbar_ea",
-            eris=eris,
-            amplitudes=amplitudes,
-        )
-
-        blocks = func(**kwargs)
-        nocc = self.nocc
-        nvir = self.nvir
-
-        h11 = blocks["h11"].reshape(nvir, nvir)
-        h12 = blocks["h12"].reshape(nvir, nvir * nvir * nocc)
-        h21 = blocks["h21"].reshape(nvir * nvir * nocc, nvir)
-        h22 = blocks["h22"].reshape(nvir * nvir * nocc, nvir * nvir * nocc)
-
-        h = np.block([[h11, h12], [h21, h22]])
-
-        return h
-
     def hbar_matvec_ip(self, r1, r2, eris=None, amplitudes=None):
         """Compute the product between a state vector and the EOM
         Hamiltonian for the IP.
@@ -1173,9 +1107,9 @@ class REBCC:
 
         return func(**kwargs)
 
-    def hbar_matvec_dd(self, r1, r2, eris=None, amplitudes=None):
+    def hbar_matvec_ee(self, r1, r2, eris=None, amplitudes=None):
         """Compute the product between a state vector and the EOM
-        Hamiltonian for the DD.
+        Hamiltonian for the EE.
 
         Parameters
         ----------
@@ -1200,88 +1134,15 @@ class REBCC:
             sector.
         """
 
-        raise NotImplementedError  # TODO
-
-    def hbar_diag_ip(self, eris=None, amplitudes=None):
-        """Compute the diagonal of the EOM Hamiltonian for the IP.
-
-        Parameters
-        ----------
-        eris : ERIs, optional
-            Electronic repulsion integrals. Default value is generated
-            using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
-            Cluster amplitudes. Default value is generated using
-            `self.init_amps()`.
-
-        Returns
-        -------
-        diag : dict of (str, numpy.ndarray)
-            Dictionary containing the diagonal in each sector of the
-            matrix. Keys are strings of the name of each vector, and
-            values are arrays whose dimension depends on the
-            particular sector.
-        """
-
         func, kwargs = self._load_function(
-            "hbar_diag_ip",
+            "hbar_matvec_ee",
             eris=eris,
             amplitudes=amplitudes,
+            r1=r1,
+            r2=r2,
         )
 
         return func(**kwargs)
-
-    def hbar_diag_ea(self, eris=None, amplitudes=None):
-        """Compute the diagonal of the EOM Hamiltonian for the EA.
-
-        Parameters
-        ----------
-        eris : ERIs, optional
-            Electronic repulsion integrals. Default value is generated
-            using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
-            Cluster amplitudes. Default value is generated using
-            `self.init_amps()`.
-
-        Returns
-        -------
-        diag : dict of (str, numpy.ndarray)
-            Dictionary containing the diagonal in each sector of the
-            matrix. Keys are strings of the name of each vector, and
-            values are arrays whose dimension depends on the
-            particular sector.
-        """
-
-        func, kwargs = self._load_function(
-            "hbar_diag_ea",
-            eris=eris,
-            amplitudes=amplitudes,
-        )
-
-        return func(**kwargs)
-
-    def hbar_diag_dd(self, eris=None, amplitudes=None):
-        """Compute the of the EOM Hamiltonian for the DD.
-
-        Parameters
-        ----------
-        eris : ERIs, optional
-            Electronic repulsion integrals. Default value is generated
-            using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
-            Cluster amplitudes. Default value is generated using
-            `self.init_amps()`.
-
-        Returns
-        -------
-        diag : dict of (str, numpy.ndarray)
-            Dictionary containing the diagonal in each sector of the
-            matrix. Keys are strings of the name of each vector, and
-            values are arrays whose dimension depends on the
-            particular sector.
-        """
-
-        raise NotImplementedError  # TODO
 
     def make_ip_mom_bras(self, eris=None, amplitudes=None, lambdas=None):
         """Get the bra IP vectors to construct EOM moments.
@@ -1347,8 +1208,8 @@ class REBCC:
 
         return func(**kwargs)
 
-    def make_dd_mom_bras(self, eris=None, amplitudes=None, lambdas=None):
-        """Get the bra DD vectors to construct EOM moments.
+    def make_ee_mom_bras(self, eris=None, amplitudes=None, lambdas=None):
+        """Get the bra EE vectors to construct EOM moments.
 
         Parameters
         ----------
@@ -1370,7 +1231,14 @@ class REBCC:
             arrays whose dimension depends on the particular sector.
         """
 
-        raise NotImplementedError  # TODO
+        func, kwargs = self._load_function(
+            "make_ee_mom_bras",
+            eris=eris,
+            amplitudes=amplitudes,
+            lambdas=lambdas,
+        )
+
+        return func(**kwargs)
 
     def make_ip_mom_kets(self, eris=None, amplitudes=None, lambdas=None):
         """Get the ket IP vectors to construct EOM moments.
@@ -1436,8 +1304,8 @@ class REBCC:
 
         return func(**kwargs)
 
-    def make_dd_mom_kets(self, eris=None, amplitudes=None, lambdas=None):
-        """Get the ket DD vectors to construct EOM moments.
+    def make_ee_mom_kets(self, eris=None, amplitudes=None, lambdas=None):
+        """Get the ket EE vectors to construct EOM moments.
 
         Parameters
         ----------
@@ -1459,7 +1327,14 @@ class REBCC:
             arrays whose dimension depends on the particular sector.
         """
 
-        raise NotImplementedError  # TODO
+        func, kwargs = self._load_function(
+            "make_ee_mom_kets",
+            eris=eris,
+            amplitudes=amplitudes,
+            lambdas=lambdas,
+        )
+
+        return func(**kwargs)
 
     def make_ip_1mom(self, eris=None, amplitudes=None, lambdas=None):
         """Build the first fermionic hole single-particle moment.
@@ -1512,13 +1387,13 @@ class REBCC:
         raise NotImplementedError  # TODO
 
     def ip_eom(self, options=None, **kwargs):
-        return eom.IP_EOM(self, options=options, **kwargs)
+        return reom.IP_REOM(self, options=options, **kwargs)
 
     def ea_eom(self, options=None, **kwargs):
-        return eom.EA_EOM(self, options=options, **kwargs)
+        return reom.EA_REOM(self, options=options, **kwargs)
 
     def ee_eom(self, options=None, **kwargs):
-        return eom.EE_EOM(self, options=options, **kwargs)
+        return reom.EE_REOM(self, options=options, **kwargs)
 
     def amplitudes_to_vector(self, amplitudes):
         """Construct a vector containing all of the amplitudes used in
@@ -1715,6 +1590,25 @@ class REBCC:
         """
         return self.excitations_to_vector_ip(*excitations)
 
+    def excitations_to_vector_ee(self, *excitations):
+        """Construct a vector containing all of the excitation
+        amplitudes used in the given ansatz for the EE.
+
+        Parameters
+        ----------
+        *excitations : iterable of numpy.ndarray
+            Dictionary containing the excitations. Keys are strings of
+            the name of each excitations, and values are arrays whose
+            dimension depends on the particular excitation amplitude.
+
+        Returns
+        -------
+        vector : numpy.ndarray
+            Single vector consisting of all the excitations flattened
+            and concatenated. Size depends on the ansatz.
+        """
+        return self.excitations_to_vector_ip(*excitations)
+
     def vector_to_excitations_ip(self, vector):
         """Construct all of the excitation amplitudes used in the
         given ansatz from a vector for the IP.
@@ -1757,16 +1651,16 @@ class REBCC:
 
         Parameters
         ----------
-        *excitations : iterable of numpy.ndarray
-            Dictionary containing the excitations. Keys are strings of
-            the name of each excitations, and values are arrays whose
-            dimension depends on the particular excitation amplitude.
-
-        Returns
-        -------
         vector : numpy.ndarray
             Single vector consisting of all the excitations flattened
             and concatenated. Size depends on the ansatz.
+
+        Returns
+        -------
+        excitations : tuple of numpy.ndarray
+            Dictionary containing the excitations. Keys are strings of
+            the name of each excitations, and values are arrays whose
+            dimension depends on the particular excitation amplitude.
         """
 
         excitations = []
@@ -1774,6 +1668,42 @@ class REBCC:
 
         for n in self.rank_numeric[0]:
             shape = (self.nvir,) * n + (self.nocc,) * (n - 1)
+            size = np.prod(shape)
+            excitations.append(vector[i0 : i0 + size].reshape(shape))
+            i0 += size
+
+        for n in self.rank_numeric[1]:
+            raise NotImplementedError
+
+        for nf in self.rank_numeric[2]:
+            for nb in self.rank_numeric[3]:
+                raise NotImplementedError
+
+        return tuple(excitations)
+
+    def vector_to_excitations_ee(self, vector):
+        """Construct a vector containing all of the excitation
+        amplitudes used in the given ansatz for the EE.
+
+        Parameters
+        ----------
+        vector : numpy.ndarray
+            Single vector consisting of all the excitations flattened
+            and concatenated. Size depends on the ansatz.
+
+        Returns
+        -------
+        excitations : tuple of numpy.ndarray
+            Dictionary containing the excitations. Keys are strings of
+            the name of each excitations, and values are arrays whose
+            dimension depends on the particular excitation amplitude.
+        """
+
+        excitations = []
+        i0 = 0
+
+        for n in self.rank_numeric[0]:
+            shape = (self.nocc,) * n + (self.nvir,) * n
             size = np.prod(shape)
             excitations.append(vector[i0 : i0 + size].reshape(shape))
             i0 += size
@@ -1933,7 +1863,7 @@ class REBCC:
             Shift in the energy from moving to polaritonic basis.
         """
         if self.options.shift:
-            return lib.einsum("I,I->", self.omega, self.xi ** 2)
+            return lib.einsum("I,I->", self.omega, self.xi**2)
         else:
             return 0.0
 

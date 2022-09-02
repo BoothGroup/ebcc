@@ -1,4 +1,4 @@
-"""Tests for the GCCSD-SD-1-2 model.
+"""Tests for the GCCSD-SD-1-1 model.
 """
 
 import os
@@ -13,9 +13,10 @@ from pyscf import cc, gto, lib, scf
 from ebcc import GEBCC, NullLogger
 
 
-class GCCSD_SD_1_2_Tests(unittest.TestCase):
-    """Test GCCSD-SD-1-2 against the legacy GCCSD-SD-1-2 values with
-    shift=True.
+@pytest.mark.reference
+class GCCSD_SD_1_1_Tests(unittest.TestCase):
+    """Test GCCSD-SD-1-1 against the legacy GCCSD-SD-1-1 values with
+    shift=False.
     """
 
     shift = True
@@ -26,7 +27,7 @@ class GCCSD_SD_1_2_Tests(unittest.TestCase):
         with open(path, "rb") as f:
             data = pickle.load(f)
             mo_coeff = data["mo_coeff"]
-            data = data[(2, 2, 2)]
+            data = data[(2, 2, 1)]
 
         mol = gto.Mole()
         mol.atom = "H 0 0 0; F 0 0 1.1"
@@ -56,7 +57,7 @@ class GCCSD_SD_1_2_Tests(unittest.TestCase):
                 fermion_excitations="SD",
                 boson_excitations="SD",
                 fermion_coupling_rank=1,
-                boson_coupling_rank=2,
+                boson_coupling_rank=1,
                 g=g,
                 omega=omega,
                 shift=cls.shift,
@@ -179,9 +180,10 @@ class GCCSD_SD_1_2_Tests(unittest.TestCase):
     #    np.testing.assert_almost_equal(a, b, 6)
 
 
-class GCCSD_SD_1_2_NoShift_Tests(GCCSD_SD_1_2_Tests):
-    """Test GCCSD-SD-1-2 against the legacy GCCSD-SD-1-2 values with
-    shift=False.
+@pytest.mark.reference
+class GCCSD_SD_1_1_NoShift_Tests(GCCSD_SD_1_1_Tests):
+    """Test GCCSD-SD-1-1 against the legacy GCCSD-SD-1-1 values with
+    shift=True.
     """
 
     shift = False
@@ -189,5 +191,5 @@ class GCCSD_SD_1_2_NoShift_Tests(GCCSD_SD_1_2_Tests):
 
 
 if __name__ == "__main__":
-    print("Tests for GCCSD-SD-1-2")
+    print("Tests for GCCSD-SD-1-1")
     unittest.main()

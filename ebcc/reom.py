@@ -1,13 +1,17 @@
-"""Equation-of-motion solver.
+"""Restricted equation-of-motion solver.
 """
 
 import dataclasses
+import functools
+import warnings
+from types import SimpleNamespace
 
 import numpy as np
 from pyscf import lib
 
 from ebcc import util
 
+# TODO split into reom, ueom, geom
 # TODO docstrings
 
 
@@ -30,20 +34,23 @@ class Options:
     """
 
     nroots: int = 5
+    koopmans: bool = False
     e_tol: float = util.Inherited
     max_iter: int = util.Inherited
     max_space: int = 12
 
 
-class EOM:
-    """Equation-of-motion base class."""
+class REOM:
+    """Restricted equation-of-motion base class."""
+
+    Options = Options
 
     def __init__(self, ebcc, options=None, **kwargs):
         self.ebcc = ebcc
         self.log = ebcc.log
 
         if options is None:
-            options = Options()
+            options = self.Options()
         self.options = options
         for key, val in kwargs.items():
             setattr(self.options, key, val)
@@ -80,10 +87,10 @@ class EOM:
     def kets(self, eris=None):
         raise NotImplementedError
 
-    def get_pick(self, guesses=None, koopmans=False, real_system=True):
+    def get_pick(self, guesses=None, real_system=True):
         """Pick eigenvalues which match the criterion."""
 
-        if koopmans:
+        if self.options.koopmans:
             assert guesses is not None
             g = np.asarray(guesses)
 
@@ -99,21 +106,30 @@ class EOM:
 
             def pick(w, v, nroots, envs):
                 real_idx = np.where(abs(w.imag) < 1e-3)[0]
-                return lib.linalg_helper._eigs_cmplx2real(w, v, real_idx, real_system)
+                w, v, idx = lib.linalg_helper._eigs_cmplx2real(w, v, real_idx, real_system)
+                mask = np.argsort(np.abs(w))
+                w, v = w[mask], v[:, mask]
+                return w, v, 0
 
         return pick
 
-    def get_guesses(self, diag=None, use_mean_field=False):
+    def _argsort_guess(self, diag):
+        if self.options.koopmans:
+            r_mf = self.vector_to_amplitudes(diag)[0]
+            size = r_mf.size
+            arg = np.argsort(np.diag(diag[:size]))
+        else:
+            arg = np.argsort(diag)
+
+        return arg
+
+    def get_guesses(self, diag=None):
         """Generate guess vectors."""
 
         if diag is None:
             diag = self.diag()
 
-        if use_mean_field:
-            r_mf = self.vector_to_amplitudes(diag)[0]
-            arg = np.argsort(np.diag(diag[: r_mf.size]))
-        else:
-            arg = np.argsort(np.abs(diag))
+        arg = self._argsort_guess(diag)
 
         nroots = min(self.options.nroots, diag.size)
         guesses = np.zeros((nroots, diag.size))
@@ -126,6 +142,9 @@ class EOM:
         """Callback function between iterations."""
 
         pass
+
+    def _quasiparticle_weight(self, r1):
+        return np.linalg.norm(r1) ** 2
 
     def davidson(self, guesses=None):
         """Solve the EOM Hamiltonian using the Davidson solver."""
@@ -149,7 +168,7 @@ class EOM:
             guesses,
             diag,
             tol=self.options.e_tol,
-            nroots=self.options.nroots,
+            nroots=nroots,
             pick=pick,
             max_cycle=self.options.max_iter,
             max_space=self.options.max_space,
@@ -165,7 +184,7 @@ class EOM:
         self.log.output("%4s %16s %16s", "Root", "Energy", "QP Weight")
         for n, (en, vn) in enumerate(zip(e, v)):
             r1n = self.vector_to_amplitudes(vn)[0]
-            qpwt = np.linalg.norm(r1n) ** 2
+            qpwt = self._quasiparticle_weight(r1n)
             self.log.output("%4d %16.10f %16.5g" % (n, en, qpwt))
 
         self.converged = converged
@@ -184,15 +203,8 @@ class EOM:
         if amplitudes is None:
             amplitudes = self.ebcc.amplitudes
 
-        bras = list(self.bras(eris=eris))
-        kets = list(self.kets(eris=eris))
-
-        bras = np.array(
-            [self.amplitudes_to_vector(*[b[i] for b in bras]) for i in range(self.ebcc.nmo)]
-        )
-        kets = np.array(
-            [self.amplitudes_to_vector(*[k[..., i] for k in kets]) for i in range(self.ebcc.nmo)]
-        )
+        bras = self.bras(eris=eris)
+        kets = self.kets(eris=eris)
 
         moments = np.zeros((nmom, self.nmo, self.nmo))
 
@@ -212,19 +224,32 @@ class EOM:
 
     @property
     def name(self):
-        return self.excitation_type.upper() + "-EOM-" + self.ebcc.name
+        return self.excitation_type.upper() + "-REOM-" + self.ebcc.name
 
     @property
     def excitation_type(self):
         raise NotImplementedError
 
     @property
+    def rank_numeric(self):
+        return self.ebcc.rank_numeric
+
+    @property
     def nmo(self):
         return self.ebcc.nmo
 
+    @property
+    def nocc(self):
+        return self.ebcc.nocc
 
-class IP_EOM(EOM):
-    """Equation-of-motion class for ionisation potentials."""
+    @property
+    def nvir(self):
+        return self.ebcc.nvir
+
+
+@util.inherit_docstrings
+class IP_REOM(REOM):
+    """Restricted equation-of-motion class for ionisation potentials."""
 
     def amplitudes_to_vector(self, *amplitudes):
         return self.ebcc.excitations_to_vector_ip(*amplitudes)
@@ -238,32 +263,51 @@ class IP_EOM(EOM):
         return self.amplitudes_to_vector(*amplitudes)
 
     def diag(self, eris=None):
-        return self.amplitudes_to_vector(*self.ebcc.hbar_diag_ip(eris=eris))
+        parts = []
+        e_ia = lib.direct_sum("i-a->ia", self.ebcc.eo, self.ebcc.ev)
+        e_i = self.ebcc.eo
 
-    def hbar(self, eris=None):
-        return self.ebcc.hbar_ip(eris=eris)
+        for n in self.rank_numeric[0]:
+            perm = list(range(0, n * 2, 2)) + list(range(1, (n - 1) * 2, 2))
+            d = functools.reduce(np.add.outer, [e_ia] * (n - 1) + [e_i])
+            d = d.transpose(perm)
+            parts.append(d)
 
-    def bras(self, eris=None):
+        for n in self.rank_numeric[1]:
+            raise NotImplementedError
+
+        return self.amplitudes_to_vector(*parts)
+
+    def _bras(self, eris=None):
         return self.ebcc.make_ip_mom_bras(eris=eris)
 
-    def kets(self, eris=None):
+    def _kets(self, eris=None):
         return self.ebcc.make_ip_mom_kets(eris=eris)
 
+    def bras(self, eris=None):
+        bras_raw = list(self._bras(eris=eris))
+        bras = np.array(
+            [self.amplitudes_to_vector(*[b[i] for b in bras_raw]) for i in range(self.nmo)]
+        )
+        return bras
+
+    def kets(self, eris=None):
+        kets_raw = list(self._kets(eris=eris))
+        kets = np.array(
+            [self.amplitudes_to_vector(*[b[..., i] for b in kets_raw]) for i in range(self.nmo)]
+        )
+        return kets
+
     def dot_braket(self, bra, ket):
-        # TODO generalise
-        b1, b2 = self.vector_to_amplitudes(bra)
-        k1, k2 = self.vector_to_amplitudes(ket)
-        # TODO move factor to bra
-        fac = 0.5 if self.ebcc.name.startswith("G") else 1.0
-        out = +1.0 * np.dot(b1, k1) + fac * np.einsum("ija,ija->", b2, k2)
-        return out
+        return np.dot(bra, ket)
 
     @property
     def excitation_type(self):
         return "ip"
 
 
-class EA_EOM(EOM):
+@util.inherit_docstrings
+class EA_REOM(REOM):
     """Equation-of-motion class for electron affinities."""
 
     def amplitudes_to_vector(self, *amplitudes):
@@ -278,32 +322,51 @@ class EA_EOM(EOM):
         return self.amplitudes_to_vector(*amplitudes)
 
     def diag(self, eris=None):
-        return self.amplitudes_to_vector(*self.ebcc.hbar_diag_ea(eris=eris))
+        parts = []
+        e_ai = lib.direct_sum("a-i->ai", self.ebcc.ev, self.ebcc.eo)
+        e_a = self.ebcc.ev
 
-    def hbar(self, eris=None):
-        return self.ebcc.hbar_ea(eris=eris)
+        for n in self.rank_numeric[0]:
+            perm = list(range(0, n * 2, 2)) + list(range(1, (n - 1) * 2, 2))
+            d = functools.reduce(np.add.outer, [e_ai] * (n - 1) + [e_a])
+            d = d.transpose(perm)
+            parts.append(d)
 
-    def bras(self, eris=None):
+        for n in self.rank_numeric[1]:
+            raise NotImplementedError
+
+        return self.amplitudes_to_vector(*parts)
+
+    def _bras(self, eris=None):
         return self.ebcc.make_ea_mom_bras(eris=eris)
 
-    def kets(self, eris=None):
+    def _kets(self, eris=None):
         return self.ebcc.make_ea_mom_kets(eris=eris)
 
+    def bras(self, eris=None):
+        bras_raw = list(self._bras(eris=eris))
+        bras = np.array(
+            [self.amplitudes_to_vector(*[b[i] for b in bras_raw]) for i in range(self.nmo)]
+        )
+        return bras
+
+    def kets(self, eris=None):
+        kets_raw = list(self._kets(eris=eris))
+        kets = np.array(
+            [self.amplitudes_to_vector(*[b[..., i] for b in kets_raw]) for i in range(self.nmo)]
+        )
+        return kets
+
     def dot_braket(self, bra, ket):
-        # TODO generalise
-        b1, b2 = self.vector_to_amplitudes(bra)
-        k1, k2 = self.vector_to_amplitudes(ket)
-        # TODO move factor to bra
-        fac = 0.5 if self.ebcc.name.startswith("G") else 1.0
-        out = +1.0 * np.dot(b1, k1) + fac * np.einsum("abi,abi->", b2, k2)
-        return out
+        return np.dot(bra, ket)
 
     @property
     def excitation_type(self):
         return "ea"
 
 
-class EE_EOM(EOM):
+@util.inherit_docstrings
+class EE_REOM(REOM):
     """Equation-of-motion class for neutral excitations."""
 
     def amplitudes_to_vector(self, *amplitudes):
@@ -318,16 +381,77 @@ class EE_EOM(EOM):
         return self.amplitudes_to_vector(*amplitudes)
 
     def diag(self, eris=None):
-        return self.amplitudes_to_vector(*self.ebcc.hbar_diag_ee(eris=eris))
+        parts = []
+        e_ia = lib.direct_sum("a-i->ia", self.ebcc.ev, self.ebcc.eo)
 
-    def hbar(self, eris=None):
-        return self.ebcc.hbar_ee(eris=eris)
+        for n in self.rank_numeric[0]:
+            perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
+            d = functools.reduce(np.add.outer, [e_ia] * n)
+            d = d.transpose(perm)
+            parts.append(d)
+
+        for n in self.rank_numeric[1]:
+            raise NotImplementedError
+
+        return self.amplitudes_to_vector(*parts)
 
     def bras(self, eris=None):
-        return self.ebcc.make_ee_mom_bras(eris=eris)
+        bras_raw = list(self.ebcc.make_ee_mom_bras(eris=eris))
+        bras = np.array(
+            [
+                [self.amplitudes_to_vector(*[b[i, j] for b in bras_raw]) for j in range(self.nmo)]
+                for i in range(self.nmo)
+            ]
+        )
+        return bras
 
     def kets(self, eris=None):
-        return self.ebcc.make_ee_mom_kets(eris=eris)
+        kets_raw = list(self.ebcc.make_ee_mom_kets(eris=eris))
+        kets = np.array(
+            [
+                [
+                    self.amplitudes_to_vector(*[k[..., i, j] for k in kets_raw])
+                    for j in range(self.nmo)
+                ]
+                for i in range(self.nmo)
+            ]
+        )
+        return kets
+
+    def dot_braket(self, bra, ket):
+        return np.dot(bra, ket)
+
+    def moments(self, nmom, eris=None, amplitudes=None, hermitise=True, diagonal_only=True):
+        """Construct the moments of the EOM Hamiltonian."""
+
+        if not diagonal_only:
+            warnings.warn("Constructing EE moments with `diagonal_only=False` will be very slow.")
+
+        if eris is None:
+            eris = self.ebcc.get_eris()
+        if amplitudes is None:
+            amplitudes = self.ebcc.amplitudes
+
+        bras = self.bras(eris=eris)
+        kets = self.kets(eris=eris)
+
+        moments = np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo))
+
+        for k in range(self.nmo):
+            for l in [k] if diagonal_only else range(self.nmo):
+                ket = kets[k, l]
+                for n in range(nmom):
+                    for i in range(self.nmo):
+                        for j in [i] if diagonal_only else range(self.nmo):
+                            bra = bras[i, j]
+                            moments[n, i, j, k, l] = self.dot_braket(bra, ket)
+                    if n != (nmom - 1):
+                        ket = self.matvec(ket, eris=eris)
+
+        if hermitise:
+            moments = 0.5 * (moments + moments.transpose(0, 3, 4, 1, 2))
+
+        return moments
 
     @property
     def excitation_type(self):

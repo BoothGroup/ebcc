@@ -1,22 +1,19 @@
-"""Tests for the RCC2 model.
+"""Tests for the UCC2 model.
 """
 
-import itertools
-import os
-import pickle
 import unittest
 
+from pyscf import gto, scf, cc, lib
 import numpy as np
-import pytest
 import scipy.linalg
-from pyscf import cc, gto, lib, scf
+import pytest
 
-from ebcc import REBCC, NullLogger, util
+from ebcc import UEBCC, NullLogger, util
 
 
 @pytest.mark.reference
-class RCC2_PySCF_Tests(unittest.TestCase):
-    """Test RCC2 against the PySCF values.
+class UCC2_PySCF_Tests(unittest.TestCase):
+    """Tests UCC2 against the PySCF values.
     """
 
     @classmethod
@@ -39,7 +36,7 @@ class RCC2_PySCF_Tests(unittest.TestCase):
         ccsd_ref.kernel()
         ccsd_ref.solve_lambda()
 
-        ccsd = REBCC(
+        ccsd = UEBCC(
                 mf,
                 fermion_excitations="2",
                 log=NullLogger(),
@@ -54,7 +51,7 @@ class RCC2_PySCF_Tests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        del cls.mf, cls.ccsd_ref, cls.ccsd
+        del cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris
 
     def test_converged(self):
         self.assertTrue(self.ccsd.converged)
@@ -70,23 +67,26 @@ class RCC2_PySCF_Tests(unittest.TestCase):
     def test_t1_amplitudes(self):
         a = self.ccsd_ref.t1
         b = self.ccsd.t1
-        np.testing.assert_almost_equal(a, b, 6)
+        np.testing.assert_almost_equal(a, b.aa, 6)
+        np.testing.assert_almost_equal(a, b.bb, 6)
 
     def test_t2_amplitudes(self):
         a = self.ccsd_ref.t2
         b = self.ccsd.t2
-        np.testing.assert_almost_equal(a, b, 6)
+        np.testing.assert_almost_equal(a, b.abab, 6)
+        np.testing.assert_almost_equal(a, b.baba, 6)
 
 
 @pytest.mark.regression
-class RCC2_Tests(unittest.TestCase):
-    """Test RCC2 against regression.
+class UCC2_Tests(unittest.TestCase):
+    """Test UCC2 against regression.
     """
 
     @classmethod
     def setUpClass(cls):
         mol = gto.Mole()
         mol.atom = "O 0.0 0.0 0.11779; H 0.0 0.755453 -0.471161; H 0.0 -0.755453 -0.471161"
+        mol.spin = 2
         mol.basis = "cc-pvdz"
         mol.verbose = 0
         mol.build()
@@ -95,7 +95,7 @@ class RCC2_Tests(unittest.TestCase):
         mf.conv_tol = 1e-12
         mf.kernel()
 
-        ccsd = REBCC(
+        ccsd = UEBCC(
                 mf,
                 fermion_excitations="2",
                 log=NullLogger(),
@@ -114,17 +114,25 @@ class RCC2_Tests(unittest.TestCase):
 
     def test_rdm1_f(self):
         dm = self.ccsd.make_rdm1_f()
-        c = self.mf.mo_coeff
-        dm = util.einsum("ij,pi,qj->pq", dm, c, c)
-        self.assertAlmostEqual(lib.fp(dm), 3.572563325863767, 6)
+        ca, cb = self.ccsd.mf.mo_coeff
+        dmaa = util.einsum("ij,pi,qj->pq", dm.aa, ca, ca)
+        dmbb = util.einsum("ij,pi,qj->pq", dm.bb, cb, cb)
+        self.assertAlmostEqual(lib.fp(dmaa), 0.9807866860139859, 6)
+        self.assertAlmostEqual(lib.fp(dmbb), 1.7626887332383463, 6)
 
     def test_rdm2_f(self):
         dm = self.ccsd.make_rdm2_f()
-        c = self.mf.mo_coeff
-        dm = util.einsum("ijkl,pi,qj,rk,sl->pqrs", dm, c, c, c, c)
-        self.assertAlmostEqual(lib.fp(dm), 6.475456720894991, 6)
+        ca, cb = self.ccsd.mf.mo_coeff
+        dmaaaa = util.einsum("ijkl,pi,qj,rk,sl->pqrs", dm.aaaa, ca, ca, ca, ca)
+        dmaabb = util.einsum("ijkl,pi,qj,rk,sl->pqrs", dm.aabb, ca, ca, cb, cb)
+        dmbbaa = util.einsum("ijkl,pi,qj,rk,sl->pqrs", dm.bbaa, cb, cb, ca, ca)
+        dmbbbb = util.einsum("ijkl,pi,qj,rk,sl->pqrs", dm.bbbb, cb, cb, cb, cb)
+        self.assertAlmostEqual(lib.fp(dmaaaa), 0.708486776584406, 6)
+        self.assertAlmostEqual(lib.fp(dmaabb), 1.618034131725763, 6)
+        self.assertAlmostEqual(lib.fp(dmbbaa), 0.956507960532591, 6)
+        self.assertAlmostEqual(lib.fp(dmbbbb), 2.231851449910531, 6)
 
 
 if __name__ == "__main__":
-    print("Tests for RCC2")
+    print("Tests for UCC2")
     unittest.main()

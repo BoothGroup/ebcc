@@ -1,4 +1,4 @@
-"""Tests for the UCCSD-SD-1-2 model.
+"""Tests for the RCCSD-SD-1-2 model.
 """
 
 import itertools
@@ -11,12 +11,13 @@ import pytest
 import scipy.linalg
 from pyscf import cc, gto, lib, scf
 
-from ebcc import GEBCC, UEBCC, NullLogger
+from ebcc import REBCC, NullLogger
 
 
-class UCCSD_SD_1_2_Tests(unittest.TestCase):
-    """Test UCCSD-SD-1-2 against the legacy GCCSD-SD-SD values with
-    shift=True. The system is a singlet.
+@pytest.mark.reference
+class RCCSD_SD_1_2_Tests(unittest.TestCase):
+    """Test RCCSD-SD-1-2 against the legacy GCCSD-SD-1-2 values with
+    shift=True.
     """
 
     shift = True
@@ -39,16 +40,15 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
         mf.conv_tol = 1e-12
         mf.kernel()
         mf.mo_coeff = mo_coeff
-        mf = mf.to_uhf()
 
-        nmo = mf.mo_occ[0].size
+        nmo = mf.mo_occ.size
         nbos = 5
         np.random.seed(12345)
         g = np.random.random((nbos, nmo, nmo)) * 0.02
         g = 0.5 * (g + g.transpose(0, 2, 1).conj())
         omega = np.random.random((nbos,)) * 5.0
 
-        ccsd = UEBCC(
+        ccsd = REBCC(
                 mf,
                 fermion_excitations="SD",
                 boson_excitations="SD",
@@ -65,8 +65,8 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
         ccsd.kernel(eris=eris)
         ccsd.solve_lambda(eris=eris)
 
-        osort = list(itertools.chain(*zip(range(ccsd.nocc[0]), range(ccsd.nocc[0], ccsd.nocc[0]+ccsd.nocc[1]))))
-        vsort = list(itertools.chain(*zip(range(ccsd.nvir[1]), range(ccsd.nvir[0], ccsd.nvir[0]+ccsd.nvir[1]))))
+        osort = list(itertools.chain(*zip(range(ccsd.nocc), range(ccsd.nocc, 2*ccsd.nocc))))
+        vsort = list(itertools.chain(*zip(range(ccsd.nvir), range(ccsd.nvir, 2*ccsd.nvir))))
         fsort = list(itertools.chain(*zip(range(ccsd.nmo), range(ccsd.nmo, 2*ccsd.nmo))))
 
         cls.mf, cls.ccsd, cls.eris, cls.data = mf, ccsd, eris, data
@@ -94,7 +94,7 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
 
     def test_t1_amplitudes(self):
         a = self.data[self.shift]["t1"]
-        b = scipy.linalg.block_diag(self.ccsd.t1.aa, self.ccsd.t1.bb)[self.osort][:, self.vsort]
+        b = scipy.linalg.block_diag(self.ccsd.t1, self.ccsd.t1)[self.osort][:, self.vsort]
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_s1_amplitudes(self):
@@ -102,21 +102,17 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
         b = self.ccsd.amplitudes["s1"]
         np.testing.assert_almost_equal(a, b, 6)
 
-    def test_s1_amplitudes(self):
-        a = self.data[self.shift]["s2"]
-        b = self.ccsd.amplitudes["s2"]
-        np.testing.assert_almost_equal(a, b, 6)
-
     def test_u11_amplitudes(self):
         a = self.data[self.shift]["u11"]
-        b = self.ccsd.amplitudes["u11"]
-        b = np.array([scipy.linalg.block_diag(x, y) for x, y in zip(b.aa, b.bb)])
+        b = np.array([scipy.linalg.block_diag(x, x) for x in self.ccsd.amplitudes["u11"]])
         b = b[:, self.osort][:, :, self.vsort]
         np.testing.assert_almost_equal(a, b, 6)
 
+    # TODO: these are not in the old code, how to test?
+
     #def test_l1_amplitudes(self):
     #    a = self.data[self.shift]["l1"]
-    #    b = scipy.linalg.block_diag(self.ccsd.l1.aa, self.ccsd.l1.bb)[self.vsort][:, self.osort]
+    #    b = scipy.linalg.block_diag(self.ccsd.l1, self.ccsd.l1)[self.vsort][:, self.osort]
     #    np.testing.assert_almost_equal(a, b, 6)
 
     #def test_ls1_amplitudes(self):
@@ -124,24 +120,19 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
     #    b = self.ccsd.lambdas["ls1"]
     #    np.testing.assert_almost_equal(a, b, 6)
 
-    #def test_ls1_amplitudes(self):
-    #    a = self.data[self.shift]["ls2"]
-    #    b = self.ccsd.lambdas["ls2"]
-    #    np.testing.assert_almost_equal(a, b, 6)
-
     #def test_lu11_amplitudes(self):
     #    a = self.data[self.shift]["lu11"]
-    #    b = self.ccsd.lambdas["lu11"]
-    #    b = np.array([scipy.linalg.block_diag(x, y) for x, y in zip(b.aa, b.bb)])
+    #    b = np.array([scipy.linalg.block_diag(x, x) for x in self.ccsd.lambdas["lu11"]])
     #    b = b[:, self.vsort][:, :, self.osort]
     #    np.testing.assert_almost_equal(a, b, 6)
 
     #def test_rdm1_f(self):
     #    rdm1_f = self.ccsd.make_rdm1_f()
     #    a = self.data[self.shift]["rdm1_f"]
-    #    b = scipy.linalg.block_diag(rdm1_f.aa, rdm1_f.bb)
+    #    b = scipy.linalg.block_diag(rdm1_f, rdm1_f) / 2
     #    b = b[self.fsort][:, self.fsort]
     #    np.testing.assert_almost_equal(a, b, 6)
+    #        factor = 1.0 if self.spatial else 1.0
 
     #def test_rdm1_b(self):
     #    a = self.data[self.shift]["rdm1_b"]
@@ -155,23 +146,21 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
 
     #def test_rdm_eb(self):
     #    a = np.array(self.data[self.shift]["rdm_eb"])
-    #    b = self.ccsd.make_eb_coup_rdm()
-    #    b = np.array([
-    #        [scipy.linalg.block_diag(x, y) for x, y in zip(b.aa[0], b.bb[0])],
-    #        [scipy.linalg.block_diag(x, y) for x, y in zip(b.aa[1], b.bb[1])],
-    #    ])
+    #    b = np.array([[scipy.linalg.block_diag(x, x) for x in y] for y in self.ccsd.make_eb_coup_rdm()])
     #    b = b[:, :, self.fsort][:, :, :, self.fsort]
     #    np.testing.assert_almost_equal(a, b, 6)
 
 
-class UCCSD_SD_1_2_NoShift_Tests(UCCSD_SD_1_2_Tests):
-    """Test UCCSD-SD-1-2 against the legacy GCCSD-SD-SD values with
-    shift=False. The system is a singlet.
+@pytest.mark.reference
+class RCCSD_SD_1_2_NoShift_Tests(RCCSD_SD_1_2_Tests):
+    """Test RCCSD-SD-1-2 against the legacy GCCSD-SD-1-2 values with
+    shift=False.
     """
 
     shift = False
 
 
+
 if __name__ == "__main__":
-    print("Tests for UCCSD-SD-1-2")
+    print("Tests for RCCSD-SD-1-2")
     unittest.main()
