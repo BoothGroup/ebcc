@@ -792,7 +792,10 @@ class UEBCC(rebcc.REBCC):
                     ]
                 )
                 vn_tril = vector[i0 : i0 + size]
-                vn = util.decompress_axes(subscript, vn_tril, shape=shape)
+                factor = max(
+                    spin[:n].count(s) for s in set(spin[:n])
+                )  # FIXME why? untested for n > 2
+                vn = util.decompress_axes(subscript, vn_tril, shape=shape) / factor
                 setattr(amp, spin, vn)
                 i0 += size
 

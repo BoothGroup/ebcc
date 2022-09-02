@@ -134,16 +134,18 @@ class UCCSD_Tests(unittest.TestCase):
     def _test_ee_moments_diag(self):
         # FIXME broken
         eom = self.ccsd.ee_eom()
+        nmo = self.ccsd.nmo
         a = self.data[True]["dd_moms"].transpose(4, 0, 1, 2, 3)
-        a = a[:, :eom.nmo, :eom.nmo, :eom.nmo, :eom.nmo]
-        a = np.einsum("npqrs,pq,rs->npqrs", a, np.eye(self.ccsd.nmo), np.eye(self.ccsd.nmo))
-        b = eom.moments(4, diagonal_only=True)
-        print(a[0, 0, 0, 0, 0])
-        print(b.aaaa[0, 0, 0, 0, 0])
-        print(b.aabb[0, 0, 0, 0, 0])
-        print(self.ccsd.make_rdm2_f().aaaa[0, 0, 0, 0])
-        print(self.ccsd.make_rdm2_f().aabb[0, 0, 0, 0])
-        for x, y in zip(a, b.aabb):
+        a = np.einsum("npqrs,pq,rs->npqrs", a, np.eye(nmo*2), np.eye(nmo*2))
+        t = eom.moments(4, diagonal_only=True)
+        b = np.zeros_like(a)
+        for i in range(a.shape[0]):
+            b[i, :nmo, :nmo, :nmo, :nmo] = t.aaaa[i]
+            b[i, :nmo, :nmo, nmo:, nmo:] = t.aabb[i]
+            b[i, nmo:, nmo:, :nmo, :nmo] = t.bbaa[i]
+            b[i, nmo:, nmo:, nmo:, nmo:] = t.bbbb[i]
+        b = b[:, self.fsort][:, :, self.fsort][:, :, :, self.fsort][:, :, :, :, self.fsort]
+        for x, y in zip(a, b):
             x /= np.max(np.abs(x))
             y /= np.max(np.abs(y))
             np.testing.assert_almost_equal(x, y, 6)

@@ -135,7 +135,6 @@ particles = {
         **{"ket2"+tag: ((codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 0), (codegen.FERMION, 1)) for tag in ("", "_o", "_v")},
         **{"braee1"+tag: ((codegen.FERMION, 0), (codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)) for tag in ("", "_oo", "_ov", "_vo", "_vv")},
         **{"ketee1"+tag: ((codegen.FERMION, 0), (codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 1)) for tag in ("", "_oo", "_ov", "_vo", "_vv")},
-        # FIXME these are almost certainly wrong:
         **{"braee2"+tag: ((codegen.FERMION, 0), (codegen.FERMION, 0), (codegen.FERMION, 1), (codegen.FERMION, 2), (codegen.FERMION, 1), (codegen.FERMION, 2)) for tag in ("", "_oo", "_ov", "_vo", "_vv")},
         **{"ketee2"+tag: ((codegen.FERMION, 1), (codegen.FERMION, 2), (codegen.FERMION, 1), (codegen.FERMION, 2), (codegen.FERMION, 0), (codegen.FERMION, 0)) for tag in ("", "_oo", "_ov", "_vo", "_vv")},
         # Similarity transformed hamiltonian:

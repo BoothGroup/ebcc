@@ -417,6 +417,8 @@ class EE_UEOM(UEOM, reom.EE_REOM):
         return kets
 
     def moments(self, nmom, eris=None, amplitudes=None, hermitise=True, diagonal_only=True):
+        raise NotImplementedError("EE moments for UEBCC not working.")
+
         if not diagonal_only:
             warnings.warn("Constructing EE moments with `diagonal_only=False` will be very slow.")
 

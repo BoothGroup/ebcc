@@ -6299,7 +6299,7 @@ def hbar_matvec_ea(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=No
 
     return r1new, r2new
 
-def make_ee_mom_kets(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=None, l2=None, **kwargs):
+def make_ee_mom_kets(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=None, l2=None, **kwargs):  # pragma: no cover
     delta_oo = SimpleNamespace()
     delta_oo.aa = np.eye(nocc[0])
     delta_oo.bb = np.eye(nocc[1])
@@ -6308,97 +6308,97 @@ def make_ee_mom_kets(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=
     delta_vv.bb = np.eye(nvir[1])
 
     ketee1_oo_aaaa = np.zeros((nocc[0], nvir[0], nocc[0], nocc[0]), dtype=np.float64)
-    ketee1_oo_aaaa += einsum("ij,ka->jaki", delta_oo.aa, t1.aa) * -0.5
+    ketee1_oo_aaaa -= einsum("ij,ka->jaki", delta_oo.aa, t1.aa)
     ketee1_oo_bbbb = np.zeros((nocc[1], nvir[1], nocc[1], nocc[1]), dtype=np.float64)
-    ketee1_oo_bbbb += einsum("ij,ka->jaki", delta_oo.bb, t1.bb) * -0.5
+    ketee1_oo_bbbb -= einsum("ij,ka->jaki", delta_oo.bb, t1.bb)
     ketee1_ov_aaaa = np.zeros((nocc[0], nvir[0], nocc[0], nvir[0]), dtype=np.float64)
-    ketee1_ov_aaaa += einsum("ia,jb->iajb", t1.aa, t1.aa) * -0.5
-    ketee1_ov_aaaa += einsum("ijab->jaib", t2.aaaa) * -0.5
-    ketee1_ov_aaaa += einsum("ijab->jbia", t2.aaaa) * 0.5
+    ketee1_ov_aaaa -= einsum("ia,jb->iajb", t1.aa, t1.aa)
+    ketee1_ov_aaaa -= einsum("ijab->jaib", t2.aaaa)
+    ketee1_ov_aaaa += einsum("ijab->jbia", t2.aaaa)
     ketee1_ov_bbbb = np.zeros((nocc[1], nvir[1], nocc[1], nvir[1]), dtype=np.float64)
-    ketee1_ov_bbbb += einsum("ia,jb->iajb", t1.bb, t1.bb) * -0.5
-    ketee1_ov_bbbb += einsum("ijab->jaib", t2.bbbb) * -0.5
-    ketee1_ov_bbbb += einsum("ijab->jbia", t2.bbbb) * 0.5
+    ketee1_ov_bbbb -= einsum("ia,jb->iajb", t1.bb, t1.bb)
+    ketee1_ov_bbbb -= einsum("ijab->jaib", t2.bbbb)
+    ketee1_ov_bbbb += einsum("ijab->jbia", t2.bbbb)
     ketee1_ov_bbaa = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
-    ketee1_ov_bbaa += einsum("ijab->jbia", t2.abab) * 0.5
-    ketee1_ov_bbaa += einsum("ia,jb->jbia", t1.aa, t1.bb) * -0.5
+    ketee1_ov_bbaa -= einsum("ia,jb->jbia", t1.aa, t1.bb)
+    ketee1_ov_bbaa += einsum("ijab->jbia", t2.abab)
     ketee1_ov_aabb = np.zeros((nocc[0], nvir[0], nocc[1], nvir[1]), dtype=np.float64)
-    ketee1_ov_aabb += einsum("ijab->iajb", t2.abab) * 0.5
-    ketee1_ov_aabb += einsum("ia,jb->iajb", t1.aa, t1.bb) * -0.5
+    ketee1_ov_aabb -= einsum("ia,jb->iajb", t1.aa, t1.bb)
+    ketee1_ov_aabb += einsum("ijab->iajb", t2.abab)
     ketee1_vo_aaaa = np.zeros((nocc[0], nvir[0], nvir[0], nocc[0]), dtype=np.float64)
-    ketee1_vo_aaaa += einsum("ab,ij->jbai", delta_vv.aa, delta_oo.aa) * 0.5
+    ketee1_vo_aaaa += einsum("ab,ij->jbai", delta_vv.aa, delta_oo.aa)
     ketee1_vo_bbbb = np.zeros((nocc[1], nvir[1], nvir[1], nocc[1]), dtype=np.float64)
-    ketee1_vo_bbbb += einsum("ab,ij->jbai", delta_vv.bb, delta_oo.bb) * 0.5
+    ketee1_vo_bbbb += einsum("ab,ij->jbai", delta_vv.bb, delta_oo.bb)
     ketee1_vv_aaaa = np.zeros((nocc[0], nvir[0], nvir[0], nvir[0]), dtype=np.float64)
-    ketee1_vv_aaaa += einsum("ab,ic->ibac", delta_vv.aa, t1.aa) * 0.5
+    ketee1_vv_aaaa += einsum("ab,ic->ibac", delta_vv.aa, t1.aa)
     ketee1_vv_bbbb = np.zeros((nocc[1], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
-    ketee1_vv_bbbb += einsum("ab,ic->ibac", delta_vv.bb, t1.bb) * 0.5
+    ketee1_vv_bbbb += einsum("ab,ic->ibac", delta_vv.bb, t1.bb)
     ketee2_oo_aaaaaa = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0], nocc[0], nocc[0]), dtype=np.float64)
-    ketee2_oo_aaaaaa += einsum("ij,klab->jlabki", delta_oo.aa, t2.aaaa) * -0.5
-    ketee2_oo_aaaaaa += einsum("ij,klab->jlbaki", delta_oo.aa, t2.aaaa) * 0.5
-    ketee2_oo_aaaaaa += einsum("ij,klab->ljabki", delta_oo.aa, t2.aaaa) * 0.5
-    ketee2_oo_aaaaaa += einsum("ij,klab->ljbaki", delta_oo.aa, t2.aaaa) * -0.5
+    ketee2_oo_aaaaaa -= einsum("ij,klab->jlabki", delta_oo.aa, t2.aaaa)
+    ketee2_oo_aaaaaa += einsum("ij,klab->jlbaki", delta_oo.aa, t2.aaaa)
+    ketee2_oo_aaaaaa += einsum("ij,klab->ljabki", delta_oo.aa, t2.aaaa)
+    ketee2_oo_aaaaaa -= einsum("ij,klab->ljbaki", delta_oo.aa, t2.aaaa)
     ketee2_oo_babaaa = np.zeros((nocc[1], nocc[0], nvir[1], nvir[0], nocc[0], nocc[0]), dtype=np.float64)
-    ketee2_oo_babaaa += einsum("ij,klab->ljbaki", delta_oo.aa, t2.abab) * -0.5
+    ketee2_oo_babaaa -= einsum("ij,klab->ljbaki", delta_oo.aa, t2.abab)
     ketee2_oo_ababbb = np.zeros((nocc[0], nocc[1], nvir[0], nvir[1], nocc[1], nocc[1]), dtype=np.float64)
-    ketee2_oo_ababbb += einsum("ij,klab->kjabli", delta_oo.bb, t2.abab) * -0.5
+    ketee2_oo_ababbb -= einsum("ij,klab->kjabli", delta_oo.bb, t2.abab)
     ketee2_oo_bbbbbb = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1], nocc[1], nocc[1]), dtype=np.float64)
-    ketee2_oo_bbbbbb += einsum("ij,klab->jlabki", delta_oo.bb, t2.bbbb) * -0.5
-    ketee2_oo_bbbbbb += einsum("ij,klab->jlbaki", delta_oo.bb, t2.bbbb) * 0.5
-    ketee2_oo_bbbbbb += einsum("ij,klab->ljabki", delta_oo.bb, t2.bbbb) * 0.5
-    ketee2_oo_bbbbbb += einsum("ij,klab->ljbaki", delta_oo.bb, t2.bbbb) * -0.5
+    ketee2_oo_bbbbbb -= einsum("ij,klab->jlabki", delta_oo.bb, t2.bbbb)
+    ketee2_oo_bbbbbb += einsum("ij,klab->jlbaki", delta_oo.bb, t2.bbbb)
+    ketee2_oo_bbbbbb += einsum("ij,klab->ljabki", delta_oo.bb, t2.bbbb)
+    ketee2_oo_bbbbbb -= einsum("ij,klab->ljbaki", delta_oo.bb, t2.bbbb)
     ketee2_oo_ababaa = np.zeros((nocc[0], nocc[1], nvir[0], nvir[1], nocc[0], nocc[0]), dtype=np.float64)
-    ketee2_oo_ababaa += einsum("ij,klab->jlabki", delta_oo.aa, t2.abab) * -0.5
+    ketee2_oo_ababaa -= einsum("ij,klab->jlabki", delta_oo.aa, t2.abab)
     ketee2_oo_bababb = np.zeros((nocc[1], nocc[0], nvir[1], nvir[0], nocc[1], nocc[1]), dtype=np.float64)
-    ketee2_oo_bababb += einsum("ij,klab->jkbali", delta_oo.bb, t2.abab) * -0.5
+    ketee2_oo_bababb -= einsum("ij,klab->jkbali", delta_oo.bb, t2.abab)
     ketee2_ov_aaaaaa = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0], nocc[0], nvir[0]), dtype=np.float64)
-    ketee2_ov_aaaaaa += einsum("ia,jkbc->ikbcja", t1.aa, t2.aaaa) * -0.5
-    ketee2_ov_aaaaaa += einsum("ia,jkbc->ikcbja", t1.aa, t2.aaaa) * 0.5
-    ketee2_ov_aaaaaa += einsum("ia,jkbc->kibcja", t1.aa, t2.aaaa) * 0.5
-    ketee2_ov_aaaaaa += einsum("ia,jkbc->kicbja", t1.aa, t2.aaaa) * -0.5
-    ketee2_ov_aaaaaa += einsum("ia,jkbc->kjabic", t1.aa, t2.aaaa) * -0.5
-    ketee2_ov_aaaaaa += einsum("ia,jkbc->kjacib", t1.aa, t2.aaaa) * 0.5
-    ketee2_ov_aaaaaa += einsum("ia,jkbc->kjbaic", t1.aa, t2.aaaa) * 0.5
-    ketee2_ov_aaaaaa += einsum("ia,jkbc->kjcaib", t1.aa, t2.aaaa) * -0.5
+    ketee2_ov_aaaaaa -= einsum("ia,jkbc->ikbcja", t1.aa, t2.aaaa)
+    ketee2_ov_aaaaaa += einsum("ia,jkbc->ikcbja", t1.aa, t2.aaaa)
+    ketee2_ov_aaaaaa += einsum("ia,jkbc->kibcja", t1.aa, t2.aaaa)
+    ketee2_ov_aaaaaa -= einsum("ia,jkbc->kicbja", t1.aa, t2.aaaa)
+    ketee2_ov_aaaaaa -= einsum("ia,jkbc->kjabic", t1.aa, t2.aaaa)
+    ketee2_ov_aaaaaa += einsum("ia,jkbc->kjacib", t1.aa, t2.aaaa)
+    ketee2_ov_aaaaaa += einsum("ia,jkbc->kjbaic", t1.aa, t2.aaaa)
+    ketee2_ov_aaaaaa -= einsum("ia,jkbc->kjcaib", t1.aa, t2.aaaa)
     ketee2_ov_bbbbbb = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1], nocc[1], nvir[1]), dtype=np.float64)
-    ketee2_ov_bbbbbb += einsum("ia,jkbc->ikbcja", t1.bb, t2.bbbb) * -0.5
-    ketee2_ov_bbbbbb += einsum("ia,jkbc->ikcbja", t1.bb, t2.bbbb) * 0.5
-    ketee2_ov_bbbbbb += einsum("ia,jkbc->kibcja", t1.bb, t2.bbbb) * 0.5
-    ketee2_ov_bbbbbb += einsum("ia,jkbc->kicbja", t1.bb, t2.bbbb) * -0.5
-    ketee2_ov_bbbbbb += einsum("ia,jkbc->kjabic", t1.bb, t2.bbbb) * -0.5
-    ketee2_ov_bbbbbb += einsum("ia,jkbc->kjacib", t1.bb, t2.bbbb) * 0.5
-    ketee2_ov_bbbbbb += einsum("ia,jkbc->kjbaic", t1.bb, t2.bbbb) * 0.5
-    ketee2_ov_bbbbbb += einsum("ia,jkbc->kjcaib", t1.bb, t2.bbbb) * -0.5
+    ketee2_ov_bbbbbb -= einsum("ia,jkbc->ikbcja", t1.bb, t2.bbbb)
+    ketee2_ov_bbbbbb += einsum("ia,jkbc->ikcbja", t1.bb, t2.bbbb)
+    ketee2_ov_bbbbbb += einsum("ia,jkbc->kibcja", t1.bb, t2.bbbb)
+    ketee2_ov_bbbbbb -= einsum("ia,jkbc->kicbja", t1.bb, t2.bbbb)
+    ketee2_ov_bbbbbb -= einsum("ia,jkbc->kjabic", t1.bb, t2.bbbb)
+    ketee2_ov_bbbbbb += einsum("ia,jkbc->kjacib", t1.bb, t2.bbbb)
+    ketee2_ov_bbbbbb += einsum("ia,jkbc->kjbaic", t1.bb, t2.bbbb)
+    ketee2_ov_bbbbbb -= einsum("ia,jkbc->kjcaib", t1.bb, t2.bbbb)
     ketee2_ov_ababaa = np.zeros((nocc[0], nocc[1], nvir[0], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
-    ketee2_ov_ababaa += einsum("ia,jkbc->ikbcja", t1.aa, t2.abab) * -0.5
-    ketee2_ov_ababaa += einsum("ia,jkbc->jkacib", t1.aa, t2.abab) * -0.5
+    ketee2_ov_ababaa -= einsum("ia,jkbc->ikbcja", t1.aa, t2.abab)
+    ketee2_ov_ababaa -= einsum("ia,jkbc->jkacib", t1.aa, t2.abab)
     ketee2_ov_bababb = np.zeros((nocc[1], nocc[0], nvir[1], nvir[0], nocc[1], nvir[1]), dtype=np.float64)
-    ketee2_ov_bababb += einsum("ia,jkbc->ijcbka", t1.bb, t2.abab) * -0.5
-    ketee2_ov_bababb += einsum("ia,jkbc->kjabic", t1.bb, t2.abab) * -0.5
+    ketee2_ov_bababb -= einsum("ia,jkbc->ijcbka", t1.bb, t2.abab)
+    ketee2_ov_bababb -= einsum("ia,jkbc->kjabic", t1.bb, t2.abab)
     ketee2_ov_babaaa = np.zeros((nocc[1], nocc[0], nvir[1], nvir[0], nocc[0], nvir[0]), dtype=np.float64)
-    ketee2_ov_babaaa += einsum("ia,jkbc->kicbja", t1.aa, t2.abab) * -0.5
-    ketee2_ov_babaaa += einsum("ia,jkbc->kjcaib", t1.aa, t2.abab) * -0.5
+    ketee2_ov_babaaa -= einsum("ia,jkbc->kicbja", t1.aa, t2.abab)
+    ketee2_ov_babaaa -= einsum("ia,jkbc->kjcaib", t1.aa, t2.abab)
     ketee2_ov_ababbb = np.zeros((nocc[0], nocc[1], nvir[0], nvir[1], nocc[1], nvir[1]), dtype=np.float64)
-    ketee2_ov_ababbb += einsum("ia,jkbc->jibcka", t1.bb, t2.abab) * -0.5
-    ketee2_ov_ababbb += einsum("ia,jkbc->jkbaic", t1.bb, t2.abab) * -0.5
+    ketee2_ov_ababbb -= einsum("ia,jkbc->jibcka", t1.bb, t2.abab)
+    ketee2_ov_ababbb -= einsum("ia,jkbc->jkbaic", t1.bb, t2.abab)
     ketee2_vv_aaaaaa = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0], nvir[0], nvir[0]), dtype=np.float64)
-    ketee2_vv_aaaaaa += einsum("ab,ijcd->jibcad", delta_vv.aa, t2.aaaa) * 0.5
-    ketee2_vv_aaaaaa += einsum("ab,ijcd->jibdac", delta_vv.aa, t2.aaaa) * -0.5
-    ketee2_vv_aaaaaa += einsum("ab,ijcd->jicbad", delta_vv.aa, t2.aaaa) * -0.5
-    ketee2_vv_aaaaaa += einsum("ab,ijcd->jidbac", delta_vv.aa, t2.aaaa) * 0.5
+    ketee2_vv_aaaaaa += einsum("ab,ijcd->jibcad", delta_vv.aa, t2.aaaa)
+    ketee2_vv_aaaaaa -= einsum("ab,ijcd->jibdac", delta_vv.aa, t2.aaaa)
+    ketee2_vv_aaaaaa -= einsum("ab,ijcd->jicbad", delta_vv.aa, t2.aaaa)
+    ketee2_vv_aaaaaa += einsum("ab,ijcd->jidbac", delta_vv.aa, t2.aaaa)
     ketee2_vv_babaaa = np.zeros((nocc[1], nocc[0], nvir[1], nvir[0], nvir[0], nvir[0]), dtype=np.float64)
-    ketee2_vv_babaaa += einsum("ab,ijcd->jidbac", delta_vv.aa, t2.abab) * 0.5
+    ketee2_vv_babaaa += einsum("ab,ijcd->jidbac", delta_vv.aa, t2.abab)
     ketee2_vv_ababbb = np.zeros((nocc[0], nocc[1], nvir[0], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
-    ketee2_vv_ababbb += einsum("ab,ijcd->ijcbad", delta_vv.bb, t2.abab) * 0.5
+    ketee2_vv_ababbb += einsum("ab,ijcd->ijcbad", delta_vv.bb, t2.abab)
     ketee2_vv_bbbbbb = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
-    ketee2_vv_bbbbbb += einsum("ab,ijcd->jibcad", delta_vv.bb, t2.bbbb) * 0.5
-    ketee2_vv_bbbbbb += einsum("ab,ijcd->jibdac", delta_vv.bb, t2.bbbb) * -0.5
-    ketee2_vv_bbbbbb += einsum("ab,ijcd->jicbad", delta_vv.bb, t2.bbbb) * -0.5
-    ketee2_vv_bbbbbb += einsum("ab,ijcd->jidbac", delta_vv.bb, t2.bbbb) * 0.5
+    ketee2_vv_bbbbbb += einsum("ab,ijcd->jibcad", delta_vv.bb, t2.bbbb)
+    ketee2_vv_bbbbbb -= einsum("ab,ijcd->jibdac", delta_vv.bb, t2.bbbb)
+    ketee2_vv_bbbbbb -= einsum("ab,ijcd->jicbad", delta_vv.bb, t2.bbbb)
+    ketee2_vv_bbbbbb += einsum("ab,ijcd->jidbac", delta_vv.bb, t2.bbbb)
     ketee2_vv_ababaa = np.zeros((nocc[0], nocc[1], nvir[0], nvir[1], nvir[0], nvir[0]), dtype=np.float64)
-    ketee2_vv_ababaa += einsum("ab,ijcd->ijbdac", delta_vv.aa, t2.abab) * 0.5
+    ketee2_vv_ababaa += einsum("ab,ijcd->ijbdac", delta_vv.aa, t2.abab)
     ketee2_vv_bababb = np.zeros((nocc[1], nocc[0], nvir[1], nvir[0], nvir[1], nvir[1]), dtype=np.float64)
-    ketee2_vv_bababb += einsum("ab,ijcd->jibcad", delta_vv.bb, t2.abab) * 0.5
+    ketee2_vv_bababb += einsum("ab,ijcd->jibcad", delta_vv.bb, t2.abab)
 
     ketee1_oo_abab = np.zeros((nocc[0], nvir[1], nocc[0], nocc[1]), dtype=np.float64)
     ketee1_oo_baba = np.zeros((nocc[1], nvir[0], nocc[1], nocc[0]), dtype=np.float64)
@@ -6441,7 +6441,7 @@ def make_ee_mom_kets(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=
 
     return ketee1, ketee2
 
-def make_ee_mom_bras(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=None, l2=None, **kwargs):
+def make_ee_mom_bras(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=None, l2=None, **kwargs):  # pragma: no cover
     delta_oo = SimpleNamespace()
     delta_oo.aa = np.eye(nocc[0])
     delta_oo.bb = np.eye(nocc[1])
@@ -6450,265 +6450,261 @@ def make_ee_mom_bras(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=
     delta_vv.bb = np.eye(nvir[1])
 
     x0 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
-    x0 += einsum("ia,abjk->kjib", t1.aa, l2.aaaa)
+    x0 += einsum("ia,bajk->jkib", t1.aa, l2.aaaa)
+    x19 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x19 += einsum("ijka->ikja", x0)
+    x19 -= einsum("ijka->jkia", x0)
     x20 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
-    x20 += einsum("ijka->ikja", x0) * -1
-    x20 += einsum("ijka->jkia", x0)
-    x21 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
-    x21 += einsum("ijka->ijka", x0)
-    x21 += einsum("ijka->jika", x0) * -1
+    x20 -= einsum("ijka->ijka", x0)
+    x20 += einsum("ijka->jika", x0)
     braee1_oo_aaaa = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
-    braee1_oo_aaaa += einsum("ijka->kija", x0) * 0.5
-    braee1_oo_aaaa += einsum("ijka->kjia", x0) * -0.5
+    braee1_oo_aaaa += einsum("ijka->kija", x0)
+    braee1_oo_aaaa -= einsum("ijka->kjia", x0)
     del x0
     x1 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
-    x1 += einsum("ia,abjk->kjib", t1.bb, l2.bbbb)
+    x1 += einsum("ia,bajk->jkib", t1.bb, l2.bbbb)
+    x23 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x23 += einsum("ijka->ikja", x1)
+    x23 -= einsum("ijka->jkia", x1)
     x24 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
-    x24 += einsum("ijka->ikja", x1)
-    x24 += einsum("ijka->jkia", x1) * -1
-    x25 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
-    x25 += einsum("ijka->ijka", x1)
-    x25 += einsum("ijka->jika", x1) * -1
+    x24 += einsum("ijka->ijka", x1)
+    x24 -= einsum("ijka->jika", x1)
     braee1_oo_bbbb = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
-    braee1_oo_bbbb += einsum("ijka->kija", x1) * 0.5
-    braee1_oo_bbbb += einsum("ijka->kjia", x1) * -0.5
+    braee1_oo_bbbb += einsum("ijka->kija", x1)
+    braee1_oo_bbbb -= einsum("ijka->kjia", x1)
     del x1
     x2 = np.zeros((nocc[0], nocc[0], nocc[1], nvir[1]), dtype=np.float64)
     x2 += einsum("ia,abjk->jikb", t1.aa, l2.abab)
-    x22 = np.zeros((nocc[0], nocc[0], nocc[1], nvir[1]), dtype=np.float64)
-    x22 += einsum("ijka->ijka", x2) * -1
+    x21 = np.zeros((nocc[0], nocc[0], nocc[1], nvir[1]), dtype=np.float64)
+    x21 -= einsum("ijka->ijka", x2)
     braee1_oo_aabb = np.zeros((nocc[0], nocc[0], nocc[1], nvir[1]), dtype=np.float64)
-    braee1_oo_aabb += einsum("ijka->jika", x2) * -0.5
+    braee1_oo_aabb -= einsum("ijka->jika", x2)
     del x2
     x3 = np.zeros((nocc[0], nocc[1], nocc[1], nvir[0]), dtype=np.float64)
     x3 += einsum("ia,bajk->jkib", t1.bb, l2.abab)
-    x23 = np.zeros((nocc[0], nocc[1], nocc[1], nvir[0]), dtype=np.float64)
-    x23 += einsum("ijka->ijka", x3) * -1
+    x22 = np.zeros((nocc[0], nocc[1], nocc[1], nvir[0]), dtype=np.float64)
+    x22 -= einsum("ijka->ijka", x3)
     braee1_oo_bbaa = np.zeros((nocc[1], nocc[1], nocc[0], nvir[0]), dtype=np.float64)
-    braee1_oo_bbaa += einsum("ijka->kjia", x3) * -0.5
+    braee1_oo_bbaa -= einsum("ijka->kjia", x3)
     del x3
     x4 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
     x4 += einsum("ia,jb->ijab", t1.aa, t1.aa)
-    x4 += einsum("ijab->jiab", t2.aaaa) * -1
+    x4 -= einsum("ijab->jiab", t2.aaaa)
     x4 += einsum("ijab->jiba", t2.aaaa)
     braee1_ov_aabb = np.zeros((nocc[0], nvir[0], nocc[1], nvir[1]), dtype=np.float64)
-    braee1_ov_aabb += einsum("abij,ikca->kcjb", l2.abab, x4) * -0.5
+    braee1_ov_aabb -= einsum("abij,ikca->kcjb", l2.abab, x4)
     x5 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
-    x5 += einsum("abij->jiab", l2.aaaa)
-    x5 += einsum("abij->jiba", l2.aaaa) * -1
+    x5 -= einsum("abij->jiab", l2.aaaa)
+    x5 += einsum("abij->jiba", l2.aaaa)
     braee1_ov_aaaa = np.zeros((nocc[0], nvir[0], nocc[0], nvir[0]), dtype=np.float64)
-    braee1_ov_aaaa += einsum("ijab,ikbc->jakc", x4, x5) * 0.5
+    braee1_ov_aaaa += einsum("ijab,ikcb->jakc", x4, x5)
     del x4
+    braee1_ov_bbaa = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    braee1_ov_bbaa -= einsum("ijab,ikca->jbkc", t2.abab, x5)
     del x5
     x6 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
     x6 += einsum("ijab->jiab", t2.aaaa)
     x6 += einsum("ijab->jiba", t2.aaaa) * -1
-    x7 = np.zeros((nvir[0], nvir[0]), dtype=np.float64)
-    x7 += einsum("abij,ijac->bc", l2.aaaa, x6) * -1
-    x8 = np.zeros((nocc[0], nocc[0]), dtype=np.float64)
-    x8 += einsum("abij,ikab->jk", l2.aaaa, x6) * -1
+    x7 = np.zeros((nocc[0], nocc[0]), dtype=np.float64)
+    x7 += einsum("abij,ikab->jk", l2.aaaa, x6) * -1
     del x6
-    x7 += einsum("ab->ba", delta_vv.aa) * -1
-    x7 += einsum("ai,ib->ab", l1.aa, t1.aa)
-    x7 += einsum("abij,ijcb->ac", l2.abab, t2.abab)
-    braee1_ov_aaaa += einsum("ij,ab->jbia", delta_oo.aa, x7) * -0.5
+    x7 += einsum("ij->ji", delta_oo.aa) * -1
+    x7 += einsum("ai,ja->ij", l1.aa, t1.aa)
+    x7 += einsum("abij,kjab->ik", l2.abab, t2.abab)
+    braee1_ov_aaaa += einsum("ab,ij->jbia", delta_vv.aa, x7) * -1
     del x7
-    x8 += einsum("ai,ja->ij", l1.aa, t1.aa)
-    x8 += einsum("abij,kjab->ik", l2.abab, t2.abab)
-    braee1_ov_aaaa += einsum("ab,ij->jbia", delta_vv.aa, x8) * -0.5
+    x8 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x8 += einsum("ijab->jiab", t2.aaaa) * -1
+    x8 += einsum("ijab->jiba", t2.aaaa)
+    x9 = np.zeros((nvir[0], nvir[0]), dtype=np.float64)
+    x9 += einsum("abij,ijca->bc", l2.aaaa, x8) * -1
     del x8
-    x9 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
-    x9 += einsum("ia,jb->ijab", t1.bb, t1.bb)
-    x9 += einsum("ijab->jiab", t2.bbbb) * -1
-    x9 += einsum("ijab->jiba", t2.bbbb)
-    braee1_ov_bbaa = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
-    braee1_ov_bbaa += einsum("abij,jkcb->kcia", l2.abab, x9) * -0.5
-    x10 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
-    x10 += einsum("abij->jiab", l2.bbbb)
-    x10 += einsum("abij->jiba", l2.bbbb) * -1
-    braee1_ov_bbbb = np.zeros((nocc[1], nvir[1], nocc[1], nvir[1]), dtype=np.float64)
-    braee1_ov_bbbb += einsum("ijab,ikca->kcjb", x10, x9) * 0.5
+    x9 += einsum("ai,ib->ab", l1.aa, t1.aa)
+    x9 += einsum("abij,ijcb->ac", l2.abab, t2.abab)
+    braee1_ov_aaaa += einsum("ij,ab->jbia", delta_oo.aa, x9) * -1
     del x9
-    del x10
+    x10 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x10 += einsum("ia,jb->ijab", t1.bb, t1.bb)
+    x10 -= einsum("ijab->jiab", t2.bbbb)
+    x10 += einsum("ijab->jiba", t2.bbbb)
+    braee1_ov_bbaa -= einsum("abij,jkcb->kcia", l2.abab, x10)
     x11 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
-    x11 += einsum("ijab->jiab", t2.bbbb) * -1
-    x11 += einsum("ijab->jiba", t2.bbbb)
-    x12 = np.zeros((nvir[1], nvir[1]), dtype=np.float64)
-    x12 += einsum("abij,ijca->bc", l2.bbbb, x11) * -1
-    x13 = np.zeros((nocc[1], nocc[1]), dtype=np.float64)
-    x13 += einsum("abij,ikba->jk", l2.bbbb, x11) * -1
+    x11 -= einsum("abij->jiab", l2.bbbb)
+    x11 += einsum("abij->jiba", l2.bbbb)
+    braee1_ov_bbbb = np.zeros((nocc[1], nvir[1], nocc[1], nvir[1]), dtype=np.float64)
+    braee1_ov_bbbb += einsum("ijab,ikcb->jakc", x10, x11)
+    del x10
+    braee1_ov_aabb -= einsum("ijab,jkcb->iakc", t2.abab, x11)
     del x11
-    x12 += einsum("ab->ba", delta_vv.bb) * -1
-    x12 += einsum("ai,ib->ab", l1.bb, t1.bb)
-    x12 += einsum("abij,ijac->bc", l2.abab, t2.abab)
-    braee1_ov_bbbb += einsum("ij,ab->jbia", delta_oo.bb, x12) * -0.5
+    x12 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x12 += einsum("ijab->jiab", t2.bbbb) * -1
+    x12 += einsum("ijab->jiba", t2.bbbb)
+    x13 = np.zeros((nocc[1], nocc[1]), dtype=np.float64)
+    x13 += einsum("abij,ikba->jk", l2.bbbb, x12) * -1
+    x14 = np.zeros((nvir[1], nvir[1]), dtype=np.float64)
+    x14 += einsum("abij,ijca->bc", l2.bbbb, x12) * -1
     del x12
+    x13 += einsum("ij->ji", delta_oo.bb) * -1
     x13 += einsum("ai,ja->ij", l1.bb, t1.bb)
     x13 += einsum("abij,ikab->jk", l2.abab, t2.abab)
-    braee1_ov_bbbb += einsum("ab,ij->jbia", delta_vv.bb, x13) * -0.5
+    braee1_ov_bbbb += einsum("ab,ij->jbia", delta_vv.bb, x13) * -1
     del x13
-    x14 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
-    x14 += einsum("abij->jiab", l2.aaaa) * -1
-    x14 += einsum("abij->jiba", l2.aaaa)
-    braee1_ov_bbaa += einsum("ijab,ikca->jbkc", t2.abab, x14) * -0.5
+    x14 += einsum("ai,ib->ab", l1.bb, t1.bb)
+    x14 += einsum("abij,ijac->bc", l2.abab, t2.abab)
+    braee1_ov_bbbb += einsum("ij,ab->jbia", delta_oo.bb, x14) * -1
     del x14
-    x15 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
-    x15 += einsum("abij->jiab", l2.bbbb) * -1
-    x15 += einsum("abij->jiba", l2.bbbb)
-    braee1_ov_aabb += einsum("ijab,jkcb->iakc", t2.abab, x15) * -0.5
-    del x15
-    x16 = np.zeros((nocc[0], nvir[0], nvir[0], nvir[0]), dtype=np.float64)
-    x16 += einsum("ia,bcji->jbca", t1.aa, l2.aaaa)
+    x15 = np.zeros((nocc[0], nvir[0], nvir[0], nvir[0]), dtype=np.float64)
+    x15 += einsum("ia,bcji->jbca", t1.aa, l2.aaaa)
     braee1_vv_aaaa = np.zeros((nvir[0], nvir[0], nocc[0], nvir[0]), dtype=np.float64)
-    braee1_vv_aaaa += einsum("iabc->acib", x16) * -0.5
-    braee1_vv_aaaa += einsum("iabc->bcia", x16) * 0.5
+    braee1_vv_aaaa -= einsum("iabc->acib", x15)
+    braee1_vv_aaaa += einsum("iabc->bcia", x15)
     braee2_ov_aaaaaa = np.zeros((nocc[0], nvir[0], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
-    braee2_ov_aaaaaa += einsum("ij,kabc->icjkab", delta_oo.aa, x16) * 0.5
-    braee2_ov_aaaaaa += einsum("ij,kabc->icjkba", delta_oo.aa, x16) * -0.5
-    braee2_ov_aaaaaa += einsum("ij,kabc->ickjab", delta_oo.aa, x16) * -0.5
-    braee2_ov_aaaaaa += einsum("ij,kabc->ickjba", delta_oo.aa, x16) * 0.5
-    del x16
-    x17 = np.zeros((nocc[1], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
-    x17 += einsum("ia,bcji->jbca", t1.bb, l2.bbbb)
+    braee2_ov_aaaaaa += einsum("ij,kabc->icjkab", delta_oo.aa, x15)
+    braee2_ov_aaaaaa -= einsum("ij,kabc->icjkba", delta_oo.aa, x15)
+    braee2_ov_aaaaaa -= einsum("ij,kabc->ickjab", delta_oo.aa, x15)
+    braee2_ov_aaaaaa += einsum("ij,kabc->ickjba", delta_oo.aa, x15)
+    del x15
+    x16 = np.zeros((nocc[1], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
+    x16 += einsum("ia,bcji->jbca", t1.bb, l2.bbbb)
     braee1_vv_bbbb = np.zeros((nvir[1], nvir[1], nocc[1], nvir[1]), dtype=np.float64)
-    braee1_vv_bbbb += einsum("iabc->acib", x17) * -0.5
-    braee1_vv_bbbb += einsum("iabc->bcia", x17) * 0.5
+    braee1_vv_bbbb -= einsum("iabc->acib", x16)
+    braee1_vv_bbbb += einsum("iabc->bcia", x16)
     braee2_ov_bbbbbb = np.zeros((nocc[1], nvir[1], nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
-    braee2_ov_bbbbbb += einsum("ij,kabc->icjkab", delta_oo.bb, x17) * 0.5
-    braee2_ov_bbbbbb += einsum("ij,kabc->icjkba", delta_oo.bb, x17) * -0.5
-    braee2_ov_bbbbbb += einsum("ij,kabc->ickjab", delta_oo.bb, x17) * -0.5
-    braee2_ov_bbbbbb += einsum("ij,kabc->ickjba", delta_oo.bb, x17) * 0.5
-    del x17
-    x18 = np.zeros((nocc[1], nvir[0], nvir[0], nvir[1]), dtype=np.float64)
-    x18 += einsum("ia,bcij->jbac", t1.aa, l2.abab)
+    braee2_ov_bbbbbb += einsum("ij,kabc->icjkab", delta_oo.bb, x16)
+    braee2_ov_bbbbbb -= einsum("ij,kabc->icjkba", delta_oo.bb, x16)
+    braee2_ov_bbbbbb -= einsum("ij,kabc->ickjab", delta_oo.bb, x16)
+    braee2_ov_bbbbbb += einsum("ij,kabc->ickjba", delta_oo.bb, x16)
+    del x16
+    x17 = np.zeros((nocc[1], nvir[0], nvir[0], nvir[1]), dtype=np.float64)
+    x17 += einsum("ia,bcij->jbac", t1.aa, l2.abab)
     braee1_vv_aabb = np.zeros((nvir[0], nvir[0], nocc[1], nvir[1]), dtype=np.float64)
-    braee1_vv_aabb += einsum("iabc->abic", x18) * 0.5
+    braee1_vv_aabb += einsum("iabc->abic", x17)
     braee2_ov_aababa = np.zeros((nocc[0], nvir[0], nocc[1], nocc[0], nvir[1], nvir[0]), dtype=np.float64)
-    braee2_ov_aababa += einsum("ij,kabc->ibkjca", delta_oo.aa, x18) * -0.5
+    braee2_ov_aababa -= einsum("ij,kabc->ibkjca", delta_oo.aa, x17)
     braee2_ov_aaabab = np.zeros((nocc[0], nvir[0], nocc[0], nocc[1], nvir[0], nvir[1]), dtype=np.float64)
-    braee2_ov_aaabab += einsum("ij,kabc->ibjkac", delta_oo.aa, x18) * -0.5
-    del x18
-    x19 = np.zeros((nocc[0], nvir[0], nvir[1], nvir[1]), dtype=np.float64)
-    x19 += einsum("ia,bcji->jbca", t1.bb, l2.abab)
+    braee2_ov_aaabab -= einsum("ij,kabc->ibjkac", delta_oo.aa, x17)
+    del x17
+    x18 = np.zeros((nocc[0], nvir[0], nvir[1], nvir[1]), dtype=np.float64)
+    x18 += einsum("ia,bcji->jbca", t1.bb, l2.abab)
     braee1_vv_bbaa = np.zeros((nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
-    braee1_vv_bbaa += einsum("iabc->bcia", x19) * 0.5
+    braee1_vv_bbaa += einsum("iabc->bcia", x18)
     braee2_ov_bbbaba = np.zeros((nocc[1], nvir[1], nocc[1], nocc[0], nvir[1], nvir[0]), dtype=np.float64)
-    braee2_ov_bbbaba += einsum("ij,kabc->icjkba", delta_oo.bb, x19) * -0.5
+    braee2_ov_bbbaba -= einsum("ij,kabc->icjkba", delta_oo.bb, x18)
     braee2_ov_bbabab = np.zeros((nocc[1], nvir[1], nocc[0], nocc[1], nvir[0], nvir[1]), dtype=np.float64)
-    braee2_ov_bbabab += einsum("ij,kabc->ickjab", delta_oo.bb, x19) * -0.5
+    braee2_ov_bbabab -= einsum("ij,kabc->ickjab", delta_oo.bb, x18)
+    del x18
+    x19 += einsum("ij,ak->jika", delta_oo.aa, l1.aa)
+    x19 -= einsum("ij,ak->kjia", delta_oo.aa, l1.aa)
+    braee2_ov_aaaaaa -= einsum("ab,ijkc->jbkiac", delta_vv.aa, x19)
     del x19
-    x20 += einsum("ij,ak->jika", delta_oo.aa, l1.aa) * -1
+    x20 -= einsum("ij,ak->jkia", delta_oo.aa, l1.aa)
     x20 += einsum("ij,ak->kjia", delta_oo.aa, l1.aa)
-    braee2_ov_aaaaaa += einsum("ab,ijkc->jbikac", delta_vv.aa, x20) * -0.5
+    braee2_ov_aaaaaa -= einsum("ab,ijkc->kbjica", delta_vv.aa, x20)
     del x20
-    x21 += einsum("ij,ak->jkia", delta_oo.aa, l1.aa)
-    x21 += einsum("ij,ak->kjia", delta_oo.aa, l1.aa) * -1
-    braee2_ov_aaaaaa += einsum("ab,ijkc->kbijca", delta_vv.aa, x21) * -0.5
+    x21 += einsum("ij,ak->jika", delta_oo.aa, l1.bb)
+    braee2_ov_aababa += einsum("ab,ijkc->jbkica", delta_vv.aa, x21)
+    braee2_ov_aaabab += einsum("ab,ijkc->jbikac", delta_vv.aa, x21)
     del x21
-    x22 += einsum("ij,ak->jika", delta_oo.aa, l1.bb)
-    braee2_ov_aababa += einsum("ab,ijkc->jbkica", delta_vv.aa, x22) * 0.5
-    braee2_ov_aaabab += einsum("ab,ijkc->jbikac", delta_vv.aa, x22) * 0.5
+    x22 += einsum("ij,ak->kjia", delta_oo.bb, l1.aa)
+    braee2_ov_bbbaba += einsum("ab,ijkc->kbjiac", delta_vv.bb, x22)
+    braee2_ov_bbabab += einsum("ab,ijkc->kbijca", delta_vv.bb, x22)
     del x22
-    x23 += einsum("ij,ak->kjia", delta_oo.bb, l1.aa)
-    braee2_ov_bbbaba += einsum("ab,ijkc->kbjiac", delta_vv.bb, x23) * 0.5
-    braee2_ov_bbabab += einsum("ab,ijkc->kbijca", delta_vv.bb, x23) * 0.5
+    x23 += einsum("ij,ak->jika", delta_oo.bb, l1.bb)
+    x23 -= einsum("ij,ak->kjia", delta_oo.bb, l1.bb)
+    braee2_ov_bbbbbb -= einsum("ab,ijkc->jbkiac", delta_vv.bb, x23)
     del x23
-    x24 += einsum("ij,ak->jika", delta_oo.bb, l1.bb)
-    x24 += einsum("ij,ak->kjia", delta_oo.bb, l1.bb) * -1
-    braee2_ov_bbbbbb += einsum("ab,ijkc->jbkiac", delta_vv.bb, x24) * -0.5
+    x24 += einsum("ij,ak->jkia", delta_oo.bb, l1.bb)
+    x24 -= einsum("ij,ak->kjia", delta_oo.bb, l1.bb)
+    braee2_ov_bbbbbb -= einsum("ab,ijkc->kbijca", delta_vv.bb, x24)
     del x24
-    x25 += einsum("ij,ak->jkia", delta_oo.bb, l1.bb)
-    x25 += einsum("ij,ak->kjia", delta_oo.bb, l1.bb) * -1
-    braee2_ov_bbbbbb += einsum("ab,ijkc->kbijca", delta_vv.bb, x25) * -0.5
-    del x25
-    braee1_oo_aaaa += einsum("ij,ak->jika", delta_oo.aa, l1.aa) * 0.5
-    braee1_oo_aaaa += einsum("ij,ak->jkia", delta_oo.aa, l1.aa) * -0.5
-    braee1_oo_bbbb += einsum("ij,ak->jika", delta_oo.bb, l1.bb) * 0.5
-    braee1_oo_bbbb += einsum("ij,ak->jkia", delta_oo.bb, l1.bb) * -0.5
-    braee1_oo_aabb += einsum("ij,ak->jika", delta_oo.aa, l1.bb) * 0.5
-    braee1_oo_bbaa += einsum("ij,ak->jika", delta_oo.bb, l1.aa) * 0.5
-    braee1_ov_aaaa += einsum("abij,kjcb->kcia", l2.abab, t2.abab) * 0.5
-    braee1_ov_aaaa += einsum("ai,jb->jbia", l1.aa, t1.aa) * 0.5
-    braee1_ov_bbbb += einsum("abij,ikac->kcjb", l2.abab, t2.abab) * 0.5
-    braee1_ov_bbbb += einsum("ai,jb->jbia", l1.bb, t1.bb) * 0.5
-    braee1_ov_bbaa += einsum("ai,jb->jbia", l1.aa, t1.bb) * 0.5
-    braee1_ov_aabb += einsum("ai,jb->jbia", l1.bb, t1.aa) * 0.5
+    braee1_oo_aaaa += einsum("ij,ak->jika", delta_oo.aa, l1.aa)
+    braee1_oo_aaaa -= einsum("ij,ak->jkia", delta_oo.aa, l1.aa)
+    braee1_oo_bbbb += einsum("ij,ak->jika", delta_oo.bb, l1.bb)
+    braee1_oo_bbbb -= einsum("ij,ak->jkia", delta_oo.bb, l1.bb)
+    braee1_oo_aabb += einsum("ij,ak->jika", delta_oo.aa, l1.bb)
+    braee1_oo_bbaa += einsum("ij,ak->jika", delta_oo.bb, l1.aa)
+    braee1_ov_aaaa += einsum("ai,jb->jbia", l1.aa, t1.aa)
+    braee1_ov_aaaa += einsum("abij,kjcb->kcia", l2.abab, t2.abab)
+    braee1_ov_bbbb += einsum("ai,jb->jbia", l1.bb, t1.bb)
+    braee1_ov_bbbb += einsum("abij,ikac->kcjb", l2.abab, t2.abab)
+    braee1_ov_bbaa += einsum("ai,jb->jbia", l1.aa, t1.bb)
+    braee1_ov_aabb += einsum("ai,jb->jbia", l1.bb, t1.aa)
     braee1_vo_aaaa = np.zeros((nvir[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
-    braee1_vo_aaaa += einsum("abij->ajib", l2.aaaa) * -0.5
-    braee1_vo_aaaa += einsum("abij->bjia", l2.aaaa) * 0.5
+    braee1_vo_aaaa -= einsum("abij->ajib", l2.aaaa)
+    braee1_vo_aaaa += einsum("abij->bjia", l2.aaaa)
     braee1_vo_bbbb = np.zeros((nvir[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
-    braee1_vo_bbbb += einsum("abij->ajib", l2.bbbb) * -0.5
-    braee1_vo_bbbb += einsum("abij->bjia", l2.bbbb) * 0.5
+    braee1_vo_bbbb -= einsum("abij->ajib", l2.bbbb)
+    braee1_vo_bbbb += einsum("abij->bjia", l2.bbbb)
     braee1_vo_bbaa = np.zeros((nvir[1], nocc[1], nocc[0], nvir[0]), dtype=np.float64)
-    braee1_vo_bbaa += einsum("abij->bjia", l2.abab) * 0.5
+    braee1_vo_bbaa += einsum("abij->bjia", l2.abab)
     braee1_vo_aabb = np.zeros((nvir[0], nocc[0], nocc[1], nvir[1]), dtype=np.float64)
-    braee1_vo_aabb += einsum("abij->aijb", l2.abab) * 0.5
-    braee1_vv_aaaa += einsum("ab,ci->cbia", delta_vv.aa, l1.aa) * 0.5
-    braee1_vv_bbbb += einsum("ab,ci->cbia", delta_vv.bb, l1.bb) * 0.5
+    braee1_vo_aabb += einsum("abij->aijb", l2.abab)
+    braee1_vv_aaaa += einsum("ab,ci->cbia", delta_vv.aa, l1.aa)
+    braee1_vv_bbbb += einsum("ab,ci->cbia", delta_vv.bb, l1.bb)
     braee2_oo_aaaaaa = np.zeros((nocc[0], nocc[0], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
-    braee2_oo_aaaaaa += einsum("ij,abkl->jilkab", delta_oo.aa, l2.aaaa) * -0.5
-    braee2_oo_aaaaaa += einsum("ij,abkl->jilkba", delta_oo.aa, l2.aaaa) * 0.5
-    braee2_oo_aaaaaa += einsum("ij,abkl->jlikab", delta_oo.aa, l2.aaaa) * 0.5
-    braee2_oo_aaaaaa += einsum("ij,abkl->jlikba", delta_oo.aa, l2.aaaa) * -0.5
-    braee2_oo_aaaaaa += einsum("ij,abkl->jlkiab", delta_oo.aa, l2.aaaa) * -0.5
-    braee2_oo_aaaaaa += einsum("ij,abkl->jlkiba", delta_oo.aa, l2.aaaa) * 0.5
+    braee2_oo_aaaaaa -= einsum("ij,abkl->jilkab", delta_oo.aa, l2.aaaa)
+    braee2_oo_aaaaaa += einsum("ij,abkl->jilkba", delta_oo.aa, l2.aaaa)
+    braee2_oo_aaaaaa += einsum("ij,abkl->jlikab", delta_oo.aa, l2.aaaa)
+    braee2_oo_aaaaaa -= einsum("ij,abkl->jlikba", delta_oo.aa, l2.aaaa)
+    braee2_oo_aaaaaa -= einsum("ij,abkl->jlkiab", delta_oo.aa, l2.aaaa)
+    braee2_oo_aaaaaa += einsum("ij,abkl->jlkiba", delta_oo.aa, l2.aaaa)
     braee2_oo_bbbbbb = np.zeros((nocc[1], nocc[1], nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
-    braee2_oo_bbbbbb += einsum("ij,abkl->jilkab", delta_oo.bb, l2.bbbb) * -0.5
-    braee2_oo_bbbbbb += einsum("ij,abkl->jilkba", delta_oo.bb, l2.bbbb) * 0.5
-    braee2_oo_bbbbbb += einsum("ij,abkl->jlikab", delta_oo.bb, l2.bbbb) * 0.5
-    braee2_oo_bbbbbb += einsum("ij,abkl->jlikba", delta_oo.bb, l2.bbbb) * -0.5
-    braee2_oo_bbbbbb += einsum("ij,abkl->jlkiab", delta_oo.bb, l2.bbbb) * -0.5
-    braee2_oo_bbbbbb += einsum("ij,abkl->jlkiba", delta_oo.bb, l2.bbbb) * 0.5
+    braee2_oo_bbbbbb -= einsum("ij,abkl->jilkab", delta_oo.bb, l2.bbbb)
+    braee2_oo_bbbbbb += einsum("ij,abkl->jilkba", delta_oo.bb, l2.bbbb)
+    braee2_oo_bbbbbb += einsum("ij,abkl->jlikab", delta_oo.bb, l2.bbbb)
+    braee2_oo_bbbbbb -= einsum("ij,abkl->jlikba", delta_oo.bb, l2.bbbb)
+    braee2_oo_bbbbbb -= einsum("ij,abkl->jlkiab", delta_oo.bb, l2.bbbb)
+    braee2_oo_bbbbbb += einsum("ij,abkl->jlkiba", delta_oo.bb, l2.bbbb)
     braee2_oo_aababa = np.zeros((nocc[0], nocc[0], nocc[1], nocc[0], nvir[1], nvir[0]), dtype=np.float64)
-    braee2_oo_aababa += einsum("ij,abkl->jilkba", delta_oo.aa, l2.abab) * 0.5
-    braee2_oo_aababa += einsum("ij,abkl->jkliba", delta_oo.aa, l2.abab) * -0.5
+    braee2_oo_aababa += einsum("ij,abkl->jilkba", delta_oo.aa, l2.abab)
+    braee2_oo_aababa -= einsum("ij,abkl->jkliba", delta_oo.aa, l2.abab)
     braee2_oo_bbabab = np.zeros((nocc[1], nocc[1], nocc[0], nocc[1], nvir[0], nvir[1]), dtype=np.float64)
-    braee2_oo_bbabab += einsum("ij,abkl->jiklab", delta_oo.bb, l2.abab) * 0.5
-    braee2_oo_bbabab += einsum("ij,abkl->jlkiab", delta_oo.bb, l2.abab) * -0.5
+    braee2_oo_bbabab += einsum("ij,abkl->jiklab", delta_oo.bb, l2.abab)
+    braee2_oo_bbabab -= einsum("ij,abkl->jlkiab", delta_oo.bb, l2.abab)
     braee2_oo_aaabab = np.zeros((nocc[0], nocc[0], nocc[0], nocc[1], nvir[0], nvir[1]), dtype=np.float64)
-    braee2_oo_aaabab += einsum("ij,abkl->jiklab", delta_oo.aa, l2.abab) * 0.5
-    braee2_oo_aaabab += einsum("ij,abkl->jkilab", delta_oo.aa, l2.abab) * -0.5
-    braee2_oo_aabbbb = np.zeros((nocc[0], nocc[0], nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
-    braee2_oo_aabbbb += einsum("ij,abkl->jilkab", delta_oo.aa, l2.bbbb) * -0.5
-    braee2_oo_aabbbb += einsum("ij,abkl->jilkba", delta_oo.aa, l2.bbbb) * 0.5
-    braee2_oo_bbaaaa = np.zeros((nocc[1], nocc[1], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
-    braee2_oo_bbaaaa += einsum("ij,abkl->jilkab", delta_oo.bb, l2.aaaa) * -0.5
-    braee2_oo_bbaaaa += einsum("ij,abkl->jilkba", delta_oo.bb, l2.aaaa) * 0.5
+    braee2_oo_aaabab += einsum("ij,abkl->jiklab", delta_oo.aa, l2.abab)
+    braee2_oo_aaabab -= einsum("ij,abkl->jkilab", delta_oo.aa, l2.abab)
     braee2_oo_bbbaba = np.zeros((nocc[1], nocc[1], nocc[1], nocc[0], nvir[1], nvir[0]), dtype=np.float64)
-    braee2_oo_bbbaba += einsum("ij,abkl->jilkba", delta_oo.bb, l2.abab) * 0.5
-    braee2_oo_bbbaba += einsum("ij,abkl->jlikba", delta_oo.bb, l2.abab) * -0.5
-    braee2_ov_aaaaaa += einsum("ia,bcjk->iakjbc", t1.aa, l2.aaaa) * -0.5
-    braee2_ov_aaaaaa += einsum("ia,bcjk->iakjcb", t1.aa, l2.aaaa) * 0.5
-    braee2_ov_aababa += einsum("ia,bcjk->iakjcb", t1.aa, l2.abab) * 0.5
-    braee2_ov_aaabab += einsum("ia,bcjk->iajkbc", t1.aa, l2.abab) * 0.5
+    braee2_oo_bbbaba += einsum("ij,abkl->jilkba", delta_oo.bb, l2.abab)
+    braee2_oo_bbbaba -= einsum("ij,abkl->jlikba", delta_oo.bb, l2.abab)
+    braee2_oo_aabbbb = np.zeros((nocc[0], nocc[0], nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    braee2_oo_aabbbb -= einsum("ij,abkl->jilkab", delta_oo.aa, l2.bbbb)
+    braee2_oo_aabbbb += einsum("ij,abkl->jilkba", delta_oo.aa, l2.bbbb)
+    braee2_oo_bbaaaa = np.zeros((nocc[1], nocc[1], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    braee2_oo_bbaaaa -= einsum("ij,abkl->jilkab", delta_oo.bb, l2.aaaa)
+    braee2_oo_bbaaaa += einsum("ij,abkl->jilkba", delta_oo.bb, l2.aaaa)
+    braee2_ov_aaaaaa -= einsum("ia,bcjk->iakjbc", t1.aa, l2.aaaa)
+    braee2_ov_aaaaaa += einsum("ia,bcjk->iakjcb", t1.aa, l2.aaaa)
+    braee2_ov_aababa += einsum("ia,bcjk->iakjcb", t1.aa, l2.abab)
+    braee2_ov_aaabab += einsum("ia,bcjk->iajkbc", t1.aa, l2.abab)
     braee2_ov_aabbbb = np.zeros((nocc[0], nvir[0], nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
-    braee2_ov_aabbbb += einsum("ia,bcjk->iakjbc", t1.aa, l2.bbbb) * -0.5
-    braee2_ov_aabbbb += einsum("ia,bcjk->iakjcb", t1.aa, l2.bbbb) * 0.5
+    braee2_ov_aabbbb -= einsum("ia,bcjk->iakjbc", t1.aa, l2.bbbb)
+    braee2_ov_aabbbb += einsum("ia,bcjk->iakjcb", t1.aa, l2.bbbb)
     braee2_ov_bbaaaa = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
-    braee2_ov_bbaaaa += einsum("ia,bcjk->iakjbc", t1.bb, l2.aaaa) * -0.5
-    braee2_ov_bbaaaa += einsum("ia,bcjk->iakjcb", t1.bb, l2.aaaa) * 0.5
-    braee2_ov_bbbaba += einsum("ia,bcjk->iakjcb", t1.bb, l2.abab) * 0.5
-    braee2_ov_bbabab += einsum("ia,bcjk->iajkbc", t1.bb, l2.abab) * 0.5
-    braee2_ov_bbbbbb += einsum("ia,bcjk->iakjbc", t1.bb, l2.bbbb) * -0.5
-    braee2_ov_bbbbbb += einsum("ia,bcjk->iakjcb", t1.bb, l2.bbbb) * 0.5
+    braee2_ov_bbaaaa -= einsum("ia,bcjk->iakjbc", t1.bb, l2.aaaa)
+    braee2_ov_bbaaaa += einsum("ia,bcjk->iakjcb", t1.bb, l2.aaaa)
+    braee2_ov_bbbaba += einsum("ia,bcjk->iakjcb", t1.bb, l2.abab)
+    braee2_ov_bbabab += einsum("ia,bcjk->iajkbc", t1.bb, l2.abab)
+    braee2_ov_bbbbbb -= einsum("ia,bcjk->iakjbc", t1.bb, l2.bbbb)
+    braee2_ov_bbbbbb += einsum("ia,bcjk->iakjcb", t1.bb, l2.bbbb)
     braee2_vv_aaaaaa = np.zeros((nvir[0], nvir[0], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
-    braee2_vv_aaaaaa += einsum("ab,cdij->cbjiad", delta_vv.aa, l2.aaaa) * -0.5
-    braee2_vv_aaaaaa += einsum("ab,cdij->dbjiac", delta_vv.aa, l2.aaaa) * 0.5
-    braee2_vv_aaaaaa += einsum("ab,cdij->cbjida", delta_vv.aa, l2.aaaa) * 0.5
-    braee2_vv_aaaaaa += einsum("ab,cdij->dbjica", delta_vv.aa, l2.aaaa) * -0.5
+    braee2_vv_aaaaaa -= einsum("ab,cdij->cbjiad", delta_vv.aa, l2.aaaa)
+    braee2_vv_aaaaaa += einsum("ab,cdij->dbjiac", delta_vv.aa, l2.aaaa)
+    braee2_vv_aaaaaa += einsum("ab,cdij->cbjida", delta_vv.aa, l2.aaaa)
+    braee2_vv_aaaaaa -= einsum("ab,cdij->dbjica", delta_vv.aa, l2.aaaa)
     braee2_vv_bbbbbb = np.zeros((nvir[1], nvir[1], nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
-    braee2_vv_bbbbbb += einsum("ab,cdij->cbjiad", delta_vv.bb, l2.bbbb) * -0.5
-    braee2_vv_bbbbbb += einsum("ab,cdij->dbjiac", delta_vv.bb, l2.bbbb) * 0.5
-    braee2_vv_bbbbbb += einsum("ab,cdij->cbjida", delta_vv.bb, l2.bbbb) * 0.5
-    braee2_vv_bbbbbb += einsum("ab,cdij->dbjica", delta_vv.bb, l2.bbbb) * -0.5
+    braee2_vv_bbbbbb -= einsum("ab,cdij->cbjiad", delta_vv.bb, l2.bbbb)
+    braee2_vv_bbbbbb += einsum("ab,cdij->dbjiac", delta_vv.bb, l2.bbbb)
+    braee2_vv_bbbbbb += einsum("ab,cdij->cbjida", delta_vv.bb, l2.bbbb)
+    braee2_vv_bbbbbb -= einsum("ab,cdij->dbjica", delta_vv.bb, l2.bbbb)
     braee2_vv_aababa = np.zeros((nvir[0], nvir[0], nocc[1], nocc[0], nvir[1], nvir[0]), dtype=np.float64)
-    braee2_vv_aababa += einsum("ab,cdij->cbjida", delta_vv.aa, l2.abab) * 0.5
+    braee2_vv_aababa += einsum("ab,cdij->cbjida", delta_vv.aa, l2.abab)
     braee2_vv_bbabab = np.zeros((nvir[1], nvir[1], nocc[0], nocc[1], nvir[0], nvir[1]), dtype=np.float64)
-    braee2_vv_bbabab += einsum("ab,cdij->dbijca", delta_vv.bb, l2.abab) * 0.5
+    braee2_vv_bbabab += einsum("ab,cdij->dbijca", delta_vv.bb, l2.abab)
     braee2_vv_aaabab = np.zeros((nvir[0], nvir[0], nocc[0], nocc[1], nvir[0], nvir[1]), dtype=np.float64)
-    braee2_vv_aaabab += einsum("ab,cdij->cbijad", delta_vv.aa, l2.abab) * 0.5
+    braee2_vv_aaabab += einsum("ab,cdij->cbijad", delta_vv.aa, l2.abab)
     braee2_vv_bbbaba = np.zeros((nvir[1], nvir[1], nocc[1], nocc[0], nvir[1], nvir[0]), dtype=np.float64)
-    braee2_vv_bbbaba += einsum("ab,cdij->dbjiac", delta_vv.bb, l2.abab) * 0.5
+    braee2_vv_bbbaba += einsum("ab,cdij->dbjiac", delta_vv.bb, l2.abab)
 
     braee1_oo_abab = np.zeros((nocc[0], nocc[1], nocc[0], nvir[1]), dtype=np.float64)
     braee1_oo_baba = np.zeros((nocc[1], nocc[0], nocc[1], nvir[0]), dtype=np.float64)
@@ -6744,6 +6740,9 @@ def make_ee_mom_bras(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=
 
     braee1 = SimpleNamespace(aaaa=braee1_aaaa, abab=braee1_abab, baba=braee1_baba, bbbb=braee1_bbbb)
     braee2 = SimpleNamespace(aaaaaa=braee2_aaaaaa, aaabab=braee2_aaabab, aababa=braee2_aababa, aabbbb=braee2_aabbbb, bbaaaa=braee2_bbaaaa, bbabab=braee2_bbabab, bbbaba=braee2_bbbaba, bbbbbb=braee2_bbbbbb)
+
+    braee1 = SimpleNamespace(**{key: val/2 for key, val in braee1.__dict__.items()})
+    braee2 = SimpleNamespace(**{key: val/2 for key, val in braee2.__dict__.items()})
 
     return braee1, braee2
 

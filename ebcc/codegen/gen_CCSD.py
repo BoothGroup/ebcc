@@ -23,7 +23,7 @@ warnings.simplefilter("ignore", UserWarning)
 rank = ("SD", "", "")
 
 # Spin setting:
-spin = "ghf"  # {"ghf", "rhf", "uhf"}
+spin = "uhf"  # {"ghf", "rhf", "uhf"}
 
 # Indices
 occs = i, j, k, l = [Idx(n, "occ") for n in range(4)]
@@ -489,6 +489,7 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
                             "    r2new.bab *= -1\n"
                             "    r2new.bbb *= -1\n"
                     )
+
         # Get EE moment expressions:
         for is_ket, ket_name in [(True, "ket"), (False, "bra")]:
             with FunctionPrinter(
@@ -531,7 +532,7 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
                         else:
                             full = (L * mid + mid) * space
 
-                        if spin != "ghf":
+                        if spin != "ghf" and not is_ket:
                             full *= Fraction(1, 2)  # FIXME find where I lost this factor!!
 
                         empty_tensors = [t for t in full.terms[0].tensors if t.name == ""]
@@ -611,53 +612,53 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
                             + "    {name}ee2 = SimpleNamespace({a1}aaaa{a2}={name}ee2_{a1}aaaa{a2}, {a1}abab{a2}={name}ee2_{a1}abab{a2}, {a1}baba{a2}={name}ee2_{a1}baba{a2}, {a1}bbbb{a2}={name}ee2_{a1}bbbb{a2}, {b1}aaaa{b2}={name}ee2_{b1}aaaa{b2}, {b1}abab{b2}={name}ee2_{b1}abab{b2}, {b1}baba{b2}={name}ee2_{b1}baba{b2}, {b1}bbbb{b2}={name}ee2_{b1}bbbb{b2})\n".format(name=ket_name, a1="" if is_ket else "aa", a2="aa" if is_ket else "", b1="" if is_ket else "bb", b2="bb" if is_ket else "")
                     )
 
-        # Get EE EOM hamiltonian-vector product expressions:
-        with FunctionPrinter(
-                file_printer,
-                "hbar_matvec_ee",
-                ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2", "r1", "r2"],
-                ["ree1new", "ree2new"],
-                return_dict=False,
-                timer=timer,
-        ) as function_printer:
-            E0 = wick.apply_wick(Hbars[-1])
-            E0.resolve()
-            spaces = bra
-            excitations = ree
-            excitation = Expression(sum([ex.terms for ex in excitations], []))
+        ## Get EE EOM hamiltonian-vector product expressions:
+        #with FunctionPrinter(
+        #        file_printer,
+        #        "hbar_matvec_ee",
+        #        ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2", "r1", "r2"],
+        #        ["ree1new", "ree2new"],
+        #        return_dict=False,
+        #        timer=timer,
+        #) as function_printer:
+        #    E0 = wick.apply_wick(Hbars[-1])
+        #    E0.resolve()
+        #    spaces = bra
+        #    excitations = ree
+        #    excitation = Expression(sum([ex.terms for ex in excitations], []))
 
-            all_terms = []
-            for space_no, space in enumerate(spaces):
-                return_value = "ree%dnew" % (space_no + 1)
+        #    all_terms = []
+        #    for space_no, space in enumerate(spaces):
+        #        return_value = "ree%dnew" % (space_no + 1)
 
-                full = space * (Hbars[-1] - E0) * excitation
-                out = wick.apply_wick(full)
-                out.resolve()
-                expr = AExpression(Ex=out, simplify=True)
+        #        full = space * (Hbars[-1] - E0) * excitation
+        #        out = wick.apply_wick(full)
+        #        out.resolve()
+        #        expr = AExpression(Ex=out, simplify=True)
 
-                terms, indices = codegen.wick_to_sympy(
-                        expr,
-                        particles,
-                        return_value=return_value,
-                )
-                terms = transform_spin(
-                        terms,
-                        indices,
-                )
-                terms = [codegen.sympy_to_drudge(
-                        group,
-                        indices,
-                        dr=dr,
-                        restricted=spin!="uhf",
-                ) for group in terms]
-                all_terms.append(terms)
+        #        terms, indices = codegen.wick_to_sympy(
+        #                expr,
+        #                particles,
+        #                return_value=return_value,
+        #        )
+        #        terms = transform_spin(
+        #                terms,
+        #                indices,
+        #        )
+        #        terms = [codegen.sympy_to_drudge(
+        #                group,
+        #                indices,
+        #                dr=dr,
+        #                restricted=spin!="uhf",
+        #        ) for group in terms]
+        #        all_terms.append(terms)
 
-            all_terms = codegen.spin_integrate._flatten(all_terms)
-            all_terms = codegen.optimize(all_terms, sizes=sizes, optimize="greedy", verify=False, interm_fmt="x{}")
-            function_printer.write_python(printer.doprint(all_terms)+"\n")
+        #    all_terms = codegen.spin_integrate._flatten(all_terms)
+        #    all_terms = codegen.optimize(all_terms, sizes=sizes, optimize="greedy", verify=False, interm_fmt="x{}")
+        #    function_printer.write_python(printer.doprint(all_terms)+"\n")
 
-            if spin == "uhf":
-                function_printer.write_python(""
-                        + "    ree1new = SimpleNamespace(aa=ree1new_aa, bb=ree1new_bb)\n"
-                        + "    ree2new = SimpleNamespace(aaaa=ree2new_aaaa, abab=ree2new_abab, baba=ree2new_baba, bbbb=ree2new_bbbb)\n"
-                )
+        #    if spin == "uhf":
+        #        function_printer.write_python(""
+        #                + "    ree1new = SimpleNamespace(aa=ree1new_aa, bb=ree1new_bb)\n"
+        #                + "    ree2new = SimpleNamespace(aaaa=ree2new_aaaa, abab=ree2new_abab, baba=ree2new_baba, bbbb=ree2new_bbbb)\n"
+        #        )

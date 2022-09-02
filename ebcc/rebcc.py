@@ -16,6 +16,7 @@ from ebcc import default_log, reom, util
 # TODO nuke hbar
 # TODO math in docstrings
 # TODO resolve G vs bare_G confusion
+# TODO warnings if amplitudes/lambdas are not converged when calling i.e. DM funcs
 
 
 class Amplitudes(dict):
