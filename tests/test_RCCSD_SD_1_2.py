@@ -108,47 +108,21 @@ class RCCSD_SD_1_2_Tests(unittest.TestCase):
         b = b[:, self.osort][:, :, self.vsort]
         np.testing.assert_almost_equal(a, b, 6)
 
-    # TODO: these are not in the old code, how to test?
+    @pytest.mark.regression
+    def test_lambdas(self):
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l1"]),  -0.05224802896432364, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l2"]),  -0.05259353852072242, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["ls1"]),  0.01144093908452783, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["ls2"]),  0.00112151562710175, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["lu11"]), 0.02324025349341592, 5)
 
-    #def test_l1_amplitudes(self):
-    #    a = self.data[self.shift]["l1"]
-    #    b = scipy.linalg.block_diag(self.ccsd.l1, self.ccsd.l1)[self.vsort][:, self.osort]
-    #    np.testing.assert_almost_equal(a, b, 6)
-
-    #def test_ls1_amplitudes(self):
-    #    a = self.data[self.shift]["ls1"]
-    #    b = self.ccsd.lambdas["ls1"]
-    #    np.testing.assert_almost_equal(a, b, 6)
-
-    #def test_lu11_amplitudes(self):
-    #    a = self.data[self.shift]["lu11"]
-    #    b = np.array([scipy.linalg.block_diag(x, x) for x in self.ccsd.lambdas["lu11"]])
-    #    b = b[:, self.vsort][:, :, self.osort]
-    #    np.testing.assert_almost_equal(a, b, 6)
-
-    #def test_rdm1_f(self):
-    #    rdm1_f = self.ccsd.make_rdm1_f()
-    #    a = self.data[self.shift]["rdm1_f"]
-    #    b = scipy.linalg.block_diag(rdm1_f, rdm1_f) / 2
-    #    b = b[self.fsort][:, self.fsort]
-    #    np.testing.assert_almost_equal(a, b, 6)
-    #        factor = 1.0 if self.spatial else 1.0
-
-    #def test_rdm1_b(self):
-    #    a = self.data[self.shift]["rdm1_b"]
-    #    b = self.ccsd.make_rdm1_b()
-    #    np.testing.assert_almost_equal(a, b, 6)
-
-    #def test_dm_b(self):
-    #    a = self.data[self.shift]["dm_b"]
-    #    b = np.array(self.ccsd.make_sing_b_dm())
-    #    np.testing.assert_almost_equal(a, b, 6)
-
-    #def test_rdm_eb(self):
-    #    a = np.array(self.data[self.shift]["rdm_eb"])
-    #    b = np.array([[scipy.linalg.block_diag(x, x) for x in y] for y in self.ccsd.make_eb_coup_rdm()])
-    #    b = b[:, :, self.fsort][:, :, :, self.fsort]
-    #    np.testing.assert_almost_equal(a, b, 6)
+    @pytest.mark.regression
+    def test_dms(self):
+        self.assertAlmostEqual(lib.fp(self.ccsd.make_rdm1_f()),       3.058518964389294, 6)
+        self.assertAlmostEqual(lib.fp(self.ccsd.make_rdm2_f()),      -1.792334872393240, 6)
+        self.assertAlmostEqual(lib.fp(self.ccsd.make_rdm1_b()),       0.035528094644337, 6)
+        self.assertAlmostEqual(lib.fp(self.ccsd.make_sing_b_dm()),    0.020426319078153, 6)
+        self.assertAlmostEqual(lib.fp(self.ccsd.make_eb_coup_rdm()), -2.107572966431455, 6)
 
 
 @pytest.mark.reference
@@ -158,6 +132,22 @@ class RCCSD_SD_1_2_NoShift_Tests(RCCSD_SD_1_2_Tests):
     """
 
     shift = False
+
+    @pytest.mark.regression
+    def test_lambdas(self):
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l1"]),  -0.05251435208717554, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l2"]),  -0.05247466694425869, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["ls1"]),  0.19939707497970954, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["ls2"]),  0.01046937063225352, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["lu11"]), 0.03280064547688709, 5)
+
+    @pytest.mark.regression
+    def test_dms(self):
+        self.assertAlmostEqual(lib.fp(self.ccsd.make_rdm1_f()),       3.056907984935672, 6)
+        self.assertAlmostEqual(lib.fp(self.ccsd.make_rdm2_f()),      -1.814797297136204, 6)
+        self.assertAlmostEqual(lib.fp(self.ccsd.make_rdm1_b()),       0.009432763560355, 6)
+        self.assertAlmostEqual(lib.fp(self.ccsd.make_sing_b_dm()),    0.343097457676634, 6)
+        self.assertAlmostEqual(lib.fp(self.ccsd.make_eb_coup_rdm()), -2.128888460564522, 6)
 
 
 

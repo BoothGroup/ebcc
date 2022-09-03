@@ -131,6 +131,10 @@ class RCCSD_S_1_1_Tests(unittest.TestCase):
         b = b[self.fsort][:, self.fsort]
         np.testing.assert_almost_equal(a, b, 6)
 
+    @pytest.mark.regression
+    def test_rdm2_f(self):
+        self.assertAlmostEqual(lib.fp(self.ccsd.make_rdm2_f()), -1.7916782894206773)
+
     def test_rdm1_b(self):
         a = self.data[self.shift]["rdm1_b"]
         b = self.ccsd.make_rdm1_b()
@@ -155,6 +159,10 @@ class RCCSD_S_1_1_NoShift_Tests(RCCSD_S_1_1_Tests):
     """
 
     shift = False
+
+    @pytest.mark.regression
+    def test_rdm2_f(self):
+        self.assertAlmostEqual(lib.fp(self.ccsd.make_rdm2_f()), -1.8193615098460836)
 
 
 

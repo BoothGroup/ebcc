@@ -25,7 +25,7 @@ warnings.simplefilter("ignore", UserWarning)
 rank = ("SD", "S", "S")
 
 # Spin setting:
-spin = "ghf"  # {"ghf", "rhf", "uhf"}
+spin = "uhf"  # {"ghf", "rhf", "uhf"}
 
 # Indices
 occs = i, j, k, l = [Idx(n, "occ") for n in range(4)]
@@ -105,7 +105,7 @@ with common.FilePrinter("%sCCSD_S_1_1" % prefix.upper()) as file_printer:
         out.resolve()
         expr = AExpression(Ex=out, simplify=True)
         terms, indices = codegen.wick_to_sympy(expr, particles, return_value="t2new")
-        terms = transform_spin(terms, indices, project_onto=[(codegen.ALPHA, codegen.BETA, codegen.ALPHA, codegen.BETA)])
+        terms = transform_spin(terms, indices, project_rhf=[(codegen.ALPHA, codegen.BETA, codegen.ALPHA, codegen.BETA)])
         terms_t2 = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
 
         # S1 residuals:
@@ -114,7 +114,7 @@ with common.FilePrinter("%sCCSD_S_1_1" % prefix.upper()) as file_printer:
         out.resolve()
         expr = AExpression(Ex=out, simplify=True)
         terms, indices = codegen.wick_to_sympy(expr, particles, return_value="s1new")
-        terms = transform_spin(terms, indices, project_onto=[(None,)])
+        terms = transform_spin(terms, indices, project_rhf=[(None,)])
         terms_s1 = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
 
         # U11 residuals:
@@ -123,7 +123,7 @@ with common.FilePrinter("%sCCSD_S_1_1" % prefix.upper()) as file_printer:
         out.resolve()
         expr = AExpression(Ex=out, simplify=True)
         terms, indices = codegen.wick_to_sympy(expr, particles, return_value="u11new")
-        terms = transform_spin(terms, indices, project_onto=[(None, codegen.ALPHA, codegen.ALPHA)])
+        terms = transform_spin(terms, indices, project_rhf=[(None, codegen.ALPHA, codegen.ALPHA)])
         terms_u11 = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
 
         terms = codegen.spin_integrate._flatten([terms_t1, terms_t2, terms_s1, terms_u11])
@@ -159,7 +159,7 @@ with common.FilePrinter("%sCCSD_S_1_1" % prefix.upper()) as file_printer:
         expr2 = expr2.get_connected()
         expr2.sort_tensors()
         terms, indices = codegen.wick_to_sympy(expr1+expr2, particles, return_value="l1new")
-        terms = transform_spin(terms, indices, project_onto=[(codegen.ALPHA, codegen.ALPHA)])
+        terms = transform_spin(terms, indices, project_rhf=[(codegen.ALPHA, codegen.ALPHA)])
         terms_l1 = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
 
         # L2 residuals <0|Hbar|doubles> (not proportional to lambda):
@@ -186,7 +186,7 @@ with common.FilePrinter("%sCCSD_S_1_1" % prefix.upper()) as file_printer:
         expr3 = AExpression(Ex=out)
         expr3.sort_tensors()
         terms, indices = codegen.wick_to_sympy(expr1+expr2+expr3, particles, return_value="l2new")
-        terms = transform_spin(terms, indices, project_onto=[(codegen.ALPHA, codegen.BETA, codegen.ALPHA, codegen.BETA)])
+        terms = transform_spin(terms, indices, project_rhf=[(codegen.ALPHA, codegen.BETA, codegen.ALPHA, codegen.BETA)])
         terms_l2 = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
 
         # B1 residuals <0|Hbar|1b> (not proportional to lambda):
@@ -205,7 +205,7 @@ with common.FilePrinter("%sCCSD_S_1_1" % prefix.upper()) as file_printer:
         expr2 = expr2.get_connected()
         expr2.sort_tensors()
         terms, indices = codegen.wick_to_sympy(expr1+expr2, particles, return_value="ls1new")
-        terms = transform_spin(terms, indices, project_onto=[(None,)])
+        terms = transform_spin(terms, indices, project_rhf=[(None,)])
         terms_ls1 = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
 
         # BE1 residuals <0|Hbar|EPS1> (not proportional to lambda)
@@ -240,7 +240,7 @@ with common.FilePrinter("%sCCSD_S_1_1" % prefix.upper()) as file_printer:
         expr4 = AExpression(Ex=out)
         expr4.sort_tensors()
         terms, indices = codegen.wick_to_sympy(expr1+expr2+expr3+expr4, particles, return_value="lu11new")
-        terms = transform_spin(terms, indices, project_onto=[(None, codegen.ALPHA, codegen.ALPHA)])
+        terms = transform_spin(terms, indices, project_rhf=[(None, codegen.ALPHA, codegen.ALPHA)])
         terms_lu11 = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
 
         terms = codegen.spin_integrate._flatten([terms_l1, terms_l2, terms_ls1, terms_lu11])
