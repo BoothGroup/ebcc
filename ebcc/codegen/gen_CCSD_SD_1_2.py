@@ -9,13 +9,14 @@ from qwick.expression import AExpression
 from qwick.wick import apply_wick
 from qwick.convenience import *
 from qwick import codegen
-from ebcc.util import pack_2e, einsum, wick
+from ebcc.codegen import common, wick
+from ebcc.util import pack_2e, einsum
 from ebcc.codegen.convenience_extra import *
 
-from pyspark import SparkContext
-ctx = SparkContext("local[4]")
-#from dummy_spark import SparkContext
-#ctx = SparkContext()
+#from pyspark import SparkContext
+#ctx = SparkContext("local[4]")
+from dummy_spark import SparkContext
+ctx = SparkContext()
 dr = drudge.Drudge(ctx)
 
 warnings.simplefilter("ignore", UserWarning)
@@ -24,7 +25,7 @@ warnings.simplefilter("ignore", UserWarning)
 rank = ("SD", "SD", "SD")
 
 # Spin setting:
-spin = "uhf"  # {"ghf", "rhf", "uhf"}
+spin = "ghf"  # {"ghf", "rhf", "uhf"}
 
 # Indices
 occs = i, j, k, l = [Idx(n, "occ") for n in range(4)]
@@ -430,24 +431,30 @@ with common.FilePrinter("%sCCSD_SD_1_2" % prefix.upper()) as file_printer:
             terms = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
             return terms
 
+        # FIXME for ghf
+        if spin != "ghf":
+            transpose = lambda name: name[:-3] + name[-2] + name[-3] + name[-1]
+        else:
+            transpose = lambda name: name
+
         # Blocks:  NOTE: transposed
         terms = [
-            case(i, j, k, l, "rdm2_f_oooo", comment="oooo block"),
-            case(i, j, k, a, "rdm2_f_ooov", comment="ooov block"),
-            case(i, j, a, k, "rdm2_f_ovoo", comment="oovo block"),
-            case(i, a, j, k, "rdm2_f_oovo", comment="ovoo block"),
-            case(a, i, j, k, "rdm2_f_vooo", comment="vooo block"),
-            case(i, j, a, b, "rdm2_f_ovov", comment="oovv block"),
-            case(i, a, j, b, "rdm2_f_oovv", comment="ovov block"),
-            case(i, a, b, j, "rdm2_f_ovvo", comment="ovvo block"),
-            case(a, i, j, b, "rdm2_f_voov", comment="voov block"),
-            case(a, i, b, j, "rdm2_f_vvoo", comment="vovo block"),
-            case(a, b, i, j, "rdm2_f_vovo", comment="vvoo block"),
-            case(i, a, b, c, "rdm2_f_ovvv", comment="ovvv block"),
-            case(a, i, b, c, "rdm2_f_vvov", comment="vovv block"),
-            case(a, b, i, c, "rdm2_f_vovv", comment="vvov block"),
-            case(a, b, c, i, "rdm2_f_vvvo", comment="vvvo block"),
-            case(a, b, c, d, "rdm2_f_vvvv", comment="vvvv block"),
+            case(i, j, k, l, transpose("rdm2_f_oooo"), comment="oooo block"),
+            case(i, j, k, a, transpose("rdm2_f_ooov"), comment="ooov block"),
+            case(i, j, a, k, transpose("rdm2_f_oovo"), comment="oovo block"),
+            case(i, a, j, k, transpose("rdm2_f_ovoo"), comment="ovoo block"),
+            case(a, i, j, k, transpose("rdm2_f_vooo"), comment="vooo block"),
+            case(i, j, a, b, transpose("rdm2_f_oovv"), comment="oovv block"),
+            case(i, a, j, b, transpose("rdm2_f_ovov"), comment="ovov block"),
+            case(i, a, b, j, transpose("rdm2_f_ovvo"), comment="ovvo block"),
+            case(a, i, j, b, transpose("rdm2_f_voov"), comment="voov block"),
+            case(a, i, b, j, transpose("rdm2_f_vovo"), comment="vovo block"),
+            case(a, b, i, j, transpose("rdm2_f_vvoo"), comment="vvoo block"),
+            case(i, a, b, c, transpose("rdm2_f_ovvv"), comment="ovvv block"),
+            case(a, i, b, c, transpose("rdm2_f_vovv"), comment="vovv block"),
+            case(a, b, i, c, transpose("rdm2_f_vvov"), comment="vvov block"),
+            case(a, b, c, i, transpose("rdm2_f_vvvo"), comment="vvvo block"),
+            case(a, b, c, d, transpose("rdm2_f_vvvv"), comment="vvvv block"),
         ]
         terms = codegen.spin_integrate._flatten(terms)
 
@@ -459,10 +466,14 @@ with common.FilePrinter("%sCCSD_SD_1_2" % prefix.upper()) as file_printer:
         else:
             function_printer.write_python(""
                     + "    rdm2_f_aaaa = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_aaaa" % x for x in common.ov_2e])
-                    + "    rdm2_f_abab = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_abab" % x for x in common.ov_2e])
-                    + "    rdm2_f_baba = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_baba" % x for x in common.ov_2e])
+                    + "    rdm2_f_aabb = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_aabb" % x for x in common.ov_2e])
+                    + "    rdm2_f_bbaa = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_bbaa" % x for x in common.ov_2e])
                     + "    rdm2_f_bbbb = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_bbbb" % x for x in common.ov_2e])
             )
+
+        # TODO fix
+        if spin == "ghf":
+            function_printer.write_python("    rdm2_f = rdm2_f.transpose(0, 2, 1, 3)\n")
 
     # Get single boson DM expressions:
     with FunctionPrinter(

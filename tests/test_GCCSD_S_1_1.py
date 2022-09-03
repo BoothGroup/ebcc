@@ -148,8 +148,8 @@ class GCCSD_S_1_1_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_rdm2_f(self):
-        a = self.data[self.shift]["rdm1_f"]
-        b = self.ccsd.make_rdm1_f()
+        a = self.data[self.shift]["rdm2_f"]
+        b = self.ccsd.make_rdm2_f()
         np.testing.assert_almost_equal(a, b, 6)
 
     def test_rdm1_b(self):
