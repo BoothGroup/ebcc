@@ -350,7 +350,7 @@ with common.FilePrinter("%sCCSD_SD_1_1" % prefix.upper()) as file_printer:
             ["f", "v", "w", "g", "G", "nocc", "nvir", "nbos", "t1", "t2", "s1", "s2", "u11", "l1", "l2", "ls1", "ls2", "lu11"],
             ["rdm2_f"],
             spin_cases={
-                "rdm2_f": ["aaaa", "abab", "baba", "bbbb"],
+                "rdm2_f": ["aaaa", "aabb", "bbaa", "bbbb"],
             },
             return_dict=False,
             timer=timer,

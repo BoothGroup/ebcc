@@ -115,54 +115,37 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
         b = b[:, self.osort][:, :, self.vsort]
         np.testing.assert_almost_equal(a, b, 6)
 
-    #def test_l1_amplitudes(self):
-    #    a = self.data[self.shift]["l1"]
-    #    b = scipy.linalg.block_diag(self.ccsd.l1.aa, self.ccsd.l1.bb)[self.vsort][:, self.osort]
-    #    np.testing.assert_almost_equal(a, b, 6)
+    @pytest.mark.regression
+    def test_lambdas(self):
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l1"].aa),   -0.05224794749064107, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l1"].bb),   -0.05224794749064056, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l2"].aaaa),  0.02916600243912396, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l2"].abab), -0.05259350959254097, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l2"].baba), -0.05259350959253986, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l2"].bbbb),  0.02916600243912393, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["ls1"]),      0.01144092890558732, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["ls1"]),      0.01144092890558732, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["ls2"]),      0.00112151519068901, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["ls2"]),      0.00112151519068901, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["lu11"].aa),  0.02324028581663984, 5)
 
-    #def test_ls1_amplitudes(self):
-    #    a = self.data[self.shift]["ls1"]
-    #    b = self.ccsd.lambdas["ls1"]
-    #    np.testing.assert_almost_equal(a, b, 6)
-
-    #def test_ls1_amplitudes(self):
-    #    a = self.data[self.shift]["ls2"]
-    #    b = self.ccsd.lambdas["ls2"]
-    #    np.testing.assert_almost_equal(a, b, 6)
-
-    #def test_lu11_amplitudes(self):
-    #    a = self.data[self.shift]["lu11"]
-    #    b = self.ccsd.lambdas["lu11"]
-    #    b = np.array([scipy.linalg.block_diag(x, y) for x, y in zip(b.aa, b.bb)])
-    #    b = b[:, self.vsort][:, :, self.osort]
-    #    np.testing.assert_almost_equal(a, b, 6)
-
-    #def test_rdm1_f(self):
-    #    rdm1_f = self.ccsd.make_rdm1_f()
-    #    a = self.data[self.shift]["rdm1_f"]
-    #    b = scipy.linalg.block_diag(rdm1_f.aa, rdm1_f.bb)
-    #    b = b[self.fsort][:, self.fsort]
-    #    np.testing.assert_almost_equal(a, b, 6)
-
-    #def test_rdm1_b(self):
-    #    a = self.data[self.shift]["rdm1_b"]
-    #    b = self.ccsd.make_rdm1_b()
-    #    np.testing.assert_almost_equal(a, b, 6)
-
-    #def test_dm_b(self):
-    #    a = self.data[self.shift]["dm_b"]
-    #    b = np.array(self.ccsd.make_sing_b_dm())
-    #    np.testing.assert_almost_equal(a, b, 6)
-
-    #def test_rdm_eb(self):
-    #    a = np.array(self.data[self.shift]["rdm_eb"])
-    #    b = self.ccsd.make_eb_coup_rdm()
-    #    b = np.array([
-    #        [scipy.linalg.block_diag(x, y) for x, y in zip(b.aa[0], b.bb[0])],
-    #        [scipy.linalg.block_diag(x, y) for x, y in zip(b.aa[1], b.bb[1])],
-    #    ])
-    #    b = b[:, :, self.fsort][:, :, :, self.fsort]
-    #    np.testing.assert_almost_equal(a, b, 6)
+    @pytest.mark.regression
+    def test_dms(self):
+        rdm1_f = self.ccsd.make_rdm1_f()
+        rdm2_f = self.ccsd.make_rdm2_f()
+        rdm1_b = self.ccsd.make_rdm1_b()
+        dm_b = self.ccsd.make_sing_b_dm()
+        dm_eb = self.ccsd.make_eb_coup_rdm()
+        self.assertAlmostEqual(lib.fp(rdm1_f.aa),     1.529259451075522, 6)
+        self.assertAlmostEqual(lib.fp(rdm1_f.bb),     1.529259451075522, 6)
+        self.assertAlmostEqual(lib.fp(rdm2_f.aaaa), -12.786827602840134, 6)
+        self.assertAlmostEqual(lib.fp(rdm2_f.aabb),  11.890660368984713, 6)
+        self.assertAlmostEqual(lib.fp(rdm2_f.bbaa),  11.890660368984715, 6)
+        self.assertAlmostEqual(lib.fp(rdm2_f.bbbb), -12.786827602840136, 6)
+        self.assertAlmostEqual(lib.fp(rdm1_b),        0.035528092227729, 6)
+        self.assertAlmostEqual(lib.fp(dm_b),          0.020426308220055, 6)
+        self.assertAlmostEqual(lib.fp(dm_eb.aa),     -1.053786451784421, 6)
+        self.assertAlmostEqual(lib.fp(dm_eb.bb),     -1.053786451784395, 6)
 
 
 @pytest.mark.reference
@@ -172,6 +155,38 @@ class UCCSD_SD_1_2_NoShift_Tests(UCCSD_SD_1_2_Tests):
     """
 
     shift = False
+
+    @pytest.mark.regression
+    def test_lambdas(self):
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l1"].aa),   -0.052514383878910095, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l1"].bb),   -0.052514383878909804, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l2"].aaaa),  0.029627372142994383, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l2"].abab), -0.052474614602499456, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l2"].baba), -0.052474614602498866, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l2"].bbbb),  0.029627372142994424, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["ls1"]),      0.199397081277302200, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["ls1"]),      0.199397081277302200, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["ls2"]),      0.010469370633854065, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["ls2"]),      0.010469370633854065, 5)
+        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["lu11"].aa),  0.032800603529878666, 5)
+
+    @pytest.mark.regression
+    def test_dms(self):
+        rdm1_f = self.ccsd.make_rdm1_f()
+        rdm2_f = self.ccsd.make_rdm2_f()
+        rdm1_b = self.ccsd.make_rdm1_b()
+        dm_b = self.ccsd.make_sing_b_dm()
+        dm_eb = self.ccsd.make_eb_coup_rdm()
+        self.assertAlmostEqual(lib.fp(rdm1_f.aa),     1.528453985001563, 6)
+        self.assertAlmostEqual(lib.fp(rdm1_f.bb),     1.528453985001563, 6)
+        self.assertAlmostEqual(lib.fp(rdm2_f.aaaa), -12.796158496372168, 6)
+        self.assertAlmostEqual(lib.fp(rdm2_f.aabb),  11.888759742067261, 6)
+        self.assertAlmostEqual(lib.fp(rdm2_f.bbaa),  11.888759742067258, 6)
+        self.assertAlmostEqual(lib.fp(rdm2_f.bbbb), -12.796158496372172, 6)
+        self.assertAlmostEqual(lib.fp(rdm1_b),        0.009432763864565, 6)
+        self.assertAlmostEqual(lib.fp(dm_b),          0.343097464069136, 6)
+        self.assertAlmostEqual(lib.fp(dm_eb.aa),     -1.064444250615477, 6)
+        self.assertAlmostEqual(lib.fp(dm_eb.bb),     -1.064444250615478, 6)
 
 
 if __name__ == "__main__":
