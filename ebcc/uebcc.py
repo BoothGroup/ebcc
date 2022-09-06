@@ -145,7 +145,7 @@ class UEBCC(rebcc.REBCC):
             for nf in rcc.rank_numeric[2]:
                 for nb in rcc.rank_numeric[3]:
                     lambdas["lu%d%d" % (nf, nb)] = SimpleNamespace()
-                    for comb in util.generate_spin_combinations(n):
+                    for comb in util.generate_spin_combinations(nf):
                         tn = rcc.lambdas["lu%d%d" % (nf, nb)]
                         setattr(lambdas["lu%d%d" % (nf, nb)], comb, tn)
 

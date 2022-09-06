@@ -66,7 +66,11 @@ class GEBCC(rebcc.REBCC):
 
     @staticmethod
     def _convert_mf(mf):
-        return mf.to_ghf()
+        if isinstance(mf, scf.ghf.GHF):
+            return mf
+        # NOTE: First convert to UHF - otherwise conversions from
+        # RHF->GHF and UHF->GHF may have inconsistent ordering
+        return mf.to_uhf().to_ghf()
 
     @classmethod
     def from_uebcc(cls, ucc):
