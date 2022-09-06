@@ -202,10 +202,10 @@ with common.FilePrinter("%sCC2" % prefix.upper()) as file_printer:
             )
         else:
             function_printer.write_python(
-                    "    delta_oo = SimpleNamespace()\n"
+                    "    delta_oo = Namespace()\n"
                     "    delta_oo.aa = np.eye(nocc[0])\n"
                     "    delta_oo.bb = np.eye(nocc[1])\n"
-                    "    delta_vv = SimpleNamespace()\n"
+                    "    delta_vv = Namespace()\n"
                     "    delta_vv.aa = np.eye(nvir[0])\n"
                     "    delta_vv.bb = np.eye(nvir[1])\n"
             )
@@ -262,10 +262,10 @@ with common.FilePrinter("%sCC2" % prefix.upper()) as file_printer:
             )
         else:
             function_printer.write_python(
-                    "    delta_oo = SimpleNamespace()\n"
+                    "    delta_oo = Namespace()\n"
                     "    delta_oo.aa = np.eye(nocc[0])\n"
                     "    delta_oo.bb = np.eye(nocc[1])\n"
-                    "    delta_vv = SimpleNamespace()\n"
+                    "    delta_vv = Namespace()\n"
                     "    delta_vv.aa = np.eye(nvir[0])\n"
                     "    delta_vv.bb = np.eye(nvir[1])\n"
             )

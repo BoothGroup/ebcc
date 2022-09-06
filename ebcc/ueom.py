@@ -4,7 +4,6 @@
 import dataclasses
 import functools
 import warnings
-from types import SimpleNamespace
 
 import numpy as np
 from pyscf import lib
@@ -38,7 +37,7 @@ class UEOM(reom.REOM):
         bras = self.bras(eris=eris)
         kets = self.kets(eris=eris)
 
-        moments = SimpleNamespace(
+        moments = util.Namespace(
             aa=np.zeros((nmom, self.nmo, self.nmo)),
             bb=np.zeros((nmom, self.nmo, self.nmo)),
         )
@@ -70,14 +69,14 @@ class IP_UEOM(UEOM, reom.IP_REOM):
 
     def diag(self, eris=None):
         parts = []
-        e_ia = SimpleNamespace(
+        e_ia = util.Namespace(
             aa=lib.direct_sum("i-a->ia", self.ebcc.eo.a, self.ebcc.ev.a),
             bb=lib.direct_sum("i-a->ia", self.ebcc.eo.b, self.ebcc.ev.b),
         )
         e_i = self.ebcc.eo
 
         for n in self.rank_numeric[0]:
-            spin_part = SimpleNamespace()
+            spin_part = util.Namespace()
             for comb in util.generate_spin_combinations(n, excited=True):
                 tensors = []
                 for i, s in enumerate(comb[:n]):
@@ -98,7 +97,7 @@ class IP_UEOM(UEOM, reom.IP_REOM):
 
     def bras(self, eris=None):
         bras_raw = list(self._bras(eris=eris))
-        bras = SimpleNamespace(a=[], b=[])
+        bras = util.Namespace(a=[], b=[])
 
         for i in range(self.nmo):
             amps_a = []
@@ -106,8 +105,8 @@ class IP_UEOM(UEOM, reom.IP_REOM):
 
             m = 0
             for n in self.ebcc.rank_numeric[0]:
-                amp_a = SimpleNamespace()
-                amp_b = SimpleNamespace()
+                amp_a = util.Namespace()
+                amp_b = util.Namespace()
                 for spin in util.generate_spin_combinations(n, excited=True):
                     shape = tuple(self.nocc["ab".index(s)] for s in spin[:n]) + tuple(
                         self.nvir["ab".index(s)] for s in spin[n:]
@@ -135,7 +134,7 @@ class IP_UEOM(UEOM, reom.IP_REOM):
 
     def kets(self, eris=None):
         kets_raw = list(self._kets(eris=eris))
-        kets = SimpleNamespace(a=[], b=[])
+        kets = util.Namespace(a=[], b=[])
 
         for i in range(self.nmo):
             j = (Ellipsis, i)
@@ -144,8 +143,8 @@ class IP_UEOM(UEOM, reom.IP_REOM):
 
             m = 0
             for n in self.ebcc.rank_numeric[0]:
-                amp_a = SimpleNamespace()
-                amp_b = SimpleNamespace()
+                amp_a = util.Namespace()
+                amp_b = util.Namespace()
                 for spin in util.generate_spin_combinations(n, excited=True):
                     shape = tuple(self.nocc["ab".index(s)] for s in spin[:n]) + tuple(
                         self.nvir["ab".index(s)] for s in spin[n:]
@@ -178,14 +177,14 @@ class EA_UEOM(UEOM, reom.EA_REOM):
 
     def diag(self, eris=None):
         parts = []
-        e_ai = SimpleNamespace(
+        e_ai = util.Namespace(
             aa=lib.direct_sum("a-i->ai", self.ebcc.ev.a, self.ebcc.eo.a),
             bb=lib.direct_sum("a-i->ai", self.ebcc.ev.b, self.ebcc.eo.b),
         )
         e_a = self.ebcc.ev
 
         for n in self.rank_numeric[0]:
-            spin_part = SimpleNamespace()
+            spin_part = util.Namespace()
             for comb in util.generate_spin_combinations(n, excited=True):
                 tensors = []
                 for i, s in enumerate(comb[:n]):
@@ -206,7 +205,7 @@ class EA_UEOM(UEOM, reom.EA_REOM):
 
     def bras(self, eris=None):
         bras_raw = list(self._bras(eris=eris))
-        bras = SimpleNamespace(a=[], b=[])
+        bras = util.Namespace(a=[], b=[])
 
         for i in range(self.nmo):
             amps_a = []
@@ -214,8 +213,8 @@ class EA_UEOM(UEOM, reom.EA_REOM):
 
             m = 0
             for n in self.ebcc.rank_numeric[0]:
-                amp_a = SimpleNamespace()
-                amp_b = SimpleNamespace()
+                amp_a = util.Namespace()
+                amp_b = util.Namespace()
                 for spin in util.generate_spin_combinations(n, excited=True):
                     shape = tuple(self.nvir["ab".index(s)] for s in spin[:n]) + tuple(
                         self.nocc["ab".index(s)] for s in spin[n:]
@@ -243,7 +242,7 @@ class EA_UEOM(UEOM, reom.EA_REOM):
 
     def kets(self, eris=None):
         kets_raw = list(self._kets(eris=eris))
-        kets = SimpleNamespace(a=[], b=[])
+        kets = util.Namespace(a=[], b=[])
 
         for i in range(self.nmo):
             j = (Ellipsis, i)
@@ -252,8 +251,8 @@ class EA_UEOM(UEOM, reom.EA_REOM):
 
             m = 0
             for n in self.ebcc.rank_numeric[0]:
-                amp_a = SimpleNamespace()
-                amp_b = SimpleNamespace()
+                amp_a = util.Namespace()
+                amp_b = util.Namespace()
                 for spin in util.generate_spin_combinations(n, excited=True):
                     shape = tuple(self.nvir["ab".index(s)] for s in spin[:n]) + tuple(
                         self.nocc["ab".index(s)] for s in spin[n:]
@@ -289,13 +288,13 @@ class EE_UEOM(UEOM, reom.EE_REOM):
 
     def diag(self, eris=None):
         parts = []
-        e_ia = SimpleNamespace(
+        e_ia = util.Namespace(
             aa=lib.direct_sum("i-a->ia", self.ebcc.eo.a, self.ebcc.ev.a),
             bb=lib.direct_sum("i-a->ia", self.ebcc.eo.b, self.ebcc.ev.b),
         )
 
         for n in self.rank_numeric[0]:
-            spin_part = SimpleNamespace()
+            spin_part = util.Namespace()
             for comb in util.generate_spin_combinations(n):
                 tensors = []
                 for i, s in enumerate(comb[:n]):
@@ -315,7 +314,7 @@ class EE_UEOM(UEOM, reom.EE_REOM):
         raise NotImplementedError("EE moments for UEBCC not working.")
 
         bras_raw = list(self.ebcc.make_ee_mom_bras(eris=eris))
-        bras = SimpleNamespace(aa=[], bb=[])
+        bras = util.Namespace(aa=[], bb=[])
 
         for i in range(self.nmo):
             for j in range(self.nmo):
@@ -324,8 +323,8 @@ class EE_UEOM(UEOM, reom.EE_REOM):
 
                 m = 0
                 for n in self.ebcc.rank_numeric[0]:
-                    amp_aa = SimpleNamespace()
-                    amp_bb = SimpleNamespace()
+                    amp_aa = util.Namespace()
+                    amp_bb = util.Namespace()
                     for spin in util.generate_spin_combinations(n):
                         shape = tuple(
                             [
@@ -369,7 +368,7 @@ class EE_UEOM(UEOM, reom.EE_REOM):
         raise NotImplementedError("EE moments for UEBCC not working.")
 
         kets_raw = list(self.ebcc.make_ee_mom_kets(eris=eris))
-        kets = SimpleNamespace(aa=[], bb=[])
+        kets = util.Namespace(aa=[], bb=[])
 
         for i in range(self.nmo):
             for j in range(self.nmo):
@@ -379,8 +378,8 @@ class EE_UEOM(UEOM, reom.EE_REOM):
 
                 m = 0
                 for n in self.ebcc.rank_numeric[0]:
-                    amp_aa = SimpleNamespace()
-                    amp_bb = SimpleNamespace()
+                    amp_aa = util.Namespace()
+                    amp_bb = util.Namespace()
                     for spin in util.generate_spin_combinations(n):
                         shape = tuple(
                             [
@@ -436,7 +435,7 @@ class EE_UEOM(UEOM, reom.EE_REOM):
         bras = self.bras(eris=eris)
         kets = self.kets(eris=eris)
 
-        moments = SimpleNamespace(
+        moments = util.Namespace(
             aaaa=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo)),
             aabb=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo)),
             bbaa=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo)),

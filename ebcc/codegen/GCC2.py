@@ -2,8 +2,7 @@
 
 import numpy as np
 from pyscf import lib
-from types import SimpleNamespace
-from ebcc.util import pack_2e, einsum
+from ebcc.util import pack_2e, einsum, Namespace
 
 def energy(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, **kwargs):
     # energy

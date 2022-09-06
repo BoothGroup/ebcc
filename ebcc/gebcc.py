@@ -3,7 +3,6 @@
 
 import functools
 import itertools
-from types import SimpleNamespace
 from typing import Tuple
 
 import numpy as np

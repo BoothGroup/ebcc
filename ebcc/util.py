@@ -5,6 +5,7 @@ import functools
 import inspect
 import itertools
 import logging
+import types
 import sys
 
 import numpy as np
@@ -16,6 +17,43 @@ class InheritedType:
 
 
 Inherited = InheritedType()
+
+
+class Namespace:
+    """Replacement for SimpleNamespace, which does not trivially allow
+    conversion to a dict for heterogenously nested objects.
+    """
+
+    def __init__(self, **kwargs):
+        self.__dict__["_keys"] = set()
+        for key, val in kwargs.items():
+            self[key] = val
+
+    def __setitem__(self, key, val):
+        self._keys.add(key)
+        self.__dict__[key] = val
+
+    def __getitem__(self, key):
+        if key not in self._keys:
+            raise IndexError(key)
+        return self.__dict__[key]
+
+    def __delitem__(self, key):
+        if key not in self._keys:
+            raise IndexError(key)
+        del self.__dict__[key]
+
+    __setattr__ = __setitem__
+
+    def __iter__(self):
+        for key in self._keys:
+            yield (key, self[key])
+
+    def __eq__(self, other):
+        return dict(self) == dict(other)
+
+    def __contains__(self, key):
+        return key in self._keys
 
 
 def factorial(n):

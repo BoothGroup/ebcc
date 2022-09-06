@@ -5,7 +5,7 @@ import dataclasses
 import functools
 import importlib
 import logging
-from types import SimpleNamespace
+import types
 from typing import Tuple
 
 import numpy as np
@@ -29,7 +29,7 @@ class Amplitudes(dict):
     pass
 
 
-class ERIs(SimpleNamespace):
+class ERIs(types.SimpleNamespace):
     """Electronic repulsion integral container class. Consists of a
     just-in-time namespace containing blocks of the integrals, with
     keys that are length-4 strings of `"o"` or `"v"` signifying
@@ -58,14 +58,13 @@ class ERIs(SimpleNamespace):
         """Just-in-time attribute getter."""
 
         if self.array is None:
-            if key not in self.__dict__:
+            if key not in self.__dict__.keys():
                 coeffs = []
                 for i, k in enumerate(key):
                     coeffs.append(self.mo_coeff[i][:, self.slices[i][k]])
                 block = ao2mo.incore.general(self.mf._eri, coeffs, compact=False)
                 block = block.reshape([c.shape[-1] for c in coeffs])
                 self.__dict__[key] = block
-
             return self.__dict__[key]
         else:
             slices = []
@@ -172,7 +171,7 @@ class REBCC:
         Whether the lambda coupled cluster equations converged.
     omega : numpy.ndarray (nbos,)
         Bosonic frequencies.
-    g : SimpleNamespace
+    g : util.Namespace
         Namespace containing blocks of the electron-boson coupling
         matrix. Each attribute should be a length-3 string of `b`,
         `o` or `v` signifying whether the corresponding axis is
@@ -181,7 +180,7 @@ class REBCC:
         Mean-field boson non-conserving term of the Hamiltonian.
     bare_G : numpy.ndarray (nbos,)
         Boson non-conserving term of the Hamiltonian.
-    fock : SimpleNamespace
+    fock : util.Namespace
         Namespace containing blocks of the Fock matrix. Each
         attribute should be a length-2 string of `o` or `v`
         signifying whether the corresponding axis is occupied or
@@ -322,7 +321,7 @@ class REBCC:
         options: Options = None,
         mo_coeff: np.ndarray = None,
         mo_occ: np.ndarray = None,
-        fock: SimpleNamespace = None,
+        fock: util.Namespace = None,
         **kwargs,
     ):
         if options is None:
@@ -1755,7 +1754,7 @@ class REBCC:
 
         Returns
         -------
-        g : SimpleNamespace
+        g : util.Namespace
             Namespace containing blocks of the electron-boson coupling
             matrix. Each attribute should be a length-3 string of
             `b`, `o` or `v` signifying whether the corresponding axis
@@ -1767,7 +1766,7 @@ class REBCC:
         bvo = g[:, self.nocc :, : self.nocc]
         bvv = g[:, self.nocc :, self.nocc :]
 
-        g = SimpleNamespace(boo=boo, bov=bov, bvo=bvo, bvv=bvv)
+        g = util.Namespace(boo=boo, bov=bov, bvo=bvo, bvv=bvv)
 
         return g
 
@@ -1777,7 +1776,7 @@ class REBCC:
 
         Returns
         -------
-        fock : SimpleNamespace
+        fock : util.Namespace
             Namespace containing blocks of the Fock matrix. Each
             attribute should be a length-2 string of `o` or `v`
             signifying whether the corresponding axis is occupied or
@@ -1798,7 +1797,7 @@ class REBCC:
             vo -= lib.einsum("I,Iai->ai", xi, self.g.bvo + self.g.bov.transpose(0, 2, 1))
             vv -= lib.einsum("I,Iab->ab", xi, self.g.bvv + self.g.bvv.transpose(0, 2, 1))
 
-        f = SimpleNamespace(oo=oo, ov=ov, vo=vo, vv=vv)
+        f = util.Namespace(oo=oo, ov=ov, vo=vo, vv=vv)
 
         return f
 

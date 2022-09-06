@@ -149,13 +149,21 @@ class GCCSD_SD_1_2_Tests(unittest.TestCase):
     def test_from_rebcc(self):
         mf = self.mf
 
+        # Careful with ordering:
+        uhf = mf.to_uhf()
+        orbspin = scf.addons.get_ghf_orbspin(uhf.mo_energy, uhf.mo_occ, False)
+        nmo = self.mf.mo_occ.size
+        g = np.zeros((self.omega.size, nmo*2, nmo*2))
+        g[np.ix_(range(self.omega.size), orbspin==0, orbspin==0)] = self.g_rhf.copy()
+        g[np.ix_(range(self.omega.size), orbspin==1, orbspin==1)] = self.g_rhf.copy()
+
         gebcc1 = GEBCC(
                 mf,
                 fermion_excitations="SD",
                 boson_excitations="SD",
                 fermion_coupling_rank=1,
                 boson_coupling_rank=2,
-                g=self.g,
+                g=g,
                 omega=self.omega,
                 shift=self.shift,
                 log=NullLogger(),
@@ -184,10 +192,10 @@ class GCCSD_SD_1_2_Tests(unittest.TestCase):
         rebcc.solve_lambda(eris=eris)
         gebcc2 = GEBCC.from_rebcc(rebcc)
 
-        #self.assertAlmostEqual(gebcc1.energy(), gebcc2.energy())
-        for key in gebcc1.amplitudes.__dict__.keys():
+        self.assertAlmostEqual(gebcc1.energy(), gebcc2.energy())
+        for key in gebcc1.amplitudes.keys():
             np.testing.assert_almost_equal(gebcc1.amplitudes[key], gebcc2.amplitudes[key], 6)
-        for key in gebcc1.lambdas.__dict__.keys():
+        for key in gebcc1.lambdas.keys():
             np.testing.assert_almost_equal(gebcc1.lambdas[key], gebcc2.lambdas[key], 5)
         np.testing.assert_almost_equal(gebcc1.make_rdm1_f(), gebcc2.make_rdm1_f(), 6)
         np.testing.assert_almost_equal(gebcc1.make_rdm2_f(), gebcc2.make_rdm2_f(), 6)
@@ -199,13 +207,20 @@ class GCCSD_SD_1_2_Tests(unittest.TestCase):
     def test_from_uebcc(self):
         mf = self.mf.to_uhf()
 
+        # Careful with ordering:
+        orbspin = scf.addons.get_ghf_orbspin(mf.mo_energy, mf.mo_occ, False)
+        nmo = self.mf.mo_occ.size
+        g = np.zeros((self.omega.size, nmo*2, nmo*2))
+        g[np.ix_(range(self.omega.size), orbspin==0, orbspin==0)] = self.g_rhf.copy()
+        g[np.ix_(range(self.omega.size), orbspin==1, orbspin==1)] = self.g_rhf.copy()
+
         gebcc1 = GEBCC(
                 mf,
                 fermion_excitations="SD",
                 boson_excitations="SD",
                 fermion_coupling_rank=1,
                 boson_coupling_rank=2,
-                g=self.g,
+                g=g,
                 omega=self.omega,
                 shift=self.shift,
                 log=NullLogger(),
@@ -234,10 +249,13 @@ class GCCSD_SD_1_2_Tests(unittest.TestCase):
         uebcc.solve_lambda(eris=eris)
         gebcc2 = GEBCC.from_uebcc(uebcc)
 
-        #self.assertAlmostEqual(gebcc1.energy(), gebcc2.energy())
-        for key in gebcc1.amplitudes.__dict__.keys():
+        self.assertAlmostEqual(gebcc1.energy(), self.data[self.shift]["e_corr"])
+        self.assertAlmostEqual(gebcc2.energy(), self.data[self.shift]["e_corr"])
+
+        self.assertAlmostEqual(gebcc1.energy(), gebcc2.energy())
+        for key in gebcc1.amplitudes.keys():
             np.testing.assert_almost_equal(gebcc1.amplitudes[key], gebcc2.amplitudes[key], 6)
-        for key in gebcc1.lambdas.__dict__.keys():
+        for key in gebcc1.lambdas.keys():
             np.testing.assert_almost_equal(gebcc1.lambdas[key], gebcc2.lambdas[key], 5)
         np.testing.assert_almost_equal(gebcc1.make_rdm1_f(), gebcc2.make_rdm1_f(), 6)
         np.testing.assert_almost_equal(gebcc1.make_rdm2_f(), gebcc2.make_rdm2_f(), 6)

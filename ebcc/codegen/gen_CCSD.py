@@ -195,10 +195,10 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
             )
         else:
             function_printer.write_python(
-                    "    delta_oo = SimpleNamespace()\n"
+                    "    delta_oo = Namespace()\n"
                     "    delta_oo.aa = np.eye(nocc[0])\n"
                     "    delta_oo.bb = np.eye(nocc[1])\n"
-                    "    delta_vv = SimpleNamespace()\n"
+                    "    delta_vv = Namespace()\n"
                     "    delta_vv.aa = np.eye(nvir[0])\n"
                     "    delta_vv.bb = np.eye(nvir[1])\n"
             )
@@ -255,10 +255,10 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
             )
         else:
             function_printer.write_python(
-                    "    delta_oo = SimpleNamespace()\n"
+                    "    delta_oo = Namespace()\n"
                     "    delta_oo.aa = np.eye(nocc[0])\n"
                     "    delta_oo.bb = np.eye(nocc[1])\n"
-                    "    delta_vv = SimpleNamespace()\n"
+                    "    delta_vv = Namespace()\n"
                     "    delta_vv.aa = np.eye(nvir[0])\n"
                     "    delta_vv.bb = np.eye(nvir[1])\n"
             )
@@ -346,10 +346,10 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
                         )
                     else:
                         function_printer.write_python(
-                                "    delta_oo = SimpleNamespace()\n"
+                                "    delta_oo = Namespace()\n"
                                 "    delta_oo.aa = np.eye(nocc[0])\n"
                                 "    delta_oo.bb = np.eye(nocc[1])\n"
-                                "    delta_vv = SimpleNamespace()\n"
+                                "    delta_vv = Namespace()\n"
                                 "    delta_vv.aa = np.eye(nvir[0])\n"
                                 "    delta_vv.bb = np.eye(nvir[1])\n"
                         )
@@ -477,8 +477,8 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
 
                 if spin == "uhf":
                     function_printer.write_python(
-                            "    r1new = SimpleNamespace(a=r1new_a, b=r1new_b)\n"
-                            "    r2new = SimpleNamespace(aaa=r2new_aaa, aba=r2new_aba, bab=r2new_bab, bbb=r2new_bbb)\n"
+                            "    r1new = Namespace(a=r1new_a, b=r1new_b)\n"
+                            "    r2new = Namespace(aaa=r2new_aaa, aba=r2new_aba, bab=r2new_bab, bbb=r2new_bbb)\n"
                     )
 
                 if spin == "uhf" and not ip:
@@ -509,10 +509,10 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
                     )
                 else:
                     function_printer.write_python(
-                            "    delta_oo = SimpleNamespace()\n"
+                            "    delta_oo = Namespace()\n"
                             "    delta_oo.aa = np.eye(nocc[0])\n"
                             "    delta_oo.bb = np.eye(nocc[1])\n"
-                            "    delta_vv = SimpleNamespace()\n"
+                            "    delta_vv = Namespace()\n"
                             "    delta_vv.aa = np.eye(nvir[0])\n"
                             "    delta_vv.bb = np.eye(nvir[1])\n"
                     )
@@ -608,8 +608,8 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
                             part += "    {name}ee2_{sp1}{sp2} = np.concatenate([np.concatenate([{name}ee2_oo_{sp1}{sp2}, {name}ee2_ov_{sp1}{sp2}], axis={ax1}), np.concatenate([{name}ee2_vo_{sp1}{sp2}, {name}ee2_vv_{sp1}{sp2}], axis={ax1})], axis={ax2})\n".format(name=ket_name, sp1=sp2 if is_ket else sp1, sp2=sp1 if is_ket else sp2, ax1=-1 if is_ket else 1, ax2=-2 if is_ket else 0)
                     function_printer.write_python(part)
                     function_printer.write_python(""
-                            + "    {name}ee1 = SimpleNamespace(aaaa={name}ee1_aaaa, abab={name}ee1_abab, baba={name}ee1_baba, bbbb={name}ee1_bbbb)\n".format(name=ket_name)
-                            + "    {name}ee2 = SimpleNamespace({a1}aaaa{a2}={name}ee2_{a1}aaaa{a2}, {a1}abab{a2}={name}ee2_{a1}abab{a2}, {a1}baba{a2}={name}ee2_{a1}baba{a2}, {a1}bbbb{a2}={name}ee2_{a1}bbbb{a2}, {b1}aaaa{b2}={name}ee2_{b1}aaaa{b2}, {b1}abab{b2}={name}ee2_{b1}abab{b2}, {b1}baba{b2}={name}ee2_{b1}baba{b2}, {b1}bbbb{b2}={name}ee2_{b1}bbbb{b2})\n".format(name=ket_name, a1="" if is_ket else "aa", a2="aa" if is_ket else "", b1="" if is_ket else "bb", b2="bb" if is_ket else "")
+                            + "    {name}ee1 = Namespace(aaaa={name}ee1_aaaa, abab={name}ee1_abab, baba={name}ee1_baba, bbbb={name}ee1_bbbb)\n".format(name=ket_name)
+                            + "    {name}ee2 = Namespace({a1}aaaa{a2}={name}ee2_{a1}aaaa{a2}, {a1}abab{a2}={name}ee2_{a1}abab{a2}, {a1}baba{a2}={name}ee2_{a1}baba{a2}, {a1}bbbb{a2}={name}ee2_{a1}bbbb{a2}, {b1}aaaa{b2}={name}ee2_{b1}aaaa{b2}, {b1}abab{b2}={name}ee2_{b1}abab{b2}, {b1}baba{b2}={name}ee2_{b1}baba{b2}, {b1}bbbb{b2}={name}ee2_{b1}bbbb{b2})\n".format(name=ket_name, a1="" if is_ket else "aa", a2="aa" if is_ket else "", b1="" if is_ket else "bb", b2="bb" if is_ket else "")
                     )
 
         ## Get EE EOM hamiltonian-vector product expressions:
@@ -659,6 +659,6 @@ with common.FilePrinter("%sCCSD" % prefix.upper()) as file_printer:
 
         #    if spin == "uhf":
         #        function_printer.write_python(""
-        #                + "    ree1new = SimpleNamespace(aa=ree1new_aa, bb=ree1new_bb)\n"
-        #                + "    ree2new = SimpleNamespace(aaaa=ree2new_aaaa, abab=ree2new_abab, baba=ree2new_baba, bbbb=ree2new_bbbb)\n"
+        #                + "    ree1new = Namespace(aa=ree1new_aa, bb=ree1new_bb)\n"
+        #                + "    ree2new = Namespace(aaaa=ree2new_aaaa, abab=ree2new_abab, baba=ree2new_baba, bbbb=ree2new_bbbb)\n"
         #        )

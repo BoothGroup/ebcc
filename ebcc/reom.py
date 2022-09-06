@@ -4,7 +4,6 @@
 import dataclasses
 import functools
 import warnings
-from types import SimpleNamespace
 
 import numpy as np
 from pyscf import lib
