@@ -466,9 +466,7 @@ class UEBCC(rebcc.REBCC):
 
     @property
     def bare_fock(self):
-        fock = lib.einsum(
-            "npq,npi,nqj->nij", self.mf.get_fock(), self.mo_coeff, self.mo_coeff
-        )
+        fock = lib.einsum("npq,npi,nqj->nij", self.mf.get_fock(), self.mo_coeff, self.mo_coeff)
         fock = util.Namespace(aa=fock[0], bb=fock[1])
         return fock
 

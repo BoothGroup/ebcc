@@ -5,8 +5,8 @@ import functools
 import inspect
 import itertools
 import logging
-import types
 import sys
+import types
 
 import numpy as np
 from pyscf.lib import einsum as pyscf_einsum
