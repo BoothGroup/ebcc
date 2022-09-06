@@ -6,10 +6,10 @@ import functools
 import importlib
 import logging
 import types
-from typing import Tuple
+from typing import Sequence, Union, Any
 
 import numpy as np
-from pyscf import ao2mo, lib
+from pyscf import ao2mo, scf, lib
 
 from ebcc import default_log, reom, util
 
@@ -18,6 +18,15 @@ from ebcc import default_log, reom, util
 # TODO resolve G vs bare_G confusion
 # TODO warnings if amplitudes/lambdas are not converged when calling i.e. DM funcs
 # TODO update docstrings
+# TODO orbspin with cluster spaces?
+# TODO fix TensorSymm and benchmark third order again
+
+
+class AbstractEBCC:
+    """Abstract base class for EBCC objects.
+    """
+
+    pass
 
 
 class Amplitudes(dict):
@@ -36,7 +45,13 @@ class ERIs(types.SimpleNamespace):
     whether the corresponding dimension is occupied or virtual.
     """
 
-    def __init__(self, ebcc, array=None, slices=None, mo_coeff=None):
+    def __init__(
+            self,
+            ebcc: AbstractEBCC,
+            array: np.ndarray = None,
+            slices: Sequence[slice] = None,
+            mo_coeff: np.ndarray = None,
+    ):
         self.mf = ebcc.mf
         self.slices = slices
         self.mo_coeff = mo_coeff
@@ -54,7 +69,7 @@ class ERIs(types.SimpleNamespace):
         if not isinstance(self.slices, (tuple, list)):
             self.slices = [self.slices] * 4
 
-    def __getattr__(self, key):
+    def __getattr__(self, key: str) -> np.ndarray:
         """Just-in-time attribute getter."""
 
         if self.array is None:
@@ -105,7 +120,7 @@ class Options:
     diis_space: int = 12
 
 
-class REBCC:
+class REBCC(AbstractEBCC):
     """Restricted electron-boson coupled cluster class.
 
     Parameters
@@ -115,9 +130,14 @@ class REBCC:
     log : logging.Logger, optional
         Log to print output to. Default value is the global logger
         which outputs to `sys.stderr`.
-    rank : tuple(str), optional
-        Rank of (fermionic, bosonic, fermion-boson coupling) cluster
-        operators. Default value is `("SD", "", "")`.
+    fermion_excitations : str, optional
+        Rank of fermionic excitations. Default value is "SD".
+    boson_excitations : str, optional
+        Rank of bosonic excitations. Default is "".
+    fermion_coupling_rank : int, optional
+        Rank of fermionic term in coupling. Default is 0.
+    boson_coupling_rank : int, optional
+        Rank of bosonic term in coupling. Default is 0.
     omega : numpy.ndarray (nbos,), optional
         Bosonic frequencies. Default value is None.
     g : numpy.ndarray (nbos, nmo, nmo), optional
@@ -135,7 +155,13 @@ class REBCC:
         .. math:: G_x (b^\\dagger + b)
 
         Default value is None.
-    options : dataclasses.dataclass
+    mo_coeff : numpy.ndarray, optional
+        Molecular orbital coefficients. Default value is `mf.mo_coeff`.
+    mo_occ : numpy.ndarray, optional
+        Molecular orbital occupancies. Default value is `mf.mo_occ`.
+    fock : util.Namespace, optional
+        Fock input. Default value is calculated using `get_fock()`.
+    options : dataclasses.dataclass, optional
         Object containing the options. Default value is `Options`.
     **kwargs : dict
         Additional keyword arguments used to update `options`.
@@ -148,17 +174,6 @@ class REBCC:
         Log to print output to.
     options : dataclasses.dataclass
         Object containing the options.
-    rank : tuple(str)
-        Rank of (fermionic, bosonic, fermion-boson coupling) cluster
-        operators.
-    fermion_excitations : str, optional
-        Rank of fermionic excitations. Default value is "SD".
-    boson_excitations : str, optional
-        Rank of bosonic excitations. Default is "".
-    fermion_coupling_rank : int, optional
-        Rank of fermionic term in coupling. Default is 0.
-    boson_coupling_rank : int, optional
-        Rank of bosonic term in coupling. Default is 0.
     e_corr : float
         Correlation energy.
     amplitudes : Amplitudes
@@ -194,16 +209,6 @@ class REBCC:
         Shift in the energy from moving to polaritonic basis.
     name : str
         Name of the method.
-    rank_numeric : tuple of int
-        Numeric form of rank tuple.
-    nmo : int
-        Number of molecular orbitals.
-    nocc : int
-        Number of occupied molecular orbitals.
-    nvir : int
-        Number of virtual molecular orbitals.
-    nbos : int
-        Number of bosonic degrees of freedom.
 
     Methods
     -------
@@ -256,10 +261,6 @@ class REBCC:
         Get the ket EA vectors to construct EOM moments.
     make_ee_mom_kets(eris=None, amplitudes=None, lambdas=None)
         Get the ket EE vectors to construct EOM moments.
-    make_ip_1mom(eris=None, amplitudes=None, lambdas=None)
-        Build the first fermionic hole single-particle moment.
-    make_ea_1mom(eris=None, amplitudes=None, lambdas=None)
-        Build the first fermionic particle single-particle moment.
     amplitudes_to_vector(amplitudes)
         Construct a vector containing all of the amplitudes used in
         the given ansatz.
@@ -309,7 +310,7 @@ class REBCC:
 
     def __init__(
         self,
-        mf,
+        mf: scf.hf.SCF,
         log: logging.Logger = None,
         fermion_excitations: str = "SD",
         boson_excitations: str = "",
@@ -318,18 +319,20 @@ class REBCC:
         omega: np.ndarray = None,
         g: np.ndarray = None,
         G: np.ndarray = None,
-        options: Options = None,
         mo_coeff: np.ndarray = None,
         mo_occ: np.ndarray = None,
         fock: util.Namespace = None,
+        options: Options = None,
         **kwargs,
     ):
+        # Options:
         if options is None:
             options = self.Options()
         self.options = options
         for key, val in kwargs.items():
             setattr(self.options, key, val)
 
+        # Parameters:
         self.log = default_log if log is None else log
         self.mf = self._convert_mf(mf)
         self._mo_coeff = mo_coeff
@@ -342,32 +345,17 @@ class REBCC:
         )
         self._eqns = self._get_eqns()
 
+        # Boson parameters:
         if bool(self.rank[2]) != bool(self.rank[3]):
             raise ValueError(
-                "Fermionic and bosonic coupling ranks must both be zero, " "or both non-zero."
+                "Fermionic and bosonic coupling ranks must both be zero, or both non-zero."
             )
-
-        self.log.info("%s", self.name)
-        self.log.info("%s", "*" * len(self.name))
-        self.log.info(" > Fermion excitations:    %s", self.rank[0])
-        self.log.info(" > Boson excitations:      %s", self.rank[1] if len(self.rank[1]) else None)
-        self.log.info(" > Fermion coupling rank:  %s", self.rank[2])
-        self.log.info(" > Boson coupling rank:    %s", self.rank[3])
-
         self.omega = omega
         self.bare_g = g
         self.bare_G = G
-
-        self.e_corr = None
-        self.amplitudes = None
-        self.converged = False
-        self.lambdas = None
-        self.converged_lambda = False
-
         if self.rank[1] != "":
             self.g = self.get_g(g)
             self.G = self.get_mean_field_G()
-
             if self.options.shift:
                 self.log.info(" > Energy shift due to polaritonic basis:  %.10f", self.const)
         else:
@@ -376,11 +364,26 @@ class REBCC:
             self.g = None
             self.G = None
 
+        # Fock matrix:
         if fock is None:
             self.fock = self.get_fock()
         else:
             self.fock = fock
 
+        # Attributes:
+        self.e_corr = None
+        self.amplitudes = None
+        self.converged = False
+        self.lambdas = None
+        self.converged_lambda = False
+
+        # Logging:
+        self.log.info("%s", self.name)
+        self.log.info("%s", "*" * len(self.name))
+        self.log.info(" > Fermion excitations:    %s", self.rank[0])
+        self.log.info(" > Boson excitations:      %s", self.rank[1] if len(self.rank[1]) else None)
+        self.log.info(" > Fermion coupling rank:  %s", self.rank[2])
+        self.log.info(" > Boson coupling rank:    %s", self.rank[3])
         self.log.info(" > nmo:   %d", self.nmo)
         self.log.info(" > nocc:  %s", self.nocc)
         self.log.info(" > nvir:  %s", self.nvir)
@@ -390,7 +393,7 @@ class REBCC:
         self.log.info(" > max_iter:  %s", self.options.max_iter)
         self.log.info(" > diis_space:  %s", self.options.diis_space)
 
-    def kernel(self, eris=None):
+    def kernel(self, eris: Union[ERIs, np.ndarray] = None) -> float:
         """Run the coupled cluster calculation.
 
         Parameters
@@ -405,15 +408,19 @@ class REBCC:
             Correlation energy.
         """
 
+        # Get the ERIs:
         eris = self.get_eris(eris)
 
+        # Get the amplitude guesses:
         if self.amplitudes is None:
             amplitudes = self.init_amps(eris=eris)
         else:
             amplitudes = self.amplitudes
 
+        # Get the initial energy:
         e_cc = e_init = self.energy(amplitudes=amplitudes, eris=eris)
 
+        # Set up DIIS:
         diis = lib.diis.DIIS()
         diis.space = self.options.diis_space
 
@@ -423,6 +430,7 @@ class REBCC:
 
         converged = False
         for niter in range(1, self.options.max_iter + 1):
+            # Update the amplitudes, extrapolate with DIIS and calculate change:
             amplitudes_prev = amplitudes
             amplitudes = self.update_amps(amplitudes=amplitudes, eris=eris)
             vector = self.amplitudes_to_vector(amplitudes)
@@ -430,12 +438,14 @@ class REBCC:
             amplitudes = self.vector_to_amplitudes(vector)
             dt = np.linalg.norm(vector - self.amplitudes_to_vector(amplitudes_prev)) ** 2
 
+            # Update the energy and calculate change:
             e_prev = e_cc
             e_cc = self.energy(amplitudes=amplitudes, eris=eris)
             de = abs(e_prev - e_cc)
 
             self.log.info("%4d %16.10f %16.5g %16.5g", niter, e_cc, de, dt)
 
+            # Check for convergence:
             converged = de < self.options.e_tol and dt < self.options.t_tol
             if converged:
                 self.log.output("Converged.")
@@ -443,6 +453,7 @@ class REBCC:
         else:
             self.log.warning("Failed to converge.")
 
+        # Update attributes:
         self.e_corr = e_cc
         self.amplitudes = amplitudes
         self.converged = converged
@@ -452,7 +463,7 @@ class REBCC:
 
         return e_cc
 
-    def solve_lambda(self, amplitudes=None, eris=None):
+    def solve_lambda(self, amplitudes: Amplitudes = None, eris: Union[ERIs, np.ndarray] = None):
         """Solve the lambda coupled cluster equations.
 
         Parameters
@@ -465,18 +476,22 @@ class REBCC:
             `self.init_amps()`.
         """
 
+        # Get the ERIs:
         eris = self.get_eris(eris)
 
+        # Get the amplitudes:
         if amplitudes is None:
             amplitudes = self.amplitudes
         if amplitudes is None:
-            amplitudes = self.init_amps(eris=eris)  # TODO warn?
+            amplitudes = self.init_amps(eris=eris)
 
+        # Get the lambda amplitude guesses:
         if self.lambdas is None:
             lambdas = self.init_lams(amplitudes=amplitudes)
         else:
             lambdas = self.lambdas
 
+        # Set up DIIS:
         diis = lib.diis.DIIS()
         diis.space = self.options.diis_space
 
@@ -485,6 +500,7 @@ class REBCC:
 
         converged = False
         for niter in range(1, self.options.max_iter + 1):
+            # Update the lambda amplitudes, extrapolate with DIIS and calculate change:
             lambdas_prev = lambdas
             lambdas = self.update_lams(amplitudes=amplitudes, lambdas=lambdas, eris=eris)
             vector = self.lambdas_to_vector(lambdas)
@@ -494,6 +510,7 @@ class REBCC:
 
             self.log.info("%4d %16.5g", niter, dl)
 
+            # Check for convergence:
             converged = dl < self.options.t_tol
             if converged:
                 self.log.output("Converged.")
@@ -501,10 +518,9 @@ class REBCC:
         else:
             self.log.warning("Failed to converge.")
 
+        # Update attributes:
         self.lambdas = lambdas
         self.converged_lambda = converged
-
-        return None
 
     @staticmethod
     def _convert_mf(mf):
@@ -569,6 +585,7 @@ class REBCC:
             if lambdas is None:
                 lambdas = self.lambdas
             if lambdas is None:
+                self.log.warning("No lambda amplitudes found, guesses will be used.")
                 lambdas = self.init_lams(amplitudes=amplitudes)
             dicts.append(lambdas)
 
@@ -578,7 +595,7 @@ class REBCC:
         func = getattr(self._eqns, name, None)
 
         if func is None:
-            raise NotImplementedError("%s for rank = %s" % (name, self.rank))
+            raise util.ModelNotImplemented("%s for rank = %s" % (name, self.rank))
 
         kwargs = self._pack_codegen_kwargs(*dicts, eris=eris)
 
@@ -629,7 +646,7 @@ class REBCC:
         # Build U amplitudes:
         for nf in self.rank_numeric[2]:
             if nf != 1:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
             for nb in self.rank_numeric[3]:
                 if nb == 1:
                     e_xia = lib.direct_sum("ia-x->xia", e_ia, self.omega)
@@ -673,7 +690,7 @@ class REBCC:
         # Build LU amplitudes:
         for nf in self.rank_numeric[2]:
             if nf != 1:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
             for nb in self.rank_numeric[3]:
                 perm = list(range(nb)) + [nb + 1, nb]
                 lambdas["lu%d%d" % (nf, nb)] = amplitudes["u%d%d" % (nf, nb)].transpose(perm)
@@ -751,7 +768,7 @@ class REBCC:
         # Divide U amplitudes:
         for nf in self.rank_numeric[2]:
             if nf != 1:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
             for nb in self.rank_numeric[3]:
                 d = functools.reduce(np.add.outer, ([-self.omega] * nb) + ([e_ia] * nf))
                 res["u%d%d" % (nf, nb)] /= d
@@ -808,7 +825,7 @@ class REBCC:
         # Divide U amplitudes:
         for nf in self.rank_numeric[2]:
             if nf != 1:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
             for nb in self.rank_numeric[3]:
                 d = functools.reduce(np.add.outer, ([-self.omega] * nb) + ([e_ai] * nf))
                 res["lu%d%d" % (nf, nb)] /= d
@@ -1367,7 +1384,7 @@ class REBCC:
             Array of the first moment.
         """
 
-        raise NotImplementedError  # TODO
+        raise util.ModelNotImplemented  # TODO
 
     def make_ea_1mom(self, eris=None, amplitudes=None, lambdas=None):
         """Build the first fermionic particle single-particle moment.
@@ -1392,7 +1409,7 @@ class REBCC:
             Array of the first moment.
         """
 
-        raise NotImplementedError  # TODO
+        raise util.ModelNotImplemented  # TODO
 
     def ip_eom(self, options=None, **kwargs):
         return reom.IP_REOM(self, options=options, **kwargs)
@@ -1571,11 +1588,11 @@ class REBCC:
             m += 1
 
         for n in self.rank_numeric[1]:
-            raise NotImplementedError
+            raise util.ModelNotImplemented
 
         for nf in self.rank_numeric[2]:
             for nb in self.rank_numeric[3]:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
 
         return np.concatenate(vectors)
 
@@ -1645,11 +1662,11 @@ class REBCC:
             i0 += size
 
         for n in self.rank_numeric[1]:
-            raise NotImplementedError
+            raise util.ModelNotImplemented
 
         for nf in self.rank_numeric[2]:
             for nb in self.rank_numeric[3]:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
 
         return tuple(excitations)
 
@@ -1681,11 +1698,11 @@ class REBCC:
             i0 += size
 
         for n in self.rank_numeric[1]:
-            raise NotImplementedError
+            raise util.ModelNotImplemented
 
         for nf in self.rank_numeric[2]:
             for nb in self.rank_numeric[3]:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
 
         return tuple(excitations)
 
@@ -1717,11 +1734,11 @@ class REBCC:
             i0 += size
 
         for n in self.rank_numeric[1]:
-            raise NotImplementedError
+            raise util.ModelNotImplemented
 
         for nf in self.rank_numeric[2]:
             for nb in self.rank_numeric[3]:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
 
         return tuple(excitations)
 

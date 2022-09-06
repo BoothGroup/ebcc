@@ -273,7 +273,7 @@ class IP_REOM(REOM):
             parts.append(d)
 
         for n in self.rank_numeric[1]:
-            raise NotImplementedError
+            raise util.ModelNotImplemented
 
         return self.amplitudes_to_vector(*parts)
 
@@ -332,7 +332,7 @@ class EA_REOM(REOM):
             parts.append(d)
 
         for n in self.rank_numeric[1]:
-            raise NotImplementedError
+            raise util.ModelNotImplemented
 
         return self.amplitudes_to_vector(*parts)
 
@@ -390,7 +390,7 @@ class EE_REOM(REOM):
             parts.append(d)
 
         for n in self.rank_numeric[1]:
-            raise NotImplementedError
+            raise util.ModelNotImplemented
 
         return self.amplitudes_to_vector(*parts)
 

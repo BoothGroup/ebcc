@@ -91,7 +91,7 @@ class IP_UEOM(UEOM, reom.IP_REOM):
             parts.append(spin_part)
 
         for n in self.rank_numeric[1]:
-            raise NotImplementedError
+            raise util.ModelNotImplemented
 
         return self.amplitudes_to_vector(*parts)
 
@@ -118,11 +118,11 @@ class IP_UEOM(UEOM, reom.IP_REOM):
                 m += 1
 
             for n in self.ebcc.rank_numeric[1]:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
 
             for nf in self.ebcc.rank_numeric[2]:
                 for nb in self.ebcc.rank_numeric[3]:
-                    raise NotImplementedError
+                    raise util.ModelNotImplemented
 
             bras.a.append(self.amplitudes_to_vector(*amps_a))
             bras.b.append(self.amplitudes_to_vector(*amps_b))
@@ -156,11 +156,11 @@ class IP_UEOM(UEOM, reom.IP_REOM):
                 m += 1
 
             for n in self.ebcc.rank_numeric[1]:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
 
             for nf in self.ebcc.rank_numeric[2]:
                 for nb in self.ebcc.rank_numeric[3]:
-                    raise NotImplementedError
+                    raise util.ModelNotImplemented
 
             kets.a.append(self.amplitudes_to_vector(*amps_a))
             kets.b.append(self.amplitudes_to_vector(*amps_b))
@@ -199,7 +199,7 @@ class EA_UEOM(UEOM, reom.EA_REOM):
             parts.append(spin_part)
 
         for n in self.rank_numeric[1]:
-            raise NotImplementedError
+            raise util.ModelNotImplemented
 
         return self.amplitudes_to_vector(*parts)
 
@@ -226,11 +226,11 @@ class EA_UEOM(UEOM, reom.EA_REOM):
                 m += 1
 
             for n in self.ebcc.rank_numeric[1]:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
 
             for nf in self.ebcc.rank_numeric[2]:
                 for nb in self.ebcc.rank_numeric[3]:
-                    raise NotImplementedError
+                    raise util.ModelNotImplemented
 
             bras.a.append(self.amplitudes_to_vector(*amps_a))
             bras.b.append(self.amplitudes_to_vector(*amps_b))
@@ -264,11 +264,11 @@ class EA_UEOM(UEOM, reom.EA_REOM):
                 m += 1
 
             for n in self.ebcc.rank_numeric[1]:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
 
             for nf in self.ebcc.rank_numeric[2]:
                 for nb in self.ebcc.rank_numeric[3]:
-                    raise NotImplementedError
+                    raise util.ModelNotImplemented
 
             kets.a.append(self.amplitudes_to_vector(*amps_a))
             kets.b.append(self.amplitudes_to_vector(*amps_b))
@@ -306,12 +306,12 @@ class EE_UEOM(UEOM, reom.EE_REOM):
             parts.append(spin_part)
 
         for n in self.rank_numeric[1]:
-            raise NotImplementedError
+            raise util.ModelNotImplemented
 
         return self.amplitudes_to_vector(*parts)
 
     def bras(self, eris=None):  # pragma: no cover
-        raise NotImplementedError("EE moments for UEBCC not working.")
+        raise util.ModelNotImplemented("EE moments for UEBCC not working.")
 
         bras_raw = list(self.ebcc.make_ee_mom_bras(eris=eris))
         bras = util.Namespace(aa=[], bb=[])
@@ -347,11 +347,11 @@ class EE_UEOM(UEOM, reom.EE_REOM):
                     m += 1
 
                 for n in self.ebcc.rank_numeric[1]:
-                    raise NotImplementedError
+                    raise util.ModelNotImplemented
 
                 for nf in self.ebcc.rank_numeric[2]:
                     for nb in self.ebcc.rank_numeric[3]:
-                        raise NotImplementedError
+                        raise util.ModelNotImplemented
 
                 bras.aa.append(self.amplitudes_to_vector(*amps_aa))
                 bras.bb.append(self.amplitudes_to_vector(*amps_bb))
@@ -365,7 +365,7 @@ class EE_UEOM(UEOM, reom.EE_REOM):
         return bras
 
     def kets(self, eris=None):  # pragma: no cover
-        raise NotImplementedError("EE moments for UEBCC not working.")
+        raise util.ModelNotImplemented("EE moments for UEBCC not working.")
 
         kets_raw = list(self.ebcc.make_ee_mom_kets(eris=eris))
         kets = util.Namespace(aa=[], bb=[])
@@ -402,11 +402,11 @@ class EE_UEOM(UEOM, reom.EE_REOM):
                     m += 1
 
                 for n in self.ebcc.rank_numeric[1]:
-                    raise NotImplementedError
+                    raise util.ModelNotImplemented
 
                 for nf in self.ebcc.rank_numeric[2]:
                     for nb in self.ebcc.rank_numeric[3]:
-                        raise NotImplementedError
+                        raise util.ModelNotImplemented
 
                 kets.aa.append(self.amplitudes_to_vector(*amps_aa))
                 kets.bb.append(self.amplitudes_to_vector(*amps_bb))
@@ -422,7 +422,7 @@ class EE_UEOM(UEOM, reom.EE_REOM):
     def moments(
         self, nmom, eris=None, amplitudes=None, hermitise=True, diagonal_only=True
     ):  # pragma: no cover
-        raise NotImplementedError("EE moments for UEBCC not working.")
+        raise util.ModelNotImplemented("EE moments for UEBCC not working.")
 
         if not diagonal_only:
             warnings.warn("Constructing EE moments with `diagonal_only=False` will be very slow.")

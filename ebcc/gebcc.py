@@ -3,7 +3,7 @@
 
 import functools
 import itertools
-from typing import Tuple
+from typing import Sequence 
 
 import numpy as np
 import scipy.linalg
@@ -32,8 +32,13 @@ class ERIs(rebcc.ERIs):
     corresponding dimension is occupied or virtual.
     """
 
-    def __init__(self, ebcc, array=None, slices=None, mo_coeff=None):
-
+    def __init__(
+            self,
+            ebcc: rebcc.AbstractEBCC,
+            array: np.ndarray = None,
+            slices: Sequence[slice] = None,
+            mo_coeff: np.ndarray = None,
+    ):
         if array is None:
             rebcc.ERIs.__init__(self, ebcc, slices=slices, mo_coeff=mo_coeff)
 
@@ -53,7 +58,7 @@ class ERIs(rebcc.ERIs):
 
         self.eri = eri
 
-    def __getattr__(self, key):
+    def __getattr__(self, key: str) -> np.ndarray:
         i, j, k, l = (self.slices[i][k] for i, k in enumerate(key))
         return self.eri[i, j, k, l]
 
@@ -288,7 +293,7 @@ class GEBCC(rebcc.REBCC):
         # Build U amplitudes:
         for nf in self.rank_numeric[2]:
             if nf != 1:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
             for nb in self.rank_numeric[3]:
                 if n == 1:
                     e_xia = lib.direct_sum("ia-x->xia", e_ia, self.omega)
@@ -326,11 +331,11 @@ class GEBCC(rebcc.REBCC):
             m += 1
 
         for n in self.rank_numeric[1]:
-            raise NotImplementedError
+            raise util.ModelNotImplemented
 
         for nf in self.rank_numeric[2]:
             for nb in self.rank_numeric[3]:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
 
         return np.concatenate(vectors)
 
@@ -344,11 +349,11 @@ class GEBCC(rebcc.REBCC):
             m += 1
 
         for n in self.rank_numeric[1]:
-            raise NotImplementedError
+            raise util.ModelNotImplemented
 
         for nf in self.rank_numeric[2]:
             for nb in self.rank_numeric[3]:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
 
         return np.concatenate(vectors)
 
@@ -366,11 +371,11 @@ class GEBCC(rebcc.REBCC):
             i0 += size
 
         for n in self.rank_numeric[1]:
-            raise NotImplementedError
+            raise util.ModelNotImplemented
 
         for nf in self.rank_numeric[2]:
             for nb in self.rank_numeric[3]:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
 
         return tuple(excitations)
 
@@ -388,11 +393,11 @@ class GEBCC(rebcc.REBCC):
             i0 += size
 
         for n in self.rank_numeric[1]:
-            raise NotImplementedError
+            raise util.ModelNotImplemented
 
         for nf in self.rank_numeric[2]:
             for nb in self.rank_numeric[3]:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
 
         return tuple(excitations)
 
@@ -410,11 +415,11 @@ class GEBCC(rebcc.REBCC):
             i0 += size
 
         for n in self.rank_numeric[1]:
-            raise NotImplementedError
+            raise util.ModelNotImplemented
 
         for nf in self.rank_numeric[2]:
             for nb in self.rank_numeric[3]:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
 
         return tuple(excitations)
 

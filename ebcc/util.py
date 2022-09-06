@@ -19,6 +19,9 @@ class InheritedType:
 Inherited = InheritedType()
 
 
+ModelNotImplemented = NotImplementedError
+
+
 class Namespace:
     """Replacement for SimpleNamespace, which does not trivially allow
     conversion to a dict for heterogenously nested objects.

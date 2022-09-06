@@ -4,6 +4,7 @@
 import functools
 import itertools
 import types
+from typing import Sequence
 
 import numpy as np
 from pyscf import ao2mo, lib
@@ -31,7 +32,12 @@ class ERIs(types.SimpleNamespace):
     spin, and values are of type `rebcc.ERIs`.
     """
 
-    def __init__(self, ebcc, array=None, mo_coeff=None):
+    def __init__(
+            self,
+            ebcc: rebcc.AbstractEBCC,
+            array: Sequence[np.ndarray] = None,
+            mo_coeff: Sequence[np.ndarray] = None,
+    ):
         self.mf = ebcc.mf
         self.mo_coeff = mo_coeff
         o = [slice(None, n) for n in ebcc.nocc]
@@ -188,7 +194,7 @@ class UEBCC(rebcc.REBCC):
                 tn.bbbb = tn.bbbb - tn.bbbb.swapaxes(0, 1)
                 amplitudes["t%d" % n] = tn
             else:
-                raise NotImplementedError  # TODO
+                raise util.ModelNotImplemented  # TODO
 
         if not (self.rank[1] == self.rank[2] == ""):
             # Only tue for real-valued couplings:
@@ -205,7 +211,7 @@ class UEBCC(rebcc.REBCC):
         # Build U amplitudes:
         for nf in self.rank_numeric[2]:
             if nf != 1:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
             for nb in self.rank_numeric[3]:
                 if nb == 1:
                     e_xia = util.Namespace(
@@ -247,7 +253,7 @@ class UEBCC(rebcc.REBCC):
         # Build LU amplitudes:
         for nf in self.rank_numeric[2]:
             if nf != 1:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
             for nb in self.rank_numeric[3]:
                 perm = list(range(nb)) + [nb + 1, nb]
                 lambdas["lu%d%d" % (nf, nb)] = util.Namespace()
@@ -294,7 +300,7 @@ class UEBCC(rebcc.REBCC):
         # Divide U amplitudes:
         for nf in self.rank_numeric[2]:
             if nf != 1:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
             for nb in self.rank_numeric[3]:
                 d = functools.reduce(np.add.outer, ([-self.omega] * nb) + ([e_ia.aa] * nf))
                 tn = res["u%d%d" % (nf, nb)].aa
@@ -347,7 +353,7 @@ class UEBCC(rebcc.REBCC):
         # Divide U amplitudes:
         for nf in self.rank_numeric[2]:
             if nf != 1:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
             for nb in self.rank_numeric[3]:
                 d = functools.reduce(np.add.outer, ([-self.omega] * nb) + ([e_ai.aa] * nf))
                 tn = res["lu%d%d" % (nf, nb)].aa
@@ -564,7 +570,7 @@ class UEBCC(rebcc.REBCC):
 
         for nf in self.rank_numeric[2]:
             if nf != 1:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
             for nb in self.rank_numeric[3]:
                 vectors.append(amplitudes["u%d%d" % (nf, nb)].aa.ravel())
                 vectors.append(amplitudes["u%d%d" % (nf, nb)].bb.ravel())
@@ -601,7 +607,7 @@ class UEBCC(rebcc.REBCC):
 
         for nf in self.rank_numeric[2]:
             if nf != 1:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
             for nb in self.rank_numeric[3]:
                 amplitudes["u%d%d" % (nf, nb)] = util.Namespace()
                 shape = (self.nbos,) * nb + (self.nocc[0], self.nvir[0]) * nf
@@ -631,7 +637,7 @@ class UEBCC(rebcc.REBCC):
 
         for nf in self.rank_numeric[2]:
             if nf != 1:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
             for nb in self.rank_numeric[3]:
                 vectors.append(lambdas["lu%d%d" % (nf, nb)].aa.ravel())
                 vectors.append(lambdas["lu%d%d" % (nf, nb)].bb.ravel())
@@ -669,7 +675,7 @@ class UEBCC(rebcc.REBCC):
 
         for nf in self.rank_numeric[2]:
             if nf != 1:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
             for nb in self.rank_numeric[3]:
                 lambdas["lu%d%d" % (nf, nb)] = util.Namespace()
                 shape = (self.nbos,) * nb + (self.nvir[0], self.nocc[0]) * nf
@@ -697,11 +703,11 @@ class UEBCC(rebcc.REBCC):
             m += 1
 
         for n in self.rank_numeric[1]:
-            raise NotImplementedError
+            raise util.ModelNotImplemented
 
         for nf in self.rank_numeric[2]:
             for nb in self.rank_numeric[3]:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
 
         return np.concatenate(vectors)
 
@@ -717,11 +723,11 @@ class UEBCC(rebcc.REBCC):
             m += 1
 
         for n in self.rank_numeric[1]:
-            raise NotImplementedError
+            raise util.ModelNotImplemented
 
         for nf in self.rank_numeric[2]:
             for nb in self.rank_numeric[3]:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
 
         return np.concatenate(vectors)
 
@@ -753,11 +759,11 @@ class UEBCC(rebcc.REBCC):
             excitations.append(amp)
 
         for n in self.rank_numeric[1]:
-            raise NotImplementedError
+            raise util.ModelNotImplemented
 
         for nf in self.rank_numeric[2]:
             for nb in self.rank_numeric[3]:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
 
         assert i0 == len(vector)
 
@@ -791,11 +797,11 @@ class UEBCC(rebcc.REBCC):
             excitations.append(amp)
 
         for n in self.rank_numeric[1]:
-            raise NotImplementedError
+            raise util.ModelNotImplemented
 
         for nf in self.rank_numeric[2]:
             for nb in self.rank_numeric[3]:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
 
         assert i0 == len(vector)
 
@@ -829,11 +835,11 @@ class UEBCC(rebcc.REBCC):
             excitations.append(amp)
 
         for n in self.rank_numeric[1]:
-            raise NotImplementedError
+            raise util.ModelNotImplemented
 
         for nf in self.rank_numeric[2]:
             for nb in self.rank_numeric[3]:
-                raise NotImplementedError
+                raise util.ModelNotImplemented
 
         assert i0 == len(vector)
 
