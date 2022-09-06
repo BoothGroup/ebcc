@@ -31,12 +31,15 @@ class ERIs(SimpleNamespace):
     spin, and values are of type `rebcc.ERIs`.
     """
 
-    def __init__(self, ebcc, array=None):
+    def __init__(self, ebcc, array=None, mo_coeff=None):
         self.mf = ebcc.mf
+        self.mo_coeff = mo_coeff
         o = [slice(None, n) for n in ebcc.nocc]
         v = [slice(n, None) for n in ebcc.nocc]
         slices = [{"o": o1, "v": v1} for o1, v1 in zip(o, v)]
-        mo_coeff = self.mf.mo_coeff
+
+        if self.mo_coeff is None:
+            self.mo_coeff = ebcc.mo_coeff
 
         if array is None:
             arrays = (None, None, None, None)
@@ -47,25 +50,25 @@ class ERIs(SimpleNamespace):
             ebcc,
             arrays[0],
             slices=[slices[i] for i in (0, 0, 0, 0)],
-            mo_coeff=[mo_coeff[i] for i in (0, 0, 0, 0)],
+            mo_coeff=[self.mo_coeff[i] for i in (0, 0, 0, 0)],
         )
         self.aabb = rebcc.ERIs(
             ebcc,
             arrays[1],
             slices=[slices[i] for i in (0, 0, 1, 1)],
-            mo_coeff=[mo_coeff[i] for i in (0, 0, 1, 1)],
+            mo_coeff=[self.mo_coeff[i] for i in (0, 0, 1, 1)],
         )
         self.bbaa = rebcc.ERIs(
             ebcc,
             arrays[2],
             slices=[slices[i] for i in (1, 1, 0, 0)],
-            mo_coeff=[mo_coeff[i] for i in (1, 1, 0, 0)],
+            mo_coeff=[self.mo_coeff[i] for i in (1, 1, 0, 0)],
         )
         self.bbbb = rebcc.ERIs(
             ebcc,
             arrays[3],
             slices=[slices[i] for i in (1, 1, 1, 1)],
-            mo_coeff=[mo_coeff[i] for i in (1, 1, 1, 1)],
+            mo_coeff=[self.mo_coeff[i] for i in (1, 1, 1, 1)],
         )
 
 
@@ -464,7 +467,7 @@ class UEBCC(rebcc.REBCC):
     @property
     def bare_fock(self):
         fock = lib.einsum(
-            "npq,npi,nqj->nij", self.mf.get_fock(), self.mf.mo_coeff, self.mf.mo_coeff
+            "npq,npi,nqj->nij", self.mf.get_fock(), self.mo_coeff, self.mo_coeff
         )
         fock = SimpleNamespace(aa=fock[0], bb=fock[1])
         return fock
@@ -844,12 +847,12 @@ class UEBCC(rebcc.REBCC):
 
     @property
     def nmo(self):
-        assert self.mf.mo_occ[0].size == self.mf.mo_occ[1].size
-        return self.mf.mo_occ[0].size
+        assert self.mo_occ[0].size == self.mo_occ[1].size
+        return self.mo_occ[0].size
 
     @property
     def nocc(self):
-        return tuple(np.sum(mo_occ > 0) for mo_occ in self.mf.mo_occ)
+        return tuple(np.sum(mo_occ > 0) for mo_occ in self.mo_occ)
 
     @property
     def nvir(self):

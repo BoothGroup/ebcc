@@ -43,7 +43,7 @@ class ERIs(SimpleNamespace):
         self.array = array
 
         if self.mo_coeff is None:
-            self.mo_coeff = self.mf.mo_coeff
+            self.mo_coeff = ebcc.mo_coeff
         if not (isinstance(self.mo_coeff, (tuple, list)) or self.mo_coeff.ndim == 3):
             self.mo_coeff = [self.mo_coeff] * 4
 
@@ -320,6 +320,9 @@ class REBCC:
         g: np.ndarray = None,
         G: np.ndarray = None,
         options: Options = None,
+        mo_coeff: np.ndarray = None,
+        mo_occ: np.ndarray = None,
+        fock: SimpleNamespace = None,
         **kwargs,
     ):
         if options is None:
@@ -330,6 +333,8 @@ class REBCC:
 
         self.log = default_log if log is None else log
         self.mf = self._convert_mf(mf)
+        self._mo_coeff = mo_coeff
+        self._mo_occ = mo_occ
         self.rank = (
             fermion_excitations,
             boson_excitations,
@@ -372,7 +377,10 @@ class REBCC:
             self.g = None
             self.G = None
 
-        self.fock = self.get_fock()
+        if fock is None:
+            self.fock = self.get_fock()
+        else:
+            self.fock = fock
 
         self.log.info(" > nmo:   %d", self.nmo)
         self.log.info(" > nocc:  %s", self.nocc)
@@ -1825,7 +1833,7 @@ class REBCC:
         """
 
         fock_ao = self.mf.get_fock()
-        mo_coeff = self.mf.mo_coeff
+        mo_coeff = self.mo_coeff
 
         fock = lib.einsum("pq,pi,qj->ij", fock_ao, mo_coeff, mo_coeff)
 
@@ -1965,6 +1973,32 @@ class REBCC:
         return tuple(rank)
 
     @property
+    def mo_coeff(self):
+        """Get the molecular orbital coefficients.
+
+        Returns
+        -------
+        mo_coeff : numpy.ndarray
+            Molecular orbital coefficients.
+        """
+        if self._mo_coeff is None:
+            return self.mf.mo_coeff
+        return self._mo_coeff
+
+    @property
+    def mo_occ(self):
+        """Get the molecular orbital occupancies.
+
+        Returns
+        -------
+        mo_occ : numpy.ndarray
+            Molecular orbital occupancies.
+        """
+        if self._mo_occ is None:
+            return self.mf.mo_occ
+        return self._mo_occ
+
+    @property
     def nmo(self):
         """Get the number of molecular orbitals.
 
@@ -1973,7 +2007,7 @@ class REBCC:
         nmo : int
             Number of molecular orbitals.
         """
-        return self.mf.mo_occ.size
+        return self.mo_occ.size
 
     @property
     def nocc(self):
@@ -1984,7 +2018,7 @@ class REBCC:
         nocc : int
             Number of occupied molecular orbitals.
         """
-        return np.sum(self.mf.mo_occ > 0)
+        return np.sum(self.mo_occ > 0)
 
     @property
     def nvir(self):

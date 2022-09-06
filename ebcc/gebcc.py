@@ -72,6 +72,7 @@ class GEBCC(rebcc.REBCC):
     def from_uebcc(cls, ucc):
         """Initialise a GEBCC object from an UEBCC object."""
 
+        # FIXME how will this behave with cluster spaces?
         orbspin = scf.addons.get_ghf_orbspin(ucc.mf.mo_energy, ucc.mf.mo_occ, False)
         nocc = sum(ucc.nocc)
         nvir = sum(ucc.nvir)
