@@ -41,7 +41,7 @@ class GCCSD_Tests(unittest.TestCase):
         mf.mo_coeff = mo_coeff
 
         ccsd = GEBCC(
-                mf,
+                mf.to_ghf(),  # Direct conversion needed for same ordering as reference data
                 fermion_excitations="SD",
                 log=NullLogger(),
         )
@@ -126,9 +126,23 @@ class GCCSD_Tests(unittest.TestCase):
             y /= np.max(np.abs(y))
             np.testing.assert_almost_equal(x, y, 6)
 
-    def _test_from_rebcc(self):
+    @pytest.mark.regression
+    def test_from_rebcc(self):
+        mf = self.mf
+
+        gebcc1 = GEBCC(
+                mf,
+                fermion_excitations="SD",
+                log=NullLogger(),
+        )
+        gebcc1.options.e_tol = 1e-12
+        gebcc1.options.t_tol = 1e-12
+        eris = gebcc1.get_eris()
+        gebcc1.kernel(eris=eris)
+        gebcc1.solve_lambda(eris=eris)
+
         rebcc = REBCC(
-                self.mf,
+                mf,
                 fermion_excitations="SD",
                 log=NullLogger(),
         )
@@ -137,53 +151,50 @@ class GCCSD_Tests(unittest.TestCase):
         eris = rebcc.get_eris()
         rebcc.kernel(eris=eris)
         rebcc.solve_lambda(eris=eris)
-        gebcc = GEBCC.from_rebcc(rebcc)
-        self.assertAlmostEqual(self.ccsd.energy(), gebcc.energy())
+        gebcc2 = GEBCC.from_rebcc(rebcc)
 
+        self.assertAlmostEqual(gebcc1.energy(), gebcc2.energy())
+        np.testing.assert_almost_equal(gebcc1.t1, gebcc2.t1, 6)
+        np.testing.assert_almost_equal(gebcc1.t2, gebcc2.t2, 6)
+        np.testing.assert_almost_equal(gebcc1.l1, gebcc2.l1, 5)
+        np.testing.assert_almost_equal(gebcc1.l2, gebcc2.l2, 5)
+        np.testing.assert_almost_equal(gebcc1.make_rdm1_f(), gebcc2.make_rdm1_f(), 6)
+        np.testing.assert_almost_equal(gebcc1.make_rdm2_f(), gebcc2.make_rdm2_f(), 6)
+
+    @pytest.mark.regression
     def test_from_uebcc(self):
-        uebcc = UEBCC(
-                self.mf,
+        mf = self.mf.to_uhf()
+
+        gebcc1 = GEBCC(
+                mf,
                 fermion_excitations="SD",
                 log=NullLogger(),
         )
-        #orbspin = np.array([0, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1])
-        #nocc = sum(uebcc.nocc)
-        #occs = {"a": np.where(orbspin[:nocc] == 0)[0], "b": np.where(orbspin[:nocc] == 1)[0]}
-        #virs = {"a": np.where(orbspin[nocc:] == 0)[0], "b": np.where(orbspin[nocc:] == 1)[0]}
-        #uebcc.amplitudes = UEBCC.Amplitudes()
-        #uebcc.amplitudes["t1"] = SimpleNamespace(
-        #        aa=self.ccsd.t1[occs["a"]][:, virs["a"]],
-        #        bb=self.ccsd.t1[occs["b"]][:, virs["b"]],
-        #)
-        #uebcc.amplitudes["t2"] = SimpleNamespace(
-        #        aaaa=self.ccsd.t2[occs["a"]][:, occs["a"]][:, :, virs["a"]][:, :, :, virs["a"]],
-        #        abab=self.ccsd.t2[occs["a"]][:, occs["b"]][:, :, virs["a"]][:, :, :, virs["b"]],
-        #        baba=self.ccsd.t2[occs["b"]][:, occs["a"]][:, :, virs["b"]][:, :, :, virs["a"]],
-        #        bbbb=self.ccsd.t2[occs["b"]][:, occs["b"]][:, :, virs["b"]][:, :, :, virs["b"]],
-        #)
-        #uebcc.lambdas = UEBCC.Amplitudes()
-        #uebcc.lambdas["l1"] = SimpleNamespace(
-        #        aa=self.ccsd.l1[virs["a"]][:, occs["a"]],
-        #        bb=self.ccsd.l1[virs["b"]][:, occs["b"]],
-        #)
-        #uebcc.lambdas["l2"] = SimpleNamespace(
-        #        aaaa=self.ccsd.l2[virs["a"]][:, virs["a"]][:, :, occs["a"]][:, :, :, occs["a"]],
-        #        baba=self.ccsd.l2[virs["a"]][:, virs["b"]][:, :, occs["a"]][:, :, :, occs["b"]],
-        #        abab=self.ccsd.l2[virs["b"]][:, virs["a"]][:, :, occs["b"]][:, :, :, occs["a"]],
-        #        bbbb=self.ccsd.l2[virs["b"]][:, virs["b"]][:, :, occs["b"]][:, :, :, occs["b"]],
-        #)
+        gebcc1.options.e_tol = 1e-12
+        gebcc1.options.t_tol = 1e-12
+        eris = gebcc1.get_eris()
+        gebcc1.kernel(eris=eris)
+        gebcc1.solve_lambda(eris=eris)
+
+        uebcc = UEBCC(
+                mf,
+                fermion_excitations="SD",
+                log=NullLogger(),
+        )
         uebcc.options.e_tol = 1e-12
-        uebcc.kernel()
-        gebcc = GEBCC.from_uebcc(uebcc)
-        # FIXME:
-        # Not true, I believe because the GCCSD have spin-forbidden
-        # elements of the ERIs not zeroed because of the 8-fold
-        # storage of the AO integrals?
-        #np.testing.assert_almost_equal(self.ccsd.t1, gebcc.t1)
-        #np.testing.assert_almost_equal(self.ccsd.t2, gebcc.t2)
-        #np.testing.assert_almost_equal(self.ccsd.l1, gebcc.l1)
-        #np.testing.assert_almost_equal(self.ccsd.l2, gebcc.l2)
-        self.assertAlmostEqual(self.ccsd.energy(), gebcc.energy(), 8)
+        uebcc.options.t_tol = 1e-12
+        eris = uebcc.get_eris()
+        uebcc.kernel(eris=eris)
+        uebcc.solve_lambda(eris=eris)
+        gebcc2 = GEBCC.from_uebcc(uebcc)
+
+        self.assertAlmostEqual(gebcc1.energy(), gebcc2.energy())
+        np.testing.assert_almost_equal(gebcc1.t1, gebcc2.t1, 6)
+        np.testing.assert_almost_equal(gebcc1.t2, gebcc2.t2, 6)
+        np.testing.assert_almost_equal(gebcc1.l1, gebcc2.l1, 5)
+        np.testing.assert_almost_equal(gebcc1.l2, gebcc2.l2, 5)
+        np.testing.assert_almost_equal(gebcc1.make_rdm1_f(), gebcc2.make_rdm1_f(), 6)
+        np.testing.assert_almost_equal(gebcc1.make_rdm2_f(), gebcc2.make_rdm2_f(), 6)
 
 
 @pytest.mark.reference

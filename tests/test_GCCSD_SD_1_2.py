@@ -10,7 +10,7 @@ import pytest
 import scipy.linalg
 from pyscf import cc, gto, lib, scf
 
-from ebcc import GEBCC, NullLogger
+from ebcc import REBCC, UEBCC, GEBCC, NullLogger
 
 
 @pytest.mark.reference
@@ -53,7 +53,7 @@ class GCCSD_SD_1_2_Tests(unittest.TestCase):
         g[np.ix_(range(nbos), orbspin==1, orbspin==1)] = g_
 
         ccsd = GEBCC(
-                mf,
+                mf.to_ghf(),  # Direct conversion needed for same ordering as reference data
                 fermion_excitations="SD",
                 boson_excitations="SD",
                 fermion_coupling_rank=1,
@@ -70,10 +70,12 @@ class GCCSD_SD_1_2_Tests(unittest.TestCase):
         ccsd.solve_lambda(eris=eris)
 
         cls.mf, cls.ccsd, cls.eris, cls.data = mf, ccsd, eris, data
+        cls.g, cls.g_rhf, cls.omega = g, g_, omega
 
     @classmethod
     def tearDownClass(cls):
         del cls.mf, cls.ccsd, cls.eris, cls.data
+        del cls.g, cls.g_rhf, cls.omega
 
     def test_const(self):
         a = self.data[self.shift]["const"]
@@ -142,6 +144,106 @@ class GCCSD_SD_1_2_Tests(unittest.TestCase):
         self.assertAlmostEqual(lib.fp(self.ccsd.make_rdm1_b()),       0.035528094885662, 6)
         self.assertAlmostEqual(lib.fp(self.ccsd.make_sing_b_dm()),    0.020426320880006, 6)
         self.assertAlmostEqual(lib.fp(self.ccsd.make_eb_coup_rdm()), -0.545361301095797, 6)
+
+    @pytest.mark.regression
+    def test_from_rebcc(self):
+        mf = self.mf
+
+        gebcc1 = GEBCC(
+                mf,
+                fermion_excitations="SD",
+                boson_excitations="SD",
+                fermion_coupling_rank=1,
+                boson_coupling_rank=2,
+                g=self.g,
+                omega=self.omega,
+                shift=self.shift,
+                log=NullLogger(),
+        )
+        gebcc1.options.e_tol = 1e-12
+        gebcc1.options.t_tol = 1e-12
+        eris = gebcc1.get_eris()
+        gebcc1.kernel(eris=eris)
+        gebcc1.solve_lambda(eris=eris)
+
+        rebcc = REBCC(
+                mf,
+                fermion_excitations="SD",
+                boson_excitations="SD",
+                fermion_coupling_rank=1,
+                boson_coupling_rank=2,
+                g=self.g_rhf,
+                omega=self.omega,
+                shift=self.shift,
+                log=NullLogger(),
+        )
+        rebcc.options.e_tol = 1e-12
+        rebcc.options.t_tol = 1e-12
+        eris = rebcc.get_eris()
+        rebcc.kernel(eris=eris)
+        rebcc.solve_lambda(eris=eris)
+        gebcc2 = GEBCC.from_rebcc(rebcc)
+
+        #self.assertAlmostEqual(gebcc1.energy(), gebcc2.energy())
+        for key in gebcc1.amplitudes.__dict__.keys():
+            np.testing.assert_almost_equal(gebcc1.amplitudes[key], gebcc2.amplitudes[key], 6)
+        for key in gebcc1.lambdas.__dict__.keys():
+            np.testing.assert_almost_equal(gebcc1.lambdas[key], gebcc2.lambdas[key], 5)
+        np.testing.assert_almost_equal(gebcc1.make_rdm1_f(), gebcc2.make_rdm1_f(), 6)
+        np.testing.assert_almost_equal(gebcc1.make_rdm2_f(), gebcc2.make_rdm2_f(), 6)
+        np.testing.assert_almost_equal(gebcc1.make_rdm1_b(), gebcc2.make_rdm1_b(), 6)
+        np.testing.assert_almost_equal(gebcc1.make_sing_b_dm(), gebcc2.make_sing_b_dm(), 6)
+        np.testing.assert_almost_equal(gebcc1.make_eb_coup_rdm(), gebcc2.make_eb_coup_rdm(), 6)
+
+    @pytest.mark.regression
+    def test_from_uebcc(self):
+        mf = self.mf.to_uhf()
+
+        gebcc1 = GEBCC(
+                mf,
+                fermion_excitations="SD",
+                boson_excitations="SD",
+                fermion_coupling_rank=1,
+                boson_coupling_rank=2,
+                g=self.g,
+                omega=self.omega,
+                shift=self.shift,
+                log=NullLogger(),
+        )
+        gebcc1.options.e_tol = 1e-12
+        gebcc1.options.t_tol = 1e-12
+        eris = gebcc1.get_eris()
+        gebcc1.kernel(eris=eris)
+        gebcc1.solve_lambda(eris=eris)
+
+        uebcc = UEBCC(
+                mf,
+                fermion_excitations="SD",
+                boson_excitations="SD",
+                fermion_coupling_rank=1,
+                boson_coupling_rank=2,
+                g=self.g_rhf,
+                omega=self.omega,
+                shift=self.shift,
+                log=NullLogger(),
+        )
+        uebcc.options.e_tol = 1e-12
+        uebcc.options.t_tol = 1e-12
+        eris = uebcc.get_eris()
+        uebcc.kernel(eris=eris)
+        uebcc.solve_lambda(eris=eris)
+        gebcc2 = GEBCC.from_uebcc(uebcc)
+
+        #self.assertAlmostEqual(gebcc1.energy(), gebcc2.energy())
+        for key in gebcc1.amplitudes.__dict__.keys():
+            np.testing.assert_almost_equal(gebcc1.amplitudes[key], gebcc2.amplitudes[key], 6)
+        for key in gebcc1.lambdas.__dict__.keys():
+            np.testing.assert_almost_equal(gebcc1.lambdas[key], gebcc2.lambdas[key], 5)
+        np.testing.assert_almost_equal(gebcc1.make_rdm1_f(), gebcc2.make_rdm1_f(), 6)
+        np.testing.assert_almost_equal(gebcc1.make_rdm2_f(), gebcc2.make_rdm2_f(), 6)
+        np.testing.assert_almost_equal(gebcc1.make_rdm1_b(), gebcc2.make_rdm1_b(), 6)
+        np.testing.assert_almost_equal(gebcc1.make_sing_b_dm(), gebcc2.make_sing_b_dm(), 6)
+        np.testing.assert_almost_equal(gebcc1.make_eb_coup_rdm(), gebcc2.make_eb_coup_rdm(), 6)
 
 
 @pytest.mark.reference

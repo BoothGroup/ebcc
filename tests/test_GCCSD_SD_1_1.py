@@ -53,7 +53,7 @@ class GCCSD_SD_1_1_Tests(unittest.TestCase):
         g[np.ix_(range(nbos), orbspin==1, orbspin==1)] = g_
 
         ccsd = GEBCC(
-                mf,
+                mf.to_ghf(),  # Direct conversion needed for same ordering as reference data
                 fermion_excitations="SD",
                 boson_excitations="SD",
                 fermion_coupling_rank=1,

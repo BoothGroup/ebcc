@@ -11,7 +11,7 @@ import pytest
 import scipy.linalg
 from pyscf import cc, gto, lib, scf
 
-from ebcc import GEBCC, UEBCC, NullLogger
+from ebcc import REBCC, UEBCC, GEBCC, NullLogger
 
 
 @pytest.mark.reference
@@ -72,11 +72,13 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
 
         cls.mf, cls.ccsd, cls.eris, cls.data = mf, ccsd, eris, data
         cls.osort, cls.vsort, cls.fsort = osort, vsort, fsort
+        cls.g, cls.omega = g, omega
 
     @classmethod
     def tearDownClass(cls):
         del cls.mf, cls.ccsd, cls.eris, cls.data
-        del cls.osort, cls.vsort
+        del cls.osort, cls.vsort, cls.fsort
+        del cls.g, cls.omega
 
     def test_const(self):
         a = self.data[self.shift]["const"]
@@ -146,6 +148,91 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
         self.assertAlmostEqual(lib.fp(dm_b),          0.020426308220055, 6)
         self.assertAlmostEqual(lib.fp(dm_eb.aa),     -1.053786451784421, 6)
         self.assertAlmostEqual(lib.fp(dm_eb.bb),     -1.053786451784395, 6)
+
+    @pytest.mark.regression
+    def test_from_rebcc(self):
+        uebcc1 = UEBCC(
+                self.mf,
+                fermion_excitations="SD",
+                boson_excitations="SD",
+                fermion_coupling_rank=1,
+                boson_coupling_rank=2,
+                g=self.g,
+                omega=self.omega,
+                shift=self.shift,
+                log=NullLogger(),
+        )
+        uebcc1.options.e_tol = 1e-12
+        uebcc1.options.t_tol = 1e-12
+        eris = uebcc1.get_eris()
+        uebcc1.kernel(eris=eris)
+        uebcc1.solve_lambda(eris=eris)
+
+        rebcc = REBCC(
+                self.mf,
+                fermion_excitations="SD",
+                boson_excitations="SD",
+                fermion_coupling_rank=1,
+                boson_coupling_rank=2,
+                g=self.g,
+                omega=self.omega,
+                shift=self.shift,
+                log=NullLogger(),
+        )
+        rebcc.options.e_tol = 1e-12
+        rebcc.options.t_tol = 1e-12
+        eris = rebcc.get_eris()
+        rebcc.kernel(eris=eris)
+        rebcc.solve_lambda(eris=eris)
+        uebcc2 = UEBCC.from_rebcc(rebcc)
+
+        np.testing.assert_almost_equal(uebcc1.amplitudes["t1"].aa,   uebcc2.amplitudes["t1"].aa,   5)
+        np.testing.assert_almost_equal(uebcc1.amplitudes["t1"].bb,   uebcc2.amplitudes["t1"].bb,   5)
+        np.testing.assert_almost_equal(uebcc1.amplitudes["t2"].aaaa, uebcc2.amplitudes["t2"].aaaa, 5)
+        np.testing.assert_almost_equal(uebcc1.amplitudes["t2"].abab, uebcc2.amplitudes["t2"].abab, 5)
+        np.testing.assert_almost_equal(uebcc1.amplitudes["t2"].baba, uebcc2.amplitudes["t2"].baba, 5)
+        np.testing.assert_almost_equal(uebcc1.amplitudes["t2"].bbbb, uebcc2.amplitudes["t2"].bbbb, 5)
+        np.testing.assert_almost_equal(uebcc1.amplitudes["s1"],      uebcc2.amplitudes["s1"],      5)
+        np.testing.assert_almost_equal(uebcc1.amplitudes["s1"],      uebcc2.amplitudes["s1"],      5)
+        np.testing.assert_almost_equal(uebcc1.amplitudes["s2"],      uebcc2.amplitudes["s2"],      5)
+        np.testing.assert_almost_equal(uebcc1.amplitudes["s2"],      uebcc2.amplitudes["s2"],      5)
+        np.testing.assert_almost_equal(uebcc1.amplitudes["u11"].aa,  uebcc2.amplitudes["u11"].aa,  5)
+        np.testing.assert_almost_equal(uebcc1.amplitudes["u11"].bb,  uebcc2.amplitudes["u11"].bb,  5)
+
+        np.testing.assert_almost_equal(uebcc1.lambdas["l1"].aa,   uebcc2.lambdas["l1"].aa,   5)
+        np.testing.assert_almost_equal(uebcc1.lambdas["l1"].bb,   uebcc2.lambdas["l1"].bb,   5)
+        np.testing.assert_almost_equal(uebcc1.lambdas["l2"].aaaa, uebcc2.lambdas["l2"].aaaa, 5)
+        np.testing.assert_almost_equal(uebcc1.lambdas["l2"].abab, uebcc2.lambdas["l2"].abab, 5)
+        np.testing.assert_almost_equal(uebcc1.lambdas["l2"].baba, uebcc2.lambdas["l2"].baba, 5)
+        np.testing.assert_almost_equal(uebcc1.lambdas["l2"].bbbb, uebcc2.lambdas["l2"].bbbb, 5)
+        np.testing.assert_almost_equal(uebcc1.lambdas["ls1"],     uebcc2.lambdas["ls1"],     5)
+        np.testing.assert_almost_equal(uebcc1.lambdas["ls1"],     uebcc2.lambdas["ls1"],     5)
+        np.testing.assert_almost_equal(uebcc1.lambdas["ls2"],     uebcc2.lambdas["ls2"],     5)
+        np.testing.assert_almost_equal(uebcc1.lambdas["ls2"],     uebcc2.lambdas["ls2"],     5)
+        np.testing.assert_almost_equal(uebcc1.lambdas["lu11"].aa, uebcc2.lambdas["lu11"].aa, 5)
+        np.testing.assert_almost_equal(uebcc1.lambdas["lu11"].bb, uebcc2.lambdas["lu11"].bb, 5)
+
+        uebcc1_rdm1_f = uebcc1.make_rdm1_f()
+        uebcc1_rdm2_f = uebcc1.make_rdm2_f()
+        uebcc1_rdm1_b = uebcc1.make_rdm1_b()
+        uebcc1_dm_b = uebcc1.make_sing_b_dm()
+        uebcc1_dm_eb = uebcc1.make_eb_coup_rdm()
+        uebcc2_rdm1_f = uebcc2.make_rdm1_f()
+        uebcc2_rdm2_f = uebcc2.make_rdm2_f()
+        uebcc2_rdm1_b = uebcc2.make_rdm1_b()
+        uebcc2_dm_b = uebcc2.make_sing_b_dm()
+        uebcc2_dm_eb = uebcc2.make_eb_coup_rdm()
+
+        np.testing.assert_almost_equal(uebcc1_rdm1_f.aa,   uebcc2_rdm1_f.aa,   6)
+        np.testing.assert_almost_equal(uebcc1_rdm1_f.bb,   uebcc2_rdm1_f.bb,   6)
+        np.testing.assert_almost_equal(uebcc1_rdm2_f.aaaa, uebcc2_rdm2_f.aaaa, 6)
+        np.testing.assert_almost_equal(uebcc1_rdm2_f.aabb, uebcc2_rdm2_f.aabb, 6)
+        np.testing.assert_almost_equal(uebcc1_rdm2_f.bbaa, uebcc2_rdm2_f.bbaa, 6)
+        np.testing.assert_almost_equal(uebcc1_rdm2_f.bbbb, uebcc2_rdm2_f.bbbb, 6)
+        np.testing.assert_almost_equal(uebcc1_rdm1_b,      uebcc2_rdm1_b,      6)
+        np.testing.assert_almost_equal(uebcc1_dm_b,        uebcc2_dm_b,        6)
+        np.testing.assert_almost_equal(uebcc1_dm_eb.aa,    uebcc2_dm_eb.aa,    6)
+        np.testing.assert_almost_equal(uebcc1_dm_eb.bb,    uebcc2_dm_eb.bb,    6)
 
 
 @pytest.mark.reference

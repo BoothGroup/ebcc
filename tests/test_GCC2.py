@@ -38,7 +38,7 @@ class GCC2_PySCF_Tests(unittest.TestCase):
         ccsd_ref.solve_lambda()
 
         ccsd = GEBCC(
-                mf,
+                mf.to_ghf(),  # Direct conversion needed for same ordering as reference data
                 fermion_excitations="2",
                 log=NullLogger(),
         )
