@@ -399,7 +399,7 @@ def get_compressed_size(subscript, **sizes):
     return n
 
 
-def symmetrise(subscript, array, symmetry=None):
+def symmetrise(subscript, array, symmetry=None, apply_factor=True):
     """Enforce a symmetry in an array. `subscript` and `symmetry` are
     as `decompress_axes`.
     """
@@ -414,6 +414,8 @@ def symmetrise(subscript, array, symmetry=None):
     subscript = "".join([subs[s] for s in subscript])
 
     # Check the symmetry string, and compress it:
+    if symmetry is None:
+        symmetry = "-" * len(subscript)
     n = 0
     symmetry_compressed = ""
     for char in sorted(set(subscript)):
@@ -421,23 +423,22 @@ def symmetrise(subscript, array, symmetry=None):
         symmetry_compressed += symmetry[n]
         n += subscript.count(char)
 
-    # Iterate over permutations with signs:
-    for char, symm in zip(sorted(set(subscript)), symmetry_compressed):
-        mask = [s == char for s in subscript]
-        inds = np.arange(len(subscript))
-        for perm_part, sign in permutations_with_signs(inds[mask]):
-            if tuple(perm_part) == tuple(inds[mask]):
-                continue
-            perm = inds.copy()
-            perm[mask] = perm_part
-            sign = sign if symm == "-" else 1
-            array = array + sign * array.transpose(perm)
+    # Iterate over permutations and signs:
+    array_as = np.zeros_like(array)
+    groups = tuple(sorted(set(zip(sorted(set(subscript)), symmetry_compressed))))  # don't ask
+    inds = [tuple(i for i, s in enumerate(subscript) if s == char) for char, symm in groups]
+    for tup in itertools.product(*(permutations_with_signs(ind) for ind in inds)):
+        perms, signs = zip(*tup)
+        perm = tuple(sum(perms, []))
+        sign = np.prod(signs) if symmetry[perm[0]] == "-" else 1
+        array_as = array_as + sign * array.transpose(perm)
 
-    # Apply factor
-    sizes = [subscript.count(s) for s in sorted(set(subscript))]
-    array *= get_symmetry_factor(*sizes)
+    if apply_factor:
+        # Apply factor
+        sizes = [subscript.count(s) for s in sorted(set(subscript))]
+        array_as = array_as * get_symmetry_factor(*sizes)
 
-    return array
+    return array_as
 
 
 ov_2e = [

@@ -93,11 +93,11 @@ class Util_Tests(unittest.TestCase):
 
     def test_antisymmetrise_array(self):
         for n in (1, 2, 3, 4):
-            for ndim in (1, 2, 3, 4):
-                array = np.arange(n**ndim).reshape((n,) * ndim)
+            for ndim in (1, 2, 3, 4, 5, 6):
+                array = np.cos(np.arange(1, n**ndim+1).reshape((n,) * ndim))
                 array = util.antisymmetrise_array(array, axes=range(ndim))
                 for perm, sign in util.permutations_with_signs(range(ndim)):
-                    np.testing.assert_equal(array, sign * array.transpose(perm))
+                    np.testing.assert_almost_equal(array, sign * array.transpose(perm))
 
     def test_is_mixed(self):
         self.assertEqual(util.is_mixed_spin("aa"), False)
@@ -117,7 +117,16 @@ class Util_Tests(unittest.TestCase):
         pass  # Covered by methods
 
     def test_symmetrise(self):
-        pass  # Covered by methods
+        for n in (1, 2, 3, 4):
+            for ndim in (2, 4, 6):
+                subscript = "i" * (ndim//2) + "a" * (ndim//2)
+                array = np.cos(np.arange(n**ndim).reshape((n,) * ndim))
+                array = util.symmetrise(subscript, array)
+                for p1, s1 in util.permutations_with_signs(range(ndim//2)):
+                    for p2, s2 in util.permutations_with_signs(range(ndim//2, ndim)):
+                        perm = tuple(p1) + tuple(p2)
+                        sign = s1 * s2
+                        np.testing.assert_almost_equal(array, sign * array.transpose(perm))
 
     def test_constructors(self):
         # Tests the constructors in the main __init__.py
