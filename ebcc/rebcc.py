@@ -6,10 +6,10 @@ import functools
 import importlib
 import logging
 import types
-from typing import Sequence, Union, Any
+from typing import Any, Sequence, Union
 
 import numpy as np
-from pyscf import ao2mo, scf, lib
+from pyscf import ao2mo, lib, scf
 
 from ebcc import default_log, reom, util
 
@@ -23,8 +23,7 @@ from ebcc import default_log, reom, util
 
 
 class AbstractEBCC:
-    """Abstract base class for EBCC objects.
-    """
+    """Abstract base class for EBCC objects."""
 
     pass
 
@@ -46,11 +45,11 @@ class ERIs(types.SimpleNamespace):
     """
 
     def __init__(
-            self,
-            ebcc: AbstractEBCC,
-            array: np.ndarray = None,
-            slices: Sequence[slice] = None,
-            mo_coeff: np.ndarray = None,
+        self,
+        ebcc: AbstractEBCC,
+        array: np.ndarray = None,
+        slices: Sequence[slice] = None,
+        mo_coeff: np.ndarray = None,
     ):
         self.mf = ebcc.mf
         self.slices = slices

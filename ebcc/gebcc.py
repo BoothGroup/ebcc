@@ -3,7 +3,7 @@
 
 import functools
 import itertools
-from typing import Sequence 
+from typing import Sequence
 
 import numpy as np
 import scipy.linalg
@@ -33,11 +33,11 @@ class ERIs(rebcc.ERIs):
     """
 
     def __init__(
-            self,
-            ebcc: rebcc.AbstractEBCC,
-            array: np.ndarray = None,
-            slices: Sequence[slice] = None,
-            mo_coeff: np.ndarray = None,
+        self,
+        ebcc: rebcc.AbstractEBCC,
+        array: np.ndarray = None,
+        slices: Sequence[slice] = None,
+        mo_coeff: np.ndarray = None,
     ):
         if array is None:
             rebcc.ERIs.__init__(self, ebcc, slices=slices, mo_coeff=mo_coeff)

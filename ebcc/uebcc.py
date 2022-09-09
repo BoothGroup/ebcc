@@ -33,10 +33,10 @@ class ERIs(types.SimpleNamespace):
     """
 
     def __init__(
-            self,
-            ebcc: rebcc.AbstractEBCC,
-            array: Sequence[np.ndarray] = None,
-            mo_coeff: Sequence[np.ndarray] = None,
+        self,
+        ebcc: rebcc.AbstractEBCC,
+        array: Sequence[np.ndarray] = None,
+        mo_coeff: Sequence[np.ndarray] = None,
     ):
         self.mf = ebcc.mf
         self.mo_coeff = mo_coeff
