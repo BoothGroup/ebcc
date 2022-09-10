@@ -3,6 +3,8 @@
 
 import os
 import sympy
+import itertools
+import numpy as np
 from fractions import Fraction
 from qwick.wick import apply_wick as _apply_wick
 from qwick.index import Idx
@@ -338,9 +340,23 @@ def get_r_ee_spaces(rank=("SD", "", ""), occs=None, virs=None, nms=None):
     return tuple(rs)
 
 
-def get_symm(particles):
-    raise NotImplementedError
-
+def get_symm(dims, antis):
+    from ebcc.util import permutations_with_signs
+    all_perms = []
+    all_signs = []
+    for tup in itertools.product(*[permutations_with_signs(tuple(range(dim))) for dim in dims]):
+        perms, signs = zip(*tup)
+        signs = [sign if anti else 1 for sign, anti in zip(signs, antis)]
+        perms = list(perms)
+        n = 0
+        for i in range(len(perms)):
+            perms[i] = tuple(n+j for j in perms[i])
+            n += len(perms[i])
+        perm = sum(perms, tuple())
+        sign = np.prod(signs)
+        all_perms.append(list(perm))
+        all_signs.append(sign)
+    return TensorSym(all_perms, all_signs)
 
 def get_excitation_ansatz(rank=("SD", "", ""), occs=None, virs=None, nms=None):
     """Define excitation amplitudes for the given ansatz.
@@ -357,7 +373,7 @@ def get_excitation_ansatz(rank=("SD", "", ""), occs=None, virs=None, nms=None):
         scalar = get_factor(*occ, *vir)
         sums = [Sigma(i) for i in occ] + [Sigma(a) for a in vir]
         name = "t{n}".format(n=n)
-        tensors = [Tensor(occ + vir, name, sym=get_sym(True) if n == 2 else TensorSym([], []))]  # FIXME get symmetry for all n
+        tensors = [Tensor(occ + vir, name, sym=get_symm([n, n], [True, True]))]
         operators = [FOperator(a, True) for a in vir] + [FOperator(i, False) for i in occ[::-1]]
         t.append(Term(scalar, sums, tensors, operators, []))
         particles[name] = tuple((FERMION, x) for x in range(n)) * 2
@@ -368,7 +384,7 @@ def get_excitation_ansatz(rank=("SD", "", ""), occs=None, virs=None, nms=None):
         scalar = get_factor(*nm)
         sums = [Sigma(x) for x in nm]
         name = "s{n}".format(n=n)
-        tensors = [Tensor(nm, name, sym=TensorSym([(0, 1), (1, 0)], [1, 1]) if n == 2 else TensorSym([], []))]  # FIXME symmetry
+        tensors = [Tensor(nm, name, sym=get_symm([n], [False]))]
         operators = [BOperator(x, True) for x in nm]
         t.append(Term(scalar, sums, tensors, operators, []))
         particles[name] = tuple((SCALAR_BOSON, x) for x in range(n))
@@ -381,7 +397,7 @@ def get_excitation_ansatz(rank=("SD", "", ""), occs=None, virs=None, nms=None):
         scalar = get_factor(i, a, *nm)
         sums = [Sigma(x) for x in nm] + [Sigma(i), Sigma(a)]
         name = "u1{n}".format(n=n)
-        tensors = [Tensor(nm + [i, a], name, sym=TensorSym([(0, 1, 2, 3), (1, 0, 2, 3)], [1, 1]) if n == 2 else TensorSym([], []))]
+        tensors = [Tensor(nm + [i, a], name, sym=get_symm([n, 1, 1], [False, True, True]))]
         operators = [BOperator(x, True) for x in nm] + [FOperator(a, True), FOperator(i, False)]
         t.append(Term(scalar, sums, tensors, operators, []))
         particles[name] = tuple((SCALAR_BOSON, x) for x in range(n)) + ((FERMION, n), (FERMION, n))
@@ -405,7 +421,7 @@ def get_deexcitation_ansatz(rank=("SD", "", ""), occs=None, virs=None, nms=None)
         scalar = get_factor(*occ, *vir)
         sums = [Sigma(i) for i in occ] + [Sigma(a) for a in vir]
         name = "l{n}".format(n=n)
-        tensors = [Tensor(occ + vir, name, sym=get_sym(True) if n == 2 else TensorSym([], []))]  # FIXME get symmetry for all n
+        tensors = [Tensor(occ + vir, name, sym=get_symm([n, n], [True, True]))]
         operators = [FOperator(a, True) for a in vir] + [FOperator(i, False) for i in occ[::-1]]
         l.append(Term(scalar, sums, tensors, operators, []))
         particles[name] = tuple((FERMION, x) for x in range(n)) * 2
@@ -416,7 +432,7 @@ def get_deexcitation_ansatz(rank=("SD", "", ""), occs=None, virs=None, nms=None)
         scalar = get_factor(*nm)
         sums = [Sigma(x) for x in nm]
         name = "ls{n}".format(n=n)
-        tensors = [Tensor(nm, name, sym=TensorSym([(0, 1), (1, 0)], [1, 1]) if n == 2 else TensorSym([], []))]  # FIXME symmetry
+        tensors = [Tensor(nm, name, sym=get_symm([n], [False]))]
         operators = [BOperator(x, False) for x in nm]
         l.append(Term(scalar, sums, tensors, operators, []))
         particles[name] = tuple((SCALAR_BOSON, x) for x in range(n))
@@ -430,7 +446,7 @@ def get_deexcitation_ansatz(rank=("SD", "", ""), occs=None, virs=None, nms=None)
         scalar = get_factor(i, a, *nm)
         sums = [Sigma(x) for x in nm] + [Sigma(i), Sigma(a)]
         name = "lu1{n}".format(n=n)
-        tensors = [Tensor(nm + [i, a], name, sym=TensorSym([(0, 1, 2, 3), (1, 0, 2, 3)], [1, 1]) if n == 2 else TensorSym([], []))]
+        tensors = [Tensor(nm + [i, a], name, sym=get_symm([n, 1, 1], [False, True, True]))]
         operators = [BOperator(x, False) for x in nm] + [FOperator(a, True), FOperator(i, False)]
         l.append(Term(scalar, sums, tensors, operators, []))
         particles[name] = tuple((SCALAR_BOSON, x) for x in range(n)) + ((FERMION, n), (FERMION, n))
