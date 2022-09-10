@@ -435,7 +435,7 @@ class REBCC(AbstractEBCC):
             vector = self.amplitudes_to_vector(amplitudes)
             vector = diis.update(vector)
             amplitudes = self.vector_to_amplitudes(vector)
-            dt = np.linalg.norm(vector - self.amplitudes_to_vector(amplitudes_prev)) ** 2
+            dt = np.linalg.norm(vector - self.amplitudes_to_vector(amplitudes_prev), ord=np.inf)
 
             # Update the energy and calculate change:
             e_prev = e_cc
@@ -505,7 +505,7 @@ class REBCC(AbstractEBCC):
             vector = self.lambdas_to_vector(lambdas)
             vector = diis.update(vector)
             lambdas = self.vector_to_lambdas(vector)
-            dl = np.linalg.norm(vector - self.lambdas_to_vector(lambdas_prev)) ** 2
+            dl = np.linalg.norm(vector - self.lambdas_to_vector(lambdas_prev), ord=np.inf)
 
             self.log.info("%4d %16.5g", niter, dl)
 

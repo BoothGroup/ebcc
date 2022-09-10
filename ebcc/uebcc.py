@@ -194,7 +194,13 @@ class UEBCC(rebcc.REBCC):
                 tn.bbbb = tn.bbbb - tn.bbbb.swapaxes(0, 1)
                 amplitudes["t%d" % n] = tn
             else:
-                raise util.ModelNotImplemented  # TODO
+                tn = util.Namespace()
+                for comb in util.generate_spin_combinations(3):
+                    shape  = tuple(self.nocc["ab".index(s)] for s in comb[:3])
+                    shape += tuple(self.nvir["ab".index(s)] for s in comb[3:])
+                    amp = np.zeros(shape)
+                    setattr(tn, comb, amp)
+                amplitudes["t%d" % n] = tn
 
         if not (self.rank[1] == self.rank[2] == ""):
             # Only tue for real-valued couplings:
