@@ -59,10 +59,13 @@ class REOM:
 
         self.log.info("%s", self.name)
         self.log.info("%s", "*" * len(self.name))
+        self.log.debug("")
+        self.log.debug("Options:")
         self.log.info(" > nroots:     %s", self.options.nroots)
         self.log.info(" > e_tol:      %s", self.options.e_tol)
         self.log.info(" > max_iter:   %s", self.options.max_iter)
         self.log.info(" > max_space:  %s", self.options.max_space)
+        self.log.debug("")
 
         self.converged = False
         self.e = None
@@ -180,11 +183,15 @@ class REOM:
         else:
             self.log.warning("Failed to converge %d roots." % sum(not c for c in converged))
 
+        self.log.debug("")
+
         self.log.output("%4s %16s %16s", "Root", "Energy", "QP Weight")
         for n, (en, vn) in enumerate(zip(e, v)):
             r1n = self.vector_to_amplitudes(vn)[0]
             qpwt = self._quasiparticle_weight(r1n)
             self.log.output("%4d %16.10f %16.5g" % (n, en, qpwt))
+
+        self.log.debug("")
 
         self.converged = converged
         self.e = e

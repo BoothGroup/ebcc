@@ -11,7 +11,7 @@ from typing import Any, Sequence, Union
 import numpy as np
 from pyscf import ao2mo, lib, scf
 
-from ebcc import METHOD_TYPES, default_log, reom, util
+from ebcc import METHOD_TYPES, default_log, init_logging, reom, util
 
 # TODO test bosonic RDMs and lambdas - only regression atm
 # TODO math in docstrings
@@ -377,8 +377,11 @@ class REBCC(AbstractEBCC):
         self.converged_lambda = False
 
         # Logging:
+        init_logging(self.log)
         self.log.info("%s", self.name)
         self.log.info("%s", "*" * len(self.name))
+        self.log.debug("")
+        self.log.debug("Options:")
         self.log.info(" > Fermion ansatz:         %s", self.rank[0])
         self.log.info(" > Boson excitations:      %s", self.rank[1] if len(self.rank[1]) else None)
         self.log.info(" > Fermion coupling rank:  %s", self.rank[2])
@@ -391,6 +394,7 @@ class REBCC(AbstractEBCC):
         self.log.info(" > t_tol:  %s", self.options.t_tol)
         self.log.info(" > max_iter:  %s", self.options.max_iter)
         self.log.info(" > diis_space:  %s", self.options.diis_space)
+        self.log.debug("")
 
     def kernel(self, eris: Union[ERIs, np.ndarray] = None) -> float:
         """Run the coupled cluster calculation.
@@ -457,8 +461,10 @@ class REBCC(AbstractEBCC):
         self.amplitudes = amplitudes
         self.converged = converged
 
+        self.log.debug("")
         self.log.output("E(corr) = %.10f", self.e_corr)
         self.log.output("E(tot)  = %.10f", self.e_tot)
+        self.log.debug("")
 
         return e_cc
 
@@ -516,6 +522,8 @@ class REBCC(AbstractEBCC):
                 break
         else:
             self.log.warning("Failed to converge.")
+
+        self.log.debug("")
 
         # Update attributes:
         self.lambdas = lambdas
