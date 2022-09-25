@@ -47,10 +47,25 @@ class ERIs(types.SimpleNamespace):
         if self.mo_coeff is None:
             self.mo_coeff = ebcc.mo_coeff
 
-        if array is None:
-            arrays = (None, None, None, None)
+        if array is not None:
+            arrays = (array[0], array[1], array[1].transpose((2, 3, 0, 1)), array[2])
+        elif isinstance(self.mf._eri, tuple):
+            # Have spin-dependent coulomb interaction; precalculate required arrays for simplicity.
+            arrays_aabb = ao2mo.incore.general(
+                self.mf._eri[1], [self.mo_coeff[i] for i in (0, 0, 1, 1)], compact=False
+            )
+            arrays = (
+                ao2mo.incore.general(
+                    self.mf._eri[0], [self.mo_coeff[i] for i in (0, 0, 0, 0)], compact=False
+                ),
+                arrays_aabb,
+                arrays_aabb.transpose(2, 3, 0, 1),
+                ao2mo.incore.general(
+                    self.mf._eri[2], [self.mo_coeff[i] for i in (1, 1, 1, 1)], compact=False
+                ),
+            )
         else:
-            arrays = (array[0], array[1], array[1].transpose(2, 3, 0, 1), array[2])
+            arrays = (None, None, None, None)
 
         self.aaaa = rebcc.ERIs(
             ebcc,
