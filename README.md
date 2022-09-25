@@ -1,14 +1,8 @@
 # ebcc: Coupled cluster calculations on electron-boson systems
 
-The `ebcc`  package implements various coupled cluster (CC) models for application to electron-boson systems, with a focus on generality and model extensibility.
+The `ebcc` package implements various coupled cluster (CC) models for both purely electronic and coupled electron-boson models, with a focus on generality and model extensibility.
 
 ### Installation
-
-From the python package index:
-
-```bash
-pip install ebcc
-```
 
 From source:
 
@@ -34,3 +28,5 @@ ccsd.kernel()
 ### Code generation
 
 The models implemented are generated algorithmically from expressions over second quantized operators. Expressions are generated using [`qwick`](https://github.com/obackhouse/qwick) with optimisation of common subexpressions and contraction order achieved using [`drudge`](https://github.com/tschijnmo/drudge) and [`gristmill`](https://github.com/tschijnmo/gristmill).
+The interface between the solvers and the files under `ebcc/codegen` 
+User-inputted CC models should operate seamlessly with the solvers by adding files under `ebcc/codegen`, so long as they satisfy the interface.
