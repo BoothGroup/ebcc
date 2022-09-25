@@ -11,7 +11,7 @@ from typing import Any, Sequence, Union
 import numpy as np
 from pyscf import ao2mo, lib, scf
 
-from ebcc import default_log, reom, util, METHOD_TYPES
+from ebcc import METHOD_TYPES, default_log, reom, util
 
 # TODO test bosonic RDMs and lambdas - only regression atm
 # TODO math in docstrings

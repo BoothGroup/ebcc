@@ -196,7 +196,7 @@ class UEBCC(rebcc.REBCC):
             else:
                 tn = util.Namespace()
                 for comb in util.generate_spin_combinations(3):
-                    shape  = tuple(self.nocc["ab".index(s)] for s in comb[:3])
+                    shape = tuple(self.nocc["ab".index(s)] for s in comb[:3])
                     shape += tuple(self.nvir["ab".index(s)] for s in comb[3:])
                     amp = np.zeros(shape)
                     setattr(tn, comb, amp)
