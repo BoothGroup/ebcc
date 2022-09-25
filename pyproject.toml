@@ -1,0 +1,118 @@
+[project]
+name = "ebcc"
+description = "Coupled cluster calculations on electron-boson systems"
+keywords = [
+    "quantum", "chemistry",
+    "electronic", "structure",
+    "coupled", "cluster",
+    "electron", "boson",
+    "ccsd",
+]
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+        "Development Status :: 2 - Pre-Alpha",
+        "Intended Audience :: Science/Research",
+        "Intended Audience :: Developers",
+        "Topic :: Scientific/Engineering",
+        "Topic :: Software Development",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Operating System :: MacOS :: MacOS X",
+        "Operating System :: POSIX :: Linux",
+]
+dependencies = [
+    "numpy>=1.19.0",
+    "pyscf>=2.0.0",
+]
+dynamic = [
+    "version",
+]
+
+[tools.setuptools.dynamic]
+version = {attr = "ebcc.__version__"}
+
+[build-system]
+requires = [
+    "setuptools>=46.1.0",
+]
+build-backend = "setuptools.build_meta"
+
+[project.optional-dependencies]
+dev = [
+    "black>=22.6.0",
+    "isort>=5.10.1",
+    "coverage[toml]",
+    "pytest",
+    "pytest-cov",
+]
+
+[tool.black]
+line-length = 100
+target-version = [
+    "py36",
+    "py37",
+    "py38",
+]
+include = "ebcc"
+exclude = """
+/(
+    | ebcc/codegen
+    | ebcc/__pycache__
+    | .git
+)/
+"""
+
+[tool.isort]
+atomic = true
+profile = "black"
+line_length = 100
+src_paths = [
+    "ebcc",
+]
+skip_glob = [
+    "ebcc/__pycache__/*",
+    "ebcc/codegen/*",
+]
+
+[tool.coverage.run]
+branch = true
+source = [
+    "ebcc",
+]
+omit = [
+    "ebcc/codegen/gen_*.py",
+    "ebcc/codegen/wick.py",
+    "ebcc/codegen/common.py",
+    "ebcc/codegen/convenience_extra.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "def __str__",
+    "raise NotImplementedError",
+    "raise util.ModelNotImplemented",
+    "if __name__ == .__main__.:",
+]
+
+[tool.coverage.html]
+directory = "cov_html"
+
+[tool.pytest.ini_options]
+addopts = "-m 'not slow'"
+testpaths = [
+    "tests",
+]
+markers = [
+    # Slow tests:
+    "slow",
+    # Tests compared to another code:
+    "reference",
+    # Tests compared to another `ebcc` version:
+    "regression",
+]
