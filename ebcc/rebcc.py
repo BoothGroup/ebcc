@@ -11,7 +11,7 @@ from typing import Any, Sequence, Union
 import numpy as np
 from pyscf import ao2mo, lib, scf
 
-from ebcc import default_log, reom, util
+from ebcc import default_log, reom, util, METHOD_TYPES
 
 # TODO test bosonic RDMs and lambdas - only regression atm
 # TODO math in docstrings
@@ -129,8 +129,8 @@ class REBCC(AbstractEBCC):
     log : logging.Logger, optional
         Log to print output to. Default value is the global logger
         which outputs to `sys.stderr`.
-    fermion_excitations : str, optional
-        Rank of fermionic excitations. Default value is "SD".
+    ansatz : str, optional
+        Fermionic ansatz. Default value is "CCSD".
     boson_excitations : str, optional
         Rank of bosonic excitations. Default is "".
     fermion_coupling_rank : int, optional
@@ -311,7 +311,7 @@ class REBCC(AbstractEBCC):
         self,
         mf: scf.hf.SCF,
         log: logging.Logger = None,
-        fermion_excitations: str = "SD",
+        ansatz: str = "CCSD",
         boson_excitations: str = "",
         fermion_coupling_rank: int = 0,
         boson_coupling_rank: int = 0,
@@ -337,7 +337,7 @@ class REBCC(AbstractEBCC):
         self._mo_coeff = mo_coeff
         self._mo_occ = mo_occ
         self.rank = (
-            fermion_excitations,
+            ansatz,
             boson_excitations,
             fermion_coupling_rank,
             boson_coupling_rank,
@@ -379,7 +379,7 @@ class REBCC(AbstractEBCC):
         # Logging:
         self.log.info("%s", self.name)
         self.log.info("%s", "*" * len(self.name))
-        self.log.info(" > Fermion excitations:    %s", self.rank[0])
+        self.log.info(" > Fermion ansatz:         %s", self.rank[0])
         self.log.info(" > Boson excitations:      %s", self.rank[1] if len(self.rank[1]) else None)
         self.log.info(" > Fermion coupling rank:  %s", self.rank[2])
         self.log.info(" > Boson coupling rank:    %s", self.rank[3])
@@ -1892,14 +1892,13 @@ class REBCC(AbstractEBCC):
             return 0.0
 
     @property
-    def fermion_excitations(self):
-        """Return a string representation of the fermionic excitations
-        in the ansatz.
+    def ansatz(self):
+        """Return a string representation of the fermionic ansatz.
 
         Returns
         -------
-        fermion_excitations : str
-            String representation of the fermion excitations.
+        ansatz : str
+            String representation of the fermion ansatz.
         """
         return self.rank[0]
 
@@ -1948,7 +1947,7 @@ class REBCC(AbstractEBCC):
         name : str
             Name of the method.
         """
-        name = "RCC%s" % self.fermion_excitations
+        name = "R" + self.ansatz
         if self.boson_excitations:
             name += "-%s" % self.boson_excitations
         if self.fermion_coupling_rank or self.boson_coupling_rank:
@@ -1973,7 +1972,15 @@ class REBCC(AbstractEBCC):
         standard_notation = {"S": 1, "D": 2, "T": 3, "Q": 4}
         partial_notation = {"2": [1, 2], "3": [1, 2, 3], "4": [1, 2, 3, 4]}
 
-        for op in self.rank[:2]:
+        for i, op in enumerate(self.rank[:2]):
+            if i == 0:
+                # Check in order of longest -> shortest string in case
+                # one method name starts with a substring equal to the
+                # name of another method:
+                for method_type in sorted(METHOD_TYPES, key=len)[::-1]:
+                    if op.startswith(method_type):
+                        op = op.replace(method_type, "")
+                        break
             rank_entry = []
             for char in op:
                 if char in standard_notation:
@@ -2137,66 +2144,3 @@ class REBCC(AbstractEBCC):
             L1 amplitude.
         """
         return self.lambdas["l2"]
-
-
-if __name__ == "__main__":
-    import numpy as np
-    from pyscf import cc, gto, scf
-
-    mol = gto.Mole()
-    # mol.atom = "He 0 0 0"
-    # mol.basis = "cc-pvdz"
-    mol.atom = "H 0 0 0; F 0 0 1.1"
-    mol.basis = "6-31g"
-    mol.verbose = 5
-    mol.build()
-
-    mf = scf.RHF(mol)
-    mf.kernel()
-
-    ccsd_ref = cc.CCSD(mf)
-    ccsd_ref.kernel()
-    ccsd_ref.solve_lambda()
-
-    # ccsd = REBCC(mf, rank=("SD", "", ""))
-    # ccsd.kernel()
-    # ccsd.solve_lambda()
-
-    # print("e ", np.abs(ccsd.e_corr - ccsd_ref.e_corr))
-    # print("t1", np.max(np.abs(ccsd.t1 - ccsd_ref.t1)))
-    # print("t2", np.max(np.abs(ccsd.t2 - ccsd_ref.t2)))
-    # print("l1", np.max(np.abs(ccsd.l1 - ccsd_ref.l1.T)))
-    # print("l2", np.max(np.abs(ccsd.l2 - ccsd_ref.l2.transpose(2, 3, 0, 1))))
-    # print("rdm1", np.max(np.abs(ccsd.make_rdm1_f() - ccsd_ref.make_rdm1())))
-    # print("rdm2", np.max(np.abs(ccsd.make_rdm2_f() - ccsd_ref.make_rdm2())))
-
-    ## Transpose issue I think:
-    ##print(ccsd.make_rdm2_f())
-    ##print(ccsd_ref.make_rdm2())
-
-    # v1 = np.ones((ccsd.nocc,))
-    # v2 = np.zeros((ccsd.nocc, ccsd.nocc, ccsd.nvir))
-
-    # ra = ccsd_ref.eomip_method().gen_matvec()[0]([np.concatenate([v1.ravel(), v2.ravel()])])
-    # rb1, rb2 = ccsd.hbar_matvec_ip(r1=v1, r2=v2)
-    # rb = np.concatenate([rb1.ravel(), rb2.ravel()])
-    # print("r", np.allclose(ra, rb/2))
-
-    nbos = 5
-    np.random.seed(1)
-    g = np.random.random((nbos, mol.nao, mol.nao)) * 0.03
-    g = g + g.transpose(0, 2, 1)
-    omega = np.random.random((nbos)) * 0.5
-
-    np.set_printoptions(edgeitems=1000, linewidth=1000, precision=8)
-    ccsd = REBCC(mf, rank=("SD", "S", "S"), omega=omega, g=g, shift=False)
-    ccsd.kernel()
-    ccsd.solve_lambda()
-    np.savetxt("tmp2.dat", ccsd.make_rdm1_b())
-
-    # amps = ccsd.init_amps()
-    # amps = ccsd.update_amps(amplitudes=amps)
-    # print(amps["t1"])
-    # print(amps["t2"])
-    # print(amps["s1"])
-    # print(amps["u11"])

@@ -40,11 +40,10 @@ class RCCSD_Tests(unittest.TestCase):
 
         ccsd = REBCC(
                 mf,
-                fermion_excitations="SD",
+                ansatz="CCSD",
                 log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-10
-        ccsd.options.t_tol = 1e-14
         eris = ccsd.get_eris()
         ccsd.kernel(eris=eris)
         ccsd.solve_lambda(eris=eris)
@@ -166,11 +165,10 @@ class RCCSD_PySCF_Tests(unittest.TestCase):
 
         ccsd = REBCC(
                 mf,
-                fermion_excitations="SD",
+                ansatz="CCSD",
                 log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-10
-        ccsd.options.t_tol = 1e-14
         eris = ccsd.get_eris()
         ccsd.kernel(eris=eris)
         ccsd.solve_lambda(eris=eris)

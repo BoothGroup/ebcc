@@ -19,16 +19,16 @@ nmo = mf.mo_occ.size
 g = np.random.random((nbos, nmo, nmo)) * 0.03
 omega = np.random.random((nbos,)) * 5.0
 
-#    ,-------- Fermionic excitation amplitudes
+#    ,-------- Fermionic ansatz
 #    | ,------ Bosonic excitation amplitudes
 #    | | ,---- Rank of fermions in coupling term
 #    | | | ,-- Rank of bosons in coupling term
 #    v v v v
-#   __ _ _ _
+# ____ _ _ _
 # CCSD-S-1-1: One-boson amplitudes and one-boson-one-fermion coupling
 ccsd = EBCC(
     mf,
-    fermion_excitations="SD",
+    ansatz="CCSD",
     boson_excitations="S",
     fermion_coupling_rank=1,
     boson_coupling_rank=1,
@@ -38,16 +38,16 @@ ccsd = EBCC(
 ccsd.kernel()
 print("%s correlation energy:" % ccsd.name, ccsd.e_corr)
 
-#    ,--------- Fermionic excitation amplitudes
+#    ,--------- Fermionic ansatz
 #    |  ,------ Bosonic excitation amplitudes
 #    |  | ,---- Rank of fermions in coupling term
 #    |  | | ,-- Rank of bosons in coupling term
 #    v  v v v
-#   __ __ _ _
+# ____ __ _ _
 # CCSD-SD-1-1: Two-boson amplitudes and one-boson-one-fermion coupling
 ccsd = EBCC(
     mf,
-    fermion_excitations="SD",
+    ansatz="CCSD",
     boson_excitations="SD",
     fermion_coupling_rank=1,
     boson_coupling_rank=1,
@@ -57,16 +57,16 @@ ccsd = EBCC(
 ccsd.kernel()
 print("%s correlation energy:" % ccsd.name, ccsd.e_corr)
 
-#    ,--------- Fermionic excitation amplitudes
+#    ,--------- Fermionic ansatz
 #    |  ,------ Bosonic excitation amplitudes
 #    |  | ,---- Rank of fermions in coupling term
 #    |  | | ,-- Rank of bosons in coupling term
 #    v  v v v
-#   __ __ _ _
+# ____ __ _ _
 # CCSD-SD-1-2: Two-boson amplitudes and two-boson-one-fermion coupling
 ccsd = EBCC(
     mf,
-    fermion_excitations="SD",
+    ansatz="CCSD",
     boson_excitations="SD",
     fermion_coupling_rank=1,
     boson_coupling_rank=2,

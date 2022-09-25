@@ -50,7 +50,7 @@ class RCCSD_SD_1_1_Tests(unittest.TestCase):
 
         ccsd = REBCC(
                 mf,
-                fermion_excitations="SD",
+                ansatz="CCSD",
                 boson_excitations="SD",
                 fermion_coupling_rank=1,
                 boson_coupling_rank=1,
@@ -60,7 +60,6 @@ class RCCSD_SD_1_1_Tests(unittest.TestCase):
                 log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-12
-        ccsd.options.t_tol = 1e-12
         eris = ccsd.get_eris()
         ccsd.kernel(eris=eris)
         ccsd.solve_lambda(eris=eris)

@@ -38,11 +38,10 @@ class UCC2_PySCF_Tests(unittest.TestCase):
 
         ccsd = UEBCC(
                 mf,
-                fermion_excitations="2",
+                ansatz="CC2",
                 log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-10
-        ccsd.options.t_tol = 1e-14
         eris = ccsd.get_eris()
         ccsd.kernel(eris=eris)
         ccsd.solve_lambda(eris=eris)
@@ -97,11 +96,10 @@ class UCC2_Tests(unittest.TestCase):
 
         ccsd = UEBCC(
                 mf,
-                fermion_excitations="2",
+                ansatz="CC2",
                 log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-10
-        ccsd.options.t_tol = 1e-14
         eris = ccsd.get_eris()
         ccsd.kernel(eris=eris)
         ccsd.solve_lambda(eris=eris)

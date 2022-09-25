@@ -50,7 +50,7 @@ class RCCSD_S_1_1_Tests(unittest.TestCase):
 
         ccsd = REBCC(
                 mf,
-                fermion_excitations="SD",
+                ansatz="CCSD",
                 boson_excitations="S",
                 fermion_coupling_rank=1,
                 boson_coupling_rank=1,
@@ -60,7 +60,6 @@ class RCCSD_S_1_1_Tests(unittest.TestCase):
                 log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-12
-        ccsd.options.t_tol = 1e-12
         eris = ccsd.get_eris()
         ccsd.kernel(eris=eris)
         ccsd.solve_lambda(eris=eris)
@@ -133,7 +132,7 @@ class RCCSD_S_1_1_Tests(unittest.TestCase):
 
     @pytest.mark.regression
     def test_rdm2_f(self):
-        self.assertAlmostEqual(lib.fp(self.ccsd.make_rdm2_f()), -1.7916782894206773)
+        self.assertAlmostEqual(lib.fp(self.ccsd.make_rdm2_f()), -1.7916782894206773, 6)
 
     def test_rdm1_b(self):
         a = self.data[self.shift]["rdm1_b"]
@@ -162,7 +161,7 @@ class RCCSD_S_1_1_NoShift_Tests(RCCSD_S_1_1_Tests):
 
     @pytest.mark.regression
     def test_rdm2_f(self):
-        self.assertAlmostEqual(lib.fp(self.ccsd.make_rdm2_f()), -1.8193615098460836)
+        self.assertAlmostEqual(lib.fp(self.ccsd.make_rdm2_f()), -1.8193615098460836, 6)
 
 
 

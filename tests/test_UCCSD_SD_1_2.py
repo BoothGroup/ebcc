@@ -51,7 +51,7 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
 
         ccsd = UEBCC(
                 mf,
-                fermion_excitations="SD",
+                ansatz="CCSD",
                 boson_excitations="SD",
                 fermion_coupling_rank=1,
                 boson_coupling_rank=2,
@@ -61,7 +61,6 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
                 log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-12
-        ccsd.options.t_tol = 1e-12
         eris = ccsd.get_eris()
         ccsd.kernel(eris=eris)
         ccsd.solve_lambda(eris=eris)
@@ -153,7 +152,7 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
     def test_from_rebcc(self):
         uebcc1 = UEBCC(
                 self.mf,
-                fermion_excitations="SD",
+                ansatz="CCSD",
                 boson_excitations="SD",
                 fermion_coupling_rank=1,
                 boson_coupling_rank=2,
@@ -163,14 +162,13 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
                 log=NullLogger(),
         )
         uebcc1.options.e_tol = 1e-12
-        uebcc1.options.t_tol = 1e-12
         eris = uebcc1.get_eris()
         uebcc1.kernel(eris=eris)
         uebcc1.solve_lambda(eris=eris)
 
         rebcc = REBCC(
                 self.mf,
-                fermion_excitations="SD",
+                ansatz="CCSD",
                 boson_excitations="SD",
                 fermion_coupling_rank=1,
                 boson_coupling_rank=2,
@@ -180,7 +178,6 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
                 log=NullLogger(),
         )
         rebcc.options.e_tol = 1e-12
-        rebcc.options.t_tol = 1e-12
         eris = rebcc.get_eris()
         rebcc.kernel(eris=eris)
         rebcc.solve_lambda(eris=eris)

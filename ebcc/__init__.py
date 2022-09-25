@@ -88,6 +88,11 @@ HEADER = """
 """
 
 
+# --- Types of ansatz supporting by the EBCC solvers:
+
+METHOD_TYPES = ["CC", "LCC", "QCI", "QCC"]
+
+
 # --- General constructor:
 
 from ebcc.gebcc import GEBCC
@@ -112,11 +117,11 @@ EBCC.__doc__ = REBCC.__doc__
 # --- Constructors for boson-free calculations:
 
 
-def _boson_free_factory(fermion_excitations):
+def _boson_free_factory(ansatz):
     def constructor(mf, *args, **kwargs):
         from pyscf import scf
 
-        kwargs["fermion_excitations"] = fermion_excitations
+        kwargs["ansatz"] = ansatz
         kwargs["boson_excitations"] = ""
         kwargs["fermion_coupling_rank"] = 0
         kwargs["boson_coupling_rank"] = 0
@@ -135,9 +140,9 @@ def _boson_free_factory(fermion_excitations):
     return constructor
 
 
-CCSD = _boson_free_factory("SD")
+CCSD = _boson_free_factory("CCSD")
 
-CC2 = _boson_free_factory("2")
+CC2 = _boson_free_factory("CC2")
 
 
 # --- List available methods:

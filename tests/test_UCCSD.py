@@ -42,11 +42,10 @@ class UCCSD_Tests(unittest.TestCase):
 
         ccsd = UEBCC(
                 mf,
-                fermion_excitations="SD",
+                ansatz="CCSD",
                 log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-12
-        ccsd.options.t_tol = 1e-12
         eris = ccsd.get_eris()
         ccsd.kernel(eris=eris)
         ccsd.solve_lambda(eris=eris)
@@ -88,7 +87,7 @@ class UCCSD_Tests(unittest.TestCase):
     def test_from_rebcc(self):
         rebcc = REBCC(
                 self.mf,
-                fermion_excitations="SD",
+                ansatz="CCSD",
                 log=NullLogger(),
         )
         rebcc.options.e_tol = 1e-12
@@ -178,11 +177,10 @@ class UCCSD_PySCF_Tests(unittest.TestCase):
 
         ccsd = UEBCC(
                 mf,
-                fermion_excitations="SD",
+                ansatz="CCSD",
                 log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-12
-        ccsd.options.t_tol = 1e-12
         eris = ccsd.get_eris()
         ccsd.kernel(eris=eris)
         ccsd.solve_lambda(eris=eris)

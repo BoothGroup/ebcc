@@ -94,7 +94,7 @@ class UEBCC(rebcc.REBCC):
         ucc = cls(
             rcc.mf,
             log=rcc.log,
-            fermion_excitations=rcc.fermion_excitations,
+            ansatz=rcc.ansatz,
             boson_excitations=rcc.boson_excitations,
             fermion_coupling_rank=rcc.fermion_coupling_rank,
             boson_coupling_rank=rcc.boson_coupling_rank,
@@ -883,26 +883,3 @@ class UEBCC(rebcc.REBCC):
             b=np.diag(self.fock.bb.vv),
         )
         return ev
-
-
-if __name__ == "__main__":
-    from pyscf import gto, scf
-
-    mol = gto.Mole()
-    mol.atom = "H 0 0 0; F 0 0 1.1"
-    mol.basis = "6-31g"
-    mol.verbose = 5
-    mol.build()
-
-    mf = scf.RHF(mol)
-    mf.kernel()
-
-    nbos = 5
-    np.random.seed(1)
-    g = np.random.random((nbos, mol.nao, mol.nao)) * 0.03
-    g = g + g.transpose(0, 2, 1)
-    omega = np.random.random((nbos)) * 0.5
-
-    cc = UEBCC(mf, rank=("SD", "SD", "S"), omega=omega, g=g, shift=False)
-    cc.kernel()
-    cc.solve_lambda()

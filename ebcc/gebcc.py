@@ -103,7 +103,7 @@ class GEBCC(rebcc.REBCC):
         gcc = cls(
             ucc.mf,
             log=ucc.log,
-            fermion_excitations=ucc.fermion_excitations,
+            ansatz=ucc.ansatz,
             boson_excitations=ucc.boson_excitations,
             fermion_coupling_rank=ucc.fermion_coupling_rank,
             boson_coupling_rank=ucc.boson_coupling_rank,
@@ -475,48 +475,3 @@ class GEBCC(rebcc.REBCC):
     @property
     def name(self):
         return super().name.replace("R", "G", 1)
-
-
-if __name__ == "__main__":
-    from pyscf import gto, scf
-
-    mol = gto.M(atom="H 0 0 0; F 0 0 1.1", basis="6-31g", verbose=0)
-    mf = scf.RHF(mol).run()
-
-    # ccsd = GEBCC(mf)
-    # ccsd.kernel()
-
-    nbos = 5
-    np.random.seed(1)
-    g = np.random.random((nbos, mol.nao, mol.nao)) * 0.03
-    g = g + g.transpose(0, 2, 1)
-    omega = np.random.random((nbos)) * 0.5
-
-    from ebcc import REBCC, UEBCC
-
-    ccsd = REBCC(mf, e_tol=1e-10)
-    ccsd.kernel()
-    # ccsd.solve_lambda()
-
-    ccsd = UEBCC.from_rebcc(ccsd)
-    ccsd.kernel()
-    # ccsd.solve_lambda()
-
-    # ccsd = UEBCC(
-    #    mf,
-    #    # g=g,
-    #    # omega=omega,
-    #    e_tol=1e-10,
-    #    # boson_excitations="S",
-    #    # fermion_coupling_rank=1,
-    #    # boson_coupling_rank=1,
-    # )
-    # ccsd.kernel()
-    # ccsd.solve_lambda()
-
-    # ccsd = GEBCC.from_uebcc(ccsd)
-    # ccsd.kernel()
-    # ccsd.solve_lambda()
-
-    # geom = ccsd.ee_eom()
-    # t = geom.moments(2, diagonal_only=True)
