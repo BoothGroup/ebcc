@@ -21,14 +21,24 @@ def get_factor(*indices):
     indices.
     """
 
+    def factorial(n):
+        if n in (0, 1):
+            return 1
+        elif n > 1:
+            return n * factorial(n-1)
+        else:
+            raise ValueError("{n}!".format(n=n))
+
     counts = {"occ": 0, "vir": 0, "nm": 0}
 
     for index in indices:
         counts[index.space] += 1
 
-    n = sum(max(0, count-1) for count in counts.values())
+    n = 1
+    for count in counts.values():
+        n *= factorial(count)
 
-    return Fraction(1, 2**n)
+    return Fraction(1, n)
 
 
 def get_rank(rank=("SD", "", "")):
