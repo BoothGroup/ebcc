@@ -429,7 +429,11 @@ def symmetrise(subscript, array, symmetry=None, apply_factor=True):
     inds = [tuple(i for i, s in enumerate(subscript) if s == char) for char, symm in groups]
     for tup in itertools.product(*(permutations_with_signs(ind) for ind in inds)):
         perms, signs = zip(*tup)
-        perm = tuple(sum(perms, []))
+        perm = list(range(len(subscript)))
+        for inds_part, perms_part in zip(inds, perms):
+            for i, p in zip(inds_part, perms_part):
+                perm[i] = p
+        perm = tuple(perm)
         sign = np.prod(signs) if symmetry[perm[0]] == "-" else 1
         array_as = array_as + sign * array.transpose(perm)
 
