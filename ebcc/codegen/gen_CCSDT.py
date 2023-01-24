@@ -1,92 +1,25 @@
 """Script to generate equations for the CCSDT model.
 
-This uses wicked instead of qwick.
+This uses pdaggerq and qccg instead of qwick.
 """
 
-import os
-import sys
-import json
-import pybind11
-import qwick
-import drudge
-from qwick.index import Idx
-from qwick import codegen
 from ebcc.codegen import common
-from wicked_utils import symmetry, antisymmetrise, wicked_indices
+import qccg
+from qccg import index, tensor, read, write
+import pdaggerq
 
-from dummy_spark import SparkContext
-ctx = SparkContext()
-#from pyspark import SparkContext
-#ctx = SparkContext("local[8]")
-dr = drudge.Drudge(ctx)
+# Spin integration mode
+spin = "rhf"
 
-# Spin setting:
-spin = "rhf"  # {"ghf", "rhf", "uhf"}
+# pdaggerq setup
+pq = pdaggerq.pq_helper("fermi")
+pq.set_print_level(0)
 
-# Indices
-occs = i, j, k, l = [Idx(n, "occ") for n in range(4)]
-virs = a, b, c, d = [Idx(n, "vir") for n in range(4)]
-sizes = common.get_sizes(20, 50, 0, spin)
-
-# Printer
-printer = common.get_printer(spin)
+# Printer setup
 FunctionPrinter = common.get_function_printer(spin)
-
-# Get prefix and spin transformation function according to setting:
-transform_spin, prefix = common.get_transformation_function(spin)
-
-# Declare particle types:
-particles = common.particles
-
-# Timer:
 timer = common.Stopwatch()
 
-# Hack to get around stupid pybind11 namespace clash rules:
-script = """
-import json
-import wicked as w
-from wicked_utils import wicked_indices, compile
-
-w.reset_space()
-w.add_space("o", "fermion", "occupied", wicked_indices["o"])
-w.add_space("v", "fermion", "unoccupied", wicked_indices["v"])
-
-T = w.op("t1", ["v+ o"]) + w.op("t2", ["v+ v+ o o"]) + w.op("t3", ["v+ v+ v+ o o o"])
-H = w.utils.gen_op("f", 1, "ov", "ov") + w.utils.gen_op("v", 2, "ov", "ov")
-Hbar = w.bch_series(H, T, 6)
-
-wt = w.WickTheorem()
-
-expr = wt.contract(w.rational(1), Hbar, 0, 6)
-mbeq = expr.to_manybody_equation("res")
-
-strings = {key: tuple(compile(e) for e in val) for key, val in mbeq.items()}
-
-with open("tmp.json", "w") as f:
-    json.dump(strings, f)
-"""
-with open("tmp.py", "w") as f:
-    f.write(script)
-os.system("%s tmp.py" % sys.executable)
-with open("tmp.json", "r") as f:
-    strings = json.load(f)
-os.system("rm tmp.json")
-os.system("rm tmp.py")
-
-groups = {
-        "f": symmetry(1),
-        "v": symmetry(2),
-        "t1": symmetry(1),
-        "t2": symmetry(2),
-        "t3": symmetry(3),
-        "t1new": symmetry(1),
-        "t2new": symmetry(2),
-        "t3new": symmetry(3),
-}
-
-with common.FilePrinter("%sCCSDT" % prefix.upper()) as file_printer:
-    file_printer.python_file.write("from ebcc.util import symmetrise\n\n")
-
+with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
     # Get energy expression:
     with FunctionPrinter(
             file_printer,
@@ -96,18 +29,26 @@ with common.FilePrinter("%sCCSDT" % prefix.upper()) as file_printer:
             return_dict=False,
             timer=timer,
     ) as function_printer:
-        terms, indices = codegen.wicked_to_sympy(
-                strings["|"],
-                wicked_indices,
-                groups,
-                particles,
-                return_value="e_cc",
-        )
-        terms = transform_spin(terms, indices)
-        terms = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
-        terms = codegen.spin_integrate._flatten(terms)
-        terms = codegen.optimize(terms, sizes=sizes, optimize="exhaust", verify=True, interm_fmt="x{}")
-        function_printer.write_python(printer.doprint(terms)+"\n", comment="energy")
+        pq.clear()
+        pq.set_left_operators([["1"]])
+        pq.add_st_operator(1.0, ["f"], ["t1", "t2", "t3"])
+        pq.add_st_operator(1.0, ["v"], ["t1", "t2", "t3"])
+        pq.simplify()
+
+        terms = pq.fully_contracted_strings()
+        terms = [term for term in terms if set(term) != {'+1.00000000000000', 'f(i,i)'}]
+        terms = [term for term in terms if set(term) != {'-0.50000000000000', '<j,i||j,i>'}]
+
+        qccg.clear()
+        qccg.set_spin(spin)
+
+        expression = read.from_pdaggerq(terms, {})
+        expression = expression.expand_spin_orbitals()
+        output = tensor.Scalar("e_cc")
+
+        einsums = write.write_einsum(expression, output, indent=4)
+        einsums = "    e_cc = 0.0\n" + einsums
+        function_printer.write_python(einsums+"\n", comment="energy")
 
     # Get amplitudes function:
     with FunctionPrinter(
@@ -116,79 +57,113 @@ with common.FilePrinter("%sCCSDT" % prefix.upper()) as file_printer:
             ["f", "v", "nocc", "nvir", "t1", "t2", "t3"],
             ["t1new", "t2new", "t3new"],
             spin_cases={
-                "t1new": ["aa", "bb"],
-                "t2new": ["abab", "baba", "aaaa", "bbbb"],
+                "t1new": [x+x for x in ("a", "b")],
+                "t2new": [x+x for x in ("aa", "ab", "ba", "bb")],
                 "t3new": [x+x for x in ("aaa", "aab", "aba", "baa", "abb", "bab", "bba", "bbb")],
             },
             timer=timer,
     ) as function_printer:
         # T1 residuals:
-        terms, indices = codegen.wicked_to_sympy(
-                strings["o|v"],
-                wicked_indices,
-                groups,
-                particles,
-                return_value="t1new",
-        )
-        terms = antisymmetrise(terms, symmetry(1))
-        terms = transform_spin(
-                terms,
-                indices,
-                project_rhf=[(codegen.ALPHA, codegen.ALPHA)],
-        )
-        terms_t1 = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
+        pq.clear()
+        pq.set_left_operators([["e1(i,a)"]])
+        pq.add_st_operator(1.0, ["f"], ["t1", "t2", "t3"])
+        pq.add_st_operator(1.0, ["v"], ["t1", "t2", "t3"])
+        pq.simplify()
+        terms_t1 = pq.fully_contracted_strings()
 
         # T2 residuals:
-        terms, indices = codegen.wicked_to_sympy(
-                strings["oo|vv"],
-                wicked_indices,
-                groups,
-                particles,
-                return_value="t2new",
-        )
-        terms = antisymmetrise(terms, symmetry(2))
-        terms = transform_spin(
-                terms,
-                indices,
-                project_rhf=[(codegen.ALPHA, codegen.BETA, codegen.ALPHA, codegen.BETA)],
-        )
-        terms_t2 = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
-
-        terms = codegen.spin_integrate._flatten([terms_t1, terms_t2])
-        #terms = codegen.optimize(terms, sizes=sizes, optimize="exhaust", verify=False, interm_fmt="x{}")
-        function_printer.write_python(printer.doprint(terms)+"\n", comment="T1 T2 amplitudes")
+        pq.clear()
+        pq.set_left_operators([["e2(i,j,b,a)"]])
+        pq.add_st_operator(1.0, ["f"], ["t1", "t2", "t3"])
+        pq.add_st_operator(1.0, ["v"], ["t1", "t2", "t3"])
+        pq.simplify()
+        terms_t2 = pq.fully_contracted_strings()
 
         # T3 residuals:
-        terms, indices = codegen.wicked_to_sympy(
-                strings["ooo|vvv"],
-                wicked_indices,
-                groups,
-                particles,
-                return_value="t3new",
-        )
-        terms = antisymmetrise(terms, symmetry(3))
-        terms = transform_spin(
-                terms,
-                indices,
-                project_rhf=[
-                    #((ai, aj, ak) * 2)
-                    #for ai in (codegen.ALPHA, codegen.BETA)
-                    #for aj in (codegen.ALPHA, codegen.BETA)
-                    #for ak in (codegen.ALPHA, codegen.BETA)
-                    #if not (ai == aj == ak)
-                    (codegen.ALPHA, codegen.BETA, codegen.ALPHA, codegen.ALPHA, codegen.BETA, codegen.ALPHA),
-                    #(codegen.BETA, codegen.ALPHA, codegen.BETA, codegen.BETA, codegen.ALPHA, codegen.BETA),
-                ],
-        )
-        terms_t3 = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
+        pq.clear()
+        pq.set_left_operators([["e3(i,j,k,c,b,a)"]])
+        pq.add_st_operator(1.0, ["f"], ["t1", "t2", "t3"])
+        pq.add_st_operator(1.0, ["v"], ["t1", "t2", "t3"])
+        pq.simplify()
+        terms_t3 = pq.fully_contracted_strings()
 
-        terms = codegen.spin_integrate._flatten([terms_t3])
-        #terms = codegen.optimize(terms, sizes=sizes, optimize="greedy", drop_cutoff=2, verify=False, interm_fmt="x{}")
-        function_printer.write_python(printer.doprint(terms)+"\n", comment="T3 amplitudes")
+        for n, (terms, name) in enumerate([(terms_t1, "T1"), (terms_t2, "T2"), (terms_t3, "T3")]):
+            if spin == "ghf":
+                spins_list = [(None,) * (n+1)]
+            elif spin == "rhf":
+                spins_list = [(("a", "b") * (n+1))[:n+1]]
+            elif spin == "uhf":
+                spins_list = list(itertools.product("ab", n+1))
 
-        #for n in range(1, 4):
-        #    function_printer.write_python(
-        #            "    t%dnew = symmetrise(\"%s%s\", t%dnew, \"%s\", apply_factor=False)"
-        #            % (n, "i"*n, "a"*n, n, "-"*n*2),
-        #    )
-        #function_printer.write_python("")
+            for spins in spins_list:
+                qccg.clear()
+                qccg.set_spin(spin)
+
+                occ = index.index_factory(index.ExternalIndex, ["i", "j", "k"][:n+1], ["o", "o", "o"][:n+1], spins)
+                vir = index.index_factory(index.ExternalIndex, ["a", "b", "c"][:n+1], ["v", "v", "v"][:n+1], spins)
+
+                output = tensor.FermionicAmplitude("t%dnew" % (n+1), occ, vir)
+
+                if spin == "uhf":
+                    shape = ", ".join(["nocc[%d]" % "ab".index(s) for s in spins] + ["nvir[%d]" % "ab".index(s) for s in spins])
+                else:
+                    shape = ", ".join(["nocc"] * (n+1) + ["nvir"] * (n+1))
+
+                index_spins = {index.character: index.spin for index in occ+vir}
+                expression = read.from_pdaggerq(terms, index_spins=index_spins)
+                expression = expression.expand_spin_orbitals()
+
+                einsums = write.write_einsum(expression, output, indent=4)
+                einsums = "    t%dnew = np.zeros((%s), dtype=np.float64)\n" % (n+1, shape) + einsums
+                function_printer.write_python(einsums+"\n", comment="%s amplitudes" % name)
+
+        #for n, (terms, name) in enumerate([(terms_t1, "T1"), (terms_t2, "T2"), (terms_t3, "T3")]):
+        #    if spin == "ghf":
+        #        indices_list = [
+        #            (
+        #                *index.index_factory(index.ExternalIndex, list("ijk")[:n+1], ["o"]*(n+1), [None]*(n+1)),
+        #                *index.index_factory(index.ExternalIndex, list("abc")[:n+1], ["v"]*(n+1), [None]*(n+1)),
+        #            ),
+        #        ]
+        #        outputs = [tensor.FermionicAmplitude("t%dnew" % (n+1), indices_list[0][:n+1], indices_list[0][n+1:])]
+        #        shape_list = [", ".join(["nocc"]*(n+1) + ["nvir"]*(n+1))]
+
+        #    elif spin == "rhf":
+        #        indices_list = [
+        #            (
+        #                *index.index_factory(index.ExternalIndex, list("ijk")[:n+1], ["o"]*(n+1), list("aba")[:n+1]),
+        #                *index.index_factory(index.ExternalIndex, list("abc")[:n+1], ["v"]*(n+1), list("aba")[:n+1]),
+        #            ),
+        #        ]
+        #        outputs = [tensor.FermionicAmplitude("t%dnew" % (n+1), indices_list[0][:n+1], indices_list[0][n+1:])]
+        #        shape_list = [", ".join(["nocc"]*(n+1) + ["nvir"]*(n+1))]
+
+        #    elif spin == "uhf":
+        #        indices_list = [
+        #                (
+        #                    *index.index_factory(index.ExternalIndex, list("ijk")[:n+1], ["o"]*(n+1), "".join(spins)),
+        #                    *index.index_factory(index.ExternalIndex, list("abc")[:n+1], ["v"]*(n+1), "".join(spins)),
+        #                )
+        #                for spins in itertools.product("ab", n+1)
+        #        ]
+        #        outputs = [
+        #                tensor.FermionicAmplitude(
+        #                    "t%dnew_%s%s" % (n+1, "".join(spins), "".join(spins)),
+        #                    indices[:n+1], indices[n+1:],
+        #                )
+        #                for spins, indices in zip(itertools.product("ab", n+1), indices_list)
+        #        ]
+        #        shape_list = [
+        #                ", ".join(["nocc[%s]"]*(n+1) + ["nvir[%s]"]*(n+1)) % (*spins, *spins)
+        #                for spins in itertools.product("01", n+1)
+        #        ]
+
+        #    for indices, shape, output in zip(indices_list, shape_list, outputs):
+        #        qccg.clear()
+        #        index_spins = {index.character: index.spin for index in indices}
+        #        expression = read.from_pdaggerq(terms, index_spins=index_spins)
+        #        expression = expression.expand_spin_orbitals()
+
+        #        einsums = write.write_einsum(expression, output, indent=4)
+        #        einsums = "    t%dnew = np.zeros((%s), dtype=np.float64)\n" % (n+1, shape) + einsums
+        #        function_printer.write_python(einsums+"\n", comment="%s amplitudes" % name)

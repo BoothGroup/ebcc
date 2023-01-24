@@ -150,14 +150,15 @@ particles = {
 
 
 # Default printer
-def get_printer(spin):
-    reorder_axes = {
+def get_printer(spin, reorder_axes={}):
+    _reorder_axes = {
             # TODO remove:
             "l1new": (1, 0),
             "l2new": (2, 3, 0, 1),
             "lu11new": (0, 2, 1),
             "lu12new": (0, 1, 3, 2),
     }
+    reorder_axes.update(_reorder_axes)
 
     if spin == "rhf" or spin == "uhf":
         reorder_axes["v"] = (0, 2, 1, 3)
