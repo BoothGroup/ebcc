@@ -12,6 +12,7 @@ from ebcc import GEBCC, NullLogger
 # TODO from http://dx.doi.org/10.1021/acs.jpca.7b10892
 
 
+@pytest.mark.regression
 class GCCSDT_Tests(unittest.TestCase):
     """Test GCCSDT against regression.
     """
@@ -32,14 +33,13 @@ class GCCSDT_Tests(unittest.TestCase):
         ccsdt = GEBCC(
                 mf,
                 ansatz="CCSDT",
-                e_tol=1e-12,
                 log=NullLogger(),
         )
         ccsdt.kernel()
         e1 = ccsdt.e_tot
 
         ci = fci.FCI(mf)
-        ci.conv_tol = 1e-12
+        ci.conv_tol = 1e-10
         e2 = ci.kernel()[0]
 
         self.assertAlmostEqual(e1, e2, 6)
