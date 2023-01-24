@@ -44,7 +44,7 @@ class RCCSDT_Tests(unittest.TestCase):
                 log=NullLogger(),
         )
         gccsdt.options.e_tol = 1e-8
-        rccsdt.options.t_tol = 1e-6
+        gccsdt.options.t_tol = 1e-6
         gccsdt.kernel()
 
         cls.mf, cls.rccsdt, cls.gccsdt = mf, rccsdt, gccsdt

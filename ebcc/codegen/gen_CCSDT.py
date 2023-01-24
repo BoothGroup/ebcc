@@ -3,13 +3,14 @@
 This uses pdaggerq and qccg instead of qwick.
 """
 
+import itertools
 from ebcc.codegen import common
 import qccg
 from qccg import index, tensor, read, write
 import pdaggerq
 
 # Spin integration mode
-spin = "rhf"
+spin = "uhf"
 
 # pdaggerq setup
 pq = pdaggerq.pq_helper("fermi")
@@ -93,7 +94,7 @@ with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
             elif spin == "rhf":
                 spins_list = [(("a", "b") * (n+1))[:n+1]]
             elif spin == "uhf":
-                spins_list = list(itertools.product("ab", n+1))
+                spins_list = list(itertools.product("ab", repeat=n+1))
 
             for spins in spins_list:
                 qccg.clear()
@@ -102,11 +103,11 @@ with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
                 occ = index.index_factory(index.ExternalIndex, ["i", "j", "k"][:n+1], ["o", "o", "o"][:n+1], spins)
                 vir = index.index_factory(index.ExternalIndex, ["a", "b", "c"][:n+1], ["v", "v", "v"][:n+1], spins)
 
-                output = tensor.FermionicAmplitude("t%dnew" % (n+1), occ, vir)
-
                 if spin == "uhf":
+                    output = tensor.FermionicAmplitude("t%dnew_%s" % (n+1, "".join(spins+spins)), occ, vir)
                     shape = ", ".join(["nocc[%d]" % "ab".index(s) for s in spins] + ["nvir[%d]" % "ab".index(s) for s in spins])
                 else:
+                    output = tensor.FermionicAmplitude("t%dnew" % (n+1), occ, vir)
                     shape = ", ".join(["nocc"] * (n+1) + ["nvir"] * (n+1))
 
                 index_spins = {index.character: index.spin for index in occ+vir}
@@ -114,56 +115,5 @@ with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
                 expression = expression.expand_spin_orbitals()
 
                 einsums = write.write_einsum(expression, output, indent=4)
-                einsums = "    t%dnew = np.zeros((%s), dtype=np.float64)\n" % (n+1, shape) + einsums
+                einsums = "    %s = np.zeros((%s), dtype=np.float64)\n" % (output.symbol, shape) + einsums
                 function_printer.write_python(einsums+"\n", comment="%s amplitudes" % name)
-
-        #for n, (terms, name) in enumerate([(terms_t1, "T1"), (terms_t2, "T2"), (terms_t3, "T3")]):
-        #    if spin == "ghf":
-        #        indices_list = [
-        #            (
-        #                *index.index_factory(index.ExternalIndex, list("ijk")[:n+1], ["o"]*(n+1), [None]*(n+1)),
-        #                *index.index_factory(index.ExternalIndex, list("abc")[:n+1], ["v"]*(n+1), [None]*(n+1)),
-        #            ),
-        #        ]
-        #        outputs = [tensor.FermionicAmplitude("t%dnew" % (n+1), indices_list[0][:n+1], indices_list[0][n+1:])]
-        #        shape_list = [", ".join(["nocc"]*(n+1) + ["nvir"]*(n+1))]
-
-        #    elif spin == "rhf":
-        #        indices_list = [
-        #            (
-        #                *index.index_factory(index.ExternalIndex, list("ijk")[:n+1], ["o"]*(n+1), list("aba")[:n+1]),
-        #                *index.index_factory(index.ExternalIndex, list("abc")[:n+1], ["v"]*(n+1), list("aba")[:n+1]),
-        #            ),
-        #        ]
-        #        outputs = [tensor.FermionicAmplitude("t%dnew" % (n+1), indices_list[0][:n+1], indices_list[0][n+1:])]
-        #        shape_list = [", ".join(["nocc"]*(n+1) + ["nvir"]*(n+1))]
-
-        #    elif spin == "uhf":
-        #        indices_list = [
-        #                (
-        #                    *index.index_factory(index.ExternalIndex, list("ijk")[:n+1], ["o"]*(n+1), "".join(spins)),
-        #                    *index.index_factory(index.ExternalIndex, list("abc")[:n+1], ["v"]*(n+1), "".join(spins)),
-        #                )
-        #                for spins in itertools.product("ab", n+1)
-        #        ]
-        #        outputs = [
-        #                tensor.FermionicAmplitude(
-        #                    "t%dnew_%s%s" % (n+1, "".join(spins), "".join(spins)),
-        #                    indices[:n+1], indices[n+1:],
-        #                )
-        #                for spins, indices in zip(itertools.product("ab", n+1), indices_list)
-        #        ]
-        #        shape_list = [
-        #                ", ".join(["nocc[%s]"]*(n+1) + ["nvir[%s]"]*(n+1)) % (*spins, *spins)
-        #                for spins in itertools.product("01", n+1)
-        #        ]
-
-        #    for indices, shape, output in zip(indices_list, shape_list, outputs):
-        #        qccg.clear()
-        #        index_spins = {index.character: index.spin for index in indices}
-        #        expression = read.from_pdaggerq(terms, index_spins=index_spins)
-        #        expression = expression.expand_spin_orbitals()
-
-        #        einsums = write.write_einsum(expression, output, indent=4)
-        #        einsums = "    t%dnew = np.zeros((%s), dtype=np.float64)\n" % (n+1, shape) + einsums
-        #        function_printer.write_python(einsums+"\n", comment="%s amplitudes" % name)
