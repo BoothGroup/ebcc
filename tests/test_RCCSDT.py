@@ -1,11 +1,13 @@
 """Tests for the RCCSDT model.
 """
 
+import itertools
 import unittest
 
 import numpy as np
 import pytest
 from pyscf import gto, lib, scf, fci
+import scipy.linalg
 
 from ebcc import REBCC, GEBCC, NullLogger
 
@@ -34,8 +36,8 @@ class RCCSDT_Tests(unittest.TestCase):
                 ansatz="CCSDT",
                 log=NullLogger(),
         )
-        rccsdt.options.e_tol = 1e-8
-        rccsdt.options.t_tol = 1e-6
+        rccsdt.options.e_tol = 1e-10
+        rccsdt.options.t_tol = 1e-8
         rccsdt.kernel()
 
         gccsdt = GEBCC(
@@ -43,20 +45,31 @@ class RCCSDT_Tests(unittest.TestCase):
                 ansatz="CCSDT",
                 log=NullLogger(),
         )
-        gccsdt.options.e_tol = 1e-8
-        gccsdt.options.t_tol = 1e-6
+        gccsdt.options.e_tol = 1e-10
+        gccsdt.options.t_tol = 1e-8
         gccsdt.kernel()
 
+        osort = list(itertools.chain(*zip(range(rccsdt.nocc), range(rccsdt.nocc, 2*rccsdt.nocc))))
+        vsort = list(itertools.chain(*zip(range(rccsdt.nvir), range(rccsdt.nvir, 2*rccsdt.nvir))))
+        fsort = list(itertools.chain(*zip(range(rccsdt.nmo), range(rccsdt.nmo, 2*rccsdt.nmo))))
+
         cls.mf, cls.rccsdt, cls.gccsdt = mf, rccsdt, gccsdt
+        cls.osort, cls.vsort, cls.fsort = osort, vsort, fsort
 
     @classmethod
     def tearDownClass(cls):
         del cls.mf, cls.rccsdt, cls.gccsdt
+        del cls.osort, cls.vsort, cls.fsort
 
     def test_energy(self):
         a = self.rccsdt.e_tot
         b = self.gccsdt.e_tot
         self.assertAlmostEqual(a, b, 7)
+
+    def test_t1(self):
+        a = scipy.linalg.block_diag(self.rccsdt.t1, self.rccsdt.t1)[self.osort][:, self.vsort]
+        b = self.gccsdt.t1
+        np.testing.assert_almost_equal(a, b, 6)
 
 
 if __name__ == "__main__":

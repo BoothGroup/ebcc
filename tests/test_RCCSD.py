@@ -58,7 +58,7 @@ class RCCSD_Tests(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         del cls.mf, cls.ccsd, cls.eris, cls.data
-        del cls.osort, cls.vsort
+        del cls.osort, cls.vsort, cls.fsort
 
     def test_energy(self):
         a = self.data[True]["e_corr"]
