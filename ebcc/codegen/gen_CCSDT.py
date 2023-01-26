@@ -10,7 +10,7 @@ from qccg import index, tensor, read, write
 import pdaggerq
 
 # Spin integration mode
-spin = "uhf"
+spin = "rhf"
 
 # pdaggerq setup
 pq = pdaggerq.pq_helper("fermi")
@@ -47,8 +47,14 @@ with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
         expression = expression.expand_spin_orbitals()
         output = tensor.Scalar("e_cc")
 
-        einsums = write.write_einsum(expression, output, indent=4)
-        einsums = "    e_cc = 0.0\n" + einsums
+        expressions = [expression]
+        outputs = [output]
+        if spin == "rhf":
+            expressions, outputs = qccg.optimisation.optimise_expression(
+                    expressions,
+                    outputs,
+            )
+        einsums = write.write_opt_einsums(expressions, outputs, (output,), indent=4)
         function_printer.write_python(einsums+"\n", comment="energy")
 
     # Get amplitudes function:
@@ -88,11 +94,13 @@ with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
         pq.simplify()
         terms_t3 = pq.fully_contracted_strings()
 
+        expressions = []
+        outputs = []
         for n, (terms, name) in enumerate([(terms_t1, "T1"), (terms_t2, "T2"), (terms_t3, "T3")]):
             if spin == "ghf":
                 spins_list = [(None,) * (n+1)]
             elif spin == "rhf":
-                spins_list = [(("a", "b") * (n+1))[:n+1]]
+                spins_list = [(["a", "b"] * (n+1))[:n+1]]
             elif spin == "uhf":
                 spins_list = list(itertools.product("ab", repeat=n+1))
 
@@ -100,20 +108,34 @@ with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
                 qccg.clear()
                 qccg.set_spin(spin)
 
-                occ = index.index_factory(index.ExternalIndex, ["i", "j", "k"][:n+1], ["o", "o", "o"][:n+1], spins)
-                vir = index.index_factory(index.ExternalIndex, ["a", "b", "c"][:n+1], ["v", "v", "v"][:n+1], spins)
-
-                if spin == "uhf":
+                if spin == "rhf":
+                    occ = index.index_factory(index.ExternalIndex, ["i", "j", "k"][:n+1], ["o", "o", "o"][:n+1], ["r", "r", "r"][:n+1])
+                    vir = index.index_factory(index.ExternalIndex, ["a", "b", "c"][:n+1], ["v", "v", "v"][:n+1], ["r", "r", "r"][:n+1])
+                    output = tensor.FermionicAmplitude("t%dnew" % (n+1), occ, vir)
+                    shape = ", ".join(["nocc"] * (n+1) + ["nvir"] * (n+1))
+                elif spin == "uhf":
+                    occ = index.index_factory(index.ExternalIndex, ["i", "j", "k"][:n+1], ["o", "o", "o"][:n+1], spins)
+                    vir = index.index_factory(index.ExternalIndex, ["a", "b", "c"][:n+1], ["v", "v", "v"][:n+1], spins)
                     output = tensor.FermionicAmplitude("t%dnew_%s" % (n+1, "".join(spins+spins)), occ, vir)
                     shape = ", ".join(["nocc[%d]" % "ab".index(s) for s in spins] + ["nvir[%d]" % "ab".index(s) for s in spins])
-                else:
+                elif spin == "ghf":
+                    occ = index.index_factory(index.ExternalIndex, ["i", "j", "k"][:n+1], ["o", "o", "o"][:n+1], [None, None, None][:n+1])
+                    vir = index.index_factory(index.ExternalIndex, ["a", "b", "c"][:n+1], ["v", "v", "v"][:n+1], [None, None, None][:n+1])
                     output = tensor.FermionicAmplitude("t%dnew" % (n+1), occ, vir)
                     shape = ", ".join(["nocc"] * (n+1) + ["nvir"] * (n+1))
 
-                index_spins = {index.character: index.spin for index in occ+vir}
+                index_spins = {index.character: spin for index, spin in zip(occ+vir, spins+spins)}
                 expression = read.from_pdaggerq(terms, index_spins=index_spins)
                 expression = expression.expand_spin_orbitals()
 
-                einsums = write.write_einsum(expression, output, indent=4)
-                einsums = "    %s = np.zeros((%s), dtype=np.float64)\n" % (output.symbol, shape) + einsums
-                function_printer.write_python(einsums+"\n", comment="%s amplitudes" % name)
+                expressions.append(expression)
+                outputs.append(output)
+
+        final_outputs = outputs
+        if spin == "rhf":
+            expressions, outputs = qccg.optimisation.optimise_expression(
+                    expressions,
+                    outputs,
+            )
+        einsums = write.write_opt_einsums(expressions, outputs, final_outputs, indent=4)
+        function_printer.write_python(einsums+"\n", comment="T amplitudes")
