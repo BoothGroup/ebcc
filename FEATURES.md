@@ -3,9 +3,9 @@ The following table summarises the available methods and routines for the ansatz
 | Ansatz      |   T   |   Λ   |  IP   |  EA   |  EE   |  DM1  |  DM2  |  BDM  |
 | :---------: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | CCSD        |  RUG  |  RUG  |  UG   |  UG   |  UG   |  RUG  |  RUG  |   -   |
-| CCSDT       |  rug  |       |       |       |       |       |       |   -   |
+| CCSDT       |  Rug  |       |       |       |       |       |       |   -   |
 | CC2         |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |   -   |
-| CC3         |  rug  |       |       |       |       |       |       |   -   |
+| CC3         |  Rug  |       |       |       |       |       |       |   -   |
 | CCSD-S-1-1  |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |  RUG  |
 | CCSD-SD-1-1 |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |  RUG  |
 | CCSD-SD-1-2 |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |  RUG  |
