@@ -5,18 +5,15 @@ from ebcc.util import pack_2e, einsum, Namespace
 
 def energy(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, t3=None, **kwargs):
     # energy
-    x0 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
-    x0 += einsum("ijab->jiba", t2)
-    x0 += einsum("ia,jb->ijab", t1, t1) * 2
-    e_cc = 0
-    e_cc += einsum("ijab,ijab->", v.oovv, x0) * 0.25
-    del x0
-    e_cc += einsum("ia,ia->", f.ov, t1)
+    e_cc = 0.0
+    e_cc += np.einsum("ia,ia->", f.ov, t1)
+    e_cc += np.einsum("ijab,ijab->", t2, v.oovv) * 0.25
+    e_cc += np.einsum("ia,jb,ijab->", t1, t1, v.oovv) * 0.5
 
     return e_cc
 
 def update_amps(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, t3=None, **kwargs):
-    # T amplitudes
+    # T1 amplitudes
     t1new = np.zeros((nocc, nvir), dtype=np.float64)
     t1new += np.einsum("ia->ia", f.ov)
     t1new += np.einsum("ij,ja->ia", f.oo, t1) * -1.0
@@ -33,6 +30,8 @@ def update_amps(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, t3=None,
     t1new += np.einsum("ja,ikbc,jkbc->ia", t1, t2, v.oovv) * -0.5
     t1new += np.einsum("jb,ikac,jkbc->ia", t1, t2, v.oovv)
     t1new += np.einsum("ib,jc,ka,jkbc->ia", t1, t1, t1, v.oovv)
+
+    # T2 amplitudes
     t2new = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
     t2new += np.einsum("ijab->ijab", v.oovv)
     t2new += np.einsum("ik,jkab->ijab", f.oo, t2)
@@ -107,6 +106,8 @@ def update_amps(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, t3=None,
     t2new += np.einsum("kc,la,ijbd,klcd->ijab", t1, t1, t2, v.oovv)
     t2new += np.einsum("kc,lb,ijad,klcd->ijab", t1, t1, t2, v.oovv) * -1.0
     t2new += np.einsum("ic,jd,ka,lb,klcd->ijab", t1, t1, t1, t1, v.oovv)
+
+    # T3 amplitudes
     t3new = np.zeros((nocc, nocc, nocc, nvir, nvir, nvir), dtype=np.float64)
     t3new += np.einsum("il,jklabc->ijkabc", f.oo, t3) * -1.0
     t3new += np.einsum("jl,iklabc->ijkabc", f.oo, t3)
