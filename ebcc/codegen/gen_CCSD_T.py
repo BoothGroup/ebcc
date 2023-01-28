@@ -12,7 +12,7 @@ from qccg import index, tensor, read, write
 import pdaggerq
 
 # Spin integration mode
-spin = "uhf"
+spin = "ghf"
 
 # pdaggerq setup
 pq = pdaggerq.pq_helper("fermi")
