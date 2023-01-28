@@ -54,7 +54,7 @@ with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
                     expressions,
                     outputs,
             )
-        einsums = write.write_opt_einsums(expressions, outputs, (output,), indent=4)
+        einsums = write.write_opt_einsums(expressions, outputs, (output,), indent=4, einsum_function="einsum")
         function_printer.write_python(einsums+"\n", comment="energy")
 
     # Get amplitudes function:
@@ -137,5 +137,5 @@ with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
                     expressions,
                     outputs,
             )
-        einsums = write.write_opt_einsums(expressions, outputs, final_outputs, indent=4)
+        einsums = write.write_opt_einsums(expressions, outputs, final_outputs, indent=4, einsum_function="einsum")
         function_printer.write_python(einsums+"\n", comment="T amplitudes")
