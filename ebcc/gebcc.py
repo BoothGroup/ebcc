@@ -278,7 +278,7 @@ class GEBCC(rebcc.REBCC):
             else:
                 amplitudes["t%d" % n] = np.zeros((self.nocc,) * n + (self.nvir,) * n)
 
-        if not (self.rank[1] == self.rank[2] == ""):
+        if self.boson_excitations:
             # Only true for real-valued couplings:
             h = self.g
             H = self.G

@@ -336,23 +336,23 @@ class REBCC(AbstractEBCC):
         self.mf = self._convert_mf(mf)
         self._mo_coeff = mo_coeff
         self._mo_occ = mo_occ
-        self.rank = (
-            ansatz,
-            boson_excitations,
-            fermion_coupling_rank,
-            boson_coupling_rank,
-        )
+
+        # Ansatz:
+        self.ansatz = ansatz
+        self.boson_excitations = boson_excitations
+        self.fermion_coupling_rank = fermion_coupling_rank
+        self.boson_coupling_rank = boson_coupling_rank
         self._eqns = self._get_eqns()
 
         # Boson parameters:
-        if bool(self.rank[2]) != bool(self.rank[3]):
+        if bool(self.fermion_coupling_rank) != bool(self.boson_coupling_rank):
             raise ValueError(
                 "Fermionic and bosonic coupling ranks must both be zero, or both non-zero."
             )
         self.omega = omega
         self.bare_g = g
         self.bare_G = G
-        if self.rank[1] != "":
+        if self.boson_excitations != "":
             self.g = self.get_g(g)
             self.G = self.get_mean_field_G()
             if self.options.shift:
@@ -382,10 +382,10 @@ class REBCC(AbstractEBCC):
         self.log.info("%s", "*" * len(self.name))
         self.log.debug("")
         self.log.debug("Options:")
-        self.log.info(" > Fermion ansatz:         %s", self.rank[0])
-        self.log.info(" > Boson excitations:      %s", self.rank[1] if len(self.rank[1]) else None)
-        self.log.info(" > Fermion coupling rank:  %s", self.rank[2])
-        self.log.info(" > Boson coupling rank:    %s", self.rank[3])
+        self.log.info(" > Fermion ansatz:         %s", self.ansatz)
+        self.log.info(" > Boson excitations:      %s", self.boson_excitations)
+        self.log.info(" > Fermion coupling rank:  %s", self.fermion_coupling_rank)
+        self.log.info(" > Boson coupling rank:    %s", self.boson_coupling_rank)
         self.log.info(" > nmo:   %d", self.nmo)
         self.log.info(" > nocc:  %s", self.nocc)
         self.log.info(" > nvir:  %s", self.nvir)
@@ -610,7 +610,7 @@ class REBCC(AbstractEBCC):
         func = getattr(self._eqns, name, None)
 
         if func is None:
-            raise util.ModelNotImplemented("%s for rank = %s" % (name, self.rank))
+            raise util.ModelNotImplemented("%s for rank = %s" % (name, self.name))
 
         kwargs = self._pack_codegen_kwargs(*dicts, eris=eris)
 
@@ -646,7 +646,7 @@ class REBCC(AbstractEBCC):
             else:
                 amplitudes["t%d" % n] = np.zeros((self.nocc,) * n + (self.nvir,) * n)
 
-        if not (self.rank[1] == self.rank[2] == ""):
+        if self.boson_excitations:
             # Only true for real-valued couplings:
             h = self.g
             H = self.G
@@ -1935,17 +1935,6 @@ class REBCC(AbstractEBCC):
             return 0.0
 
     @property
-    def ansatz(self):
-        """Return a string representation of the fermionic ansatz.
-
-        Returns
-        -------
-        ansatz : str
-            String representation of the fermion ansatz.
-        """
-        return self.rank[0]
-
-    @property
     def ansatz_is_perturbative(self):
         """Return a boolean indicating whether the ansatz includes a
         perturbative correction e.g. CCSD(T).
@@ -1957,42 +1946,6 @@ class REBCC(AbstractEBCC):
             corrected.
         """
         return "(" in self.ansatz and ")" in self.ansatz
-
-    @property
-    def boson_excitations(self):
-        """Return a string representation of the bosonic excitations
-        in the ansatz.
-
-        Returns
-        -------
-        boson_excitations : str
-            String representation of the boson excitations.
-        """
-        return self.rank[1]
-
-    @property
-    def fermion_coupling_rank(self):
-        """Return the fermionic rank of the fermion-boson coupling
-        in the ansatz.
-
-        Returns
-        -------
-        fermion_coupling_rank : int
-            Integer representation of the fermion coupling rank.
-        """
-        return self.rank[2]
-
-    @property
-    def boson_coupling_rank(self):
-        """Return the bosonic rank of the fermion-boson coupling
-        in the ansatz.
-
-        Returns
-        -------
-        boson_coupling_rank : int
-            Integer representation of the boson coupling rank.
-        """
-        return self.rank[3]
 
     @property
     def name(self):
@@ -2028,7 +1981,7 @@ class REBCC(AbstractEBCC):
         standard_notation = {"S": 1, "D": 2, "T": 3, "Q": 4}
         partial_notation = {"2": [1, 2], "3": [1, 2, 3], "4": [1, 2, 3, 4]}
 
-        for i, op in enumerate(self.rank[:2]):
+        for i, op in enumerate([self.ansatz, self.boson_excitations]):
             # Remove any perturbative corrections
             while "(" in op:
                 start = op.index("(")
@@ -2053,7 +2006,7 @@ class REBCC(AbstractEBCC):
                     rank_entry += partial_notation[char]
             rank.append(tuple(rank_entry))
 
-        for op in self.rank[2:]:
+        for op in [self.fermion_coupling_rank, self.boson_coupling_rank]:
             rank.append(tuple(range(1, op + 1)))
 
         return tuple(rank)

@@ -217,7 +217,7 @@ class UEBCC(rebcc.REBCC):
                     setattr(tn, comb, amp)
                 amplitudes["t%d" % n] = tn
 
-        if not (self.rank[1] == self.rank[2] == ""):
+        if self.boson_excitations:
             # Only tue for real-valued couplings:
             h = self.g
             H = self.G
