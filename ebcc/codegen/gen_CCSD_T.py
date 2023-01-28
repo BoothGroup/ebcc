@@ -248,4 +248,5 @@ with common.FilePrinter("%sCCSD_T" % spin[0].upper()) as file_printer:
         # FIXME messy
         if spin == "uhf":
             einsums = einsums.replace("t3.", "t3_")
+            einsums += "\n    e_pert /= 2"  # FIXME where did I lose this?
         function_printer.write_python(einsums+"\n", comment="energy")
