@@ -5,22 +5,10 @@ from ebcc.util import pack_2e, einsum, direct_sum, Namespace
 
 def energy(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, **kwargs):
     # energy
-    x0 = 0
-    x0 += np.einsum("ijab,ijab->", t2, v.oovv)
     e_cc = 0
-    e_cc += np.einsum("->", x0) * 0.25
-    del x0
-    x1 = np.zeros((nocc, nvir), dtype=np.float64)
-    x1 += np.einsum("ia,jiba->ia", t1, v.oovv)
-    x2 = np.zeros((nocc, nvir), dtype=np.float64)
-    x2 += np.einsum("ia->ia", f.ov) * 2.0
-    x2 += np.einsum("ia->ia", x1)
-    del x1
-    x3 = 0
-    x3 += np.einsum("ia,ia->", t1, x2)
-    del x2
-    e_cc += np.einsum("->", x3) * 0.5
-    del x3
+    e_cc += np.einsum("ia,ia->", f.ov, t1)
+    e_cc += np.einsum("ijab,ijab->", t2, v.oovv) * 0.25
+    e_cc += np.einsum("ia,jb,ijab->", t1, t1, v.oovv) * 0.5
 
     return e_cc
 
