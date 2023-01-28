@@ -15,6 +15,8 @@ class GCC3_Tests(unittest.TestCase):
     """Test GCC3 against regression.
     """
 
+    # TODO proper tests against some other code
+
     pass
 
 
