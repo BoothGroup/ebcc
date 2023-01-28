@@ -53,10 +53,13 @@ with common.FilePrinter("%sCCSD_T" % spin[0].upper()) as file_printer:
         expression = expression.expand_spin_orbitals()
         output = tensor.Scalar("e_cc")
 
-        expressions, outputs = qccg.optimisation.optimise_expression(
-                expression,
-                output,
-        )
+        expressions = [expression]
+        outputs = [output]
+        if spin == "rhf":
+            expressions, outputs = qccg.optimisation.optimise_expression(
+                    expression,
+                    output,
+            )
         einsums = write.write_opt_einsums(expressions, outputs, (output,), indent=4)
         function_printer.write_python(einsums+"\n", comment="energy")
 
