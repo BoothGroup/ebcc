@@ -5,19 +5,19 @@ from ebcc.util import pack_2e, einsum, direct_sum, Namespace
 
 def energy(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, **kwargs):
     # energy
-    e_cc = 0.0
-    e_cc += einsum("ia,ia->", f.aa.ov, t1.aa)
-    e_cc += einsum("ia,ia->", f.bb.ov, t1.bb)
-    e_cc += einsum("ijab,iajb->", t2.abab, v.aabb.ovov)
-    e_cc += einsum("ijab,iajb->", t2.aaaa, v.aaaa.ovov) * 0.5
-    e_cc += einsum("ijab,iajb->", t2.bbbb, v.bbbb.ovov) * 0.5
-    e_cc += einsum("ijab,ibja->", t2.aaaa, v.aaaa.ovov) * -0.5
-    e_cc += einsum("ijab,ibja->", t2.bbbb, v.bbbb.ovov) * -0.5
-    e_cc += einsum("ia,jb,iajb->", t1.aa, t1.aa, v.aaaa.ovov) * 0.5
-    e_cc += einsum("ia,jb,ibja->", t1.aa, t1.aa, v.aaaa.ovov) * -0.5
-    e_cc += einsum("ia,jb,iajb->", t1.aa, t1.bb, v.aabb.ovov)
-    e_cc += einsum("ia,jb,iajb->", t1.bb, t1.bb, v.bbbb.ovov) * 0.5
-    e_cc += einsum("ia,jb,ibja->", t1.bb, t1.bb, v.bbbb.ovov) * -0.5
+    e_cc = 0
+    e_cc += np.einsum("ia,ia->", f.aa.ov, t1.aa)
+    e_cc += np.einsum("ia,ia->", f.bb.ov, t1.bb)
+    e_cc += np.einsum("ijab,iajb->", t2.abab, v.aabb.ovov)
+    e_cc += np.einsum("ijab,iajb->", t2.aaaa, v.aaaa.ovov) * 0.5
+    e_cc += np.einsum("ijab,iajb->", t2.bbbb, v.bbbb.ovov) * 0.5
+    e_cc += np.einsum("ijab,ibja->", t2.aaaa, v.aaaa.ovov) * -0.5
+    e_cc += np.einsum("ijab,ibja->", t2.bbbb, v.bbbb.ovov) * -0.5
+    e_cc += np.einsum("ia,jb,iajb->", t1.aa, t1.aa, v.aaaa.ovov) * 0.5
+    e_cc += np.einsum("ia,jb,ibja->", t1.aa, t1.aa, v.aaaa.ovov) * -0.5
+    e_cc += np.einsum("ia,jb,iajb->", t1.aa, t1.bb, v.aabb.ovov)
+    e_cc += np.einsum("ia,jb,iajb->", t1.bb, t1.bb, v.bbbb.ovov) * 0.5
+    e_cc += np.einsum("ia,jb,ibja->", t1.bb, t1.bb, v.bbbb.ovov) * -0.5
 
     return e_cc
 
@@ -907,30 +907,30 @@ def energy_perturbative(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, 
 
     # energy
     e_pert = 0
-    e_pert += einsum("ai,jbkc,ijkabc->", l1.aa, v.bbaa.ovov, t3.abaaba)
-    e_pert += einsum("ai,jbkc,ikjacb->", l1.aa, v.aabb.ovov, t3.abaaba)
-    e_pert += einsum("ai,jbkc,ijkabc->", l1.aa, v.bbbb.ovov, t3.abbabb)
-    e_pert += einsum("ai,jbkc,ijkabc->", l1.aa, v.aaaa.ovov, t3.aaaaaa) * 3.0
-    e_pert += einsum("ai,jbkc,jikbac->", l1.bb, v.aaaa.ovov, t3.abaaba)
-    e_pert += einsum("ai,jbkc,ijkabc->", l1.bb, v.aabb.ovov, t3.babbab)
-    e_pert += einsum("ai,jbkc,ijkabc->", l1.bb, v.bbaa.ovov, t3.bbabba)
-    e_pert += einsum("ai,jbkc,ijkabc->", l1.bb, v.bbbb.ovov, t3.bbbbbb) * 3.0
-    e_pert += einsum("abij,iklc,kjlabc->", l2.abab, v.aaaa.ooov, t3.abaaba) * -2.0
-    e_pert += einsum("abij,jklc,iklabc->", l2.abab, v.bbaa.ooov, t3.abaaba) * -2.0
-    e_pert += einsum("abij,kcad,ijkcbd->", l2.abab, v.aaaa.ovvv, t3.abaaba) * -2.0
-    e_pert += einsum("abij,kcbd,ijkadc->", l2.abab, v.aabb.ovvv, t3.abaaba) * 2.0
-    e_pert += einsum("abij,iklc,jklbac->", l2.abab, v.aabb.ooov, t3.babbab) * -2.0
-    e_pert += einsum("abij,jklc,iklabc->", l2.abab, v.bbbb.ooov, t3.abbabb) * -2.0
-    e_pert += einsum("abij,kcad,ijkdbc->", l2.abab, v.bbaa.ovvv, t3.abbabb) * 2.0
-    e_pert += einsum("abij,kcbd,ijkacd->", l2.abab, v.bbbb.ovvv, t3.abbabb) * -2.0
-    e_pert += einsum("abij,jklc,ilkacb->", l2.aaaa, v.aabb.ooov, t3.abaaba) * -2.0
-    e_pert += einsum("abij,kcbd,ikjacd->", l2.aaaa, v.bbaa.ovvv, t3.abaaba) * 2.0
-    e_pert += einsum("abij,jklc,iklabc->", l2.aaaa, v.aaaa.ooov, t3.aaaaaa) * -6.0
-    e_pert += einsum("abij,jklc,iklabc->", l2.bbbb, v.bbaa.ooov, t3.bbabba) * -2.0
-    e_pert += einsum("abij,jklc,iklabc->", l2.bbbb, v.bbbb.ooov, t3.bbbbbb) * -6.0
-    e_pert += einsum("abij,kcbd,ijkacd->", l2.aaaa, v.aaaa.ovvv, t3.aaaaaa) * -6.0
-    e_pert += einsum("abij,kcbd,ijkacd->", l2.bbbb, v.bbbb.ovvv, t3.bbbbbb) * -6.0
-    e_pert += einsum("abij,kcbd,ijkadc->", l2.bbbb, v.aabb.ovvv, t3.bbabba) * 2.0
+    e_pert += einsum("ai,jbkc,ijkabc->", l1.aa, v.bbaa.ovov, t3_abaaba)
+    e_pert += einsum("ai,jbkc,ikjacb->", l1.aa, v.aabb.ovov, t3_abaaba)
+    e_pert += einsum("ai,jbkc,ijkabc->", l1.aa, v.bbbb.ovov, t3_abbabb)
+    e_pert += einsum("ai,jbkc,ijkabc->", l1.aa, v.aaaa.ovov, t3_aaaaaa) * 3.0
+    e_pert += einsum("ai,jbkc,jikbac->", l1.bb, v.aaaa.ovov, t3_abaaba)
+    e_pert += einsum("ai,jbkc,ijkabc->", l1.bb, v.aabb.ovov, t3_babbab)
+    e_pert += einsum("ai,jbkc,ijkabc->", l1.bb, v.bbaa.ovov, t3_bbabba)
+    e_pert += einsum("ai,jbkc,ijkabc->", l1.bb, v.bbbb.ovov, t3_bbbbbb) * 3.0
+    e_pert += einsum("abij,iklc,kjlabc->", l2.abab, v.aaaa.ooov, t3_abaaba) * -2.0
+    e_pert += einsum("abij,jklc,iklabc->", l2.abab, v.bbaa.ooov, t3_abaaba) * -2.0
+    e_pert += einsum("abij,kcad,ijkcbd->", l2.abab, v.aaaa.ovvv, t3_abaaba) * -2.0
+    e_pert += einsum("abij,kcbd,ijkadc->", l2.abab, v.aabb.ovvv, t3_abaaba) * 2.0
+    e_pert += einsum("abij,iklc,jklbac->", l2.abab, v.aabb.ooov, t3_babbab) * -2.0
+    e_pert += einsum("abij,jklc,iklabc->", l2.abab, v.bbbb.ooov, t3_abbabb) * -2.0
+    e_pert += einsum("abij,kcad,ijkdbc->", l2.abab, v.bbaa.ovvv, t3_abbabb) * 2.0
+    e_pert += einsum("abij,kcbd,ijkacd->", l2.abab, v.bbbb.ovvv, t3_abbabb) * -2.0
+    e_pert += einsum("abij,jklc,ilkacb->", l2.aaaa, v.aabb.ooov, t3_abaaba) * -2.0
+    e_pert += einsum("abij,kcbd,ikjacd->", l2.aaaa, v.bbaa.ovvv, t3_abaaba) * 2.0
+    e_pert += einsum("abij,jklc,iklabc->", l2.aaaa, v.aaaa.ooov, t3_aaaaaa) * -6.0
+    e_pert += einsum("abij,jklc,iklabc->", l2.bbbb, v.bbaa.ooov, t3_bbabba) * -2.0
+    e_pert += einsum("abij,jklc,iklabc->", l2.bbbb, v.bbbb.ooov, t3_bbbbbb) * -6.0
+    e_pert += einsum("abij,kcbd,ijkacd->", l2.aaaa, v.aaaa.ovvv, t3_aaaaaa) * -6.0
+    e_pert += einsum("abij,kcbd,ijkacd->", l2.bbbb, v.bbbb.ovvv, t3_bbbbbb) * -6.0
+    e_pert += einsum("abij,kcbd,ijkadc->", l2.bbbb, v.aabb.ovvv, t3_bbabba) * 2.0
 
     return e_pert
 
