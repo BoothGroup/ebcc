@@ -202,8 +202,8 @@ with common.FilePrinter("%sCCSD_T" % spin[0].upper()) as file_printer:
         # FIXME messy
         if spin != "uhf":
             lines = [
-                    "    e_ia = lib.direct_sum(\"i-a->ia\", np.diag(f.oo), np.diag(f.vv))",
-                    "    e_ijkabc = lib.direct_sum(\"ia+jb+kc->ijkabc\", e_ia, e_ia, e_ia)",
+                    "    e_ia = direct_sum(\"i-a->ia\", np.diag(f.oo), np.diag(f.vv))",
+                    "    e_ijkabc = direct_sum(\"ia+jb+kc->ijkabc\", e_ia, e_ia, e_ia)",
                     "    t3 /= e_ijkabc",
                     "    del e_ijkabc",
             ]
@@ -211,11 +211,11 @@ with common.FilePrinter("%sCCSD_T" % spin[0].upper()) as file_printer:
             lines = []
             for spins in spins_list:
                 lines += [
-                        "    e_{spins}{spins}_ijkabc = lib.direct_sum(".format(spins="".join(spins)),
+                        "    e_{spins}{spins}_ijkabc = direct_sum(".format(spins="".join(spins)),
                         "            \"ia+jb+kc->ijkabc\",",
-                        "            lib.direct_sum(\"i-a->ia\", np.diag(f.{s}{s}.oo), np.diag(f.{s}{s}.vv)),".format(s=spins[0]),
-                        "            lib.direct_sum(\"i-a->ia\", np.diag(f.{s}{s}.oo), np.diag(f.{s}{s}.vv)),".format(s=spins[1]),
-                        "            lib.direct_sum(\"i-a->ia\", np.diag(f.{s}{s}.oo), np.diag(f.{s}{s}.vv)),".format(s=spins[2]),
+                        "            direct_sum(\"i-a->ia\", np.diag(f.{s}{s}.oo), np.diag(f.{s}{s}.vv)),".format(s=spins[0]),
+                        "            direct_sum(\"i-a->ia\", np.diag(f.{s}{s}.oo), np.diag(f.{s}{s}.vv)),".format(s=spins[1]),
+                        "            direct_sum(\"i-a->ia\", np.diag(f.{s}{s}.oo), np.diag(f.{s}{s}.vv)),".format(s=spins[2]),
                         "    )",
                         "    t3_{spins}{spins} /= e_{spins}{spins}_ijkabc".format(spins="".join(spins)),
                         "    del e_{spins}{spins}_ijkabc".format(spins="".join(spins)),

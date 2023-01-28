@@ -670,8 +670,8 @@ def energy_perturbative(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, 
     t3 += einsum("kjbiac->ijkabc", x3)
     t3 += einsum("kjbica->ijkabc", x3) * -1.0
     del x3
-    e_ia = lib.direct_sum("i-a->ia", np.diag(f.oo), np.diag(f.vv))
-    e_ijkabc = lib.direct_sum("ia+jb+kc->ijkabc", e_ia, e_ia, e_ia)
+    e_ia = direct_sum("i-a->ia", np.diag(f.oo), np.diag(f.vv))
+    e_ijkabc = direct_sum("ia+jb+kc->ijkabc", e_ia, e_ia, e_ia)
     t3 /= e_ijkabc
     del e_ijkabc
 
