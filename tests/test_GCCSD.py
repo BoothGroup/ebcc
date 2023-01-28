@@ -219,7 +219,7 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
                 ansatz="CCSD",
                 log=NullLogger(),
         )
-        ccsd.e_tol = 1e-12
+        ccsd.options.e_tol = 1e-12
         eris = ccsd.get_eris()
         ccsd.kernel(eris=eris)
         ccsd.solve_lambda(eris=eris)
