@@ -456,6 +456,13 @@ class REBCC(AbstractEBCC):
         else:
             self.log.warning("Failed to converge.")
 
+        # Include perturbative correction if required:
+        if self.ansatz_is_perturbative:
+            self.log.info("Computing perturbative energy correction.")
+            e_pert = self.energy_perturbative(amplitudes=amplitudes, eris=eris)
+            e_cc += e_pert
+            self.log.info("E(pert) = %.10f", e_pert)
+
         # Update attributes:
         self.e_corr = e_cc
         self.amplitudes = amplitudes
@@ -541,6 +548,7 @@ class REBCC(AbstractEBCC):
         the current model.
         """
         name = self.name.replace("-", "_")
+        name = name.replace("(", "_").replace(")", "")
         eqns = importlib.import_module("ebcc.codegen.%s" % name)
         return eqns
 
@@ -726,6 +734,33 @@ class REBCC(AbstractEBCC):
             "energy",
             eris=eris,
             amplitudes=amplitudes,
+        )
+
+        return func(**kwargs)
+
+    def energy_perturbative(self, eris=None, amplitudes=None, lambdas=None):
+        """Compute the perturbative part to the correlation energy.
+
+        Parameters
+        ----------
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.get_eris()`.
+        amplitudes : Amplitudes, optional
+            Cluster amplitudes. Default value is generated using
+            `self.init_amps()`.
+
+        Returns
+        -------
+        e_pert : float
+            Perturbative correction to the correlation energy.
+        """
+
+        func, kwargs = self._load_function(
+            "energy_perturbative",
+            eris=eris,
+            amplitudes=amplitudes,
+            lambdas=lambdas,
         )
 
         return func(**kwargs)
@@ -1911,6 +1946,19 @@ class REBCC(AbstractEBCC):
         return self.rank[0]
 
     @property
+    def ansatz_is_perturbative(self):
+        """Return a boolean indicating whether the ansatz includes a
+        perturbative correction e.g. CCSD(T).
+
+        Returns
+        -------
+        perturbative : bool
+            Boolean indicating if the ansatz is perturbatively
+            corrected.
+        """
+        return "(" in self.ansatz and ")" in self.ansatz
+
+    @property
     def boson_excitations(self):
         """Return a string representation of the bosonic excitations
         in the ansatz.
@@ -1981,6 +2029,14 @@ class REBCC(AbstractEBCC):
         partial_notation = {"2": [1, 2], "3": [1, 2, 3], "4": [1, 2, 3, 4]}
 
         for i, op in enumerate(self.rank[:2]):
+            # Remove any perturbative corrections
+            while "(" in op:
+                start = op.index("(")
+                end = op.index(")")
+                op = op[:start]
+                if (end + 1) < len(op):
+                    op += op[end + 1 :]
+
             if i == 0:
                 # Check in order of longest -> shortest string in case
                 # one method name starts with a substring equal to the

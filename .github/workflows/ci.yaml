@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [rebcc]
+    branches: [master]
   pull_request:
-    branches: [rebcc]
+    branches: [master]
 
 jobs:
   build:
