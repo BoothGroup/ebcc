@@ -931,6 +931,7 @@ def energy_perturbative(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, 
     e_pert += einsum("abij,kcbd,ijkacd->", l2.aaaa, v.aaaa.ovvv, t3_aaaaaa) * -6.0
     e_pert += einsum("abij,kcbd,ijkacd->", l2.bbbb, v.bbbb.ovvv, t3_bbbbbb) * -6.0
     e_pert += einsum("abij,kcbd,ijkadc->", l2.bbbb, v.aabb.ovvv, t3_bbabba) * 2.0
+    e_pert /= 2
 
     return e_pert
 
