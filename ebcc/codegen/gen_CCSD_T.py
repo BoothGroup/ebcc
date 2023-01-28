@@ -12,7 +12,7 @@ from qccg import index, tensor, read, write
 import pdaggerq
 
 # Spin integration mode
-spin = "ghf"
+spin = "uhf"
 
 # pdaggerq setup
 pq = pdaggerq.pq_helper("fermi")
@@ -21,6 +21,10 @@ pq.set_print_level(0)
 # Printer setup
 FunctionPrinter = common.get_function_printer(spin)
 timer = common.Stopwatch()
+common.PYTHON_HEADER = common.PYTHON_HEADER.replace(
+        "from ebcc.util import pack_2e, einsum, Namespace",
+        "from ebcc.util import pack_2e, einsum, direct_sum, Namespace",
+)
 
 with common.FilePrinter("%sCCSD_T" % spin[0].upper()) as file_printer:
     # Get energy expression:
@@ -192,8 +196,31 @@ with common.FilePrinter("%sCCSD_T" % spin[0].upper()) as file_printer:
                     expressions,
                     outputs,
             )
-        einsums = write.write_opt_einsums(expressions, outputs, final_outputs, indent=4)
-        function_printer.write_python(einsums+"\n", comment="T3 amplitude")
+        einsums = write.write_opt_einsums(expressions, outputs, final_outputs, indent=4, einsum_function="einsum")
+        function_printer.write_python(einsums, comment="T3 amplitude")
+
+        # FIXME messy
+        if spin != "uhf":
+            lines = [
+                    "    e_ia = lib.direct_sum(\"i-a->ia\", np.diag(f.oo), np.diag(f.vv))",
+                    "    e_ijkabc = lib.direct_sum(\"ia+jb+kc->ijkabc\", e_ia, e_ia, e_ia)",
+                    "    t3 /= e_ijkabc",
+                    "    del e_ijkabc",
+            ]
+        else:
+            lines = []
+            for spins in spins_list:
+                lines += [
+                        "    e_{spins}{spins}_ijkabc = lib.direct_sum(".format(spins="".join(spins)),
+                        "            \"ia+jb+kc->ijkabc\",",
+                        "            lib.direct_sum(\"i-a->ia\", np.diag(f.{s}{s}.oo), np.diag(f.{s}{s}.vv)),".format(s=spins[0]),
+                        "            lib.direct_sum(\"i-a->ia\", np.diag(f.{s}{s}.oo), np.diag(f.{s}{s}.vv)),".format(s=spins[1]),
+                        "            lib.direct_sum(\"i-a->ia\", np.diag(f.{s}{s}.oo), np.diag(f.{s}{s}.vv)),".format(s=spins[2]),
+                        "    )",
+                        "    t3_{spins}{spins} /= e_{spins}{spins}_ijkabc".format(spins="".join(spins)),
+                        "    del e_{spins}{spins}_ijkabc".format(spins="".join(spins)),
+                ]
+        function_printer.write_python("\n".join(lines)+"\n")
 
         pq.clear()
         pq.set_left_operators([["l1"], ["l2"]])
@@ -214,5 +241,5 @@ with common.FilePrinter("%sCCSD_T" % spin[0].upper()) as file_printer:
                     expressions,
                     outputs,
             )
-        einsums = write.write_opt_einsums(expressions, outputs, final_outputs, indent=4)
+        einsums = write.write_opt_einsums(expressions, outputs, final_outputs, indent=4, einsum_function="einsum")
         function_printer.write_python(einsums+"\n", comment="energy")
