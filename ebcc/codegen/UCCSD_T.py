@@ -5,33 +5,19 @@ from ebcc.util import pack_2e, einsum, direct_sum, Namespace
 
 def energy(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, **kwargs):
     # energy
-    x0 = 0
-    x0 += np.einsum("ijab,ibja->", t2.bbbb, v.bbbb.ovov)
-    e_cc = 0
-    e_cc += np.einsum("->", x0) * -1.0
-    del x0
-    x1 = 0
-    x1 += np.einsum("ijab,iajb->", t2.bbbb, v.bbbb.ovov)
-    e_cc += np.einsum("->", x1) * 2.0
-    del x1
-    x2 = 0
-    x2 += np.einsum("ia,ia->", f.bb.ov, t1.bb)
-    e_cc += np.einsum("->", x2) * 2.0
-    del x2
-    x3 = np.zeros((nocc[1], nvir[1]), dtype=np.float64)
-    x3 += np.einsum("ia,jbia->ia", t1.bb, v.bbbb.ovov)
-    x4 = 0
-    x4 += np.einsum("ia,ia->", t1.bb, x3.bb)
-    del x3.bb
-    e_cc += np.einsum("->", x4) * 2.0
-    del x4
-    x5 = np.zeros((nocc[1], nvir[1]), dtype=np.float64)
-    x5 += np.einsum("ia,jaib->ia", t1.bb, v.bbbb.ovov)
-    x6 = 0
-    x6 += np.einsum("ia,ia->", t1.bb, x5.bb)
-    del x5.bb
-    e_cc += np.einsum("->", x6) * -1.0
-    del x6
+    e_cc = 0.0
+    e_cc += einsum("ia,ia->", f.aa.ov, t1.aa)
+    e_cc += einsum("ia,ia->", f.bb.ov, t1.bb)
+    e_cc += einsum("ijab,iajb->", t2.abab, v.aabb.ovov)
+    e_cc += einsum("ijab,iajb->", t2.aaaa, v.aaaa.ovov) * 0.5
+    e_cc += einsum("ijab,iajb->", t2.bbbb, v.bbbb.ovov) * 0.5
+    e_cc += einsum("ijab,ibja->", t2.aaaa, v.aaaa.ovov) * -0.5
+    e_cc += einsum("ijab,ibja->", t2.bbbb, v.bbbb.ovov) * -0.5
+    e_cc += einsum("ia,jb,iajb->", t1.aa, t1.aa, v.aaaa.ovov) * 0.5
+    e_cc += einsum("ia,jb,ibja->", t1.aa, t1.aa, v.aaaa.ovov) * -0.5
+    e_cc += einsum("ia,jb,iajb->", t1.aa, t1.bb, v.aabb.ovov)
+    e_cc += einsum("ia,jb,iajb->", t1.bb, t1.bb, v.bbbb.ovov) * 0.5
+    e_cc += einsum("ia,jb,ibja->", t1.bb, t1.bb, v.bbbb.ovov) * -0.5
 
     return e_cc
 
