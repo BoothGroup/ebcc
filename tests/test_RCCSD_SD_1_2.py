@@ -50,8 +50,8 @@ class RCCSD_SD_1_2_Tests(unittest.TestCase):
 
         ccsd = REBCC(
                 mf,
-                ansatz="CCSD",
-                boson_excitations="SD",
+                fermion_ansatz="CCSD",
+                boson_ansatz="SD",
                 fermion_coupling_rank=1,
                 boson_coupling_rank=2,
                 g=g,

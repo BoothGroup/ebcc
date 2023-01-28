@@ -41,7 +41,7 @@ class RCC2_PySCF_Tests(unittest.TestCase):
 
         ccsd = REBCC(
                 mf,
-                ansatz="CC2",
+                fermion_ansatz="CC2",
                 log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-10
@@ -96,7 +96,7 @@ class RCC2_Tests(unittest.TestCase):
 
         ccsd = REBCC(
                 mf,
-                ansatz="CC2",
+                fermion_ansatz="CC2",
                 log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-10

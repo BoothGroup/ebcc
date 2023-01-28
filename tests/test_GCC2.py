@@ -39,7 +39,7 @@ class GCC2_PySCF_Tests(unittest.TestCase):
 
         ccsd = GEBCC(
                 mf.to_ghf(),  # Direct conversion needed for same ordering as reference data
-                ansatz="CC2",
+                fermion_ansatz="CC2",
                 log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-10
@@ -96,7 +96,7 @@ class GCC2_Tests(unittest.TestCase):
 
         ccsd = GEBCC(
                 mf,
-                ansatz="CC2",
+                fermion_ansatz="CC2",
                 log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-10

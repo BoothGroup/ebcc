@@ -39,7 +39,7 @@ class GCCSD_T_PySCF_Tests(unittest.TestCase):
 
         ccsd = GEBCC(
                 mf,
-                ansatz="CCSD(T)",
+                fermion_ansatz="CCSD(T)",
                 log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-12

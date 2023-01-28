@@ -165,8 +165,8 @@ def _boson_free_factory(ansatz):
     def constructor(mf, *args, **kwargs):
         from pyscf import scf
 
-        kwargs["ansatz"] = ansatz
-        kwargs["boson_excitations"] = ""
+        kwargs["fermion_ansatz"] = ansatz
+        kwargs["boson_asnatz"] = ""
         kwargs["fermion_coupling_rank"] = 0
         kwargs["boson_coupling_rank"] = 0
 

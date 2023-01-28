@@ -31,7 +31,7 @@ class RCC3_Tests(unittest.TestCase):
 
         rcc3 = REBCC(
                 mf,
-                ansatz="CC3",
+                fermion_ansatz="CC3",
                 log=NullLogger(),
         )
         rcc3.options.e_tol = 1e-10
@@ -40,7 +40,7 @@ class RCC3_Tests(unittest.TestCase):
 
         gcc3 = GEBCC(
                 mf,
-                ansatz="CC3",
+                fermion_ansatz="CC3",
                 log=NullLogger(),
         )
         gcc3.options.e_tol = 1e-10
@@ -87,7 +87,7 @@ class RCC3_Tests(unittest.TestCase):
 
     #    cc3 = REBCC(
     #            mf,
-    #            ansatz="CC3",
+    #            fermion_ansatz="CC3",
     #            #log=NullLogger(),
     #    )
     #    cc3.kernel()

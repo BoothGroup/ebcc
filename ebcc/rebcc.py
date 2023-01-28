@@ -2,8 +2,8 @@
 """
 
 import dataclasses
-import functools
 import importlib
+import functools
 import logging
 import types
 from typing import Any, Sequence, Union
@@ -12,6 +12,7 @@ import numpy as np
 from pyscf import ao2mo, lib, scf
 
 from ebcc import METHOD_TYPES, default_log, init_logging, reom, util
+from ebcc.ansatz import Ansatz
 
 # TODO test bosonic RDMs and lambdas - only regression atm
 # TODO math in docstrings
@@ -129,9 +130,13 @@ class REBCC(AbstractEBCC):
     log : logging.Logger, optional
         Log to print output to. Default value is the global logger
         which outputs to `sys.stderr`.
-    ansatz : str, optional
+    ansatz : str or Ansatz, optional
+        Overall ansatz, as a string representation or an Ansatz
+        object. If None, construct from the individual ansatz
+        parameters, otherwise override them. Default value is None.
+    fermion_ansatz : str, optional
         Fermionic ansatz. Default value is "CCSD".
-    boson_excitations : str, optional
+    boson_ansatz : str, optional
         Rank of bosonic excitations. Default is "".
     fermion_coupling_rank : int, optional
         Rank of fermionic term in coupling. Default is 0.
@@ -311,8 +316,9 @@ class REBCC(AbstractEBCC):
         self,
         mf: scf.hf.SCF,
         log: logging.Logger = None,
-        ansatz: str = "CCSD",
-        boson_excitations: str = "",
+        ansatz: Union[str, Ansatz] = None,
+        fermion_ansatz: str = "CCSD",
+        boson_ansatz: str = "",
         fermion_coupling_rank: int = 0,
         boson_coupling_rank: int = 0,
         omega: np.ndarray = None,
@@ -338,11 +344,19 @@ class REBCC(AbstractEBCC):
         self._mo_occ = mo_occ
 
         # Ansatz:
-        self.ansatz = ansatz
-        self.boson_excitations = boson_excitations
-        self.fermion_coupling_rank = fermion_coupling_rank
-        self.boson_coupling_rank = boson_coupling_rank
-        self._eqns = self._get_eqns()
+        if ansatz is None:
+            self.ansatz = Ansatz(
+                    fermion_ansatz=fermion_ansatz,
+                    boson_ansatz=boson_ansatz,
+                    fermion_coupling_rank=fermion_coupling_rank,
+                    boson_coupling_rank=boson_coupling_rank,
+            )
+        else:
+            if isinstance(ansatz, Ansatz):
+                self.ansatz = ansatz
+            else:
+                self.ansatz = Ansatz.from_string(ansatz)
+        self._eqns = self.ansatz._get_eqns(self.__class__.__name__[0])
 
         # Boson parameters:
         if bool(self.fermion_coupling_rank) != bool(self.boson_coupling_rank):
@@ -352,7 +366,7 @@ class REBCC(AbstractEBCC):
         self.omega = omega
         self.bare_g = g
         self.bare_G = G
-        if self.boson_excitations != "":
+        if self.boson_ansatz != "":
             self.g = self.get_g(g)
             self.G = self.get_mean_field_G()
             if self.options.shift:
@@ -382,8 +396,8 @@ class REBCC(AbstractEBCC):
         self.log.info("%s", "*" * len(self.name))
         self.log.debug("")
         self.log.debug("Options:")
-        self.log.info(" > Fermion ansatz:         %s", self.ansatz)
-        self.log.info(" > Boson excitations:      %s", self.boson_excitations)
+        self.log.info(" > Fermion ansatz:         %s", self.fermion_ansatz)
+        self.log.info(" > Boson excitations:      %s", self.boson_ansatz)
         self.log.info(" > Fermion coupling rank:  %s", self.fermion_coupling_rank)
         self.log.info(" > Boson coupling rank:    %s", self.boson_coupling_rank)
         self.log.info(" > nmo:   %d", self.nmo)
@@ -457,7 +471,7 @@ class REBCC(AbstractEBCC):
             self.log.warning("Failed to converge.")
 
         # Include perturbative correction if required:
-        if self.ansatz_is_perturbative:
+        if self.ansatz.has_perturbative_correction:
             self.log.info("Computing perturbative energy correction.")
             e_pert = self.energy_perturbative(amplitudes=amplitudes, eris=eris)
             e_cc += e_pert
@@ -543,40 +557,6 @@ class REBCC(AbstractEBCC):
         """
         return mf.to_rhf()
 
-    def _get_eqns(self):
-        """Get the module which contains the generated equations for
-        the current model.
-        """
-        name = self.name.replace("-", "_")
-        name = name.replace("(", "_").replace(")", "")
-        eqns = importlib.import_module("ebcc.codegen.%s" % name)
-        return eqns
-
-    def _pack_codegen_kwargs(self, *extra_kwargs, eris=None):
-        """Pack all the possible keyword arguments for generated code
-        into a dictionary.
-        """
-
-        eris = self.get_eris(eris)
-
-        omega = np.diag(self.omega) if self.omega is not None else None
-
-        kwargs = dict(
-            f=self.fock,
-            v=eris,
-            g=self.g,
-            G=self.G,
-            w=omega,
-            nocc=self.nocc,
-            nvir=self.nvir,
-            nbos=self.nbos,
-        )
-        for kw in extra_kwargs:
-            if kw is not None:
-                kwargs.update(kw)
-
-        return kwargs
-
     def _load_function(self, name, eris=False, amplitudes=False, lambdas=False, **kwargs):
         """Load a function from the generated code, and return a dict
         of arguments.
@@ -616,6 +596,31 @@ class REBCC(AbstractEBCC):
 
         return func, kwargs
 
+    def _pack_codegen_kwargs(self, *extra_kwargs, eris=None):
+        """Pack all the possible keyword arguments for generated code
+        into a dictionary.
+        """
+
+        eris = self.get_eris(eris)
+
+        omega = np.diag(self.omega) if self.omega is not None else None
+
+        kwargs = dict(
+            f=self.fock,
+            v=eris,
+            g=self.g,
+            G=self.G,
+            w=omega,
+            nocc=self.nocc,
+            nvir=self.nvir,
+            nbos=self.nbos,
+        )
+        for kw in extra_kwargs:
+            if kw is not None:
+                kwargs.update(kw)
+
+        return kwargs
+
     def init_amps(self, eris=None):
         """Initialise the amplitudes.
 
@@ -646,7 +651,7 @@ class REBCC(AbstractEBCC):
             else:
                 amplitudes["t%d" % n] = np.zeros((self.nocc,) * n + (self.nvir,) * n)
 
-        if self.boson_excitations:
+        if self.boson_ansatz:
             # Only true for real-valued couplings:
             h = self.g
             H = self.G
@@ -1935,34 +1940,24 @@ class REBCC(AbstractEBCC):
             return 0.0
 
     @property
-    def ansatz_is_perturbative(self):
-        """Return a boolean indicating whether the ansatz includes a
-        perturbative correction e.g. CCSD(T).
+    def fermion_ansatz(self):
+        return self.ansatz.fermion_ansatz
 
-        Returns
-        -------
-        perturbative : bool
-            Boolean indicating if the ansatz is perturbatively
-            corrected.
-        """
-        return "(" in self.ansatz and ")" in self.ansatz
+    @property
+    def boson_ansatz(self):
+        return self.ansatz.boson_ansatz
+
+    @property
+    def fermion_coupling_rank(self):
+        return self.ansatz.fermion_coupling_rank
+
+    @property
+    def boson_coupling_rank(self):
+        return self.ansatz.boson_coupling_rank
 
     @property
     def name(self):
-        """Get a string with the name of the method.
-
-        Returns
-        -------
-        name : str
-            Name of the method.
-        """
-        name = "R" + self.ansatz
-        if self.boson_excitations:
-            name += "-%s" % self.boson_excitations
-        if self.fermion_coupling_rank or self.boson_coupling_rank:
-            name += "-%d" % self.fermion_coupling_rank
-            name += "-%d" % self.boson_coupling_rank
-        return name
+        return "R" + self.ansatz.name
 
     @property
     def rank_numeric(self):
@@ -1981,7 +1976,7 @@ class REBCC(AbstractEBCC):
         standard_notation = {"S": 1, "D": 2, "T": 3, "Q": 4}
         partial_notation = {"2": [1, 2], "3": [1, 2, 3], "4": [1, 2, 3, 4]}
 
-        for i, op in enumerate([self.ansatz, self.boson_excitations]):
+        for i, op in enumerate([self.fermion_ansatz, self.boson_ansatz]):
             # Remove any perturbative corrections
             while "(" in op:
                 start = op.index("(")

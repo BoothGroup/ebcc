@@ -31,7 +31,7 @@ class UCC3_Tests(unittest.TestCase):
 
         ucc3 = UEBCC(
                 mf,
-                ansatz="CC3",
+                fermion_ansatz="CC3",
                 log=NullLogger(),
         )
         ucc3.options.e_tol = 1e-10
@@ -40,7 +40,7 @@ class UCC3_Tests(unittest.TestCase):
 
         gcc3 = GEBCC(
                 mf,
-                ansatz="CC3",
+                fermion_ansatz="CC3",
                 log=NullLogger(),
         )
         gcc3.options.e_tol = 1e-10

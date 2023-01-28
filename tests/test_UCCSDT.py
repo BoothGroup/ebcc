@@ -33,7 +33,7 @@ class UCCSDT_Tests(unittest.TestCase):
 
         uccsdt = UEBCC(
                 mf,
-                ansatz="CCSDT",
+                fermion_ansatz="CCSDT",
                 log=NullLogger(),
         )
         uccsdt.options.e_tol = 1e-10
@@ -42,7 +42,7 @@ class UCCSDT_Tests(unittest.TestCase):
 
         gccsdt = GEBCC(
                 mf,
-                ansatz="CCSDT",
+                fermion_ansatz="CCSDT",
                 log=NullLogger(),
         )
         gccsdt.options.e_tol = 1e-10
@@ -80,7 +80,7 @@ class UCCSDT_Tests(unittest.TestCase):
 
         ccsdt = UEBCC(
                 mf,
-                ansatz="CCSDT",
+                fermion_ansatz="CCSDT",
                 log=NullLogger(),
         )
         ccsdt.kernel()

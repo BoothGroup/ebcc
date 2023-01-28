@@ -109,8 +109,8 @@ class UEBCC(rebcc.REBCC):
         ucc = cls(
             rcc.mf,
             log=rcc.log,
-            ansatz=rcc.ansatz,
-            boson_excitations=rcc.boson_excitations,
+            fermion_ansatz=rcc.fermion_ansatz,
+            boson_ansatz=rcc.boson_ansatz,
             fermion_coupling_rank=rcc.fermion_coupling_rank,
             boson_coupling_rank=rcc.boson_coupling_rank,
             omega=rcc.omega,
@@ -217,7 +217,7 @@ class UEBCC(rebcc.REBCC):
                     setattr(tn, comb, amp)
                 amplitudes["t%d" % n] = tn
 
-        if self.boson_excitations:
+        if self.boson_ansatz:
             # Only tue for real-valued couplings:
             h = self.g
             H = self.G
@@ -868,7 +868,7 @@ class UEBCC(rebcc.REBCC):
 
     @property
     def name(self):
-        return super().name.replace("R", "U", 1)
+        return "U" + self.ansatz.name
 
     @property
     def nmo(self):

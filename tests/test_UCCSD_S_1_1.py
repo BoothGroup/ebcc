@@ -51,8 +51,8 @@ class UCCSD_S_1_1_Tests(unittest.TestCase):
 
         ccsd = UEBCC(
                 mf,
-                ansatz="CCSD",
-                boson_excitations="S",
+                fermion_ansatz="CCSD",
+                boson_ansatz="S",
                 fermion_coupling_rank=1,
                 boson_coupling_rank=1,
                 g=g,

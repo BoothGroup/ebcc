@@ -103,8 +103,8 @@ class GEBCC(rebcc.REBCC):
         gcc = cls(
             ucc.mf,
             log=ucc.log,
-            ansatz=ucc.ansatz,
-            boson_excitations=ucc.boson_excitations,
+            fermion_ansatz=ucc.fermion_ansatz,
+            boson_ansatz=ucc.boson_ansatz,
             fermion_coupling_rank=ucc.fermion_coupling_rank,
             boson_coupling_rank=ucc.boson_coupling_rank,
             omega=ucc.omega,
@@ -278,7 +278,7 @@ class GEBCC(rebcc.REBCC):
             else:
                 amplitudes["t%d" % n] = np.zeros((self.nocc,) * n + (self.nvir,) * n)
 
-        if self.boson_excitations:
+        if self.boson_ansatz:
             # Only true for real-valued couplings:
             h = self.g
             H = self.G
@@ -474,4 +474,4 @@ class GEBCC(rebcc.REBCC):
 
     @property
     def name(self):
-        return super().name.replace("R", "G", 1)
+        return "G" + self.ansatz.name
