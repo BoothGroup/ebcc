@@ -14,7 +14,7 @@ from ebcc import REBCC, GEBCC, NullLogger
 
 @pytest.mark.regression
 class RCC3_Tests(unittest.TestCase):
-    """Test RCC3 against RCC3.
+    """Test RCC3 against GCC3.
     """
 
     @classmethod

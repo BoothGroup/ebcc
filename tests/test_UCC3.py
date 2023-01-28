@@ -14,7 +14,7 @@ from ebcc import UEBCC, GEBCC, NullLogger
 
 @pytest.mark.regression
 class UCC3_Tests(unittest.TestCase):
-    """Test UCC3 against regression.
+    """Test UCC3 against GCC3.
     """
 
     @classmethod

@@ -211,7 +211,6 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
 
         ccsd_ref = cc.GCCSD(mf)
         ccsd_ref.conv_tol = 1e-12
-        ccsd_ref.conv_tol_normt = 1e-12
         ccsd_ref.kernel()
         ccsd_ref.solve_lambda()
 
@@ -220,7 +219,7 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
                 ansatz="CCSD",
                 log=NullLogger(),
         )
-        ccsd.e_tol = 1e-12
+        ccsd.options.e_tol = 1e-12
         eris = ccsd.get_eris()
         ccsd.kernel(eris=eris)
         ccsd.solve_lambda(eris=eris)
@@ -230,6 +229,10 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         del cls.mf, cls.ccsd_ref, cls.ccsd
+
+    def test_converged(self):
+        self.assertTrue(self.ccsd.converged)
+        self.assertTrue(self.ccsd_ref.converged)
 
     def test_ccsd_energy(self):
         a = self.ccsd_ref.e_tot

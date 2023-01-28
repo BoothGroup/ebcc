@@ -2035,7 +2035,7 @@ class REBCC(AbstractEBCC):
                 end = op.index(")")
                 op = op[:start]
                 if (end + 1) < len(op):
-                    op += op[end+1:]
+                    op += op[end + 1 :]
 
             if i == 0:
                 # Check in order of longest -> shortest string in case

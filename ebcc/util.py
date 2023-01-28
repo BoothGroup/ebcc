@@ -9,8 +9,8 @@ import sys
 import types
 
 import numpy as np
-from pyscf.lib import einsum as pyscf_einsum
 from pyscf.lib import direct_sum
+from pyscf.lib import einsum as pyscf_einsum
 
 
 class InheritedType:
