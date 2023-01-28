@@ -245,4 +245,7 @@ with common.FilePrinter("%sCCSD_T" % spin[0].upper()) as file_printer:
                     outputs,
             )
         einsums = write.write_opt_einsums(expressions, outputs, final_outputs, indent=4, einsum_function="einsum")
+        # FIXME messy
+        if spin == "uhf":
+            einsums = einsums.replace("t3.", "t3_")
         function_printer.write_python(einsums+"\n", comment="energy")
