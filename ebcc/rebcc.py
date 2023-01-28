@@ -738,7 +738,7 @@ class REBCC(AbstractEBCC):
 
         return func(**kwargs)
 
-    def energy_perturbative(self, eris=None, amplitudes=None):
+    def energy_perturbative(self, eris=None, amplitudes=None, lambdas=None):
         """Compute the perturbative part to the correlation energy.
 
         Parameters
@@ -760,6 +760,7 @@ class REBCC(AbstractEBCC):
             "energy_perturbative",
             eris=eris,
             amplitudes=amplitudes,
+            lambdas=lambdas,
         )
 
         return func(**kwargs)
