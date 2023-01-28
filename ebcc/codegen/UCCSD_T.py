@@ -854,67 +854,67 @@ def energy_perturbative(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, 
     t3_bbbbbb += einsum("jkcd,ibad->ijkabc", t2.bbbb, v.bbbb.ovvv) * 2.0
     t3_bbbbbb += einsum("jkad,icbd->ijkabc", t2.bbbb, v.bbbb.ovvv) * 2.0
     t3_bbbbbb += einsum("jkbd,icad->ijkabc", t2.bbbb, v.bbbb.ovvv) * -2.0
-    e_aaaaaa_ijkabc = lib.direct_sum(
+    e_aaaaaa_ijkabc = direct_sum(
             "ia+jb+kc->ijkabc",
-            lib.direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
-            lib.direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
-            lib.direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
+            direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
+            direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
+            direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
     )
     t3_aaaaaa /= e_aaaaaa_ijkabc
     del e_aaaaaa_ijkabc
-    e_aabaab_ijkabc = lib.direct_sum(
+    e_aabaab_ijkabc = direct_sum(
             "ia+jb+kc->ijkabc",
-            lib.direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
-            lib.direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
-            lib.direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
+            direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
+            direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
+            direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
     )
     t3_aabaab /= e_aabaab_ijkabc
     del e_aabaab_ijkabc
-    e_abaaba_ijkabc = lib.direct_sum(
+    e_abaaba_ijkabc = direct_sum(
             "ia+jb+kc->ijkabc",
-            lib.direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
-            lib.direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
-            lib.direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
+            direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
+            direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
+            direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
     )
     t3_abaaba /= e_abaaba_ijkabc
     del e_abaaba_ijkabc
-    e_abbabb_ijkabc = lib.direct_sum(
+    e_abbabb_ijkabc = direct_sum(
             "ia+jb+kc->ijkabc",
-            lib.direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
-            lib.direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
-            lib.direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
+            direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
+            direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
+            direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
     )
     t3_abbabb /= e_abbabb_ijkabc
     del e_abbabb_ijkabc
-    e_baabaa_ijkabc = lib.direct_sum(
+    e_baabaa_ijkabc = direct_sum(
             "ia+jb+kc->ijkabc",
-            lib.direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
-            lib.direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
-            lib.direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
+            direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
+            direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
+            direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
     )
     t3_baabaa /= e_baabaa_ijkabc
     del e_baabaa_ijkabc
-    e_babbab_ijkabc = lib.direct_sum(
+    e_babbab_ijkabc = direct_sum(
             "ia+jb+kc->ijkabc",
-            lib.direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
-            lib.direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
-            lib.direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
+            direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
+            direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
+            direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
     )
     t3_babbab /= e_babbab_ijkabc
     del e_babbab_ijkabc
-    e_bbabba_ijkabc = lib.direct_sum(
+    e_bbabba_ijkabc = direct_sum(
             "ia+jb+kc->ijkabc",
-            lib.direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
-            lib.direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
-            lib.direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
+            direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
+            direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
+            direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
     )
     t3_bbabba /= e_bbabba_ijkabc
     del e_bbabba_ijkabc
-    e_bbbbbb_ijkabc = lib.direct_sum(
+    e_bbbbbb_ijkabc = direct_sum(
             "ia+jb+kc->ijkabc",
-            lib.direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
-            lib.direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
-            lib.direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
+            direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
+            direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
+            direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
     )
     t3_bbbbbb /= e_bbbbbb_ijkabc
     del e_bbbbbb_ijkabc
