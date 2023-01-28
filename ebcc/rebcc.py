@@ -642,7 +642,7 @@ class REBCC(AbstractEBCC):
         e_ia = lib.direct_sum("i-a->ia", self.eo, self.ev)
 
         # Build T amplitudes:
-        for n in self.rank_numeric[0]:
+        for n in self.ansatz.correlated_cluster_ranks[0]:
             if n == 1:
                 amplitudes["t%d" % n] = self.fock.vo.T / e_ia
             elif n == 2:
@@ -657,17 +657,17 @@ class REBCC(AbstractEBCC):
             H = self.G
 
         # Build S amplitudes:
-        for n in self.rank_numeric[1]:
+        for n in self.ansatz.correlated_cluster_ranks[1]:
             if n == 1:
                 amplitudes["s%d" % n] = -H / self.omega
             else:
                 amplitudes["s%d" % n] = np.zeros((self.nbos,) * n)
 
         # Build U amplitudes:
-        for nf in self.rank_numeric[2]:
+        for nf in self.ansatz.correlated_cluster_ranks[2]:
             if nf != 1:
                 raise util.ModelNotImplemented
-            for nb in self.rank_numeric[3]:
+            for nb in self.ansatz.correlated_cluster_ranks[3]:
                 if nb == 1:
                     e_xia = lib.direct_sum("ia-x->xia", e_ia, self.omega)
                     amplitudes["u%d%d" % (nf, nb)] = h.bov / e_xia
@@ -699,19 +699,19 @@ class REBCC(AbstractEBCC):
         lambdas = self.Amplitudes()
 
         # Build L amplitudes:
-        for n in self.rank_numeric[0]:
+        for n in self.ansatz.correlated_cluster_ranks[0]:
             perm = list(range(n, 2 * n)) + list(range(n))
             lambdas["l%d" % n] = amplitudes["t%d" % n].transpose(perm)
 
         # Build LS amplitudes:
-        for n in self.rank_numeric[1]:
+        for n in self.ansatz.correlated_cluster_ranks[1]:
             lambdas["ls%d" % n] = amplitudes["s%d" % n]
 
         # Build LU amplitudes:
-        for nf in self.rank_numeric[2]:
+        for nf in self.ansatz.correlated_cluster_ranks[2]:
             if nf != 1:
                 raise util.ModelNotImplemented
-            for nb in self.rank_numeric[3]:
+            for nb in self.ansatz.correlated_cluster_ranks[3]:
                 perm = list(range(nb)) + [nb + 1, nb]
                 lambdas["lu%d%d" % (nf, nb)] = amplitudes["u%d%d" % (nf, nb)].transpose(perm)
 
@@ -799,7 +799,7 @@ class REBCC(AbstractEBCC):
         e_ia = lib.direct_sum("i-a->ia", self.eo, self.ev)
 
         # Divide T amplitudes:
-        for n in self.rank_numeric[0]:
+        for n in self.ansatz.correlated_cluster_ranks[0]:
             perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
             d = functools.reduce(np.add.outer, [e_ia] * n)
             d = d.transpose(perm)
@@ -807,16 +807,16 @@ class REBCC(AbstractEBCC):
             res["t%d" % n] += amplitudes["t%d" % n]
 
         # Divide S amplitudes:
-        for n in self.rank_numeric[1]:
+        for n in self.ansatz.correlated_cluster_ranks[1]:
             d = functools.reduce(np.add.outer, ([-self.omega] * n))
             res["s%d" % n] /= d
             res["s%d" % n] += amplitudes["s%d" % n]
 
         # Divide U amplitudes:
-        for nf in self.rank_numeric[2]:
+        for nf in self.ansatz.correlated_cluster_ranks[2]:
             if nf != 1:
                 raise util.ModelNotImplemented
-            for nb in self.rank_numeric[3]:
+            for nb in self.ansatz.correlated_cluster_ranks[3]:
                 d = functools.reduce(np.add.outer, ([-self.omega] * nb) + ([e_ia] * nf))
                 res["u%d%d" % (nf, nb)] /= d
                 res["u%d%d" % (nf, nb)] += amplitudes["u%d%d" % (nf, nb)]
@@ -856,7 +856,7 @@ class REBCC(AbstractEBCC):
         e_ai = lib.direct_sum("i-a->ai", self.eo, self.ev)
 
         # Divide T amplitudes:
-        for n in self.rank_numeric[0]:
+        for n in self.ansatz.correlated_cluster_ranks[0]:
             perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
             d = functools.reduce(np.add.outer, [e_ai] * n)
             d = d.transpose(perm)
@@ -864,16 +864,16 @@ class REBCC(AbstractEBCC):
             res["l%d" % n] += lambdas["l%d" % n]
 
         # Divide S amplitudes:
-        for n in self.rank_numeric[1]:
+        for n in self.ansatz.correlated_cluster_ranks[1]:
             d = functools.reduce(np.add.outer, [-self.omega] * n)
             res["ls%d" % n] /= d
             res["ls%d" % n] += lambdas["ls%d" % n]
 
         # Divide U amplitudes:
-        for nf in self.rank_numeric[2]:
+        for nf in self.ansatz.correlated_cluster_ranks[2]:
             if nf != 1:
                 raise util.ModelNotImplemented
-            for nb in self.rank_numeric[3]:
+            for nb in self.ansatz.correlated_cluster_ranks[3]:
                 d = functools.reduce(np.add.outer, ([-self.omega] * nb) + ([e_ai] * nf))
                 res["lu%d%d" % (nf, nb)] /= d
                 res["lu%d%d" % (nf, nb)] += lambdas["lu%d%d" % (nf, nb)]
@@ -1486,14 +1486,14 @@ class REBCC(AbstractEBCC):
 
         vectors = []
 
-        for n in self.rank_numeric[0]:
+        for n in self.ansatz.correlated_cluster_ranks[0]:
             vectors.append(amplitudes["t%d" % n].ravel())
 
-        for n in self.rank_numeric[1]:
+        for n in self.ansatz.correlated_cluster_ranks[1]:
             vectors.append(amplitudes["s%d" % n].ravel())
 
-        for nf in self.rank_numeric[2]:
-            for nb in self.rank_numeric[3]:
+        for nf in self.ansatz.correlated_cluster_ranks[2]:
+            for nb in self.ansatz.correlated_cluster_ranks[3]:
                 vectors.append(amplitudes["u%d%d" % (nf, nb)].ravel())
 
         return np.concatenate(vectors)
@@ -1517,20 +1517,20 @@ class REBCC(AbstractEBCC):
         amplitudes = self.Amplitudes()
         i0 = 0
 
-        for n in self.rank_numeric[0]:
+        for n in self.ansatz.correlated_cluster_ranks[0]:
             shape = (self.nocc,) * n + (self.nvir,) * n
             size = np.prod(shape)
             amplitudes["t%d" % n] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
-        for n in self.rank_numeric[1]:
+        for n in self.ansatz.correlated_cluster_ranks[1]:
             shape = (self.nbos,) * n
             size = np.prod(shape)
             amplitudes["s%d" % n] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
-        for nf in self.rank_numeric[2]:
-            for nb in self.rank_numeric[3]:
+        for nf in self.ansatz.correlated_cluster_ranks[2]:
+            for nb in self.ansatz.correlated_cluster_ranks[3]:
                 shape = (self.nbos,) * nb + (self.nocc, self.nvir) * nf
                 size = np.prod(shape)
                 amplitudes["u%d%d" % (nf, nb)] = vector[i0 : i0 + size].reshape(shape)
@@ -1557,14 +1557,14 @@ class REBCC(AbstractEBCC):
 
         vectors = []
 
-        for n in self.rank_numeric[0]:
+        for n in self.ansatz.correlated_cluster_ranks[0]:
             vectors.append(lambdas["l%d" % n].ravel())
 
-        for n in self.rank_numeric[1]:
+        for n in self.ansatz.correlated_cluster_ranks[1]:
             vectors.append(lambdas["ls%d" % n].ravel())
 
-        for nf in self.rank_numeric[2]:
-            for nb in self.rank_numeric[3]:
+        for nf in self.ansatz.correlated_cluster_ranks[2]:
+            for nb in self.ansatz.correlated_cluster_ranks[3]:
                 vectors.append(lambdas["lu%d%d" % (nf, nb)].ravel())
 
         return np.concatenate(vectors)
@@ -1588,20 +1588,20 @@ class REBCC(AbstractEBCC):
         lambdas = self.Amplitudes()
         i0 = 0
 
-        for n in self.rank_numeric[0]:
+        for n in self.ansatz.correlated_cluster_ranks[0]:
             shape = (self.nvir,) * n + (self.nocc,) * n
             size = np.prod(shape)
             lambdas["l%d" % n] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
-        for n in self.rank_numeric[1]:
+        for n in self.ansatz.correlated_cluster_ranks[1]:
             shape = (self.nbos,) * n
             size = np.prod(shape)
             lambdas["ls%d" % n] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
-        for nf in self.rank_numeric[2]:
-            for nb in self.rank_numeric[3]:
+        for nf in self.ansatz.correlated_cluster_ranks[2]:
+            for nb in self.ansatz.correlated_cluster_ranks[3]:
                 shape = (self.nbos,) * nb + (self.nvir, self.nocc) * nf
                 size = np.prod(shape)
                 lambdas["lu%d%d" % (nf, nb)] = vector[i0 : i0 + size].reshape(shape)
@@ -1630,15 +1630,15 @@ class REBCC(AbstractEBCC):
         vectors = []
         m = 0
 
-        for n in self.rank_numeric[0]:
+        for n in self.ansatz.correlated_cluster_ranks[0]:
             vectors.append(excitations[m].ravel())
             m += 1
 
-        for n in self.rank_numeric[1]:
+        for n in self.ansatz.correlated_cluster_ranks[1]:
             raise util.ModelNotImplemented
 
-        for nf in self.rank_numeric[2]:
-            for nb in self.rank_numeric[3]:
+        for nf in self.ansatz.correlated_cluster_ranks[2]:
+            for nb in self.ansatz.correlated_cluster_ranks[3]:
                 raise util.ModelNotImplemented
 
         return np.concatenate(vectors)
@@ -1702,17 +1702,17 @@ class REBCC(AbstractEBCC):
         excitations = []
         i0 = 0
 
-        for n in self.rank_numeric[0]:
+        for n in self.ansatz.correlated_cluster_ranks[0]:
             shape = (self.nocc,) * n + (self.nvir,) * (n - 1)
             size = np.prod(shape)
             excitations.append(vector[i0 : i0 + size].reshape(shape))
             i0 += size
 
-        for n in self.rank_numeric[1]:
+        for n in self.ansatz.correlated_cluster_ranks[1]:
             raise util.ModelNotImplemented
 
-        for nf in self.rank_numeric[2]:
-            for nb in self.rank_numeric[3]:
+        for nf in self.ansatz.correlated_cluster_ranks[2]:
+            for nb in self.ansatz.correlated_cluster_ranks[3]:
                 raise util.ModelNotImplemented
 
         return tuple(excitations)
@@ -1738,17 +1738,17 @@ class REBCC(AbstractEBCC):
         excitations = []
         i0 = 0
 
-        for n in self.rank_numeric[0]:
+        for n in self.ansatz.correlated_cluster_ranks[0]:
             shape = (self.nvir,) * n + (self.nocc,) * (n - 1)
             size = np.prod(shape)
             excitations.append(vector[i0 : i0 + size].reshape(shape))
             i0 += size
 
-        for n in self.rank_numeric[1]:
+        for n in self.ansatz.correlated_cluster_ranks[1]:
             raise util.ModelNotImplemented
 
-        for nf in self.rank_numeric[2]:
-            for nb in self.rank_numeric[3]:
+        for nf in self.ansatz.correlated_cluster_ranks[2]:
+            for nb in self.ansatz.correlated_cluster_ranks[3]:
                 raise util.ModelNotImplemented
 
         return tuple(excitations)
@@ -1774,17 +1774,17 @@ class REBCC(AbstractEBCC):
         excitations = []
         i0 = 0
 
-        for n in self.rank_numeric[0]:
+        for n in self.ansatz.correlated_cluster_ranks[0]:
             shape = (self.nocc,) * n + (self.nvir,) * n
             size = np.prod(shape)
             excitations.append(vector[i0 : i0 + size].reshape(shape))
             i0 += size
 
-        for n in self.rank_numeric[1]:
+        for n in self.ansatz.correlated_cluster_ranks[1]:
             raise util.ModelNotImplemented
 
-        for nf in self.rank_numeric[2]:
-            for nb in self.rank_numeric[3]:
+        for nf in self.ansatz.correlated_cluster_ranks[2]:
+            for nb in self.ansatz.correlated_cluster_ranks[3]:
                 raise util.ModelNotImplemented
 
         return tuple(excitations)
@@ -1958,53 +1958,6 @@ class REBCC(AbstractEBCC):
     @property
     def name(self):
         return "R" + self.ansatz.name
-
-    @property
-    def rank_numeric(self):
-        """Get a list of cluster operator rank numbers for each of
-        the fermionic, bosonic and coupling ansatz.
-
-        Returns
-        -------
-        rank_numeric : tuple of tuple of int
-            Numeric form of rank tuple.
-        """
-        # TODO this won't support i.e. SDt
-
-        rank = []
-
-        standard_notation = {"S": 1, "D": 2, "T": 3, "Q": 4}
-        partial_notation = {"2": [1, 2], "3": [1, 2, 3], "4": [1, 2, 3, 4]}
-
-        for i, op in enumerate([self.fermion_ansatz, self.boson_ansatz]):
-            # Remove any perturbative corrections
-            while "(" in op:
-                start = op.index("(")
-                end = op.index(")")
-                op = op[:start]
-                if (end + 1) < len(op):
-                    op += op[end + 1 :]
-
-            if i == 0:
-                # Check in order of longest -> shortest string in case
-                # one method name starts with a substring equal to the
-                # name of another method:
-                for method_type in sorted(METHOD_TYPES, key=len)[::-1]:
-                    if op.startswith(method_type):
-                        op = op.replace(method_type, "")
-                        break
-            rank_entry = []
-            for char in op:
-                if char in standard_notation:
-                    rank_entry.append(standard_notation[char])
-                elif char in partial_notation:
-                    rank_entry += partial_notation[char]
-            rank.append(tuple(rank_entry))
-
-        for op in [self.fermion_coupling_rank, self.boson_coupling_rank]:
-            rank.append(tuple(range(1, op + 1)))
-
-        return tuple(rank)
 
     @property
     def mo_coeff(self):
