@@ -68,14 +68,8 @@ class ERIs(types.SimpleNamespace):
 
         if self.slices is None:
             self.slices = {
-                    "o": np.logical_or(
-                        self.space.correlated_occupied,
-                        self.space.active_occupied,
-                    ),
-                    "v": np.logical_or(
-                        self.space.correlated_virtual,
-                        self.space.active_virtual,
-                    ),
+                    "o": self.space.correlated_occupied,
+                    "v": self.space.correlated_virtual,
                     "O": self.space.active_occupied,
                     "V": self.space.active_virtual,
             }

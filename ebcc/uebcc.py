@@ -44,14 +44,8 @@ class ERIs(types.SimpleNamespace):
         self.mo_coeff = mo_coeff
         slices = [
                 {
-                    "o": np.logical_or(
-                        space.correlated_occupied,
-                        space.active_occupied,
-                    ),
-                    "v": np.logical_or(
-                        space.correlated_virtual,
-                        space.active_virtual,
-                    ),
+                    "o": space.correlated_occupied,
+                    "v": space.correlated_virtual,
                     "O": space.active_occupied,
                     "V": space.active_virtual,
                 }
