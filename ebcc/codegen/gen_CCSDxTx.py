@@ -26,7 +26,7 @@ common.PYTHON_HEADER = common.PYTHON_HEADER.replace(
         "from ebcc.util import pack_2e, einsum, direct_sum, Namespace",
 )
 
-with common.FilePrinter("%sCCSD_T" % spin[0].upper()) as file_printer:
+with common.FilePrinter("%sCCSDxTx" % spin[0].upper()) as file_printer:
     # Get energy expression:
     with FunctionPrinter(
             file_printer,
