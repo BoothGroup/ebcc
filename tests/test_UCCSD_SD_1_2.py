@@ -51,10 +51,7 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
 
         ccsd = UEBCC(
                 mf,
-                ansatz="CCSD",
-                boson_excitations="SD",
-                fermion_coupling_rank=1,
-                boson_coupling_rank=2,
+                ansatz="CCSD-SD-1-2",
                 g=g,
                 omega=omega,
                 shift=cls.shift,
@@ -152,10 +149,7 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
     def test_from_rebcc(self):
         uebcc1 = UEBCC(
                 self.mf,
-                ansatz="CCSD",
-                boson_excitations="SD",
-                fermion_coupling_rank=1,
-                boson_coupling_rank=2,
+                ansatz="CCSD-SD-1-2",
                 g=self.g,
                 omega=self.omega,
                 shift=self.shift,
@@ -168,10 +162,7 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
 
         rebcc = REBCC(
                 self.mf,
-                ansatz="CCSD",
-                boson_excitations="SD",
-                fermion_coupling_rank=1,
-                boson_coupling_rank=2,
+                ansatz="CCSD-SD-1-2",
                 g=self.g,
                 omega=self.omega,
                 shift=self.shift,

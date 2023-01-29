@@ -104,9 +104,6 @@ class GEBCC(rebcc.REBCC):
             ucc.mf,
             log=ucc.log,
             ansatz=ucc.ansatz,
-            boson_excitations=ucc.boson_excitations,
-            fermion_coupling_rank=ucc.fermion_coupling_rank,
-            boson_coupling_rank=ucc.boson_coupling_rank,
             omega=ucc.omega,
             g=g,
             G=ucc.bare_G,
@@ -123,7 +120,7 @@ class GEBCC(rebcc.REBCC):
         if has_amps:
             amplitudes = cls.Amplitudes()
 
-            for n in ucc.rank_numeric[0]:
+            for n in ucc.ansatz.correlated_cluster_ranks[0]:
                 amplitudes["t%d" % n] = np.zeros((nocc,) * n + (nvir,) * n)
                 for comb in util.generate_spin_combinations(n):
                     done = set()
@@ -144,11 +141,11 @@ class GEBCC(rebcc.REBCC):
                                 )
                         done.add(combn)
 
-            for n in ucc.rank_numeric[1]:
+            for n in ucc.ansatz.correlated_cluster_ranks[1]:
                 amplitudes["s%d" % n] = ucc.amplitudes["s%d" % n].copy()
 
-            for nf in ucc.rank_numeric[2]:
-                for nb in ucc.rank_numeric[3]:
+            for nf in ucc.ansatz.correlated_cluster_ranks[2]:
+                for nb in ucc.ansatz.correlated_cluster_ranks[3]:
                     amplitudes["u%d%d" % (nf, nb)] = np.zeros(
                         (nbos,) * nb + (nocc,) * nf + (nvir,) * nf
                     )
@@ -190,7 +187,7 @@ class GEBCC(rebcc.REBCC):
         if has_lams:
             lambdas = gcc.init_lams()  # Easier this way - but have to build ERIs...
 
-            for n in ucc.rank_numeric[0]:
+            for n in ucc.ansatz.correlated_cluster_ranks[0]:
                 lambdas["l%d" % n] = np.zeros((nvir,) * n + (nocc,) * n)
                 for comb in util.generate_spin_combinations(n):
                     done = set()
@@ -209,11 +206,11 @@ class GEBCC(rebcc.REBCC):
                                 lambdas["l%d" % n][mask] += amp.transpose(transpose).copy() * sign
                         done.add(combn)
 
-            for n in ucc.rank_numeric[1]:
+            for n in ucc.ansatz.correlated_cluster_ranks[1]:
                 lambdas["ls%d" % n] = ucc.lambdas["ls%d" % n].copy()
 
-            for nf in ucc.rank_numeric[2]:
-                for nb in ucc.rank_numeric[3]:
+            for nf in ucc.ansatz.correlated_cluster_ranks[2]:
+                for nb in ucc.ansatz.correlated_cluster_ranks[3]:
                     lambdas["lu%d%d" % (nf, nb)] = np.zeros(
                         (nbos,) * nb + (nvir,) * nf + (nocc,) * nf
                     )
@@ -269,7 +266,7 @@ class GEBCC(rebcc.REBCC):
         e_ia = lib.direct_sum("i-a->ia", self.eo, self.ev)
 
         # Build T amplitudes:
-        for n in self.rank_numeric[0]:
+        for n in self.ansatz.correlated_cluster_ranks[0]:
             if n == 1:
                 amplitudes["t%d" % n] = self.fock.vo.T / e_ia
             elif n == 2:
@@ -278,23 +275,23 @@ class GEBCC(rebcc.REBCC):
             else:
                 amplitudes["t%d" % n] = np.zeros((self.nocc,) * n + (self.nvir,) * n)
 
-        if not (self.rank[1] == self.rank[2] == ""):
+        if self.boson_ansatz:
             # Only true for real-valued couplings:
             h = self.g
             H = self.G
 
         # Build S amplitudes:
-        for n in self.rank_numeric[1]:
+        for n in self.ansatz.correlated_cluster_ranks[1]:
             if n == 1:
                 amplitudes["s%d" % n] = -H / self.omega
             else:
                 amplitudes["s%d" % n] = np.zeros((self.nbos,) * n)
 
         # Build U amplitudes:
-        for nf in self.rank_numeric[2]:
+        for nf in self.ansatz.correlated_cluster_ranks[2]:
             if nf != 1:
                 raise util.ModelNotImplemented
-            for nb in self.rank_numeric[3]:
+            for nb in self.ansatz.correlated_cluster_ranks[3]:
                 if n == 1:
                     e_xia = lib.direct_sum("ia-x->xia", e_ia, self.omega)
                     amplitudes["u%d%d" % (nf, nb)] = h.bov / e_xia
@@ -325,16 +322,16 @@ class GEBCC(rebcc.REBCC):
         vectors = []
         m = 0
 
-        for n in self.rank_numeric[0]:
+        for n in self.ansatz.correlated_cluster_ranks[0]:
             subscript = "i" * n + "a" * (n - 1)
             vectors.append(util.compress_axes(subscript, excitations[m]).ravel())
             m += 1
 
-        for n in self.rank_numeric[1]:
+        for n in self.ansatz.correlated_cluster_ranks[1]:
             raise util.ModelNotImplemented
 
-        for nf in self.rank_numeric[2]:
-            for nb in self.rank_numeric[3]:
+        for nf in self.ansatz.correlated_cluster_ranks[2]:
+            for nb in self.ansatz.correlated_cluster_ranks[3]:
                 raise util.ModelNotImplemented
 
         return np.concatenate(vectors)
@@ -343,16 +340,16 @@ class GEBCC(rebcc.REBCC):
         vectors = []
         m = 0
 
-        for n in self.rank_numeric[0]:
+        for n in self.ansatz.correlated_cluster_ranks[0]:
             subscript = "i" * n + "a" * n
             vectors.append(util.compress_axes(subscript, excitations[m]).ravel())
             m += 1
 
-        for n in self.rank_numeric[1]:
+        for n in self.ansatz.correlated_cluster_ranks[1]:
             raise util.ModelNotImplemented
 
-        for nf in self.rank_numeric[2]:
-            for nb in self.rank_numeric[3]:
+        for nf in self.ansatz.correlated_cluster_ranks[2]:
+            for nb in self.ansatz.correlated_cluster_ranks[3]:
                 raise util.ModelNotImplemented
 
         return np.concatenate(vectors)
@@ -361,7 +358,7 @@ class GEBCC(rebcc.REBCC):
         excitations = []
         i0 = 0
 
-        for n in self.rank_numeric[0]:
+        for n in self.ansatz.correlated_cluster_ranks[0]:
             subscript = "i" * n + "a" * (n - 1)
             size = util.get_compressed_size(subscript, i=self.nocc, a=self.nvir)
             shape = tuple([self.nocc] * n + [self.nvir] * (n - 1))
@@ -370,11 +367,11 @@ class GEBCC(rebcc.REBCC):
             excitations.append(vn)
             i0 += size
 
-        for n in self.rank_numeric[1]:
+        for n in self.ansatz.correlated_cluster_ranks[1]:
             raise util.ModelNotImplemented
 
-        for nf in self.rank_numeric[2]:
-            for nb in self.rank_numeric[3]:
+        for nf in self.ansatz.correlated_cluster_ranks[2]:
+            for nb in self.ansatz.correlated_cluster_ranks[3]:
                 raise util.ModelNotImplemented
 
         return tuple(excitations)
@@ -383,7 +380,7 @@ class GEBCC(rebcc.REBCC):
         excitations = []
         i0 = 0
 
-        for n in self.rank_numeric[0]:
+        for n in self.ansatz.correlated_cluster_ranks[0]:
             subscript = "a" * n + "i" * (n - 1)
             size = util.get_compressed_size(subscript, i=self.nocc, a=self.nvir)
             shape = tuple([self.nvir] * n + [self.nocc] * (n - 1))
@@ -392,11 +389,11 @@ class GEBCC(rebcc.REBCC):
             excitations.append(vn)
             i0 += size
 
-        for n in self.rank_numeric[1]:
+        for n in self.ansatz.correlated_cluster_ranks[1]:
             raise util.ModelNotImplemented
 
-        for nf in self.rank_numeric[2]:
-            for nb in self.rank_numeric[3]:
+        for nf in self.ansatz.correlated_cluster_ranks[2]:
+            for nb in self.ansatz.correlated_cluster_ranks[3]:
                 raise util.ModelNotImplemented
 
         return tuple(excitations)
@@ -405,7 +402,7 @@ class GEBCC(rebcc.REBCC):
         excitations = []
         i0 = 0
 
-        for n in self.rank_numeric[0]:
+        for n in self.ansatz.correlated_cluster_ranks[0]:
             subscript = "i" * n + "a" * n
             size = util.get_compressed_size(subscript, i=self.nocc, a=self.nvir)
             shape = tuple([self.nocc] * n + [self.nvir] * n)
@@ -414,11 +411,11 @@ class GEBCC(rebcc.REBCC):
             excitations.append(vn)
             i0 += size
 
-        for n in self.rank_numeric[1]:
+        for n in self.ansatz.correlated_cluster_ranks[1]:
             raise util.ModelNotImplemented
 
-        for nf in self.rank_numeric[2]:
-            for nb in self.rank_numeric[3]:
+        for nf in self.ansatz.correlated_cluster_ranks[2]:
+            for nb in self.ansatz.correlated_cluster_ranks[3]:
                 raise util.ModelNotImplemented
 
         return tuple(excitations)
@@ -474,4 +471,4 @@ class GEBCC(rebcc.REBCC):
 
     @property
     def name(self):
-        return super().name.replace("R", "G", 1)
+        return "G" + self.ansatz.name
