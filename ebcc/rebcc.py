@@ -634,7 +634,6 @@ class REBCC(AbstractEBCC):
         space = Space(
                 self.mo_occ > 0,
                 np.zeros_like(self.mo_occ, dtype=bool),
-                np.ones_like(self.mo_occ, dtype=bool),
                 np.zeros_like(self.mo_occ, dtype=bool),
         )
 
@@ -1819,6 +1818,7 @@ class REBCC(AbstractEBCC):
             Mean-field boson non-conserving term of the Hamiltonian.
         """
 
+        # FIXME should this also sum in frozen orbitals?
         val = lib.einsum("Ipp->I", self.g.boo) * 2.0
         val -= self.xi * self.omega
 

@@ -191,13 +191,11 @@ class UEBCC(rebcc.REBCC):
                 Space(
                     self.mo_occ[0] > 0,
                     np.zeros_like(self.mo_occ[0], dtype=bool),
-                    np.ones_like(self.mo_occ[0], dtype=bool),
                     np.zeros_like(self.mo_occ[0], dtype=bool),
                 ),
                 Space(
                     self.mo_occ[1] > 0,
                     np.zeros_like(self.mo_occ[1], dtype=bool),
-                    np.ones_like(self.mo_occ[1], dtype=bool),
                     np.zeros_like(self.mo_occ[1], dtype=bool),
                 ),
         )

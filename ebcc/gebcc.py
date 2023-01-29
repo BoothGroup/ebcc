@@ -107,13 +107,10 @@ class GEBCC(rebcc.REBCC):
         frozen = np.zeros((nocc+nvir,), dtype=bool)
         frozen[slices["a"]] = ucc.space[0].frozen.copy()
         frozen[slices["b"]] = ucc.space[1].frozen.copy()
-        correlated = np.zeros((nocc+nvir,), dtype=bool)
-        correlated[slices["a"]] = ucc.space[0].correlated.copy()
-        correlated[slices["b"]] = ucc.space[1].correlated.copy()
         active = np.zeros((nocc+nvir,), dtype=bool)
         active[slices["a"]] = ucc.space[0].active.copy()
         active[slices["b"]] = ucc.space[1].active.copy()
-        space = Space(occupied, frozen, correlated, active)
+        space = Space(occupied, frozen, active)
 
         gcc = cls(
             ucc.mf,
