@@ -110,8 +110,7 @@ class Ansatz:
 
         return cls(*named_ansatzes[string])
 
-    @property
-    def name(self):
+    def __repr__(self):
         """Get a string with the name of the method.
 
         Returns
@@ -126,6 +125,10 @@ class Ansatz:
             name += "-%d" % self.fermion_coupling_rank
             name += "-%d" % self.boson_coupling_rank
         return name
+
+    @property
+    def name(self):
+        return repr(self)
 
     @property
     def has_perturbative_correction(self):

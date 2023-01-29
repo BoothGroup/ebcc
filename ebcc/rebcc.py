@@ -13,6 +13,7 @@ from pyscf import ao2mo, lib, scf
 
 from ebcc import METHOD_TYPES, default_log, init_logging, reom, util
 from ebcc.ansatz import Ansatz
+from ebcc.space import Space
 
 # TODO test bosonic RDMs and lambdas - only regression atm
 # TODO math in docstrings
@@ -43,6 +44,8 @@ class ERIs(types.SimpleNamespace):
     just-in-time namespace containing blocks of the integrals, with
     keys that are length-4 strings of `"o"` or `"v"` signifying
     whether the corresponding dimension is occupied or virtual.
+    Additionally, capital letters letter `"O"` or `"V"` signify
+    active orbitals, whereas lowercase correlated plus active.
     """
 
     def __init__(
@@ -53,6 +56,7 @@ class ERIs(types.SimpleNamespace):
         mo_coeff: np.ndarray = None,
     ):
         self.mf = ebcc.mf
+        self.space = ebcc.space
         self.slices = slices
         self.mo_coeff = mo_coeff
         self.array = array
@@ -63,9 +67,18 @@ class ERIs(types.SimpleNamespace):
             self.mo_coeff = [self.mo_coeff] * 4
 
         if self.slices is None:
-            o = slice(None, ebcc.nocc)
-            v = slice(ebcc.nocc, None)
-            self.slices = {"o": o, "v": v}
+            self.slices = {
+                    "o": np.logical_or(
+                        self.space.correlated_occupied,
+                        self.space.active_occupied,
+                    ),
+                    "v": np.logical_or(
+                        self.space.correlated_virtual,
+                        self.space.active_virtual,
+                    ),
+                    "O": self.space.active_occupied,
+                    "V": self.space.active_virtual,
+            }
         if not isinstance(self.slices, (tuple, list)):
             self.slices = [self.slices] * 4
 
@@ -134,6 +147,10 @@ class REBCC(AbstractEBCC):
         Overall ansatz, as a string representation or an Ansatz
         object. If None, construct from the individual ansatz
         parameters, otherwise override them. Default value is None.
+    space : Space, optional
+        Space object defining the size of frozen, correlated and
+        active fermionic spaces. If None, all fermionic degrees of
+        freedom are assumed correlated. Default value is None.
     omega : numpy.ndarray (nbos,), optional
         Bosonic frequencies. Default value is None.
     g : numpy.ndarray (nbos, nmo, nmo), optional
@@ -309,6 +326,7 @@ class REBCC(AbstractEBCC):
         mf: scf.hf.SCF,
         log: logging.Logger = None,
         ansatz: Union[str, Ansatz] = "CCSD",
+        space: Space = None,
         omega: np.ndarray = None,
         g: np.ndarray = None,
         G: np.ndarray = None,
@@ -337,6 +355,12 @@ class REBCC(AbstractEBCC):
         else:
             self.ansatz = Ansatz.from_string(ansatz)
         self._eqns = self.ansatz._get_eqns(self.__class__.__name__[0])
+
+        # Space:
+        if space is not None:
+            self.space = space
+        else:
+            self.space = self.init_space()
 
         # Boson parameters:
         if bool(self.fermion_coupling_rank) != bool(self.boson_coupling_rank):
@@ -375,19 +399,15 @@ class REBCC(AbstractEBCC):
         self.log.info("%s", self.name)
         self.log.info("%s", "*" * len(self.name))
         self.log.debug("")
-        self.log.debug("Options:")
-        self.log.info(" > Fermion ansatz:         %s", self.fermion_ansatz)
-        self.log.info(" > Boson excitations:      %s", self.boson_ansatz)
-        self.log.info(" > Fermion coupling rank:  %s", self.fermion_coupling_rank)
-        self.log.info(" > Boson coupling rank:    %s", self.boson_coupling_rank)
-        self.log.info(" > nmo:   %d", self.nmo)
-        self.log.info(" > nocc:  %s", self.nocc)
-        self.log.info(" > nvir:  %s", self.nvir)
-        self.log.info(" > nbos:  %d", self.nbos)
+        self.log.info("Options:")
         self.log.info(" > e_tol:  %s", self.options.e_tol)
         self.log.info(" > t_tol:  %s", self.options.t_tol)
         self.log.info(" > max_iter:  %s", self.options.max_iter)
         self.log.info(" > diis_space:  %s", self.options.diis_space)
+        self.log.debug("")
+        self.log.info("Ansatz: %s", self.ansatz)
+        self.log.debug("")
+        self.log.info("Space: %s", self.space)
         self.log.debug("")
 
     def kernel(self, eris: Union[ERIs, np.ndarray] = None) -> float:
@@ -600,6 +620,26 @@ class REBCC(AbstractEBCC):
                 kwargs.update(kw)
 
         return kwargs
+
+    def init_space(self):
+        """Initialise the default Space object.
+
+        Returns
+        -------
+        space : Space
+            Space object in which all fermionic degrees of freedom are
+            considered correlated.
+        """
+
+        space = Space(
+                self.mo_occ > 0,
+                np.zeros_like(self.mo_occ, dtype=bool),
+                np.ones_like(self.mo_occ, dtype=bool),
+                np.zeros_like(self.mo_occ, dtype=bool),
+        )
+
+        return space
+
 
     def init_amps(self, eris=None):
         """Initialise the amplitudes.
@@ -1967,36 +2007,15 @@ class REBCC(AbstractEBCC):
 
     @property
     def nmo(self):
-        """Get the number of molecular orbitals.
-
-        Returns
-        -------
-        nmo : int
-            Number of molecular orbitals.
-        """
-        return self.mo_occ.size
+        return self.space.nmo
 
     @property
     def nocc(self):
-        """Get the number of occupied molecular orbitals.
-
-        Returns
-        -------
-        nocc : int
-            Number of occupied molecular orbitals.
-        """
-        return np.sum(self.mo_occ > 0)
+        return self.space.nocc
 
     @property
     def nvir(self):
-        """Get the number of virtual molecular orbitals.
-
-        Returns
-        -------
-        nvir : int
-            Number of virtual molecular orbitals.
-        """
-        return self.nmo - self.nocc
+        return self.space.nvir
 
     @property
     def nbos(self):
