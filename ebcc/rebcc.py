@@ -1839,14 +1839,21 @@ class REBCC(AbstractEBCC):
             is bosonic, occupied or virtual.
         """
 
-        boo = g[:, : self.nocc, : self.nocc]
-        bov = g[:, : self.nocc, self.nocc :]
-        bvo = g[:, self.nocc :, : self.nocc]
-        bvv = g[:, self.nocc :, self.nocc :]
+        slices = {
+                "o": self.space.correlated_occupied,
+                "v": self.space.correlated_virtual,
+                "O": self.space.active_occupied,
+                "V": self.space.active_virtual,
+        }
 
-        g = util.Namespace(boo=boo, bov=bov, bvo=bvo, bvv=bvv)
+        class Blocks:
+            def __getattr__(selffer, key):
+                assert key[0] == "b"
+                i = slices[key[1]]
+                j = slices[key[2]]
+                return g[:, i][:, :, j].copy()
 
-        return g
+        return Blocks()
 
     def get_fock(self):
         """Get blocks of the Fock matrix, shifted due to bosons where
@@ -1861,23 +1868,30 @@ class REBCC(AbstractEBCC):
             virtual.
         """
 
-        fock = self.bare_fock
+        slices = {
+                "o": self.space.correlated_occupied,
+                "v": self.space.correlated_virtual,
+                "O": self.space.active_occupied,
+                "V": self.space.active_virtual,
+        }
 
-        oo = fock[: self.nocc, : self.nocc]
-        ov = fock[: self.nocc, self.nocc :]
-        vo = fock[self.nocc :, : self.nocc]
-        vv = fock[self.nocc :, self.nocc :]
+        class Blocks:
+            def __getattr__(selffer, key):
+                i = slices[key[0]]
+                j = slices[key[1]]
+                fock = self.bare_fock[i][:, j].copy()
 
-        if self.options.shift:
-            xi = self.xi
-            oo -= lib.einsum("I,Iij->ij", xi, self.g.boo + self.g.boo.transpose(0, 2, 1))
-            ov -= lib.einsum("I,Iia->ia", xi, self.g.bov + self.g.bvo.transpose(0, 2, 1))
-            vo -= lib.einsum("I,Iai->ai", xi, self.g.bvo + self.g.bov.transpose(0, 2, 1))
-            vv -= lib.einsum("I,Iab->ab", xi, self.g.bvv + self.g.bvv.transpose(0, 2, 1))
+                if self.options.shift:
+                    xi = self.xi
+                    g = (
+                        + self.g.__getattr__("b"+key)
+                        + self.g.__getattr__("b"+key[::-1]).transpose(0, 2, 1)
+                    )
+                    fock -= util.einsum("I,Ipq->pq", xi, g)
 
-        f = util.Namespace(oo=oo, ov=ov, vo=vo, vv=vv)
+                return fock
 
-        return f
+        return Blocks()
 
     def get_eris(self, eris=None):
         """Get blocks of the ERIs.
@@ -1901,7 +1915,8 @@ class REBCC(AbstractEBCC):
 
     @property
     def bare_fock(self):
-        """Get the mean-field Fock matrix in the MO basis.
+        """Get the mean-field Fock matrix in the MO basis, including
+        frozen parts.
 
         Returns
         -------
@@ -1912,7 +1927,7 @@ class REBCC(AbstractEBCC):
         fock_ao = self.mf.get_fock()
         mo_coeff = self.mo_coeff
 
-        fock = lib.einsum("pq,pi,qj->ij", fock_ao, mo_coeff, mo_coeff)
+        fock = util.einsum("pq,pi,qj->ij", fock_ao, mo_coeff, mo_coeff)
 
         return fock
 
