@@ -46,6 +46,7 @@ class REOM:
 
     def __init__(self, ebcc, options=None, **kwargs):
         self.ebcc = ebcc
+        self.space = ebcc.space
         self.ansatz = ebcc.ansatz
         self.log = ebcc.log
 
