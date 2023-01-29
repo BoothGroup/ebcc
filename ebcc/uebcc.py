@@ -497,19 +497,29 @@ class UEBCC(rebcc.REBCC):
         if np.array(g).ndim != 4:
             g = np.array([g, g])
 
+        slices = [
+                {
+                    "o": space.correlated_occupied,
+                    "v": space.correlated_virtual,
+                    "O": space.active_occupied,
+                    "V": space.active_virtual,
+                }
+                for space in self.space
+        ]
+
+        def constructor(s):
+            class Blocks:
+                def __getattr__(selffer, key):
+                    assert key[0] == "b"
+                    i = slices[s][key[1]]
+                    j = slices[s][key[2]]
+                    return g[s][:, i][:, :, j].copy()
+
+            return Blocks()
+
         gs = util.Namespace()
-
-        boo = g[0][:, : self.nocc[0], : self.nocc[0]]
-        bov = g[0][:, : self.nocc[0], self.nocc[0] :]
-        bvo = g[0][:, self.nocc[0] :, : self.nocc[0]]
-        bvv = g[0][:, self.nocc[0] :, self.nocc[0] :]
-        gs.aa = util.Namespace(boo=boo, bov=bov, bvo=bvo, bvv=bvv)
-
-        boo = g[1][:, : self.nocc[1], : self.nocc[1]]
-        bov = g[1][:, : self.nocc[1], self.nocc[1] :]
-        bvo = g[1][:, self.nocc[1] :, : self.nocc[1]]
-        bvv = g[1][:, self.nocc[1] :, self.nocc[1] :]
-        gs.bb = util.Namespace(boo=boo, bov=bov, bvo=bvo, bvv=bvv)
+        gs.aa = constructor(0)
+        gs.bb = constructor(1)
 
         return gs
 
@@ -533,39 +543,40 @@ class UEBCC(rebcc.REBCC):
         return xi
 
     def get_fock(self):
-        fock = self.bare_fock
-        if self.options.shift:
-            xi = self.xi
+        slices = [
+                {
+                    "o": space.correlated_occupied,
+                    "v": space.correlated_virtual,
+                    "O": space.active_occupied,
+                    "V": space.active_virtual,
+                }
+                for space in self.space
+        ]
+
+        def constructor(s):
+            class Blocks:
+                def __getattr__(selffer, key):
+                    i = slices[s][key[0]]
+                    j = slices[s][key[1]]
+                    focks = getattr(self.bare_fock, "ab"[s] * 2)
+                    fock = focks[i][:, j].copy()
+
+                    if self.options.shift:
+                        xi = self.xi
+                        gs = getattr(self.g, "ab"[s] * 2)
+                        g = (
+                            + gs.__getattr__("b"+key)
+                            + gs.__getattr__("b"+key[::-1]).transpose(0, 2, 1)
+                        )
+                        fock -= util.einsum("I,Ipq->pq", xi, g)
+
+                    return fock
+
+            return Blocks()
 
         f = util.Namespace()
-
-        oo = fock.aa[: self.nocc[0], : self.nocc[0]]
-        ov = fock.aa[: self.nocc[0], self.nocc[0] :]
-        vo = fock.aa[self.nocc[0] :, : self.nocc[0]]
-        vv = fock.aa[self.nocc[0] :, self.nocc[0] :]
-
-        if self.options.shift:
-            g = self.g
-            oo -= lib.einsum("I,Iij->ij", xi, g.aa.boo + g.aa.boo.transpose(0, 2, 1))
-            ov -= lib.einsum("I,Iia->ia", xi, g.aa.bov + g.aa.bvo.transpose(0, 2, 1))
-            vo -= lib.einsum("I,Iai->ai", xi, g.aa.bvo + g.aa.bov.transpose(0, 2, 1))
-            vv -= lib.einsum("I,Iab->ab", xi, g.aa.bvv + g.aa.bvv.transpose(0, 2, 1))
-
-        f.aa = util.Namespace(oo=oo, ov=ov, vo=vo, vv=vv)
-
-        oo = fock.bb[: self.nocc[1], : self.nocc[1]]
-        ov = fock.bb[: self.nocc[1], self.nocc[1] :]
-        vo = fock.bb[self.nocc[1] :, : self.nocc[1]]
-        vv = fock.bb[self.nocc[1] :, self.nocc[1] :]
-
-        if self.options.shift:
-            g = self.g
-            oo -= lib.einsum("I,Iij->ij", xi, g.bb.boo + g.bb.boo.transpose(0, 2, 1))
-            ov -= lib.einsum("I,Iia->ia", xi, g.bb.bov + g.bb.bvo.transpose(0, 2, 1))
-            vo -= lib.einsum("I,Iai->ai", xi, g.bb.bvo + g.bb.bov.transpose(0, 2, 1))
-            vv -= lib.einsum("I,Iab->ab", xi, g.bb.bvv + g.bb.bvv.transpose(0, 2, 1))
-
-        f.bb = util.Namespace(oo=oo, ov=ov, vo=vo, vv=vv)
+        f.aa = constructor(0)
+        f.bb = constructor(1)
 
         return f
 
