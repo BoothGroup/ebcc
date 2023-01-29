@@ -103,10 +103,7 @@ class GEBCC(rebcc.REBCC):
         gcc = cls(
             ucc.mf,
             log=ucc.log,
-            fermion_ansatz=ucc.fermion_ansatz,
-            boson_ansatz=ucc.boson_ansatz,
-            fermion_coupling_rank=ucc.fermion_coupling_rank,
-            boson_coupling_rank=ucc.boson_coupling_rank,
+            ansatz=ucc.ansatz,
             omega=ucc.omega,
             g=g,
             G=ucc.bare_G,

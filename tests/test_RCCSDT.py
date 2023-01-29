@@ -33,7 +33,7 @@ class RCCSDT_Tests(unittest.TestCase):
 
         rccsdt = REBCC(
                 mf,
-                fermion_ansatz="CCSDT",
+                ansatz="CCSDT",
                 log=NullLogger(),
         )
         rccsdt.options.e_tol = 1e-10
@@ -42,7 +42,7 @@ class RCCSDT_Tests(unittest.TestCase):
 
         gccsdt = GEBCC(
                 mf,
-                fermion_ansatz="CCSDT",
+                ansatz="CCSDT",
                 log=NullLogger(),
         )
         gccsdt.options.e_tol = 1e-10

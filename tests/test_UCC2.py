@@ -38,7 +38,7 @@ class UCC2_PySCF_Tests(unittest.TestCase):
 
         ccsd = UEBCC(
                 mf,
-                fermion_ansatz="CC2",
+                ansatz="CC2",
                 log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-10
@@ -96,7 +96,7 @@ class UCC2_Tests(unittest.TestCase):
 
         ccsd = UEBCC(
                 mf,
-                fermion_ansatz="CC2",
+                ansatz="CC2",
                 log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-10

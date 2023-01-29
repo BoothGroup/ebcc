@@ -32,7 +32,7 @@ class GCCSDT_Tests(unittest.TestCase):
 
         ccsdt = GEBCC(
                 mf,
-                fermion_ansatz="CCSDT",
+                ansatz="CCSDT",
                 log=NullLogger(),
         )
         ccsdt.kernel()

@@ -160,15 +160,11 @@ EBCC.__doc__ = REBCC.__doc__
 
 # --- Constructors for boson-free calculations:
 
-
-def _boson_free_factory(ansatz):
+def _factory(ansatz):
     def constructor(mf, *args, **kwargs):
         from pyscf import scf
 
-        kwargs["fermion_ansatz"] = ansatz
-        kwargs["boson_asnatz"] = ""
-        kwargs["fermion_coupling_rank"] = 0
-        kwargs["boson_coupling_rank"] = 0
+        kwargs["ansatz"] = ansatz
 
         if isinstance(mf, scf.uhf.UHF):
             cc = UEBCC(mf, *args, **kwargs)
@@ -184,9 +180,12 @@ def _boson_free_factory(ansatz):
     return constructor
 
 
-CCSD = _boson_free_factory("CCSD")
+CCSD = _factory("CCSD")
+CCSDT = _factory("CCSDT")
+CC2 = _factory("CC2")
+CC3 = _factory("CC3")
 
-CC2 = _boson_free_factory("CC2")
+del _factory
 
 
 # --- List available methods:

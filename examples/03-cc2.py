@@ -11,6 +11,6 @@ mol.build()
 mf = scf.RHF(mol)
 mf.kernel()
 
-ccsd = EBCC(mf, fermion_ansatz="CC2")
+ccsd = EBCC(mf, ansatz="CC2")
 ccsd.kernel()
 

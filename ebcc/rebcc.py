@@ -134,14 +134,6 @@ class REBCC(AbstractEBCC):
         Overall ansatz, as a string representation or an Ansatz
         object. If None, construct from the individual ansatz
         parameters, otherwise override them. Default value is None.
-    fermion_ansatz : str, optional
-        Fermionic ansatz. Default value is "CCSD".
-    boson_ansatz : str, optional
-        Rank of bosonic excitations. Default is "".
-    fermion_coupling_rank : int, optional
-        Rank of fermionic term in coupling. Default is 0.
-    boson_coupling_rank : int, optional
-        Rank of bosonic term in coupling. Default is 0.
     omega : numpy.ndarray (nbos,), optional
         Bosonic frequencies. Default value is None.
     g : numpy.ndarray (nbos, nmo, nmo), optional
@@ -316,11 +308,7 @@ class REBCC(AbstractEBCC):
         self,
         mf: scf.hf.SCF,
         log: logging.Logger = None,
-        ansatz: Union[str, Ansatz] = None,
-        fermion_ansatz: str = "CCSD",
-        boson_ansatz: str = "",
-        fermion_coupling_rank: int = 0,
-        boson_coupling_rank: int = 0,
+        ansatz: Union[str, Ansatz] = "CCSD",
         omega: np.ndarray = None,
         g: np.ndarray = None,
         G: np.ndarray = None,
@@ -344,18 +332,10 @@ class REBCC(AbstractEBCC):
         self._mo_occ = mo_occ
 
         # Ansatz:
-        if ansatz is None:
-            self.ansatz = Ansatz(
-                    fermion_ansatz=fermion_ansatz,
-                    boson_ansatz=boson_ansatz,
-                    fermion_coupling_rank=fermion_coupling_rank,
-                    boson_coupling_rank=boson_coupling_rank,
-            )
+        if isinstance(ansatz, Ansatz):
+            self.ansatz = ansatz
         else:
-            if isinstance(ansatz, Ansatz):
-                self.ansatz = ansatz
-            else:
-                self.ansatz = Ansatz.from_string(ansatz)
+            self.ansatz = Ansatz.from_string(ansatz)
         self._eqns = self.ansatz._get_eqns(self.__class__.__name__[0])
 
         # Boson parameters:

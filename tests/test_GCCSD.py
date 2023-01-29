@@ -42,7 +42,7 @@ class GCCSD_Tests(unittest.TestCase):
 
         ccsd = GEBCC(
                 mf.to_ghf(),  # Direct conversion needed for same ordering as reference data
-                fermion_ansatz="CCSD",
+                ansatz="CCSD",
                 log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-12
@@ -131,7 +131,7 @@ class GCCSD_Tests(unittest.TestCase):
 
         gebcc1 = GEBCC(
                 mf,
-                fermion_ansatz="CCSD",
+                ansatz="CCSD",
                 log=NullLogger(),
         )
         gebcc1.options.e_tol = 1e-12
@@ -141,7 +141,7 @@ class GCCSD_Tests(unittest.TestCase):
 
         rebcc = REBCC(
                 mf,
-                fermion_ansatz="CCSD",
+                ansatz="CCSD",
                 log=NullLogger(),
         )
         rebcc.options.e_tol = 1e-12
@@ -164,7 +164,7 @@ class GCCSD_Tests(unittest.TestCase):
 
         gebcc1 = GEBCC(
                 mf,
-                fermion_ansatz="CCSD",
+                ansatz="CCSD",
                 log=NullLogger(),
         )
         gebcc1.options.e_tol = 1e-12
@@ -174,7 +174,7 @@ class GCCSD_Tests(unittest.TestCase):
 
         uebcc = UEBCC(
                 mf,
-                fermion_ansatz="CCSD",
+                ansatz="CCSD",
                 log=NullLogger(),
         )
         uebcc.options.e_tol = 1e-12
@@ -216,7 +216,7 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
 
         ccsd = GEBCC(
                 mf,
-                fermion_ansatz="CCSD",
+                ansatz="CCSD",
                 log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-12

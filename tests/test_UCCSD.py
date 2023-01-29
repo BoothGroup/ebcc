@@ -42,7 +42,7 @@ class UCCSD_Tests(unittest.TestCase):
 
         ccsd = UEBCC(
                 mf,
-                fermion_ansatz="CCSD",
+                ansatz="CCSD",
                 log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-12
@@ -87,7 +87,7 @@ class UCCSD_Tests(unittest.TestCase):
     def test_from_rebcc(self):
         rebcc = REBCC(
                 self.mf,
-                fermion_ansatz="CCSD",
+                ansatz="CCSD",
                 log=NullLogger(),
         )
         rebcc.options.e_tol = 1e-12
@@ -177,7 +177,7 @@ class UCCSD_PySCF_Tests(unittest.TestCase):
 
         ccsd = UEBCC(
                 mf,
-                fermion_ansatz="CCSD",
+                ansatz="CCSD",
                 log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-12

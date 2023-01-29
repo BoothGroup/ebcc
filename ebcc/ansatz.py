@@ -20,8 +20,54 @@ named_ansatzes = {
 }
 
 
+def name_to_identifier(name):
+    """Convert an ansatz name to an identifer that can be used for
+    variable and file names.
+
+    >>> identifier_to_name("CCSD(T)")
+    CCSDxTx
+    >>> identifier_to_name("CCSD-SD-1-2")
+    CCSD_SD_1_2
+    """
+
+    iden = name.replace("(", "x").replace(")", "x")
+    iden = iden.replace("[", "y").replace("]", "y")
+    iden = iden.replace("-", "_")
+
+    return iden
+
+
+def identifity_to_name(iden):
+    """Convert an ansatz identifier to a name.
+
+    >>> identifier_to_name("CCSDxTx")
+    CCSD(T)
+    >>> identifier_to_name("CCSD_SD_1_2")
+    CCSD-SD-1-2
+    """
+
+    name = iden.replace("-", "_")
+    while "x" in name:
+        name = name.replace("x", "(", 1).replace("x", ")", 1)
+    while "y" in name:
+        name = name.replace("y", "(", 1).replace("y", ")", 1)
+
+    return name
+
+
 class Ansatz:
     """Ansatz class.
+
+    Parameters
+    ----------
+    fermion_ansatz : str, optional
+        Fermionic ansatz. Default value is "CCSD".
+    boson_ansatz : str, optional
+        Rank of bosonic excitations. Default is "".
+    fermion_coupling_rank : int, optional
+        Rank of fermionic term in coupling. Default is 0.
+    boson_coupling_rank : int, optional
+        Rank of bosonic term in coupling. Default is 0.
     """
 
     def __init__(
@@ -40,8 +86,7 @@ class Ansatz:
         """Get the module which contains the generated equations for
         the current model.
         """
-        name = prefix + self.name.replace("-", "_")
-        name = name.replace("(", "_").replace(")", "")
+        name = prefix + name_to_identifier(self.name)
         eqns = importlib.import_module("ebcc.codegen.%s" % name)
         return eqns
 
@@ -62,6 +107,8 @@ class Ansatz:
 
         if string not in named_ansatzes:
             raise util.ModelNotImplemented(string)
+
+        return cls(*named_ansatzes[string])
 
     @property
     def name(self):

@@ -109,10 +109,7 @@ class UEBCC(rebcc.REBCC):
         ucc = cls(
             rcc.mf,
             log=rcc.log,
-            fermion_ansatz=rcc.fermion_ansatz,
-            boson_ansatz=rcc.boson_ansatz,
-            fermion_coupling_rank=rcc.fermion_coupling_rank,
-            boson_coupling_rank=rcc.boson_coupling_rank,
+            ansatz=rcc.ansatz,
             omega=rcc.omega,
             g=rcc.bare_g,
             G=rcc.bare_G,
