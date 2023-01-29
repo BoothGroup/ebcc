@@ -605,8 +605,8 @@ class REBCC(AbstractEBCC):
             g=self.g,
             G=self.G,
             w=omega,
-            nocc=self.nocc,
-            nvir=self.nvir,
+            nocc=self.space.ncocc,  # FIXME rename?
+            nvir=self.space.ncvir,  # FIXME rename?
             nbos=self.nbos,
         )
         for kw in extra_kwargs:
@@ -662,7 +662,7 @@ class REBCC(AbstractEBCC):
                 e_ijab = lib.direct_sum("ia,jb->ijab", e_ia, e_ia)
                 amplitudes["t%d" % n] = eris.ovov.swapaxes(1, 2) / e_ijab
             else:
-                amplitudes["t%d" % n] = np.zeros((self.nocc,) * n + (self.nvir,) * n)
+                amplitudes["t%d" % n] = np.zeros((self.space.ncocc,) * n + (self.space.ncvir,) * n)
 
         if self.boson_ansatz:
             # Only true for real-valued couplings:
@@ -686,7 +686,7 @@ class REBCC(AbstractEBCC):
                     amplitudes["u%d%d" % (nf, nb)] = h.bov / e_xia
                 else:
                     amplitudes["u%d%d" % (nf, nb)] = np.zeros(
-                        (self.nbos,) * nb + (self.nocc, self.nvir)
+                        (self.nbos,) * nb + (self.space.ncocc, self.space.ncvir)
                     )
 
         return amplitudes
@@ -1112,7 +1112,7 @@ class REBCC(AbstractEBCC):
 
         if unshifted and self.options.shift:
             rdm1_f = self.make_rdm1_f(hermitise=hermitise)
-            shift = lib.einsum("x,ij->xij", self.xi, rdm1_f)
+            shift = util.einsum("x,ij->xij", self.xi, rdm1_f)
             dm_eb -= shift[None]
 
         return dm_eb
@@ -1531,7 +1531,7 @@ class REBCC(AbstractEBCC):
         i0 = 0
 
         for n in self.ansatz.correlated_cluster_ranks[0]:
-            shape = (self.nocc,) * n + (self.nvir,) * n
+            shape = (self.space.ncocc,) * n + (self.space.ncvir,) * n
             size = np.prod(shape)
             amplitudes["t%d" % n] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
@@ -1544,7 +1544,7 @@ class REBCC(AbstractEBCC):
 
         for nf in self.ansatz.correlated_cluster_ranks[2]:
             for nb in self.ansatz.correlated_cluster_ranks[3]:
-                shape = (self.nbos,) * nb + (self.nocc, self.nvir) * nf
+                shape = (self.nbos,) * nb + (self.space.ncocc, self.space.ncvir) * nf
                 size = np.prod(shape)
                 amplitudes["u%d%d" % (nf, nb)] = vector[i0 : i0 + size].reshape(shape)
                 i0 += size
@@ -1602,7 +1602,7 @@ class REBCC(AbstractEBCC):
         i0 = 0
 
         for n in self.ansatz.correlated_cluster_ranks[0]:
-            shape = (self.nvir,) * n + (self.nocc,) * n
+            shape = (self.space.ncvir,) * n + (self.space.ncocc,) * n
             size = np.prod(shape)
             lambdas["l%d" % n] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
@@ -1615,7 +1615,7 @@ class REBCC(AbstractEBCC):
 
         for nf in self.ansatz.correlated_cluster_ranks[2]:
             for nb in self.ansatz.correlated_cluster_ranks[3]:
-                shape = (self.nbos,) * nb + (self.nvir, self.nocc) * nf
+                shape = (self.nbos,) * nb + (self.space.ncvir, self.space.ncocc) * nf
                 size = np.prod(shape)
                 lambdas["lu%d%d" % (nf, nb)] = vector[i0 : i0 + size].reshape(shape)
                 i0 += size
@@ -1716,7 +1716,7 @@ class REBCC(AbstractEBCC):
         i0 = 0
 
         for n in self.ansatz.correlated_cluster_ranks[0]:
-            shape = (self.nocc,) * n + (self.nvir,) * (n - 1)
+            shape = (self.space.ncocc,) * n + (self.space.ncvir,) * (n - 1)
             size = np.prod(shape)
             excitations.append(vector[i0 : i0 + size].reshape(shape))
             i0 += size
@@ -1752,7 +1752,7 @@ class REBCC(AbstractEBCC):
         i0 = 0
 
         for n in self.ansatz.correlated_cluster_ranks[0]:
-            shape = (self.nvir,) * n + (self.nocc,) * (n - 1)
+            shape = (self.space.ncvir,) * n + (self.space.ncocc,) * (n - 1)
             size = np.prod(shape)
             excitations.append(vector[i0 : i0 + size].reshape(shape))
             i0 += size
@@ -1788,7 +1788,7 @@ class REBCC(AbstractEBCC):
         i0 = 0
 
         for n in self.ansatz.correlated_cluster_ranks[0]:
-            shape = (self.nocc,) * n + (self.nvir,) * n
+            shape = (self.space.ncocc,) * n + (self.space.ncvir,) * n
             size = np.prod(shape)
             excitations.append(vector[i0 : i0 + size].reshape(shape))
             i0 += size
@@ -2046,7 +2046,7 @@ class REBCC(AbstractEBCC):
 
         Returns
         -------
-        eo : numpy.ndarray (nocc,)
+        eo : numpy.ndarray (naocc,)
             Diagonal of the occupied Fock matrix in MO basis.
         """
         return np.diag(self.fock.oo)
@@ -2058,7 +2058,7 @@ class REBCC(AbstractEBCC):
 
         Returns
         -------
-        ev : numpy.ndarray (nvir,)
+        ev : numpy.ndarray (navir,)
             Diagonal of the virtual Fock matrix in MO basis.
         """
         return np.diag(self.fock.vv)
@@ -2076,44 +2076,24 @@ class REBCC(AbstractEBCC):
 
     @property
     def t1(self):
-        """Return the T1 amplitude.
-
-        Returns
-        -------
-        t1 : numpy.ndarray (nocc, nvir)
-            T1 amplitude.
-        """
         return self.amplitudes["t1"]
 
     @property
     def t2(self):
-        """Return the T2 amplitude.
-
-        Returns
-        -------
-        t2 : numpy.ndarray (nocc, nocc, nvir, nvir)
-            T2 amplitude.
-        """
         return self.amplitudes["t2"]
 
     @property
-    def l1(self):
-        """Return the L1 amplitude.
+    def t3(self):
+        return self.amplitudes["t3"]
 
-        Returns
-        -------
-        l1 : numpy.ndarray (nvir, nocc)
-            L1 amplitude.
-        """
+    @property
+    def l1(self):
         return self.lambdas["l1"]
 
     @property
     def l2(self):
-        """Return the L1 amplitude.
-
-        Returns
-        -------
-        l1 : numpy.ndarray (nvir, nocc)
-            L1 amplitude.
-        """
         return self.lambdas["l2"]
+
+    @property
+    def l3(self):
+        return self.lambdas["l3"]

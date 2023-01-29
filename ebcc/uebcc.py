@@ -180,6 +180,27 @@ class UEBCC(rebcc.REBCC):
 
         return ucc
 
+    def _pack_codegen_kwargs(self, *extra_kwargs, eris=None):
+        eris = self.get_eris(eris)
+
+        omega = np.diag(self.omega) if self.omega is not None else None
+
+        kwargs = dict(
+            f=self.fock,
+            v=eris,
+            g=self.g,
+            G=self.G,
+            w=omega,
+            nocc=(self.space[0].ncocc, self.space[1].ncocc),  # FIXME rename?
+            nvir=(self.space[0].ncvir, self.space[1].ncvir),  # FIXME rename?
+            nbos=self.nbos,
+        )
+        for kw in extra_kwargs:
+            if kw is not None:
+                kwargs.update(kw)
+
+        return kwargs
+
     def init_space(self):
         space = (
                 Space(
@@ -233,8 +254,8 @@ class UEBCC(rebcc.REBCC):
             else:
                 tn = util.Namespace()
                 for comb in util.generate_spin_combinations(3):
-                    shape = tuple(self.nocc["ab".index(s)] for s in comb[:3])
-                    shape += tuple(self.nvir["ab".index(s)] for s in comb[3:])
+                    shape = tuple(self.space["ab".index(s)].ncocc for s in comb[:3])
+                    shape += tuple(self.space["ab".index(s)].ncvir for s in comb[3:])
                     amp = np.zeros(shape)
                     setattr(tn, comb, amp)
                 amplitudes["t%d" % n] = tn
@@ -268,8 +289,8 @@ class UEBCC(rebcc.REBCC):
                     amplitudes["u%d%d" % (nf, nb)] = u1n
                 else:
                     u1n = util.Namespace(
-                        aa=np.zeros((self.nbos,) * nb + (self.nocc[0], self.nvir[0])),
-                        bb=np.zeros((self.nbos,) * nb + (self.nocc[1], self.nvir[1])),
+                        aa=np.zeros((self.nbos,) * nb + (self.space[0].ncocc, self.space[0].ncvir)),
+                        bb=np.zeros((self.nbos,) * nb + (self.space[1].ncocc, self.space[1].ncvir)),
                     )
                     amplitudes["u%d%d" % (nf, nb)] = u1n
 
@@ -640,12 +661,12 @@ class UEBCC(rebcc.REBCC):
             for spin in util.generate_spin_combinations(n):
                 subscript = spin[:n] + spin[n:].upper()
                 size = util.get_compressed_size(
-                    subscript, a=self.nocc[0], b=self.nocc[1], A=self.nvir[0], B=self.nvir[1]
+                    subscript, a=self.space[0].ncocc, b=self.space[1].ncocc, A=self.space[0].ncvir, B=self.space[1].ncvir
                 )
                 shape = tuple(
                     [
-                        *[self.nocc["ab".index(s)] for s in spin[:n]],
-                        *[self.nvir["ab".index(s)] for s in spin[n:]],
+                        *[self.space["ab".index(s)].ncocc for s in spin[:n]],
+                        *[self.space["ab".index(s)].ncvir for s in spin[n:]],
                     ]
                 )
                 tn_tril = vector[i0 : i0 + size]
@@ -664,11 +685,11 @@ class UEBCC(rebcc.REBCC):
                 raise util.ModelNotImplemented
             for nb in self.ansatz.correlated_cluster_ranks[3]:
                 amplitudes["u%d%d" % (nf, nb)] = util.Namespace()
-                shape = (self.nbos,) * nb + (self.nocc[0], self.nvir[0]) * nf
+                shape = (self.nbos,) * nb + (self.space[0].ncocc, self.space[0].ncvir) * nf
                 size = np.prod(shape)
                 amplitudes["u%d%d" % (nf, nb)].aa = vector[i0 : i0 + size].reshape(shape)
                 i0 += size
-                shape = (self.nbos,) * nb + (self.nocc[1], self.nvir[1]) * nf
+                shape = (self.nbos,) * nb + (self.space[1].ncocc, self.space[1].ncvir) * nf
                 size = np.prod(shape)
                 amplitudes["u%d%d" % (nf, nb)].bb = vector[i0 : i0 + size].reshape(shape)
                 i0 += size
@@ -708,12 +729,12 @@ class UEBCC(rebcc.REBCC):
             for spin in util.generate_spin_combinations(n):
                 subscript = spin[:n] + spin[n:].upper()
                 size = util.get_compressed_size(
-                    subscript, a=self.nvir[0], b=self.nvir[1], A=self.nocc[0], B=self.nocc[1]
+                    subscript, a=self.space[0].ncvir, b=self.space[1].ncvir, A=self.space[0].ncocc, B=self.space[1].ncocc,
                 )
                 shape = tuple(
                     [
-                        *[self.nvir["ab".index(s)] for s in spin[:n]],
-                        *[self.nocc["ab".index(s)] for s in spin[n:]],
+                        *[self.space["ab".index(s)].ncvir for s in spin[:n]],
+                        *[self.space["ab".index(s)].ncocc for s in spin[n:]],
                     ]
                 )
                 tn_tril = vector[i0 : i0 + size]
@@ -732,11 +753,11 @@ class UEBCC(rebcc.REBCC):
                 raise util.ModelNotImplemented
             for nb in self.ansatz.correlated_cluster_ranks[3]:
                 lambdas["lu%d%d" % (nf, nb)] = util.Namespace()
-                shape = (self.nbos,) * nb + (self.nvir[0], self.nocc[0]) * nf
+                shape = (self.nbos,) * nb + (self.space[0].ncvir, self.space[0].ncocc) * nf
                 size = np.prod(shape)
                 lambdas["lu%d%d" % (nf, nb)].aa = vector[i0 : i0 + size].reshape(shape)
                 i0 += size
-                shape = (self.nbos,) * nb + (self.nvir[1], self.nocc[1]) * nf
+                shape = (self.nbos,) * nb + (self.space[1].ncvir, self.space[1].ncocc) * nf
                 size = np.prod(shape)
                 lambdas["lu%d%d" % (nf, nb)].bb = vector[i0 : i0 + size].reshape(shape)
                 i0 += size
@@ -794,12 +815,12 @@ class UEBCC(rebcc.REBCC):
             for spin in util.generate_spin_combinations(n, excited=True):
                 subscript = spin[:n] + spin[n:].upper()
                 size = util.get_compressed_size(
-                    subscript, a=self.nocc[0], b=self.nocc[1], A=self.nvir[0], B=self.nvir[1]
+                    subscript, a=self.space[0].ncocc, b=self.space[1].ncocc, A=self.space[0].ncvir, B=self.space[1].ncvir,
                 )
                 shape = tuple(
                     [
-                        *[self.nocc["ab".index(s)] for s in spin[:n]],
-                        *[self.nvir["ab".index(s)] for s in spin[n:]],
+                        *[self.space["ab".index(s)].ncocc for s in spin[:n]],
+                        *[self.space["ab".index(s)].ncvir for s in spin[n:]],
                     ]
                 )
                 vn_tril = vector[i0 : i0 + size]
@@ -832,12 +853,12 @@ class UEBCC(rebcc.REBCC):
             for spin in util.generate_spin_combinations(n, excited=True):
                 subscript = spin[:n] + spin[n:].upper()
                 size = util.get_compressed_size(
-                    subscript, a=self.nvir[0], b=self.nvir[1], A=self.nocc[0], B=self.nocc[1]
+                    subscript, a=self.space[0].ncvir, b=self.space[1].ncvir, A=self.space[0].ncocc, B=self.space[1].ncocc,
                 )
                 shape = tuple(
                     [
-                        *[self.nvir["ab".index(s)] for s in spin[:n]],
-                        *[self.nocc["ab".index(s)] for s in spin[n:]],
+                        *[self.space["ab".index(s)].ncvir for s in spin[:n]],
+                        *[self.space["ab".index(s)].ncocc for s in spin[n:]],
                     ]
                 )
                 vn_tril = vector[i0 : i0 + size]
@@ -870,12 +891,12 @@ class UEBCC(rebcc.REBCC):
             for spin in util.generate_spin_combinations(n):
                 subscript = spin[:n] + spin[n:].upper()
                 size = util.get_compressed_size(
-                    subscript, a=self.nocc[0], b=self.nocc[1], A=self.nvir[0], B=self.nvir[1]
+                    subscript, a=self.space[0].ncocc, b=self.space[1].ncocc, A=self.space[0].ncvir, B=self.space[1].ncvir,
                 )
                 shape = tuple(
                     [
-                        *[self.nocc["ab".index(s)] for s in spin[:n]],
-                        *[self.nvir["ab".index(s)] for s in spin[n:]],
+                        *[self.space["ab".index(s)].ncocc for s in spin[:n]],
+                        *[self.space["ab".index(s)].ncvir for s in spin[n:]],
                     ]
                 )
                 vn_tril = vector[i0 : i0 + size]

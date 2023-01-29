@@ -108,8 +108,8 @@ class IP_UEOM(UEOM, reom.IP_REOM):
                 amp_a = util.Namespace()
                 amp_b = util.Namespace()
                 for spin in util.generate_spin_combinations(n, excited=True):
-                    shape = tuple(self.nocc["ab".index(s)] for s in spin[:n]) + tuple(
-                        self.nvir["ab".index(s)] for s in spin[n:]
+                    shape = tuple(self.space["ab".index(s)].ncocc for s in spin[:n]) + tuple(
+                        self.space["ab".index(s)].ncvir for s in spin[n:]
                     )
                     setattr(amp_a, spin, getattr(bras_raw[m], "a" + spin, {i: np.zeros(shape)})[i])
                     setattr(amp_b, spin, getattr(bras_raw[m], "b" + spin, {i: np.zeros(shape)})[i])
@@ -146,8 +146,8 @@ class IP_UEOM(UEOM, reom.IP_REOM):
                 amp_a = util.Namespace()
                 amp_b = util.Namespace()
                 for spin in util.generate_spin_combinations(n, excited=True):
-                    shape = tuple(self.nocc["ab".index(s)] for s in spin[:n]) + tuple(
-                        self.nvir["ab".index(s)] for s in spin[n:]
+                    shape = tuple(self.space["ab".index(s)].ncocc for s in spin[:n]) + tuple(
+                        self.space["ab".index(s)].ncvir for s in spin[n:]
                     )
                     setattr(amp_a, spin, getattr(kets_raw[m], spin + "a", {j: np.zeros(shape)})[j])
                     setattr(amp_b, spin, getattr(kets_raw[m], spin + "b", {j: np.zeros(shape)})[j])
@@ -216,8 +216,8 @@ class EA_UEOM(UEOM, reom.EA_REOM):
                 amp_a = util.Namespace()
                 amp_b = util.Namespace()
                 for spin in util.generate_spin_combinations(n, excited=True):
-                    shape = tuple(self.nvir["ab".index(s)] for s in spin[:n]) + tuple(
-                        self.nocc["ab".index(s)] for s in spin[n:]
+                    shape = tuple(self.space["ab".index(s)].ncvir for s in spin[:n]) + tuple(
+                        self.space["ab".index(s)].ncocc for s in spin[n:]
                     )
                     setattr(amp_a, spin, getattr(bras_raw[m], "a" + spin, {i: np.zeros(shape)})[i])
                     setattr(amp_b, spin, getattr(bras_raw[m], "b" + spin, {i: np.zeros(shape)})[i])
@@ -254,8 +254,8 @@ class EA_UEOM(UEOM, reom.EA_REOM):
                 amp_a = util.Namespace()
                 amp_b = util.Namespace()
                 for spin in util.generate_spin_combinations(n, excited=True):
-                    shape = tuple(self.nvir["ab".index(s)] for s in spin[:n]) + tuple(
-                        self.nocc["ab".index(s)] for s in spin[n:]
+                    shape = tuple(self.space["ab".index(s)].ncvir for s in spin[:n]) + tuple(
+                        self.space["ab".index(s)].ncocc for s in spin[n:]
                     )
                     setattr(amp_a, spin, getattr(kets_raw[m], spin + "a", {j: np.zeros(shape)})[j])
                     setattr(amp_b, spin, getattr(kets_raw[m], spin + "b", {j: np.zeros(shape)})[j])
@@ -328,8 +328,8 @@ class EE_UEOM(UEOM, reom.EE_REOM):
                     for spin in util.generate_spin_combinations(n):
                         shape = tuple(
                             [
-                                *[self.nocc["ab".index(s)] for s in spin[:n]],
-                                *[self.nvir["ab".index(s)] for s in spin[n:]],
+                                *[self.space["ab".index(s)].ncocc for s in spin[:n]],
+                                *[self.space["ab".index(s)].ncvir for s in spin[n:]],
                             ]
                         )
                         setattr(
@@ -383,8 +383,8 @@ class EE_UEOM(UEOM, reom.EE_REOM):
                     for spin in util.generate_spin_combinations(n):
                         shape = tuple(
                             [
-                                *[self.nocc["ab".index(s)] for s in spin[:n]],
-                                *[self.nvir["ab".index(s)] for s in spin[n:]],
+                                *[self.space["ab".index(s)].ncocc for s in spin[:n]],
+                                *[self.space["ab".index(s)].ncvir for s in spin[n:]],
                             ]
                         )
                         setattr(
