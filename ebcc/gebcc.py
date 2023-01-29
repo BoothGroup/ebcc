@@ -10,6 +10,7 @@ import scipy.linalg
 from pyscf import ao2mo, lib, scf
 
 from ebcc import geom, rebcc, uebcc, util
+from ebcc.space import Space
 
 
 class Amplitudes(rebcc.Amplitudes):
@@ -60,7 +61,7 @@ class ERIs(rebcc.ERIs):
 
     def __getattr__(self, key: str) -> np.ndarray:
         i, j, k, l = (self.slices[i][k] for i, k in enumerate(key))
-        return self.eri[i, j, k, l]
+        return self.eri[i][:, j][:, :, k][:, :, :, l]
 
 
 @util.inherit_docstrings
@@ -100,10 +101,25 @@ class GEBCC(rebcc.REBCC):
         else:
             g = None
 
+        occupied = np.zeros((nocc+nvir,), dtype=bool)
+        occupied[slices["a"]] = ucc.space[0].occupied.copy()
+        occupied[slices["b"]] = ucc.space[1].occupied.copy()
+        frozen = np.zeros((nocc+nvir,), dtype=bool)
+        frozen[slices["a"]] = ucc.space[0].frozen.copy()
+        frozen[slices["b"]] = ucc.space[1].frozen.copy()
+        correlated = np.zeros((nocc+nvir,), dtype=bool)
+        correlated[slices["a"]] = ucc.space[0].correlated.copy()
+        correlated[slices["b"]] = ucc.space[1].correlated.copy()
+        active = np.zeros((nocc+nvir,), dtype=bool)
+        active[slices["a"]] = ucc.space[0].active.copy()
+        active[slices["b"]] = ucc.space[1].active.copy()
+        space = Space(occupied, frozen, correlated, active)
+
         gcc = cls(
             ucc.mf,
             log=ucc.log,
             ansatz=ucc.ansatz,
+            space=space,
             omega=ucc.omega,
             g=g,
             G=ucc.bare_G,

@@ -10,6 +10,7 @@ import numpy as np
 from pyscf import ao2mo, lib
 
 from ebcc import rebcc, ueom, util
+from ebcc.space import Space
 
 
 class Amplitudes(rebcc.Amplitudes):
@@ -39,10 +40,23 @@ class ERIs(types.SimpleNamespace):
         mo_coeff: Sequence[np.ndarray] = None,
     ):
         self.mf = ebcc.mf
+        self.space = ebcc.space
         self.mo_coeff = mo_coeff
-        o = [slice(None, n) for n in ebcc.nocc]
-        v = [slice(n, None) for n in ebcc.nocc]
-        slices = [{"o": o1, "v": v1} for o1, v1 in zip(o, v)]
+        slices = [
+                {
+                    "o": np.logical_or(
+                        space.correlated_occupied,
+                        space.active_occupied,
+                    ),
+                    "v": np.logical_or(
+                        space.correlated_virtual,
+                        space.active_virtual,
+                    ),
+                    "O": space.active_occupied,
+                    "V": space.active_virtual,
+                }
+                for space in self.space
+        ]
 
         if self.mo_coeff is None:
             self.mo_coeff = ebcc.mo_coeff
@@ -110,6 +124,7 @@ class UEBCC(rebcc.REBCC):
             rcc.mf,
             log=rcc.log,
             ansatz=rcc.ansatz,
+            space=(rcc.space, rcc.space),
             omega=rcc.omega,
             g=rcc.bare_g,
             G=rcc.bare_G,
@@ -170,6 +185,24 @@ class UEBCC(rebcc.REBCC):
             ucc.lambdas = lambdas
 
         return ucc
+
+    def init_space(self):
+        space = (
+                Space(
+                    self.mo_occ[0] > 0,
+                    np.zeros_like(self.mo_occ[0], dtype=bool),
+                    np.ones_like(self.mo_occ[0], dtype=bool),
+                    np.zeros_like(self.mo_occ[0], dtype=bool),
+                ),
+                Space(
+                    self.mo_occ[1] > 0,
+                    np.zeros_like(self.mo_occ[1], dtype=bool),
+                    np.ones_like(self.mo_occ[1], dtype=bool),
+                    np.zeros_like(self.mo_occ[1], dtype=bool),
+                ),
+        )
+
+        return space
 
     def init_amps(self, eris=None):
         eris = self.get_eris(eris)
