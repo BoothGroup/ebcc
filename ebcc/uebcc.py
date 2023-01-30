@@ -43,13 +43,13 @@ class ERIs(types.SimpleNamespace):
         self.space = ebcc.space
         self.mo_coeff = mo_coeff
         slices = [
-                {
-                    "o": space.correlated_occupied,
-                    "v": space.correlated_virtual,
-                    "O": space.active_occupied,
-                    "V": space.active_virtual,
-                }
-                for space in self.space
+            {
+                "o": space.correlated_occupied,
+                "v": space.correlated_virtual,
+                "O": space.active_occupied,
+                "V": space.active_virtual,
+            }
+            for space in self.space
         ]
 
         if self.mo_coeff is None:
@@ -203,16 +203,16 @@ class UEBCC(rebcc.REBCC):
 
     def init_space(self):
         space = (
-                Space(
-                    self.mo_occ[0] > 0,
-                    np.zeros_like(self.mo_occ[0], dtype=bool),
-                    np.zeros_like(self.mo_occ[0], dtype=bool),
-                ),
-                Space(
-                    self.mo_occ[1] > 0,
-                    np.zeros_like(self.mo_occ[1], dtype=bool),
-                    np.zeros_like(self.mo_occ[1], dtype=bool),
-                ),
+            Space(
+                self.mo_occ[0] > 0,
+                np.zeros_like(self.mo_occ[0], dtype=bool),
+                np.zeros_like(self.mo_occ[0], dtype=bool),
+            ),
+            Space(
+                self.mo_occ[1] > 0,
+                np.zeros_like(self.mo_occ[1], dtype=bool),
+                np.zeros_like(self.mo_occ[1], dtype=bool),
+            ),
         )
 
         return space
@@ -519,13 +519,13 @@ class UEBCC(rebcc.REBCC):
             g = np.array([g, g])
 
         slices = [
-                {
-                    "o": space.correlated_occupied,
-                    "v": space.correlated_virtual,
-                    "O": space.active_occupied,
-                    "V": space.active_virtual,
-                }
-                for space in self.space
+            {
+                "o": space.correlated_occupied,
+                "v": space.correlated_virtual,
+                "O": space.active_occupied,
+                "V": space.active_virtual,
+            }
+            for space in self.space
         ]
 
         def constructor(s):
@@ -565,13 +565,13 @@ class UEBCC(rebcc.REBCC):
 
     def get_fock(self):
         slices = [
-                {
-                    "o": space.correlated_occupied,
-                    "v": space.correlated_virtual,
-                    "O": space.active_occupied,
-                    "V": space.active_virtual,
-                }
-                for space in self.space
+            {
+                "o": space.correlated_occupied,
+                "v": space.correlated_virtual,
+                "O": space.active_occupied,
+                "V": space.active_virtual,
+            }
+            for space in self.space
         ]
 
         def constructor(s):
@@ -585,9 +585,8 @@ class UEBCC(rebcc.REBCC):
                     if self.options.shift:
                         xi = self.xi
                         gs = getattr(self.g, "ab"[s] * 2)
-                        g = (
-                            + gs.__getattr__("b"+key)
-                            + gs.__getattr__("b"+key[::-1]).transpose(0, 2, 1)
+                        g = +gs.__getattr__("b" + key) + gs.__getattr__("b" + key[::-1]).transpose(
+                            0, 2, 1
                         )
                         fock -= util.einsum("I,Ipq->pq", xi, g)
 
@@ -661,7 +660,11 @@ class UEBCC(rebcc.REBCC):
             for spin in util.generate_spin_combinations(n):
                 subscript = spin[:n] + spin[n:].upper()
                 size = util.get_compressed_size(
-                    subscript, a=self.space[0].ncocc, b=self.space[1].ncocc, A=self.space[0].ncvir, B=self.space[1].ncvir
+                    subscript,
+                    a=self.space[0].ncocc,
+                    b=self.space[1].ncocc,
+                    A=self.space[0].ncvir,
+                    B=self.space[1].ncvir,
                 )
                 shape = tuple(
                     [
@@ -729,7 +732,11 @@ class UEBCC(rebcc.REBCC):
             for spin in util.generate_spin_combinations(n):
                 subscript = spin[:n] + spin[n:].upper()
                 size = util.get_compressed_size(
-                    subscript, a=self.space[0].ncvir, b=self.space[1].ncvir, A=self.space[0].ncocc, B=self.space[1].ncocc,
+                    subscript,
+                    a=self.space[0].ncvir,
+                    b=self.space[1].ncvir,
+                    A=self.space[0].ncocc,
+                    B=self.space[1].ncocc,
                 )
                 shape = tuple(
                     [
@@ -815,7 +822,11 @@ class UEBCC(rebcc.REBCC):
             for spin in util.generate_spin_combinations(n, excited=True):
                 subscript = spin[:n] + spin[n:].upper()
                 size = util.get_compressed_size(
-                    subscript, a=self.space[0].ncocc, b=self.space[1].ncocc, A=self.space[0].ncvir, B=self.space[1].ncvir,
+                    subscript,
+                    a=self.space[0].ncocc,
+                    b=self.space[1].ncocc,
+                    A=self.space[0].ncvir,
+                    B=self.space[1].ncvir,
                 )
                 shape = tuple(
                     [
@@ -853,7 +864,11 @@ class UEBCC(rebcc.REBCC):
             for spin in util.generate_spin_combinations(n, excited=True):
                 subscript = spin[:n] + spin[n:].upper()
                 size = util.get_compressed_size(
-                    subscript, a=self.space[0].ncvir, b=self.space[1].ncvir, A=self.space[0].ncocc, B=self.space[1].ncocc,
+                    subscript,
+                    a=self.space[0].ncvir,
+                    b=self.space[1].ncvir,
+                    A=self.space[0].ncocc,
+                    B=self.space[1].ncocc,
                 )
                 shape = tuple(
                     [
@@ -891,7 +906,11 @@ class UEBCC(rebcc.REBCC):
             for spin in util.generate_spin_combinations(n):
                 subscript = spin[:n] + spin[n:].upper()
                 size = util.get_compressed_size(
-                    subscript, a=self.space[0].ncocc, b=self.space[1].ncocc, A=self.space[0].ncvir, B=self.space[1].ncvir,
+                    subscript,
+                    a=self.space[0].ncocc,
+                    b=self.space[1].ncocc,
+                    A=self.space[0].ncvir,
+                    B=self.space[1].ncvir,
                 )
                 shape = tuple(
                     [
