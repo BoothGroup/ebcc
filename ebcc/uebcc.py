@@ -574,12 +574,14 @@ class UEBCC(rebcc.REBCC):
             for space in self.space
         ]
 
+        bare_fock = self.bare_fock
+
         def constructor(s):
             class Blocks:
                 def __getattr__(selffer, key):
                     i = slices[s][key[0]]
                     j = slices[s][key[1]]
-                    focks = getattr(self.bare_fock, "ab"[s] * 2)
+                    focks = getattr(bare_fock, "ab"[s] * 2)
                     fock = focks[i][:, j].copy()
 
                     if self.options.shift:

@@ -1874,15 +1874,17 @@ class REBCC(AbstractEBCC):
             "V": self.space.active_virtual,
         }
 
+        bare_fock = self.bare_fock
+
         class Blocks:
             def __getattr__(selffer, key):
                 i = slices[key[0]]
                 j = slices[key[1]]
-                fock = self.bare_fock[i][:, j].copy()
+                fock = bare_fock[i][:, j].copy()
 
                 if self.options.shift:
                     xi = self.xi
-                    g = +self.g.__getattr__("b" + key) + self.g.__getattr__(
+                    g = self.g.__getattr__("b" + key) + self.g.__getattr__(
                         "b" + key[::-1]
                     ).transpose(0, 2, 1)
                     fock -= util.einsum("I,Ipq->pq", xi, g)
