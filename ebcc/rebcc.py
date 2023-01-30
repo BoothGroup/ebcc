@@ -622,7 +622,7 @@ class REBCC(AbstractEBCC):
         -------
         space : Space
             Space object in which all fermionic degrees of freedom are
-            considered correlated.
+            considered inactive.
         """
 
         space = Space(

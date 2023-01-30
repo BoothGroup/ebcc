@@ -7,19 +7,19 @@ import numpy as np
 class Space:
     """Space class.
 
-               +----------+
-             / |  frozen  |
-             | +----------+
-    occupied | |  active  | \ 
-             | +----------+ | correlated
-             \ | inactive | /
-               #==========#
-             / | inactive | \ 
-             | +----------+ | correlated
-     virtual | |  active  | /
-             | +----------+
-             \ |  frozen  |
-               +----------+
+             -  +----------+
+             |  |  frozen  |
+             |  +----------+  -
+    occupied |  |  active  |  |
+             |  +----------+  | correlated
+             |  | inactive |  |
+             -  #==========#  -
+             |  | inactive |  |
+             |  +----------+  | correlated
+     virtual |  |  active  |  |
+             |  +----------+  -
+             |  |  frozen  |
+             -  +----------+
 
     Parameters
     ----------
