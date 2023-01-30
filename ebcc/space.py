@@ -7,9 +7,19 @@ import numpy as np
 class Space:
     """Space class.
 
-    Note: orbitals are not either active or frozen, in the notation of
-    `ebcc` active orbitals are active in the correlated sense i.e. the
-    triples of CCSDt.
+               +----------+
+             / |  frozen  |
+             | +----------+
+    occupied | |  active  | \ 
+             | +----------+ | correlated
+             \ | inactive | /
+               #==========#
+             / | inactive | \ 
+             | +----------+ | correlated
+     virtual | |  active  | /
+             | +----------+
+             \ |  frozen  |
+               +----------+
 
     Parameters
     ----------
@@ -57,6 +67,10 @@ class Space:
         return ~self.frozen
 
     @property
+    def inactive(self):
+        return ~self.active
+
+    @property
     def frozen_occupied(self):
         return np.logical_and(self.frozen, self.occupied)
 
@@ -69,6 +83,10 @@ class Space:
         return np.logical_and(self.active, self.occupied)
 
     @property
+    def inactive_occupied(self):
+        return np.logical_and(self.inactive, self.occupied)
+
+    @property
     def frozen_virtual(self):
         return np.logical_and(self.frozen, self.virtual)
 
@@ -79,6 +97,10 @@ class Space:
     @property
     def active_virtual(self):
         return np.logical_and(self.active, self.virtual)
+
+    @property
+    def inactive_virtual(self):
+        return np.logical_and(self.inactive, self.virtual)
 
     @property
     def nmo(self):
@@ -105,6 +127,10 @@ class Space:
         return np.sum(self.active)
 
     @property
+    def ninact(self):
+        return np.sum(self.inactive)
+
+    @property
     def nfocc(self):
         return np.sum(self.frozen_occupied)
 
@@ -117,6 +143,10 @@ class Space:
         return np.sum(self.active_occupied)
 
     @property
+    def niocc(self):
+        return np.sum(self.inactive_occupied)
+
+    @property
     def nfvir(self):
         return np.sum(self.frozen_virtual)
 
@@ -127,3 +157,7 @@ class Space:
     @property
     def navir(self):
         return np.sum(self.active_virtual)
+
+    @property
+    def nivir(self):
+        return np.sum(self.inactive_virtual)
