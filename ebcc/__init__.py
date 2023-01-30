@@ -188,6 +188,12 @@ CC3 = _factory("CC3")
 del _factory
 
 
+# --- Other imports:
+
+from ebcc.space import Space
+from ebcc.ansatz import Ansatz
+
+
 # --- List available methods:
 
 
