@@ -75,18 +75,26 @@ class Ansatz:
         boson_ansatz: str = "",
         fermion_coupling_rank: int = 0,
         boson_coupling_rank: int = 0,
+        module_name: str = None
     ):
         self.fermion_ansatz = fermion_ansatz
         self.boson_ansatz = boson_ansatz
         self.fermion_coupling_rank = fermion_coupling_rank
         self.boson_coupling_rank = boson_coupling_rank
+        self.module_name = module_name
 
     def _get_eqns(self, prefix):
         """Get the module which contains the generated equations for
         the current model.
         """
-        name = prefix + name_to_identifier(self.name)
+        
+        if self.module_name is None:
+            name = prefix + name_to_identifier(self.name)
+        else:
+            name = prefix + self.module_name
+            
         eqns = importlib.import_module("ebcc.codegen.%s" % name)
+
         return eqns
 
     @classmethod
