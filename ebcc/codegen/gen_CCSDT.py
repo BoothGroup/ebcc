@@ -43,7 +43,7 @@ with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
         qccg.clear()
         qccg.set_spin(spin)
 
-        expression = read.from_pdaggerq(terms, {})
+        expression = read.from_pdaggerq(terms, index_spins={})
         expression = expression.expand_spin_orbitals()
         output = tensor.Scalar("e_cc")
 
