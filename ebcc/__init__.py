@@ -160,6 +160,7 @@ EBCC.__doc__ = REBCC.__doc__
 
 # --- Constructors for boson-free calculations:
 
+
 def _factory(ansatz):
     def constructor(mf, *args, **kwargs):
         from pyscf import scf
@@ -187,6 +188,11 @@ CC3 = _factory("CC3")
 
 del _factory
 
+
+# --- Other imports:
+
+from ebcc.ansatz import Ansatz
+from ebcc.space import Space
 
 # --- List available methods:
 

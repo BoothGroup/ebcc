@@ -2,8 +2,8 @@
 """
 
 import dataclasses
-import importlib
 import functools
+import importlib
 import logging
 import types
 from typing import Any, Sequence, Union
@@ -68,10 +68,10 @@ class ERIs(types.SimpleNamespace):
 
         if self.slices is None:
             self.slices = {
-                    "o": self.space.correlated_occupied,
-                    "v": self.space.correlated_virtual,
-                    "O": self.space.active_occupied,
-                    "V": self.space.active_virtual,
+                "o": self.space.correlated_occupied,
+                "v": self.space.correlated_virtual,
+                "O": self.space.active_occupied,
+                "V": self.space.active_virtual,
             }
         if not isinstance(self.slices, (tuple, list)):
             self.slices = [self.slices] * 4
@@ -622,17 +622,16 @@ class REBCC(AbstractEBCC):
         -------
         space : Space
             Space object in which all fermionic degrees of freedom are
-            considered correlated.
+            considered inactive.
         """
 
         space = Space(
-                self.mo_occ > 0,
-                np.zeros_like(self.mo_occ, dtype=bool),
-                np.zeros_like(self.mo_occ, dtype=bool),
+            self.mo_occ > 0,
+            np.zeros_like(self.mo_occ, dtype=bool),
+            np.zeros_like(self.mo_occ, dtype=bool),
         )
 
         return space
-
 
     def init_amps(self, eris=None):
         """Initialise the amplitudes.
@@ -1054,8 +1053,8 @@ class REBCC(AbstractEBCC):
         dm = func(**kwargs)
 
         if hermitise:
-            dm = 0.5 * (+dm.transpose(0, 1, 2, 3) + dm.transpose(2, 3, 0, 1))
-            dm = 0.5 * (+dm.transpose(0, 1, 2, 3) + dm.transpose(1, 0, 3, 2))
+            dm = 0.5 * (dm.transpose(0, 1, 2, 3) + dm.transpose(2, 3, 0, 1))
+            dm = 0.5 * (dm.transpose(0, 1, 2, 3) + dm.transpose(1, 0, 3, 2))
 
         return dm
 
@@ -1840,10 +1839,10 @@ class REBCC(AbstractEBCC):
         """
 
         slices = {
-                "o": self.space.correlated_occupied,
-                "v": self.space.correlated_virtual,
-                "O": self.space.active_occupied,
-                "V": self.space.active_virtual,
+            "o": self.space.correlated_occupied,
+            "v": self.space.correlated_virtual,
+            "O": self.space.active_occupied,
+            "V": self.space.active_virtual,
         }
 
         class Blocks:
@@ -1869,24 +1868,25 @@ class REBCC(AbstractEBCC):
         """
 
         slices = {
-                "o": self.space.correlated_occupied,
-                "v": self.space.correlated_virtual,
-                "O": self.space.active_occupied,
-                "V": self.space.active_virtual,
+            "o": self.space.correlated_occupied,
+            "v": self.space.correlated_virtual,
+            "O": self.space.active_occupied,
+            "V": self.space.active_virtual,
         }
+
+        bare_fock = self.bare_fock
 
         class Blocks:
             def __getattr__(selffer, key):
                 i = slices[key[0]]
                 j = slices[key[1]]
-                fock = self.bare_fock[i][:, j].copy()
+                fock = bare_fock[i][:, j].copy()
 
                 if self.options.shift:
                     xi = self.xi
-                    g = (
-                        + self.g.__getattr__("b"+key)
-                        + self.g.__getattr__("b"+key[::-1]).transpose(0, 2, 1)
-                    )
+                    g = self.g.__getattr__("b" + key) + self.g.__getattr__(
+                        "b" + key[::-1]
+                    ).transpose(0, 2, 1)
                     fock -= util.einsum("I,Ipq->pq", xi, g)
 
                 return fock

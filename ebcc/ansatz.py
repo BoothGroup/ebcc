@@ -7,16 +7,15 @@ import numpy as np
 
 from ebcc import METHOD_TYPES, util
 
-
 named_ansatzes = {
-        "CCSD": ("CCSD", "", 0, 0),
-        "CCSDT": ("CCSDT", "", 0, 0),
-        "CCSD(T)": ("CCSD(T)", "", 0, 0),
-        "CC2": ("CC2", "", 0, 0),
-        "CC3": ("CC3", "", 0, 0),
-        "CCSD-S-1-1": ("CCSD", "S", 1, 1),
-        "CCSD-SD-1-1": ("CCSD", "SD", 1, 1),
-        "CCSD-SD-1-2": ("CCSD", "SD", 1, 2),
+    "CCSD": ("CCSD", "", 0, 0),
+    "CCSDT": ("CCSDT", "", 0, 0),
+    "CCSD(T)": ("CCSD(T)", "", 0, 0),
+    "CC2": ("CC2", "", 0, 0),
+    "CC3": ("CC3", "", 0, 0),
+    "CCSD-S-1-1": ("CCSD", "S", 1, 1),
+    "CCSD-SD-1-1": ("CCSD", "SD", 1, 1),
+    "CCSD-SD-1-2": ("CCSD", "SD", 1, 2),
 }
 
 
@@ -71,23 +70,31 @@ class Ansatz:
     """
 
     def __init__(
-            self,
-            fermion_ansatz: str = "CCSD",
-            boson_ansatz: str = "",
-            fermion_coupling_rank: int = 0,
-            boson_coupling_rank: int = 0,
+        self,
+        fermion_ansatz: str = "CCSD",
+        boson_ansatz: str = "",
+        fermion_coupling_rank: int = 0,
+        boson_coupling_rank: int = 0,
+        module_name: str = None
     ):
         self.fermion_ansatz = fermion_ansatz
         self.boson_ansatz = boson_ansatz
         self.fermion_coupling_rank = fermion_coupling_rank
         self.boson_coupling_rank = boson_coupling_rank
+        self.module_name = module_name
 
     def _get_eqns(self, prefix):
         """Get the module which contains the generated equations for
         the current model.
         """
-        name = prefix + name_to_identifier(self.name)
+        
+        if self.module_name is None:
+            name = prefix + name_to_identifier(self.name)
+        else:
+            name = prefix + self.module_name
+            
         eqns = importlib.import_module("ebcc.codegen.%s" % name)
+
         return eqns
 
     @classmethod
@@ -142,8 +149,7 @@ class Ansatz:
             corrected.
         """
         return any(
-                "(" in ansatz and ")" in ansatz
-                for ansatz in (self.fermion_ansatz, self.boson_ansatz)
+            "(" in ansatz and ")" in ansatz for ansatz in (self.fermion_ansatz, self.boson_ansatz)
         )
 
     @property
@@ -162,8 +168,13 @@ class Ansatz:
         ranks = []
 
         notations = {
-                "S": [1], "D": [2], "T": [3], "Q": [4],
-                "2": [1, 2], "3": [1, 2, 3], "4": [1, 2, 3, 4],
+            "S": [1],
+            "D": [2],
+            "T": [3],
+            "Q": [4],
+            "2": [1, 2],
+            "3": [1, 2, 3],
+            "4": [1, 2, 3, 4],
         }
 
         for i, op in enumerate([self.fermion_ansatz, self.boson_ansatz]):
@@ -217,7 +228,10 @@ class Ansatz:
         ranks = []
 
         notations = {
-                "s": [1], "d": [2], "t": [3], "q": [4],
+            "s": [1],
+            "d": [2],
+            "t": [3],
+            "q": [4],
         }
 
         for i, op in enumerate([self.fermion_ansatz, self.boson_ansatz]):
@@ -254,4 +268,3 @@ class Ansatz:
         ranks.append(tuple())
 
         return tuple(ranks)
-
