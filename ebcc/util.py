@@ -5,8 +5,8 @@ import functools
 import inspect
 import itertools
 import logging
-import time
 import sys
+import time
 import types
 
 import numpy as np
@@ -95,7 +95,7 @@ class Timer:
         if milliseconds:
             out.append("%d ms" % milliseconds)
 
-        return " ".join(out[-max(precision, len(out)):])
+        return " ".join(out[-max(precision, len(out)) :])
 
 
 def factorial(n):
