@@ -419,6 +419,9 @@ class REBCC(AbstractEBCC):
             Correlation energy.
         """
 
+        # Start a timer:
+        timer = util.Timer()
+
         # Get the ERIs:
         eris = self.get_eris(eris)
 
@@ -480,6 +483,9 @@ class REBCC(AbstractEBCC):
         self.log.output("E(corr) = %.10f", self.e_corr)
         self.log.output("E(tot)  = %.10f", self.e_tot)
         self.log.debug("")
+        self.log.debug("Time elapsed: %s", timer.format_time(timer()))
+        self.log.debug("")
+        self.log.debug("")
 
         return e_cc
 
@@ -538,6 +544,9 @@ class REBCC(AbstractEBCC):
         else:
             self.log.warning("Failed to converge.")
 
+        self.log.debug("")
+        self.log.debug("Time elapsed: %s", timer.format_time(timer()))
+        self.log.debug("")
         self.log.debug("")
 
         # Update attributes:

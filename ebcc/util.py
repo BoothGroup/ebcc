@@ -5,6 +5,7 @@ import functools
 import inspect
 import itertools
 import logging
+import time
 import sys
 import types
 
@@ -58,6 +59,43 @@ class Namespace:
 
     def __contains__(self, key):
         return key in self._keys
+
+
+class Timer:
+    def __init__(self):
+        self.t_init = time.perf_counter()
+        self.t_prev = time.perf_counter()
+        self.t_curr = time.perf_counter()
+
+    def lap(self):
+        self.t_prev, self.t_curr = self.t_curr, time.perf_counter()
+        return self.t_curr - self.t_prev
+
+    __call__ = lap
+
+    def total(self):
+        return time.perf_counter() - self.t_init
+
+    @staticmethod
+    def format_time(seconds, precision=2):
+        """Return a formatted time."""
+
+        seconds, milliseconds = divmod(seconds, 1)
+        milliseconds *= 1000
+        minutes, seconds = divmod(seconds, 60)
+        hours, minutes = divmod(minutes, 60)
+
+        out = []
+        if hours:
+            out.append("%d h" % hours)
+        if minutes:
+            out.append("%d m" % minutes)
+        if seconds:
+            out.append("%d s" % seconds)
+        if milliseconds:
+            out.append("%d ms" % milliseconds)
+
+        return " ".join(out[-max(precision, len(out)):])
 
 
 def factorial(n):
