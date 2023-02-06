@@ -16,6 +16,8 @@ jobs:
       matrix:
         include:
           - {python-version: "3.7", os: ubuntu-latest, documentation: True}
+          - {python-version: "3.8", os: ubuntu-latest, documentation: False}
+          - {python-version: "3.9", os: ubuntu-latest, documentation: False}
 
     steps:
       - uses: actions/checkout@v2
@@ -32,8 +34,8 @@ jobs:
           python -m pip install .[dev]
       - name: Linting
         run: |
-          python -m black ebcc/ --check --verbose
-          python -m isort ebcc/ --check-only --verbose
+          python -m black ebcc/ --diff --check --verbose
+          python -m isort ebcc/ --diff --check-only --verbose
       - name: Run unit tests
         run: |
           python -m pip install pytest pytest-cov
