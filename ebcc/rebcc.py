@@ -92,7 +92,8 @@ class ERIs(types.SimpleNamespace):
             slices = []
             for i, k in enumerate(key):
                 slices.append(self.slices[i][k])
-            block = self.array[tuple(slices)]
+            si, sj, sk, sl = slices
+            block = self.array[si][:, sj][:, :, sk][:, :, :, sl]
             return block
 
 
