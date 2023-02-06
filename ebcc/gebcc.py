@@ -272,7 +272,6 @@ class GEBCC(rebcc.REBCC):
         return gcc
 
     def init_amps(self, eris=None):
-
         eris = self.get_eris(eris)
 
         amplitudes = self.Amplitudes()
