@@ -502,6 +502,9 @@ class REBCC(AbstractEBCC):
             `self.init_amps()`.
         """
 
+        # Start a timer:
+        timer = util.Timer()
+
         # Get the ERIs:
         eris = self.get_eris(eris)
 
