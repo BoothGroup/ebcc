@@ -46,6 +46,8 @@ class REOM:
 
     def __init__(self, ebcc, options=None, **kwargs):
         self.ebcc = ebcc
+        self.space = ebcc.space
+        self.ansatz = ebcc.ansatz
         self.log = ebcc.log
 
         if options is None:
@@ -237,10 +239,6 @@ class REOM:
         raise NotImplementedError
 
     @property
-    def rank_numeric(self):
-        return self.ebcc.rank_numeric
-
-    @property
     def nmo(self):
         return self.ebcc.nmo
 
@@ -273,13 +271,13 @@ class IP_REOM(REOM):
         e_ia = lib.direct_sum("i-a->ia", self.ebcc.eo, self.ebcc.ev)
         e_i = self.ebcc.eo
 
-        for n in self.rank_numeric[0]:
+        for n in self.ansatz.correlated_cluster_ranks[0]:
             perm = list(range(0, n * 2, 2)) + list(range(1, (n - 1) * 2, 2))
             d = functools.reduce(np.add.outer, [e_ia] * (n - 1) + [e_i])
             d = d.transpose(perm)
             parts.append(d)
 
-        for n in self.rank_numeric[1]:
+        for n in self.ansatz.correlated_cluster_ranks[1]:
             raise util.ModelNotImplemented
 
         return self.amplitudes_to_vector(*parts)
@@ -332,13 +330,13 @@ class EA_REOM(REOM):
         e_ai = lib.direct_sum("a-i->ai", self.ebcc.ev, self.ebcc.eo)
         e_a = self.ebcc.ev
 
-        for n in self.rank_numeric[0]:
+        for n in self.ansatz.correlated_cluster_ranks[0]:
             perm = list(range(0, n * 2, 2)) + list(range(1, (n - 1) * 2, 2))
             d = functools.reduce(np.add.outer, [e_ai] * (n - 1) + [e_a])
             d = d.transpose(perm)
             parts.append(d)
 
-        for n in self.rank_numeric[1]:
+        for n in self.ansatz.correlated_cluster_ranks[1]:
             raise util.ModelNotImplemented
 
         return self.amplitudes_to_vector(*parts)
@@ -390,13 +388,13 @@ class EE_REOM(REOM):
         parts = []
         e_ia = lib.direct_sum("a-i->ia", self.ebcc.ev, self.ebcc.eo)
 
-        for n in self.rank_numeric[0]:
+        for n in self.ansatz.correlated_cluster_ranks[0]:
             perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
             d = functools.reduce(np.add.outer, [e_ia] * n)
             d = d.transpose(perm)
             parts.append(d)
 
-        for n in self.rank_numeric[1]:
+        for n in self.ansatz.correlated_cluster_ranks[1]:
             raise util.ModelNotImplemented
 
         return self.amplitudes_to_vector(*parts)

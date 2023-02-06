@@ -28,10 +28,7 @@ omega = np.random.random((nbos,)) * 5.0
 # CCSD-S-1-1: One-boson amplitudes and one-boson-one-fermion coupling
 ccsd = EBCC(
     mf,
-    ansatz="CCSD",
-    boson_excitations="S",
-    fermion_coupling_rank=1,
-    boson_coupling_rank=1,
+    ansatz="CCSD-S-1-1",
     omega=omega,
     g=g,
 )
@@ -46,10 +43,7 @@ ccsd.kernel()
 # CCSD-SD-1-1: Two-boson amplitudes and one-boson-one-fermion coupling
 ccsd = EBCC(
     mf,
-    ansatz="CCSD",
-    boson_excitations="SD",
-    fermion_coupling_rank=1,
-    boson_coupling_rank=1,
+    ansatz="CCSD-SD-1-1",
     omega=omega,
     g=g,
 )
@@ -64,10 +58,7 @@ ccsd.kernel()
 # CCSD-SD-1-2: Two-boson amplitudes and two-boson-one-fermion coupling
 ccsd = EBCC(
     mf,
-    ansatz="CCSD",
-    boson_excitations="SD",
-    fermion_coupling_rank=1,
-    boson_coupling_rank=2,
+    ansatz="CCSD-SD-1-2",
     omega=omega,
     g=g,
 )

@@ -54,10 +54,7 @@ class GCCSD_S_1_1_Tests(unittest.TestCase):
 
         ccsd = GEBCC(
                 mf.to_ghf(),  # Direct conversion needed for same ordering as reference data
-                ansatz="CCSD",
-                boson_excitations="S",
-                fermion_coupling_rank=1,
-                boson_coupling_rank=1,
+                ansatz="CCSD-S-1-1",
                 g=g,
                 omega=omega,
                 shift=cls.shift,

@@ -75,7 +75,7 @@ class IP_UEOM(UEOM, reom.IP_REOM):
         )
         e_i = self.ebcc.eo
 
-        for n in self.rank_numeric[0]:
+        for n in self.ansatz.correlated_cluster_ranks[0]:
             spin_part = util.Namespace()
             for comb in util.generate_spin_combinations(n, excited=True):
                 tensors = []
@@ -90,7 +90,7 @@ class IP_UEOM(UEOM, reom.IP_REOM):
                 setattr(spin_part, comb, d)
             parts.append(spin_part)
 
-        for n in self.rank_numeric[1]:
+        for n in self.ansatz.correlated_cluster_ranks[1]:
             raise util.ModelNotImplemented
 
         return self.amplitudes_to_vector(*parts)
@@ -104,12 +104,12 @@ class IP_UEOM(UEOM, reom.IP_REOM):
             amps_b = []
 
             m = 0
-            for n in self.ebcc.rank_numeric[0]:
+            for n in self.ansatz.correlated_cluster_ranks[0]:
                 amp_a = util.Namespace()
                 amp_b = util.Namespace()
                 for spin in util.generate_spin_combinations(n, excited=True):
-                    shape = tuple(self.nocc["ab".index(s)] for s in spin[:n]) + tuple(
-                        self.nvir["ab".index(s)] for s in spin[n:]
+                    shape = tuple(self.space["ab".index(s)].ncocc for s in spin[:n]) + tuple(
+                        self.space["ab".index(s)].ncvir for s in spin[n:]
                     )
                     setattr(amp_a, spin, getattr(bras_raw[m], "a" + spin, {i: np.zeros(shape)})[i])
                     setattr(amp_b, spin, getattr(bras_raw[m], "b" + spin, {i: np.zeros(shape)})[i])
@@ -117,11 +117,11 @@ class IP_UEOM(UEOM, reom.IP_REOM):
                 amps_b.append(amp_b)
                 m += 1
 
-            for n in self.ebcc.rank_numeric[1]:
+            for n in self.ansatz.correlated_cluster_ranks[1]:
                 raise util.ModelNotImplemented
 
-            for nf in self.ebcc.rank_numeric[2]:
-                for nb in self.ebcc.rank_numeric[3]:
+            for nf in self.ansatz.correlated_cluster_ranks[2]:
+                for nb in self.ansatz.correlated_cluster_ranks[3]:
                     raise util.ModelNotImplemented
 
             bras.a.append(self.amplitudes_to_vector(*amps_a))
@@ -142,12 +142,12 @@ class IP_UEOM(UEOM, reom.IP_REOM):
             amps_b = []
 
             m = 0
-            for n in self.ebcc.rank_numeric[0]:
+            for n in self.ansatz.correlated_cluster_ranks[0]:
                 amp_a = util.Namespace()
                 amp_b = util.Namespace()
                 for spin in util.generate_spin_combinations(n, excited=True):
-                    shape = tuple(self.nocc["ab".index(s)] for s in spin[:n]) + tuple(
-                        self.nvir["ab".index(s)] for s in spin[n:]
+                    shape = tuple(self.space["ab".index(s)].ncocc for s in spin[:n]) + tuple(
+                        self.space["ab".index(s)].ncvir for s in spin[n:]
                     )
                     setattr(amp_a, spin, getattr(kets_raw[m], spin + "a", {j: np.zeros(shape)})[j])
                     setattr(amp_b, spin, getattr(kets_raw[m], spin + "b", {j: np.zeros(shape)})[j])
@@ -155,11 +155,11 @@ class IP_UEOM(UEOM, reom.IP_REOM):
                 amps_b.append(amp_b)
                 m += 1
 
-            for n in self.ebcc.rank_numeric[1]:
+            for n in self.ansatz.correlated_cluster_ranks[1]:
                 raise util.ModelNotImplemented
 
-            for nf in self.ebcc.rank_numeric[2]:
-                for nb in self.ebcc.rank_numeric[3]:
+            for nf in self.ansatz.correlated_cluster_ranks[2]:
+                for nb in self.ansatz.correlated_cluster_ranks[3]:
                     raise util.ModelNotImplemented
 
             kets.a.append(self.amplitudes_to_vector(*amps_a))
@@ -183,7 +183,7 @@ class EA_UEOM(UEOM, reom.EA_REOM):
         )
         e_a = self.ebcc.ev
 
-        for n in self.rank_numeric[0]:
+        for n in self.ansatz.correlated_cluster_ranks[0]:
             spin_part = util.Namespace()
             for comb in util.generate_spin_combinations(n, excited=True):
                 tensors = []
@@ -198,7 +198,7 @@ class EA_UEOM(UEOM, reom.EA_REOM):
                 setattr(spin_part, comb, d)
             parts.append(spin_part)
 
-        for n in self.rank_numeric[1]:
+        for n in self.ansatz.correlated_cluster_ranks[1]:
             raise util.ModelNotImplemented
 
         return self.amplitudes_to_vector(*parts)
@@ -212,12 +212,12 @@ class EA_UEOM(UEOM, reom.EA_REOM):
             amps_b = []
 
             m = 0
-            for n in self.ebcc.rank_numeric[0]:
+            for n in self.ansatz.correlated_cluster_ranks[0]:
                 amp_a = util.Namespace()
                 amp_b = util.Namespace()
                 for spin in util.generate_spin_combinations(n, excited=True):
-                    shape = tuple(self.nvir["ab".index(s)] for s in spin[:n]) + tuple(
-                        self.nocc["ab".index(s)] for s in spin[n:]
+                    shape = tuple(self.space["ab".index(s)].ncvir for s in spin[:n]) + tuple(
+                        self.space["ab".index(s)].ncocc for s in spin[n:]
                     )
                     setattr(amp_a, spin, getattr(bras_raw[m], "a" + spin, {i: np.zeros(shape)})[i])
                     setattr(amp_b, spin, getattr(bras_raw[m], "b" + spin, {i: np.zeros(shape)})[i])
@@ -225,11 +225,11 @@ class EA_UEOM(UEOM, reom.EA_REOM):
                 amps_b.append(amp_b)
                 m += 1
 
-            for n in self.ebcc.rank_numeric[1]:
+            for n in self.ansatz.correlated_cluster_ranks[1]:
                 raise util.ModelNotImplemented
 
-            for nf in self.ebcc.rank_numeric[2]:
-                for nb in self.ebcc.rank_numeric[3]:
+            for nf in self.ansatz.correlated_cluster_ranks[2]:
+                for nb in self.ansatz.correlated_cluster_ranks[3]:
                     raise util.ModelNotImplemented
 
             bras.a.append(self.amplitudes_to_vector(*amps_a))
@@ -250,12 +250,12 @@ class EA_UEOM(UEOM, reom.EA_REOM):
             amps_b = []
 
             m = 0
-            for n in self.ebcc.rank_numeric[0]:
+            for n in self.ansatz.correlated_cluster_ranks[0]:
                 amp_a = util.Namespace()
                 amp_b = util.Namespace()
                 for spin in util.generate_spin_combinations(n, excited=True):
-                    shape = tuple(self.nvir["ab".index(s)] for s in spin[:n]) + tuple(
-                        self.nocc["ab".index(s)] for s in spin[n:]
+                    shape = tuple(self.space["ab".index(s)].ncvir for s in spin[:n]) + tuple(
+                        self.space["ab".index(s)].ncocc for s in spin[n:]
                     )
                     setattr(amp_a, spin, getattr(kets_raw[m], spin + "a", {j: np.zeros(shape)})[j])
                     setattr(amp_b, spin, getattr(kets_raw[m], spin + "b", {j: np.zeros(shape)})[j])
@@ -263,11 +263,11 @@ class EA_UEOM(UEOM, reom.EA_REOM):
                 amps_b.append(amp_b)
                 m += 1
 
-            for n in self.ebcc.rank_numeric[1]:
+            for n in self.ansatz.correlated_cluster_ranks[1]:
                 raise util.ModelNotImplemented
 
-            for nf in self.ebcc.rank_numeric[2]:
-                for nb in self.ebcc.rank_numeric[3]:
+            for nf in self.ansatz.correlated_cluster_ranks[2]:
+                for nb in self.ansatz.correlated_cluster_ranks[3]:
                     raise util.ModelNotImplemented
 
             kets.a.append(self.amplitudes_to_vector(*amps_a))
@@ -293,7 +293,7 @@ class EE_UEOM(UEOM, reom.EE_REOM):
             bb=lib.direct_sum("i-a->ia", self.ebcc.eo.b, self.ebcc.ev.b),
         )
 
-        for n in self.rank_numeric[0]:
+        for n in self.ansatz.correlated_cluster_ranks[0]:
             spin_part = util.Namespace()
             for comb in util.generate_spin_combinations(n):
                 tensors = []
@@ -305,7 +305,7 @@ class EE_UEOM(UEOM, reom.EE_REOM):
                 setattr(spin_part, comb, d)
             parts.append(spin_part)
 
-        for n in self.rank_numeric[1]:
+        for n in self.ansatz.correlated_cluster_ranks[1]:
             raise util.ModelNotImplemented
 
         return self.amplitudes_to_vector(*parts)
@@ -322,14 +322,14 @@ class EE_UEOM(UEOM, reom.EE_REOM):
                 amps_bb = []
 
                 m = 0
-                for n in self.ebcc.rank_numeric[0]:
+                for n in self.ansatz.correlated_cluster_ranks[0]:
                     amp_aa = util.Namespace()
                     amp_bb = util.Namespace()
                     for spin in util.generate_spin_combinations(n):
                         shape = tuple(
                             [
-                                *[self.nocc["ab".index(s)] for s in spin[:n]],
-                                *[self.nvir["ab".index(s)] for s in spin[n:]],
+                                *[self.space["ab".index(s)].ncocc for s in spin[:n]],
+                                *[self.space["ab".index(s)].ncvir for s in spin[n:]],
                             ]
                         )
                         setattr(
@@ -346,11 +346,11 @@ class EE_UEOM(UEOM, reom.EE_REOM):
                     amps_bb.append(amp_bb)
                     m += 1
 
-                for n in self.ebcc.rank_numeric[1]:
+                for n in self.ansatz.correlated_cluster_ranks[1]:
                     raise util.ModelNotImplemented
 
-                for nf in self.ebcc.rank_numeric[2]:
-                    for nb in self.ebcc.rank_numeric[3]:
+                for nf in self.ansatz.correlated_cluster_ranks[2]:
+                    for nb in self.ansatz.correlated_cluster_ranks[3]:
                         raise util.ModelNotImplemented
 
                 bras.aa.append(self.amplitudes_to_vector(*amps_aa))
@@ -377,14 +377,14 @@ class EE_UEOM(UEOM, reom.EE_REOM):
                 amps_bb = []
 
                 m = 0
-                for n in self.ebcc.rank_numeric[0]:
+                for n in self.ansatz.correlated_cluster_ranks[0]:
                     amp_aa = util.Namespace()
                     amp_bb = util.Namespace()
                     for spin in util.generate_spin_combinations(n):
                         shape = tuple(
                             [
-                                *[self.nocc["ab".index(s)] for s in spin[:n]],
-                                *[self.nvir["ab".index(s)] for s in spin[n:]],
+                                *[self.space["ab".index(s)].ncocc for s in spin[:n]],
+                                *[self.space["ab".index(s)].ncvir for s in spin[n:]],
                             ]
                         )
                         setattr(
@@ -401,11 +401,11 @@ class EE_UEOM(UEOM, reom.EE_REOM):
                     amps_bb.append(amp_bb)
                     m += 1
 
-                for n in self.ebcc.rank_numeric[1]:
+                for n in self.ansatz.correlated_cluster_ranks[1]:
                     raise util.ModelNotImplemented
 
-                for nf in self.ebcc.rank_numeric[2]:
-                    for nb in self.ebcc.rank_numeric[3]:
+                for nf in self.ansatz.correlated_cluster_ranks[2]:
+                    for nb in self.ansatz.correlated_cluster_ranks[3]:
                         raise util.ModelNotImplemented
 
                 kets.aa.append(self.amplitudes_to_vector(*amps_aa))

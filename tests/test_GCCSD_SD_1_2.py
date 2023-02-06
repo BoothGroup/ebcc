@@ -54,10 +54,7 @@ class GCCSD_SD_1_2_Tests(unittest.TestCase):
 
         ccsd = GEBCC(
                 mf.to_ghf(),  # Direct conversion needed for same ordering as reference data
-                ansatz="CCSD",
-                boson_excitations="SD",
-                fermion_coupling_rank=1,
-                boson_coupling_rank=2,
+                ansatz="CCSD-SD-1-2",
                 g=g,
                 omega=omega,
                 shift=cls.shift,
@@ -158,10 +155,7 @@ class GCCSD_SD_1_2_Tests(unittest.TestCase):
 
         gebcc1 = GEBCC(
                 mf,
-                ansatz="CCSD",
-                boson_excitations="SD",
-                fermion_coupling_rank=1,
-                boson_coupling_rank=2,
+                ansatz="CCSD-SD-1-2",
                 g=g,
                 omega=self.omega,
                 shift=self.shift,
@@ -174,10 +168,7 @@ class GCCSD_SD_1_2_Tests(unittest.TestCase):
 
         rebcc = REBCC(
                 mf,
-                ansatz="CCSD",
-                boson_excitations="SD",
-                fermion_coupling_rank=1,
-                boson_coupling_rank=2,
+                ansatz="CCSD-SD-1-2",
                 g=self.g_rhf,
                 omega=self.omega,
                 shift=self.shift,
@@ -213,10 +204,7 @@ class GCCSD_SD_1_2_Tests(unittest.TestCase):
 
         gebcc1 = GEBCC(
                 mf,
-                ansatz="CCSD",
-                boson_excitations="SD",
-                fermion_coupling_rank=1,
-                boson_coupling_rank=2,
+                ansatz="CCSD-SD-1-2",
                 g=g,
                 omega=self.omega,
                 shift=self.shift,
@@ -229,10 +217,7 @@ class GCCSD_SD_1_2_Tests(unittest.TestCase):
 
         uebcc = UEBCC(
                 mf,
-                ansatz="CCSD",
-                boson_excitations="SD",
-                fermion_coupling_rank=1,
-                boson_coupling_rank=2,
+                ansatz="CCSD-SD-1-2",
                 g=self.g_rhf,
                 omega=self.omega,
                 shift=self.shift,
