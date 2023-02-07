@@ -523,7 +523,7 @@ def pack_2e(*args):
     return out
 
 
-def einsum(subscript, *args, symmetry=False, **kwargs):  # pragma: no cover
+def einsum(*operands, symmetry=False, **kwargs):  # pragma: no cover
     """Dispatch an einsum. If `symmetry`, then assume that all arrays
     are totally symmetric within occupied, virtual and bosonic
     sectors. If `symmetry` is an iterable, then it should provide
@@ -532,6 +532,9 @@ def einsum(subscript, *args, symmetry=False, **kwargs):  # pragma: no cover
     """
     # TODO custom symmetry
     # TODO assert the symmetry?
+
+    inp, out, args = np.core.einsumfunc._parse_einsum_input(operands)
+    subscript = "%s->%s" % (inp, out)
 
     if not symmetry:
         return pyscf_einsum(subscript, *args, **kwargs)
