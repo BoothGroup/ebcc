@@ -9,8 +9,12 @@ import qccg
 from qccg import index, tensor, read, write
 import pdaggerq
 
+# FIXME rhf 2rdm
+# FIXME uhf
+# FIXME add eom
+
 # Spin integration mode
-spin = "uhf"
+spin = "rhf"
 
 # pdaggerq setup
 pq = pdaggerq.pq_helper("fermi")
@@ -294,6 +298,9 @@ with common.FilePrinter("%sCCSD_test" % spin[0].upper()) as file_printer:
                 expression = read.from_pdaggerq(terms, index_spins=index_spins)
                 expression = expression.expand_spin_orbitals()
 
+                if spin == "rhf":
+                    expression = expression * 2
+
                 expressions.append(expression)
                 outputs.append(output)
 
@@ -385,6 +392,9 @@ with common.FilePrinter("%sCCSD_test" % spin[0].upper()) as file_printer:
                 index_spins = {index.character: spin for index, spin in zip(inds, spins+spins)}
                 expression = read.from_pdaggerq(terms, index_spins=index_spins)
                 expression = expression.expand_spin_orbitals()
+
+                if spin == "rhf":
+                    expression = expression * 2
 
                 expressions.append(expression)
                 outputs.append(output)
