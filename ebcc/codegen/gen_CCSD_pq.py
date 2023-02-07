@@ -10,7 +10,7 @@ from qccg import index, tensor, read, write
 import pdaggerq
 
 # Spin integration mode
-spin = "ghf"
+spin = "uhf"
 
 # pdaggerq setup
 pq = pdaggerq.pq_helper("fermi")
@@ -110,7 +110,7 @@ with common.FilePrinter("%sCCSD_test" % spin[0].upper()) as file_printer:
                 elif spin == "uhf":
                     occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1], ["o", "o"][:n+1], spins)
                     vir = index.index_factory(index.ExternalIndex, ["a", "b"][:n+1], ["v", "v"][:n+1], spins)
-                    output = tensor.FermionicAmplitude("t%dnew_%s" % (n+1, "".join(spins+spins)), occ, vir)
+                    output = tensor.FermionicAmplitude("t%dnew" % (n+1), occ, vir)
                     shape = ", ".join(["nocc[%d]" % "ab".index(s) for s in spins] + ["nvir[%d]" % "ab".index(s) for s in spins])
                 elif spin == "ghf":
                     occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1], ["o", "o"][:n+1], [None, None][:n+1])
@@ -204,7 +204,7 @@ with common.FilePrinter("%sCCSD_test" % spin[0].upper()) as file_printer:
                 elif spin == "uhf":
                     occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1], ["o", "o"][:n+1], spins)
                     vir = index.index_factory(index.ExternalIndex, ["a", "b"][:n+1], ["v", "v"][:n+1], spins)
-                    output = tensor.FermionicAmplitude("l%dnew_%s" % (n+1, "".join(spins+spins)), vir, occ)
+                    output = tensor.FermionicAmplitude("l%dnew" % (n+1), vir, occ)
                     shape = ", ".join(["nvir[%d]" % "ab".index(s) for s in spins] + ["nocc[%d]" % "ab".index(s) for s in spins])
                 elif spin == "ghf":
                     occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1], ["o", "o"][:n+1], [None, None][:n+1])
@@ -284,7 +284,7 @@ with common.FilePrinter("%sCCSD_test" % spin[0].upper()) as file_printer:
                 elif spin == "uhf":
                     inds = index.index_factory(index.ExternalIndex, indices, sectors, spins)
                     output = tensor.RDM1(inds)
-                    shape = ", ".join(["nocc[%d]" % s if o == "o" else "nvir[%d]" % s for o, s in zip(sectors, spins)])
+                    shape = ", ".join(["nocc[%d]" % "ab".index(s) if o == "o" else "nvir[%d]" % "ab".index(s) for o, s in zip(sectors, spins)])
                 elif spin == "ghf":
                     inds = index.index_factory(index.ExternalIndex, indices, sectors, [None]*2)
                     output = tensor.RDM1(inds)
@@ -354,9 +354,10 @@ with common.FilePrinter("%sCCSD_test" % spin[0].upper()) as file_printer:
         outputs = []
         terms_rdm1 = []
         for sectors, indices in [
-                ("oooo", "ijkl"), ("ooov", "ijka"), ("oovo", "ijak"), ("ovoo", "iajk"), ("vooo", "aijk"),
-                ("oovv", "ijab"), ("ovov", "iajb"), ("ovvo", "iabj"), ("vovo", "aibj"), ("vvoo", "abij"),
-                ("ovvv", "iabc"), ("vovv", "aibc"), ("vvov", "abic"), ("vvvo", "abci"), ("vvvv", "abcd"),
+                ("oooo", "ijkl"), ("ooov", "ijka"), ("oovo", "ijak"), ("ovoo", "iajk"),
+                ("vooo", "aijk"), ("oovv", "ijab"), ("ovov", "iajb"), ("ovvo", "iabj"),
+                ("voov", "aijb"), ("vovo", "aibj"), ("vvoo", "abij"), ("ovvv", "iabc"),
+                ("vovv", "aibc"), ("vvov", "abic"), ("vvvo", "abci"), ("vvvv", "abcd"),
         ]:
             pq.clear()
             pq.set_left_operators([["1"], ["l1"], ["l2"]])
@@ -375,7 +376,7 @@ with common.FilePrinter("%sCCSD_test" % spin[0].upper()) as file_printer:
                 elif spin == "uhf":
                     inds = index.index_factory(index.ExternalIndex, indices, sectors, spins)
                     output = tensor.RDM2(inds)
-                    shape = ", ".join(["nocc[%d]" % s if o == "o" else "nvir[%d]" % s for o, s in zip(sectors, spins)])
+                    shape = ", ".join(["nocc[%d]" % "ab".index(s) if o == "o" else "nvir[%d]" % "ab".index(s) for o, s in zip(sectors, spins)])
                 elif spin == "ghf":
                     inds = index.index_factory(index.ExternalIndex, indices, sectors, [None]*4)
                     output = tensor.RDM2(inds)
