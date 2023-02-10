@@ -14,7 +14,7 @@ import pdaggerq
 # FIXME add eom
 
 # Spin integration mode
-spin = "rhf"
+spin = "uhf"
 
 # pdaggerq setup
 pq = pdaggerq.pq_helper("fermi")
@@ -122,7 +122,7 @@ with common.FilePrinter("%sCCSD_test" % spin[0].upper()) as file_printer:
                     output = tensor.FermionicAmplitude("t%dnew" % (n+1), occ, vir)
                     shape = ", ".join(["nocc"] * (n+1) + ["nvir"] * (n+1))
 
-                index_spins = {index.character: spin for index, spin in zip(occ+vir, spins+spins)}
+                index_spins = {index.character: s for index, s in zip(occ+vir, spins+spins)}
                 expression = read.from_pdaggerq(terms, index_spins=index_spins)
 
                 expression = expression.expand_spin_orbitals()
@@ -216,7 +216,7 @@ with common.FilePrinter("%sCCSD_test" % spin[0].upper()) as file_printer:
                     output = tensor.FermionicAmplitude("l%dnew" % (n+1), vir, occ)
                     shape = ", ".join(["nvir"] * (n+1) + ["nocc"] * (n+1))
 
-                index_spins = {index.character: spin for index, spin in zip(vir+occ, spins+spins)}
+                index_spins = {index.character: s for index, s in zip(vir+occ, spins+spins)}
                 expression = read.from_pdaggerq(terms, index_spins=index_spins)
                 expression = expression.expand_spin_orbitals()
 
@@ -294,7 +294,7 @@ with common.FilePrinter("%sCCSD_test" % spin[0].upper()) as file_printer:
                     output = tensor.RDM1(inds)
                     shape = ", ".join(["nocc" if o == "o" else "nvir" for o in sectors])
 
-                index_spins = {index.character: spin for index, spin in zip(inds, spins+spins)}
+                index_spins = {index.character: s for index, s in zip(inds, spins+spins)}
                 expression = read.from_pdaggerq(terms, index_spins=index_spins)
                 expression = expression.expand_spin_orbitals()
 
@@ -323,106 +323,109 @@ with common.FilePrinter("%sCCSD_test" % spin[0].upper()) as file_printer:
             function_printer.write_python("    rdm1_f = np.block([[rdm1_f_oo, rdm1_f_ov], [rdm1_f_vo, rdm1_f_vv]])\n")
         else:
             function_printer.write_python(
-                "    rdm1_f_aa = np.block([[rdm1_f_oo_aa, rdm1_f_ov_aa], [rdm1_f_vo_aa, rdm1_f_vv_aa]])\n"
-                "    rdm1_f_bb = np.block([[rdm1_f_oo_bb, rdm1_f_ov_bb], [rdm1_f_vo_bb, rdm1_f_vv_bb]])\n"
+                "    rdm1_f_aa = np.block([[rdm1_f_aa_oo, rdm1_f_aa_ov], [rdm1_f_aa_vo, rdm1_f_aa_vv]])\n"
+                "    rdm1_f_bb = np.block([[rdm1_f_bb_oo, rdm1_f_bb_ov], [rdm1_f_bb_vo, rdm1_f_bb_vv]])\n"
             )
 
-    # Get 2RDM expressions:
-    with FunctionPrinter(
-            file_printer,
-            "make_rdm2_f",
-            ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2"],
-            ["rdm2_f"],
-            spin_cases={
-                "rdm2_f": ["aaaa", "aabb", "bbaa", "bbbb"],
-            },
-            return_dict=False,
-            timer=timer,
-    ) as function_printer:
-        if spin != "uhf":
-            function_printer.write_python(
-                    "    delta = Namespace(oo=np.eye(nocc), vv=np.eye(nvir))\n"
-            )
-        else:
-            function_printer.write_python(
-                    "    delta = Namespace(aa=Namespace(), bb=Namespace())\n"
-                    "    delta.aa = Namespace(oo=np.eye(nocc[0]), vv=np.eye(nvir[0]))\n"
-                    "    delta.bb = Namespace(oo=np.eye(nocc[1]), vv=np.eye(nvir[1]))\n"
-            )
+    ## Get 2RDM expressions:
+    #with FunctionPrinter(
+    #        file_printer,
+    #        "make_rdm2_f",
+    #        ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2"],
+    #        ["rdm2_f"],
+    #        spin_cases={
+    #            "rdm2_f": ["aaaa", "aabb", "bbaa", "bbbb"],
+    #        },
+    #        return_dict=False,
+    #        timer=timer,
+    #) as function_printer:
+    #    if spin != "uhf":
+    #        function_printer.write_python(
+    #                "    delta = Namespace(oo=np.eye(nocc), vv=np.eye(nvir))\n"
+    #        )
+    #    else:
+    #        function_printer.write_python(
+    #                "    delta = Namespace(aa=Namespace(), bb=Namespace())\n"
+    #                "    delta.aa = Namespace(oo=np.eye(nocc[0]), vv=np.eye(nvir[0]))\n"
+    #                "    delta.bb = Namespace(oo=np.eye(nocc[1]), vv=np.eye(nvir[1]))\n"
+    #        )
 
-        if spin == "ghf":
-            spins_list = [(None, None)]
-        elif spin == "rhf":
-            spins_list = [("a", "b", "a", "b")]
-        elif spin == "uhf":
-            spins_list = [("a", "a", "a", "a"), ("a", "b", "a", "b"), ("b", "a", "b", "a"), ("b", "b", "b", "b")]
+    #    if spin == "ghf":
+    #        spins_list = [(None, None, None, None)]
+    #    elif spin == "rhf":
+    #        spins_list = [("a", "b", "a", "b")]
+    #    elif spin == "uhf":
+    #        spins_list = [("a", "a", "a", "a"), ("a", "b", "a", "b"), ("b", "a", "b", "a"), ("b", "b", "b", "b")]
 
-        expressions = []
-        outputs = []
-        terms_rdm1 = []
-        for sectors, indices in [
-                ("oooo", "ijkl"), ("ooov", "ijka"), ("oovo", "ijak"), ("ovoo", "iajk"),
-                ("vooo", "aijk"), ("oovv", "ijab"), ("ovov", "iajb"), ("ovvo", "iabj"),
-                ("voov", "aijb"), ("vovo", "aibj"), ("vvoo", "abij"), ("ovvv", "iabc"),
-                ("vovv", "aibc"), ("vvov", "abic"), ("vvvo", "abci"), ("vvvv", "abcd"),
-        ]:
-            pq.clear()
-            pq.set_left_operators([["1"], ["l1"], ["l2"]])
-            pq.add_st_operator(1.0, ["e2(%s,%s,%s,%s)" % tuple(indices[:2]+indices[2:][::-1])], ["t1", "t2"])
-            pq.simplify()
-            terms = pq.fully_contracted_strings()
+    #    expressions = []
+    #    outputs = []
+    #    terms_rdm1 = []
+    #    for sectors, indices in [
+    #            ("oooo", "ijkl"), ("ooov", "ijka"), ("oovo", "ijak"), ("ovoo", "iajk"),
+    #            ("vooo", "aijk"), ("oovv", "ijab"), ("ovov", "iajb"), ("ovvo", "iabj"),
+    #            ("voov", "aijb"), ("vovo", "aibj"), ("vvoo", "abij"), ("ovvv", "iabc"),
+    #            ("vovv", "aibc"), ("vvov", "abic"), ("vvvo", "abci"), ("vvvv", "abcd"),
+    #    ]:
+    #        pq.clear()
+    #        pq.set_left_operators([["1"], ["l1"], ["l2"]])
+    #        pq.add_st_operator(1.0, ["e2(%s,%s,%s,%s)" % tuple(indices[:2]+indices[2:][::-1])], ["t1", "t2"])
+    #        pq.simplify()
+    #        terms = pq.fully_contracted_strings()
 
-            for spins in spins_list:
-                qccg.clear()
-                qccg.set_spin(spin)
+    #        for spins in spins_list:
+    #            qccg.clear()
+    #            qccg.set_spin(spin)
 
-                if spin == "rhf":
-                    inds = index.index_factory(index.ExternalIndex, indices, sectors, "rrrr")
-                    output = tensor.RDM2(inds)
-                    shape = ", ".join(["nocc" if o == "o" else "nvir" for o in sectors])
-                elif spin == "uhf":
-                    inds = index.index_factory(index.ExternalIndex, indices, sectors, spins)
-                    output = tensor.RDM2(inds)
-                    shape = ", ".join(["nocc[%d]" % "ab".index(s) if o == "o" else "nvir[%d]" % "ab".index(s) for o, s in zip(sectors, spins)])
-                elif spin == "ghf":
-                    inds = index.index_factory(index.ExternalIndex, indices, sectors, [None]*4)
-                    output = tensor.RDM2(inds)
-                    shape = ", ".join(["nocc" if o == "o" else "nvir" for o in sectors])
+    #            if spin == "rhf":
+    #                inds = index.index_factory(index.ExternalIndex, indices, sectors, "rrrr")
+    #                output = tensor.RDM2(inds)
+    #                shape = ", ".join(["nocc" if o == "o" else "nvir" for o in sectors])
+    #            elif spin == "uhf":
+    #                inds = index.index_factory(index.ExternalIndex, indices, sectors, spins)
+    #                output = tensor.RDM2(inds)
+    #                shape = ", ".join(["nocc[%d]" % "ab".index(s) if o == "o" else "nvir[%d]" % "ab".index(s) for o, s in zip(sectors, spins)])
+    #            elif spin == "ghf":
+    #                inds = index.index_factory(index.ExternalIndex, indices, sectors, [None]*4)
+    #                output = tensor.RDM2(inds)
+    #                shape = ", ".join(["nocc" if o == "o" else "nvir" for o in sectors])
 
-                index_spins = {index.character: spin for index, spin in zip(inds, spins+spins)}
-                expression = read.from_pdaggerq(terms, index_spins=index_spins)
-                expression = expression.expand_spin_orbitals()
+    #            index_spins = {index.character: s for index, s in zip(inds, spins+spins)}
+    #            expression = read.from_pdaggerq(terms, index_spins=index_spins)
+    #            expression = expression.expand_spin_orbitals()
 
-                if spin == "rhf":
-                    expression = expression * 2
+    #            expressions.append(expression)
+    #            outputs.append(output)
 
-                expressions.append(expression)
-                outputs.append(output)
+    #    final_outputs = outputs
+    #    expressions, outputs = qccg.optimisation.optimise_expression_gristmill(
+    #            expressions,
+    #            outputs,
+    #    )
+    #    einsums = write.write_opt_einsums(
+    #            expressions,
+    #            outputs,
+    #            final_outputs,
+    #            indent=4,
+    #            einsum_function="einsum",
+    #            add_occupancies={"f", "v", "rdm1_f", "rdm2_f", "delta"},
+    #    )
 
-        final_outputs = outputs
-        expressions, outputs = qccg.optimisation.optimise_expression_gristmill(
-                expressions,
-                outputs,
-        )
-        einsums = write.write_opt_einsums(
-                expressions,
-                outputs,
-                final_outputs,
-                indent=4,
-                einsum_function="einsum",
-                add_occupancies={"f", "v", "rdm1_f", "rdm2_f", "delta"},
-        )
-        function_printer.write_python(einsums+"\n", comment="RDM2")
+    #    function_printer.write_python(einsums+"\n", comment="RDM2")
 
-        if spin != "uhf":
-            function_printer.write_python("    rdm2_f = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s" % x for x in common.ov_2e]))
-        else:
-            function_printer.write_python(""
-                    + "    rdm2_f_aaaa = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_aaaa" % x for x in common.ov_2e])
-                    + "    rdm2_f_aabb = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_aabb" % x for x in common.ov_2e])
-                    + "    rdm2_f_bbaa = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_bbaa" % x for x in common.ov_2e])
-                    + "    rdm2_f_bbbb = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_bbbb" % x for x in common.ov_2e])
-            )
+    #    if spin != "uhf":
+    #        function_printer.write_python("    rdm2_f = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s" % x for x in common.ov_2e]))
+    #    else:
+    #        function_printer.write_python(""
+    #                + "    rdm2_f_aaaa = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_aaaa" % x for x in common.ov_2e])
+    #                + "    rdm2_f_aabb = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_aabb" % x for x in common.ov_2e])
+    #                + "    rdm2_f_bbaa = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_bbaa" % x for x in common.ov_2e])
+    #                + "    rdm2_f_bbbb = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_bbbb" % x for x in common.ov_2e])
+    #        )
 
-        if spin == "ghf":
-            function_printer.write_python("    rdm2_f = rdm2_f.transpose(0, 2, 1, 3)\n")
+    #    #if spin == "rhf":
+    #    #    function_printer.write_python("    rdm2_f = rdm2_f.swapaxes(1, 2)\n")
+    #    #elif spin == "uhf":
+    #    #    function_printer.write_python("    rdm2_f_aaaa = rdm2_f_aaaa.swapaxes(1, 2)\n")
+    #    #    function_printer.write_python("    rdm2_f_abab = rdm2_f_aabb.swapaxes(1, 2)\n")
+    #    #    function_printer.write_python("    rdm2_f_baba = rdm2_f_bbaa.swapaxes(1, 2)\n")
+    #    #    function_printer.write_python("    rdm2_f_bbbb = rdm2_f_bbbb.swapaxes(1, 2)\n")
