@@ -11,7 +11,7 @@ import scipy.linalg
 from types import SimpleNamespace
 from pyscf import cc, gto, lib, scf
 
-from ebcc import REBCC, UEBCC, GEBCC, NullLogger
+from ebcc import REBCC, UEBCC, GEBCC, NullLogger, util
 
 # TODO test more excitations in EOM
 
@@ -293,6 +293,18 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
         e1 = self.ccsd.ea_eom(nroots=5, koopmans=True).kernel()
         e2, v2 = self.ccsd_ref.eaccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
+
+    def test_rdm_energy(self):
+        dm1 = self.ccsd.make_rdm1_f()
+        dm2 = self.ccsd.make_rdm2_f()
+        c = self.mf.to_ghf().mo_coeff
+        h = self.mf.to_ghf().get_hcore()
+        h = np.linalg.multi_dot((c.T, h, c))
+        v = self.ccsd.get_eris().eri
+        e_rdm = util.einsum("pq,pq->", h, dm1)
+        e_rdm += util.einsum("pqrs,pqrs->", v, dm2) * 0.5
+        e_rdm += self.mf.mol.energy_nuc()
+        self.assertAlmostEqual(e_rdm, self.ccsd_ref.e_tot)
 
 
 if __name__ == "__main__":

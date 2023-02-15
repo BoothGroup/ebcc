@@ -76,6 +76,19 @@ class GCC2_PySCF_Tests(unittest.TestCase):
         b = self.ccsd.t1
         np.testing.assert_almost_equal(a, b, 6)
 
+    # This fails:
+    #def test_rdm_energy(self):
+    #    dm1 = self.ccsd.make_rdm1_f()
+    #    dm2 = self.ccsd.make_rdm2_f()
+    #    c = self.mf.to_ghf().mo_coeff
+    #    h = self.mf.to_ghf().get_hcore()
+    #    h = np.linalg.multi_dot((c.T, h, c))
+    #    v = self.ccsd.get_eris().eri
+    #    e_rdm = util.einsum("pq,pq->", h, dm1)
+    #    e_rdm += util.einsum("pqrs,pqrs->", v, dm2) * 0.5
+    #    e_rdm += self.mf.mol.energy_nuc()
+    #    self.assertAlmostEqual(e_rdm, self.ccsd_ref.e_tot)
+
 
 @pytest.mark.regression
 class GCC2_Tests(unittest.TestCase):
