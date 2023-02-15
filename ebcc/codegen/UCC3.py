@@ -5,19 +5,25 @@ from ebcc.util import pack_2e, einsum, Namespace
 
 def energy(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, t3=None, **kwargs):
     # energy
-    e_cc = 0.0
-    e_cc += einsum("ia,ia->", f.aa.ov, t1.aa)
-    e_cc += einsum("ia,ia->", f.bb.ov, t1.bb)
-    e_cc += einsum("ijab,iajb->", t2.abab, v.aabb.ovov)
-    e_cc += einsum("ijab,iajb->", t2.aaaa, v.aaaa.ovov) * 0.5
-    e_cc += einsum("ijab,iajb->", t2.bbbb, v.bbbb.ovov) * 0.5
-    e_cc += einsum("ijab,ibja->", t2.aaaa, v.aaaa.ovov) * -0.5
-    e_cc += einsum("ijab,ibja->", t2.bbbb, v.bbbb.ovov) * -0.5
-    e_cc += einsum("ia,jb,iajb->", t1.aa, t1.aa, v.aaaa.ovov) * 0.5
-    e_cc += einsum("ia,jb,ibja->", t1.aa, t1.aa, v.aaaa.ovov) * -0.5
-    e_cc += einsum("ia,jb,iajb->", t1.aa, t1.bb, v.aabb.ovov)
-    e_cc += einsum("ia,jb,iajb->", t1.bb, t1.bb, v.bbbb.ovov) * 0.5
-    e_cc += einsum("ia,jb,ibja->", t1.bb, t1.bb, v.bbbb.ovov) * -0.5
+    e_cc = 0
+    e_cc += einsum(t2.aaaa, (0, 1, 2, 3), v.aaaa.ovov, (0, 3, 1, 2), ()) * -1.0
+    e_cc += einsum(t2.bbbb, (0, 1, 2, 3), v.bbbb.ovov, (0, 3, 1, 2), ()) * -1.0
+    e_cc += einsum(t2.baba, (0, 1, 2, 3), v.bbaa.ovov, (0, 2, 1, 3), ())
+    x0 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x0 += einsum(v.aaaa.ovov, (0, 1, 2, 3), (2, 0, 1, 3))
+    x0 += einsum(v.aaaa.ovov, (0, 1, 2, 3), (2, 0, 3, 1)) * -1.0
+    x1 = np.zeros((nocc[0], nvir[0]), dtype=np.float64)
+    x1 += einsum(f.aa.ov, (0, 1), (0, 1)) * 2.0
+    x1 += einsum(v.bbaa.ovov, (0, 1, 2, 3), t1.bb, (0, 1), (2, 3)) * 2.0
+    x1 += einsum(x0, (0, 1, 2, 3), t1.aa, (0, 2), (1, 3)) * -1.0
+    e_cc += einsum(x1, (0, 1), t1.aa, (0, 1), ()) * 0.5
+    x2 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x2 += einsum(v.bbbb.ovov, (0, 1, 2, 3), (2, 0, 1, 3)) * -1.0
+    x2 += einsum(v.bbbb.ovov, (0, 1, 2, 3), (2, 0, 3, 1))
+    x3 = np.zeros((nocc[1], nvir[1]), dtype=np.float64)
+    x3 += einsum(f.bb.ov, (0, 1), (0, 1)) * 2.0
+    x3 += einsum(x2, (0, 1, 2, 3), t1.bb, (0, 3), (1, 2)) * -1.0
+    e_cc += einsum(x3, (0, 1), t1.bb, (0, 1), ()) * 0.5
 
     return e_cc
 
@@ -26,2461 +32,1512 @@ def update_amps(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, t3=None,
     t2new = Namespace()
     t3new = Namespace()
 
-    # T1 amplitudes
+    # T amplitudes
     t1new_aa = np.zeros((nocc[0], nvir[0]), dtype=np.float64)
-    t1new_aa += einsum("ia->ia", f.aa.ov)
-    t1new_aa += einsum("ij,ja->ia", f.aa.oo, t1.aa) * -1.0
-    t1new_aa += einsum("ab,ib->ia", f.aa.vv, t1.aa)
-    t1new_aa += einsum("jb,ijab->ia", f.bb.ov, t2.abab)
-    t1new_aa += einsum("jb,ijab->ia", f.aa.ov, t2.aaaa) * 2.0
-    t1new_aa += einsum("jb,ijab->ia", t1.aa, v.aaaa.oovv) * -1.0
-    t1new_aa += einsum("jb,iajb->ia", t1.aa, v.aaaa.ovov)
-    t1new_aa += einsum("jb,iajb->ia", t1.bb, v.aabb.ovov)
-    t1new_aa += einsum("jkab,ijkb->ia", t2.abab, v.aabb.ooov) * -1.0
-    t1new_aa += einsum("ijbc,jcab->ia", t2.abab, v.bbaa.ovvv)
-    t1new_aa += einsum("jkab,ijkb->ia", t2.aaaa, v.aaaa.ooov) * -1.0
-    t1new_aa += einsum("jkab,ikjb->ia", t2.aaaa, v.aaaa.ooov)
-    t1new_aa += einsum("ijbc,jbac->ia", t2.aaaa, v.aaaa.ovvv) * -1.0
-    t1new_aa += einsum("ijbc,jcab->ia", t2.aaaa, v.aaaa.ovvv)
-    t1new_aa += einsum("jbkc,ijkabc->ia", v.bbaa.ovov, t3.abaaba)
-    t1new_aa += einsum("jbkc,ikjacb->ia", v.aabb.ovov, t3.abaaba)
-    t1new_aa += einsum("jbkc,ijkabc->ia", v.aaaa.ovov, t3.aaaaaa) * 3.0
-    t1new_aa += einsum("jbkc,ijkabc->ia", v.bbbb.ovov, t3.abbabb)
-    t1new_aa += einsum("jb,ib,ja->ia", f.aa.ov, t1.aa, t1.aa) * -1.0
-    t1new_aa += einsum("jb,ka,ijkb->ia", t1.aa, t1.aa, v.aaaa.ooov)
-    t1new_aa += einsum("jb,ka,ikjb->ia", t1.aa, t1.aa, v.aaaa.ooov) * -1.0
-    t1new_aa += einsum("ib,jc,jbac->ia", t1.aa, t1.aa, v.aaaa.ovvv) * -1.0
-    t1new_aa += einsum("ib,jc,jcab->ia", t1.aa, t1.aa, v.aaaa.ovvv)
-    t1new_aa += einsum("ja,kb,ijkb->ia", t1.aa, t1.bb, v.aabb.ooov) * -1.0
-    t1new_aa += einsum("ib,jc,jcab->ia", t1.aa, t1.bb, v.bbaa.ovvv)
-    t1new_aa += einsum("ib,jkac,jbkc->ia", t1.aa, t2.abab, v.aabb.ovov) * -1.0
-    t1new_aa += einsum("ja,ikbc,jbkc->ia", t1.aa, t2.abab, v.aabb.ovov) * -1.0
-    t1new_aa += einsum("jb,ikac,jbkc->ia", t1.aa, t2.abab, v.aabb.ovov)
-    t1new_aa += einsum("ib,jkac,jbkc->ia", t1.aa, t2.aaaa, v.aaaa.ovov) * -1.0
-    t1new_aa += einsum("ib,jkac,jckb->ia", t1.aa, t2.aaaa, v.aaaa.ovov)
-    t1new_aa += einsum("ja,ikbc,jbkc->ia", t1.aa, t2.aaaa, v.aaaa.ovov) * -1.0
-    t1new_aa += einsum("ja,ikbc,jckb->ia", t1.aa, t2.aaaa, v.aaaa.ovov)
-    t1new_aa += einsum("jb,ikac,jbkc->ia", t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t1new_aa += einsum("jb,ikac,jckb->ia", t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t1new_aa += einsum("jb,ikac,jbkc->ia", t1.bb, t2.abab, v.bbbb.ovov)
-    t1new_aa += einsum("jb,ikac,jckb->ia", t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t1new_aa += einsum("jb,ikac,jbkc->ia", t1.bb, t2.aaaa, v.bbaa.ovov) * 2.0
-    t1new_aa += einsum("ib,jc,ka,jbkc->ia", t1.aa, t1.aa, t1.aa, v.aaaa.ovov)
-    t1new_aa += einsum("ib,jc,ka,jckb->ia", t1.aa, t1.aa, t1.aa, v.aaaa.ovov) * -1.0
-    t1new_aa += einsum("ib,ja,kc,jbkc->ia", t1.aa, t1.aa, t1.bb, v.aabb.ovov) * -1.0
-
-    # T1 amplitudes
+    t1new_aa += einsum(v.aaaa.ovov, (0, 1, 2, 3), t3.aaaaaa, (4, 2, 0, 5, 1, 3), (4, 5)) * -3.0
+    t1new_aa += einsum(v.bbaa.ovov, (0, 1, 2, 3), t3.baabaa, (0, 4, 2, 1, 5, 3), (4, 5)) * 2.0
+    t1new_aa += einsum(f.aa.ov, (0, 1), (0, 1))
+    t1new_aa += einsum(t3.bbabba, (0, 1, 2, 3, 4, 5), v.bbbb.ovov, (0, 4, 1, 3), (2, 5)) * -1.0
     t1new_bb = np.zeros((nocc[1], nvir[1]), dtype=np.float64)
-    t1new_bb += einsum("ia->ia", f.bb.ov)
-    t1new_bb += einsum("ij,ja->ia", f.bb.oo, t1.bb) * -1.0
-    t1new_bb += einsum("ab,ib->ia", f.bb.vv, t1.bb)
-    t1new_bb += einsum("jb,jiba->ia", f.aa.ov, t2.abab)
-    t1new_bb += einsum("jb,ijab->ia", f.bb.ov, t2.bbbb) * 2.0
-    t1new_bb += einsum("jb,iajb->ia", t1.aa, v.bbaa.ovov)
-    t1new_bb += einsum("jb,ijab->ia", t1.bb, v.bbbb.oovv) * -1.0
-    t1new_bb += einsum("jb,iajb->ia", t1.bb, v.bbbb.ovov)
-    t1new_bb += einsum("jkba,ikjb->ia", t2.abab, v.bbaa.ooov) * -1.0
-    t1new_bb += einsum("jibc,jbac->ia", t2.abab, v.aabb.ovvv)
-    t1new_bb += einsum("jkab,ijkb->ia", t2.bbbb, v.bbbb.ooov) * -1.0
-    t1new_bb += einsum("jkab,ikjb->ia", t2.bbbb, v.bbbb.ooov)
-    t1new_bb += einsum("ijbc,jbac->ia", t2.bbbb, v.bbbb.ovvv) * -1.0
-    t1new_bb += einsum("ijbc,jcab->ia", t2.bbbb, v.bbbb.ovvv)
-    t1new_bb += einsum("jbkc,jikbac->ia", v.aaaa.ovov, t3.abaaba)
-    t1new_bb += einsum("jbkc,ijkabc->ia", v.aabb.ovov, t3.babbab)
-    t1new_bb += einsum("jbkc,ijkabc->ia", v.bbaa.ovov, t3.bbabba)
-    t1new_bb += einsum("jbkc,ijkabc->ia", v.bbbb.ovov, t3.bbbbbb) * 3.0
-    t1new_bb += einsum("jb,ib,ja->ia", f.bb.ov, t1.bb, t1.bb) * -1.0
-    t1new_bb += einsum("jb,ka,ikjb->ia", t1.aa, t1.bb, v.bbaa.ooov) * -1.0
-    t1new_bb += einsum("jb,ic,jbac->ia", t1.aa, t1.bb, v.aabb.ovvv)
-    t1new_bb += einsum("jb,ka,ijkb->ia", t1.bb, t1.bb, v.bbbb.ooov)
-    t1new_bb += einsum("jb,ka,ikjb->ia", t1.bb, t1.bb, v.bbbb.ooov) * -1.0
-    t1new_bb += einsum("ib,jc,jbac->ia", t1.bb, t1.bb, v.bbbb.ovvv) * -1.0
-    t1new_bb += einsum("ib,jc,jcab->ia", t1.bb, t1.bb, v.bbbb.ovvv)
-    t1new_bb += einsum("jb,kica,jbkc->ia", t1.aa, t2.abab, v.aaaa.ovov)
-    t1new_bb += einsum("jb,kica,jckb->ia", t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t1new_bb += einsum("jb,ikac,jbkc->ia", t1.aa, t2.bbbb, v.aabb.ovov) * 2.0
-    t1new_bb += einsum("ib,jkca,jckb->ia", t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t1new_bb += einsum("ja,kibc,jckb->ia", t1.bb, t2.abab, v.bbaa.ovov) * -1.0
-    t1new_bb += einsum("jb,kica,jbkc->ia", t1.bb, t2.abab, v.bbaa.ovov)
-    t1new_bb += einsum("ib,jkac,jbkc->ia", t1.bb, t2.bbbb, v.bbbb.ovov) * -1.0
-    t1new_bb += einsum("ib,jkac,jckb->ia", t1.bb, t2.bbbb, v.bbbb.ovov)
-    t1new_bb += einsum("ja,ikbc,jbkc->ia", t1.bb, t2.bbbb, v.bbbb.ovov) * -1.0
-    t1new_bb += einsum("ja,ikbc,jckb->ia", t1.bb, t2.bbbb, v.bbbb.ovov)
-    t1new_bb += einsum("jb,ikac,jbkc->ia", t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t1new_bb += einsum("jb,ikac,jckb->ia", t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t1new_bb += einsum("jb,ic,ka,jbkc->ia", t1.aa, t1.bb, t1.bb, v.aabb.ovov) * -1.0
-    t1new_bb += einsum("ib,jc,ka,jbkc->ia", t1.bb, t1.bb, t1.bb, v.bbbb.ovov)
-    t1new_bb += einsum("ib,jc,ka,jckb->ia", t1.bb, t1.bb, t1.bb, v.bbbb.ovov) * -1.0
-
-    # T2 amplitudes
+    t1new_bb += einsum(t3.bbabba, (0, 1, 2, 3, 4, 5), v.bbaa.ovov, (1, 4, 2, 5), (0, 3)) * 2.0
+    t1new_bb += einsum(t3.baabaa, (0, 1, 2, 3, 4, 5), v.aaaa.ovov, (1, 5, 2, 4), (0, 3)) * -1.0
+    t1new_bb += einsum(v.bbbb.ovov, (0, 1, 2, 3), t3.bbbbbb, (4, 2, 0, 5, 1, 3), (4, 5)) * -3.0
+    t1new_bb += einsum(f.bb.ov, (0, 1), (0, 1))
     t2new_aaaa = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
-    t2new_aaaa += einsum("iajb->ijab", v.aaaa.ovov)
-    t2new_aaaa += einsum("ibja->ijab", v.aaaa.ovov) * -1.0
-    t2new_aaaa += einsum("ik,jkab->ijab", f.aa.oo, t2.aaaa) * 2.0
-    t2new_aaaa += einsum("jk,ikab->ijab", f.aa.oo, t2.aaaa) * -2.0
-    t2new_aaaa += einsum("ac,ijbc->ijab", f.aa.vv, t2.aaaa) * -2.0
-    t2new_aaaa += einsum("bc,ijac->ijab", f.aa.vv, t2.aaaa) * 2.0
-    t2new_aaaa += einsum("ka,ikjb->ijab", t1.aa, v.aaaa.ooov) * -1.0
-    t2new_aaaa += einsum("ka,jkib->ijab", t1.aa, v.aaaa.ooov)
-    t2new_aaaa += einsum("kb,ikja->ijab", t1.aa, v.aaaa.ooov)
-    t2new_aaaa += einsum("kb,jkia->ijab", t1.aa, v.aaaa.ooov) * -1.0
-    t2new_aaaa += einsum("ic,jabc->ijab", t1.aa, v.aaaa.ovvv) * -1.0
-    t2new_aaaa += einsum("ic,jbac->ijab", t1.aa, v.aaaa.ovvv)
-    t2new_aaaa += einsum("jc,iabc->ijab", t1.aa, v.aaaa.ovvv)
-    t2new_aaaa += einsum("jc,ibac->ijab", t1.aa, v.aaaa.ovvv) * -1.0
-    t2new_aaaa += einsum("kc,ikjacb->ijab", f.bb.ov, t3.abaaba) * 2.0
-    t2new_aaaa += einsum("kc,ijkabc->ijab", f.aa.ov, t3.aaaaaa) * 6.0
-    t2new_aaaa += einsum("ikbc,jakc->ijab", t2.abab, v.aabb.ovov) * -1.0
-    t2new_aaaa += einsum("ikac,jbkc->ijab", t2.abab, v.aabb.ovov)
-    t2new_aaaa += einsum("jkbc,iakc->ijab", t2.abab, v.aabb.ovov)
-    t2new_aaaa += einsum("jkac,ibkc->ijab", t2.abab, v.aabb.ovov) * -1.0
-    t2new_aaaa += einsum("klab,ikjl->ijab", t2.aaaa, v.aaaa.oooo)
-    t2new_aaaa += einsum("klab,iljk->ijab", t2.aaaa, v.aaaa.oooo) * -1.0
-    t2new_aaaa += einsum("ikac,jkbc->ijab", t2.aaaa, v.aaaa.oovv) * -2.0
-    t2new_aaaa += einsum("ikbc,jkac->ijab", t2.aaaa, v.aaaa.oovv) * 2.0
-    t2new_aaaa += einsum("jkac,ikbc->ijab", t2.aaaa, v.aaaa.oovv) * 2.0
-    t2new_aaaa += einsum("jkbc,ikac->ijab", t2.aaaa, v.aaaa.oovv) * -2.0
-    t2new_aaaa += einsum("ikbc,jakc->ijab", t2.aaaa, v.aaaa.ovov) * -2.0
-    t2new_aaaa += einsum("ikac,jbkc->ijab", t2.aaaa, v.aaaa.ovov) * 2.0
-    t2new_aaaa += einsum("jkbc,iakc->ijab", t2.aaaa, v.aaaa.ovov) * 2.0
-    t2new_aaaa += einsum("jkac,ibkc->ijab", t2.aaaa, v.aaaa.ovov) * -2.0
-    t2new_aaaa += einsum("ijcd,acbd->ijab", t2.aaaa, v.aaaa.vvvv)
-    t2new_aaaa += einsum("ijcd,adbc->ijab", t2.aaaa, v.aaaa.vvvv) * -1.0
-    t2new_aaaa += einsum("iklc,jlkacb->ijab", v.aabb.ooov, t3.abaaba) * 2.0
-    t2new_aaaa += einsum("jklc,ilkacb->ijab", v.aabb.ooov, t3.abaaba) * -2.0
-    t2new_aaaa += einsum("kcad,ikjbcd->ijab", v.bbaa.ovvv, t3.abaaba) * -2.0
-    t2new_aaaa += einsum("kcbd,ikjacd->ijab", v.bbaa.ovvv, t3.abaaba) * 2.0
-    t2new_aaaa += einsum("iklc,jklabc->ijab", v.aaaa.ooov, t3.aaaaaa) * 6.0
-    t2new_aaaa += einsum("jklc,iklabc->ijab", v.aaaa.ooov, t3.aaaaaa) * -6.0
-    t2new_aaaa += einsum("kcad,ijkbcd->ijab", v.aaaa.ovvv, t3.aaaaaa) * 6.0
-    t2new_aaaa += einsum("kcbd,ijkacd->ijab", v.aaaa.ovvv, t3.aaaaaa) * -6.0
-    t2new_aaaa += einsum("kc,ic,jkab->ijab", f.aa.ov, t1.aa, t2.aaaa) * 2.0
-    t2new_aaaa += einsum("kc,jc,ikab->ijab", f.aa.ov, t1.aa, t2.aaaa) * -2.0
-    t2new_aaaa += einsum("kc,ka,ijbc->ijab", f.aa.ov, t1.aa, t2.aaaa) * 2.0
-    t2new_aaaa += einsum("kc,kb,ijac->ijab", f.aa.ov, t1.aa, t2.aaaa) * -2.0
-    t2new_aaaa += einsum("ic,ka,jkbc->ijab", t1.aa, t1.aa, v.aaaa.oovv)
-    t2new_aaaa += einsum("ic,kb,jkac->ijab", t1.aa, t1.aa, v.aaaa.oovv) * -1.0
-    t2new_aaaa += einsum("jc,ka,ikbc->ijab", t1.aa, t1.aa, v.aaaa.oovv) * -1.0
-    t2new_aaaa += einsum("jc,kb,ikac->ijab", t1.aa, t1.aa, v.aaaa.oovv)
-    t2new_aaaa += einsum("ka,lb,ikjl->ijab", t1.aa, t1.aa, v.aaaa.oooo)
-    t2new_aaaa += einsum("ka,lb,iljk->ijab", t1.aa, t1.aa, v.aaaa.oooo) * -1.0
-    t2new_aaaa += einsum("ic,ka,jbkc->ijab", t1.aa, t1.aa, v.aaaa.ovov) * -1.0
-    t2new_aaaa += einsum("ic,kb,jakc->ijab", t1.aa, t1.aa, v.aaaa.ovov)
-    t2new_aaaa += einsum("jc,ka,ibkc->ijab", t1.aa, t1.aa, v.aaaa.ovov)
-    t2new_aaaa += einsum("jc,kb,iakc->ijab", t1.aa, t1.aa, v.aaaa.ovov) * -1.0
-    t2new_aaaa += einsum("ic,jd,acbd->ijab", t1.aa, t1.aa, v.aaaa.vvvv)
-    t2new_aaaa += einsum("ic,jd,adbc->ijab", t1.aa, t1.aa, v.aaaa.vvvv) * -1.0
-    t2new_aaaa += einsum("ka,ilbc,jklc->ijab", t1.aa, t2.abab, v.aabb.ooov)
-    t2new_aaaa += einsum("ka,jlbc,iklc->ijab", t1.aa, t2.abab, v.aabb.ooov) * -1.0
-    t2new_aaaa += einsum("kb,ilac,jklc->ijab", t1.aa, t2.abab, v.aabb.ooov) * -1.0
-    t2new_aaaa += einsum("kb,jlac,iklc->ijab", t1.aa, t2.abab, v.aabb.ooov)
-    t2new_aaaa += einsum("ic,jkad,kdbc->ijab", t1.aa, t2.abab, v.bbaa.ovvv) * -1.0
-    t2new_aaaa += einsum("ic,jkbd,kdac->ijab", t1.aa, t2.abab, v.bbaa.ovvv)
-    t2new_aaaa += einsum("jc,ikad,kdbc->ijab", t1.aa, t2.abab, v.bbaa.ovvv)
-    t2new_aaaa += einsum("jc,ikbd,kdac->ijab", t1.aa, t2.abab, v.bbaa.ovvv) * -1.0
-    t2new_aaaa += einsum("ic,klab,jklc->ijab", t1.aa, t2.aaaa, v.aaaa.ooov) * -1.0
-    t2new_aaaa += einsum("ic,klab,jlkc->ijab", t1.aa, t2.aaaa, v.aaaa.ooov)
-    t2new_aaaa += einsum("jc,klab,iklc->ijab", t1.aa, t2.aaaa, v.aaaa.ooov)
-    t2new_aaaa += einsum("jc,klab,ilkc->ijab", t1.aa, t2.aaaa, v.aaaa.ooov) * -1.0
-    t2new_aaaa += einsum("ka,ilbc,jklc->ijab", t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t2new_aaaa += einsum("ka,ilbc,jlkc->ijab", t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t2new_aaaa += einsum("ka,jlbc,iklc->ijab", t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t2new_aaaa += einsum("ka,jlbc,ilkc->ijab", t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t2new_aaaa += einsum("kb,ilac,jklc->ijab", t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t2new_aaaa += einsum("kb,ilac,jlkc->ijab", t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t2new_aaaa += einsum("kb,jlac,iklc->ijab", t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t2new_aaaa += einsum("kb,jlac,ilkc->ijab", t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t2new_aaaa += einsum("kc,ilab,jklc->ijab", t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t2new_aaaa += einsum("kc,ilab,jlkc->ijab", t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t2new_aaaa += einsum("kc,jlab,iklc->ijab", t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t2new_aaaa += einsum("kc,jlab,ilkc->ijab", t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t2new_aaaa += einsum("ic,jkad,kcbd->ijab", t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t2new_aaaa += einsum("ic,jkbd,kcad->ijab", t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t2new_aaaa += einsum("ic,jkad,kdbc->ijab", t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t2new_aaaa += einsum("ic,jkbd,kdac->ijab", t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t2new_aaaa += einsum("jc,ikad,kcbd->ijab", t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t2new_aaaa += einsum("jc,ikbd,kcad->ijab", t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t2new_aaaa += einsum("jc,ikad,kdbc->ijab", t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t2new_aaaa += einsum("jc,ikbd,kdac->ijab", t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t2new_aaaa += einsum("ka,ijcd,kcbd->ijab", t1.aa, t2.aaaa, v.aaaa.ovvv) * -1.0
-    t2new_aaaa += einsum("ka,ijcd,kdbc->ijab", t1.aa, t2.aaaa, v.aaaa.ovvv)
-    t2new_aaaa += einsum("kb,ijcd,kcad->ijab", t1.aa, t2.aaaa, v.aaaa.ovvv)
-    t2new_aaaa += einsum("kb,ijcd,kdac->ijab", t1.aa, t2.aaaa, v.aaaa.ovvv) * -1.0
-    t2new_aaaa += einsum("kc,ijad,kcbd->ijab", t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t2new_aaaa += einsum("kc,ijbd,kcad->ijab", t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t2new_aaaa += einsum("kc,ijad,kdbc->ijab", t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t2new_aaaa += einsum("kc,ijbd,kdac->ijab", t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t2new_aaaa += einsum("kc,ilab,jlkc->ijab", t1.bb, t2.aaaa, v.aabb.ooov) * -2.0
-    t2new_aaaa += einsum("kc,jlab,ilkc->ijab", t1.bb, t2.aaaa, v.aabb.ooov) * 2.0
-    t2new_aaaa += einsum("kc,ijad,kcbd->ijab", t1.bb, t2.aaaa, v.bbaa.ovvv) * 2.0
-    t2new_aaaa += einsum("kc,ijbd,kcad->ijab", t1.bb, t2.aaaa, v.bbaa.ovvv) * -2.0
-    t2new_aaaa += einsum("ic,kcld,jlkadb->ijab", t1.aa, v.aabb.ovov, t3.abaaba)
-    t2new_aaaa += einsum("ic,kdlc,jkladb->ijab", t1.aa, v.bbaa.ovov, t3.abaaba)
-    t2new_aaaa += einsum("jc,kcld,ilkadb->ijab", t1.aa, v.aabb.ovov, t3.abaaba) * -1.0
-    t2new_aaaa += einsum("jc,kdlc,ikladb->ijab", t1.aa, v.bbaa.ovov, t3.abaaba) * -1.0
-    t2new_aaaa += einsum("ka,kcld,iljbdc->ijab", t1.aa, v.aabb.ovov, t3.abaaba) * 2.0
-    t2new_aaaa += einsum("kb,kcld,iljadc->ijab", t1.aa, v.aabb.ovov, t3.abaaba) * -2.0
-    t2new_aaaa += einsum("kc,kcld,iljadb->ijab", t1.aa, v.aabb.ovov, t3.abaaba) * 2.0
-    t2new_aaaa += einsum("ic,kcld,jklabd->ijab", t1.aa, v.aaaa.ovov, t3.aaaaaa) * 3.0
-    t2new_aaaa += einsum("ic,kdlc,jklabd->ijab", t1.aa, v.aaaa.ovov, t3.aaaaaa) * -3.0
-    t2new_aaaa += einsum("jc,kcld,iklabd->ijab", t1.aa, v.aaaa.ovov, t3.aaaaaa) * -3.0
-    t2new_aaaa += einsum("jc,kdlc,iklabd->ijab", t1.aa, v.aaaa.ovov, t3.aaaaaa) * 3.0
-    t2new_aaaa += einsum("ka,kcld,ijlbcd->ijab", t1.aa, v.aaaa.ovov, t3.aaaaaa) * 6.0
-    t2new_aaaa += einsum("kb,kcld,ijlacd->ijab", t1.aa, v.aaaa.ovov, t3.aaaaaa) * -6.0
-    t2new_aaaa += einsum("kc,kcld,ijlabd->ijab", t1.aa, v.aaaa.ovov, t3.aaaaaa) * 6.0
-    t2new_aaaa += einsum("kc,kdlc,ijlabd->ijab", t1.aa, v.aaaa.ovov, t3.aaaaaa) * -6.0
-    t2new_aaaa += einsum("kc,kcld,iljadb->ijab", t1.bb, v.bbbb.ovov, t3.abaaba) * 2.0
-    t2new_aaaa += einsum("kc,kdlc,iljadb->ijab", t1.bb, v.bbbb.ovov, t3.abaaba) * -2.0
-    t2new_aaaa += einsum("kc,kcld,ijlabd->ijab", t1.bb, v.bbaa.ovov, t3.aaaaaa) * 6.0
-    t2new_aaaa += einsum("ikac,jlbd,kcld->ijab", t2.abab, t2.abab, v.bbbb.ovov)
-    t2new_aaaa += einsum("ikbc,jlad,kcld->ijab", t2.abab, t2.abab, v.bbbb.ovov) * -1.0
-    t2new_aaaa += einsum("ikac,jlbd,kdlc->ijab", t2.abab, t2.abab, v.bbbb.ovov) * -1.0
-    t2new_aaaa += einsum("ikbc,jlad,kdlc->ijab", t2.abab, t2.abab, v.bbbb.ovov)
-    t2new_aaaa += einsum("ikac,jlbd,kcld->ijab", t2.abab, t2.aaaa, v.bbaa.ovov) * 2.0
-    t2new_aaaa += einsum("ikbc,jlad,kcld->ijab", t2.abab, t2.aaaa, v.bbaa.ovov) * -2.0
-    t2new_aaaa += einsum("ikcd,jlab,kdlc->ijab", t2.abab, t2.aaaa, v.bbaa.ovov) * 2.0
-    t2new_aaaa += einsum("jkac,ilbd,kcld->ijab", t2.abab, t2.aaaa, v.bbaa.ovov) * -2.0
-    t2new_aaaa += einsum("jkbc,ilad,kcld->ijab", t2.abab, t2.aaaa, v.bbaa.ovov) * 2.0
-    t2new_aaaa += einsum("jkcd,ilab,kdlc->ijab", t2.abab, t2.aaaa, v.bbaa.ovov) * -2.0
-    t2new_aaaa += einsum("klac,ijbd,kdlc->ijab", t2.abab, t2.aaaa, v.aabb.ovov) * 2.0
-    t2new_aaaa += einsum("klbc,ijad,kdlc->ijab", t2.abab, t2.aaaa, v.aabb.ovov) * -2.0
-    t2new_aaaa += einsum("ikac,jlbd,kcld->ijab", t2.aaaa, t2.aaaa, v.aaaa.ovov) * 4.0
-    t2new_aaaa += einsum("ikab,jlcd,kcld->ijab", t2.aaaa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t2new_aaaa += einsum("ikbc,jlad,kcld->ijab", t2.aaaa, t2.aaaa, v.aaaa.ovov) * -4.0
-    t2new_aaaa += einsum("ikcd,jlab,kcld->ijab", t2.aaaa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t2new_aaaa += einsum("ikac,jlbd,kdlc->ijab", t2.aaaa, t2.aaaa, v.aaaa.ovov) * -4.0
-    t2new_aaaa += einsum("ikab,jlcd,kdlc->ijab", t2.aaaa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t2new_aaaa += einsum("ikbc,jlad,kdlc->ijab", t2.aaaa, t2.aaaa, v.aaaa.ovov) * 4.0
-    t2new_aaaa += einsum("ikcd,jlab,kdlc->ijab", t2.aaaa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t2new_aaaa += einsum("ijac,klbd,kcld->ijab", t2.aaaa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t2new_aaaa += einsum("ijbc,klad,kcld->ijab", t2.aaaa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t2new_aaaa += einsum("ijcd,klab,kcld->ijab", t2.aaaa, t2.aaaa, v.aaaa.ovov)
-    t2new_aaaa += einsum("ijac,klbd,kdlc->ijab", t2.aaaa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t2new_aaaa += einsum("ijbc,klad,kdlc->ijab", t2.aaaa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t2new_aaaa += einsum("ijcd,klab,kdlc->ijab", t2.aaaa, t2.aaaa, v.aaaa.ovov) * -1.0
-    t2new_aaaa += einsum("ic,ka,lb,jklc->ijab", t1.aa, t1.aa, t1.aa, v.aaaa.ooov) * -1.0
-    t2new_aaaa += einsum("ic,ka,lb,jlkc->ijab", t1.aa, t1.aa, t1.aa, v.aaaa.ooov)
-    t2new_aaaa += einsum("jc,ka,lb,iklc->ijab", t1.aa, t1.aa, t1.aa, v.aaaa.ooov)
-    t2new_aaaa += einsum("jc,ka,lb,ilkc->ijab", t1.aa, t1.aa, t1.aa, v.aaaa.ooov) * -1.0
-    t2new_aaaa += einsum("ic,jd,ka,kcbd->ijab", t1.aa, t1.aa, t1.aa, v.aaaa.ovvv) * -1.0
-    t2new_aaaa += einsum("ic,jd,ka,kdbc->ijab", t1.aa, t1.aa, t1.aa, v.aaaa.ovvv)
-    t2new_aaaa += einsum("ic,jd,kb,kcad->ijab", t1.aa, t1.aa, t1.aa, v.aaaa.ovvv)
-    t2new_aaaa += einsum("ic,jd,kb,kdac->ijab", t1.aa, t1.aa, t1.aa, v.aaaa.ovvv) * -1.0
-    t2new_aaaa += einsum("ic,ka,jlbd,kcld->ijab", t1.aa, t1.aa, t2.abab, v.aabb.ovov) * -1.0
-    t2new_aaaa += einsum("ic,kb,jlad,kcld->ijab", t1.aa, t1.aa, t2.abab, v.aabb.ovov)
-    t2new_aaaa += einsum("jc,ka,ilbd,kcld->ijab", t1.aa, t1.aa, t2.abab, v.aabb.ovov)
-    t2new_aaaa += einsum("jc,kb,ilad,kcld->ijab", t1.aa, t1.aa, t2.abab, v.aabb.ovov) * -1.0
-    t2new_aaaa += einsum("ic,jd,klab,kcld->ijab", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov)
-    t2new_aaaa += einsum("ic,jd,klab,kdlc->ijab", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -1.0
-    t2new_aaaa += einsum("ic,ka,jlbd,kcld->ijab", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t2new_aaaa += einsum("ic,ka,jlbd,kdlc->ijab", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t2new_aaaa += einsum("ic,kb,jlad,kcld->ijab", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t2new_aaaa += einsum("ic,kb,jlad,kdlc->ijab", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t2new_aaaa += einsum("ic,kd,jlab,kcld->ijab", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t2new_aaaa += einsum("ic,kd,jlab,kdlc->ijab", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t2new_aaaa += einsum("jc,ka,ilbd,kcld->ijab", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t2new_aaaa += einsum("jc,ka,ilbd,kdlc->ijab", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t2new_aaaa += einsum("jc,kb,ilad,kcld->ijab", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t2new_aaaa += einsum("jc,kb,ilad,kdlc->ijab", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t2new_aaaa += einsum("jc,kd,ilab,kcld->ijab", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t2new_aaaa += einsum("jc,kd,ilab,kdlc->ijab", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t2new_aaaa += einsum("ka,lb,ijcd,kcld->ijab", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov)
-    t2new_aaaa += einsum("ka,lb,ijcd,kdlc->ijab", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -1.0
-    t2new_aaaa += einsum("kc,la,ijbd,kcld->ijab", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t2new_aaaa += einsum("kc,la,ijbd,kdlc->ijab", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t2new_aaaa += einsum("kc,lb,ijad,kcld->ijab", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t2new_aaaa += einsum("kc,lb,ijad,kdlc->ijab", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t2new_aaaa += einsum("ic,kd,jlab,kdlc->ijab", t1.aa, t1.bb, t2.aaaa, v.bbaa.ovov) * 2.0
-    t2new_aaaa += einsum("jc,kd,ilab,kdlc->ijab", t1.aa, t1.bb, t2.aaaa, v.bbaa.ovov) * -2.0
-    t2new_aaaa += einsum("ka,lc,ijbd,kdlc->ijab", t1.aa, t1.bb, t2.aaaa, v.aabb.ovov) * 2.0
-    t2new_aaaa += einsum("kb,lc,ijad,kdlc->ijab", t1.aa, t1.bb, t2.aaaa, v.aabb.ovov) * -2.0
-    t2new_aaaa += einsum("ic,jd,ka,lb,kcld->ijab", t1.aa, t1.aa, t1.aa, t1.aa, v.aaaa.ovov)
-    t2new_aaaa += einsum("ic,jd,ka,lb,kdlc->ijab", t1.aa, t1.aa, t1.aa, t1.aa, v.aaaa.ovov) * -1.0
-
-    # T2 amplitudes
+    t2new_aaaa += einsum(v.aaaa.vvvv, (0, 1, 2, 3), t2.aaaa, (4, 5, 1, 2), (5, 4, 3, 0)) * 2.0
     t2new_abab = np.zeros((nocc[0], nocc[1], nvir[0], nvir[1]), dtype=np.float64)
-    t2new_abab += einsum("iajb->ijab", v.aabb.ovov)
-    t2new_abab += einsum("ik,kjab->ijab", f.aa.oo, t2.abab) * -1.0
-    t2new_abab += einsum("jk,ikab->ijab", f.bb.oo, t2.abab) * -1.0
-    t2new_abab += einsum("ac,ijcb->ijab", f.aa.vv, t2.abab)
-    t2new_abab += einsum("bc,ijac->ijab", f.bb.vv, t2.abab)
-    t2new_abab += einsum("ka,ikjb->ijab", t1.aa, v.aabb.ooov) * -1.0
-    t2new_abab += einsum("ic,jbac->ijab", t1.aa, v.bbaa.ovvv)
-    t2new_abab += einsum("kb,jkia->ijab", t1.bb, v.bbaa.ooov) * -1.0
-    t2new_abab += einsum("jc,iabc->ijab", t1.bb, v.aabb.ovvv)
-    t2new_abab += einsum("kc,ijkabc->ijab", f.aa.ov, t3.abaaba) * 2.0
-    t2new_abab += einsum("kc,ijkabc->ijab", f.bb.ov, t3.abbabb) * 2.0
-    t2new_abab += einsum("klab,ikjl->ijab", t2.abab, v.aabb.oooo)
-    t2new_abab += einsum("ikac,jkbc->ijab", t2.abab, v.bbbb.oovv) * -1.0
-    t2new_abab += einsum("ikcb,jkac->ijab", t2.abab, v.bbaa.oovv) * -1.0
-    t2new_abab += einsum("kjac,ikbc->ijab", t2.abab, v.aabb.oovv) * -1.0
-    t2new_abab += einsum("kjcb,ikac->ijab", t2.abab, v.aaaa.oovv) * -1.0
-    t2new_abab += einsum("ikac,jbkc->ijab", t2.abab, v.bbbb.ovov)
-    t2new_abab += einsum("kjcb,iakc->ijab", t2.abab, v.aaaa.ovov)
-    t2new_abab += einsum("ijcd,acbd->ijab", t2.abab, v.aabb.vvvv)
-    t2new_abab += einsum("ikac,jbkc->ijab", t2.aaaa, v.bbaa.ovov) * 2.0
-    t2new_abab += einsum("jkbc,iakc->ijab", t2.bbbb, v.aabb.ovov) * 2.0
-    t2new_abab += einsum("iklc,kjlabc->ijab", v.aaaa.ooov, t3.abaaba) * -2.0
-    t2new_abab += einsum("jklc,iklabc->ijab", v.bbaa.ooov, t3.abaaba) * -2.0
-    t2new_abab += einsum("kcad,ijkcbd->ijab", v.aaaa.ovvv, t3.abaaba) * -2.0
-    t2new_abab += einsum("kcbd,ijkadc->ijab", v.aabb.ovvv, t3.abaaba) * 2.0
-    t2new_abab += einsum("iklc,jklbac->ijab", v.aabb.ooov, t3.babbab) * -2.0
-    t2new_abab += einsum("jklc,iklabc->ijab", v.bbbb.ooov, t3.abbabb) * -2.0
-    t2new_abab += einsum("kcad,ijkdbc->ijab", v.bbaa.ovvv, t3.abbabb) * 2.0
-    t2new_abab += einsum("kcbd,ijkacd->ijab", v.bbbb.ovvv, t3.abbabb) * -2.0
-    t2new_abab += einsum("kc,ic,kjab->ijab", f.aa.ov, t1.aa, t2.abab) * -1.0
-    t2new_abab += einsum("kc,ka,ijcb->ijab", f.aa.ov, t1.aa, t2.abab) * -1.0
-    t2new_abab += einsum("kc,jc,ikab->ijab", f.bb.ov, t1.bb, t2.abab) * -1.0
-    t2new_abab += einsum("kc,kb,ijac->ijab", f.bb.ov, t1.bb, t2.abab) * -1.0
-    t2new_abab += einsum("ic,ka,jbkc->ijab", t1.aa, t1.aa, v.bbaa.ovov) * -1.0
-    t2new_abab += einsum("ic,kb,jkac->ijab", t1.aa, t1.bb, v.bbaa.oovv) * -1.0
-    t2new_abab += einsum("ka,jc,ikbc->ijab", t1.aa, t1.bb, v.aabb.oovv) * -1.0
-    t2new_abab += einsum("ka,lb,ikjl->ijab", t1.aa, t1.bb, v.aabb.oooo)
-    t2new_abab += einsum("ic,jd,acbd->ijab", t1.aa, t1.bb, v.aabb.vvvv)
-    t2new_abab += einsum("jc,kb,iakc->ijab", t1.bb, t1.bb, v.aabb.ovov) * -1.0
-    t2new_abab += einsum("ic,klab,jlkc->ijab", t1.aa, t2.abab, v.bbaa.ooov)
-    t2new_abab += einsum("ka,ilcb,jlkc->ijab", t1.aa, t2.abab, v.bbaa.ooov)
-    t2new_abab += einsum("ka,ljcb,iklc->ijab", t1.aa, t2.abab, v.aaaa.ooov) * -1.0
-    t2new_abab += einsum("ka,ljcb,ilkc->ijab", t1.aa, t2.abab, v.aaaa.ooov)
-    t2new_abab += einsum("kc,ilab,jlkc->ijab", t1.aa, t2.abab, v.bbaa.ooov) * -1.0
-    t2new_abab += einsum("kc,ljab,iklc->ijab", t1.aa, t2.abab, v.aaaa.ooov)
-    t2new_abab += einsum("kc,ljab,ilkc->ijab", t1.aa, t2.abab, v.aaaa.ooov) * -1.0
-    t2new_abab += einsum("ic,kjad,kcbd->ijab", t1.aa, t2.abab, v.aabb.ovvv) * -1.0
-    t2new_abab += einsum("ic,kjdb,kcad->ijab", t1.aa, t2.abab, v.aaaa.ovvv) * -1.0
-    t2new_abab += einsum("ic,kjdb,kdac->ijab", t1.aa, t2.abab, v.aaaa.ovvv)
-    t2new_abab += einsum("ka,ijcd,kcbd->ijab", t1.aa, t2.abab, v.aabb.ovvv) * -1.0
-    t2new_abab += einsum("kc,ijad,kcbd->ijab", t1.aa, t2.abab, v.aabb.ovvv)
-    t2new_abab += einsum("kc,ijdb,kcad->ijab", t1.aa, t2.abab, v.aaaa.ovvv)
-    t2new_abab += einsum("kc,ijdb,kdac->ijab", t1.aa, t2.abab, v.aaaa.ovvv) * -1.0
-    t2new_abab += einsum("ka,jlbc,iklc->ijab", t1.aa, t2.bbbb, v.aabb.ooov) * -2.0
-    t2new_abab += einsum("ic,jkbd,kdac->ijab", t1.aa, t2.bbbb, v.bbaa.ovvv) * 2.0
-    t2new_abab += einsum("jc,klab,iklc->ijab", t1.bb, t2.abab, v.aabb.ooov)
-    t2new_abab += einsum("kb,ilac,jklc->ijab", t1.bb, t2.abab, v.bbbb.ooov) * -1.0
-    t2new_abab += einsum("kb,ilac,jlkc->ijab", t1.bb, t2.abab, v.bbbb.ooov)
-    t2new_abab += einsum("kb,ljac,ilkc->ijab", t1.bb, t2.abab, v.aabb.ooov)
-    t2new_abab += einsum("kc,ilab,jklc->ijab", t1.bb, t2.abab, v.bbbb.ooov)
-    t2new_abab += einsum("kc,ilab,jlkc->ijab", t1.bb, t2.abab, v.bbbb.ooov) * -1.0
-    t2new_abab += einsum("kc,ljab,ilkc->ijab", t1.bb, t2.abab, v.aabb.ooov) * -1.0
-    t2new_abab += einsum("jc,ikad,kcbd->ijab", t1.bb, t2.abab, v.bbbb.ovvv) * -1.0
-    t2new_abab += einsum("jc,ikdb,kcad->ijab", t1.bb, t2.abab, v.bbaa.ovvv) * -1.0
-    t2new_abab += einsum("jc,ikad,kdbc->ijab", t1.bb, t2.abab, v.bbbb.ovvv)
-    t2new_abab += einsum("kb,ijcd,kdac->ijab", t1.bb, t2.abab, v.bbaa.ovvv) * -1.0
-    t2new_abab += einsum("kc,ijad,kcbd->ijab", t1.bb, t2.abab, v.bbbb.ovvv)
-    t2new_abab += einsum("kc,ijdb,kcad->ijab", t1.bb, t2.abab, v.bbaa.ovvv)
-    t2new_abab += einsum("kc,ijad,kdbc->ijab", t1.bb, t2.abab, v.bbbb.ovvv) * -1.0
-    t2new_abab += einsum("kb,ilac,jklc->ijab", t1.bb, t2.aaaa, v.bbaa.ooov) * -2.0
-    t2new_abab += einsum("jc,ikad,kdbc->ijab", t1.bb, t2.aaaa, v.aabb.ovvv) * 2.0
-    t2new_abab += einsum("ic,kcld,kjlabd->ijab", t1.aa, v.aaaa.ovov, t3.abaaba) * -1.0
-    t2new_abab += einsum("ic,kdlc,kjlabd->ijab", t1.aa, v.aaaa.ovov, t3.abaaba)
-    t2new_abab += einsum("ka,kcld,ijlcbd->ijab", t1.aa, v.aaaa.ovov, t3.abaaba) * -2.0
-    t2new_abab += einsum("kc,kcld,ijlabd->ijab", t1.aa, v.aaaa.ovov, t3.abaaba) * 2.0
-    t2new_abab += einsum("kc,kdlc,ijlabd->ijab", t1.aa, v.aaaa.ovov, t3.abaaba) * -2.0
-    t2new_abab += einsum("ic,kcld,jklbad->ijab", t1.aa, v.aabb.ovov, t3.babbab) * -1.0
-    t2new_abab += einsum("ic,kdlc,jklbda->ijab", t1.aa, v.bbaa.ovov, t3.bbabba) * -1.0
-    t2new_abab += einsum("ka,kcld,ijlcbd->ijab", t1.aa, v.aabb.ovov, t3.abbabb) * -2.0
-    t2new_abab += einsum("kc,kcld,ijlabd->ijab", t1.aa, v.aabb.ovov, t3.abbabb) * 2.0
-    t2new_abab += einsum("jc,kcld,iklabd->ijab", t1.bb, v.bbaa.ovov, t3.abaaba) * -1.0
-    t2new_abab += einsum("jc,kdlc,ilkabd->ijab", t1.bb, v.aabb.ovov, t3.abaaba) * -1.0
-    t2new_abab += einsum("kb,kcld,ijlacd->ijab", t1.bb, v.bbaa.ovov, t3.abaaba) * -2.0
-    t2new_abab += einsum("kc,kcld,ijlabd->ijab", t1.bb, v.bbaa.ovov, t3.abaaba) * 2.0
-    t2new_abab += einsum("jc,kcld,iklabd->ijab", t1.bb, v.bbbb.ovov, t3.abbabb) * -1.0
-    t2new_abab += einsum("jc,kdlc,iklabd->ijab", t1.bb, v.bbbb.ovov, t3.abbabb)
-    t2new_abab += einsum("kb,kcld,ijlacd->ijab", t1.bb, v.bbbb.ovov, t3.abbabb) * -2.0
-    t2new_abab += einsum("kc,kcld,ijlabd->ijab", t1.bb, v.bbbb.ovov, t3.abbabb) * 2.0
-    t2new_abab += einsum("kc,kdlc,ijlabd->ijab", t1.bb, v.bbbb.ovov, t3.abbabb) * -2.0
-    t2new_abab += einsum("ijcb,klad,kcld->ijab", t2.abab, t2.abab, v.aabb.ovov) * -1.0
-    t2new_abab += einsum("ijcd,klab,kcld->ijab", t2.abab, t2.abab, v.aabb.ovov)
-    t2new_abab += einsum("ijac,kldb,kdlc->ijab", t2.abab, t2.abab, v.aabb.ovov) * -1.0
-    t2new_abab += einsum("ikac,ljdb,kcld->ijab", t2.abab, t2.abab, v.bbaa.ovov)
-    t2new_abab += einsum("ikab,ljcd,kdlc->ijab", t2.abab, t2.abab, v.bbaa.ovov) * -1.0
-    t2new_abab += einsum("ikcb,ljad,kdlc->ijab", t2.abab, t2.abab, v.bbaa.ovov)
-    t2new_abab += einsum("ikcd,ljab,kdlc->ijab", t2.abab, t2.abab, v.bbaa.ovov) * -1.0
-    t2new_abab += einsum("ikac,jlbd,kcld->ijab", t2.abab, t2.bbbb, v.bbbb.ovov) * 2.0
-    t2new_abab += einsum("ikab,jlcd,kcld->ijab", t2.abab, t2.bbbb, v.bbbb.ovov) * -1.0
-    t2new_abab += einsum("ikac,jlbd,kdlc->ijab", t2.abab, t2.bbbb, v.bbbb.ovov) * -2.0
-    t2new_abab += einsum("ikab,jlcd,kdlc->ijab", t2.abab, t2.bbbb, v.bbbb.ovov)
-    t2new_abab += einsum("ijac,klbd,kcld->ijab", t2.abab, t2.bbbb, v.bbbb.ovov) * -1.0
-    t2new_abab += einsum("ijcb,klad,kcld->ijab", t2.abab, t2.aaaa, v.aaaa.ovov) * -1.0
-    t2new_abab += einsum("ijac,klbd,kdlc->ijab", t2.abab, t2.bbbb, v.bbbb.ovov)
-    t2new_abab += einsum("ijcb,klad,kdlc->ijab", t2.abab, t2.aaaa, v.aaaa.ovov)
-    t2new_abab += einsum("kjab,ilcd,kcld->ijab", t2.abab, t2.aaaa, v.aaaa.ovov) * -1.0
-    t2new_abab += einsum("kjcb,ilad,kcld->ijab", t2.abab, t2.aaaa, v.aaaa.ovov) * 2.0
-    t2new_abab += einsum("kjab,ilcd,kdlc->ijab", t2.abab, t2.aaaa, v.aaaa.ovov)
-    t2new_abab += einsum("kjcb,ilad,kdlc->ijab", t2.abab, t2.aaaa, v.aaaa.ovov) * -2.0
-    t2new_abab += einsum("ikac,jlbd,kcld->ijab", t2.aaaa, t2.bbbb, v.aabb.ovov) * 4.0
-    t2new_abab += einsum("ic,ka,lb,jlkc->ijab", t1.aa, t1.aa, t1.bb, v.bbaa.ooov)
-    t2new_abab += einsum("ic,ka,jd,kcbd->ijab", t1.aa, t1.aa, t1.bb, v.aabb.ovvv) * -1.0
-    t2new_abab += einsum("ka,jc,lb,iklc->ijab", t1.aa, t1.bb, t1.bb, v.aabb.ooov)
-    t2new_abab += einsum("ic,jd,kb,kdac->ijab", t1.aa, t1.bb, t1.bb, v.bbaa.ovvv) * -1.0
-    t2new_abab += einsum("ic,ka,ljdb,kcld->ijab", t1.aa, t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t2new_abab += einsum("ic,ka,ljdb,kdlc->ijab", t1.aa, t1.aa, t2.abab, v.aaaa.ovov)
-    t2new_abab += einsum("ic,kd,ljab,kcld->ijab", t1.aa, t1.aa, t2.abab, v.aaaa.ovov)
-    t2new_abab += einsum("ic,kd,ljab,kdlc->ijab", t1.aa, t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t2new_abab += einsum("kc,la,ijdb,kcld->ijab", t1.aa, t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t2new_abab += einsum("kc,la,ijdb,kdlc->ijab", t1.aa, t1.aa, t2.abab, v.aaaa.ovov)
-    t2new_abab += einsum("ic,ka,jlbd,kcld->ijab", t1.aa, t1.aa, t2.bbbb, v.aabb.ovov) * -2.0
-    t2new_abab += einsum("ic,jd,klab,kcld->ijab", t1.aa, t1.bb, t2.abab, v.aabb.ovov)
-    t2new_abab += einsum("ic,kb,ljad,kdlc->ijab", t1.aa, t1.bb, t2.abab, v.bbaa.ovov)
-    t2new_abab += einsum("ic,kd,ljab,kdlc->ijab", t1.aa, t1.bb, t2.abab, v.bbaa.ovov) * -1.0
-    t2new_abab += einsum("ka,jc,ildb,kdlc->ijab", t1.aa, t1.bb, t2.abab, v.aabb.ovov)
-    t2new_abab += einsum("kc,jd,ilab,kcld->ijab", t1.aa, t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t2new_abab += einsum("ka,lb,ijcd,kcld->ijab", t1.aa, t1.bb, t2.abab, v.aabb.ovov)
-    t2new_abab += einsum("ka,lc,ijdb,kdlc->ijab", t1.aa, t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t2new_abab += einsum("kc,lb,ijad,kcld->ijab", t1.aa, t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t2new_abab += einsum("jc,kb,ilad,kcld->ijab", t1.bb, t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t2new_abab += einsum("jc,kb,ilad,kdlc->ijab", t1.bb, t1.bb, t2.abab, v.bbbb.ovov)
-    t2new_abab += einsum("jc,kd,ilab,kcld->ijab", t1.bb, t1.bb, t2.abab, v.bbbb.ovov)
-    t2new_abab += einsum("jc,kd,ilab,kdlc->ijab", t1.bb, t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t2new_abab += einsum("kc,lb,ijad,kcld->ijab", t1.bb, t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t2new_abab += einsum("kc,lb,ijad,kdlc->ijab", t1.bb, t1.bb, t2.abab, v.bbbb.ovov)
-    t2new_abab += einsum("jc,kb,ilad,kcld->ijab", t1.bb, t1.bb, t2.aaaa, v.bbaa.ovov) * -2.0
-    t2new_abab += einsum("ic,ka,jd,lb,kcld->ijab", t1.aa, t1.aa, t1.bb, t1.bb, v.aabb.ovov)
-
-    # T2 amplitudes
+    t2new_abab += einsum(v.bbaa.ovov, (0, 1, 2, 3), (2, 0, 3, 1))
     t2new_baba = np.zeros((nocc[1], nocc[0], nvir[1], nvir[0]), dtype=np.float64)
-    t2new_baba += einsum("iajb->ijab", v.bbaa.ovov)
-    t2new_baba += einsum("ik,jkba->ijab", f.bb.oo, t2.abab) * -1.0
-    t2new_baba += einsum("jk,kiba->ijab", f.aa.oo, t2.abab) * -1.0
-    t2new_baba += einsum("ac,jibc->ijab", f.bb.vv, t2.abab)
-    t2new_baba += einsum("bc,jica->ijab", f.aa.vv, t2.abab)
-    t2new_baba += einsum("kb,jkia->ijab", t1.aa, v.aabb.ooov) * -1.0
-    t2new_baba += einsum("jc,iabc->ijab", t1.aa, v.bbaa.ovvv)
-    t2new_baba += einsum("ka,ikjb->ijab", t1.bb, v.bbaa.ooov) * -1.0
-    t2new_baba += einsum("ic,jbac->ijab", t1.bb, v.aabb.ovvv)
-    t2new_baba += einsum("kc,jikbac->ijab", f.aa.ov, t3.abaaba) * 2.0
-    t2new_baba += einsum("kc,ijkabc->ijab", f.bb.ov, t3.babbab) * 2.0
-    t2new_baba += einsum("klba,iljk->ijab", t2.abab, v.bbaa.oooo)
-    t2new_baba += einsum("jkbc,ikac->ijab", t2.abab, v.bbbb.oovv) * -1.0
-    t2new_baba += einsum("jkca,ikbc->ijab", t2.abab, v.bbaa.oovv) * -1.0
-    t2new_baba += einsum("kibc,jkac->ijab", t2.abab, v.aabb.oovv) * -1.0
-    t2new_baba += einsum("kica,jkbc->ijab", t2.abab, v.aaaa.oovv) * -1.0
-    t2new_baba += einsum("jkbc,iakc->ijab", t2.abab, v.bbbb.ovov)
-    t2new_baba += einsum("kica,jbkc->ijab", t2.abab, v.aaaa.ovov)
-    t2new_baba += einsum("jicd,adbc->ijab", t2.abab, v.bbaa.vvvv)
-    t2new_baba += einsum("ikac,jbkc->ijab", t2.bbbb, v.aabb.ovov) * 2.0
-    t2new_baba += einsum("jkbc,iakc->ijab", t2.aaaa, v.bbaa.ovov) * 2.0
-    t2new_baba += einsum("iklc,jklbac->ijab", v.bbaa.ooov, t3.abaaba) * -2.0
-    t2new_baba += einsum("jklc,kilbac->ijab", v.aaaa.ooov, t3.abaaba) * -2.0
-    t2new_baba += einsum("kcad,jikbdc->ijab", v.aabb.ovvv, t3.abaaba) * 2.0
-    t2new_baba += einsum("kcbd,jikcad->ijab", v.aaaa.ovvv, t3.abaaba) * -2.0
-    t2new_baba += einsum("iklc,jklbac->ijab", v.bbbb.ooov, t3.abbabb) * -2.0
-    t2new_baba += einsum("jklc,iklabc->ijab", v.aabb.ooov, t3.babbab) * -2.0
-    t2new_baba += einsum("kcad,ijkcbd->ijab", v.bbbb.ovvv, t3.babbab) * -2.0
-    t2new_baba += einsum("kcbd,ijkadc->ijab", v.bbaa.ovvv, t3.babbab) * 2.0
-    t2new_baba += einsum("kc,jc,kiba->ijab", f.aa.ov, t1.aa, t2.abab) * -1.0
-    t2new_baba += einsum("kc,kb,jica->ijab", f.aa.ov, t1.aa, t2.abab) * -1.0
-    t2new_baba += einsum("kc,ic,jkba->ijab", f.bb.ov, t1.bb, t2.abab) * -1.0
-    t2new_baba += einsum("kc,ka,jibc->ijab", f.bb.ov, t1.bb, t2.abab) * -1.0
-    t2new_baba += einsum("jc,kb,iakc->ijab", t1.aa, t1.aa, v.bbaa.ovov) * -1.0
-    t2new_baba += einsum("jc,ka,ikbc->ijab", t1.aa, t1.bb, v.bbaa.oovv) * -1.0
-    t2new_baba += einsum("kb,ic,jkac->ijab", t1.aa, t1.bb, v.aabb.oovv) * -1.0
-    t2new_baba += einsum("kb,la,iljk->ijab", t1.aa, t1.bb, v.bbaa.oooo)
-    t2new_baba += einsum("jc,id,adbc->ijab", t1.aa, t1.bb, v.bbaa.vvvv)
-    t2new_baba += einsum("ic,ka,jbkc->ijab", t1.bb, t1.bb, v.aabb.ovov) * -1.0
-    t2new_baba += einsum("jc,klba,ilkc->ijab", t1.aa, t2.abab, v.bbaa.ooov)
-    t2new_baba += einsum("kb,jlca,ilkc->ijab", t1.aa, t2.abab, v.bbaa.ooov)
-    t2new_baba += einsum("kb,lica,jklc->ijab", t1.aa, t2.abab, v.aaaa.ooov) * -1.0
-    t2new_baba += einsum("kb,lica,jlkc->ijab", t1.aa, t2.abab, v.aaaa.ooov)
-    t2new_baba += einsum("kc,jlba,ilkc->ijab", t1.aa, t2.abab, v.bbaa.ooov) * -1.0
-    t2new_baba += einsum("kc,liba,jklc->ijab", t1.aa, t2.abab, v.aaaa.ooov)
-    t2new_baba += einsum("kc,liba,jlkc->ijab", t1.aa, t2.abab, v.aaaa.ooov) * -1.0
-    t2new_baba += einsum("jc,kibd,kcad->ijab", t1.aa, t2.abab, v.aabb.ovvv) * -1.0
-    t2new_baba += einsum("jc,kida,kcbd->ijab", t1.aa, t2.abab, v.aaaa.ovvv) * -1.0
-    t2new_baba += einsum("jc,kida,kdbc->ijab", t1.aa, t2.abab, v.aaaa.ovvv)
-    t2new_baba += einsum("kb,jicd,kcad->ijab", t1.aa, t2.abab, v.aabb.ovvv) * -1.0
-    t2new_baba += einsum("kc,jibd,kcad->ijab", t1.aa, t2.abab, v.aabb.ovvv)
-    t2new_baba += einsum("kc,jida,kcbd->ijab", t1.aa, t2.abab, v.aaaa.ovvv)
-    t2new_baba += einsum("kc,jida,kdbc->ijab", t1.aa, t2.abab, v.aaaa.ovvv) * -1.0
-    t2new_baba += einsum("kb,ilac,jklc->ijab", t1.aa, t2.bbbb, v.aabb.ooov) * -2.0
-    t2new_baba += einsum("jc,ikad,kdbc->ijab", t1.aa, t2.bbbb, v.bbaa.ovvv) * 2.0
-    t2new_baba += einsum("ic,klba,jklc->ijab", t1.bb, t2.abab, v.aabb.ooov)
-    t2new_baba += einsum("ka,jlbc,iklc->ijab", t1.bb, t2.abab, v.bbbb.ooov) * -1.0
-    t2new_baba += einsum("ka,jlbc,ilkc->ijab", t1.bb, t2.abab, v.bbbb.ooov)
-    t2new_baba += einsum("ka,libc,jlkc->ijab", t1.bb, t2.abab, v.aabb.ooov)
-    t2new_baba += einsum("kc,jlba,iklc->ijab", t1.bb, t2.abab, v.bbbb.ooov)
-    t2new_baba += einsum("kc,jlba,ilkc->ijab", t1.bb, t2.abab, v.bbbb.ooov) * -1.0
-    t2new_baba += einsum("kc,liba,jlkc->ijab", t1.bb, t2.abab, v.aabb.ooov) * -1.0
-    t2new_baba += einsum("ic,jkbd,kcad->ijab", t1.bb, t2.abab, v.bbbb.ovvv) * -1.0
-    t2new_baba += einsum("ic,jkda,kcbd->ijab", t1.bb, t2.abab, v.bbaa.ovvv) * -1.0
-    t2new_baba += einsum("ic,jkbd,kdac->ijab", t1.bb, t2.abab, v.bbbb.ovvv)
-    t2new_baba += einsum("ka,jicd,kdbc->ijab", t1.bb, t2.abab, v.bbaa.ovvv) * -1.0
-    t2new_baba += einsum("kc,jibd,kcad->ijab", t1.bb, t2.abab, v.bbbb.ovvv)
-    t2new_baba += einsum("kc,jida,kcbd->ijab", t1.bb, t2.abab, v.bbaa.ovvv)
-    t2new_baba += einsum("kc,jibd,kdac->ijab", t1.bb, t2.abab, v.bbbb.ovvv) * -1.0
-    t2new_baba += einsum("ka,jlbc,iklc->ijab", t1.bb, t2.aaaa, v.bbaa.ooov) * -2.0
-    t2new_baba += einsum("ic,jkbd,kdac->ijab", t1.bb, t2.aaaa, v.aabb.ovvv) * 2.0
-    t2new_baba += einsum("jc,kcld,kilbad->ijab", t1.aa, v.aaaa.ovov, t3.abaaba) * -1.0
-    t2new_baba += einsum("jc,kdlc,kilbad->ijab", t1.aa, v.aaaa.ovov, t3.abaaba)
-    t2new_baba += einsum("kb,kcld,jilcad->ijab", t1.aa, v.aaaa.ovov, t3.abaaba) * -2.0
-    t2new_baba += einsum("kc,kcld,jilbad->ijab", t1.aa, v.aaaa.ovov, t3.abaaba) * 2.0
-    t2new_baba += einsum("kc,kdlc,jilbad->ijab", t1.aa, v.aaaa.ovov, t3.abaaba) * -2.0
-    t2new_baba += einsum("jc,kcld,iklabd->ijab", t1.aa, v.aabb.ovov, t3.babbab) * -1.0
-    t2new_baba += einsum("jc,kdlc,ikladb->ijab", t1.aa, v.bbaa.ovov, t3.bbabba) * -1.0
-    t2new_baba += einsum("kb,kcld,ijlacd->ijab", t1.aa, v.aabb.ovov, t3.babbab) * -2.0
-    t2new_baba += einsum("kc,kcld,ijlabd->ijab", t1.aa, v.aabb.ovov, t3.babbab) * 2.0
-    t2new_baba += einsum("ic,kcld,jklbad->ijab", t1.bb, v.bbaa.ovov, t3.abaaba) * -1.0
-    t2new_baba += einsum("ic,kdlc,jlkbad->ijab", t1.bb, v.aabb.ovov, t3.abaaba) * -1.0
-    t2new_baba += einsum("ka,kcld,jilbcd->ijab", t1.bb, v.bbaa.ovov, t3.abaaba) * -2.0
-    t2new_baba += einsum("kc,kcld,jilbad->ijab", t1.bb, v.bbaa.ovov, t3.abaaba) * 2.0
-    t2new_baba += einsum("ic,kcld,jklbad->ijab", t1.bb, v.bbbb.ovov, t3.abbabb) * -1.0
-    t2new_baba += einsum("ic,kdlc,jklbad->ijab", t1.bb, v.bbbb.ovov, t3.abbabb)
-    t2new_baba += einsum("ka,kcld,ijlcbd->ijab", t1.bb, v.bbbb.ovov, t3.babbab) * -2.0
-    t2new_baba += einsum("kc,kcld,ijlabd->ijab", t1.bb, v.bbbb.ovov, t3.babbab) * 2.0
-    t2new_baba += einsum("kc,kdlc,ijlabd->ijab", t1.bb, v.bbbb.ovov, t3.babbab) * -2.0
-    t2new_baba += einsum("jica,klbd,kcld->ijab", t2.abab, t2.abab, v.aabb.ovov) * -1.0
-    t2new_baba += einsum("jicd,klba,kcld->ijab", t2.abab, t2.abab, v.aabb.ovov)
-    t2new_baba += einsum("jibc,klda,kdlc->ijab", t2.abab, t2.abab, v.aabb.ovov) * -1.0
-    t2new_baba += einsum("jkbc,lida,kcld->ijab", t2.abab, t2.abab, v.bbaa.ovov)
-    t2new_baba += einsum("jkba,licd,kdlc->ijab", t2.abab, t2.abab, v.bbaa.ovov) * -1.0
-    t2new_baba += einsum("jkca,libd,kdlc->ijab", t2.abab, t2.abab, v.bbaa.ovov)
-    t2new_baba += einsum("jkcd,liba,kdlc->ijab", t2.abab, t2.abab, v.bbaa.ovov) * -1.0
-    t2new_baba += einsum("jkbc,ilad,kcld->ijab", t2.abab, t2.bbbb, v.bbbb.ovov) * 2.0
-    t2new_baba += einsum("jkba,ilcd,kcld->ijab", t2.abab, t2.bbbb, v.bbbb.ovov) * -1.0
-    t2new_baba += einsum("jkbc,ilad,kdlc->ijab", t2.abab, t2.bbbb, v.bbbb.ovov) * -2.0
-    t2new_baba += einsum("jkba,ilcd,kdlc->ijab", t2.abab, t2.bbbb, v.bbbb.ovov)
-    t2new_baba += einsum("jibc,klad,kcld->ijab", t2.abab, t2.bbbb, v.bbbb.ovov) * -1.0
-    t2new_baba += einsum("jica,klbd,kcld->ijab", t2.abab, t2.aaaa, v.aaaa.ovov) * -1.0
-    t2new_baba += einsum("jibc,klad,kdlc->ijab", t2.abab, t2.bbbb, v.bbbb.ovov)
-    t2new_baba += einsum("jica,klbd,kdlc->ijab", t2.abab, t2.aaaa, v.aaaa.ovov)
-    t2new_baba += einsum("kiba,jlcd,kcld->ijab", t2.abab, t2.aaaa, v.aaaa.ovov) * -1.0
-    t2new_baba += einsum("kica,jlbd,kcld->ijab", t2.abab, t2.aaaa, v.aaaa.ovov) * 2.0
-    t2new_baba += einsum("kiba,jlcd,kdlc->ijab", t2.abab, t2.aaaa, v.aaaa.ovov)
-    t2new_baba += einsum("kica,jlbd,kdlc->ijab", t2.abab, t2.aaaa, v.aaaa.ovov) * -2.0
-    t2new_baba += einsum("ikac,jlbd,kcld->ijab", t2.bbbb, t2.aaaa, v.bbaa.ovov) * 4.0
-    t2new_baba += einsum("jc,kb,la,ilkc->ijab", t1.aa, t1.aa, t1.bb, v.bbaa.ooov)
-    t2new_baba += einsum("jc,kb,id,kcad->ijab", t1.aa, t1.aa, t1.bb, v.aabb.ovvv) * -1.0
-    t2new_baba += einsum("kb,ic,la,jklc->ijab", t1.aa, t1.bb, t1.bb, v.aabb.ooov)
-    t2new_baba += einsum("jc,id,ka,kdbc->ijab", t1.aa, t1.bb, t1.bb, v.bbaa.ovvv) * -1.0
-    t2new_baba += einsum("jc,kb,lida,kcld->ijab", t1.aa, t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t2new_baba += einsum("jc,kb,lida,kdlc->ijab", t1.aa, t1.aa, t2.abab, v.aaaa.ovov)
-    t2new_baba += einsum("jc,kd,liba,kcld->ijab", t1.aa, t1.aa, t2.abab, v.aaaa.ovov)
-    t2new_baba += einsum("jc,kd,liba,kdlc->ijab", t1.aa, t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t2new_baba += einsum("kc,lb,jida,kcld->ijab", t1.aa, t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t2new_baba += einsum("kc,lb,jida,kdlc->ijab", t1.aa, t1.aa, t2.abab, v.aaaa.ovov)
-    t2new_baba += einsum("jc,kb,ilad,kcld->ijab", t1.aa, t1.aa, t2.bbbb, v.aabb.ovov) * -2.0
-    t2new_baba += einsum("jc,id,klba,kcld->ijab", t1.aa, t1.bb, t2.abab, v.aabb.ovov)
-    t2new_baba += einsum("jc,ka,libd,kdlc->ijab", t1.aa, t1.bb, t2.abab, v.bbaa.ovov)
-    t2new_baba += einsum("jc,kd,liba,kdlc->ijab", t1.aa, t1.bb, t2.abab, v.bbaa.ovov) * -1.0
-    t2new_baba += einsum("kb,ic,jlda,kdlc->ijab", t1.aa, t1.bb, t2.abab, v.aabb.ovov)
-    t2new_baba += einsum("kc,id,jlba,kcld->ijab", t1.aa, t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t2new_baba += einsum("kb,la,jicd,kcld->ijab", t1.aa, t1.bb, t2.abab, v.aabb.ovov)
-    t2new_baba += einsum("kb,lc,jida,kdlc->ijab", t1.aa, t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t2new_baba += einsum("kc,la,jibd,kcld->ijab", t1.aa, t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t2new_baba += einsum("ic,ka,jlbd,kcld->ijab", t1.bb, t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t2new_baba += einsum("ic,ka,jlbd,kdlc->ijab", t1.bb, t1.bb, t2.abab, v.bbbb.ovov)
-    t2new_baba += einsum("ic,kd,jlba,kcld->ijab", t1.bb, t1.bb, t2.abab, v.bbbb.ovov)
-    t2new_baba += einsum("ic,kd,jlba,kdlc->ijab", t1.bb, t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t2new_baba += einsum("kc,la,jibd,kcld->ijab", t1.bb, t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t2new_baba += einsum("kc,la,jibd,kdlc->ijab", t1.bb, t1.bb, t2.abab, v.bbbb.ovov)
-    t2new_baba += einsum("ic,ka,jlbd,kcld->ijab", t1.bb, t1.bb, t2.aaaa, v.bbaa.ovov) * -2.0
-    t2new_baba += einsum("jc,kb,id,la,kcld->ijab", t1.aa, t1.aa, t1.bb, t1.bb, v.aabb.ovov)
-
-    # T2 amplitudes
+    t2new_baba += einsum(v.bbaa.ovov, (0, 1, 2, 3), (0, 2, 1, 3))
     t2new_bbbb = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
-    t2new_bbbb += einsum("iajb->ijab", v.bbbb.ovov)
-    t2new_bbbb += einsum("ibja->ijab", v.bbbb.ovov) * -1.0
-    t2new_bbbb += einsum("ik,jkab->ijab", f.bb.oo, t2.bbbb) * 2.0
-    t2new_bbbb += einsum("jk,ikab->ijab", f.bb.oo, t2.bbbb) * -2.0
-    t2new_bbbb += einsum("ac,ijbc->ijab", f.bb.vv, t2.bbbb) * -2.0
-    t2new_bbbb += einsum("bc,ijac->ijab", f.bb.vv, t2.bbbb) * 2.0
-    t2new_bbbb += einsum("ka,ikjb->ijab", t1.bb, v.bbbb.ooov) * -1.0
-    t2new_bbbb += einsum("ka,jkib->ijab", t1.bb, v.bbbb.ooov)
-    t2new_bbbb += einsum("kb,ikja->ijab", t1.bb, v.bbbb.ooov)
-    t2new_bbbb += einsum("kb,jkia->ijab", t1.bb, v.bbbb.ooov) * -1.0
-    t2new_bbbb += einsum("ic,jabc->ijab", t1.bb, v.bbbb.ovvv) * -1.0
-    t2new_bbbb += einsum("ic,jbac->ijab", t1.bb, v.bbbb.ovvv)
-    t2new_bbbb += einsum("jc,iabc->ijab", t1.bb, v.bbbb.ovvv)
-    t2new_bbbb += einsum("jc,ibac->ijab", t1.bb, v.bbbb.ovvv) * -1.0
-    t2new_bbbb += einsum("kc,ijkabc->ijab", f.aa.ov, t3.bbabba) * 2.0
-    t2new_bbbb += einsum("kc,ijkabc->ijab", f.bb.ov, t3.bbbbbb) * 6.0
-    t2new_bbbb += einsum("kjcb,iakc->ijab", t2.abab, v.bbaa.ovov)
-    t2new_bbbb += einsum("kjca,ibkc->ijab", t2.abab, v.bbaa.ovov) * -1.0
-    t2new_bbbb += einsum("kicb,jakc->ijab", t2.abab, v.bbaa.ovov) * -1.0
-    t2new_bbbb += einsum("kica,jbkc->ijab", t2.abab, v.bbaa.ovov)
-    t2new_bbbb += einsum("klab,ikjl->ijab", t2.bbbb, v.bbbb.oooo)
-    t2new_bbbb += einsum("klab,iljk->ijab", t2.bbbb, v.bbbb.oooo) * -1.0
-    t2new_bbbb += einsum("ikac,jkbc->ijab", t2.bbbb, v.bbbb.oovv) * -2.0
-    t2new_bbbb += einsum("ikbc,jkac->ijab", t2.bbbb, v.bbbb.oovv) * 2.0
-    t2new_bbbb += einsum("jkac,ikbc->ijab", t2.bbbb, v.bbbb.oovv) * 2.0
-    t2new_bbbb += einsum("jkbc,ikac->ijab", t2.bbbb, v.bbbb.oovv) * -2.0
-    t2new_bbbb += einsum("ikbc,jakc->ijab", t2.bbbb, v.bbbb.ovov) * -2.0
-    t2new_bbbb += einsum("ikac,jbkc->ijab", t2.bbbb, v.bbbb.ovov) * 2.0
-    t2new_bbbb += einsum("jkbc,iakc->ijab", t2.bbbb, v.bbbb.ovov) * 2.0
-    t2new_bbbb += einsum("jkac,ibkc->ijab", t2.bbbb, v.bbbb.ovov) * -2.0
-    t2new_bbbb += einsum("ijcd,acbd->ijab", t2.bbbb, v.bbbb.vvvv)
-    t2new_bbbb += einsum("ijcd,adbc->ijab", t2.bbbb, v.bbbb.vvvv) * -1.0
-    t2new_bbbb += einsum("iklc,jklabc->ijab", v.bbaa.ooov, t3.bbabba) * 2.0
-    t2new_bbbb += einsum("iklc,jklabc->ijab", v.bbbb.ooov, t3.bbbbbb) * 6.0
-    t2new_bbbb += einsum("jklc,iklabc->ijab", v.bbaa.ooov, t3.bbabba) * -2.0
-    t2new_bbbb += einsum("jklc,iklabc->ijab", v.bbbb.ooov, t3.bbbbbb) * -6.0
-    t2new_bbbb += einsum("kcad,ijkbcd->ijab", v.bbbb.ovvv, t3.bbbbbb) * 6.0
-    t2new_bbbb += einsum("kcad,ijkbdc->ijab", v.aabb.ovvv, t3.bbabba) * -2.0
-    t2new_bbbb += einsum("kcbd,ijkacd->ijab", v.bbbb.ovvv, t3.bbbbbb) * -6.0
-    t2new_bbbb += einsum("kcbd,ijkadc->ijab", v.aabb.ovvv, t3.bbabba) * 2.0
-    t2new_bbbb += einsum("kc,ic,jkab->ijab", f.bb.ov, t1.bb, t2.bbbb) * 2.0
-    t2new_bbbb += einsum("kc,jc,ikab->ijab", f.bb.ov, t1.bb, t2.bbbb) * -2.0
-    t2new_bbbb += einsum("kc,ka,ijbc->ijab", f.bb.ov, t1.bb, t2.bbbb) * 2.0
-    t2new_bbbb += einsum("kc,kb,ijac->ijab", f.bb.ov, t1.bb, t2.bbbb) * -2.0
-    t2new_bbbb += einsum("ic,ka,jkbc->ijab", t1.bb, t1.bb, v.bbbb.oovv)
-    t2new_bbbb += einsum("ic,kb,jkac->ijab", t1.bb, t1.bb, v.bbbb.oovv) * -1.0
-    t2new_bbbb += einsum("jc,ka,ikbc->ijab", t1.bb, t1.bb, v.bbbb.oovv) * -1.0
-    t2new_bbbb += einsum("jc,kb,ikac->ijab", t1.bb, t1.bb, v.bbbb.oovv)
-    t2new_bbbb += einsum("ka,lb,ikjl->ijab", t1.bb, t1.bb, v.bbbb.oooo)
-    t2new_bbbb += einsum("ka,lb,iljk->ijab", t1.bb, t1.bb, v.bbbb.oooo) * -1.0
-    t2new_bbbb += einsum("ic,ka,jbkc->ijab", t1.bb, t1.bb, v.bbbb.ovov) * -1.0
-    t2new_bbbb += einsum("ic,kb,jakc->ijab", t1.bb, t1.bb, v.bbbb.ovov)
-    t2new_bbbb += einsum("jc,ka,ibkc->ijab", t1.bb, t1.bb, v.bbbb.ovov)
-    t2new_bbbb += einsum("jc,kb,iakc->ijab", t1.bb, t1.bb, v.bbbb.ovov) * -1.0
-    t2new_bbbb += einsum("ic,jd,acbd->ijab", t1.bb, t1.bb, v.bbbb.vvvv)
-    t2new_bbbb += einsum("ic,jd,adbc->ijab", t1.bb, t1.bb, v.bbbb.vvvv) * -1.0
-    t2new_bbbb += einsum("kc,ilab,jlkc->ijab", t1.aa, t2.bbbb, v.bbaa.ooov) * -2.0
-    t2new_bbbb += einsum("kc,jlab,ilkc->ijab", t1.aa, t2.bbbb, v.bbaa.ooov) * 2.0
-    t2new_bbbb += einsum("kc,ijad,kcbd->ijab", t1.aa, t2.bbbb, v.aabb.ovvv) * 2.0
-    t2new_bbbb += einsum("kc,ijbd,kcad->ijab", t1.aa, t2.bbbb, v.aabb.ovvv) * -2.0
-    t2new_bbbb += einsum("ka,ljcb,iklc->ijab", t1.bb, t2.abab, v.bbaa.ooov) * -1.0
-    t2new_bbbb += einsum("ka,licb,jklc->ijab", t1.bb, t2.abab, v.bbaa.ooov)
-    t2new_bbbb += einsum("kb,ljca,iklc->ijab", t1.bb, t2.abab, v.bbaa.ooov)
-    t2new_bbbb += einsum("kb,lica,jklc->ijab", t1.bb, t2.abab, v.bbaa.ooov) * -1.0
-    t2new_bbbb += einsum("ic,kjdb,kdac->ijab", t1.bb, t2.abab, v.aabb.ovvv)
-    t2new_bbbb += einsum("ic,kjda,kdbc->ijab", t1.bb, t2.abab, v.aabb.ovvv) * -1.0
-    t2new_bbbb += einsum("jc,kidb,kdac->ijab", t1.bb, t2.abab, v.aabb.ovvv) * -1.0
-    t2new_bbbb += einsum("jc,kida,kdbc->ijab", t1.bb, t2.abab, v.aabb.ovvv)
-    t2new_bbbb += einsum("ic,klab,jklc->ijab", t1.bb, t2.bbbb, v.bbbb.ooov) * -1.0
-    t2new_bbbb += einsum("ic,klab,jlkc->ijab", t1.bb, t2.bbbb, v.bbbb.ooov)
-    t2new_bbbb += einsum("jc,klab,iklc->ijab", t1.bb, t2.bbbb, v.bbbb.ooov)
-    t2new_bbbb += einsum("jc,klab,ilkc->ijab", t1.bb, t2.bbbb, v.bbbb.ooov) * -1.0
-    t2new_bbbb += einsum("ka,ilbc,jklc->ijab", t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t2new_bbbb += einsum("ka,ilbc,jlkc->ijab", t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t2new_bbbb += einsum("ka,jlbc,iklc->ijab", t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t2new_bbbb += einsum("ka,jlbc,ilkc->ijab", t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t2new_bbbb += einsum("kb,ilac,jklc->ijab", t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t2new_bbbb += einsum("kb,ilac,jlkc->ijab", t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t2new_bbbb += einsum("kb,jlac,iklc->ijab", t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t2new_bbbb += einsum("kb,jlac,ilkc->ijab", t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t2new_bbbb += einsum("kc,ilab,jklc->ijab", t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t2new_bbbb += einsum("kc,ilab,jlkc->ijab", t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t2new_bbbb += einsum("kc,jlab,iklc->ijab", t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t2new_bbbb += einsum("kc,jlab,ilkc->ijab", t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t2new_bbbb += einsum("ic,jkad,kcbd->ijab", t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t2new_bbbb += einsum("ic,jkbd,kcad->ijab", t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t2new_bbbb += einsum("ic,jkad,kdbc->ijab", t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t2new_bbbb += einsum("ic,jkbd,kdac->ijab", t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t2new_bbbb += einsum("jc,ikad,kcbd->ijab", t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t2new_bbbb += einsum("jc,ikbd,kcad->ijab", t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t2new_bbbb += einsum("jc,ikad,kdbc->ijab", t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t2new_bbbb += einsum("jc,ikbd,kdac->ijab", t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t2new_bbbb += einsum("ka,ijcd,kcbd->ijab", t1.bb, t2.bbbb, v.bbbb.ovvv) * -1.0
-    t2new_bbbb += einsum("ka,ijcd,kdbc->ijab", t1.bb, t2.bbbb, v.bbbb.ovvv)
-    t2new_bbbb += einsum("kb,ijcd,kcad->ijab", t1.bb, t2.bbbb, v.bbbb.ovvv)
-    t2new_bbbb += einsum("kb,ijcd,kdac->ijab", t1.bb, t2.bbbb, v.bbbb.ovvv) * -1.0
-    t2new_bbbb += einsum("kc,ijad,kcbd->ijab", t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t2new_bbbb += einsum("kc,ijbd,kcad->ijab", t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t2new_bbbb += einsum("kc,ijad,kdbc->ijab", t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t2new_bbbb += einsum("kc,ijbd,kdac->ijab", t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t2new_bbbb += einsum("kc,kcld,ijlabd->ijab", t1.aa, v.aaaa.ovov, t3.bbabba) * 2.0
-    t2new_bbbb += einsum("kc,kcld,ijlabd->ijab", t1.aa, v.aabb.ovov, t3.bbbbbb) * 6.0
-    t2new_bbbb += einsum("kc,kdlc,ijlabd->ijab", t1.aa, v.aaaa.ovov, t3.bbabba) * -2.0
-    t2new_bbbb += einsum("ic,kcld,jklabd->ijab", t1.bb, v.bbaa.ovov, t3.bbabba)
-    t2new_bbbb += einsum("ic,kcld,jklabd->ijab", t1.bb, v.bbbb.ovov, t3.bbbbbb) * 3.0
-    t2new_bbbb += einsum("ic,kdlc,jkladb->ijab", t1.bb, v.aabb.ovov, t3.babbab)
-    t2new_bbbb += einsum("ic,kdlc,jklabd->ijab", t1.bb, v.bbbb.ovov, t3.bbbbbb) * -3.0
-    t2new_bbbb += einsum("jc,kcld,iklabd->ijab", t1.bb, v.bbaa.ovov, t3.bbabba) * -1.0
-    t2new_bbbb += einsum("jc,kcld,iklabd->ijab", t1.bb, v.bbbb.ovov, t3.bbbbbb) * -3.0
-    t2new_bbbb += einsum("jc,kdlc,ikladb->ijab", t1.bb, v.aabb.ovov, t3.babbab) * -1.0
-    t2new_bbbb += einsum("jc,kdlc,iklabd->ijab", t1.bb, v.bbbb.ovov, t3.bbbbbb) * 3.0
-    t2new_bbbb += einsum("ka,kcld,ijlbcd->ijab", t1.bb, v.bbaa.ovov, t3.bbabba) * 2.0
-    t2new_bbbb += einsum("ka,kcld,ijlbcd->ijab", t1.bb, v.bbbb.ovov, t3.bbbbbb) * 6.0
-    t2new_bbbb += einsum("kb,kcld,ijlacd->ijab", t1.bb, v.bbaa.ovov, t3.bbabba) * -2.0
-    t2new_bbbb += einsum("kb,kcld,ijlacd->ijab", t1.bb, v.bbbb.ovov, t3.bbbbbb) * -6.0
-    t2new_bbbb += einsum("kc,kcld,ijlabd->ijab", t1.bb, v.bbaa.ovov, t3.bbabba) * 2.0
-    t2new_bbbb += einsum("kc,kcld,ijlabd->ijab", t1.bb, v.bbbb.ovov, t3.bbbbbb) * 6.0
-    t2new_bbbb += einsum("kc,kdlc,ijlabd->ijab", t1.bb, v.bbbb.ovov, t3.bbbbbb) * -6.0
-    t2new_bbbb += einsum("kica,ljdb,kcld->ijab", t2.abab, t2.abab, v.aaaa.ovov)
-    t2new_bbbb += einsum("kicb,ljda,kcld->ijab", t2.abab, t2.abab, v.aaaa.ovov) * -1.0
-    t2new_bbbb += einsum("kica,ljdb,kdlc->ijab", t2.abab, t2.abab, v.aaaa.ovov) * -1.0
-    t2new_bbbb += einsum("kicb,ljda,kdlc->ijab", t2.abab, t2.abab, v.aaaa.ovov)
-    t2new_bbbb += einsum("kjcb,ilad,kcld->ijab", t2.abab, t2.bbbb, v.aabb.ovov) * 2.0
-    t2new_bbbb += einsum("kjcd,ilab,kcld->ijab", t2.abab, t2.bbbb, v.aabb.ovov) * -2.0
-    t2new_bbbb += einsum("kjca,ilbd,kcld->ijab", t2.abab, t2.bbbb, v.aabb.ovov) * -2.0
-    t2new_bbbb += einsum("klcb,ijad,kcld->ijab", t2.abab, t2.bbbb, v.aabb.ovov) * -2.0
-    t2new_bbbb += einsum("klca,ijbd,kcld->ijab", t2.abab, t2.bbbb, v.aabb.ovov) * 2.0
-    t2new_bbbb += einsum("kicb,jlad,kcld->ijab", t2.abab, t2.bbbb, v.aabb.ovov) * -2.0
-    t2new_bbbb += einsum("kicd,jlab,kcld->ijab", t2.abab, t2.bbbb, v.aabb.ovov) * 2.0
-    t2new_bbbb += einsum("kica,jlbd,kcld->ijab", t2.abab, t2.bbbb, v.aabb.ovov) * 2.0
-    t2new_bbbb += einsum("ikac,jlbd,kcld->ijab", t2.bbbb, t2.bbbb, v.bbbb.ovov) * 4.0
-    t2new_bbbb += einsum("ikab,jlcd,kcld->ijab", t2.bbbb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t2new_bbbb += einsum("ikbc,jlad,kcld->ijab", t2.bbbb, t2.bbbb, v.bbbb.ovov) * -4.0
-    t2new_bbbb += einsum("ikcd,jlab,kcld->ijab", t2.bbbb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t2new_bbbb += einsum("ikac,jlbd,kdlc->ijab", t2.bbbb, t2.bbbb, v.bbbb.ovov) * -4.0
-    t2new_bbbb += einsum("ikab,jlcd,kdlc->ijab", t2.bbbb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t2new_bbbb += einsum("ikbc,jlad,kdlc->ijab", t2.bbbb, t2.bbbb, v.bbbb.ovov) * 4.0
-    t2new_bbbb += einsum("ikcd,jlab,kdlc->ijab", t2.bbbb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t2new_bbbb += einsum("ijac,klbd,kcld->ijab", t2.bbbb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t2new_bbbb += einsum("ijbc,klad,kcld->ijab", t2.bbbb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t2new_bbbb += einsum("ijcd,klab,kcld->ijab", t2.bbbb, t2.bbbb, v.bbbb.ovov)
-    t2new_bbbb += einsum("ijac,klbd,kdlc->ijab", t2.bbbb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t2new_bbbb += einsum("ijbc,klad,kdlc->ijab", t2.bbbb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t2new_bbbb += einsum("ijcd,klab,kdlc->ijab", t2.bbbb, t2.bbbb, v.bbbb.ovov) * -1.0
-    t2new_bbbb += einsum("ic,ka,lb,jklc->ijab", t1.bb, t1.bb, t1.bb, v.bbbb.ooov) * -1.0
-    t2new_bbbb += einsum("ic,ka,lb,jlkc->ijab", t1.bb, t1.bb, t1.bb, v.bbbb.ooov)
-    t2new_bbbb += einsum("jc,ka,lb,iklc->ijab", t1.bb, t1.bb, t1.bb, v.bbbb.ooov)
-    t2new_bbbb += einsum("jc,ka,lb,ilkc->ijab", t1.bb, t1.bb, t1.bb, v.bbbb.ooov) * -1.0
-    t2new_bbbb += einsum("ic,jd,ka,kcbd->ijab", t1.bb, t1.bb, t1.bb, v.bbbb.ovvv) * -1.0
-    t2new_bbbb += einsum("ic,jd,ka,kdbc->ijab", t1.bb, t1.bb, t1.bb, v.bbbb.ovvv)
-    t2new_bbbb += einsum("ic,jd,kb,kcad->ijab", t1.bb, t1.bb, t1.bb, v.bbbb.ovvv)
-    t2new_bbbb += einsum("ic,jd,kb,kdac->ijab", t1.bb, t1.bb, t1.bb, v.bbbb.ovvv) * -1.0
-    t2new_bbbb += einsum("kc,id,jlab,kcld->ijab", t1.aa, t1.bb, t2.bbbb, v.aabb.ovov) * 2.0
-    t2new_bbbb += einsum("kc,jd,ilab,kcld->ijab", t1.aa, t1.bb, t2.bbbb, v.aabb.ovov) * -2.0
-    t2new_bbbb += einsum("kc,la,ijbd,kcld->ijab", t1.aa, t1.bb, t2.bbbb, v.aabb.ovov) * 2.0
-    t2new_bbbb += einsum("kc,lb,ijad,kcld->ijab", t1.aa, t1.bb, t2.bbbb, v.aabb.ovov) * -2.0
-    t2new_bbbb += einsum("ic,ka,ljdb,kcld->ijab", t1.bb, t1.bb, t2.abab, v.bbaa.ovov) * -1.0
-    t2new_bbbb += einsum("ic,kb,ljda,kcld->ijab", t1.bb, t1.bb, t2.abab, v.bbaa.ovov)
-    t2new_bbbb += einsum("jc,ka,lidb,kcld->ijab", t1.bb, t1.bb, t2.abab, v.bbaa.ovov)
-    t2new_bbbb += einsum("jc,kb,lida,kcld->ijab", t1.bb, t1.bb, t2.abab, v.bbaa.ovov) * -1.0
-    t2new_bbbb += einsum("ic,jd,klab,kcld->ijab", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov)
-    t2new_bbbb += einsum("ic,jd,klab,kdlc->ijab", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -1.0
-    t2new_bbbb += einsum("ic,ka,jlbd,kcld->ijab", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t2new_bbbb += einsum("ic,ka,jlbd,kdlc->ijab", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t2new_bbbb += einsum("ic,kb,jlad,kcld->ijab", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t2new_bbbb += einsum("ic,kb,jlad,kdlc->ijab", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t2new_bbbb += einsum("ic,kd,jlab,kcld->ijab", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t2new_bbbb += einsum("ic,kd,jlab,kdlc->ijab", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t2new_bbbb += einsum("jc,ka,ilbd,kcld->ijab", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t2new_bbbb += einsum("jc,ka,ilbd,kdlc->ijab", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t2new_bbbb += einsum("jc,kb,ilad,kcld->ijab", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t2new_bbbb += einsum("jc,kb,ilad,kdlc->ijab", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t2new_bbbb += einsum("jc,kd,ilab,kcld->ijab", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t2new_bbbb += einsum("jc,kd,ilab,kdlc->ijab", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t2new_bbbb += einsum("ka,lb,ijcd,kcld->ijab", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov)
-    t2new_bbbb += einsum("ka,lb,ijcd,kdlc->ijab", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -1.0
-    t2new_bbbb += einsum("kc,la,ijbd,kcld->ijab", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t2new_bbbb += einsum("kc,la,ijbd,kdlc->ijab", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t2new_bbbb += einsum("kc,lb,ijad,kcld->ijab", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t2new_bbbb += einsum("kc,lb,ijad,kdlc->ijab", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t2new_bbbb += einsum("ic,jd,ka,lb,kcld->ijab", t1.bb, t1.bb, t1.bb, t1.bb, v.bbbb.ovov)
-    t2new_bbbb += einsum("ic,jd,ka,lb,kdlc->ijab", t1.bb, t1.bb, t1.bb, t1.bb, v.bbbb.ovov) * -1.0
-
-    # T3 amplitudes
+    t2new_bbbb += einsum(t2.bbbb, (0, 1, 2, 3), v.bbbb.vvvv, (4, 3, 5, 2), (1, 0, 5, 4)) * -2.0
+    x0 = np.zeros((nocc[0], nvir[0]), dtype=np.float64)
+    x0 += einsum(v.bbaa.ovov, (0, 1, 2, 3), t1.bb, (0, 1), (2, 3))
+    t1new_aa += einsum(x0, (0, 1), (0, 1))
+    x1 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x1 += einsum(v.aaaa.ovov, (0, 1, 2, 3), t1.aa, (4, 1), (4, 2, 0, 3))
+    x2 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x2 += einsum(v.aaaa.ooov, (0, 1, 2, 3), (1, 2, 0, 3))
+    x2 += einsum(x1, (0, 1, 2, 3), (0, 1, 2, 3))
+    t1new_aa += einsum(x2, (0, 1, 2, 3), t2.aaaa, (2, 1, 3, 4), (0, 4)) * 2.0
+    x3 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0]), dtype=np.float64)
+    x3 += einsum(v.bbaa.ovov, (0, 1, 2, 3), t1.aa, (4, 3), (0, 1, 4, 2))
+    x4 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0]), dtype=np.float64)
+    x4 += einsum(v.bbaa.ovoo, (0, 1, 2, 3), (0, 1, 3, 2))
+    x4 += einsum(x3, (0, 1, 2, 3), (0, 1, 3, 2))
+    t1new_aa += einsum(x4, (0, 1, 2, 3), t2.baba, (0, 2, 1, 4), (3, 4)) * -1.0
+    x5 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x5 += einsum(t2.aaaa, (0, 1, 2, 3), (1, 0, 3, 2))
+    x5 += einsum(t1.aa, (0, 1), t1.aa, (2, 3), (2, 0, 3, 1)) * 0.5
+    t1new_aa += einsum(v.aaaa.ovvv, (0, 1, 2, 3), x5, (0, 4, 2, 1), (4, 3)) * -2.0
+    x6 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x6 += einsum(t2.baba, (0, 1, 2, 3), (0, 2, 1, 3))
+    x6 += einsum(t1.aa, (0, 1), t1.bb, (2, 3), (2, 3, 0, 1))
+    t1new_aa += einsum(x6, (0, 1, 2, 3), v.bbaa.ovvv, (0, 1, 3, 4), (2, 4))
+    t1new_bb += einsum(x6, (0, 1, 2, 3), v.bbaa.vvov, (1, 4, 2, 3), (0, 4))
+    x7 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x7 += einsum(v.aaaa.ovov, (0, 1, 2, 3), (2, 0, 1, 3))
+    x7 += einsum(v.aaaa.ovov, (0, 1, 2, 3), (2, 0, 3, 1)) * -1.0
+    x8 = np.zeros((nocc[0], nvir[0]), dtype=np.float64)
+    x8 += einsum(t1.aa, (0, 1), x7, (0, 2, 1, 3), (2, 3))
+    x9 = np.zeros((nocc[0], nvir[0]), dtype=np.float64)
+    x9 += einsum(f.aa.ov, (0, 1), (0, 1))
+    x9 += einsum(x0, (0, 1), (0, 1))
+    x9 += einsum(x8, (0, 1), (0, 1)) * -1.0
+    t1new_aa += einsum(t2.aaaa, (0, 1, 2, 3), x9, (0, 2), (1, 3)) * 2.0
+    t1new_bb += einsum(x9, (0, 1), t2.baba, (2, 0, 3, 1), (2, 3))
+    t2new_aaaa += einsum(x9, (0, 1), t3.aaaaaa, (0, 2, 3, 1, 4, 5), (2, 3, 4, 5)) * 6.0
+    t2new_bbbb += einsum(x9, (0, 1), t3.bbabba, (2, 3, 0, 4, 5, 1), (3, 2, 5, 4)) * 2.0
+    x10 = np.zeros((nocc[1], nvir[1]), dtype=np.float64)
+    x10 += einsum(v.bbaa.ovov, (0, 1, 2, 3), t1.aa, (2, 3), (0, 1))
+    t1new_bb += einsum(x10, (0, 1), (0, 1))
+    x11 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x11 += einsum(v.bbbb.ovov, (0, 1, 2, 3), (2, 0, 1, 3)) * -1.0
+    x11 += einsum(v.bbbb.ovov, (0, 1, 2, 3), (2, 0, 3, 1))
+    x12 = np.zeros((nocc[1], nvir[1]), dtype=np.float64)
+    x12 += einsum(t1.bb, (0, 1), x11, (0, 2, 3, 1), (2, 3))
+    x13 = np.zeros((nocc[1], nvir[1]), dtype=np.float64)
+    x13 += einsum(f.bb.ov, (0, 1), (0, 1))
+    x13 += einsum(x10, (0, 1), (0, 1))
+    x13 += einsum(x12, (0, 1), (0, 1)) * -1.0
+    t1new_aa += einsum(t2.baba, (0, 1, 2, 3), x13, (0, 2), (1, 3))
+    t1new_bb += einsum(x13, (0, 1), t2.bbbb, (0, 2, 1, 3), (2, 3)) * 2.0
+    t2new_aaaa += einsum(x13, (0, 1), t3.baabaa, (0, 2, 3, 1, 4, 5), (3, 2, 5, 4)) * 2.0
+    t2new_bbbb += einsum(t3.bbbbbb, (0, 1, 2, 3, 4, 5), x13, (0, 3), (1, 2, 4, 5)) * 6.0
+    x14 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x14 += einsum(v.aaaa.oovv, (0, 1, 2, 3), (1, 0, 3, 2))
+    x14 += einsum(v.aaaa.ovov, (0, 1, 2, 3), (2, 0, 3, 1)) * -1.0
+    t1new_aa += einsum(x14, (0, 1, 2, 3), t1.aa, (0, 2), (1, 3)) * -1.0
+    x15 = np.zeros((nocc[0], nocc[0]), dtype=np.float64)
+    x15 += einsum(v.bbaa.ovoo, (0, 1, 2, 3), t1.bb, (0, 1), (2, 3))
+    x16 = np.zeros((nocc[0], nocc[0]), dtype=np.float64)
+    x16 += einsum(t2.baba, (0, 1, 2, 3), v.bbaa.ovov, (0, 2, 4, 3), (1, 4))
+    x17 = np.zeros((nocc[0], nocc[0]), dtype=np.float64)
+    x17 += einsum(v.aaaa.ovov, (0, 1, 2, 3), t2.aaaa, (4, 0, 1, 3), (4, 2)) * -1.0
+    x18 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x18 += einsum(v.aaaa.ooov, (0, 1, 2, 3), (1, 0, 2, 3)) * -1.0
+    x18 += einsum(v.aaaa.ooov, (0, 1, 2, 3), (1, 2, 0, 3))
+    x19 = np.zeros((nocc[0], nocc[0]), dtype=np.float64)
+    x19 += einsum(x18, (0, 1, 2, 3), t1.aa, (2, 3), (0, 1))
+    x20 = np.zeros((nocc[0], nocc[0]), dtype=np.float64)
+    x20 += einsum(x9, (0, 1), t1.aa, (2, 1), (2, 0))
+    x21 = np.zeros((nocc[0], nocc[0]), dtype=np.float64)
+    x21 += einsum(f.aa.oo, (0, 1), (1, 0))
+    x21 += einsum(x15, (0, 1), (1, 0))
+    x21 += einsum(x16, (0, 1), (1, 0))
+    x21 += einsum(x17, (0, 1), (1, 0)) * 2.0
+    x21 += einsum(x19, (0, 1), (1, 0)) * -1.0
+    x21 += einsum(x20, (0, 1), (1, 0))
+    t1new_aa += einsum(x21, (0, 1), t1.aa, (0, 2), (1, 2)) * -1.0
+    x22 = np.zeros((nvir[0], nvir[0]), dtype=np.float64)
+    x22 += einsum(f.aa.vv, (0, 1), (1, 0))
+    x22 += einsum(v.aaaa.ovvv, (0, 1, 2, 3), t1.aa, (0, 1), (3, 2))
+    t1new_aa += einsum(t1.aa, (0, 1), x22, (1, 2), (0, 2))
+    x23 = np.zeros((nocc[1], nocc[1], nocc[0], nvir[0]), dtype=np.float64)
+    x23 += einsum(v.bbaa.ovov, (0, 1, 2, 3), t1.bb, (4, 1), (4, 0, 2, 3))
+    x24 = np.zeros((nocc[1], nocc[1], nocc[0], nvir[0]), dtype=np.float64)
+    x24 += einsum(v.bbaa.ooov, (0, 1, 2, 3), (1, 0, 2, 3))
+    x24 += einsum(x23, (0, 1, 2, 3), (1, 0, 2, 3))
+    t1new_bb += einsum(t2.baba, (0, 1, 2, 3), x24, (0, 4, 1, 3), (4, 2)) * -1.0
+    x25 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x25 += einsum(v.bbbb.ovov, (0, 1, 2, 3), t1.bb, (4, 1), (4, 2, 0, 3))
+    x26 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x26 += einsum(v.bbbb.ooov, (0, 1, 2, 3), (1, 2, 0, 3))
+    x26 += einsum(x25, (0, 1, 2, 3), (0, 1, 2, 3))
+    t1new_bb += einsum(x26, (0, 1, 2, 3), t2.bbbb, (2, 1, 3, 4), (0, 4)) * 2.0
+    x27 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x27 += einsum(t2.bbbb, (0, 1, 2, 3), (1, 0, 3, 2))
+    x27 += einsum(t1.bb, (0, 1), t1.bb, (2, 3), (2, 0, 3, 1)) * 0.5
+    t1new_bb += einsum(v.bbbb.ovvv, (0, 1, 2, 3), x27, (0, 4, 2, 1), (4, 3)) * -2.0
+    x28 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x28 += einsum(v.bbbb.oovv, (0, 1, 2, 3), (1, 0, 3, 2))
+    x28 += einsum(v.bbbb.ovov, (0, 1, 2, 3), (2, 0, 3, 1)) * -1.0
+    t1new_bb += einsum(t1.bb, (0, 1), x28, (0, 2, 1, 3), (2, 3)) * -1.0
+    x29 = np.zeros((nocc[1], nocc[1]), dtype=np.float64)
+    x29 += einsum(t1.aa, (0, 1), v.bbaa.ooov, (2, 3, 0, 1), (2, 3))
+    x30 = np.zeros((nocc[1], nocc[1]), dtype=np.float64)
+    x30 += einsum(v.bbbb.ovov, (0, 1, 2, 3), t2.bbbb, (4, 0, 1, 3), (4, 2)) * -1.0
+    x31 = np.zeros((nocc[1], nocc[1]), dtype=np.float64)
+    x31 += einsum(t2.baba, (0, 1, 2, 3), v.bbaa.ovov, (4, 2, 1, 3), (0, 4))
+    x32 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x32 += einsum(v.bbbb.ooov, (0, 1, 2, 3), (1, 0, 2, 3)) * -1.0
+    x32 += einsum(v.bbbb.ooov, (0, 1, 2, 3), (1, 2, 0, 3))
+    x33 = np.zeros((nocc[1], nocc[1]), dtype=np.float64)
+    x33 += einsum(t1.bb, (0, 1), x32, (2, 3, 0, 1), (2, 3))
+    x34 = np.zeros((nocc[1], nocc[1]), dtype=np.float64)
+    x34 += einsum(x13, (0, 1), t1.bb, (2, 1), (2, 0))
+    x35 = np.zeros((nocc[1], nocc[1]), dtype=np.float64)
+    x35 += einsum(f.bb.oo, (0, 1), (1, 0))
+    x35 += einsum(x29, (0, 1), (1, 0))
+    x35 += einsum(x30, (0, 1), (1, 0)) * 2.0
+    x35 += einsum(x31, (0, 1), (1, 0))
+    x35 += einsum(x33, (0, 1), (1, 0)) * -1.0
+    x35 += einsum(x34, (0, 1), (1, 0))
+    t1new_bb += einsum(x35, (0, 1), t1.bb, (0, 2), (1, 2)) * -1.0
+    x36 = np.zeros((nvir[1], nvir[1]), dtype=np.float64)
+    x36 += einsum(f.bb.vv, (0, 1), (1, 0))
+    x36 += einsum(t1.bb, (0, 1), v.bbbb.ovvv, (0, 1, 2, 3), (3, 2))
+    t1new_bb += einsum(x36, (0, 1), t1.bb, (2, 0), (2, 1))
+    x37 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x37 += einsum(t1.aa, (0, 1), v.aaaa.ooov, (2, 0, 3, 4), (2, 3, 1, 4))
+    x38 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x38 += einsum(v.bbaa.ovoo, (0, 1, 2, 3), t3.baabaa, (0, 4, 3, 1, 5, 6), (4, 2, 5, 6))
+    x39 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x39 += einsum(v.aaaa.ooov, (0, 1, 2, 3), t3.aaaaaa, (4, 2, 1, 5, 3, 6), (4, 0, 5, 6))
+    x40 = np.zeros((nocc[0], nocc[0], nocc[0], nocc[0]), dtype=np.float64)
+    x40 += einsum(v.aaaa.ooov, (0, 1, 2, 3), t1.aa, (4, 3), (4, 0, 1, 2))
+    x41 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x41 += einsum(x40, (0, 1, 2, 3), t2.aaaa, (2, 3, 4, 5), (0, 1, 4, 5))
+    x42 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x42 += einsum(t3.baabaa, (0, 1, 2, 3, 4, 5), x3, (0, 3, 6, 2), (6, 1, 4, 5))
+    x43 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x43 += einsum(x1, (0, 1, 2, 3), t3.aaaaaa, (4, 1, 2, 5, 3, 6), (0, 4, 5, 6))
+    x44 = np.zeros((nocc[0], nocc[0]), dtype=np.float64)
+    x44 += einsum(f.aa.oo, (0, 1), (1, 0))
+    x44 += einsum(x20, (0, 1), (0, 1))
+    x45 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x45 += einsum(x44, (0, 1), t2.aaaa, (1, 2, 3, 4), (2, 0, 3, 4)) * 2.0
+    x46 = np.zeros((nocc[0], nocc[0]), dtype=np.float64)
+    x46 += einsum(x15, (0, 1), (1, 0))
+    x46 += einsum(x16, (0, 1), (1, 0))
+    x46 += einsum(x17, (0, 1), (1, 0)) * 2.0
+    x46 += einsum(x19, (0, 1), (1, 0)) * -1.0
+    x47 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x47 += einsum(x46, (0, 1), t2.aaaa, (0, 2, 3, 4), (2, 1, 3, 4)) * 2.0
+    x48 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x48 += einsum(x37, (0, 1, 2, 3), (0, 1, 3, 2)) * -1.0
+    x48 += einsum(x38, (0, 1, 2, 3), (0, 1, 3, 2)) * -2.0
+    x48 += einsum(x39, (0, 1, 2, 3), (0, 1, 3, 2)) * -6.0
+    x48 += einsum(x41, (0, 1, 2, 3), (0, 1, 3, 2)) * -2.0
+    x48 += einsum(x42, (0, 1, 2, 3), (0, 1, 3, 2)) * 2.0
+    x48 += einsum(x43, (0, 1, 2, 3), (0, 1, 3, 2)) * 6.0
+    x48 += einsum(x45, (0, 1, 2, 3), (1, 0, 3, 2)) * -1.0
+    x48 += einsum(x47, (0, 1, 2, 3), (0, 1, 3, 2))
+    t2new_aaaa += einsum(x48, (0, 1, 2, 3), (0, 1, 2, 3)) * -1.0
+    t2new_aaaa += einsum(x48, (0, 1, 2, 3), (1, 0, 2, 3))
+    x49 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x49 += einsum(v.aaaa.ovvv, (0, 1, 2, 3), t1.aa, (4, 3), (4, 0, 1, 2))
+    x50 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x50 += einsum(t1.aa, (0, 1), v.bbaa.ovvv, (2, 3, 4, 1), (2, 3, 0, 4))
+    t2new_abab += einsum(x50, (0, 1, 2, 3), (2, 0, 3, 1))
+    t2new_baba += einsum(x50, (0, 1, 2, 3), (0, 2, 1, 3))
+    x51 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x51 += einsum(x50, (0, 1, 2, 3), t2.baba, (0, 4, 1, 5), (2, 4, 5, 3))
+    x52 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x52 += einsum(t2.aaaa, (0, 1, 2, 3), (1, 0, 3, 2))
+    x52 += einsum(t1.aa, (0, 1), t1.aa, (2, 3), (0, 2, 3, 1)) * -0.5
+    x53 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x53 += einsum(x52, (0, 1, 2, 3), x14, (0, 4, 2, 5), (4, 1, 5, 3)) * 2.0
+    x54 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x54 += einsum(t2.aaaa, (0, 1, 2, 3), v.bbaa.ovov, (4, 5, 1, 3), (4, 5, 0, 2))
+    x55 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x55 += einsum(v.bbaa.ovov, (0, 1, 2, 3), (0, 1, 2, 3))
+    x55 += einsum(x54, (0, 1, 2, 3), (0, 1, 2, 3)) * 2.0
+    x56 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x56 += einsum(t2.baba, (0, 1, 2, 3), x55, (0, 2, 4, 5), (1, 4, 3, 5))
+    x57 = np.zeros((nocc[0], nvir[0], nvir[0], nvir[0]), dtype=np.float64)
+    x57 += einsum(v.aaaa.ovvv, (0, 1, 2, 3), (0, 1, 3, 2))
+    x57 += einsum(v.aaaa.ovvv, (0, 1, 2, 3), (0, 3, 2, 1)) * -1.0
+    x58 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x58 += einsum(x57, (0, 1, 2, 3), t1.aa, (4, 1), (4, 0, 2, 3))
+    x59 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x59 += einsum(x58, (0, 1, 2, 3), t2.aaaa, (1, 4, 3, 5), (4, 0, 5, 2)) * -2.0
+    x60 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x60 += einsum(t2.baba, (0, 1, 2, 3), v.bbaa.ovoo, (0, 2, 4, 5), (1, 4, 5, 3))
+    x61 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x61 += einsum(x40, (0, 1, 2, 3), t1.aa, (3, 4), (0, 2, 1, 4))
+    x62 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x62 += einsum(t1.aa, (0, 1), x49, (2, 3, 1, 4), (0, 2, 3, 4))
+    x63 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x63 += einsum(x3, (0, 1, 2, 3), t2.baba, (0, 4, 1, 5), (2, 4, 3, 5))
+    x64 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x64 += einsum(v.aaaa.ooov, (0, 1, 2, 3), (1, 0, 2, 3))
+    x64 += einsum(v.aaaa.ooov, (0, 1, 2, 3), (1, 2, 0, 3)) * -1.0
+    x65 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x65 += einsum(t2.aaaa, (0, 1, 2, 3), x64, (4, 5, 0, 2), (1, 4, 5, 3)) * 2.0
+    x66 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x66 += einsum(x1, (0, 1, 2, 3), (0, 1, 2, 3)) * -1.0
+    x66 += einsum(x1, (0, 1, 2, 3), (0, 2, 1, 3))
+    x67 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x67 += einsum(t2.aaaa, (0, 1, 2, 3), x66, (4, 0, 5, 2), (1, 4, 5, 3)) * 2.0
+    x68 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x68 += einsum(x60, (0, 1, 2, 3), (0, 2, 1, 3)) * -1.0
+    x68 += einsum(x61, (0, 1, 2, 3), (0, 2, 1, 3))
+    x68 += einsum(x62, (0, 1, 2, 3), (0, 2, 1, 3))
+    x68 += einsum(x63, (0, 1, 2, 3), (0, 2, 1, 3))
+    x68 += einsum(x65, (0, 1, 2, 3), (0, 2, 1, 3)) * -1.0
+    x68 += einsum(x67, (0, 1, 2, 3), (1, 2, 0, 3)) * -1.0
+    x69 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x69 += einsum(x68, (0, 1, 2, 3), t1.aa, (1, 4), (0, 2, 4, 3))
+    x70 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x70 += einsum(x49, (0, 1, 2, 3), (0, 1, 2, 3))
+    x70 += einsum(x51, (0, 1, 2, 3), (0, 1, 2, 3))
+    x70 += einsum(x53, (0, 1, 2, 3), (1, 0, 3, 2))
+    x70 += einsum(x56, (0, 1, 2, 3), (0, 1, 2, 3)) * -1.0
+    x70 += einsum(x59, (0, 1, 2, 3), (1, 0, 2, 3))
+    x70 += einsum(x69, (0, 1, 2, 3), (0, 1, 2, 3))
+    t2new_aaaa += einsum(x70, (0, 1, 2, 3), (0, 1, 2, 3)) * -1.0
+    t2new_aaaa += einsum(x70, (0, 1, 2, 3), (0, 1, 3, 2))
+    t2new_aaaa += einsum(x70, (0, 1, 2, 3), (1, 0, 2, 3))
+    t2new_aaaa += einsum(x70, (0, 1, 2, 3), (1, 0, 3, 2)) * -1.0
+    x71 = np.zeros((nocc[0], nvir[0], nvir[0], nvir[0]), dtype=np.float64)
+    x71 += einsum(v.aaaa.vvvv, (0, 1, 2, 3), t1.aa, (4, 1), (4, 2, 3, 0))
+    x72 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x72 += einsum(x71, (0, 1, 2, 3), t1.aa, (4, 2), (4, 0, 1, 3))
+    x73 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x73 += einsum(t3.baabaa, (0, 1, 2, 3, 4, 5), v.bbaa.ovvv, (0, 3, 6, 5), (1, 2, 4, 6))
+    x74 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x74 += einsum(t3.aaaaaa, (0, 1, 2, 3, 4, 5), v.aaaa.ovvv, (1, 5, 6, 4), (0, 2, 3, 6))
+    x75 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x75 += einsum(v.aaaa.ovov, (0, 1, 2, 3), (2, 0, 1, 3)) * -1.0
+    x75 += einsum(v.aaaa.ovov, (0, 1, 2, 3), (2, 0, 3, 1))
+    x76 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x76 += einsum(x75, (0, 1, 2, 3), t2.aaaa, (0, 4, 3, 5), (4, 1, 5, 2))
+    x77 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x77 += einsum(x76, (0, 1, 2, 3), t2.aaaa, (1, 4, 3, 5), (4, 0, 5, 2)) * -4.0
+    x78 = np.zeros((nvir[0], nvir[0]), dtype=np.float64)
+    x78 += einsum(v.bbaa.ovvv, (0, 1, 2, 3), t1.bb, (0, 1), (2, 3))
+    x79 = np.zeros((nvir[0], nvir[0]), dtype=np.float64)
+    x79 += einsum(t2.baba, (0, 1, 2, 3), v.bbaa.ovov, (0, 2, 1, 4), (3, 4))
+    x80 = np.zeros((nvir[0], nvir[0]), dtype=np.float64)
+    x80 += einsum(v.aaaa.ovov, (0, 1, 2, 3), t2.aaaa, (0, 2, 4, 3), (4, 1))
+    x81 = np.zeros((nvir[0], nvir[0]), dtype=np.float64)
+    x81 += einsum(x57, (0, 1, 2, 3), t1.aa, (0, 1), (2, 3))
+    x82 = np.zeros((nvir[0], nvir[0]), dtype=np.float64)
+    x82 += einsum(x78, (0, 1), (1, 0)) * -1.0
+    x82 += einsum(x79, (0, 1), (1, 0))
+    x82 += einsum(x80, (0, 1), (1, 0)) * 2.0
+    x82 += einsum(x81, (0, 1), (1, 0)) * -1.0
+    x83 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x83 += einsum(x82, (0, 1), t2.aaaa, (2, 3, 0, 4), (2, 3, 4, 1)) * 2.0
+    x84 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x84 += einsum(t2.aaaa, (0, 1, 2, 3), v.aaaa.ovvv, (4, 2, 5, 3), (0, 1, 4, 5))
+    x85 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x85 += einsum(v.bbaa.ovov, (0, 1, 2, 3), t3.baabaa, (0, 4, 5, 1, 6, 3), (4, 5, 2, 6))
+    x86 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x86 += einsum(t3.aaaaaa, (0, 1, 2, 3, 4, 5), v.aaaa.ovov, (1, 4, 6, 5), (0, 2, 6, 3))
+    x87 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x87 += einsum(t2.aaaa, (0, 1, 2, 3), x9, (4, 2), (0, 1, 4, 3)) * 2.0
+    x88 = np.zeros((nocc[0], nocc[0], nocc[0], nocc[0]), dtype=np.float64)
+    x88 += einsum(t1.aa, (0, 1), x1, (2, 3, 4, 1), (2, 0, 4, 3))
+    x89 = np.zeros((nocc[0], nocc[0], nocc[0], nocc[0]), dtype=np.float64)
+    x89 += einsum(v.aaaa.oooo, (0, 1, 2, 3), (2, 3, 1, 0))
+    x89 += einsum(x88, (0, 1, 2, 3), (3, 1, 2, 0))
+    x90 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x90 += einsum(t1.aa, (0, 1), x89, (0, 2, 3, 4), (2, 3, 4, 1))
+    x91 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x91 += einsum(x84, (0, 1, 2, 3), (2, 1, 0, 3)) * -2.0
+    x91 += einsum(x85, (0, 1, 2, 3), (2, 1, 0, 3)) * 2.0
+    x91 += einsum(x86, (0, 1, 2, 3), (2, 1, 0, 3)) * 6.0
+    x91 += einsum(x87, (0, 1, 2, 3), (2, 1, 0, 3)) * -1.0
+    x91 += einsum(x90, (0, 1, 2, 3), (1, 0, 2, 3))
+    x92 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x92 += einsum(x91, (0, 1, 2, 3), t1.aa, (0, 4), (1, 2, 4, 3))
+    x93 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x93 += einsum(x72, (0, 1, 2, 3), (0, 1, 2, 3))
+    x93 += einsum(x73, (0, 1, 2, 3), (0, 1, 2, 3)) * 2.0
+    x93 += einsum(x74, (0, 1, 2, 3), (0, 1, 2, 3)) * -6.0
+    x93 += einsum(x77, (0, 1, 2, 3), (0, 1, 2, 3))
+    x93 += einsum(x83, (0, 1, 2, 3), (1, 0, 2, 3)) * -1.0
+    x93 += einsum(x92, (0, 1, 2, 3), (1, 0, 2, 3))
+    t2new_aaaa += einsum(x93, (0, 1, 2, 3), (0, 1, 2, 3))
+    t2new_aaaa += einsum(x93, (0, 1, 2, 3), (0, 1, 3, 2)) * -1.0
+    x94 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x94 += einsum(t2.aaaa, (0, 1, 2, 3), f.aa.vv, (4, 3), (0, 1, 4, 2))
+    x95 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x95 += einsum(t2.baba, (0, 1, 2, 3), x11, (0, 4, 5, 2), (4, 5, 1, 3))
+    x96 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x96 += einsum(t2.baba, (0, 1, 2, 3), x95, (0, 2, 4, 5), (1, 4, 3, 5)) * -1.0
+    x97 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x97 += einsum(v.aaaa.ovov, (0, 1, 2, 3), (2, 0, 3, 1))
+    x97 += einsum(x94, (0, 1, 2, 3), (1, 0, 3, 2)) * -2.0
+    x97 += einsum(x96, (0, 1, 2, 3), (0, 1, 2, 3))
+    t2new_aaaa += einsum(x97, (0, 1, 2, 3), (0, 1, 3, 2)) * -1.0
+    t2new_aaaa += einsum(x97, (0, 1, 2, 3), (0, 1, 2, 3))
+    x98 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x98 += einsum(t2.aaaa, (0, 1, 2, 3), (1, 0, 3, 2))
+    x98 += einsum(t1.aa, (0, 1), t1.aa, (2, 3), (2, 0, 3, 1))
+    x99 = np.zeros((nocc[0], nocc[0], nocc[0], nocc[0]), dtype=np.float64)
+    x99 += einsum(v.aaaa.oooo, (0, 1, 2, 3), (2, 3, 1, 0))
+    x99 += einsum(x98, (0, 1, 2, 3), v.aaaa.ovov, (4, 2, 5, 3), (5, 1, 4, 0))
+    t2new_aaaa += einsum(x99, (0, 1, 2, 3), t2.aaaa, (0, 2, 4, 5), (1, 3, 5, 4)) * -2.0
+    x100 = np.zeros((nocc[0], nocc[0], nocc[0], nocc[0]), dtype=np.float64)
+    x100 += einsum(t2.aaaa, (0, 1, 2, 3), v.aaaa.ovov, (4, 2, 5, 3), (0, 1, 4, 5))
+    x101 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x101 += einsum(x100, (0, 1, 2, 3), t1.aa, (2, 4), (0, 1, 3, 4)) * -1.0
+    x101 += einsum(v.aaaa.ooov, (0, 1, 2, 3), (1, 2, 0, 3)) * -0.5
+    x101 += einsum(v.aaaa.ooov, (0, 1, 2, 3), (2, 1, 0, 3)) * 0.5
+    t2new_aaaa += einsum(x101, (0, 1, 2, 3), t1.aa, (2, 4), (0, 1, 4, 3)) * 2.0
+    x102 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x102 += einsum(x24, (0, 1, 2, 3), t3.baabaa, (0, 2, 4, 5, 3, 6), (1, 5, 4, 6)) * 2.0
+    t2new_abab += einsum(x102, (0, 1, 2, 3), (2, 0, 3, 1)) * -1.0
+    t2new_baba += einsum(x102, (0, 1, 2, 3), (0, 2, 1, 3)) * -1.0
+    x103 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x103 += einsum(x4, (0, 1, 2, 3), t3.bbabba, (0, 4, 2, 1, 5, 6), (4, 5, 3, 6)) * 2.0
+    t2new_abab += einsum(x103, (0, 1, 2, 3), (2, 0, 3, 1)) * -1.0
+    t2new_baba += einsum(x103, (0, 1, 2, 3), (0, 2, 1, 3)) * -1.0
+    x104 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x104 += einsum(x26, (0, 1, 2, 3), t3.bbabba, (2, 1, 4, 3, 5, 6), (0, 5, 4, 6)) * 2.0
+    t2new_abab += einsum(x104, (0, 1, 2, 3), (2, 0, 3, 1))
+    t2new_baba += einsum(x104, (0, 1, 2, 3), (0, 2, 1, 3))
+    x105 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x105 += einsum(x2, (0, 1, 2, 3), t3.baabaa, (4, 2, 1, 5, 3, 6), (4, 5, 0, 6)) * 2.0
+    t2new_abab += einsum(x105, (0, 1, 2, 3), (2, 0, 3, 1))
+    t2new_baba += einsum(x105, (0, 1, 2, 3), (0, 2, 1, 3))
+    x106 = np.zeros((nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x106 += einsum(v.bbaa.ovov, (0, 1, 2, 3), t1.bb, (0, 4), (4, 1, 2, 3))
+    x107 = np.zeros((nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x107 += einsum(v.bbaa.vvov, (0, 1, 2, 3), (1, 0, 2, 3))
+    x107 += einsum(x106, (0, 1, 2, 3), (1, 0, 2, 3)) * -1.0
+    x108 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x108 += einsum(t3.baabaa, (0, 1, 2, 3, 4, 5), x107, (3, 6, 1, 4), (0, 6, 2, 5)) * 2.0
+    t2new_abab += einsum(x108, (0, 1, 2, 3), (2, 0, 3, 1))
+    t2new_baba += einsum(x108, (0, 1, 2, 3), (0, 2, 1, 3))
+    x109 = np.zeros((nocc[1], nvir[1], nvir[0], nvir[0]), dtype=np.float64)
+    x109 += einsum(v.bbaa.ovov, (0, 1, 2, 3), t1.aa, (2, 4), (0, 1, 4, 3))
+    x110 = np.zeros((nocc[1], nvir[1], nvir[0], nvir[0]), dtype=np.float64)
+    x110 += einsum(v.bbaa.ovvv, (0, 1, 2, 3), (0, 1, 3, 2))
+    x110 += einsum(x109, (0, 1, 2, 3), (0, 1, 3, 2)) * -1.0
+    x111 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x111 += einsum(x110, (0, 1, 2, 3), t3.bbabba, (0, 4, 5, 1, 6, 2), (4, 6, 5, 3)) * 2.0
+    t2new_abab += einsum(x111, (0, 1, 2, 3), (2, 0, 3, 1))
+    t2new_baba += einsum(x111, (0, 1, 2, 3), (0, 2, 1, 3))
+    x112 = np.zeros((nocc[0], nvir[0], nvir[0], nvir[0]), dtype=np.float64)
+    x112 += einsum(t1.aa, (0, 1), v.aaaa.ovov, (2, 3, 0, 4), (2, 1, 3, 4))
+    x113 = np.zeros((nocc[0], nvir[0], nvir[0], nvir[0]), dtype=np.float64)
+    x113 += einsum(v.aaaa.ovvv, (0, 1, 2, 3), (0, 3, 2, 1))
+    x113 += einsum(x112, (0, 1, 2, 3), (0, 1, 2, 3))
+    x114 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x114 += einsum(t3.baabaa, (0, 1, 2, 3, 4, 5), x113, (1, 6, 4, 5), (0, 3, 2, 6)) * 2.0
+    t2new_abab += einsum(x114, (0, 1, 2, 3), (2, 0, 3, 1)) * -1.0
+    t2new_baba += einsum(x114, (0, 1, 2, 3), (0, 2, 1, 3)) * -1.0
+    x115 = np.zeros((nocc[1], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
+    x115 += einsum(t1.bb, (0, 1), v.bbbb.ovov, (2, 3, 0, 4), (2, 1, 3, 4))
+    x116 = np.zeros((nocc[1], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
+    x116 += einsum(v.bbbb.ovvv, (0, 1, 2, 3), (0, 3, 2, 1))
+    x116 += einsum(x115, (0, 1, 2, 3), (0, 1, 2, 3))
+    x117 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x117 += einsum(t3.bbabba, (0, 1, 2, 3, 4, 5), x116, (0, 6, 3, 4), (1, 6, 2, 5)) * 2.0
+    t2new_abab += einsum(x117, (0, 1, 2, 3), (2, 0, 3, 1)) * -1.0
+    t2new_baba += einsum(x117, (0, 1, 2, 3), (0, 2, 1, 3)) * -1.0
+    x118 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x118 += einsum(t2.baba, (0, 1, 2, 3), v.bbaa.ovov, (0, 2, 4, 5), (1, 4, 3, 5))
+    x119 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x119 += einsum(x52, (0, 1, 2, 3), x7, (0, 4, 2, 5), (4, 1, 5, 3)) * 2.0
+    x120 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x120 += einsum(x18, (0, 1, 2, 3), t1.aa, (2, 4), (0, 1, 4, 3))
+    x121 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x121 += einsum(v.aaaa.ovov, (0, 1, 2, 3), (2, 0, 3, 1))
+    x121 += einsum(v.aaaa.oovv, (0, 1, 2, 3), (1, 0, 3, 2)) * -1.0
+    x121 += einsum(x118, (0, 1, 2, 3), (1, 0, 3, 2))
+    x121 += einsum(x119, (0, 1, 2, 3), (0, 1, 2, 3)) * -1.0
+    x121 += einsum(x58, (0, 1, 2, 3), (1, 0, 3, 2)) * -1.0
+    x121 += einsum(x120, (0, 1, 2, 3), (1, 0, 3, 2)) * -1.0
+    x122 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x122 += einsum(t2.baba, (0, 1, 2, 3), x121, (1, 4, 3, 5), (0, 2, 4, 5))
+    t2new_abab += einsum(x122, (0, 1, 2, 3), (2, 0, 3, 1))
+    t2new_baba += einsum(x122, (0, 1, 2, 3), (0, 2, 1, 3))
+    x123 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x123 += einsum(t2.bbbb, (0, 1, 2, 3), (1, 0, 3, 2))
+    x123 += einsum(t1.bb, (0, 1), t1.bb, (2, 3), (2, 0, 1, 3)) * -0.5
+    x124 = np.zeros((nocc[1], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
+    x124 += einsum(v.bbbb.ovvv, (0, 1, 2, 3), (0, 1, 3, 2))
+    x124 += einsum(v.bbbb.ovvv, (0, 1, 2, 3), (0, 3, 1, 2)) * -1.0
+    x125 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x125 += einsum(v.bbbb.ooov, (0, 1, 2, 3), (1, 0, 2, 3))
+    x125 += einsum(v.bbbb.ooov, (0, 1, 2, 3), (1, 2, 0, 3)) * -1.0
+    x126 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x126 += einsum(v.bbbb.oovv, (0, 1, 2, 3), (1, 0, 3, 2)) * 0.5
+    x126 += einsum(v.bbbb.ovov, (0, 1, 2, 3), (2, 0, 3, 1)) * -0.5
+    x126 += einsum(x11, (0, 1, 2, 3), x123, (0, 4, 2, 5), (1, 4, 3, 5)) * -1.0
+    x126 += einsum(x124, (0, 1, 2, 3), t1.bb, (4, 2), (0, 4, 1, 3)) * -0.5
+    x126 += einsum(t1.bb, (0, 1), x125, (2, 3, 0, 4), (3, 2, 4, 1)) * -0.5
+    t2new_abab += einsum(x126, (0, 1, 2, 3), t2.baba, (0, 4, 2, 5), (4, 1, 5, 3)) * -2.0
+    x127 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x127 += einsum(t3.baabaa, (0, 1, 2, 3, 4, 5), x9, (1, 4), (0, 3, 2, 5)) * 2.0
+    t2new_abab += einsum(x127, (0, 1, 2, 3), (2, 0, 3, 1))
+    t2new_baba += einsum(x127, (0, 1, 2, 3), (0, 2, 1, 3))
+    x128 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x128 += einsum(x13, (0, 1), t3.bbabba, (0, 2, 3, 1, 4, 5), (2, 4, 3, 5)) * 2.0
+    t2new_abab += einsum(x128, (0, 1, 2, 3), (2, 0, 3, 1))
+    t2new_baba += einsum(x128, (0, 1, 2, 3), (0, 2, 1, 3))
+    x129 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x129 += einsum(t1.bb, (0, 1), v.bbaa.ooov, (2, 0, 3, 4), (2, 1, 3, 4))
+    x130 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x130 += einsum(t1.bb, (0, 1), v.bbaa.vvov, (2, 1, 3, 4), (0, 2, 3, 4))
+    x131 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x131 += einsum(v.bbaa.ovov, (0, 1, 2, 3), (0, 1, 2, 3)) * 0.5
+    x131 += einsum(x129, (0, 1, 2, 3), (0, 1, 2, 3)) * -0.5
+    x131 += einsum(x130, (0, 1, 2, 3), (0, 1, 2, 3)) * 0.5
+    x131 += einsum(v.bbaa.ovov, (0, 1, 2, 3), x123, (0, 4, 1, 5), (4, 5, 2, 3))
+    t2new_abab += einsum(x131, (0, 1, 2, 3), t2.aaaa, (2, 4, 3, 5), (4, 0, 5, 1)) * 4.0
+    x132 = np.zeros((nvir[1], nvir[1], nocc[0], nocc[0]), dtype=np.float64)
+    x132 += einsum(v.bbaa.ovoo, (0, 1, 2, 3), t1.bb, (0, 4), (4, 1, 2, 3))
+    x133 = np.zeros((nvir[1], nvir[1], nocc[0], nocc[0]), dtype=np.float64)
+    x133 += einsum(v.bbaa.vvov, (0, 1, 2, 3), t1.aa, (4, 3), (0, 1, 4, 2))
+    x134 = np.zeros((nvir[1], nvir[1], nocc[0], nocc[0]), dtype=np.float64)
+    x134 += einsum(v.bbaa.ovov, (0, 1, 2, 3), x6, (0, 4, 5, 3), (1, 4, 2, 5))
+    x135 = np.zeros((nvir[1], nvir[1], nocc[0], nocc[0]), dtype=np.float64)
+    x135 += einsum(v.bbaa.vvoo, (0, 1, 2, 3), (1, 0, 3, 2)) * -1.0
+    x135 += einsum(x132, (0, 1, 2, 3), (1, 0, 3, 2))
+    x135 += einsum(x133, (0, 1, 2, 3), (1, 0, 3, 2)) * -1.0
+    x135 += einsum(x134, (0, 1, 2, 3), (0, 1, 2, 3))
+    x136 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x136 += einsum(t2.baba, (0, 1, 2, 3), x135, (2, 4, 1, 5), (0, 4, 5, 3))
+    t2new_abab += einsum(x136, (0, 1, 2, 3), (2, 0, 3, 1))
+    t2new_baba += einsum(x136, (0, 1, 2, 3), (0, 2, 1, 3))
+    x137 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x137 += einsum(t1.aa, (0, 1), x4, (2, 3, 0, 4), (2, 3, 4, 1))
+    x138 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x138 += einsum(v.bbaa.ovov, (0, 1, 2, 3), (0, 1, 2, 3))
+    x138 += einsum(x50, (0, 1, 2, 3), (0, 1, 2, 3))
+    x138 += einsum(x137, (0, 1, 2, 3), (0, 1, 2, 3)) * -1.0
+    x139 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x139 += einsum(x138, (0, 1, 2, 3), x123, (0, 4, 1, 5), (4, 5, 2, 3)) * 2.0
+    t2new_abab += einsum(x139, (0, 1, 2, 3), (2, 0, 3, 1))
+    t2new_baba += einsum(x139, (0, 1, 2, 3), (0, 2, 1, 3))
+    x140 = np.zeros((nocc[1], nocc[1], nvir[0], nvir[0]), dtype=np.float64)
+    x140 += einsum(v.bbaa.ovvv, (0, 1, 2, 3), t1.bb, (4, 1), (4, 0, 2, 3))
+    x141 = np.zeros((nocc[1], nocc[1], nocc[0], nvir[0]), dtype=np.float64)
+    x141 += einsum(v.bbaa.ooov, (0, 1, 2, 3), (1, 0, 2, 3))
+    x141 += einsum(x23, (0, 1, 2, 3), (0, 1, 2, 3))
+    x142 = np.zeros((nocc[1], nocc[1], nvir[0], nvir[0]), dtype=np.float64)
+    x142 += einsum(x141, (0, 1, 2, 3), t1.aa, (2, 4), (0, 1, 4, 3))
+    x143 = np.zeros((nocc[1], nocc[1], nvir[0], nvir[0]), dtype=np.float64)
+    x143 += einsum(v.bbaa.oovv, (0, 1, 2, 3), (1, 0, 3, 2))
+    x143 += einsum(x140, (0, 1, 2, 3), (1, 0, 3, 2))
+    x143 += einsum(x142, (0, 1, 2, 3), (1, 0, 3, 2)) * -1.0
+    x144 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x144 += einsum(x143, (0, 1, 2, 3), t2.baba, (0, 4, 5, 2), (1, 5, 4, 3))
+    t2new_abab += einsum(x144, (0, 1, 2, 3), (2, 0, 3, 1)) * -1.0
+    t2new_baba += einsum(x144, (0, 1, 2, 3), (0, 2, 1, 3)) * -1.0
+    x145 = np.zeros((nvir[1], nvir[1], nvir[0], nvir[0]), dtype=np.float64)
+    x145 += einsum(v.bbaa.ovvv, (0, 1, 2, 3), t1.bb, (0, 4), (4, 1, 2, 3))
+    x146 = np.zeros((nvir[1], nvir[1], nvir[0], nvir[0]), dtype=np.float64)
+    x146 += einsum(v.bbaa.vvov, (0, 1, 2, 3), t1.aa, (2, 4), (0, 1, 4, 3))
+    x147 = np.zeros((nvir[1], nvir[1], nvir[0], nvir[0]), dtype=np.float64)
+    x147 += einsum(v.bbaa.vvvv, (0, 1, 2, 3), (1, 0, 3, 2)) * -1.0
+    x147 += einsum(x145, (0, 1, 2, 3), (1, 0, 3, 2))
+    x147 += einsum(x146, (0, 1, 2, 3), (1, 0, 3, 2))
+    x148 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x148 += einsum(t2.baba, (0, 1, 2, 3), x147, (2, 4, 3, 5), (0, 4, 1, 5))
+    t2new_abab += einsum(x148, (0, 1, 2, 3), (2, 0, 3, 1)) * -1.0
+    t2new_baba += einsum(x148, (0, 1, 2, 3), (0, 2, 1, 3)) * -1.0
+    x149 = np.zeros((nocc[1], nocc[1], nocc[0], nocc[0]), dtype=np.float64)
+    x149 += einsum(v.bbaa.ovoo, (0, 1, 2, 3), t1.bb, (4, 1), (4, 0, 2, 3))
+    x150 = np.zeros((nocc[1], nocc[1], nocc[0], nocc[0]), dtype=np.float64)
+    x150 += einsum(t1.aa, (0, 1), v.bbaa.ooov, (2, 3, 4, 1), (2, 3, 0, 4))
+    x151 = np.zeros((nocc[1], nocc[1], nocc[0], nocc[0]), dtype=np.float64)
+    x151 += einsum(v.bbaa.ovov, (0, 1, 2, 3), x6, (4, 1, 5, 3), (0, 4, 2, 5))
+    x152 = np.zeros((nocc[1], nocc[1], nocc[0], nocc[0]), dtype=np.float64)
+    x152 += einsum(v.bbaa.oooo, (0, 1, 2, 3), (1, 0, 3, 2))
+    x152 += einsum(x149, (0, 1, 2, 3), (1, 0, 3, 2))
+    x152 += einsum(x150, (0, 1, 2, 3), (1, 0, 3, 2))
+    x152 += einsum(x151, (0, 1, 2, 3), (0, 1, 2, 3))
+    x153 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x153 += einsum(t2.baba, (0, 1, 2, 3), x152, (0, 4, 1, 5), (4, 2, 5, 3))
+    t2new_abab += einsum(x153, (0, 1, 2, 3), (2, 0, 3, 1))
+    t2new_baba += einsum(x153, (0, 1, 2, 3), (0, 2, 1, 3))
+    x154 = np.zeros((nvir[0], nvir[0]), dtype=np.float64)
+    x154 += einsum(t1.aa, (0, 1), x9, (0, 2), (1, 2))
+    x155 = np.zeros((nvir[0], nvir[0]), dtype=np.float64)
+    x155 += einsum(f.aa.vv, (0, 1), (1, 0)) * -1.0
+    x155 += einsum(x78, (0, 1), (1, 0)) * -1.0
+    x155 += einsum(x79, (0, 1), (1, 0))
+    x155 += einsum(x80, (0, 1), (1, 0)) * 2.0
+    x155 += einsum(x81, (0, 1), (1, 0)) * -1.0
+    x155 += einsum(x154, (0, 1), (1, 0))
+    x156 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x156 += einsum(t2.baba, (0, 1, 2, 3), x155, (3, 4), (0, 2, 1, 4))
+    t2new_abab += einsum(x156, (0, 1, 2, 3), (2, 0, 3, 1)) * -1.0
+    t2new_baba += einsum(x156, (0, 1, 2, 3), (0, 2, 1, 3)) * -1.0
+    x157 = np.zeros((nvir[1], nvir[1]), dtype=np.float64)
+    x157 += einsum(t1.aa, (0, 1), v.bbaa.vvov, (2, 3, 0, 1), (2, 3))
+    x158 = np.zeros((nvir[1], nvir[1]), dtype=np.float64)
+    x158 += einsum(v.bbbb.ovov, (0, 1, 2, 3), t2.bbbb, (0, 2, 4, 3), (4, 1))
+    x159 = np.zeros((nvir[1], nvir[1]), dtype=np.float64)
+    x159 += einsum(t2.baba, (0, 1, 2, 3), v.bbaa.ovov, (0, 4, 1, 3), (2, 4))
+    x160 = np.zeros((nocc[1], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
+    x160 += einsum(v.bbbb.ovvv, (0, 1, 2, 3), (0, 1, 3, 2)) * -1.0
+    x160 += einsum(v.bbbb.ovvv, (0, 1, 2, 3), (0, 3, 1, 2))
+    x161 = np.zeros((nvir[1], nvir[1]), dtype=np.float64)
+    x161 += einsum(t1.bb, (0, 1), x160, (0, 2, 1, 3), (2, 3))
+    x162 = np.zeros((nvir[1], nvir[1]), dtype=np.float64)
+    x162 += einsum(x13, (0, 1), t1.bb, (0, 2), (2, 1))
+    x163 = np.zeros((nvir[1], nvir[1]), dtype=np.float64)
+    x163 += einsum(f.bb.vv, (0, 1), (1, 0)) * -1.0
+    x163 += einsum(x157, (0, 1), (1, 0)) * -1.0
+    x163 += einsum(x158, (0, 1), (1, 0)) * 2.0
+    x163 += einsum(x159, (0, 1), (1, 0))
+    x163 += einsum(x161, (0, 1), (0, 1)) * -1.0
+    x163 += einsum(x162, (0, 1), (1, 0))
+    x164 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x164 += einsum(x163, (0, 1), t2.baba, (2, 3, 0, 4), (2, 1, 3, 4))
+    t2new_abab += einsum(x164, (0, 1, 2, 3), (2, 0, 3, 1)) * -1.0
+    t2new_baba += einsum(x164, (0, 1, 2, 3), (0, 2, 1, 3)) * -1.0
+    x165 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x165 += einsum(x21, (0, 1), t2.baba, (2, 0, 3, 4), (2, 3, 1, 4))
+    t2new_abab += einsum(x165, (0, 1, 2, 3), (2, 0, 3, 1)) * -1.0
+    t2new_baba += einsum(x165, (0, 1, 2, 3), (0, 2, 1, 3)) * -1.0
+    x166 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x166 += einsum(x35, (0, 1), t2.baba, (0, 2, 3, 4), (1, 3, 2, 4))
+    t2new_abab += einsum(x166, (0, 1, 2, 3), (2, 0, 3, 1)) * -1.0
+    t2new_baba += einsum(x166, (0, 1, 2, 3), (0, 2, 1, 3)) * -1.0
+    x167 = np.zeros((nvir[1], nvir[1], nocc[0], nocc[0]), dtype=np.float64)
+    x167 += einsum(v.bbaa.vvoo, (0, 1, 2, 3), (1, 0, 3, 2))
+    x167 += einsum(x133, (0, 1, 2, 3), (1, 0, 2, 3))
+    x168 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0]), dtype=np.float64)
+    x168 += einsum(x167, (0, 1, 2, 3), t1.bb, (4, 0), (4, 1, 2, 3))
+    x169 = np.zeros((nocc[1], nocc[1], nocc[0], nocc[0]), dtype=np.float64)
+    x169 += einsum(t2.baba, (0, 1, 2, 3), v.bbaa.ovov, (4, 2, 5, 3), (0, 4, 1, 5))
+    x170 = np.zeros((nocc[1], nocc[1], nocc[0], nocc[0]), dtype=np.float64)
+    x170 += einsum(v.bbaa.oooo, (0, 1, 2, 3), (1, 0, 3, 2))
+    x170 += einsum(x150, (0, 1, 2, 3), (1, 0, 2, 3))
+    x170 += einsum(x169, (0, 1, 2, 3), (1, 0, 2, 3))
+    x171 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0]), dtype=np.float64)
+    x171 += einsum(t1.bb, (0, 1), x170, (0, 2, 3, 4), (2, 1, 3, 4))
+    x172 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0]), dtype=np.float64)
+    x172 += einsum(v.bbaa.ovoo, (0, 1, 2, 3), (0, 1, 3, 2))
+    x172 += einsum(x3, (0, 1, 2, 3), (0, 1, 3, 2))
+    x172 += einsum(x168, (0, 1, 2, 3), (0, 1, 3, 2))
+    x172 += einsum(x171, (0, 1, 2, 3), (0, 1, 3, 2)) * -1.0
+    x173 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x173 += einsum(t1.aa, (0, 1), x172, (2, 3, 0, 4), (2, 3, 4, 1))
+    t2new_abab += einsum(x173, (0, 1, 2, 3), (2, 0, 3, 1)) * -1.0
+    t2new_baba += einsum(x173, (0, 1, 2, 3), (0, 2, 1, 3)) * -1.0
+    x174 = np.zeros((nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x174 += einsum(v.bbaa.vvvv, (0, 1, 2, 3), t1.aa, (4, 3), (0, 1, 4, 2))
+    x175 = np.zeros((nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x175 += einsum(v.bbaa.vvov, (0, 1, 2, 3), (1, 0, 2, 3))
+    x175 += einsum(x174, (0, 1, 2, 3), (1, 0, 2, 3))
+    x176 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x176 += einsum(t1.bb, (0, 1), x175, (1, 2, 3, 4), (0, 2, 3, 4))
+    t2new_abab += einsum(x176, (0, 1, 2, 3), (2, 0, 3, 1))
+    t2new_baba += einsum(x176, (0, 1, 2, 3), (0, 2, 1, 3))
+    x177 = np.zeros((nocc[1], nocc[1], nocc[0], nvir[0]), dtype=np.float64)
+    x177 += einsum(t1.aa, (0, 1), v.bbaa.oovv, (2, 3, 4, 1), (2, 3, 0, 4))
+    x178 = np.zeros((nocc[1], nocc[1], nocc[0], nvir[0]), dtype=np.float64)
+    x178 += einsum(v.bbaa.ooov, (0, 1, 2, 3), (1, 0, 2, 3))
+    x178 += einsum(x177, (0, 1, 2, 3), (1, 0, 2, 3))
+    x179 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x179 += einsum(x178, (0, 1, 2, 3), t1.bb, (0, 4), (1, 4, 2, 3))
+    t2new_abab += einsum(x179, (0, 1, 2, 3), (2, 0, 3, 1)) * -1.0
+    t2new_baba += einsum(x179, (0, 1, 2, 3), (0, 2, 1, 3)) * -1.0
+    x180 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x180 += einsum(v.bbbb.oovv, (0, 1, 2, 3), (1, 0, 3, 2))
+    x180 += einsum(v.bbbb.ovov, (0, 1, 2, 3), (2, 0, 3, 1)) * -1.0
+    x180 += einsum(x11, (0, 1, 2, 3), x123, (0, 4, 2, 5), (1, 4, 3, 5)) * -2.0
+    x180 += einsum(x124, (0, 1, 2, 3), t1.bb, (4, 2), (0, 4, 1, 3)) * -1.0
+    x180 += einsum(t1.bb, (0, 1), x125, (2, 3, 0, 4), (3, 2, 4, 1)) * -1.0
+    t2new_baba += einsum(x180, (0, 1, 2, 3), t2.baba, (0, 4, 2, 5), (1, 4, 3, 5)) * -1.0
+    x181 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x181 += einsum(v.bbaa.ovov, (0, 1, 2, 3), (0, 1, 2, 3))
+    x181 += einsum(x129, (0, 1, 2, 3), (0, 1, 2, 3)) * -1.0
+    x181 += einsum(x130, (0, 1, 2, 3), (0, 1, 2, 3))
+    x181 += einsum(v.bbaa.ovov, (0, 1, 2, 3), x123, (0, 4, 1, 5), (4, 5, 2, 3)) * 2.0
+    t2new_baba += einsum(t2.aaaa, (0, 1, 2, 3), x181, (4, 5, 0, 2), (4, 1, 5, 3)) * 2.0
+    x182 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x182 += einsum(t1.bb, (0, 1), v.bbbb.ooov, (2, 0, 3, 4), (2, 3, 1, 4))
+    x183 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x183 += einsum(t3.bbbbbb, (0, 1, 2, 3, 4, 5), v.bbbb.ooov, (6, 1, 2, 4), (0, 6, 3, 5)) * -1.0
+    x184 = np.zeros((nocc[1], nocc[1], nocc[1], nocc[1]), dtype=np.float64)
+    x184 += einsum(v.bbbb.ooov, (0, 1, 2, 3), t1.bb, (4, 3), (4, 0, 1, 2))
+    x185 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x185 += einsum(t2.bbbb, (0, 1, 2, 3), x184, (4, 5, 1, 0), (4, 5, 2, 3)) * -1.0
+    x186 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x186 += einsum(t3.bbabba, (0, 1, 2, 3, 4, 5), v.bbaa.ooov, (6, 1, 2, 5), (0, 6, 3, 4))
+    x187 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x187 += einsum(x25, (0, 1, 2, 3), t3.bbbbbb, (4, 2, 1, 5, 3, 6), (0, 4, 5, 6)) * -1.0
+    x188 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x188 += einsum(x23, (0, 1, 2, 3), t3.bbabba, (4, 1, 2, 5, 6, 3), (0, 4, 5, 6))
+    x189 = np.zeros((nocc[1], nocc[1]), dtype=np.float64)
+    x189 += einsum(f.bb.oo, (0, 1), (1, 0))
+    x189 += einsum(x34, (0, 1), (0, 1))
+    x190 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x190 += einsum(x189, (0, 1), t2.bbbb, (1, 2, 3, 4), (0, 2, 3, 4)) * 2.0
+    x191 = np.zeros((nocc[1], nocc[1]), dtype=np.float64)
+    x191 += einsum(x29, (0, 1), (1, 0))
+    x191 += einsum(x30, (0, 1), (1, 0)) * 2.0
+    x191 += einsum(x31, (0, 1), (1, 0))
+    x191 += einsum(x33, (0, 1), (1, 0)) * -1.0
+    x192 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x192 += einsum(x191, (0, 1), t2.bbbb, (0, 2, 3, 4), (1, 2, 3, 4)) * 2.0
+    x193 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x193 += einsum(x182, (0, 1, 2, 3), (0, 1, 3, 2)) * -1.0
+    x193 += einsum(x183, (0, 1, 2, 3), (0, 1, 3, 2)) * -6.0
+    x193 += einsum(x185, (0, 1, 2, 3), (0, 1, 3, 2)) * -2.0
+    x193 += einsum(x186, (0, 1, 2, 3), (0, 1, 3, 2)) * -2.0
+    x193 += einsum(x187, (0, 1, 2, 3), (0, 1, 3, 2)) * 6.0
+    x193 += einsum(x188, (0, 1, 2, 3), (0, 1, 3, 2)) * 2.0
+    x193 += einsum(x190, (0, 1, 2, 3), (0, 1, 3, 2)) * -1.0
+    x193 += einsum(x192, (0, 1, 2, 3), (1, 0, 3, 2))
+    t2new_bbbb += einsum(x193, (0, 1, 2, 3), (0, 1, 2, 3)) * -1.0
+    t2new_bbbb += einsum(x193, (0, 1, 2, 3), (1, 0, 2, 3))
+    x194 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x194 += einsum(t1.bb, (0, 1), v.bbbb.ovvv, (2, 3, 4, 1), (0, 2, 3, 4))
+    x195 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x195 += einsum(t2.baba, (0, 1, 2, 3), v.bbaa.ovov, (4, 5, 1, 3), (0, 4, 2, 5))
+    x196 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x196 += einsum(x130, (0, 1, 2, 3), t2.baba, (4, 2, 5, 3), (0, 4, 5, 1))
+    x197 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x197 += einsum(v.bbbb.ovov, (0, 1, 2, 3), (2, 0, 3, 1))
+    x197 += einsum(v.bbbb.oovv, (0, 1, 2, 3), (1, 0, 3, 2)) * -1.0
+    x197 += einsum(x195, (0, 1, 2, 3), (1, 0, 3, 2))
+    x198 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x198 += einsum(t2.bbbb, (0, 1, 2, 3), x197, (0, 4, 2, 5), (4, 1, 5, 3)) * 2.0
+    x199 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x199 += einsum(t1.bb, (0, 1), x160, (2, 3, 1, 4), (0, 2, 3, 4))
+    x200 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x200 += einsum(x199, (0, 1, 2, 3), t2.bbbb, (1, 4, 2, 5), (0, 4, 3, 5)) * -2.0
+    x201 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x201 += einsum(t1.bb, (0, 1), x184, (2, 3, 4, 0), (2, 4, 3, 1))
+    x202 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x202 += einsum(t2.baba, (0, 1, 2, 3), v.bbaa.ooov, (4, 5, 1, 3), (0, 4, 5, 2))
+    x203 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x203 += einsum(x23, (0, 1, 2, 3), t2.baba, (4, 2, 5, 3), (0, 4, 1, 5))
+    x204 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x204 += einsum(t2.bbbb, (0, 1, 2, 3), x125, (4, 5, 0, 2), (1, 4, 5, 3)) * 2.0
+    x205 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x205 += einsum(x25, (0, 1, 2, 3), (0, 1, 2, 3))
+    x205 += einsum(x25, (0, 1, 2, 3), (0, 2, 1, 3)) * -1.0
+    x206 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x206 += einsum(x205, (0, 1, 2, 3), t2.bbbb, (2, 4, 3, 5), (0, 1, 4, 5)) * 2.0
+    x207 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x207 += einsum(v.bbbb.ovov, (0, 1, 2, 3), (2, 0, 1, 3))
+    x207 += einsum(v.bbbb.oovv, (0, 1, 2, 3), (1, 0, 3, 2)) * -1.0
+    x207 += einsum(x194, (0, 1, 2, 3), (0, 1, 2, 3))
+    x208 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x208 += einsum(x207, (0, 1, 2, 3), t1.bb, (4, 2), (0, 1, 4, 3))
+    x209 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x209 += einsum(x201, (0, 1, 2, 3), (0, 2, 1, 3))
+    x209 += einsum(x202, (0, 1, 2, 3), (0, 2, 1, 3)) * -1.0
+    x209 += einsum(x203, (0, 1, 2, 3), (0, 2, 1, 3))
+    x209 += einsum(x204, (0, 1, 2, 3), (0, 2, 1, 3)) * -1.0
+    x209 += einsum(x206, (0, 1, 2, 3), (0, 1, 2, 3)) * -1.0
+    x209 += einsum(x208, (0, 1, 2, 3), (2, 1, 0, 3))
+    x210 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x210 += einsum(x209, (0, 1, 2, 3), t1.bb, (1, 4), (0, 2, 3, 4))
+    x211 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x211 += einsum(x194, (0, 1, 2, 3), (0, 1, 2, 3))
+    x211 += einsum(x195, (0, 1, 2, 3), (0, 1, 2, 3)) * -1.0
+    x211 += einsum(x196, (0, 1, 2, 3), (0, 1, 2, 3))
+    x211 += einsum(x198, (0, 1, 2, 3), (1, 0, 3, 2)) * -1.0
+    x211 += einsum(x200, (0, 1, 2, 3), (0, 1, 3, 2))
+    x211 += einsum(x210, (0, 1, 2, 3), (0, 1, 3, 2))
+    t2new_bbbb += einsum(x211, (0, 1, 2, 3), (0, 1, 2, 3)) * -1.0
+    t2new_bbbb += einsum(x211, (0, 1, 2, 3), (0, 1, 3, 2))
+    t2new_bbbb += einsum(x211, (0, 1, 2, 3), (1, 0, 2, 3))
+    t2new_bbbb += einsum(x211, (0, 1, 2, 3), (1, 0, 3, 2)) * -1.0
+    x212 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x212 += einsum(f.bb.vv, (0, 1), t2.bbbb, (2, 3, 4, 1), (2, 3, 0, 4))
+    x213 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x213 += einsum(v.bbbb.ovov, (0, 1, 2, 3), (2, 0, 3, 1))
+    x213 += einsum(x212, (0, 1, 2, 3), (1, 0, 3, 2)) * -2.0
+    t2new_bbbb += einsum(x213, (0, 1, 2, 3), (0, 1, 3, 2)) * -1.0
+    t2new_bbbb += einsum(x213, (0, 1, 2, 3), (0, 1, 2, 3))
+    x214 = np.zeros((nocc[1], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
+    x214 += einsum(t1.bb, (0, 1), v.bbbb.vvvv, (2, 3, 1, 4), (0, 2, 3, 4))
+    x215 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x215 += einsum(t1.bb, (0, 1), x214, (2, 3, 1, 4), (0, 2, 3, 4))
+    x216 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x216 += einsum(v.bbbb.ovvv, (0, 1, 2, 3), t3.bbbbbb, (4, 0, 5, 6, 3, 1), (4, 5, 6, 2))
+    x217 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x217 += einsum(v.bbaa.vvov, (0, 1, 2, 3), t3.bbabba, (4, 5, 2, 6, 1, 3), (4, 5, 6, 0))
+    x218 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x218 += einsum(v.bbbb.ovov, (0, 1, 2, 3), (2, 0, 1, 3))
+    x218 += einsum(v.bbbb.ovov, (0, 1, 2, 3), (2, 0, 3, 1)) * -1.0
+    x219 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x219 += einsum(t2.bbbb, (0, 1, 2, 3), x218, (0, 4, 2, 5), (4, 1, 5, 3))
+    x220 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x220 += einsum(t2.bbbb, (0, 1, 2, 3), x219, (0, 4, 2, 5), (4, 1, 5, 3)) * -4.0
+    x221 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x221 += einsum(t2.baba, (0, 1, 2, 3), x7, (1, 4, 3, 5), (0, 2, 4, 5))
+    x222 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x222 += einsum(x221, (0, 1, 2, 3), t2.baba, (4, 2, 5, 3), (0, 4, 1, 5)) * -1.0
+    x223 = np.zeros((nvir[1], nvir[1]), dtype=np.float64)
+    x223 += einsum(x157, (0, 1), (1, 0)) * -1.0
+    x223 += einsum(x158, (0, 1), (1, 0)) * 2.0
+    x223 += einsum(x159, (0, 1), (1, 0))
+    x223 += einsum(x161, (0, 1), (0, 1)) * -1.0
+    x224 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x224 += einsum(x223, (0, 1), t2.bbbb, (2, 3, 0, 4), (2, 3, 1, 4)) * 2.0
+    x225 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x225 += einsum(v.bbbb.ovvv, (0, 1, 2, 3), t2.bbbb, (4, 5, 1, 3), (4, 5, 0, 2))
+    x226 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x226 += einsum(t3.bbbbbb, (0, 1, 2, 3, 4, 5), v.bbbb.ovov, (1, 4, 6, 5), (0, 2, 6, 3))
+    x227 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x227 += einsum(t3.bbabba, (0, 1, 2, 3, 4, 5), v.bbaa.ovov, (6, 4, 2, 5), (0, 1, 6, 3))
+    x228 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x228 += einsum(x13, (0, 1), t2.bbbb, (2, 3, 1, 4), (0, 2, 3, 4)) * 2.0
+    x229 = np.zeros((nocc[1], nocc[1], nocc[1], nocc[1]), dtype=np.float64)
+    x229 += einsum(x25, (0, 1, 2, 3), t1.bb, (4, 3), (0, 4, 2, 1))
+    x230 = np.zeros((nocc[1], nocc[1], nocc[1], nocc[1]), dtype=np.float64)
+    x230 += einsum(v.bbbb.oooo, (0, 1, 2, 3), (2, 3, 1, 0))
+    x230 += einsum(x229, (0, 1, 2, 3), (3, 1, 2, 0))
+    x231 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x231 += einsum(t1.bb, (0, 1), x230, (0, 2, 3, 4), (2, 3, 4, 1))
+    x232 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x232 += einsum(x225, (0, 1, 2, 3), (2, 1, 0, 3)) * -2.0
+    x232 += einsum(x226, (0, 1, 2, 3), (2, 1, 0, 3)) * 6.0
+    x232 += einsum(x227, (0, 1, 2, 3), (2, 1, 0, 3)) * 2.0
+    x232 += einsum(x228, (0, 1, 2, 3), (0, 2, 1, 3)) * -1.0
+    x232 += einsum(x231, (0, 1, 2, 3), (1, 0, 2, 3))
+    x233 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x233 += einsum(x232, (0, 1, 2, 3), t1.bb, (0, 4), (1, 2, 3, 4))
+    x234 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x234 += einsum(x215, (0, 1, 2, 3), (0, 1, 2, 3))
+    x234 += einsum(x216, (0, 1, 2, 3), (0, 1, 2, 3)) * -6.0
+    x234 += einsum(x217, (0, 1, 2, 3), (0, 1, 2, 3)) * 2.0
+    x234 += einsum(x220, (0, 1, 2, 3), (0, 1, 2, 3))
+    x234 += einsum(x222, (0, 1, 2, 3), (0, 1, 2, 3))
+    x234 += einsum(x224, (0, 1, 2, 3), (1, 0, 3, 2)) * -1.0
+    x234 += einsum(x233, (0, 1, 2, 3), (1, 0, 3, 2))
+    t2new_bbbb += einsum(x234, (0, 1, 2, 3), (0, 1, 2, 3))
+    t2new_bbbb += einsum(x234, (0, 1, 2, 3), (0, 1, 3, 2)) * -1.0
+    x235 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x235 += einsum(t2.bbbb, (0, 1, 2, 3), (1, 0, 3, 2))
+    x235 += einsum(t1.bb, (0, 1), t1.bb, (2, 3), (2, 0, 3, 1))
+    x236 = np.zeros((nocc[1], nocc[1], nocc[1], nocc[1]), dtype=np.float64)
+    x236 += einsum(v.bbbb.oooo, (0, 1, 2, 3), (2, 3, 1, 0)) * -1.0
+    x236 += einsum(v.bbbb.ovov, (0, 1, 2, 3), x235, (4, 5, 3, 1), (2, 5, 0, 4))
+    t2new_bbbb += einsum(t2.bbbb, (0, 1, 2, 3), x236, (0, 4, 1, 5), (4, 5, 3, 2)) * 2.0
+    x237 = np.zeros((nocc[1], nocc[1], nocc[1], nocc[1]), dtype=np.float64)
+    x237 += einsum(t2.bbbb, (0, 1, 2, 3), v.bbbb.ovov, (4, 3, 5, 2), (0, 1, 4, 5)) * -1.0
+    x238 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x238 += einsum(x237, (0, 1, 2, 3), t1.bb, (2, 4), (0, 1, 3, 4)) * -2.0
+    x238 += einsum(v.bbbb.ooov, (0, 1, 2, 3), (1, 2, 0, 3)) * -1.0
+    x238 += einsum(v.bbbb.ooov, (0, 1, 2, 3), (2, 1, 0, 3))
+    t2new_bbbb += einsum(t1.bb, (0, 1), x238, (2, 3, 0, 4), (2, 3, 1, 4))
+    x239 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0], nvir[0], nvir[0]), dtype=np.float64)
+    x239 += einsum(v.aaaa.ooov, (0, 1, 2, 3), t2.aaaa, (4, 1, 5, 6), (4, 0, 2, 5, 6, 3))
+    x240 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0], nvir[0], nvir[0]), dtype=np.float64)
+    x240 += einsum(t2.aaaa, (0, 1, 2, 3), x62, (4, 5, 1, 6), (4, 5, 0, 2, 3, 6))
+    x241 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x241 += einsum(v.aaaa.oovv, (0, 1, 2, 3), (1, 0, 3, 2))
+    x241 += einsum(v.aaaa.ovov, (0, 1, 2, 3), (2, 0, 1, 3)) * -1.0
+    x242 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x242 += einsum(x241, (0, 1, 2, 3), t1.aa, (4, 2), (0, 1, 4, 3))
+    x243 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0], nvir[0], nvir[0]), dtype=np.float64)
+    x243 += einsum(t2.aaaa, (0, 1, 2, 3), x242, (4, 0, 5, 6), (5, 4, 1, 6, 2, 3)) * 2.0
+    x244 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0], nvir[0], nvir[0]), dtype=np.float64)
+    x244 += einsum(x239, (0, 1, 2, 3, 4, 5), (0, 1, 2, 4, 3, 5)) * -2.0
+    x244 += einsum(x240, (0, 1, 2, 3, 4, 5), (0, 1, 2, 4, 3, 5)) * -2.0
+    x244 += einsum(x243, (0, 1, 2, 3, 4, 5), (0, 2, 1, 5, 4, 3))
     t3new_aaaaaa = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0], nvir[0], nvir[0]), dtype=np.float64)
-    t3new_aaaaaa += einsum("il,jklabc->ijkabc", f.aa.oo, t3.aaaaaa) * -6.0
-    t3new_aaaaaa += einsum("jl,iklabc->ijkabc", f.aa.oo, t3.aaaaaa) * 6.0
-    t3new_aaaaaa += einsum("kl,ijlabc->ijkabc", f.aa.oo, t3.aaaaaa) * -6.0
-    t3new_aaaaaa += einsum("ad,ijkbcd->ijkabc", f.aa.vv, t3.aaaaaa) * 6.0
-    t3new_aaaaaa += einsum("bd,ijkacd->ijkabc", f.aa.vv, t3.aaaaaa) * -6.0
-    t3new_aaaaaa += einsum("cd,ijkabd->ijkabc", f.aa.vv, t3.aaaaaa) * 6.0
-    t3new_aaaaaa += einsum("ilab,jlkc->ijkabc", t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("ilac,jlkb->ijkabc", t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("ilbc,jlka->ijkabc", t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("ilab,kljc->ijkabc", t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("ilac,kljb->ijkabc", t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("ilbc,klja->ijkabc", t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("jlab,ilkc->ijkabc", t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("jlac,ilkb->ijkabc", t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("jlbc,ilka->ijkabc", t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("jlab,klic->ijkabc", t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("jlac,klib->ijkabc", t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("jlbc,klia->ijkabc", t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("klab,iljc->ijkabc", t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("klac,iljb->ijkabc", t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("klbc,ilja->ijkabc", t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("klab,jlic->ijkabc", t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("klac,jlib->ijkabc", t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("klbc,jlia->ijkabc", t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("ikbd,jacd->ijkabc", t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("ikcd,jabd->ijkabc", t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("ikad,jbcd->ijkabc", t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("ikcd,jbad->ijkabc", t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("ikad,jcbd->ijkabc", t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("ikbd,jcad->ijkabc", t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("ijbd,kacd->ijkabc", t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("ijcd,kabd->ijkabc", t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("ijad,kbcd->ijkabc", t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("ijcd,kbad->ijkabc", t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("ijad,kcbd->ijkabc", t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("ijbd,kcad->ijkabc", t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("jkbd,iacd->ijkabc", t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("jkcd,iabd->ijkabc", t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("jkad,ibcd->ijkabc", t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("jkcd,ibad->ijkabc", t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("jkad,icbd->ijkabc", t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("jkbd,icad->ijkabc", t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("ld,id,jklabc->ijkabc", f.aa.ov, t1.aa, t3.aaaaaa) * -6.0
-    t3new_aaaaaa += einsum("ld,jd,iklabc->ijkabc", f.aa.ov, t1.aa, t3.aaaaaa) * 6.0
-    t3new_aaaaaa += einsum("ld,kd,ijlabc->ijkabc", f.aa.ov, t1.aa, t3.aaaaaa) * -6.0
-    t3new_aaaaaa += einsum("ld,la,ijkbcd->ijkabc", f.aa.ov, t1.aa, t3.aaaaaa) * -6.0
-    t3new_aaaaaa += einsum("ld,lb,ijkacd->ijkabc", f.aa.ov, t1.aa, t3.aaaaaa) * 6.0
-    t3new_aaaaaa += einsum("ld,lc,ijkabd->ijkabc", f.aa.ov, t1.aa, t3.aaaaaa) * -6.0
-    t3new_aaaaaa += einsum("ld,ikad,jlbc->ijkabc", f.aa.ov, t2.aaaa, t2.aaaa) * -4.0
-    t3new_aaaaaa += einsum("ld,ikbd,jlac->ijkabc", f.aa.ov, t2.aaaa, t2.aaaa) * 4.0
-    t3new_aaaaaa += einsum("ld,ikcd,jlab->ijkabc", f.aa.ov, t2.aaaa, t2.aaaa) * -4.0
-    t3new_aaaaaa += einsum("ld,ilac,jkbd->ijkabc", f.aa.ov, t2.aaaa, t2.aaaa) * -4.0
-    t3new_aaaaaa += einsum("ld,ilab,jkcd->ijkabc", f.aa.ov, t2.aaaa, t2.aaaa) * 4.0
-    t3new_aaaaaa += einsum("ld,ilbc,jkad->ijkabc", f.aa.ov, t2.aaaa, t2.aaaa) * 4.0
-    t3new_aaaaaa += einsum("ld,ijad,klbc->ijkabc", f.aa.ov, t2.aaaa, t2.aaaa) * 4.0
-    t3new_aaaaaa += einsum("ld,ijbd,klac->ijkabc", f.aa.ov, t2.aaaa, t2.aaaa) * -4.0
-    t3new_aaaaaa += einsum("ld,ijcd,klab->ijkabc", f.aa.ov, t2.aaaa, t2.aaaa) * 4.0
-    t3new_aaaaaa += einsum("id,jlac,klbd->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * 2.0
-    t3new_aaaaaa += einsum("id,jlab,klcd->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * -2.0
-    t3new_aaaaaa += einsum("id,jlbc,klad->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * -2.0
-    t3new_aaaaaa += einsum("id,klac,jlbd->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * -2.0
-    t3new_aaaaaa += einsum("id,klab,jlcd->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * 2.0
-    t3new_aaaaaa += einsum("id,klbc,jlad->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * 2.0
-    t3new_aaaaaa += einsum("jd,ilac,klbd->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * -2.0
-    t3new_aaaaaa += einsum("jd,ilab,klcd->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * 2.0
-    t3new_aaaaaa += einsum("jd,ilbc,klad->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * 2.0
-    t3new_aaaaaa += einsum("jd,klac,ilbd->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * 2.0
-    t3new_aaaaaa += einsum("jd,klab,ilcd->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * -2.0
-    t3new_aaaaaa += einsum("jd,klbc,ilad->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * -2.0
-    t3new_aaaaaa += einsum("kd,ilac,jlbd->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * 2.0
-    t3new_aaaaaa += einsum("kd,ilab,jlcd->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * -2.0
-    t3new_aaaaaa += einsum("kd,ilbc,jlad->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * -2.0
-    t3new_aaaaaa += einsum("kd,jlac,ilbd->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * -2.0
-    t3new_aaaaaa += einsum("kd,jlab,ilcd->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * 2.0
-    t3new_aaaaaa += einsum("kd,jlbc,ilad->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * 2.0
-    t3new_aaaaaa += einsum("la,imbc,jlkm->ijkabc", t1.aa, t2.aaaa, v.aaaa.oooo) * -2.0
-    t3new_aaaaaa += einsum("la,imbc,jmkl->ijkabc", t1.aa, t2.aaaa, v.aaaa.oooo) * 2.0
-    t3new_aaaaaa += einsum("la,jmbc,ilkm->ijkabc", t1.aa, t2.aaaa, v.aaaa.oooo) * 2.0
-    t3new_aaaaaa += einsum("la,jmbc,imkl->ijkabc", t1.aa, t2.aaaa, v.aaaa.oooo) * -2.0
-    t3new_aaaaaa += einsum("la,kmbc,iljm->ijkabc", t1.aa, t2.aaaa, v.aaaa.oooo) * -2.0
-    t3new_aaaaaa += einsum("la,kmbc,imjl->ijkabc", t1.aa, t2.aaaa, v.aaaa.oooo) * 2.0
-    t3new_aaaaaa += einsum("lb,imac,jlkm->ijkabc", t1.aa, t2.aaaa, v.aaaa.oooo) * 2.0
-    t3new_aaaaaa += einsum("lb,imac,jmkl->ijkabc", t1.aa, t2.aaaa, v.aaaa.oooo) * -2.0
-    t3new_aaaaaa += einsum("lb,jmac,ilkm->ijkabc", t1.aa, t2.aaaa, v.aaaa.oooo) * -2.0
-    t3new_aaaaaa += einsum("lb,jmac,imkl->ijkabc", t1.aa, t2.aaaa, v.aaaa.oooo) * 2.0
-    t3new_aaaaaa += einsum("lb,kmac,iljm->ijkabc", t1.aa, t2.aaaa, v.aaaa.oooo) * 2.0
-    t3new_aaaaaa += einsum("lb,kmac,imjl->ijkabc", t1.aa, t2.aaaa, v.aaaa.oooo) * -2.0
-    t3new_aaaaaa += einsum("lc,imab,jlkm->ijkabc", t1.aa, t2.aaaa, v.aaaa.oooo) * -2.0
-    t3new_aaaaaa += einsum("lc,imab,jmkl->ijkabc", t1.aa, t2.aaaa, v.aaaa.oooo) * 2.0
-    t3new_aaaaaa += einsum("lc,jmab,ilkm->ijkabc", t1.aa, t2.aaaa, v.aaaa.oooo) * 2.0
-    t3new_aaaaaa += einsum("lc,jmab,imkl->ijkabc", t1.aa, t2.aaaa, v.aaaa.oooo) * -2.0
-    t3new_aaaaaa += einsum("lc,kmab,iljm->ijkabc", t1.aa, t2.aaaa, v.aaaa.oooo) * -2.0
-    t3new_aaaaaa += einsum("lc,kmab,imjl->ijkabc", t1.aa, t2.aaaa, v.aaaa.oooo) * 2.0
-    t3new_aaaaaa += einsum("la,ikbd,jlcd->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * 2.0
-    t3new_aaaaaa += einsum("la,ikcd,jlbd->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * -2.0
-    t3new_aaaaaa += einsum("la,ijbd,klcd->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * -2.0
-    t3new_aaaaaa += einsum("la,ijcd,klbd->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * 2.0
-    t3new_aaaaaa += einsum("la,jkbd,ilcd->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * -2.0
-    t3new_aaaaaa += einsum("la,jkcd,ilbd->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * 2.0
-    t3new_aaaaaa += einsum("lb,ikad,jlcd->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * -2.0
-    t3new_aaaaaa += einsum("lb,ikcd,jlad->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * 2.0
-    t3new_aaaaaa += einsum("lb,ijad,klcd->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * 2.0
-    t3new_aaaaaa += einsum("lb,ijcd,klad->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * -2.0
-    t3new_aaaaaa += einsum("lb,jkad,ilcd->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * 2.0
-    t3new_aaaaaa += einsum("lb,jkcd,ilad->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * -2.0
-    t3new_aaaaaa += einsum("lc,ikad,jlbd->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * 2.0
-    t3new_aaaaaa += einsum("lc,ikbd,jlad->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * -2.0
-    t3new_aaaaaa += einsum("lc,ijad,klbd->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * -2.0
-    t3new_aaaaaa += einsum("lc,ijbd,klad->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * 2.0
-    t3new_aaaaaa += einsum("lc,jkad,ilbd->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * -2.0
-    t3new_aaaaaa += einsum("lc,jkbd,ilad->ijkabc", t1.aa, t2.aaaa, v.aaaa.oovv) * 2.0
-    t3new_aaaaaa += einsum("id,jlbc,kald->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("id,jlac,kbld->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("id,jlab,kcld->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("id,klbc,jald->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("id,klac,jbld->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("id,klab,jcld->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("jd,ilbc,kald->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("jd,ilac,kbld->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("jd,ilab,kcld->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("jd,klbc,iald->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("jd,klac,ibld->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("jd,klab,icld->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("kd,ilbc,jald->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("kd,ilac,jbld->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("kd,ilab,jcld->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("kd,jlbc,iald->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("kd,jlac,ibld->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("kd,jlab,icld->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("la,ikcd,jbld->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("la,ikbd,jcld->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("la,ijcd,kbld->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("la,ijbd,kcld->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("la,jkcd,ibld->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("la,jkbd,icld->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("lb,ikcd,jald->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("lb,ikad,jcld->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("lb,ijcd,kald->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("lb,ijad,kcld->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("lb,jkcd,iald->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("lb,jkad,icld->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("lc,ikbd,jald->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("lc,ikad,jbld->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("lc,ijbd,kald->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("lc,ijad,kbld->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("lc,jkbd,iald->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("lc,jkad,ibld->ijkabc", t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("id,jkbe,adce->ijkabc", t1.aa, t2.aaaa, v.aaaa.vvvv) * 2.0
-    t3new_aaaaaa += einsum("id,jkce,adbe->ijkabc", t1.aa, t2.aaaa, v.aaaa.vvvv) * -2.0
-    t3new_aaaaaa += einsum("id,jkbe,aecd->ijkabc", t1.aa, t2.aaaa, v.aaaa.vvvv) * -2.0
-    t3new_aaaaaa += einsum("id,jkce,aebd->ijkabc", t1.aa, t2.aaaa, v.aaaa.vvvv) * 2.0
-    t3new_aaaaaa += einsum("id,jkae,bdce->ijkabc", t1.aa, t2.aaaa, v.aaaa.vvvv) * -2.0
-    t3new_aaaaaa += einsum("id,jkae,becd->ijkabc", t1.aa, t2.aaaa, v.aaaa.vvvv) * 2.0
-    t3new_aaaaaa += einsum("jd,ikbe,adce->ijkabc", t1.aa, t2.aaaa, v.aaaa.vvvv) * -2.0
-    t3new_aaaaaa += einsum("jd,ikce,adbe->ijkabc", t1.aa, t2.aaaa, v.aaaa.vvvv) * 2.0
-    t3new_aaaaaa += einsum("jd,ikbe,aecd->ijkabc", t1.aa, t2.aaaa, v.aaaa.vvvv) * 2.0
-    t3new_aaaaaa += einsum("jd,ikce,aebd->ijkabc", t1.aa, t2.aaaa, v.aaaa.vvvv) * -2.0
-    t3new_aaaaaa += einsum("jd,ikae,bdce->ijkabc", t1.aa, t2.aaaa, v.aaaa.vvvv) * 2.0
-    t3new_aaaaaa += einsum("jd,ikae,becd->ijkabc", t1.aa, t2.aaaa, v.aaaa.vvvv) * -2.0
-    t3new_aaaaaa += einsum("kd,ijbe,adce->ijkabc", t1.aa, t2.aaaa, v.aaaa.vvvv) * 2.0
-    t3new_aaaaaa += einsum("kd,ijce,adbe->ijkabc", t1.aa, t2.aaaa, v.aaaa.vvvv) * -2.0
-    t3new_aaaaaa += einsum("kd,ijbe,aecd->ijkabc", t1.aa, t2.aaaa, v.aaaa.vvvv) * -2.0
-    t3new_aaaaaa += einsum("kd,ijce,aebd->ijkabc", t1.aa, t2.aaaa, v.aaaa.vvvv) * 2.0
-    t3new_aaaaaa += einsum("kd,ijae,bdce->ijkabc", t1.aa, t2.aaaa, v.aaaa.vvvv) * -2.0
-    t3new_aaaaaa += einsum("kd,ijae,becd->ijkabc", t1.aa, t2.aaaa, v.aaaa.vvvv) * 2.0
-    t3new_aaaaaa += einsum("id,la,jmbc,klmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("id,la,jmbc,kmld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("id,la,kmbc,jlmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("id,la,kmbc,jmld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("id,lb,jmac,klmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("id,lb,jmac,kmld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("id,lb,kmac,jlmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("id,lb,kmac,jmld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("id,lc,jmab,klmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("id,lc,jmab,kmld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("id,lc,kmab,jlmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("id,lc,kmab,jmld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("jd,la,imbc,klmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("jd,la,imbc,kmld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("jd,la,kmbc,ilmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("jd,la,kmbc,imld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("jd,lb,imac,klmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("jd,lb,imac,kmld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("jd,lb,kmac,ilmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("jd,lb,kmac,imld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("jd,lc,imab,klmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("jd,lc,imab,kmld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("jd,lc,kmab,ilmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("jd,lc,kmab,imld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("kd,la,imbc,jlmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("kd,la,imbc,jmld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("kd,la,jmbc,ilmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("kd,la,jmbc,imld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("kd,lb,imac,jlmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("kd,lb,imac,jmld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("kd,lb,jmac,ilmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("kd,lb,jmac,imld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("kd,lc,imab,jlmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("kd,lc,imab,jmld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("kd,lc,jmab,ilmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("kd,lc,jmab,imld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("la,mb,ikcd,jlmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("la,mb,ikcd,jmld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("la,mb,ijcd,klmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("la,mb,ijcd,kmld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("la,mb,jkcd,ilmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("la,mb,jkcd,imld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("la,mc,ikbd,jlmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("la,mc,ikbd,jmld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("la,mc,ijbd,klmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("la,mc,ijbd,kmld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("la,mc,jkbd,ilmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("la,mc,jkbd,imld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("lb,mc,ikad,jlmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("lb,mc,ikad,jmld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("lb,mc,ijad,klmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("lb,mc,ijad,kmld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("lb,mc,jkad,ilmd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * -2.0
-    t3new_aaaaaa += einsum("lb,mc,jkad,imld->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ooov) * 2.0
-    t3new_aaaaaa += einsum("id,je,klac,ldbe->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("id,je,klab,ldce->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("id,je,klbc,ldae->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("id,je,klac,lebd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("id,je,klab,lecd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("id,je,klbc,lead->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("id,ke,jlac,ldbe->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("id,ke,jlab,ldce->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("id,ke,jlbc,ldae->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("id,ke,jlac,lebd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("id,ke,jlab,lecd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("id,ke,jlbc,lead->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("id,la,jkbe,ldce->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("id,la,jkce,ldbe->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("id,la,jkbe,lecd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("id,la,jkce,lebd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("id,lb,jkae,ldce->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("id,lb,jkce,ldae->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("id,lb,jkae,lecd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("id,lb,jkce,lead->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("id,lc,jkae,ldbe->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("id,lc,jkbe,ldae->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("id,lc,jkae,lebd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("id,lc,jkbe,lead->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("jd,ke,ilac,ldbe->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("jd,ke,ilab,ldce->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("jd,ke,ilbc,ldae->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("jd,ke,ilac,lebd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("jd,ke,ilab,lecd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("jd,ke,ilbc,lead->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("jd,la,ikbe,ldce->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("jd,la,ikce,ldbe->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("jd,la,ikbe,lecd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("jd,la,ikce,lebd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("jd,lb,ikae,ldce->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("jd,lb,ikce,ldae->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("jd,lb,ikae,lecd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("jd,lb,ikce,lead->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("jd,lc,ikae,ldbe->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("jd,lc,ikbe,ldae->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("jd,lc,ikae,lebd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("jd,lc,ikbe,lead->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("kd,la,ijbe,ldce->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("kd,la,ijce,ldbe->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("kd,la,ijbe,lecd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("kd,la,ijce,lebd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("kd,lb,ijae,ldce->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("kd,lb,ijce,ldae->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("kd,lb,ijae,lecd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("kd,lb,ijce,lead->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("kd,lc,ijae,ldbe->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("kd,lc,ijbe,ldae->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("kd,lc,ijae,lebd->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * 2.0
-    t3new_aaaaaa += einsum("kd,lc,ijbe,lead->ijkabc", t1.aa, t1.aa, t2.aaaa, v.aaaa.ovvv) * -2.0
-    t3new_aaaaaa += einsum("id,je,la,kmbc,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("id,je,la,kmbc,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("id,je,lb,kmac,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("id,je,lb,kmac,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("id,je,lc,kmab,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("id,je,lc,kmab,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("id,ke,la,jmbc,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("id,ke,la,jmbc,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("id,ke,lb,jmac,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("id,ke,lb,jmac,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("id,ke,lc,jmab,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("id,ke,lc,jmab,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("id,la,mb,jkce,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("id,la,mb,jkce,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("id,la,mc,jkbe,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("id,la,mc,jkbe,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("id,lb,mc,jkae,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("id,lb,mc,jkae,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("jd,ke,la,imbc,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("jd,ke,la,imbc,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("jd,ke,lb,imac,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("jd,ke,lb,imac,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("jd,ke,lc,imab,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("jd,ke,lc,imab,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("jd,la,mb,ikce,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("jd,la,mb,ikce,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("jd,la,mc,ikbe,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("jd,la,mc,ikbe,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("jd,lb,mc,ikae,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("jd,lb,mc,ikae,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("kd,la,mb,ijce,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("kd,la,mb,ijce,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("kd,la,mc,ijbe,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-    t3new_aaaaaa += einsum("kd,la,mc,ijbe,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("kd,lb,mc,ijae,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * -2.0
-    t3new_aaaaaa += einsum("kd,lb,mc,ijae,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.aaaa, v.aaaa.ovov) * 2.0
-
-    # T3 amplitudes
+    t3new_aaaaaa += einsum(x244, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 4, 5)) * -1.0
+    t3new_aaaaaa += einsum(x244, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 5, 4))
+    t3new_aaaaaa += einsum(x244, (0, 1, 2, 3, 4, 5), (0, 1, 2, 5, 3, 4)) * -1.0
+    t3new_aaaaaa += einsum(x244, (0, 1, 2, 3, 4, 5), (0, 2, 1, 3, 4, 5))
+    t3new_aaaaaa += einsum(x244, (0, 1, 2, 3, 4, 5), (0, 2, 1, 3, 5, 4)) * -1.0
+    t3new_aaaaaa += einsum(x244, (0, 1, 2, 3, 4, 5), (0, 2, 1, 5, 3, 4))
+    t3new_aaaaaa += einsum(x244, (0, 1, 2, 3, 4, 5), (1, 0, 2, 3, 4, 5))
+    t3new_aaaaaa += einsum(x244, (0, 1, 2, 3, 4, 5), (1, 0, 2, 3, 5, 4)) * -1.0
+    t3new_aaaaaa += einsum(x244, (0, 1, 2, 3, 4, 5), (1, 0, 2, 5, 3, 4))
+    t3new_aaaaaa += einsum(x244, (0, 1, 2, 3, 4, 5), (2, 0, 1, 3, 4, 5)) * -1.0
+    t3new_aaaaaa += einsum(x244, (0, 1, 2, 3, 4, 5), (2, 0, 1, 3, 5, 4))
+    t3new_aaaaaa += einsum(x244, (0, 1, 2, 3, 4, 5), (2, 0, 1, 5, 3, 4)) * -1.0
+    t3new_aaaaaa += einsum(x244, (0, 1, 2, 3, 4, 5), (1, 2, 0, 3, 4, 5)) * -1.0
+    t3new_aaaaaa += einsum(x244, (0, 1, 2, 3, 4, 5), (1, 2, 0, 3, 5, 4))
+    t3new_aaaaaa += einsum(x244, (0, 1, 2, 3, 4, 5), (1, 2, 0, 5, 3, 4)) * -1.0
+    t3new_aaaaaa += einsum(x244, (0, 1, 2, 3, 4, 5), (2, 1, 0, 3, 4, 5))
+    t3new_aaaaaa += einsum(x244, (0, 1, 2, 3, 4, 5), (2, 1, 0, 3, 5, 4)) * -1.0
+    t3new_aaaaaa += einsum(x244, (0, 1, 2, 3, 4, 5), (2, 1, 0, 5, 3, 4))
+    x245 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0], nvir[0], nvir[0]), dtype=np.float64)
+    x245 += einsum(t2.aaaa, (0, 1, 2, 3), x71, (4, 5, 3, 6), (4, 0, 1, 2, 6, 5))
+    x246 = np.zeros((nocc[0], nocc[0], nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x246 += einsum(t2.aaaa, (0, 1, 2, 3), x1, (4, 5, 6, 3), (4, 0, 1, 6, 5, 2))
+    x247 = np.zeros((nocc[0], nocc[0], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x247 += einsum(x246, (0, 1, 2, 3, 4, 5), t1.aa, (4, 6), (0, 1, 2, 3, 6, 5))
+    x248 = np.zeros((nocc[0], nocc[0], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x248 += einsum(x58, (0, 1, 2, 3), t2.aaaa, (4, 5, 3, 6), (4, 5, 0, 1, 6, 2)) * -1.0
+    x249 = np.zeros((nocc[0], nocc[0], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x249 += einsum(x247, (0, 1, 2, 3, 4, 5), (0, 2, 1, 3, 4, 5)) * -1.0
+    x249 += einsum(x248, (0, 1, 2, 3, 4, 5), (2, 1, 0, 3, 4, 5)) * -1.0
+    x250 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0], nvir[0], nvir[0]), dtype=np.float64)
+    x250 += einsum(t1.aa, (0, 1), x249, (2, 3, 4, 0, 5, 6), (2, 3, 4, 5, 6, 1)) * 2.0
+    x251 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0], nvir[0], nvir[0]), dtype=np.float64)
+    x251 += einsum(x245, (0, 1, 2, 3, 4, 5), (0, 2, 1, 3, 4, 5)) * -2.0
+    x251 += einsum(x250, (0, 1, 2, 3, 4, 5), (0, 2, 1, 5, 3, 4)) * -1.0
+    t3new_aaaaaa += einsum(x251, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 4, 5)) * -1.0
+    t3new_aaaaaa += einsum(x251, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 5, 4))
+    t3new_aaaaaa += einsum(x251, (0, 1, 2, 3, 4, 5), (0, 1, 2, 4, 3, 5))
+    t3new_aaaaaa += einsum(x251, (0, 1, 2, 3, 4, 5), (0, 1, 2, 5, 3, 4)) * -1.0
+    t3new_aaaaaa += einsum(x251, (0, 1, 2, 3, 4, 5), (0, 1, 2, 4, 5, 3)) * -1.0
+    t3new_aaaaaa += einsum(x251, (0, 1, 2, 3, 4, 5), (0, 1, 2, 5, 4, 3))
+    t3new_aaaaaa += einsum(x251, (0, 1, 2, 3, 4, 5), (2, 0, 1, 3, 4, 5)) * -1.0
+    t3new_aaaaaa += einsum(x251, (0, 1, 2, 3, 4, 5), (2, 0, 1, 3, 5, 4))
+    t3new_aaaaaa += einsum(x251, (0, 1, 2, 3, 4, 5), (2, 0, 1, 4, 3, 5))
+    t3new_aaaaaa += einsum(x251, (0, 1, 2, 3, 4, 5), (2, 0, 1, 5, 3, 4)) * -1.0
+    t3new_aaaaaa += einsum(x251, (0, 1, 2, 3, 4, 5), (2, 0, 1, 4, 5, 3)) * -1.0
+    t3new_aaaaaa += einsum(x251, (0, 1, 2, 3, 4, 5), (2, 0, 1, 5, 4, 3))
+    t3new_aaaaaa += einsum(x251, (0, 1, 2, 3, 4, 5), (2, 1, 0, 3, 4, 5))
+    t3new_aaaaaa += einsum(x251, (0, 1, 2, 3, 4, 5), (2, 1, 0, 3, 5, 4)) * -1.0
+    t3new_aaaaaa += einsum(x251, (0, 1, 2, 3, 4, 5), (2, 1, 0, 4, 3, 5)) * -1.0
+    t3new_aaaaaa += einsum(x251, (0, 1, 2, 3, 4, 5), (2, 1, 0, 5, 3, 4))
+    t3new_aaaaaa += einsum(x251, (0, 1, 2, 3, 4, 5), (2, 1, 0, 4, 5, 3))
+    t3new_aaaaaa += einsum(x251, (0, 1, 2, 3, 4, 5), (2, 1, 0, 5, 4, 3)) * -1.0
+    x252 = np.zeros((nocc[0], nocc[0], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x252 += einsum(t2.aaaa, (0, 1, 2, 3), v.aaaa.oooo, (4, 5, 6, 1), (0, 5, 4, 6, 2, 3))
+    x253 = np.zeros((nocc[0], nocc[0], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x253 += einsum(t2.aaaa, (0, 1, 2, 3), x88, (4, 5, 1, 6), (5, 4, 0, 6, 2, 3))
+    x254 = np.zeros((nocc[0], nocc[0], nocc[0], nocc[0]), dtype=np.float64)
+    x254 += einsum(x40, (0, 1, 2, 3), (0, 2, 1, 3))
+    x254 += einsum(x40, (0, 1, 2, 3), (0, 3, 2, 1)) * -1.0
+    x255 = np.zeros((nocc[0], nocc[0], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x255 += einsum(t2.aaaa, (0, 1, 2, 3), x254, (4, 0, 5, 6), (4, 5, 6, 1, 2, 3))
+    x256 = np.zeros((nocc[0], nocc[0], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x256 += einsum(x252, (0, 1, 2, 3, 4, 5), (0, 2, 1, 3, 5, 4)) * -1.0
+    x256 += einsum(x253, (0, 1, 2, 3, 4, 5), (0, 1, 3, 2, 5, 4)) * -1.0
+    x256 += einsum(x255, (0, 1, 2, 3, 4, 5), (0, 3, 2, 1, 5, 4)) * -1.0
+    x257 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0], nvir[0], nvir[0]), dtype=np.float64)
+    x257 += einsum(t1.aa, (0, 1), x256, (2, 3, 0, 4, 5, 6), (2, 3, 4, 5, 6, 1)) * 2.0
+    t3new_aaaaaa += einsum(x257, (0, 1, 2, 3, 4, 5), (0, 1, 2, 5, 4, 3))
+    t3new_aaaaaa += einsum(x257, (0, 1, 2, 3, 4, 5), (0, 1, 2, 4, 5, 3)) * -1.0
+    t3new_aaaaaa += einsum(x257, (0, 1, 2, 3, 4, 5), (0, 1, 2, 4, 3, 5))
+    t3new_aaaaaa += einsum(x257, (0, 1, 2, 3, 4, 5), (0, 2, 1, 5, 4, 3)) * -1.0
+    t3new_aaaaaa += einsum(x257, (0, 1, 2, 3, 4, 5), (0, 2, 1, 4, 5, 3))
+    t3new_aaaaaa += einsum(x257, (0, 1, 2, 3, 4, 5), (0, 2, 1, 4, 3, 5)) * -1.0
+    t3new_aaaaaa += einsum(x257, (0, 1, 2, 3, 4, 5), (1, 0, 2, 5, 4, 3)) * -1.0
+    t3new_aaaaaa += einsum(x257, (0, 1, 2, 3, 4, 5), (1, 0, 2, 4, 5, 3))
+    t3new_aaaaaa += einsum(x257, (0, 1, 2, 3, 4, 5), (1, 0, 2, 4, 3, 5)) * -1.0
+    t3new_aaaaaa += einsum(x257, (0, 1, 2, 3, 4, 5), (2, 0, 1, 5, 4, 3))
+    t3new_aaaaaa += einsum(x257, (0, 1, 2, 3, 4, 5), (2, 0, 1, 4, 5, 3)) * -1.0
+    t3new_aaaaaa += einsum(x257, (0, 1, 2, 3, 4, 5), (2, 0, 1, 4, 3, 5))
+    t3new_aaaaaa += einsum(x257, (0, 1, 2, 3, 4, 5), (1, 2, 0, 5, 4, 3))
+    t3new_aaaaaa += einsum(x257, (0, 1, 2, 3, 4, 5), (1, 2, 0, 4, 5, 3)) * -1.0
+    t3new_aaaaaa += einsum(x257, (0, 1, 2, 3, 4, 5), (1, 2, 0, 4, 3, 5))
+    t3new_aaaaaa += einsum(x257, (0, 1, 2, 3, 4, 5), (2, 1, 0, 5, 4, 3)) * -1.0
+    t3new_aaaaaa += einsum(x257, (0, 1, 2, 3, 4, 5), (2, 1, 0, 4, 5, 3))
+    t3new_aaaaaa += einsum(x257, (0, 1, 2, 3, 4, 5), (2, 1, 0, 4, 3, 5)) * -1.0
+    x258 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0], nvir[0], nvir[0]), dtype=np.float64)
+    x258 += einsum(v.aaaa.ovvv, (0, 1, 2, 3), t2.aaaa, (4, 5, 6, 3), (4, 5, 0, 6, 1, 2))
+    x259 = np.zeros((nocc[0], nocc[0], nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x259 += einsum(t2.aaaa, (0, 1, 2, 3), v.aaaa.ooov, (4, 5, 6, 3), (0, 1, 5, 4, 6, 2))
+    x260 = np.zeros((nocc[0], nocc[0], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x260 += einsum(x259, (0, 1, 2, 3, 4, 5), t1.aa, (4, 6), (0, 1, 2, 3, 6, 5))
+    x261 = np.zeros((nocc[0], nocc[0], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x261 += einsum(t2.aaaa, (0, 1, 2, 3), x241, (4, 5, 2, 6), (4, 5, 0, 1, 6, 3))
+    x262 = np.zeros((nocc[0], nocc[0], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x262 += einsum(x260, (0, 1, 2, 3, 4, 5), (0, 1, 3, 2, 4, 5))
+    x262 += einsum(x261, (0, 1, 2, 3, 4, 5), (3, 2, 1, 0, 5, 4))
+    x263 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0], nvir[0], nvir[0]), dtype=np.float64)
+    x263 += einsum(x262, (0, 1, 2, 3, 4, 5), t1.aa, (2, 6), (0, 1, 3, 4, 5, 6)) * 2.0
+    x264 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0], nvir[0], nvir[0]), dtype=np.float64)
+    x264 += einsum(x258, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 4, 5)) * 2.0
+    x264 += einsum(x263, (0, 1, 2, 3, 4, 5), (0, 1, 2, 5, 3, 4))
+    t3new_aaaaaa += einsum(x264, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 4, 5)) * -1.0
+    t3new_aaaaaa += einsum(x264, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 5, 4))
+    t3new_aaaaaa += einsum(x264, (0, 1, 2, 3, 4, 5), (0, 1, 2, 4, 3, 5))
+    t3new_aaaaaa += einsum(x264, (0, 1, 2, 3, 4, 5), (0, 1, 2, 5, 3, 4)) * -1.0
+    t3new_aaaaaa += einsum(x264, (0, 1, 2, 3, 4, 5), (0, 1, 2, 4, 5, 3)) * -1.0
+    t3new_aaaaaa += einsum(x264, (0, 1, 2, 3, 4, 5), (0, 1, 2, 5, 4, 3))
+    t3new_aaaaaa += einsum(x264, (0, 1, 2, 3, 4, 5), (0, 2, 1, 3, 4, 5))
+    t3new_aaaaaa += einsum(x264, (0, 1, 2, 3, 4, 5), (0, 2, 1, 3, 5, 4)) * -1.0
+    t3new_aaaaaa += einsum(x264, (0, 1, 2, 3, 4, 5), (0, 2, 1, 4, 3, 5)) * -1.0
+    t3new_aaaaaa += einsum(x264, (0, 1, 2, 3, 4, 5), (0, 2, 1, 5, 3, 4))
+    t3new_aaaaaa += einsum(x264, (0, 1, 2, 3, 4, 5), (0, 2, 1, 4, 5, 3))
+    t3new_aaaaaa += einsum(x264, (0, 1, 2, 3, 4, 5), (0, 2, 1, 5, 4, 3)) * -1.0
+    t3new_aaaaaa += einsum(x264, (0, 1, 2, 3, 4, 5), (2, 1, 0, 3, 4, 5))
+    t3new_aaaaaa += einsum(x264, (0, 1, 2, 3, 4, 5), (2, 1, 0, 3, 5, 4)) * -1.0
+    t3new_aaaaaa += einsum(x264, (0, 1, 2, 3, 4, 5), (2, 1, 0, 4, 3, 5)) * -1.0
+    t3new_aaaaaa += einsum(x264, (0, 1, 2, 3, 4, 5), (2, 1, 0, 5, 3, 4))
+    t3new_aaaaaa += einsum(x264, (0, 1, 2, 3, 4, 5), (2, 1, 0, 4, 5, 3))
+    t3new_aaaaaa += einsum(x264, (0, 1, 2, 3, 4, 5), (2, 1, 0, 5, 4, 3)) * -1.0
+    x265 = np.zeros((nvir[0], nvir[0]), dtype=np.float64)
+    x265 += einsum(t1.aa, (0, 1), f.aa.ov, (0, 2), (2, 1))
+    x266 = np.zeros((nvir[0], nvir[0]), dtype=np.float64)
+    x266 += einsum(f.aa.vv, (0, 1), (1, 0))
+    x266 += einsum(x265, (0, 1), (0, 1)) * -1.0
+    x267 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0], nvir[0], nvir[0]), dtype=np.float64)
+    x267 += einsum(x266, (0, 1), t3.aaaaaa, (2, 3, 4, 0, 5, 6), (2, 3, 4, 1, 5, 6)) * 6.0
+    t3new_aaaaaa += einsum(x267, (0, 1, 2, 3, 4, 5), (1, 2, 0, 3, 4, 5))
+    t3new_aaaaaa += einsum(x267, (0, 1, 2, 3, 4, 5), (1, 2, 0, 4, 3, 5)) * -1.0
+    t3new_aaaaaa += einsum(x267, (0, 1, 2, 3, 4, 5), (1, 2, 0, 4, 5, 3))
+    x268 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x268 += einsum(t2.aaaa, (0, 1, 2, 3), f.aa.ov, (4, 3), (4, 0, 1, 2))
+    x269 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0], nvir[0], nvir[0]), dtype=np.float64)
+    x269 += einsum(t2.aaaa, (0, 1, 2, 3), x268, (1, 4, 5, 6), (5, 4, 0, 6, 2, 3)) * -1.0
+    t3new_aaaaaa += einsum(x269, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 5, 4)) * -4.0
+    t3new_aaaaaa += einsum(x269, (0, 1, 2, 3, 4, 5), (0, 1, 2, 5, 3, 4)) * 4.0
+    t3new_aaaaaa += einsum(x269, (0, 1, 2, 3, 4, 5), (0, 1, 2, 5, 4, 3)) * -4.0
+    t3new_aaaaaa += einsum(x269, (0, 1, 2, 3, 4, 5), (0, 2, 1, 3, 5, 4)) * 4.0
+    t3new_aaaaaa += einsum(x269, (0, 1, 2, 3, 4, 5), (0, 2, 1, 5, 3, 4)) * -4.0
+    t3new_aaaaaa += einsum(x269, (0, 1, 2, 3, 4, 5), (0, 2, 1, 5, 4, 3)) * 4.0
+    t3new_aaaaaa += einsum(x269, (0, 1, 2, 3, 4, 5), (2, 1, 0, 3, 5, 4)) * 4.0
+    t3new_aaaaaa += einsum(x269, (0, 1, 2, 3, 4, 5), (2, 1, 0, 5, 3, 4)) * -4.0
+    t3new_aaaaaa += einsum(x269, (0, 1, 2, 3, 4, 5), (2, 1, 0, 5, 4, 3)) * 4.0
+    x270 = np.zeros((nocc[0], nocc[0]), dtype=np.float64)
+    x270 += einsum(t1.aa, (0, 1), f.aa.ov, (2, 1), (2, 0))
+    x271 = np.zeros((nocc[0], nocc[0]), dtype=np.float64)
+    x271 += einsum(f.aa.oo, (0, 1), (1, 0))
+    x271 += einsum(x270, (0, 1), (0, 1))
+    x272 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0], nvir[0], nvir[0]), dtype=np.float64)
+    x272 += einsum(x271, (0, 1), t3.aaaaaa, (0, 2, 3, 4, 5, 6), (1, 2, 3, 4, 5, 6)) * 6.0
+    t3new_aaaaaa += einsum(x272, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 4, 5)) * -1.0
+    t3new_aaaaaa += einsum(x272, (0, 1, 2, 3, 4, 5), (2, 0, 1, 3, 4, 5)) * -1.0
+    t3new_aaaaaa += einsum(x272, (0, 1, 2, 3, 4, 5), (2, 1, 0, 3, 4, 5))
+    x273 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x273 += einsum(t2.baba, (0, 1, 2, 3), v.aaaa.ovvv, (4, 5, 6, 3), (0, 2, 1, 4, 5, 6))
+    x274 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x274 += einsum(x71, (0, 1, 2, 3), t2.baba, (4, 5, 6, 2), (4, 6, 0, 5, 3, 1))
+    x275 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x275 += einsum(t1.aa, (0, 1), v.aaaa.ooov, (2, 3, 0, 4), (2, 3, 1, 4))
+    x276 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x276 += einsum(v.aaaa.ovov, (0, 1, 2, 3), (2, 0, 3, 1))
+    x276 += einsum(v.aaaa.oovv, (0, 1, 2, 3), (1, 0, 3, 2)) * -1.0
+    x276 += einsum(x275, (0, 1, 2, 3), (1, 0, 2, 3))
+    x277 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x277 += einsum(t2.baba, (0, 1, 2, 3), x276, (4, 5, 6, 3), (0, 2, 4, 5, 1, 6))
+    x278 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x278 += einsum(t1.aa, (0, 1), x1, (2, 0, 3, 4), (2, 3, 1, 4))
+    x279 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x279 += einsum(x278, (0, 1, 2, 3), (0, 1, 3, 2))
+    x279 += einsum(x58, (0, 1, 2, 3), (0, 1, 3, 2)) * -1.0
+    x280 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x280 += einsum(t2.baba, (0, 1, 2, 3), x279, (4, 5, 3, 6), (0, 2, 4, 5, 1, 6))
+    x281 = np.zeros((nocc[0], nocc[0], nocc[0], nocc[0]), dtype=np.float64)
+    x281 += einsum(v.aaaa.oooo, (0, 1, 2, 3), (2, 3, 1, 0))
+    x281 += einsum(x88, (0, 1, 2, 3), (3, 1, 0, 2))
+    x281 += einsum(x40, (0, 1, 2, 3), (2, 1, 0, 3))
+    x281 += einsum(x40, (0, 1, 2, 3), (3, 2, 0, 1)) * -1.0
+    x282 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x282 += einsum(t2.baba, (0, 1, 2, 3), x281, (1, 4, 5, 6), (0, 2, 4, 5, 6, 3))
+    x283 = np.zeros((nvir[1], nvir[1], nocc[0], nocc[0]), dtype=np.float64)
+    x283 += einsum(v.bbaa.vvoo, (0, 1, 2, 3), (1, 0, 3, 2))
+    x283 += einsum(x132, (0, 1, 2, 3), (1, 0, 3, 2)) * -1.0
+    x284 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x284 += einsum(x283, (0, 1, 2, 3), t2.baba, (4, 5, 0, 6), (4, 1, 2, 3, 5, 6))
+    x285 = np.zeros((nvir[1], nvir[1], nocc[0], nocc[0]), dtype=np.float64)
+    x285 += einsum(x3, (0, 1, 2, 3), t1.bb, (0, 4), (4, 1, 2, 3))
+    x286 = np.zeros((nvir[1], nvir[1], nocc[0], nocc[0]), dtype=np.float64)
+    x286 += einsum(x133, (0, 1, 2, 3), (1, 0, 2, 3))
+    x286 += einsum(x285, (0, 1, 2, 3), (1, 0, 2, 3)) * -1.0
+    x287 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x287 += einsum(x286, (0, 1, 2, 3), t2.baba, (4, 5, 0, 6), (4, 1, 2, 3, 5, 6))
+    x288 = np.zeros((nocc[1], nocc[1], nocc[0], nocc[0]), dtype=np.float64)
+    x288 += einsum(v.bbaa.oooo, (0, 1, 2, 3), (1, 0, 3, 2))
+    x288 += einsum(x149, (0, 1, 2, 3), (1, 0, 3, 2))
+    x289 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x289 += einsum(t2.baba, (0, 1, 2, 3), x288, (0, 4, 5, 6), (4, 2, 5, 6, 1, 3))
+    x290 = np.zeros((nocc[1], nocc[1], nocc[0], nocc[0]), dtype=np.float64)
+    x290 += einsum(x141, (0, 1, 2, 3), t1.aa, (4, 3), (0, 1, 4, 2))
+    x291 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x291 += einsum(t2.baba, (0, 1, 2, 3), x290, (4, 0, 5, 6), (4, 2, 5, 6, 1, 3))
+    x292 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x292 += einsum(x277, (0, 1, 2, 3, 4, 5), (0, 1, 4, 3, 2, 5)) * -1.0
+    x292 += einsum(x280, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 4, 5))
+    x292 += einsum(x282, (0, 1, 2, 3, 4, 5), (0, 1, 3, 4, 2, 5))
+    x292 += einsum(x284, (0, 1, 2, 3, 4, 5), (0, 1, 4, 3, 2, 5))
+    x292 += einsum(x287, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 4, 5)) * -1.0
+    x292 += einsum(x289, (0, 1, 2, 3, 4, 5), (0, 1, 4, 3, 2, 5)) * -1.0
+    x292 += einsum(x291, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 4, 5))
+    x293 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x293 += einsum(t1.aa, (0, 1), x292, (2, 3, 4, 0, 5, 6), (2, 3, 4, 5, 6, 1))
+    x294 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x294 += einsum(v.aaaa.ovov, (0, 1, 2, 3), (2, 0, 1, 3))
+    x294 += einsum(v.aaaa.oovv, (0, 1, 2, 3), (1, 0, 3, 2)) * -1.0
+    x294 += einsum(x49, (0, 1, 2, 3), (0, 1, 2, 3))
+    x295 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x295 += einsum(t1.aa, (0, 1), x294, (2, 3, 1, 4), (2, 3, 0, 4))
+    x296 = np.zeros((nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x296 += einsum(v.aaaa.ooov, (0, 1, 2, 3), (1, 0, 2, 3))
+    x296 += einsum(x295, (0, 1, 2, 3), (2, 1, 0, 3))
+    x297 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x297 += einsum(t2.baba, (0, 1, 2, 3), x296, (4, 1, 5, 6), (0, 2, 4, 5, 6, 3))
+    x298 = np.zeros((nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x298 += einsum(t2.baba, (0, 1, 2, 3), f.bb.ov, (0, 4), (4, 2, 1, 3))
+    x299 = np.zeros((nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x299 += einsum(v.bbaa.vvov, (0, 1, 2, 3), (1, 0, 2, 3)) * -1.0
+    x299 += einsum(x298, (0, 1, 2, 3), (0, 1, 2, 3))
+    x299 += einsum(x106, (0, 1, 2, 3), (1, 0, 2, 3))
+    x300 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x300 += einsum(x299, (0, 1, 2, 3), t2.baba, (4, 5, 0, 6), (4, 1, 2, 5, 3, 6))
+    x301 = np.zeros((nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x301 += einsum(x50, (0, 1, 2, 3), t1.bb, (0, 4), (4, 1, 2, 3))
+    x302 = np.zeros((nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x302 += einsum(x174, (0, 1, 2, 3), (1, 0, 2, 3))
+    x302 += einsum(x301, (0, 1, 2, 3), (1, 0, 2, 3)) * -1.0
+    x303 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x303 += einsum(x302, (0, 1, 2, 3), t2.baba, (4, 5, 0, 6), (4, 1, 2, 5, 3, 6))
+    x304 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x304 += einsum(x24, (0, 1, 2, 3), t2.baba, (0, 4, 5, 6), (1, 5, 4, 2, 6, 3))
+    x305 = np.zeros((nocc[1], nocc[1], nvir[0], nvir[0]), dtype=np.float64)
+    x305 += einsum(v.bbaa.oovv, (0, 1, 2, 3), (1, 0, 3, 2))
+    x305 += einsum(x140, (0, 1, 2, 3), (0, 1, 3, 2))
+    x306 = np.zeros((nocc[1], nocc[1], nocc[0], nvir[0]), dtype=np.float64)
+    x306 += einsum(t1.aa, (0, 1), x305, (2, 3, 1, 4), (2, 3, 0, 4))
+    x307 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x307 += einsum(x306, (0, 1, 2, 3), t2.baba, (1, 4, 5, 6), (0, 5, 2, 4, 3, 6))
+    x308 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x308 += einsum(x273, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 4, 5))
+    x308 += einsum(x274, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 4, 5)) * -1.0
+    x308 += einsum(x293, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 5, 4)) * -1.0
+    x308 += einsum(x297, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 5, 4))
+    x308 += einsum(x300, (0, 1, 2, 3, 4, 5), (0, 1, 3, 2, 5, 4))
+    x308 += einsum(x303, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 5, 4))
+    x308 += einsum(x304, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 4, 5))
+    x308 += einsum(x307, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 5, 4)) * -1.0
     t3new_aabaab = np.zeros((nocc[0], nocc[0], nocc[1], nvir[0], nvir[0], nvir[1]), dtype=np.float64)
-    t3new_aabaab += einsum("il,jklacb->ijkabc", f.aa.oo, t3.abaaba) * 2.0
-    t3new_aabaab += einsum("jl,iklacb->ijkabc", f.aa.oo, t3.abaaba) * -2.0
-    t3new_aabaab += einsum("kl,iljacb->ijkabc", f.bb.oo, t3.abaaba) * -2.0
-    t3new_aabaab += einsum("ad,ikjbcd->ijkabc", f.aa.vv, t3.abaaba) * -2.0
-    t3new_aabaab += einsum("bd,ikjacd->ijkabc", f.aa.vv, t3.abaaba) * 2.0
-    t3new_aabaab += einsum("cd,ikjadb->ijkabc", f.bb.vv, t3.abaaba) * 2.0
-    t3new_aabaab += einsum("ilac,kljb->ijkabc", t2.abab, v.bbaa.ooov) * -1.0
-    t3new_aabaab += einsum("ilbc,klja->ijkabc", t2.abab, v.bbaa.ooov)
-    t3new_aabaab += einsum("jlac,klib->ijkabc", t2.abab, v.bbaa.ooov)
-    t3new_aabaab += einsum("jlbc,klia->ijkabc", t2.abab, v.bbaa.ooov) * -1.0
-    t3new_aabaab += einsum("lkac,iljb->ijkabc", t2.abab, v.aaaa.ooov) * -1.0
-    t3new_aabaab += einsum("lkbc,ilja->ijkabc", t2.abab, v.aaaa.ooov)
-    t3new_aabaab += einsum("lkac,jlib->ijkabc", t2.abab, v.aaaa.ooov)
-    t3new_aabaab += einsum("lkbc,jlia->ijkabc", t2.abab, v.aaaa.ooov) * -1.0
-    t3new_aabaab += einsum("ikbd,jacd->ijkabc", t2.abab, v.aabb.ovvv) * -1.0
-    t3new_aabaab += einsum("ikdc,jabd->ijkabc", t2.abab, v.aaaa.ovvv) * -1.0
-    t3new_aabaab += einsum("ikad,jbcd->ijkabc", t2.abab, v.aabb.ovvv)
-    t3new_aabaab += einsum("ikdc,jbad->ijkabc", t2.abab, v.aaaa.ovvv)
-    t3new_aabaab += einsum("jkbd,iacd->ijkabc", t2.abab, v.aabb.ovvv)
-    t3new_aabaab += einsum("jkdc,iabd->ijkabc", t2.abab, v.aaaa.ovvv)
-    t3new_aabaab += einsum("jkad,ibcd->ijkabc", t2.abab, v.aabb.ovvv) * -1.0
-    t3new_aabaab += einsum("jkdc,ibad->ijkabc", t2.abab, v.aaaa.ovvv) * -1.0
-    t3new_aabaab += einsum("ilab,jlkc->ijkabc", t2.aaaa, v.aabb.ooov) * -2.0
-    t3new_aabaab += einsum("jlab,ilkc->ijkabc", t2.aaaa, v.aabb.ooov) * 2.0
-    t3new_aabaab += einsum("ijad,kcbd->ijkabc", t2.aaaa, v.bbaa.ovvv) * 2.0
-    t3new_aabaab += einsum("ijbd,kcad->ijkabc", t2.aaaa, v.bbaa.ovvv) * -2.0
-    t3new_aabaab += einsum("ld,id,jklacb->ijkabc", f.aa.ov, t1.aa, t3.abaaba) * 2.0
-    t3new_aabaab += einsum("ld,jd,iklacb->ijkabc", f.aa.ov, t1.aa, t3.abaaba) * -2.0
-    t3new_aabaab += einsum("ld,la,ikjbcd->ijkabc", f.aa.ov, t1.aa, t3.abaaba) * 2.0
-    t3new_aabaab += einsum("ld,lb,ikjacd->ijkabc", f.aa.ov, t1.aa, t3.abaaba) * -2.0
-    t3new_aabaab += einsum("ld,kd,iljacb->ijkabc", f.bb.ov, t1.bb, t3.abaaba) * -2.0
-    t3new_aabaab += einsum("ld,lc,ikjadb->ijkabc", f.bb.ov, t1.bb, t3.abaaba) * -2.0
-    t3new_aabaab += einsum("ld,ikad,jlbc->ijkabc", f.bb.ov, t2.abab, t2.abab) * -1.0
-    t3new_aabaab += einsum("ld,ikbd,jlac->ijkabc", f.bb.ov, t2.abab, t2.abab)
-    t3new_aabaab += einsum("ld,ilac,jkbd->ijkabc", f.bb.ov, t2.abab, t2.abab) * -1.0
-    t3new_aabaab += einsum("ld,ilbc,jkad->ijkabc", f.bb.ov, t2.abab, t2.abab)
-    t3new_aabaab += einsum("ld,ikdc,jlab->ijkabc", f.aa.ov, t2.abab, t2.aaaa) * 2.0
-    t3new_aabaab += einsum("ld,jkdc,ilab->ijkabc", f.aa.ov, t2.abab, t2.aaaa) * -2.0
-    t3new_aabaab += einsum("ld,lkac,ijbd->ijkabc", f.aa.ov, t2.abab, t2.aaaa) * 2.0
-    t3new_aabaab += einsum("ld,lkbc,ijad->ijkabc", f.aa.ov, t2.abab, t2.aaaa) * -2.0
-    t3new_aabaab += einsum("id,jlac,klbd->ijkabc", t1.aa, t2.abab, v.bbaa.oovv)
-    t3new_aabaab += einsum("id,jlbc,klad->ijkabc", t1.aa, t2.abab, v.bbaa.oovv) * -1.0
-    t3new_aabaab += einsum("id,lkac,jlbd->ijkabc", t1.aa, t2.abab, v.aaaa.oovv)
-    t3new_aabaab += einsum("id,lkbc,jlad->ijkabc", t1.aa, t2.abab, v.aaaa.oovv) * -1.0
-    t3new_aabaab += einsum("jd,ilac,klbd->ijkabc", t1.aa, t2.abab, v.bbaa.oovv) * -1.0
-    t3new_aabaab += einsum("jd,ilbc,klad->ijkabc", t1.aa, t2.abab, v.bbaa.oovv)
-    t3new_aabaab += einsum("jd,lkac,ilbd->ijkabc", t1.aa, t2.abab, v.aaaa.oovv) * -1.0
-    t3new_aabaab += einsum("jd,lkbc,ilad->ijkabc", t1.aa, t2.abab, v.aaaa.oovv)
-    t3new_aabaab += einsum("la,imbc,jlkm->ijkabc", t1.aa, t2.abab, v.aabb.oooo) * -1.0
-    t3new_aabaab += einsum("la,jmbc,ilkm->ijkabc", t1.aa, t2.abab, v.aabb.oooo)
-    t3new_aabaab += einsum("la,mkbc,iljm->ijkabc", t1.aa, t2.abab, v.aaaa.oooo)
-    t3new_aabaab += einsum("la,mkbc,imjl->ijkabc", t1.aa, t2.abab, v.aaaa.oooo) * -1.0
-    t3new_aabaab += einsum("lb,imac,jlkm->ijkabc", t1.aa, t2.abab, v.aabb.oooo)
-    t3new_aabaab += einsum("lb,jmac,ilkm->ijkabc", t1.aa, t2.abab, v.aabb.oooo) * -1.0
-    t3new_aabaab += einsum("lb,mkac,iljm->ijkabc", t1.aa, t2.abab, v.aaaa.oooo) * -1.0
-    t3new_aabaab += einsum("lb,mkac,imjl->ijkabc", t1.aa, t2.abab, v.aaaa.oooo)
-    t3new_aabaab += einsum("la,ikbd,jlcd->ijkabc", t1.aa, t2.abab, v.aabb.oovv)
-    t3new_aabaab += einsum("la,ikdc,jlbd->ijkabc", t1.aa, t2.abab, v.aaaa.oovv)
-    t3new_aabaab += einsum("la,jkbd,ilcd->ijkabc", t1.aa, t2.abab, v.aabb.oovv) * -1.0
-    t3new_aabaab += einsum("la,jkdc,ilbd->ijkabc", t1.aa, t2.abab, v.aaaa.oovv) * -1.0
-    t3new_aabaab += einsum("lb,ikad,jlcd->ijkabc", t1.aa, t2.abab, v.aabb.oovv) * -1.0
-    t3new_aabaab += einsum("lb,ikdc,jlad->ijkabc", t1.aa, t2.abab, v.aaaa.oovv) * -1.0
-    t3new_aabaab += einsum("lb,jkad,ilcd->ijkabc", t1.aa, t2.abab, v.aabb.oovv)
-    t3new_aabaab += einsum("lb,jkdc,ilad->ijkabc", t1.aa, t2.abab, v.aaaa.oovv)
-    t3new_aabaab += einsum("id,lkbc,jald->ijkabc", t1.aa, t2.abab, v.aaaa.ovov)
-    t3new_aabaab += einsum("id,lkac,jbld->ijkabc", t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t3new_aabaab += einsum("jd,lkbc,iald->ijkabc", t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t3new_aabaab += einsum("jd,lkac,ibld->ijkabc", t1.aa, t2.abab, v.aaaa.ovov)
-    t3new_aabaab += einsum("la,ikdc,jbld->ijkabc", t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t3new_aabaab += einsum("la,jkdc,ibld->ijkabc", t1.aa, t2.abab, v.aaaa.ovov)
-    t3new_aabaab += einsum("lb,ikdc,jald->ijkabc", t1.aa, t2.abab, v.aaaa.ovov)
-    t3new_aabaab += einsum("lb,jkdc,iald->ijkabc", t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t3new_aabaab += einsum("id,jkbe,adce->ijkabc", t1.aa, t2.abab, v.aabb.vvvv)
-    t3new_aabaab += einsum("id,jkec,adbe->ijkabc", t1.aa, t2.abab, v.aaaa.vvvv)
-    t3new_aabaab += einsum("id,jkec,aebd->ijkabc", t1.aa, t2.abab, v.aaaa.vvvv) * -1.0
-    t3new_aabaab += einsum("id,jkae,bdce->ijkabc", t1.aa, t2.abab, v.aabb.vvvv) * -1.0
-    t3new_aabaab += einsum("jd,ikbe,adce->ijkabc", t1.aa, t2.abab, v.aabb.vvvv) * -1.0
-    t3new_aabaab += einsum("jd,ikec,adbe->ijkabc", t1.aa, t2.abab, v.aaaa.vvvv) * -1.0
-    t3new_aabaab += einsum("jd,ikec,aebd->ijkabc", t1.aa, t2.abab, v.aaaa.vvvv)
-    t3new_aabaab += einsum("jd,ikae,bdce->ijkabc", t1.aa, t2.abab, v.aabb.vvvv)
-    t3new_aabaab += einsum("id,jlab,kcld->ijkabc", t1.aa, t2.aaaa, v.bbaa.ovov) * 2.0
-    t3new_aabaab += einsum("jd,ilab,kcld->ijkabc", t1.aa, t2.aaaa, v.bbaa.ovov) * -2.0
-    t3new_aabaab += einsum("la,ijbd,kcld->ijkabc", t1.aa, t2.aaaa, v.bbaa.ovov) * 2.0
-    t3new_aabaab += einsum("lb,ijad,kcld->ijkabc", t1.aa, t2.aaaa, v.bbaa.ovov) * -2.0
-    t3new_aabaab += einsum("kd,ilbc,jald->ijkabc", t1.bb, t2.abab, v.aabb.ovov)
-    t3new_aabaab += einsum("kd,ilac,jbld->ijkabc", t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_aabaab += einsum("kd,jlbc,iald->ijkabc", t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_aabaab += einsum("kd,jlac,ibld->ijkabc", t1.bb, t2.abab, v.aabb.ovov)
-    t3new_aabaab += einsum("lc,ikbd,jald->ijkabc", t1.bb, t2.abab, v.aabb.ovov)
-    t3new_aabaab += einsum("lc,ikad,jbld->ijkabc", t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_aabaab += einsum("lc,jkbd,iald->ijkabc", t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_aabaab += einsum("lc,jkad,ibld->ijkabc", t1.bb, t2.abab, v.aabb.ovov)
-    t3new_aabaab += einsum("kd,ilab,jlcd->ijkabc", t1.bb, t2.aaaa, v.aabb.oovv) * -2.0
-    t3new_aabaab += einsum("kd,jlab,ilcd->ijkabc", t1.bb, t2.aaaa, v.aabb.oovv) * 2.0
-    t3new_aabaab += einsum("lc,imab,jmkl->ijkabc", t1.bb, t2.aaaa, v.aabb.oooo) * 2.0
-    t3new_aabaab += einsum("lc,jmab,imkl->ijkabc", t1.bb, t2.aaaa, v.aabb.oooo) * -2.0
-    t3new_aabaab += einsum("lc,ijad,klbd->ijkabc", t1.bb, t2.aaaa, v.bbaa.oovv) * -2.0
-    t3new_aabaab += einsum("lc,ijbd,klad->ijkabc", t1.bb, t2.aaaa, v.bbaa.oovv) * 2.0
-    t3new_aabaab += einsum("kd,ijbe,aecd->ijkabc", t1.bb, t2.aaaa, v.aabb.vvvv) * -2.0
-    t3new_aabaab += einsum("kd,ijae,becd->ijkabc", t1.bb, t2.aaaa, v.aabb.vvvv) * 2.0
-    t3new_aabaab += einsum("id,la,jmbc,kmld->ijkabc", t1.aa, t1.aa, t2.abab, v.bbaa.ooov)
-    t3new_aabaab += einsum("id,la,mkbc,jlmd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov) * -1.0
-    t3new_aabaab += einsum("id,la,mkbc,jmld->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov)
-    t3new_aabaab += einsum("id,lb,jmac,kmld->ijkabc", t1.aa, t1.aa, t2.abab, v.bbaa.ooov) * -1.0
-    t3new_aabaab += einsum("id,lb,mkac,jlmd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov)
-    t3new_aabaab += einsum("id,lb,mkac,jmld->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov) * -1.0
-    t3new_aabaab += einsum("jd,la,imbc,kmld->ijkabc", t1.aa, t1.aa, t2.abab, v.bbaa.ooov) * -1.0
-    t3new_aabaab += einsum("jd,la,mkbc,ilmd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov)
-    t3new_aabaab += einsum("jd,la,mkbc,imld->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov) * -1.0
-    t3new_aabaab += einsum("jd,lb,imac,kmld->ijkabc", t1.aa, t1.aa, t2.abab, v.bbaa.ooov)
-    t3new_aabaab += einsum("jd,lb,mkac,ilmd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov) * -1.0
-    t3new_aabaab += einsum("jd,lb,mkac,imld->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov)
-    t3new_aabaab += einsum("la,mb,ikdc,jlmd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov) * -1.0
-    t3new_aabaab += einsum("la,mb,ikdc,jmld->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov)
-    t3new_aabaab += einsum("la,mb,jkdc,ilmd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov)
-    t3new_aabaab += einsum("la,mb,jkdc,imld->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov) * -1.0
-    t3new_aabaab += einsum("id,je,lkac,ldbe->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv) * -1.0
-    t3new_aabaab += einsum("id,je,lkbc,ldae->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv)
-    t3new_aabaab += einsum("id,je,lkac,lebd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv)
-    t3new_aabaab += einsum("id,je,lkbc,lead->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv) * -1.0
-    t3new_aabaab += einsum("id,la,jkbe,ldce->ijkabc", t1.aa, t1.aa, t2.abab, v.aabb.ovvv) * -1.0
-    t3new_aabaab += einsum("id,la,jkec,ldbe->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv) * -1.0
-    t3new_aabaab += einsum("id,la,jkec,lebd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv)
-    t3new_aabaab += einsum("id,lb,jkae,ldce->ijkabc", t1.aa, t1.aa, t2.abab, v.aabb.ovvv)
-    t3new_aabaab += einsum("id,lb,jkec,ldae->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv)
-    t3new_aabaab += einsum("id,lb,jkec,lead->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv) * -1.0
-    t3new_aabaab += einsum("jd,la,ikbe,ldce->ijkabc", t1.aa, t1.aa, t2.abab, v.aabb.ovvv)
-    t3new_aabaab += einsum("jd,la,ikec,ldbe->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv)
-    t3new_aabaab += einsum("jd,la,ikec,lebd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv) * -1.0
-    t3new_aabaab += einsum("jd,lb,ikae,ldce->ijkabc", t1.aa, t1.aa, t2.abab, v.aabb.ovvv) * -1.0
-    t3new_aabaab += einsum("jd,lb,ikec,ldae->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv) * -1.0
-    t3new_aabaab += einsum("jd,lb,ikec,lead->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv)
-    t3new_aabaab += einsum("la,kd,imbc,jlmd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ooov) * -1.0
-    t3new_aabaab += einsum("la,kd,jmbc,ilmd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ooov)
-    t3new_aabaab += einsum("lb,kd,imac,jlmd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ooov)
-    t3new_aabaab += einsum("lb,kd,jmac,ilmd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ooov) * -1.0
-    t3new_aabaab += einsum("la,mc,ikbd,jlmd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ooov) * -1.0
-    t3new_aabaab += einsum("la,mc,jkbd,ilmd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ooov)
-    t3new_aabaab += einsum("lb,mc,ikad,jlmd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ooov)
-    t3new_aabaab += einsum("lb,mc,jkad,ilmd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ooov) * -1.0
-    t3new_aabaab += einsum("id,ke,jlac,lebd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ovvv)
-    t3new_aabaab += einsum("id,ke,jlbc,lead->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ovvv) * -1.0
-    t3new_aabaab += einsum("id,lc,jkae,lebd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ovvv)
-    t3new_aabaab += einsum("id,lc,jkbe,lead->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ovvv) * -1.0
-    t3new_aabaab += einsum("jd,ke,ilac,lebd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ovvv) * -1.0
-    t3new_aabaab += einsum("jd,ke,ilbc,lead->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ovvv)
-    t3new_aabaab += einsum("jd,lc,ikae,lebd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ovvv) * -1.0
-    t3new_aabaab += einsum("jd,lc,ikbe,lead->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ovvv)
-    t3new_aabaab += einsum("id,lc,jmab,klmd->ijkabc", t1.aa, t1.bb, t2.aaaa, v.bbaa.ooov) * -2.0
-    t3new_aabaab += einsum("jd,lc,imab,klmd->ijkabc", t1.aa, t1.bb, t2.aaaa, v.bbaa.ooov) * 2.0
-    t3new_aabaab += einsum("la,mc,ijbd,kmld->ijkabc", t1.aa, t1.bb, t2.aaaa, v.bbaa.ooov) * -2.0
-    t3new_aabaab += einsum("lb,mc,ijad,kmld->ijkabc", t1.aa, t1.bb, t2.aaaa, v.bbaa.ooov) * 2.0
-    t3new_aabaab += einsum("id,ke,jlab,ldce->ijkabc", t1.aa, t1.bb, t2.aaaa, v.aabb.ovvv) * 2.0
-    t3new_aabaab += einsum("jd,ke,ilab,ldce->ijkabc", t1.aa, t1.bb, t2.aaaa, v.aabb.ovvv) * -2.0
-    t3new_aabaab += einsum("la,kd,ijbe,lecd->ijkabc", t1.aa, t1.bb, t2.aaaa, v.aabb.ovvv) * 2.0
-    t3new_aabaab += einsum("lb,kd,ijae,lecd->ijkabc", t1.aa, t1.bb, t2.aaaa, v.aabb.ovvv) * -2.0
-    t3new_aabaab += einsum("kd,lc,imab,jmld->ijkabc", t1.bb, t1.bb, t2.aaaa, v.aabb.ooov) * 2.0
-    t3new_aabaab += einsum("kd,lc,jmab,imld->ijkabc", t1.bb, t1.bb, t2.aaaa, v.aabb.ooov) * -2.0
-    t3new_aabaab += einsum("kd,lc,ijae,ldbe->ijkabc", t1.bb, t1.bb, t2.aaaa, v.bbaa.ovvv) * -2.0
-    t3new_aabaab += einsum("kd,lc,ijbe,ldae->ijkabc", t1.bb, t1.bb, t2.aaaa, v.bbaa.ovvv) * 2.0
-    t3new_aabaab += einsum("id,je,la,mkbc,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.abab, v.aaaa.ovov)
-    t3new_aabaab += einsum("id,je,la,mkbc,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t3new_aabaab += einsum("id,je,lb,mkac,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t3new_aabaab += einsum("id,je,lb,mkac,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.abab, v.aaaa.ovov)
-    t3new_aabaab += einsum("id,la,mb,jkec,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.abab, v.aaaa.ovov)
-    t3new_aabaab += einsum("id,la,mb,jkec,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t3new_aabaab += einsum("jd,la,mb,ikec,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t3new_aabaab += einsum("jd,la,mb,ikec,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.abab, v.aaaa.ovov)
-    t3new_aabaab += einsum("id,la,ke,jmbc,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.abab, v.aabb.ovov)
-    t3new_aabaab += einsum("id,lb,ke,jmac,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_aabaab += einsum("id,la,mc,jkbe,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.abab, v.aabb.ovov)
-    t3new_aabaab += einsum("id,lb,mc,jkae,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_aabaab += einsum("jd,la,ke,imbc,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_aabaab += einsum("jd,lb,ke,imac,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.abab, v.aabb.ovov)
-    t3new_aabaab += einsum("jd,la,mc,ikbe,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_aabaab += einsum("jd,lb,mc,ikae,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.abab, v.aabb.ovov)
-    t3new_aabaab += einsum("id,ke,lc,jmab,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.aaaa, v.bbaa.ovov) * -2.0
-    t3new_aabaab += einsum("jd,ke,lc,imab,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.aaaa, v.bbaa.ovov) * 2.0
-    t3new_aabaab += einsum("la,kd,mc,ijbe,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.aaaa, v.aabb.ovov) * -2.0
-    t3new_aabaab += einsum("lb,kd,mc,ijae,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.aaaa, v.aabb.ovov) * 2.0
-
-    # T3 amplitudes
+    t3new_aabaab += einsum(x308, (0, 1, 2, 3, 4, 5), (2, 3, 0, 4, 5, 1)) * -1.0
+    t3new_aabaab += einsum(x308, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1))
+    t3new_aabaab += einsum(x308, (0, 1, 2, 3, 4, 5), (3, 2, 0, 4, 5, 1))
+    t3new_aabaab += einsum(x308, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1)) * -1.0
     t3new_abaaba = np.zeros((nocc[0], nocc[1], nocc[0], nvir[0], nvir[1], nvir[0]), dtype=np.float64)
-    t3new_abaaba += einsum("il,kjlabc->ijkabc", f.aa.oo, t3.abaaba) * 2.0
-    t3new_abaaba += einsum("jl,ilkabc->ijkabc", f.bb.oo, t3.abaaba) * -2.0
-    t3new_abaaba += einsum("kl,ijlabc->ijkabc", f.aa.oo, t3.abaaba) * -2.0
-    t3new_abaaba += einsum("ad,ijkcbd->ijkabc", f.aa.vv, t3.abaaba) * -2.0
-    t3new_abaaba += einsum("bd,ijkadc->ijkabc", f.bb.vv, t3.abaaba) * 2.0
-    t3new_abaaba += einsum("cd,ijkabd->ijkabc", f.aa.vv, t3.abaaba) * 2.0
-    t3new_abaaba += einsum("ilab,jlkc->ijkabc", t2.abab, v.bbaa.ooov) * -1.0
-    t3new_abaaba += einsum("ilcb,jlka->ijkabc", t2.abab, v.bbaa.ooov)
-    t3new_abaaba += einsum("klab,jlic->ijkabc", t2.abab, v.bbaa.ooov)
-    t3new_abaaba += einsum("klcb,jlia->ijkabc", t2.abab, v.bbaa.ooov) * -1.0
-    t3new_abaaba += einsum("ljab,ilkc->ijkabc", t2.abab, v.aaaa.ooov) * -1.0
-    t3new_abaaba += einsum("ljcb,ilka->ijkabc", t2.abab, v.aaaa.ooov)
-    t3new_abaaba += einsum("ljab,klic->ijkabc", t2.abab, v.aaaa.ooov)
-    t3new_abaaba += einsum("ljcb,klia->ijkabc", t2.abab, v.aaaa.ooov) * -1.0
-    t3new_abaaba += einsum("ijcd,kabd->ijkabc", t2.abab, v.aabb.ovvv) * -1.0
-    t3new_abaaba += einsum("ijdb,kacd->ijkabc", t2.abab, v.aaaa.ovvv) * -1.0
-    t3new_abaaba += einsum("ijad,kcbd->ijkabc", t2.abab, v.aabb.ovvv)
-    t3new_abaaba += einsum("ijdb,kcad->ijkabc", t2.abab, v.aaaa.ovvv)
-    t3new_abaaba += einsum("kjcd,iabd->ijkabc", t2.abab, v.aabb.ovvv)
-    t3new_abaaba += einsum("kjdb,iacd->ijkabc", t2.abab, v.aaaa.ovvv)
-    t3new_abaaba += einsum("kjad,icbd->ijkabc", t2.abab, v.aabb.ovvv) * -1.0
-    t3new_abaaba += einsum("kjdb,icad->ijkabc", t2.abab, v.aaaa.ovvv) * -1.0
-    t3new_abaaba += einsum("ilac,kljb->ijkabc", t2.aaaa, v.aabb.ooov) * -2.0
-    t3new_abaaba += einsum("klac,iljb->ijkabc", t2.aaaa, v.aabb.ooov) * 2.0
-    t3new_abaaba += einsum("ikad,jbcd->ijkabc", t2.aaaa, v.bbaa.ovvv) * 2.0
-    t3new_abaaba += einsum("ikcd,jbad->ijkabc", t2.aaaa, v.bbaa.ovvv) * -2.0
-    t3new_abaaba += einsum("ld,id,kjlabc->ijkabc", f.aa.ov, t1.aa, t3.abaaba) * 2.0
-    t3new_abaaba += einsum("ld,kd,ijlabc->ijkabc", f.aa.ov, t1.aa, t3.abaaba) * -2.0
-    t3new_abaaba += einsum("ld,la,ijkcbd->ijkabc", f.aa.ov, t1.aa, t3.abaaba) * 2.0
-    t3new_abaaba += einsum("ld,lc,ijkabd->ijkabc", f.aa.ov, t1.aa, t3.abaaba) * -2.0
-    t3new_abaaba += einsum("ld,jd,ilkabc->ijkabc", f.bb.ov, t1.bb, t3.abaaba) * -2.0
-    t3new_abaaba += einsum("ld,lb,ijkadc->ijkabc", f.bb.ov, t1.bb, t3.abaaba) * -2.0
-    t3new_abaaba += einsum("ld,ijad,klcb->ijkabc", f.bb.ov, t2.abab, t2.abab) * -1.0
-    t3new_abaaba += einsum("ld,ijcd,klab->ijkabc", f.bb.ov, t2.abab, t2.abab)
-    t3new_abaaba += einsum("ld,ilab,kjcd->ijkabc", f.bb.ov, t2.abab, t2.abab) * -1.0
-    t3new_abaaba += einsum("ld,ilcb,kjad->ijkabc", f.bb.ov, t2.abab, t2.abab)
-    t3new_abaaba += einsum("ld,ijdb,klac->ijkabc", f.aa.ov, t2.abab, t2.aaaa) * 2.0
-    t3new_abaaba += einsum("ld,kjdb,ilac->ijkabc", f.aa.ov, t2.abab, t2.aaaa) * -2.0
-    t3new_abaaba += einsum("ld,ljab,ikcd->ijkabc", f.aa.ov, t2.abab, t2.aaaa) * 2.0
-    t3new_abaaba += einsum("ld,ljcb,ikad->ijkabc", f.aa.ov, t2.abab, t2.aaaa) * -2.0
-    t3new_abaaba += einsum("id,klab,jlcd->ijkabc", t1.aa, t2.abab, v.bbaa.oovv)
-    t3new_abaaba += einsum("id,klcb,jlad->ijkabc", t1.aa, t2.abab, v.bbaa.oovv) * -1.0
-    t3new_abaaba += einsum("id,ljab,klcd->ijkabc", t1.aa, t2.abab, v.aaaa.oovv)
-    t3new_abaaba += einsum("id,ljcb,klad->ijkabc", t1.aa, t2.abab, v.aaaa.oovv) * -1.0
-    t3new_abaaba += einsum("kd,ilab,jlcd->ijkabc", t1.aa, t2.abab, v.bbaa.oovv) * -1.0
-    t3new_abaaba += einsum("kd,ilcb,jlad->ijkabc", t1.aa, t2.abab, v.bbaa.oovv)
-    t3new_abaaba += einsum("kd,ljab,ilcd->ijkabc", t1.aa, t2.abab, v.aaaa.oovv) * -1.0
-    t3new_abaaba += einsum("kd,ljcb,ilad->ijkabc", t1.aa, t2.abab, v.aaaa.oovv)
-    t3new_abaaba += einsum("la,imcb,jmkl->ijkabc", t1.aa, t2.abab, v.bbaa.oooo) * -1.0
-    t3new_abaaba += einsum("la,kmcb,iljm->ijkabc", t1.aa, t2.abab, v.aabb.oooo)
-    t3new_abaaba += einsum("la,mjcb,ilkm->ijkabc", t1.aa, t2.abab, v.aaaa.oooo)
-    t3new_abaaba += einsum("la,mjcb,imkl->ijkabc", t1.aa, t2.abab, v.aaaa.oooo) * -1.0
-    t3new_abaaba += einsum("lc,imab,jmkl->ijkabc", t1.aa, t2.abab, v.bbaa.oooo)
-    t3new_abaaba += einsum("lc,kmab,iljm->ijkabc", t1.aa, t2.abab, v.aabb.oooo) * -1.0
-    t3new_abaaba += einsum("lc,mjab,ilkm->ijkabc", t1.aa, t2.abab, v.aaaa.oooo) * -1.0
-    t3new_abaaba += einsum("lc,mjab,imkl->ijkabc", t1.aa, t2.abab, v.aaaa.oooo)
-    t3new_abaaba += einsum("la,ijcd,klbd->ijkabc", t1.aa, t2.abab, v.aabb.oovv)
-    t3new_abaaba += einsum("la,ijdb,klcd->ijkabc", t1.aa, t2.abab, v.aaaa.oovv)
-    t3new_abaaba += einsum("la,kjcd,ilbd->ijkabc", t1.aa, t2.abab, v.aabb.oovv) * -1.0
-    t3new_abaaba += einsum("la,kjdb,ilcd->ijkabc", t1.aa, t2.abab, v.aaaa.oovv) * -1.0
-    t3new_abaaba += einsum("lc,ijad,klbd->ijkabc", t1.aa, t2.abab, v.aabb.oovv) * -1.0
-    t3new_abaaba += einsum("lc,ijdb,klad->ijkabc", t1.aa, t2.abab, v.aaaa.oovv) * -1.0
-    t3new_abaaba += einsum("lc,kjad,ilbd->ijkabc", t1.aa, t2.abab, v.aabb.oovv)
-    t3new_abaaba += einsum("lc,kjdb,ilad->ijkabc", t1.aa, t2.abab, v.aaaa.oovv)
-    t3new_abaaba += einsum("id,ljcb,kald->ijkabc", t1.aa, t2.abab, v.aaaa.ovov)
-    t3new_abaaba += einsum("id,ljab,kcld->ijkabc", t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t3new_abaaba += einsum("kd,ljcb,iald->ijkabc", t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t3new_abaaba += einsum("kd,ljab,icld->ijkabc", t1.aa, t2.abab, v.aaaa.ovov)
-    t3new_abaaba += einsum("la,ijdb,kcld->ijkabc", t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t3new_abaaba += einsum("la,kjdb,icld->ijkabc", t1.aa, t2.abab, v.aaaa.ovov)
-    t3new_abaaba += einsum("lc,ijdb,kald->ijkabc", t1.aa, t2.abab, v.aaaa.ovov)
-    t3new_abaaba += einsum("lc,kjdb,iald->ijkabc", t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t3new_abaaba += einsum("id,kjce,adbe->ijkabc", t1.aa, t2.abab, v.aabb.vvvv)
-    t3new_abaaba += einsum("id,kjeb,adce->ijkabc", t1.aa, t2.abab, v.aaaa.vvvv)
-    t3new_abaaba += einsum("id,kjeb,aecd->ijkabc", t1.aa, t2.abab, v.aaaa.vvvv) * -1.0
-    t3new_abaaba += einsum("id,kjae,becd->ijkabc", t1.aa, t2.abab, v.bbaa.vvvv) * -1.0
-    t3new_abaaba += einsum("kd,ijce,adbe->ijkabc", t1.aa, t2.abab, v.aabb.vvvv) * -1.0
-    t3new_abaaba += einsum("kd,ijeb,adce->ijkabc", t1.aa, t2.abab, v.aaaa.vvvv) * -1.0
-    t3new_abaaba += einsum("kd,ijeb,aecd->ijkabc", t1.aa, t2.abab, v.aaaa.vvvv)
-    t3new_abaaba += einsum("kd,ijae,becd->ijkabc", t1.aa, t2.abab, v.bbaa.vvvv)
-    t3new_abaaba += einsum("id,klac,jbld->ijkabc", t1.aa, t2.aaaa, v.bbaa.ovov) * 2.0
-    t3new_abaaba += einsum("kd,ilac,jbld->ijkabc", t1.aa, t2.aaaa, v.bbaa.ovov) * -2.0
-    t3new_abaaba += einsum("la,ikcd,jbld->ijkabc", t1.aa, t2.aaaa, v.bbaa.ovov) * 2.0
-    t3new_abaaba += einsum("lc,ikad,jbld->ijkabc", t1.aa, t2.aaaa, v.bbaa.ovov) * -2.0
-    t3new_abaaba += einsum("jd,ilcb,kald->ijkabc", t1.bb, t2.abab, v.aabb.ovov)
-    t3new_abaaba += einsum("jd,ilab,kcld->ijkabc", t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_abaaba += einsum("jd,klcb,iald->ijkabc", t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_abaaba += einsum("jd,klab,icld->ijkabc", t1.bb, t2.abab, v.aabb.ovov)
-    t3new_abaaba += einsum("lb,ijcd,kald->ijkabc", t1.bb, t2.abab, v.aabb.ovov)
-    t3new_abaaba += einsum("lb,ijad,kcld->ijkabc", t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_abaaba += einsum("lb,kjcd,iald->ijkabc", t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_abaaba += einsum("lb,kjad,icld->ijkabc", t1.bb, t2.abab, v.aabb.ovov)
-    t3new_abaaba += einsum("jd,ilac,klbd->ijkabc", t1.bb, t2.aaaa, v.aabb.oovv) * -2.0
-    t3new_abaaba += einsum("jd,klac,ilbd->ijkabc", t1.bb, t2.aaaa, v.aabb.oovv) * 2.0
-    t3new_abaaba += einsum("lb,imac,jlkm->ijkabc", t1.bb, t2.aaaa, v.bbaa.oooo) * 2.0
-    t3new_abaaba += einsum("lb,kmac,imjl->ijkabc", t1.bb, t2.aaaa, v.aabb.oooo) * -2.0
-    t3new_abaaba += einsum("lb,ikad,jlcd->ijkabc", t1.bb, t2.aaaa, v.bbaa.oovv) * -2.0
-    t3new_abaaba += einsum("lb,ikcd,jlad->ijkabc", t1.bb, t2.aaaa, v.bbaa.oovv) * 2.0
-    t3new_abaaba += einsum("jd,ikce,aebd->ijkabc", t1.bb, t2.aaaa, v.aabb.vvvv) * -2.0
-    t3new_abaaba += einsum("jd,ikae,bdce->ijkabc", t1.bb, t2.aaaa, v.bbaa.vvvv) * 2.0
-    t3new_abaaba += einsum("id,la,kmcb,jmld->ijkabc", t1.aa, t1.aa, t2.abab, v.bbaa.ooov)
-    t3new_abaaba += einsum("id,la,mjcb,klmd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov) * -1.0
-    t3new_abaaba += einsum("id,la,mjcb,kmld->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov)
-    t3new_abaaba += einsum("id,lc,kmab,jmld->ijkabc", t1.aa, t1.aa, t2.abab, v.bbaa.ooov) * -1.0
-    t3new_abaaba += einsum("id,lc,mjab,klmd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov)
-    t3new_abaaba += einsum("id,lc,mjab,kmld->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov) * -1.0
-    t3new_abaaba += einsum("kd,la,imcb,jmld->ijkabc", t1.aa, t1.aa, t2.abab, v.bbaa.ooov) * -1.0
-    t3new_abaaba += einsum("kd,la,mjcb,ilmd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov)
-    t3new_abaaba += einsum("kd,la,mjcb,imld->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov) * -1.0
-    t3new_abaaba += einsum("kd,lc,imab,jmld->ijkabc", t1.aa, t1.aa, t2.abab, v.bbaa.ooov)
-    t3new_abaaba += einsum("kd,lc,mjab,ilmd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov) * -1.0
-    t3new_abaaba += einsum("kd,lc,mjab,imld->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov)
-    t3new_abaaba += einsum("la,mc,ijdb,klmd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov) * -1.0
-    t3new_abaaba += einsum("la,mc,ijdb,kmld->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov)
-    t3new_abaaba += einsum("la,mc,kjdb,ilmd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov)
-    t3new_abaaba += einsum("la,mc,kjdb,imld->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov) * -1.0
-    t3new_abaaba += einsum("id,ke,ljab,ldce->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv) * -1.0
-    t3new_abaaba += einsum("id,ke,ljcb,ldae->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv)
-    t3new_abaaba += einsum("id,ke,ljab,lecd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv)
-    t3new_abaaba += einsum("id,ke,ljcb,lead->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv) * -1.0
-    t3new_abaaba += einsum("id,la,kjce,ldbe->ijkabc", t1.aa, t1.aa, t2.abab, v.aabb.ovvv) * -1.0
-    t3new_abaaba += einsum("id,la,kjeb,ldce->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv) * -1.0
-    t3new_abaaba += einsum("id,la,kjeb,lecd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv)
-    t3new_abaaba += einsum("id,lc,kjae,ldbe->ijkabc", t1.aa, t1.aa, t2.abab, v.aabb.ovvv)
-    t3new_abaaba += einsum("id,lc,kjeb,ldae->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv)
-    t3new_abaaba += einsum("id,lc,kjeb,lead->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv) * -1.0
-    t3new_abaaba += einsum("kd,la,ijce,ldbe->ijkabc", t1.aa, t1.aa, t2.abab, v.aabb.ovvv)
-    t3new_abaaba += einsum("kd,la,ijeb,ldce->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv)
-    t3new_abaaba += einsum("kd,la,ijeb,lecd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv) * -1.0
-    t3new_abaaba += einsum("kd,lc,ijae,ldbe->ijkabc", t1.aa, t1.aa, t2.abab, v.aabb.ovvv) * -1.0
-    t3new_abaaba += einsum("kd,lc,ijeb,ldae->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv) * -1.0
-    t3new_abaaba += einsum("kd,lc,ijeb,lead->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv)
-    t3new_abaaba += einsum("la,jd,imcb,klmd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ooov) * -1.0
-    t3new_abaaba += einsum("la,jd,kmcb,ilmd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ooov)
-    t3new_abaaba += einsum("lc,jd,imab,klmd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ooov)
-    t3new_abaaba += einsum("lc,jd,kmab,ilmd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ooov) * -1.0
-    t3new_abaaba += einsum("la,mb,ijcd,klmd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ooov) * -1.0
-    t3new_abaaba += einsum("la,mb,kjcd,ilmd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ooov)
-    t3new_abaaba += einsum("lc,mb,ijad,klmd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ooov)
-    t3new_abaaba += einsum("lc,mb,kjad,ilmd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ooov) * -1.0
-    t3new_abaaba += einsum("id,je,klab,lecd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ovvv)
-    t3new_abaaba += einsum("id,je,klcb,lead->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ovvv) * -1.0
-    t3new_abaaba += einsum("id,lb,kjae,lecd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ovvv)
-    t3new_abaaba += einsum("id,lb,kjce,lead->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ovvv) * -1.0
-    t3new_abaaba += einsum("kd,je,ilab,lecd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ovvv) * -1.0
-    t3new_abaaba += einsum("kd,je,ilcb,lead->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ovvv)
-    t3new_abaaba += einsum("kd,lb,ijae,lecd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ovvv) * -1.0
-    t3new_abaaba += einsum("kd,lb,ijce,lead->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ovvv)
-    t3new_abaaba += einsum("id,lb,kmac,jlmd->ijkabc", t1.aa, t1.bb, t2.aaaa, v.bbaa.ooov) * -2.0
-    t3new_abaaba += einsum("kd,lb,imac,jlmd->ijkabc", t1.aa, t1.bb, t2.aaaa, v.bbaa.ooov) * 2.0
-    t3new_abaaba += einsum("la,mb,ikcd,jmld->ijkabc", t1.aa, t1.bb, t2.aaaa, v.bbaa.ooov) * -2.0
-    t3new_abaaba += einsum("lc,mb,ikad,jmld->ijkabc", t1.aa, t1.bb, t2.aaaa, v.bbaa.ooov) * 2.0
-    t3new_abaaba += einsum("id,je,klac,ldbe->ijkabc", t1.aa, t1.bb, t2.aaaa, v.aabb.ovvv) * 2.0
-    t3new_abaaba += einsum("kd,je,ilac,ldbe->ijkabc", t1.aa, t1.bb, t2.aaaa, v.aabb.ovvv) * -2.0
-    t3new_abaaba += einsum("la,jd,ikce,lebd->ijkabc", t1.aa, t1.bb, t2.aaaa, v.aabb.ovvv) * 2.0
-    t3new_abaaba += einsum("lc,jd,ikae,lebd->ijkabc", t1.aa, t1.bb, t2.aaaa, v.aabb.ovvv) * -2.0
-    t3new_abaaba += einsum("jd,lb,imac,kmld->ijkabc", t1.bb, t1.bb, t2.aaaa, v.aabb.ooov) * 2.0
-    t3new_abaaba += einsum("jd,lb,kmac,imld->ijkabc", t1.bb, t1.bb, t2.aaaa, v.aabb.ooov) * -2.0
-    t3new_abaaba += einsum("jd,lb,ikae,ldce->ijkabc", t1.bb, t1.bb, t2.aaaa, v.bbaa.ovvv) * -2.0
-    t3new_abaaba += einsum("jd,lb,ikce,ldae->ijkabc", t1.bb, t1.bb, t2.aaaa, v.bbaa.ovvv) * 2.0
-    t3new_abaaba += einsum("id,ke,la,mjcb,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.abab, v.aaaa.ovov)
-    t3new_abaaba += einsum("id,ke,la,mjcb,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t3new_abaaba += einsum("id,ke,lc,mjab,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t3new_abaaba += einsum("id,ke,lc,mjab,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.abab, v.aaaa.ovov)
-    t3new_abaaba += einsum("id,la,mc,kjeb,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.abab, v.aaaa.ovov)
-    t3new_abaaba += einsum("id,la,mc,kjeb,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t3new_abaaba += einsum("kd,la,mc,ijeb,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t3new_abaaba += einsum("kd,la,mc,ijeb,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.abab, v.aaaa.ovov)
-    t3new_abaaba += einsum("id,la,je,kmcb,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.abab, v.aabb.ovov)
-    t3new_abaaba += einsum("id,lc,je,kmab,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_abaaba += einsum("id,la,mb,kjce,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.abab, v.aabb.ovov)
-    t3new_abaaba += einsum("id,lc,mb,kjae,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_abaaba += einsum("kd,la,je,imcb,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_abaaba += einsum("kd,lc,je,imab,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.abab, v.aabb.ovov)
-    t3new_abaaba += einsum("kd,la,mb,ijce,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_abaaba += einsum("kd,lc,mb,ijae,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.abab, v.aabb.ovov)
-    t3new_abaaba += einsum("id,je,lb,kmac,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.aaaa, v.bbaa.ovov) * -2.0
-    t3new_abaaba += einsum("kd,je,lb,imac,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.aaaa, v.bbaa.ovov) * 2.0
-    t3new_abaaba += einsum("la,jd,mb,ikce,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.aaaa, v.aabb.ovov) * -2.0
-    t3new_abaaba += einsum("lc,jd,mb,ikae,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.aaaa, v.aabb.ovov) * 2.0
-
-    # T3 amplitudes
-    t3new_abbabb = np.zeros((nocc[0], nocc[1], nocc[1], nvir[0], nvir[1], nvir[1]), dtype=np.float64)
-    t3new_abbabb += einsum("il,jklbca->ijkabc", f.aa.oo, t3.bbabba) * -2.0
-    t3new_abbabb += einsum("jl,iklabc->ijkabc", f.bb.oo, t3.abbabb) * 2.0
-    t3new_abbabb += einsum("kl,ijlabc->ijkabc", f.bb.oo, t3.abbabb) * -2.0
-    t3new_abbabb += einsum("ad,ijkdbc->ijkabc", f.aa.vv, t3.abbabb) * 2.0
-    t3new_abbabb += einsum("bd,ijkacd->ijkabc", f.bb.vv, t3.abbabb) * -2.0
-    t3new_abbabb += einsum("cd,ijkabd->ijkabc", f.bb.vv, t3.abbabb) * 2.0
-    t3new_abbabb += einsum("ilab,jlkc->ijkabc", t2.abab, v.bbbb.ooov) * -1.0
-    t3new_abbabb += einsum("ilac,jlkb->ijkabc", t2.abab, v.bbbb.ooov)
-    t3new_abbabb += einsum("ilab,kljc->ijkabc", t2.abab, v.bbbb.ooov)
-    t3new_abbabb += einsum("ilac,kljb->ijkabc", t2.abab, v.bbbb.ooov) * -1.0
-    t3new_abbabb += einsum("ljab,ilkc->ijkabc", t2.abab, v.aabb.ooov) * -1.0
-    t3new_abbabb += einsum("ljac,ilkb->ijkabc", t2.abab, v.aabb.ooov)
-    t3new_abbabb += einsum("lkab,iljc->ijkabc", t2.abab, v.aabb.ooov)
-    t3new_abbabb += einsum("lkac,iljb->ijkabc", t2.abab, v.aabb.ooov) * -1.0
-    t3new_abbabb += einsum("ikad,jbcd->ijkabc", t2.abab, v.bbbb.ovvv)
-    t3new_abbabb += einsum("ikdc,jbad->ijkabc", t2.abab, v.bbaa.ovvv)
-    t3new_abbabb += einsum("ikad,jcbd->ijkabc", t2.abab, v.bbbb.ovvv) * -1.0
-    t3new_abbabb += einsum("ikdb,jcad->ijkabc", t2.abab, v.bbaa.ovvv) * -1.0
-    t3new_abbabb += einsum("ijad,kbcd->ijkabc", t2.abab, v.bbbb.ovvv) * -1.0
-    t3new_abbabb += einsum("ijdc,kbad->ijkabc", t2.abab, v.bbaa.ovvv) * -1.0
-    t3new_abbabb += einsum("ijad,kcbd->ijkabc", t2.abab, v.bbbb.ovvv)
-    t3new_abbabb += einsum("ijdb,kcad->ijkabc", t2.abab, v.bbaa.ovvv)
-    t3new_abbabb += einsum("jlbc,klia->ijkabc", t2.bbbb, v.bbaa.ooov) * -2.0
-    t3new_abbabb += einsum("klbc,jlia->ijkabc", t2.bbbb, v.bbaa.ooov) * 2.0
-    t3new_abbabb += einsum("jkbd,iacd->ijkabc", t2.bbbb, v.aabb.ovvv) * 2.0
-    t3new_abbabb += einsum("jkcd,iabd->ijkabc", t2.bbbb, v.aabb.ovvv) * -2.0
-    t3new_abbabb += einsum("ld,id,jklbca->ijkabc", f.aa.ov, t1.aa, t3.bbabba) * -2.0
-    t3new_abbabb += einsum("ld,la,ijkdbc->ijkabc", f.aa.ov, t1.aa, t3.abbabb) * -2.0
-    t3new_abbabb += einsum("ld,jd,iklabc->ijkabc", f.bb.ov, t1.bb, t3.abbabb) * 2.0
-    t3new_abbabb += einsum("ld,kd,ijlabc->ijkabc", f.bb.ov, t1.bb, t3.abbabb) * -2.0
-    t3new_abbabb += einsum("ld,lb,ijkacd->ijkabc", f.bb.ov, t1.bb, t3.abbabb) * 2.0
-    t3new_abbabb += einsum("ld,lc,ijkabd->ijkabc", f.bb.ov, t1.bb, t3.abbabb) * -2.0
-    t3new_abbabb += einsum("ld,ijdb,lkac->ijkabc", f.aa.ov, t2.abab, t2.abab) * -1.0
-    t3new_abbabb += einsum("ld,ijdc,lkab->ijkabc", f.aa.ov, t2.abab, t2.abab)
-    t3new_abbabb += einsum("ld,ikdb,ljac->ijkabc", f.aa.ov, t2.abab, t2.abab)
-    t3new_abbabb += einsum("ld,ikdc,ljab->ijkabc", f.aa.ov, t2.abab, t2.abab) * -1.0
-    t3new_abbabb += einsum("ld,ikad,jlbc->ijkabc", f.bb.ov, t2.abab, t2.bbbb) * -2.0
-    t3new_abbabb += einsum("ld,ilac,jkbd->ijkabc", f.bb.ov, t2.abab, t2.bbbb) * -2.0
-    t3new_abbabb += einsum("ld,ilab,jkcd->ijkabc", f.bb.ov, t2.abab, t2.bbbb) * 2.0
-    t3new_abbabb += einsum("ld,ijad,klbc->ijkabc", f.bb.ov, t2.abab, t2.bbbb) * 2.0
-    t3new_abbabb += einsum("id,lkac,jbld->ijkabc", t1.aa, t2.abab, v.bbaa.ovov) * -1.0
-    t3new_abbabb += einsum("id,lkab,jcld->ijkabc", t1.aa, t2.abab, v.bbaa.ovov)
-    t3new_abbabb += einsum("id,ljac,kbld->ijkabc", t1.aa, t2.abab, v.bbaa.ovov)
-    t3new_abbabb += einsum("id,ljab,kcld->ijkabc", t1.aa, t2.abab, v.bbaa.ovov) * -1.0
-    t3new_abbabb += einsum("la,ikdc,jbld->ijkabc", t1.aa, t2.abab, v.bbaa.ovov) * -1.0
-    t3new_abbabb += einsum("la,ikdb,jcld->ijkabc", t1.aa, t2.abab, v.bbaa.ovov)
-    t3new_abbabb += einsum("la,ijdc,kbld->ijkabc", t1.aa, t2.abab, v.bbaa.ovov)
-    t3new_abbabb += einsum("la,ijdb,kcld->ijkabc", t1.aa, t2.abab, v.bbaa.ovov) * -1.0
-    t3new_abbabb += einsum("id,jlbc,klad->ijkabc", t1.aa, t2.bbbb, v.bbaa.oovv) * -2.0
-    t3new_abbabb += einsum("id,klbc,jlad->ijkabc", t1.aa, t2.bbbb, v.bbaa.oovv) * 2.0
-    t3new_abbabb += einsum("la,jmbc,ilkm->ijkabc", t1.aa, t2.bbbb, v.aabb.oooo) * 2.0
-    t3new_abbabb += einsum("la,kmbc,iljm->ijkabc", t1.aa, t2.bbbb, v.aabb.oooo) * -2.0
-    t3new_abbabb += einsum("la,jkbd,ilcd->ijkabc", t1.aa, t2.bbbb, v.aabb.oovv) * -2.0
-    t3new_abbabb += einsum("la,jkcd,ilbd->ijkabc", t1.aa, t2.bbbb, v.aabb.oovv) * 2.0
-    t3new_abbabb += einsum("id,jkbe,adce->ijkabc", t1.aa, t2.bbbb, v.aabb.vvvv) * 2.0
-    t3new_abbabb += einsum("id,jkce,adbe->ijkabc", t1.aa, t2.bbbb, v.aabb.vvvv) * -2.0
-    t3new_abbabb += einsum("jd,ilac,klbd->ijkabc", t1.bb, t2.abab, v.bbbb.oovv) * -1.0
-    t3new_abbabb += einsum("jd,ilab,klcd->ijkabc", t1.bb, t2.abab, v.bbbb.oovv)
-    t3new_abbabb += einsum("jd,lkac,ilbd->ijkabc", t1.bb, t2.abab, v.aabb.oovv) * -1.0
-    t3new_abbabb += einsum("jd,lkab,ilcd->ijkabc", t1.bb, t2.abab, v.aabb.oovv)
-    t3new_abbabb += einsum("kd,ilac,jlbd->ijkabc", t1.bb, t2.abab, v.bbbb.oovv)
-    t3new_abbabb += einsum("kd,ilab,jlcd->ijkabc", t1.bb, t2.abab, v.bbbb.oovv) * -1.0
-    t3new_abbabb += einsum("kd,ljac,ilbd->ijkabc", t1.bb, t2.abab, v.aabb.oovv)
-    t3new_abbabb += einsum("kd,ljab,ilcd->ijkabc", t1.bb, t2.abab, v.aabb.oovv) * -1.0
-    t3new_abbabb += einsum("lb,imac,jlkm->ijkabc", t1.bb, t2.abab, v.bbbb.oooo)
-    t3new_abbabb += einsum("lb,imac,jmkl->ijkabc", t1.bb, t2.abab, v.bbbb.oooo) * -1.0
-    t3new_abbabb += einsum("lb,mjac,imkl->ijkabc", t1.bb, t2.abab, v.aabb.oooo) * -1.0
-    t3new_abbabb += einsum("lb,mkac,imjl->ijkabc", t1.bb, t2.abab, v.aabb.oooo)
-    t3new_abbabb += einsum("lc,imab,jlkm->ijkabc", t1.bb, t2.abab, v.bbbb.oooo) * -1.0
-    t3new_abbabb += einsum("lc,imab,jmkl->ijkabc", t1.bb, t2.abab, v.bbbb.oooo)
-    t3new_abbabb += einsum("lc,mjab,imkl->ijkabc", t1.bb, t2.abab, v.aabb.oooo)
-    t3new_abbabb += einsum("lc,mkab,imjl->ijkabc", t1.bb, t2.abab, v.aabb.oooo) * -1.0
-    t3new_abbabb += einsum("lb,ikad,jlcd->ijkabc", t1.bb, t2.abab, v.bbbb.oovv) * -1.0
-    t3new_abbabb += einsum("lb,ikdc,jlad->ijkabc", t1.bb, t2.abab, v.bbaa.oovv) * -1.0
-    t3new_abbabb += einsum("lb,ijad,klcd->ijkabc", t1.bb, t2.abab, v.bbbb.oovv)
-    t3new_abbabb += einsum("lb,ijdc,klad->ijkabc", t1.bb, t2.abab, v.bbaa.oovv)
-    t3new_abbabb += einsum("lc,ikad,jlbd->ijkabc", t1.bb, t2.abab, v.bbbb.oovv)
-    t3new_abbabb += einsum("lc,ikdb,jlad->ijkabc", t1.bb, t2.abab, v.bbaa.oovv)
-    t3new_abbabb += einsum("lc,ijad,klbd->ijkabc", t1.bb, t2.abab, v.bbbb.oovv) * -1.0
-    t3new_abbabb += einsum("lc,ijdb,klad->ijkabc", t1.bb, t2.abab, v.bbaa.oovv) * -1.0
-    t3new_abbabb += einsum("jd,ilac,kbld->ijkabc", t1.bb, t2.abab, v.bbbb.ovov)
-    t3new_abbabb += einsum("jd,ilab,kcld->ijkabc", t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t3new_abbabb += einsum("kd,ilac,jbld->ijkabc", t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t3new_abbabb += einsum("kd,ilab,jcld->ijkabc", t1.bb, t2.abab, v.bbbb.ovov)
-    t3new_abbabb += einsum("lb,ikad,jcld->ijkabc", t1.bb, t2.abab, v.bbbb.ovov)
-    t3new_abbabb += einsum("lb,ijad,kcld->ijkabc", t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t3new_abbabb += einsum("lc,ikad,jbld->ijkabc", t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t3new_abbabb += einsum("lc,ijad,kbld->ijkabc", t1.bb, t2.abab, v.bbbb.ovov)
-    t3new_abbabb += einsum("jd,ikec,aebd->ijkabc", t1.bb, t2.abab, v.aabb.vvvv)
-    t3new_abbabb += einsum("jd,ikeb,aecd->ijkabc", t1.bb, t2.abab, v.aabb.vvvv) * -1.0
-    t3new_abbabb += einsum("jd,ikae,bdce->ijkabc", t1.bb, t2.abab, v.bbbb.vvvv)
-    t3new_abbabb += einsum("jd,ikae,becd->ijkabc", t1.bb, t2.abab, v.bbbb.vvvv) * -1.0
-    t3new_abbabb += einsum("kd,ijec,aebd->ijkabc", t1.bb, t2.abab, v.aabb.vvvv) * -1.0
-    t3new_abbabb += einsum("kd,ijeb,aecd->ijkabc", t1.bb, t2.abab, v.aabb.vvvv)
-    t3new_abbabb += einsum("kd,ijae,bdce->ijkabc", t1.bb, t2.abab, v.bbbb.vvvv) * -1.0
-    t3new_abbabb += einsum("kd,ijae,becd->ijkabc", t1.bb, t2.abab, v.bbbb.vvvv)
-    t3new_abbabb += einsum("jd,klbc,iald->ijkabc", t1.bb, t2.bbbb, v.aabb.ovov) * 2.0
-    t3new_abbabb += einsum("kd,jlbc,iald->ijkabc", t1.bb, t2.bbbb, v.aabb.ovov) * -2.0
-    t3new_abbabb += einsum("lb,jkcd,iald->ijkabc", t1.bb, t2.bbbb, v.aabb.ovov) * 2.0
-    t3new_abbabb += einsum("lc,jkbd,iald->ijkabc", t1.bb, t2.bbbb, v.aabb.ovov) * -2.0
-    t3new_abbabb += einsum("id,la,jmbc,kmld->ijkabc", t1.aa, t1.aa, t2.bbbb, v.bbaa.ooov) * 2.0
-    t3new_abbabb += einsum("id,la,kmbc,jmld->ijkabc", t1.aa, t1.aa, t2.bbbb, v.bbaa.ooov) * -2.0
-    t3new_abbabb += einsum("id,la,jkbe,ldce->ijkabc", t1.aa, t1.aa, t2.bbbb, v.aabb.ovvv) * -2.0
-    t3new_abbabb += einsum("id,la,jkce,ldbe->ijkabc", t1.aa, t1.aa, t2.bbbb, v.aabb.ovvv) * 2.0
-    t3new_abbabb += einsum("id,lb,mkac,jlmd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ooov)
-    t3new_abbabb += einsum("id,lb,mjac,klmd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ooov) * -1.0
-    t3new_abbabb += einsum("id,lc,mkab,jlmd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ooov) * -1.0
-    t3new_abbabb += einsum("id,lc,mjab,klmd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ooov)
-    t3new_abbabb += einsum("la,mb,ikdc,jmld->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ooov)
-    t3new_abbabb += einsum("la,mb,ijdc,kmld->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ooov) * -1.0
-    t3new_abbabb += einsum("la,mc,ikdb,jmld->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ooov) * -1.0
-    t3new_abbabb += einsum("la,mc,ijdb,kmld->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ooov)
-    t3new_abbabb += einsum("id,je,lkac,ldbe->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ovvv) * -1.0
-    t3new_abbabb += einsum("id,je,lkab,ldce->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ovvv)
-    t3new_abbabb += einsum("id,ke,ljac,ldbe->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ovvv)
-    t3new_abbabb += einsum("id,ke,ljab,ldce->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ovvv) * -1.0
-    t3new_abbabb += einsum("la,jd,ikec,lebd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ovvv) * -1.0
-    t3new_abbabb += einsum("la,jd,ikeb,lecd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ovvv)
-    t3new_abbabb += einsum("la,kd,ijec,lebd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ovvv)
-    t3new_abbabb += einsum("la,kd,ijeb,lecd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ovvv) * -1.0
-    t3new_abbabb += einsum("la,jd,kmbc,ilmd->ijkabc", t1.aa, t1.bb, t2.bbbb, v.aabb.ooov) * -2.0
-    t3new_abbabb += einsum("la,kd,jmbc,ilmd->ijkabc", t1.aa, t1.bb, t2.bbbb, v.aabb.ooov) * 2.0
-    t3new_abbabb += einsum("la,mb,jkcd,ilmd->ijkabc", t1.aa, t1.bb, t2.bbbb, v.aabb.ooov) * -2.0
-    t3new_abbabb += einsum("la,mc,jkbd,ilmd->ijkabc", t1.aa, t1.bb, t2.bbbb, v.aabb.ooov) * 2.0
-    t3new_abbabb += einsum("id,je,klbc,lead->ijkabc", t1.aa, t1.bb, t2.bbbb, v.bbaa.ovvv) * 2.0
-    t3new_abbabb += einsum("id,ke,jlbc,lead->ijkabc", t1.aa, t1.bb, t2.bbbb, v.bbaa.ovvv) * -2.0
-    t3new_abbabb += einsum("id,lb,jkce,lead->ijkabc", t1.aa, t1.bb, t2.bbbb, v.bbaa.ovvv) * 2.0
-    t3new_abbabb += einsum("id,lc,jkbe,lead->ijkabc", t1.aa, t1.bb, t2.bbbb, v.bbaa.ovvv) * -2.0
-    t3new_abbabb += einsum("jd,lb,imac,klmd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov) * -1.0
-    t3new_abbabb += einsum("jd,lb,imac,kmld->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov)
-    t3new_abbabb += einsum("jd,lb,mkac,imld->ijkabc", t1.bb, t1.bb, t2.abab, v.aabb.ooov)
-    t3new_abbabb += einsum("jd,lc,imab,klmd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov)
-    t3new_abbabb += einsum("jd,lc,imab,kmld->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov) * -1.0
-    t3new_abbabb += einsum("jd,lc,mkab,imld->ijkabc", t1.bb, t1.bb, t2.abab, v.aabb.ooov) * -1.0
-    t3new_abbabb += einsum("kd,lb,imac,jlmd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov)
-    t3new_abbabb += einsum("kd,lb,imac,jmld->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov) * -1.0
-    t3new_abbabb += einsum("kd,lb,mjac,imld->ijkabc", t1.bb, t1.bb, t2.abab, v.aabb.ooov) * -1.0
-    t3new_abbabb += einsum("kd,lc,imab,jlmd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov) * -1.0
-    t3new_abbabb += einsum("kd,lc,imab,jmld->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov)
-    t3new_abbabb += einsum("kd,lc,mjab,imld->ijkabc", t1.bb, t1.bb, t2.abab, v.aabb.ooov)
-    t3new_abbabb += einsum("lb,mc,ikad,jlmd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov)
-    t3new_abbabb += einsum("lb,mc,ikad,jmld->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov) * -1.0
-    t3new_abbabb += einsum("lb,mc,ijad,klmd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov) * -1.0
-    t3new_abbabb += einsum("lb,mc,ijad,kmld->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov)
-    t3new_abbabb += einsum("jd,ke,ilac,ldbe->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv)
-    t3new_abbabb += einsum("jd,ke,ilab,ldce->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv) * -1.0
-    t3new_abbabb += einsum("jd,ke,ilac,lebd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv) * -1.0
-    t3new_abbabb += einsum("jd,ke,ilab,lecd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv)
-    t3new_abbabb += einsum("jd,lb,ikae,ldce->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv) * -1.0
-    t3new_abbabb += einsum("jd,lb,ikec,ldae->ijkabc", t1.bb, t1.bb, t2.abab, v.bbaa.ovvv) * -1.0
-    t3new_abbabb += einsum("jd,lb,ikae,lecd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv)
-    t3new_abbabb += einsum("jd,lc,ikae,ldbe->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv)
-    t3new_abbabb += einsum("jd,lc,ikeb,ldae->ijkabc", t1.bb, t1.bb, t2.abab, v.bbaa.ovvv)
-    t3new_abbabb += einsum("jd,lc,ikae,lebd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv) * -1.0
-    t3new_abbabb += einsum("kd,lb,ijae,ldce->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv)
-    t3new_abbabb += einsum("kd,lb,ijec,ldae->ijkabc", t1.bb, t1.bb, t2.abab, v.bbaa.ovvv)
-    t3new_abbabb += einsum("kd,lb,ijae,lecd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv) * -1.0
-    t3new_abbabb += einsum("kd,lc,ijae,ldbe->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv) * -1.0
-    t3new_abbabb += einsum("kd,lc,ijeb,ldae->ijkabc", t1.bb, t1.bb, t2.abab, v.bbaa.ovvv) * -1.0
-    t3new_abbabb += einsum("kd,lc,ijae,lebd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv)
-    t3new_abbabb += einsum("id,la,je,kmbc,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.bbbb, v.aabb.ovov) * -2.0
-    t3new_abbabb += einsum("id,la,ke,jmbc,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.bbbb, v.aabb.ovov) * 2.0
-    t3new_abbabb += einsum("id,la,mb,jkce,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.bbbb, v.aabb.ovov) * -2.0
-    t3new_abbabb += einsum("id,la,mc,jkbe,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.bbbb, v.aabb.ovov) * 2.0
-    t3new_abbabb += einsum("id,je,lb,mkac,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.abab, v.bbaa.ovov)
-    t3new_abbabb += einsum("id,je,lc,mkab,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.abab, v.bbaa.ovov) * -1.0
-    t3new_abbabb += einsum("id,ke,lb,mjac,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.abab, v.bbaa.ovov) * -1.0
-    t3new_abbabb += einsum("id,ke,lc,mjab,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.abab, v.bbaa.ovov)
-    t3new_abbabb += einsum("la,jd,mb,ikec,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.abab, v.aabb.ovov)
-    t3new_abbabb += einsum("la,jd,mc,ikeb,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_abbabb += einsum("la,kd,mb,ijec,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_abbabb += einsum("la,kd,mc,ijeb,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.abab, v.aabb.ovov)
-    t3new_abbabb += einsum("jd,ke,lb,imac,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.abab, v.bbbb.ovov)
-    t3new_abbabb += einsum("jd,ke,lb,imac,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t3new_abbabb += einsum("jd,ke,lc,imab,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t3new_abbabb += einsum("jd,ke,lc,imab,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.abab, v.bbbb.ovov)
-    t3new_abbabb += einsum("jd,lb,mc,ikae,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.abab, v.bbbb.ovov)
-    t3new_abbabb += einsum("jd,lb,mc,ikae,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t3new_abbabb += einsum("kd,lb,mc,ijae,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t3new_abbabb += einsum("kd,lb,mc,ijae,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.abab, v.bbbb.ovov)
-
-    # T3 amplitudes
+    t3new_abaaba += einsum(x308, (0, 1, 2, 3, 4, 5), (2, 0, 3, 4, 1, 5)) * -1.0
+    t3new_abaaba += einsum(x308, (0, 1, 2, 3, 4, 5), (2, 0, 3, 5, 1, 4))
+    t3new_abaaba += einsum(x308, (0, 1, 2, 3, 4, 5), (3, 0, 2, 4, 1, 5))
+    t3new_abaaba += einsum(x308, (0, 1, 2, 3, 4, 5), (3, 0, 2, 5, 1, 4)) * -1.0
     t3new_baabaa = np.zeros((nocc[1], nocc[0], nocc[0], nvir[1], nvir[0], nvir[0]), dtype=np.float64)
-    t3new_baabaa += einsum("il,jlkbac->ijkabc", f.bb.oo, t3.abaaba) * -2.0
-    t3new_baabaa += einsum("jl,kilbac->ijkabc", f.aa.oo, t3.abaaba) * 2.0
-    t3new_baabaa += einsum("kl,jilbac->ijkabc", f.aa.oo, t3.abaaba) * -2.0
-    t3new_baabaa += einsum("ad,jikbdc->ijkabc", f.bb.vv, t3.abaaba) * 2.0
-    t3new_baabaa += einsum("bd,jikcad->ijkabc", f.aa.vv, t3.abaaba) * -2.0
-    t3new_baabaa += einsum("cd,jikbad->ijkabc", f.aa.vv, t3.abaaba) * 2.0
-    t3new_baabaa += einsum("jlba,ilkc->ijkabc", t2.abab, v.bbaa.ooov) * -1.0
-    t3new_baabaa += einsum("jlca,ilkb->ijkabc", t2.abab, v.bbaa.ooov)
-    t3new_baabaa += einsum("klba,iljc->ijkabc", t2.abab, v.bbaa.ooov)
-    t3new_baabaa += einsum("klca,iljb->ijkabc", t2.abab, v.bbaa.ooov) * -1.0
-    t3new_baabaa += einsum("liba,jlkc->ijkabc", t2.abab, v.aaaa.ooov) * -1.0
-    t3new_baabaa += einsum("lica,jlkb->ijkabc", t2.abab, v.aaaa.ooov)
-    t3new_baabaa += einsum("liba,kljc->ijkabc", t2.abab, v.aaaa.ooov)
-    t3new_baabaa += einsum("lica,kljb->ijkabc", t2.abab, v.aaaa.ooov) * -1.0
-    t3new_baabaa += einsum("jicd,kbad->ijkabc", t2.abab, v.aabb.ovvv) * -1.0
-    t3new_baabaa += einsum("jida,kbcd->ijkabc", t2.abab, v.aaaa.ovvv) * -1.0
-    t3new_baabaa += einsum("jibd,kcad->ijkabc", t2.abab, v.aabb.ovvv)
-    t3new_baabaa += einsum("jida,kcbd->ijkabc", t2.abab, v.aaaa.ovvv)
-    t3new_baabaa += einsum("kicd,jbad->ijkabc", t2.abab, v.aabb.ovvv)
-    t3new_baabaa += einsum("kida,jbcd->ijkabc", t2.abab, v.aaaa.ovvv)
-    t3new_baabaa += einsum("kibd,jcad->ijkabc", t2.abab, v.aabb.ovvv) * -1.0
-    t3new_baabaa += einsum("kida,jcbd->ijkabc", t2.abab, v.aaaa.ovvv) * -1.0
-    t3new_baabaa += einsum("jlbc,klia->ijkabc", t2.aaaa, v.aabb.ooov) * -2.0
-    t3new_baabaa += einsum("klbc,jlia->ijkabc", t2.aaaa, v.aabb.ooov) * 2.0
-    t3new_baabaa += einsum("jkbd,iacd->ijkabc", t2.aaaa, v.bbaa.ovvv) * 2.0
-    t3new_baabaa += einsum("jkcd,iabd->ijkabc", t2.aaaa, v.bbaa.ovvv) * -2.0
-    t3new_baabaa += einsum("ld,jd,kilbac->ijkabc", f.aa.ov, t1.aa, t3.abaaba) * 2.0
-    t3new_baabaa += einsum("ld,kd,jilbac->ijkabc", f.aa.ov, t1.aa, t3.abaaba) * -2.0
-    t3new_baabaa += einsum("ld,lb,jikcad->ijkabc", f.aa.ov, t1.aa, t3.abaaba) * 2.0
-    t3new_baabaa += einsum("ld,lc,jikbad->ijkabc", f.aa.ov, t1.aa, t3.abaaba) * -2.0
-    t3new_baabaa += einsum("ld,id,jlkbac->ijkabc", f.bb.ov, t1.bb, t3.abaaba) * -2.0
-    t3new_baabaa += einsum("ld,la,jikbdc->ijkabc", f.bb.ov, t1.bb, t3.abaaba) * -2.0
-    t3new_baabaa += einsum("ld,jibd,klca->ijkabc", f.bb.ov, t2.abab, t2.abab) * -1.0
-    t3new_baabaa += einsum("ld,jicd,klba->ijkabc", f.bb.ov, t2.abab, t2.abab)
-    t3new_baabaa += einsum("ld,jlba,kicd->ijkabc", f.bb.ov, t2.abab, t2.abab) * -1.0
-    t3new_baabaa += einsum("ld,jlca,kibd->ijkabc", f.bb.ov, t2.abab, t2.abab)
-    t3new_baabaa += einsum("ld,jida,klbc->ijkabc", f.aa.ov, t2.abab, t2.aaaa) * 2.0
-    t3new_baabaa += einsum("ld,kida,jlbc->ijkabc", f.aa.ov, t2.abab, t2.aaaa) * -2.0
-    t3new_baabaa += einsum("ld,liba,jkcd->ijkabc", f.aa.ov, t2.abab, t2.aaaa) * 2.0
-    t3new_baabaa += einsum("ld,lica,jkbd->ijkabc", f.aa.ov, t2.abab, t2.aaaa) * -2.0
-    t3new_baabaa += einsum("jd,klba,ilcd->ijkabc", t1.aa, t2.abab, v.bbaa.oovv)
-    t3new_baabaa += einsum("jd,klca,ilbd->ijkabc", t1.aa, t2.abab, v.bbaa.oovv) * -1.0
-    t3new_baabaa += einsum("jd,liba,klcd->ijkabc", t1.aa, t2.abab, v.aaaa.oovv)
-    t3new_baabaa += einsum("jd,lica,klbd->ijkabc", t1.aa, t2.abab, v.aaaa.oovv) * -1.0
-    t3new_baabaa += einsum("kd,jlba,ilcd->ijkabc", t1.aa, t2.abab, v.bbaa.oovv) * -1.0
-    t3new_baabaa += einsum("kd,jlca,ilbd->ijkabc", t1.aa, t2.abab, v.bbaa.oovv)
-    t3new_baabaa += einsum("kd,liba,jlcd->ijkabc", t1.aa, t2.abab, v.aaaa.oovv) * -1.0
-    t3new_baabaa += einsum("kd,lica,jlbd->ijkabc", t1.aa, t2.abab, v.aaaa.oovv)
-    t3new_baabaa += einsum("lb,jmca,imkl->ijkabc", t1.aa, t2.abab, v.bbaa.oooo) * -1.0
-    t3new_baabaa += einsum("lb,kmca,imjl->ijkabc", t1.aa, t2.abab, v.bbaa.oooo)
-    t3new_baabaa += einsum("lb,mica,jlkm->ijkabc", t1.aa, t2.abab, v.aaaa.oooo)
-    t3new_baabaa += einsum("lb,mica,jmkl->ijkabc", t1.aa, t2.abab, v.aaaa.oooo) * -1.0
-    t3new_baabaa += einsum("lc,jmba,imkl->ijkabc", t1.aa, t2.abab, v.bbaa.oooo)
-    t3new_baabaa += einsum("lc,kmba,imjl->ijkabc", t1.aa, t2.abab, v.bbaa.oooo) * -1.0
-    t3new_baabaa += einsum("lc,miba,jlkm->ijkabc", t1.aa, t2.abab, v.aaaa.oooo) * -1.0
-    t3new_baabaa += einsum("lc,miba,jmkl->ijkabc", t1.aa, t2.abab, v.aaaa.oooo)
-    t3new_baabaa += einsum("lb,jicd,klad->ijkabc", t1.aa, t2.abab, v.aabb.oovv)
-    t3new_baabaa += einsum("lb,jida,klcd->ijkabc", t1.aa, t2.abab, v.aaaa.oovv)
-    t3new_baabaa += einsum("lb,kicd,jlad->ijkabc", t1.aa, t2.abab, v.aabb.oovv) * -1.0
-    t3new_baabaa += einsum("lb,kida,jlcd->ijkabc", t1.aa, t2.abab, v.aaaa.oovv) * -1.0
-    t3new_baabaa += einsum("lc,jibd,klad->ijkabc", t1.aa, t2.abab, v.aabb.oovv) * -1.0
-    t3new_baabaa += einsum("lc,jida,klbd->ijkabc", t1.aa, t2.abab, v.aaaa.oovv) * -1.0
-    t3new_baabaa += einsum("lc,kibd,jlad->ijkabc", t1.aa, t2.abab, v.aabb.oovv)
-    t3new_baabaa += einsum("lc,kida,jlbd->ijkabc", t1.aa, t2.abab, v.aaaa.oovv)
-    t3new_baabaa += einsum("jd,lica,kbld->ijkabc", t1.aa, t2.abab, v.aaaa.ovov)
-    t3new_baabaa += einsum("jd,liba,kcld->ijkabc", t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t3new_baabaa += einsum("kd,lica,jbld->ijkabc", t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t3new_baabaa += einsum("kd,liba,jcld->ijkabc", t1.aa, t2.abab, v.aaaa.ovov)
-    t3new_baabaa += einsum("lb,jida,kcld->ijkabc", t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t3new_baabaa += einsum("lb,kida,jcld->ijkabc", t1.aa, t2.abab, v.aaaa.ovov)
-    t3new_baabaa += einsum("lc,jida,kbld->ijkabc", t1.aa, t2.abab, v.aaaa.ovov)
-    t3new_baabaa += einsum("lc,kida,jbld->ijkabc", t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t3new_baabaa += einsum("jd,kibe,aecd->ijkabc", t1.aa, t2.abab, v.bbaa.vvvv) * -1.0
-    t3new_baabaa += einsum("jd,kice,aebd->ijkabc", t1.aa, t2.abab, v.bbaa.vvvv)
-    t3new_baabaa += einsum("jd,kiea,bdce->ijkabc", t1.aa, t2.abab, v.aaaa.vvvv)
-    t3new_baabaa += einsum("jd,kiea,becd->ijkabc", t1.aa, t2.abab, v.aaaa.vvvv) * -1.0
-    t3new_baabaa += einsum("kd,jibe,aecd->ijkabc", t1.aa, t2.abab, v.bbaa.vvvv)
-    t3new_baabaa += einsum("kd,jice,aebd->ijkabc", t1.aa, t2.abab, v.bbaa.vvvv) * -1.0
-    t3new_baabaa += einsum("kd,jiea,bdce->ijkabc", t1.aa, t2.abab, v.aaaa.vvvv) * -1.0
-    t3new_baabaa += einsum("kd,jiea,becd->ijkabc", t1.aa, t2.abab, v.aaaa.vvvv)
-    t3new_baabaa += einsum("jd,klbc,iald->ijkabc", t1.aa, t2.aaaa, v.bbaa.ovov) * 2.0
-    t3new_baabaa += einsum("kd,jlbc,iald->ijkabc", t1.aa, t2.aaaa, v.bbaa.ovov) * -2.0
-    t3new_baabaa += einsum("lb,jkcd,iald->ijkabc", t1.aa, t2.aaaa, v.bbaa.ovov) * 2.0
-    t3new_baabaa += einsum("lc,jkbd,iald->ijkabc", t1.aa, t2.aaaa, v.bbaa.ovov) * -2.0
-    t3new_baabaa += einsum("id,jlca,kbld->ijkabc", t1.bb, t2.abab, v.aabb.ovov)
-    t3new_baabaa += einsum("id,jlba,kcld->ijkabc", t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_baabaa += einsum("id,klca,jbld->ijkabc", t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_baabaa += einsum("id,klba,jcld->ijkabc", t1.bb, t2.abab, v.aabb.ovov)
-    t3new_baabaa += einsum("la,jicd,kbld->ijkabc", t1.bb, t2.abab, v.aabb.ovov)
-    t3new_baabaa += einsum("la,jibd,kcld->ijkabc", t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_baabaa += einsum("la,kicd,jbld->ijkabc", t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_baabaa += einsum("la,kibd,jcld->ijkabc", t1.bb, t2.abab, v.aabb.ovov)
-    t3new_baabaa += einsum("id,jlbc,klad->ijkabc", t1.bb, t2.aaaa, v.aabb.oovv) * -2.0
-    t3new_baabaa += einsum("id,klbc,jlad->ijkabc", t1.bb, t2.aaaa, v.aabb.oovv) * 2.0
-    t3new_baabaa += einsum("la,jmbc,ilkm->ijkabc", t1.bb, t2.aaaa, v.bbaa.oooo) * 2.0
-    t3new_baabaa += einsum("la,kmbc,iljm->ijkabc", t1.bb, t2.aaaa, v.bbaa.oooo) * -2.0
-    t3new_baabaa += einsum("la,jkbd,ilcd->ijkabc", t1.bb, t2.aaaa, v.bbaa.oovv) * -2.0
-    t3new_baabaa += einsum("la,jkcd,ilbd->ijkabc", t1.bb, t2.aaaa, v.bbaa.oovv) * 2.0
-    t3new_baabaa += einsum("id,jkbe,adce->ijkabc", t1.bb, t2.aaaa, v.bbaa.vvvv) * 2.0
-    t3new_baabaa += einsum("id,jkce,adbe->ijkabc", t1.bb, t2.aaaa, v.bbaa.vvvv) * -2.0
-    t3new_baabaa += einsum("jd,lb,kmca,imld->ijkabc", t1.aa, t1.aa, t2.abab, v.bbaa.ooov)
-    t3new_baabaa += einsum("jd,lb,mica,klmd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov) * -1.0
-    t3new_baabaa += einsum("jd,lb,mica,kmld->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov)
-    t3new_baabaa += einsum("jd,lc,kmba,imld->ijkabc", t1.aa, t1.aa, t2.abab, v.bbaa.ooov) * -1.0
-    t3new_baabaa += einsum("jd,lc,miba,klmd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov)
-    t3new_baabaa += einsum("jd,lc,miba,kmld->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov) * -1.0
-    t3new_baabaa += einsum("kd,lb,jmca,imld->ijkabc", t1.aa, t1.aa, t2.abab, v.bbaa.ooov) * -1.0
-    t3new_baabaa += einsum("kd,lb,mica,jlmd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov)
-    t3new_baabaa += einsum("kd,lb,mica,jmld->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov) * -1.0
-    t3new_baabaa += einsum("kd,lc,jmba,imld->ijkabc", t1.aa, t1.aa, t2.abab, v.bbaa.ooov)
-    t3new_baabaa += einsum("kd,lc,miba,jlmd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov) * -1.0
-    t3new_baabaa += einsum("kd,lc,miba,jmld->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov)
-    t3new_baabaa += einsum("lb,mc,jida,klmd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov) * -1.0
-    t3new_baabaa += einsum("lb,mc,jida,kmld->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov)
-    t3new_baabaa += einsum("lb,mc,kida,jlmd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov)
-    t3new_baabaa += einsum("lb,mc,kida,jmld->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ooov) * -1.0
-    t3new_baabaa += einsum("jd,ke,liba,ldce->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv) * -1.0
-    t3new_baabaa += einsum("jd,ke,lica,ldbe->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv)
-    t3new_baabaa += einsum("jd,ke,liba,lecd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv)
-    t3new_baabaa += einsum("jd,ke,lica,lebd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv) * -1.0
-    t3new_baabaa += einsum("jd,lb,kice,ldae->ijkabc", t1.aa, t1.aa, t2.abab, v.aabb.ovvv) * -1.0
-    t3new_baabaa += einsum("jd,lb,kiea,ldce->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv) * -1.0
-    t3new_baabaa += einsum("jd,lb,kiea,lecd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv)
-    t3new_baabaa += einsum("jd,lc,kibe,ldae->ijkabc", t1.aa, t1.aa, t2.abab, v.aabb.ovvv)
-    t3new_baabaa += einsum("jd,lc,kiea,ldbe->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv)
-    t3new_baabaa += einsum("jd,lc,kiea,lebd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv) * -1.0
-    t3new_baabaa += einsum("kd,lb,jice,ldae->ijkabc", t1.aa, t1.aa, t2.abab, v.aabb.ovvv)
-    t3new_baabaa += einsum("kd,lb,jiea,ldce->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv)
-    t3new_baabaa += einsum("kd,lb,jiea,lecd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv) * -1.0
-    t3new_baabaa += einsum("kd,lc,jibe,ldae->ijkabc", t1.aa, t1.aa, t2.abab, v.aabb.ovvv) * -1.0
-    t3new_baabaa += einsum("kd,lc,jiea,ldbe->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv) * -1.0
-    t3new_baabaa += einsum("kd,lc,jiea,lebd->ijkabc", t1.aa, t1.aa, t2.abab, v.aaaa.ovvv)
-    t3new_baabaa += einsum("lb,id,jmca,klmd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ooov) * -1.0
-    t3new_baabaa += einsum("lb,id,kmca,jlmd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ooov)
-    t3new_baabaa += einsum("lc,id,jmba,klmd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ooov)
-    t3new_baabaa += einsum("lc,id,kmba,jlmd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ooov) * -1.0
-    t3new_baabaa += einsum("lb,ma,jicd,klmd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ooov) * -1.0
-    t3new_baabaa += einsum("lb,ma,kicd,jlmd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ooov)
-    t3new_baabaa += einsum("lc,ma,jibd,klmd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ooov)
-    t3new_baabaa += einsum("lc,ma,kibd,jlmd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ooov) * -1.0
-    t3new_baabaa += einsum("jd,ie,klba,lecd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ovvv)
-    t3new_baabaa += einsum("jd,ie,klca,lebd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ovvv) * -1.0
-    t3new_baabaa += einsum("jd,la,kibe,lecd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ovvv)
-    t3new_baabaa += einsum("jd,la,kice,lebd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ovvv) * -1.0
-    t3new_baabaa += einsum("kd,ie,jlba,lecd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ovvv) * -1.0
-    t3new_baabaa += einsum("kd,ie,jlca,lebd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ovvv)
-    t3new_baabaa += einsum("kd,la,jibe,lecd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ovvv) * -1.0
-    t3new_baabaa += einsum("kd,la,jice,lebd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ovvv)
-    t3new_baabaa += einsum("jd,la,kmbc,ilmd->ijkabc", t1.aa, t1.bb, t2.aaaa, v.bbaa.ooov) * -2.0
-    t3new_baabaa += einsum("kd,la,jmbc,ilmd->ijkabc", t1.aa, t1.bb, t2.aaaa, v.bbaa.ooov) * 2.0
-    t3new_baabaa += einsum("lb,ma,jkcd,imld->ijkabc", t1.aa, t1.bb, t2.aaaa, v.bbaa.ooov) * -2.0
-    t3new_baabaa += einsum("lc,ma,jkbd,imld->ijkabc", t1.aa, t1.bb, t2.aaaa, v.bbaa.ooov) * 2.0
-    t3new_baabaa += einsum("jd,ie,klbc,ldae->ijkabc", t1.aa, t1.bb, t2.aaaa, v.aabb.ovvv) * 2.0
-    t3new_baabaa += einsum("kd,ie,jlbc,ldae->ijkabc", t1.aa, t1.bb, t2.aaaa, v.aabb.ovvv) * -2.0
-    t3new_baabaa += einsum("lb,id,jkce,lead->ijkabc", t1.aa, t1.bb, t2.aaaa, v.aabb.ovvv) * 2.0
-    t3new_baabaa += einsum("lc,id,jkbe,lead->ijkabc", t1.aa, t1.bb, t2.aaaa, v.aabb.ovvv) * -2.0
-    t3new_baabaa += einsum("id,la,jmbc,kmld->ijkabc", t1.bb, t1.bb, t2.aaaa, v.aabb.ooov) * 2.0
-    t3new_baabaa += einsum("id,la,kmbc,jmld->ijkabc", t1.bb, t1.bb, t2.aaaa, v.aabb.ooov) * -2.0
-    t3new_baabaa += einsum("id,la,jkbe,ldce->ijkabc", t1.bb, t1.bb, t2.aaaa, v.bbaa.ovvv) * -2.0
-    t3new_baabaa += einsum("id,la,jkce,ldbe->ijkabc", t1.bb, t1.bb, t2.aaaa, v.bbaa.ovvv) * 2.0
-    t3new_baabaa += einsum("jd,ke,lb,mica,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.abab, v.aaaa.ovov)
-    t3new_baabaa += einsum("jd,ke,lb,mica,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t3new_baabaa += einsum("jd,ke,lc,miba,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t3new_baabaa += einsum("jd,ke,lc,miba,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.abab, v.aaaa.ovov)
-    t3new_baabaa += einsum("jd,lb,mc,kiea,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.abab, v.aaaa.ovov)
-    t3new_baabaa += einsum("jd,lb,mc,kiea,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t3new_baabaa += einsum("kd,lb,mc,jiea,ldme->ijkabc", t1.aa, t1.aa, t1.aa, t2.abab, v.aaaa.ovov) * -1.0
-    t3new_baabaa += einsum("kd,lb,mc,jiea,lemd->ijkabc", t1.aa, t1.aa, t1.aa, t2.abab, v.aaaa.ovov)
-    t3new_baabaa += einsum("jd,lb,ie,kmca,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.abab, v.aabb.ovov)
-    t3new_baabaa += einsum("jd,lc,ie,kmba,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_baabaa += einsum("jd,lb,ma,kice,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.abab, v.aabb.ovov)
-    t3new_baabaa += einsum("jd,lc,ma,kibe,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_baabaa += einsum("kd,lb,ie,jmca,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_baabaa += einsum("kd,lc,ie,jmba,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.abab, v.aabb.ovov)
-    t3new_baabaa += einsum("kd,lb,ma,jice,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_baabaa += einsum("kd,lc,ma,jibe,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.abab, v.aabb.ovov)
-    t3new_baabaa += einsum("jd,ie,la,kmbc,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.aaaa, v.bbaa.ovov) * -2.0
-    t3new_baabaa += einsum("kd,ie,la,jmbc,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.aaaa, v.bbaa.ovov) * 2.0
-    t3new_baabaa += einsum("lb,id,ma,jkce,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.aaaa, v.aabb.ovov) * -2.0
-    t3new_baabaa += einsum("lc,id,ma,jkbe,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.aaaa, v.aabb.ovov) * 2.0
-
-    # T3 amplitudes
+    t3new_baabaa += einsum(x308, (0, 1, 2, 3, 4, 5), (0, 2, 3, 1, 4, 5)) * -1.0
+    t3new_baabaa += einsum(x308, (0, 1, 2, 3, 4, 5), (0, 2, 3, 1, 5, 4))
+    t3new_baabaa += einsum(x308, (0, 1, 2, 3, 4, 5), (0, 3, 2, 1, 4, 5))
+    t3new_baabaa += einsum(x308, (0, 1, 2, 3, 4, 5), (0, 3, 2, 1, 5, 4)) * -1.0
+    x309 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0]), dtype=np.float64)
+    x309 += einsum(t1.bb, (0, 1), v.bbaa.vvoo, (2, 1, 3, 4), (0, 2, 3, 4))
+    x310 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0]), dtype=np.float64)
+    x310 += einsum(f.aa.ov, (0, 1), t2.baba, (2, 3, 4, 1), (2, 4, 0, 3))
+    x311 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0]), dtype=np.float64)
+    x311 += einsum(t1.bb, (0, 1), x288, (0, 2, 3, 4), (2, 1, 3, 4))
+    x312 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0]), dtype=np.float64)
+    x312 += einsum(v.bbaa.ovoo, (0, 1, 2, 3), (0, 1, 3, 2))
+    x312 += einsum(x309, (0, 1, 2, 3), (0, 1, 3, 2))
+    x312 += einsum(x310, (0, 1, 2, 3), (0, 1, 2, 3))
+    x312 += einsum(x311, (0, 1, 2, 3), (0, 1, 3, 2)) * -1.0
+    x313 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x313 += einsum(t2.aaaa, (0, 1, 2, 3), x312, (4, 5, 0, 6), (4, 5, 6, 1, 2, 3)) * 2.0
+    x314 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x314 += einsum(v.bbaa.ovov, (0, 1, 2, 3), (0, 1, 2, 3))
+    x314 += einsum(x130, (0, 1, 2, 3), (0, 1, 2, 3))
+    x315 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0]), dtype=np.float64)
+    x315 += einsum(t1.aa, (0, 1), x314, (2, 3, 4, 1), (2, 3, 4, 0))
+    x316 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0]), dtype=np.float64)
+    x316 += einsum(t1.bb, (0, 1), x290, (2, 0, 3, 4), (2, 1, 3, 4))
+    x317 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0]), dtype=np.float64)
+    x317 += einsum(x315, (0, 1, 2, 3), (0, 1, 3, 2))
+    x317 += einsum(x316, (0, 1, 2, 3), (0, 1, 2, 3)) * -1.0
+    x318 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x318 += einsum(t2.aaaa, (0, 1, 2, 3), x317, (4, 5, 6, 0), (4, 5, 6, 1, 2, 3)) * 2.0
+    x319 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x319 += einsum(t3.baabaa, (0, 1, 2, 3, 4, 5), x271, (1, 6), (0, 3, 6, 2, 4, 5)) * 2.0
+    x320 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x320 += einsum(x313, (0, 1, 2, 3, 4, 5), (0, 1, 3, 2, 5, 4)) * -1.0
+    x320 += einsum(x318, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 5, 4))
+    x320 += einsum(x319, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 5, 4))
+    t3new_aabaab += einsum(x320, (0, 1, 2, 3, 4, 5), (2, 3, 0, 4, 5, 1))
+    t3new_aabaab += einsum(x320, (0, 1, 2, 3, 4, 5), (3, 2, 0, 4, 5, 1)) * -1.0
+    t3new_abaaba += einsum(x320, (0, 1, 2, 3, 4, 5), (2, 0, 3, 4, 1, 5))
+    t3new_abaaba += einsum(x320, (0, 1, 2, 3, 4, 5), (3, 0, 2, 4, 1, 5)) * -1.0
+    t3new_baabaa += einsum(x320, (0, 1, 2, 3, 4, 5), (0, 2, 3, 1, 4, 5))
+    t3new_baabaa += einsum(x320, (0, 1, 2, 3, 4, 5), (0, 3, 2, 1, 4, 5)) * -1.0
+    x321 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x321 += einsum(f.aa.vv, (0, 1), t3.baabaa, (2, 3, 4, 5, 6, 1), (2, 5, 3, 4, 0, 6))
+    x322 = np.zeros((nocc[1], nvir[1], nvir[0], nvir[0]), dtype=np.float64)
+    x322 += einsum(f.aa.ov, (0, 1), t2.baba, (2, 0, 3, 4), (2, 3, 1, 4))
+    x323 = np.zeros((nocc[1], nvir[1], nvir[0], nvir[0]), dtype=np.float64)
+    x323 += einsum(v.bbaa.vvvv, (0, 1, 2, 3), t1.bb, (4, 1), (4, 0, 2, 3))
+    x324 = np.zeros((nocc[1], nocc[1], nvir[0], nvir[0]), dtype=np.float64)
+    x324 += einsum(v.bbaa.oovv, (0, 1, 2, 3), (1, 0, 3, 2))
+    x324 += einsum(x140, (0, 1, 2, 3), (1, 0, 3, 2))
+    x325 = np.zeros((nocc[1], nvir[1], nvir[0], nvir[0]), dtype=np.float64)
+    x325 += einsum(t1.bb, (0, 1), x324, (0, 2, 3, 4), (2, 1, 3, 4))
+    x326 = np.zeros((nocc[1], nvir[1], nvir[0], nvir[0]), dtype=np.float64)
+    x326 += einsum(v.bbaa.ovvv, (0, 1, 2, 3), (0, 1, 3, 2)) * -1.0
+    x326 += einsum(x322, (0, 1, 2, 3), (0, 1, 2, 3))
+    x326 += einsum(x323, (0, 1, 2, 3), (0, 1, 3, 2)) * -1.0
+    x326 += einsum(x325, (0, 1, 2, 3), (0, 1, 3, 2))
+    x327 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x327 += einsum(t2.aaaa, (0, 1, 2, 3), x326, (4, 5, 2, 6), (4, 5, 0, 1, 6, 3)) * 2.0
+    x328 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x328 += einsum(f.aa.ov, (0, 1), t3.baabaa, (2, 3, 4, 5, 6, 1), (2, 5, 0, 3, 4, 6))
+    x329 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x329 += einsum(t1.bb, (0, 1), x24, (0, 2, 3, 4), (2, 1, 3, 4))
+    x330 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x330 += einsum(v.bbaa.ovov, (0, 1, 2, 3), (0, 1, 2, 3))
+    x330 += einsum(x130, (0, 1, 2, 3), (0, 1, 2, 3))
+    x330 += einsum(x329, (0, 1, 2, 3), (0, 1, 2, 3)) * -1.0
+    x331 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x331 += einsum(x330, (0, 1, 2, 3), t2.aaaa, (4, 5, 3, 6), (0, 1, 2, 4, 5, 6))
+    x332 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nocc[0], nvir[0]), dtype=np.float64)
+    x332 += einsum(x328, (0, 1, 2, 3, 4, 5), (0, 1, 2, 4, 3, 5)) * -1.0
+    x332 += einsum(x331, (0, 1, 2, 3, 4, 5), (0, 1, 2, 4, 3, 5))
+    x333 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x333 += einsum(t1.aa, (0, 1), x332, (2, 3, 0, 4, 5, 6), (2, 3, 4, 5, 6, 1)) * 2.0
+    x334 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x334 += einsum(x321, (0, 1, 2, 3, 4, 5), (0, 1, 3, 2, 4, 5)) * -2.0
+    x334 += einsum(x327, (0, 1, 2, 3, 4, 5), (0, 1, 3, 2, 5, 4))
+    x334 += einsum(x333, (0, 1, 2, 3, 4, 5), (0, 1, 3, 2, 5, 4))
+    t3new_aabaab += einsum(x334, (0, 1, 2, 3, 4, 5), (3, 2, 0, 4, 5, 1))
+    t3new_aabaab += einsum(x334, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1)) * -1.0
+    t3new_abaaba += einsum(x334, (0, 1, 2, 3, 4, 5), (3, 0, 2, 4, 1, 5))
+    t3new_abaaba += einsum(x334, (0, 1, 2, 3, 4, 5), (3, 0, 2, 5, 1, 4)) * -1.0
+    t3new_baabaa += einsum(x334, (0, 1, 2, 3, 4, 5), (0, 2, 3, 1, 4, 5)) * -1.0
+    t3new_baabaa += einsum(x334, (0, 1, 2, 3, 4, 5), (0, 2, 3, 1, 5, 4))
+    x335 = np.zeros((nvir[1], nvir[1]), dtype=np.float64)
+    x335 += einsum(t1.bb, (0, 1), f.bb.ov, (0, 2), (2, 1))
+    x336 = np.zeros((nvir[1], nvir[1]), dtype=np.float64)
+    x336 += einsum(f.bb.vv, (0, 1), (1, 0))
+    x336 += einsum(x335, (0, 1), (0, 1)) * -1.0
+    x337 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x337 += einsum(t3.baabaa, (0, 1, 2, 3, 4, 5), x336, (3, 6), (0, 6, 1, 2, 4, 5)) * 2.0
+    t3new_aabaab += einsum(x337, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1))
+    t3new_abaaba += einsum(x337, (0, 1, 2, 3, 4, 5), (3, 0, 2, 5, 1, 4))
+    t3new_baabaa += einsum(x337, (0, 1, 2, 3, 4, 5), (0, 3, 2, 1, 5, 4))
+    x338 = np.zeros((nocc[1], nocc[1]), dtype=np.float64)
+    x338 += einsum(t1.bb, (0, 1), f.bb.ov, (2, 1), (2, 0))
+    x339 = np.zeros((nocc[1], nocc[1]), dtype=np.float64)
+    x339 += einsum(f.bb.oo, (0, 1), (1, 0))
+    x339 += einsum(x338, (0, 1), (0, 1))
+    x340 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
+    x340 += einsum(t3.baabaa, (0, 1, 2, 3, 4, 5), x339, (0, 6), (6, 3, 1, 2, 4, 5)) * 2.0
+    t3new_aabaab += einsum(x340, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1)) * -1.0
+    t3new_abaaba += einsum(x340, (0, 1, 2, 3, 4, 5), (3, 0, 2, 5, 1, 4)) * -1.0
+    t3new_baabaa += einsum(x340, (0, 1, 2, 3, 4, 5), (0, 3, 2, 1, 5, 4)) * -1.0
+    x341 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x341 += einsum(t2.baba, (0, 1, 2, 3), v.bbbb.ovvv, (4, 5, 6, 2), (0, 4, 5, 6, 1, 3))
+    x342 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x342 += einsum(x214, (0, 1, 2, 3), t2.baba, (4, 5, 2, 6), (0, 4, 3, 1, 5, 6))
+    x343 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x343 += einsum(t1.bb, (0, 1), v.bbbb.ooov, (2, 3, 0, 4), (2, 3, 1, 4))
+    x344 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x344 += einsum(v.bbbb.ovov, (0, 1, 2, 3), (2, 0, 3, 1))
+    x344 += einsum(v.bbbb.oovv, (0, 1, 2, 3), (1, 0, 3, 2)) * -1.0
+    x344 += einsum(x343, (0, 1, 2, 3), (1, 0, 2, 3))
+    x345 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x345 += einsum(t2.baba, (0, 1, 2, 3), x344, (4, 5, 6, 2), (4, 5, 0, 6, 1, 3))
+    x346 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x346 += einsum(t1.bb, (0, 1), x25, (2, 0, 3, 4), (2, 3, 1, 4))
+    x347 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x347 += einsum(x346, (0, 1, 2, 3), (0, 1, 3, 2))
+    x347 += einsum(x199, (0, 1, 2, 3), (0, 1, 2, 3)) * -1.0
+    x348 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x348 += einsum(x347, (0, 1, 2, 3), t2.baba, (4, 5, 2, 6), (0, 1, 4, 3, 5, 6))
+    x349 = np.zeros((nocc[1], nocc[1], nocc[1], nocc[1]), dtype=np.float64)
+    x349 += einsum(v.bbbb.oooo, (0, 1, 2, 3), (2, 3, 1, 0))
+    x349 += einsum(x229, (0, 1, 2, 3), (3, 1, 0, 2))
+    x349 += einsum(x184, (0, 1, 2, 3), (2, 1, 0, 3))
+    x349 += einsum(x184, (0, 1, 2, 3), (3, 2, 0, 1)) * -1.0
+    x350 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x350 += einsum(x349, (0, 1, 2, 3), t2.baba, (0, 4, 5, 6), (1, 2, 3, 5, 4, 6))
+    x351 = np.zeros((nocc[1], nocc[1], nvir[0], nvir[0]), dtype=np.float64)
+    x351 += einsum(v.bbaa.ooov, (0, 1, 2, 3), t1.aa, (2, 4), (0, 1, 4, 3))
+    x352 = np.zeros((nocc[1], nocc[1], nvir[0], nvir[0]), dtype=np.float64)
+    x352 += einsum(v.bbaa.oovv, (0, 1, 2, 3), (1, 0, 3, 2))
+    x352 += einsum(x351, (0, 1, 2, 3), (1, 0, 3, 2)) * -1.0
+    x353 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x353 += einsum(x352, (0, 1, 2, 3), t2.baba, (4, 5, 6, 2), (0, 1, 4, 6, 5, 3))
+    x354 = np.zeros((nocc[1], nocc[1], nvir[0], nvir[0]), dtype=np.float64)
+    x354 += einsum(t1.aa, (0, 1), x23, (2, 3, 0, 4), (2, 3, 1, 4))
+    x355 = np.zeros((nocc[1], nocc[1], nvir[0], nvir[0]), dtype=np.float64)
+    x355 += einsum(x140, (0, 1, 2, 3), (0, 1, 3, 2))
+    x355 += einsum(x354, (0, 1, 2, 3), (0, 1, 3, 2)) * -1.0
+    x356 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x356 += einsum(x355, (0, 1, 2, 3), t2.baba, (4, 5, 6, 2), (0, 1, 4, 6, 5, 3))
+    x357 = np.zeros((nocc[1], nocc[1], nocc[0], nocc[0]), dtype=np.float64)
+    x357 += einsum(v.bbaa.oooo, (0, 1, 2, 3), (1, 0, 3, 2))
+    x357 += einsum(x150, (0, 1, 2, 3), (1, 0, 3, 2))
+    x358 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x358 += einsum(t2.baba, (0, 1, 2, 3), x357, (4, 5, 1, 6), (4, 5, 0, 2, 6, 3))
+    x359 = np.zeros((nocc[1], nvir[1], nocc[0], nocc[0]), dtype=np.float64)
+    x359 += einsum(v.bbaa.ovoo, (0, 1, 2, 3), (0, 1, 3, 2))
+    x359 += einsum(x3, (0, 1, 2, 3), (0, 1, 2, 3))
+    x360 = np.zeros((nocc[1], nocc[1], nocc[0], nocc[0]), dtype=np.float64)
+    x360 += einsum(t1.bb, (0, 1), x359, (2, 1, 3, 4), (2, 0, 3, 4))
+    x361 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x361 += einsum(t2.baba, (0, 1, 2, 3), x360, (4, 5, 6, 1), (5, 4, 0, 2, 6, 3))
+    x362 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x362 += einsum(x345, (0, 1, 2, 3, 4, 5), (2, 1, 0, 3, 4, 5)) * -1.0
+    x362 += einsum(x348, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 4, 5))
+    x362 += einsum(x350, (0, 1, 2, 3, 4, 5), (1, 2, 0, 3, 4, 5))
+    x362 += einsum(x353, (0, 1, 2, 3, 4, 5), (2, 1, 0, 3, 4, 5))
+    x362 += einsum(x356, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 4, 5)) * -1.0
+    x362 += einsum(x358, (0, 1, 2, 3, 4, 5), (2, 1, 0, 3, 4, 5)) * -1.0
+    x362 += einsum(x361, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 4, 5))
+    x363 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x363 += einsum(x362, (0, 1, 2, 3, 4, 5), t1.bb, (1, 6), (0, 2, 3, 6, 4, 5))
+    x364 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x364 += einsum(v.bbbb.ooov, (0, 1, 2, 3), (1, 0, 2, 3))
+    x364 += einsum(x208, (0, 1, 2, 3), (2, 1, 0, 3))
+    x365 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x365 += einsum(t2.baba, (0, 1, 2, 3), x364, (4, 0, 5, 6), (4, 5, 6, 2, 1, 3))
+    x366 = np.zeros((nocc[1], nvir[1], nvir[0], nvir[0]), dtype=np.float64)
+    x366 += einsum(v.bbaa.ovvv, (0, 1, 2, 3), (0, 1, 3, 2)) * -1.0
+    x366 += einsum(x322, (0, 1, 2, 3), (0, 1, 2, 3))
+    x366 += einsum(x109, (0, 1, 2, 3), (0, 1, 3, 2))
+    x367 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x367 += einsum(t2.baba, (0, 1, 2, 3), x366, (4, 5, 3, 6), (4, 0, 5, 2, 1, 6))
+    x368 = np.zeros((nocc[1], nvir[1], nvir[0], nvir[0]), dtype=np.float64)
+    x368 += einsum(x130, (0, 1, 2, 3), t1.aa, (2, 4), (0, 1, 4, 3))
+    x369 = np.zeros((nocc[1], nvir[1], nvir[0], nvir[0]), dtype=np.float64)
+    x369 += einsum(x323, (0, 1, 2, 3), (0, 1, 3, 2))
+    x369 += einsum(x368, (0, 1, 2, 3), (0, 1, 3, 2)) * -1.0
+    x370 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x370 += einsum(t2.baba, (0, 1, 2, 3), x369, (4, 5, 3, 6), (4, 0, 5, 2, 1, 6))
+    x371 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x371 += einsum(x4, (0, 1, 2, 3), t2.baba, (4, 2, 5, 6), (4, 0, 5, 1, 3, 6))
+    x372 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x372 += einsum(x168, (0, 1, 2, 3), t2.baba, (4, 3, 5, 6), (0, 4, 1, 5, 2, 6))
+    x373 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x373 += einsum(x341, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 4, 5))
+    x373 += einsum(x342, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 4, 5)) * -1.0
+    x373 += einsum(x363, (0, 1, 2, 3, 4, 5), (0, 1, 3, 2, 4, 5)) * -1.0
+    x373 += einsum(x365, (0, 1, 2, 3, 4, 5), (0, 1, 3, 2, 4, 5))
+    x373 += einsum(x367, (0, 1, 2, 3, 4, 5), (1, 0, 3, 2, 4, 5))
+    x373 += einsum(x370, (0, 1, 2, 3, 4, 5), (0, 1, 3, 2, 4, 5))
+    x373 += einsum(x371, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 4, 5))
+    x373 += einsum(x372, (0, 1, 2, 3, 4, 5), (0, 1, 3, 2, 4, 5)) * -1.0
+    t3new_abbabb = np.zeros((nocc[0], nocc[1], nocc[1], nvir[0], nvir[1], nvir[1]), dtype=np.float64)
+    t3new_abbabb += einsum(x373, (0, 1, 2, 3, 4, 5), (4, 0, 1, 5, 2, 3)) * -1.0
+    t3new_abbabb += einsum(x373, (0, 1, 2, 3, 4, 5), (4, 0, 1, 5, 3, 2))
+    t3new_abbabb += einsum(x373, (0, 1, 2, 3, 4, 5), (4, 1, 0, 5, 2, 3))
+    t3new_abbabb += einsum(x373, (0, 1, 2, 3, 4, 5), (4, 1, 0, 5, 3, 2)) * -1.0
     t3new_babbab = np.zeros((nocc[1], nocc[0], nocc[1], nvir[1], nvir[0], nvir[1]), dtype=np.float64)
-    t3new_babbab += einsum("il,jklbac->ijkabc", f.bb.oo, t3.abbabb) * 2.0
-    t3new_babbab += einsum("jl,iklacb->ijkabc", f.aa.oo, t3.bbabba) * -2.0
-    t3new_babbab += einsum("kl,ijlabc->ijkabc", f.bb.oo, t3.babbab) * -2.0
-    t3new_babbab += einsum("ad,ijkcbd->ijkabc", f.bb.vv, t3.babbab) * -2.0
-    t3new_babbab += einsum("bd,ijkadc->ijkabc", f.aa.vv, t3.babbab) * 2.0
-    t3new_babbab += einsum("cd,ijkabd->ijkabc", f.bb.vv, t3.babbab) * 2.0
-    t3new_babbab += einsum("jlba,ilkc->ijkabc", t2.abab, v.bbbb.ooov) * -1.0
-    t3new_babbab += einsum("jlbc,ilka->ijkabc", t2.abab, v.bbbb.ooov)
-    t3new_babbab += einsum("jlba,klic->ijkabc", t2.abab, v.bbbb.ooov)
-    t3new_babbab += einsum("jlbc,klia->ijkabc", t2.abab, v.bbbb.ooov) * -1.0
-    t3new_babbab += einsum("liba,jlkc->ijkabc", t2.abab, v.aabb.ooov) * -1.0
-    t3new_babbab += einsum("libc,jlka->ijkabc", t2.abab, v.aabb.ooov)
-    t3new_babbab += einsum("lkba,jlic->ijkabc", t2.abab, v.aabb.ooov)
-    t3new_babbab += einsum("lkbc,jlia->ijkabc", t2.abab, v.aabb.ooov) * -1.0
-    t3new_babbab += einsum("jkbd,iacd->ijkabc", t2.abab, v.bbbb.ovvv)
-    t3new_babbab += einsum("jkdc,iabd->ijkabc", t2.abab, v.bbaa.ovvv)
-    t3new_babbab += einsum("jkbd,icad->ijkabc", t2.abab, v.bbbb.ovvv) * -1.0
-    t3new_babbab += einsum("jkda,icbd->ijkabc", t2.abab, v.bbaa.ovvv) * -1.0
-    t3new_babbab += einsum("jibd,kacd->ijkabc", t2.abab, v.bbbb.ovvv) * -1.0
-    t3new_babbab += einsum("jidc,kabd->ijkabc", t2.abab, v.bbaa.ovvv) * -1.0
-    t3new_babbab += einsum("jibd,kcad->ijkabc", t2.abab, v.bbbb.ovvv)
-    t3new_babbab += einsum("jida,kcbd->ijkabc", t2.abab, v.bbaa.ovvv)
-    t3new_babbab += einsum("ilac,kljb->ijkabc", t2.bbbb, v.bbaa.ooov) * -2.0
-    t3new_babbab += einsum("klac,iljb->ijkabc", t2.bbbb, v.bbaa.ooov) * 2.0
-    t3new_babbab += einsum("ikad,jbcd->ijkabc", t2.bbbb, v.aabb.ovvv) * 2.0
-    t3new_babbab += einsum("ikcd,jbad->ijkabc", t2.bbbb, v.aabb.ovvv) * -2.0
-    t3new_babbab += einsum("ld,jd,iklacb->ijkabc", f.aa.ov, t1.aa, t3.bbabba) * -2.0
-    t3new_babbab += einsum("ld,lb,ijkadc->ijkabc", f.aa.ov, t1.aa, t3.babbab) * -2.0
-    t3new_babbab += einsum("ld,id,jklbac->ijkabc", f.bb.ov, t1.bb, t3.abbabb) * 2.0
-    t3new_babbab += einsum("ld,kd,ijlabc->ijkabc", f.bb.ov, t1.bb, t3.babbab) * -2.0
-    t3new_babbab += einsum("ld,la,ijkcbd->ijkabc", f.bb.ov, t1.bb, t3.babbab) * 2.0
-    t3new_babbab += einsum("ld,lc,ijkabd->ijkabc", f.bb.ov, t1.bb, t3.babbab) * -2.0
-    t3new_babbab += einsum("ld,jida,lkbc->ijkabc", f.aa.ov, t2.abab, t2.abab) * -1.0
-    t3new_babbab += einsum("ld,jidc,lkba->ijkabc", f.aa.ov, t2.abab, t2.abab)
-    t3new_babbab += einsum("ld,jkda,libc->ijkabc", f.aa.ov, t2.abab, t2.abab)
-    t3new_babbab += einsum("ld,jkdc,liba->ijkabc", f.aa.ov, t2.abab, t2.abab) * -1.0
-    t3new_babbab += einsum("ld,jkbd,ilac->ijkabc", f.bb.ov, t2.abab, t2.bbbb) * -2.0
-    t3new_babbab += einsum("ld,jlbc,ikad->ijkabc", f.bb.ov, t2.abab, t2.bbbb) * -2.0
-    t3new_babbab += einsum("ld,jlba,ikcd->ijkabc", f.bb.ov, t2.abab, t2.bbbb) * 2.0
-    t3new_babbab += einsum("ld,jibd,klac->ijkabc", f.bb.ov, t2.abab, t2.bbbb) * 2.0
-    t3new_babbab += einsum("jd,lkbc,iald->ijkabc", t1.aa, t2.abab, v.bbaa.ovov) * -1.0
-    t3new_babbab += einsum("jd,lkba,icld->ijkabc", t1.aa, t2.abab, v.bbaa.ovov)
-    t3new_babbab += einsum("jd,libc,kald->ijkabc", t1.aa, t2.abab, v.bbaa.ovov)
-    t3new_babbab += einsum("jd,liba,kcld->ijkabc", t1.aa, t2.abab, v.bbaa.ovov) * -1.0
-    t3new_babbab += einsum("lb,jkdc,iald->ijkabc", t1.aa, t2.abab, v.bbaa.ovov) * -1.0
-    t3new_babbab += einsum("lb,jkda,icld->ijkabc", t1.aa, t2.abab, v.bbaa.ovov)
-    t3new_babbab += einsum("lb,jidc,kald->ijkabc", t1.aa, t2.abab, v.bbaa.ovov)
-    t3new_babbab += einsum("lb,jida,kcld->ijkabc", t1.aa, t2.abab, v.bbaa.ovov) * -1.0
-    t3new_babbab += einsum("jd,ilac,klbd->ijkabc", t1.aa, t2.bbbb, v.bbaa.oovv) * -2.0
-    t3new_babbab += einsum("jd,klac,ilbd->ijkabc", t1.aa, t2.bbbb, v.bbaa.oovv) * 2.0
-    t3new_babbab += einsum("lb,imac,jlkm->ijkabc", t1.aa, t2.bbbb, v.aabb.oooo) * 2.0
-    t3new_babbab += einsum("lb,kmac,imjl->ijkabc", t1.aa, t2.bbbb, v.bbaa.oooo) * -2.0
-    t3new_babbab += einsum("lb,ikad,jlcd->ijkabc", t1.aa, t2.bbbb, v.aabb.oovv) * -2.0
-    t3new_babbab += einsum("lb,ikcd,jlad->ijkabc", t1.aa, t2.bbbb, v.aabb.oovv) * 2.0
-    t3new_babbab += einsum("jd,ikce,aebd->ijkabc", t1.aa, t2.bbbb, v.bbaa.vvvv) * -2.0
-    t3new_babbab += einsum("jd,ikae,bdce->ijkabc", t1.aa, t2.bbbb, v.aabb.vvvv) * 2.0
-    t3new_babbab += einsum("id,jlbc,klad->ijkabc", t1.bb, t2.abab, v.bbbb.oovv) * -1.0
-    t3new_babbab += einsum("id,jlba,klcd->ijkabc", t1.bb, t2.abab, v.bbbb.oovv)
-    t3new_babbab += einsum("id,lkbc,jlad->ijkabc", t1.bb, t2.abab, v.aabb.oovv) * -1.0
-    t3new_babbab += einsum("id,lkba,jlcd->ijkabc", t1.bb, t2.abab, v.aabb.oovv)
-    t3new_babbab += einsum("kd,jlbc,ilad->ijkabc", t1.bb, t2.abab, v.bbbb.oovv)
-    t3new_babbab += einsum("kd,jlba,ilcd->ijkabc", t1.bb, t2.abab, v.bbbb.oovv) * -1.0
-    t3new_babbab += einsum("kd,libc,jlad->ijkabc", t1.bb, t2.abab, v.aabb.oovv)
-    t3new_babbab += einsum("kd,liba,jlcd->ijkabc", t1.bb, t2.abab, v.aabb.oovv) * -1.0
-    t3new_babbab += einsum("la,jmbc,ilkm->ijkabc", t1.bb, t2.abab, v.bbbb.oooo)
-    t3new_babbab += einsum("la,jmbc,imkl->ijkabc", t1.bb, t2.abab, v.bbbb.oooo) * -1.0
-    t3new_babbab += einsum("la,mkbc,iljm->ijkabc", t1.bb, t2.abab, v.bbaa.oooo)
-    t3new_babbab += einsum("la,mibc,jmkl->ijkabc", t1.bb, t2.abab, v.aabb.oooo) * -1.0
-    t3new_babbab += einsum("lc,jmba,ilkm->ijkabc", t1.bb, t2.abab, v.bbbb.oooo) * -1.0
-    t3new_babbab += einsum("lc,jmba,imkl->ijkabc", t1.bb, t2.abab, v.bbbb.oooo)
-    t3new_babbab += einsum("lc,mkba,iljm->ijkabc", t1.bb, t2.abab, v.bbaa.oooo) * -1.0
-    t3new_babbab += einsum("lc,miba,jmkl->ijkabc", t1.bb, t2.abab, v.aabb.oooo)
-    t3new_babbab += einsum("la,jkbd,ilcd->ijkabc", t1.bb, t2.abab, v.bbbb.oovv) * -1.0
-    t3new_babbab += einsum("la,jkdc,ilbd->ijkabc", t1.bb, t2.abab, v.bbaa.oovv) * -1.0
-    t3new_babbab += einsum("la,jibd,klcd->ijkabc", t1.bb, t2.abab, v.bbbb.oovv)
-    t3new_babbab += einsum("la,jidc,klbd->ijkabc", t1.bb, t2.abab, v.bbaa.oovv)
-    t3new_babbab += einsum("lc,jkbd,ilad->ijkabc", t1.bb, t2.abab, v.bbbb.oovv)
-    t3new_babbab += einsum("lc,jkda,ilbd->ijkabc", t1.bb, t2.abab, v.bbaa.oovv)
-    t3new_babbab += einsum("lc,jibd,klad->ijkabc", t1.bb, t2.abab, v.bbbb.oovv) * -1.0
-    t3new_babbab += einsum("lc,jida,klbd->ijkabc", t1.bb, t2.abab, v.bbaa.oovv) * -1.0
-    t3new_babbab += einsum("id,jlbc,kald->ijkabc", t1.bb, t2.abab, v.bbbb.ovov)
-    t3new_babbab += einsum("id,jlba,kcld->ijkabc", t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t3new_babbab += einsum("kd,jlbc,iald->ijkabc", t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t3new_babbab += einsum("kd,jlba,icld->ijkabc", t1.bb, t2.abab, v.bbbb.ovov)
-    t3new_babbab += einsum("la,jkbd,icld->ijkabc", t1.bb, t2.abab, v.bbbb.ovov)
-    t3new_babbab += einsum("la,jibd,kcld->ijkabc", t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t3new_babbab += einsum("lc,jkbd,iald->ijkabc", t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t3new_babbab += einsum("lc,jibd,kald->ijkabc", t1.bb, t2.abab, v.bbbb.ovov)
-    t3new_babbab += einsum("id,jkbe,adce->ijkabc", t1.bb, t2.abab, v.bbbb.vvvv)
-    t3new_babbab += einsum("id,jkec,adbe->ijkabc", t1.bb, t2.abab, v.bbaa.vvvv)
-    t3new_babbab += einsum("id,jkbe,aecd->ijkabc", t1.bb, t2.abab, v.bbbb.vvvv) * -1.0
-    t3new_babbab += einsum("id,jkea,becd->ijkabc", t1.bb, t2.abab, v.aabb.vvvv) * -1.0
-    t3new_babbab += einsum("kd,jibe,adce->ijkabc", t1.bb, t2.abab, v.bbbb.vvvv) * -1.0
-    t3new_babbab += einsum("kd,jiec,adbe->ijkabc", t1.bb, t2.abab, v.bbaa.vvvv) * -1.0
-    t3new_babbab += einsum("kd,jibe,aecd->ijkabc", t1.bb, t2.abab, v.bbbb.vvvv)
-    t3new_babbab += einsum("kd,jiea,becd->ijkabc", t1.bb, t2.abab, v.aabb.vvvv)
-    t3new_babbab += einsum("id,klac,jbld->ijkabc", t1.bb, t2.bbbb, v.aabb.ovov) * 2.0
-    t3new_babbab += einsum("kd,ilac,jbld->ijkabc", t1.bb, t2.bbbb, v.aabb.ovov) * -2.0
-    t3new_babbab += einsum("la,ikcd,jbld->ijkabc", t1.bb, t2.bbbb, v.aabb.ovov) * 2.0
-    t3new_babbab += einsum("lc,ikad,jbld->ijkabc", t1.bb, t2.bbbb, v.aabb.ovov) * -2.0
-    t3new_babbab += einsum("jd,lb,imac,kmld->ijkabc", t1.aa, t1.aa, t2.bbbb, v.bbaa.ooov) * 2.0
-    t3new_babbab += einsum("jd,lb,kmac,imld->ijkabc", t1.aa, t1.aa, t2.bbbb, v.bbaa.ooov) * -2.0
-    t3new_babbab += einsum("jd,lb,ikae,ldce->ijkabc", t1.aa, t1.aa, t2.bbbb, v.aabb.ovvv) * -2.0
-    t3new_babbab += einsum("jd,lb,ikce,ldae->ijkabc", t1.aa, t1.aa, t2.bbbb, v.aabb.ovvv) * 2.0
-    t3new_babbab += einsum("jd,la,mkbc,ilmd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ooov)
-    t3new_babbab += einsum("jd,la,mibc,klmd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ooov) * -1.0
-    t3new_babbab += einsum("jd,lc,mkba,ilmd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ooov) * -1.0
-    t3new_babbab += einsum("jd,lc,miba,klmd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ooov)
-    t3new_babbab += einsum("lb,ma,jkdc,imld->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ooov)
-    t3new_babbab += einsum("lb,ma,jidc,kmld->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ooov) * -1.0
-    t3new_babbab += einsum("lb,mc,jkda,imld->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ooov) * -1.0
-    t3new_babbab += einsum("lb,mc,jida,kmld->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ooov)
-    t3new_babbab += einsum("jd,ie,lkbc,ldae->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ovvv) * -1.0
-    t3new_babbab += einsum("jd,ie,lkba,ldce->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ovvv)
-    t3new_babbab += einsum("jd,ke,libc,ldae->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ovvv)
-    t3new_babbab += einsum("jd,ke,liba,ldce->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ovvv) * -1.0
-    t3new_babbab += einsum("lb,id,jkec,lead->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ovvv) * -1.0
-    t3new_babbab += einsum("lb,id,jkea,lecd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ovvv)
-    t3new_babbab += einsum("lb,kd,jiec,lead->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ovvv)
-    t3new_babbab += einsum("lb,kd,jiea,lecd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ovvv) * -1.0
-    t3new_babbab += einsum("lb,id,kmac,jlmd->ijkabc", t1.aa, t1.bb, t2.bbbb, v.aabb.ooov) * -2.0
-    t3new_babbab += einsum("lb,kd,imac,jlmd->ijkabc", t1.aa, t1.bb, t2.bbbb, v.aabb.ooov) * 2.0
-    t3new_babbab += einsum("lb,ma,ikcd,jlmd->ijkabc", t1.aa, t1.bb, t2.bbbb, v.aabb.ooov) * -2.0
-    t3new_babbab += einsum("lb,mc,ikad,jlmd->ijkabc", t1.aa, t1.bb, t2.bbbb, v.aabb.ooov) * 2.0
-    t3new_babbab += einsum("jd,ie,klac,lebd->ijkabc", t1.aa, t1.bb, t2.bbbb, v.bbaa.ovvv) * 2.0
-    t3new_babbab += einsum("jd,ke,ilac,lebd->ijkabc", t1.aa, t1.bb, t2.bbbb, v.bbaa.ovvv) * -2.0
-    t3new_babbab += einsum("jd,la,ikce,lebd->ijkabc", t1.aa, t1.bb, t2.bbbb, v.bbaa.ovvv) * 2.0
-    t3new_babbab += einsum("jd,lc,ikae,lebd->ijkabc", t1.aa, t1.bb, t2.bbbb, v.bbaa.ovvv) * -2.0
-    t3new_babbab += einsum("id,la,jmbc,klmd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov) * -1.0
-    t3new_babbab += einsum("id,la,jmbc,kmld->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov)
-    t3new_babbab += einsum("id,la,mkbc,jmld->ijkabc", t1.bb, t1.bb, t2.abab, v.aabb.ooov)
-    t3new_babbab += einsum("id,lc,jmba,klmd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov)
-    t3new_babbab += einsum("id,lc,jmba,kmld->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov) * -1.0
-    t3new_babbab += einsum("id,lc,mkba,jmld->ijkabc", t1.bb, t1.bb, t2.abab, v.aabb.ooov) * -1.0
-    t3new_babbab += einsum("kd,la,jmbc,ilmd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov)
-    t3new_babbab += einsum("kd,la,jmbc,imld->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov) * -1.0
-    t3new_babbab += einsum("kd,la,mibc,jmld->ijkabc", t1.bb, t1.bb, t2.abab, v.aabb.ooov) * -1.0
-    t3new_babbab += einsum("kd,lc,jmba,ilmd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov) * -1.0
-    t3new_babbab += einsum("kd,lc,jmba,imld->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov)
-    t3new_babbab += einsum("kd,lc,miba,jmld->ijkabc", t1.bb, t1.bb, t2.abab, v.aabb.ooov)
-    t3new_babbab += einsum("la,mc,jkbd,ilmd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov)
-    t3new_babbab += einsum("la,mc,jkbd,imld->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov) * -1.0
-    t3new_babbab += einsum("la,mc,jibd,klmd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov) * -1.0
-    t3new_babbab += einsum("la,mc,jibd,kmld->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov)
-    t3new_babbab += einsum("id,ke,jlbc,ldae->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv)
-    t3new_babbab += einsum("id,ke,jlba,ldce->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv) * -1.0
-    t3new_babbab += einsum("id,ke,jlbc,lead->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv) * -1.0
-    t3new_babbab += einsum("id,ke,jlba,lecd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv)
-    t3new_babbab += einsum("id,la,jkbe,ldce->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv) * -1.0
-    t3new_babbab += einsum("id,la,jkec,ldbe->ijkabc", t1.bb, t1.bb, t2.abab, v.bbaa.ovvv) * -1.0
-    t3new_babbab += einsum("id,la,jkbe,lecd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv)
-    t3new_babbab += einsum("id,lc,jkbe,ldae->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv)
-    t3new_babbab += einsum("id,lc,jkea,ldbe->ijkabc", t1.bb, t1.bb, t2.abab, v.bbaa.ovvv)
-    t3new_babbab += einsum("id,lc,jkbe,lead->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv) * -1.0
-    t3new_babbab += einsum("kd,la,jibe,ldce->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv)
-    t3new_babbab += einsum("kd,la,jiec,ldbe->ijkabc", t1.bb, t1.bb, t2.abab, v.bbaa.ovvv)
-    t3new_babbab += einsum("kd,la,jibe,lecd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv) * -1.0
-    t3new_babbab += einsum("kd,lc,jibe,ldae->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv) * -1.0
-    t3new_babbab += einsum("kd,lc,jiea,ldbe->ijkabc", t1.bb, t1.bb, t2.abab, v.bbaa.ovvv) * -1.0
-    t3new_babbab += einsum("kd,lc,jibe,lead->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv)
-    t3new_babbab += einsum("jd,lb,ie,kmac,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.bbbb, v.aabb.ovov) * -2.0
-    t3new_babbab += einsum("jd,lb,ke,imac,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.bbbb, v.aabb.ovov) * 2.0
-    t3new_babbab += einsum("jd,lb,ma,ikce,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.bbbb, v.aabb.ovov) * -2.0
-    t3new_babbab += einsum("jd,lb,mc,ikae,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.bbbb, v.aabb.ovov) * 2.0
-    t3new_babbab += einsum("jd,ie,la,mkbc,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.abab, v.bbaa.ovov)
-    t3new_babbab += einsum("jd,ie,lc,mkba,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.abab, v.bbaa.ovov) * -1.0
-    t3new_babbab += einsum("jd,ke,la,mibc,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.abab, v.bbaa.ovov) * -1.0
-    t3new_babbab += einsum("jd,ke,lc,miba,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.abab, v.bbaa.ovov)
-    t3new_babbab += einsum("lb,id,ma,jkec,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.abab, v.aabb.ovov)
-    t3new_babbab += einsum("lb,id,mc,jkea,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_babbab += einsum("lb,kd,ma,jiec,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_babbab += einsum("lb,kd,mc,jiea,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.abab, v.aabb.ovov)
-    t3new_babbab += einsum("id,ke,la,jmbc,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.abab, v.bbbb.ovov)
-    t3new_babbab += einsum("id,ke,la,jmbc,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t3new_babbab += einsum("id,ke,lc,jmba,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t3new_babbab += einsum("id,ke,lc,jmba,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.abab, v.bbbb.ovov)
-    t3new_babbab += einsum("id,la,mc,jkbe,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.abab, v.bbbb.ovov)
-    t3new_babbab += einsum("id,la,mc,jkbe,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t3new_babbab += einsum("kd,la,mc,jibe,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t3new_babbab += einsum("kd,la,mc,jibe,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.abab, v.bbbb.ovov)
-
-    # T3 amplitudes
+    t3new_babbab += einsum(x373, (0, 1, 2, 3, 4, 5), (0, 4, 1, 2, 5, 3)) * -1.0
+    t3new_babbab += einsum(x373, (0, 1, 2, 3, 4, 5), (0, 4, 1, 3, 5, 2))
+    t3new_babbab += einsum(x373, (0, 1, 2, 3, 4, 5), (1, 4, 0, 2, 5, 3))
+    t3new_babbab += einsum(x373, (0, 1, 2, 3, 4, 5), (1, 4, 0, 3, 5, 2)) * -1.0
     t3new_bbabba = np.zeros((nocc[1], nocc[1], nocc[0], nvir[1], nvir[1], nvir[0]), dtype=np.float64)
-    t3new_bbabba += einsum("il,jklacb->ijkabc", f.bb.oo, t3.babbab) * 2.0
-    t3new_bbabba += einsum("jl,iklacb->ijkabc", f.bb.oo, t3.babbab) * -2.0
-    t3new_bbabba += einsum("kl,ijlabc->ijkabc", f.aa.oo, t3.bbabba) * -2.0
-    t3new_bbabba += einsum("ad,ijkbdc->ijkabc", f.bb.vv, t3.bbabba) * -2.0
-    t3new_bbabba += einsum("bd,ijkadc->ijkabc", f.bb.vv, t3.bbabba) * 2.0
-    t3new_bbabba += einsum("cd,ijkabd->ijkabc", f.aa.vv, t3.bbabba) * 2.0
-    t3new_bbabba += einsum("klca,iljb->ijkabc", t2.abab, v.bbbb.ooov) * -1.0
-    t3new_bbabba += einsum("klcb,ilja->ijkabc", t2.abab, v.bbbb.ooov)
-    t3new_bbabba += einsum("klca,jlib->ijkabc", t2.abab, v.bbbb.ooov)
-    t3new_bbabba += einsum("klcb,jlia->ijkabc", t2.abab, v.bbbb.ooov) * -1.0
-    t3new_bbabba += einsum("lica,kljb->ijkabc", t2.abab, v.aabb.ooov) * -1.0
-    t3new_bbabba += einsum("licb,klja->ijkabc", t2.abab, v.aabb.ooov)
-    t3new_bbabba += einsum("ljca,klib->ijkabc", t2.abab, v.aabb.ooov)
-    t3new_bbabba += einsum("ljcb,klia->ijkabc", t2.abab, v.aabb.ooov) * -1.0
-    t3new_bbabba += einsum("kjcd,iabd->ijkabc", t2.abab, v.bbbb.ovvv)
-    t3new_bbabba += einsum("kjdb,iacd->ijkabc", t2.abab, v.bbaa.ovvv)
-    t3new_bbabba += einsum("kjcd,ibad->ijkabc", t2.abab, v.bbbb.ovvv) * -1.0
-    t3new_bbabba += einsum("kjda,ibcd->ijkabc", t2.abab, v.bbaa.ovvv) * -1.0
-    t3new_bbabba += einsum("kicd,jabd->ijkabc", t2.abab, v.bbbb.ovvv) * -1.0
-    t3new_bbabba += einsum("kidb,jacd->ijkabc", t2.abab, v.bbaa.ovvv) * -1.0
-    t3new_bbabba += einsum("kicd,jbad->ijkabc", t2.abab, v.bbbb.ovvv)
-    t3new_bbabba += einsum("kida,jbcd->ijkabc", t2.abab, v.bbaa.ovvv)
-    t3new_bbabba += einsum("ilab,jlkc->ijkabc", t2.bbbb, v.bbaa.ooov) * -2.0
-    t3new_bbabba += einsum("jlab,ilkc->ijkabc", t2.bbbb, v.bbaa.ooov) * 2.0
-    t3new_bbabba += einsum("ijad,kcbd->ijkabc", t2.bbbb, v.aabb.ovvv) * 2.0
-    t3new_bbabba += einsum("ijbd,kcad->ijkabc", t2.bbbb, v.aabb.ovvv) * -2.0
-    t3new_bbabba += einsum("ld,kd,ijlabc->ijkabc", f.aa.ov, t1.aa, t3.bbabba) * -2.0
-    t3new_bbabba += einsum("ld,lc,ijkabd->ijkabc", f.aa.ov, t1.aa, t3.bbabba) * -2.0
-    t3new_bbabba += einsum("ld,id,jklacb->ijkabc", f.bb.ov, t1.bb, t3.babbab) * 2.0
-    t3new_bbabba += einsum("ld,jd,iklacb->ijkabc", f.bb.ov, t1.bb, t3.babbab) * -2.0
-    t3new_bbabba += einsum("ld,la,ijkbdc->ijkabc", f.bb.ov, t1.bb, t3.bbabba) * 2.0
-    t3new_bbabba += einsum("ld,lb,ijkadc->ijkabc", f.bb.ov, t1.bb, t3.bbabba) * -2.0
-    t3new_bbabba += einsum("ld,kida,ljcb->ijkabc", f.aa.ov, t2.abab, t2.abab) * -1.0
-    t3new_bbabba += einsum("ld,kidb,ljca->ijkabc", f.aa.ov, t2.abab, t2.abab)
-    t3new_bbabba += einsum("ld,kjda,licb->ijkabc", f.aa.ov, t2.abab, t2.abab)
-    t3new_bbabba += einsum("ld,kjdb,lica->ijkabc", f.aa.ov, t2.abab, t2.abab) * -1.0
-    t3new_bbabba += einsum("ld,kjcd,ilab->ijkabc", f.bb.ov, t2.abab, t2.bbbb) * -2.0
-    t3new_bbabba += einsum("ld,klcb,ijad->ijkabc", f.bb.ov, t2.abab, t2.bbbb) * -2.0
-    t3new_bbabba += einsum("ld,klca,ijbd->ijkabc", f.bb.ov, t2.abab, t2.bbbb) * 2.0
-    t3new_bbabba += einsum("ld,kicd,jlab->ijkabc", f.bb.ov, t2.abab, t2.bbbb) * 2.0
-    t3new_bbabba += einsum("kd,ljcb,iald->ijkabc", t1.aa, t2.abab, v.bbaa.ovov) * -1.0
-    t3new_bbabba += einsum("kd,ljca,ibld->ijkabc", t1.aa, t2.abab, v.bbaa.ovov)
-    t3new_bbabba += einsum("kd,licb,jald->ijkabc", t1.aa, t2.abab, v.bbaa.ovov)
-    t3new_bbabba += einsum("kd,lica,jbld->ijkabc", t1.aa, t2.abab, v.bbaa.ovov) * -1.0
-    t3new_bbabba += einsum("lc,kjdb,iald->ijkabc", t1.aa, t2.abab, v.bbaa.ovov) * -1.0
-    t3new_bbabba += einsum("lc,kjda,ibld->ijkabc", t1.aa, t2.abab, v.bbaa.ovov)
-    t3new_bbabba += einsum("lc,kidb,jald->ijkabc", t1.aa, t2.abab, v.bbaa.ovov)
-    t3new_bbabba += einsum("lc,kida,jbld->ijkabc", t1.aa, t2.abab, v.bbaa.ovov) * -1.0
-    t3new_bbabba += einsum("kd,ilab,jlcd->ijkabc", t1.aa, t2.bbbb, v.bbaa.oovv) * -2.0
-    t3new_bbabba += einsum("kd,jlab,ilcd->ijkabc", t1.aa, t2.bbbb, v.bbaa.oovv) * 2.0
-    t3new_bbabba += einsum("lc,imab,jmkl->ijkabc", t1.aa, t2.bbbb, v.bbaa.oooo) * 2.0
-    t3new_bbabba += einsum("lc,jmab,imkl->ijkabc", t1.aa, t2.bbbb, v.bbaa.oooo) * -2.0
-    t3new_bbabba += einsum("lc,ijad,klbd->ijkabc", t1.aa, t2.bbbb, v.aabb.oovv) * -2.0
-    t3new_bbabba += einsum("lc,ijbd,klad->ijkabc", t1.aa, t2.bbbb, v.aabb.oovv) * 2.0
-    t3new_bbabba += einsum("kd,ijbe,aecd->ijkabc", t1.aa, t2.bbbb, v.bbaa.vvvv) * -2.0
-    t3new_bbabba += einsum("kd,ijae,becd->ijkabc", t1.aa, t2.bbbb, v.bbaa.vvvv) * 2.0
-    t3new_bbabba += einsum("id,klcb,jlad->ijkabc", t1.bb, t2.abab, v.bbbb.oovv) * -1.0
-    t3new_bbabba += einsum("id,klca,jlbd->ijkabc", t1.bb, t2.abab, v.bbbb.oovv)
-    t3new_bbabba += einsum("id,ljcb,klad->ijkabc", t1.bb, t2.abab, v.aabb.oovv) * -1.0
-    t3new_bbabba += einsum("id,ljca,klbd->ijkabc", t1.bb, t2.abab, v.aabb.oovv)
-    t3new_bbabba += einsum("jd,klcb,ilad->ijkabc", t1.bb, t2.abab, v.bbbb.oovv)
-    t3new_bbabba += einsum("jd,klca,ilbd->ijkabc", t1.bb, t2.abab, v.bbbb.oovv) * -1.0
-    t3new_bbabba += einsum("jd,licb,klad->ijkabc", t1.bb, t2.abab, v.aabb.oovv)
-    t3new_bbabba += einsum("jd,lica,klbd->ijkabc", t1.bb, t2.abab, v.aabb.oovv) * -1.0
-    t3new_bbabba += einsum("la,kmcb,iljm->ijkabc", t1.bb, t2.abab, v.bbbb.oooo)
-    t3new_bbabba += einsum("la,kmcb,imjl->ijkabc", t1.bb, t2.abab, v.bbbb.oooo) * -1.0
-    t3new_bbabba += einsum("la,mjcb,ilkm->ijkabc", t1.bb, t2.abab, v.bbaa.oooo)
-    t3new_bbabba += einsum("la,micb,jlkm->ijkabc", t1.bb, t2.abab, v.bbaa.oooo) * -1.0
-    t3new_bbabba += einsum("lb,kmca,iljm->ijkabc", t1.bb, t2.abab, v.bbbb.oooo) * -1.0
-    t3new_bbabba += einsum("lb,kmca,imjl->ijkabc", t1.bb, t2.abab, v.bbbb.oooo)
-    t3new_bbabba += einsum("lb,mjca,ilkm->ijkabc", t1.bb, t2.abab, v.bbaa.oooo) * -1.0
-    t3new_bbabba += einsum("lb,mica,jlkm->ijkabc", t1.bb, t2.abab, v.bbaa.oooo)
-    t3new_bbabba += einsum("la,kjcd,ilbd->ijkabc", t1.bb, t2.abab, v.bbbb.oovv) * -1.0
-    t3new_bbabba += einsum("la,kjdb,ilcd->ijkabc", t1.bb, t2.abab, v.bbaa.oovv) * -1.0
-    t3new_bbabba += einsum("la,kicd,jlbd->ijkabc", t1.bb, t2.abab, v.bbbb.oovv)
-    t3new_bbabba += einsum("la,kidb,jlcd->ijkabc", t1.bb, t2.abab, v.bbaa.oovv)
-    t3new_bbabba += einsum("lb,kjcd,ilad->ijkabc", t1.bb, t2.abab, v.bbbb.oovv)
-    t3new_bbabba += einsum("lb,kjda,ilcd->ijkabc", t1.bb, t2.abab, v.bbaa.oovv)
-    t3new_bbabba += einsum("lb,kicd,jlad->ijkabc", t1.bb, t2.abab, v.bbbb.oovv) * -1.0
-    t3new_bbabba += einsum("lb,kida,jlcd->ijkabc", t1.bb, t2.abab, v.bbaa.oovv) * -1.0
-    t3new_bbabba += einsum("id,klcb,jald->ijkabc", t1.bb, t2.abab, v.bbbb.ovov)
-    t3new_bbabba += einsum("id,klca,jbld->ijkabc", t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t3new_bbabba += einsum("jd,klcb,iald->ijkabc", t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t3new_bbabba += einsum("jd,klca,ibld->ijkabc", t1.bb, t2.abab, v.bbbb.ovov)
-    t3new_bbabba += einsum("la,kjcd,ibld->ijkabc", t1.bb, t2.abab, v.bbbb.ovov)
-    t3new_bbabba += einsum("la,kicd,jbld->ijkabc", t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t3new_bbabba += einsum("lb,kjcd,iald->ijkabc", t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t3new_bbabba += einsum("lb,kicd,jald->ijkabc", t1.bb, t2.abab, v.bbbb.ovov)
-    t3new_bbabba += einsum("id,kjce,adbe->ijkabc", t1.bb, t2.abab, v.bbbb.vvvv)
-    t3new_bbabba += einsum("id,kjeb,adce->ijkabc", t1.bb, t2.abab, v.bbaa.vvvv)
-    t3new_bbabba += einsum("id,kjce,aebd->ijkabc", t1.bb, t2.abab, v.bbbb.vvvv) * -1.0
-    t3new_bbabba += einsum("id,kjea,bdce->ijkabc", t1.bb, t2.abab, v.bbaa.vvvv) * -1.0
-    t3new_bbabba += einsum("jd,kice,adbe->ijkabc", t1.bb, t2.abab, v.bbbb.vvvv) * -1.0
-    t3new_bbabba += einsum("jd,kieb,adce->ijkabc", t1.bb, t2.abab, v.bbaa.vvvv) * -1.0
-    t3new_bbabba += einsum("jd,kice,aebd->ijkabc", t1.bb, t2.abab, v.bbbb.vvvv)
-    t3new_bbabba += einsum("jd,kiea,bdce->ijkabc", t1.bb, t2.abab, v.bbaa.vvvv)
-    t3new_bbabba += einsum("id,jlab,kcld->ijkabc", t1.bb, t2.bbbb, v.aabb.ovov) * 2.0
-    t3new_bbabba += einsum("jd,ilab,kcld->ijkabc", t1.bb, t2.bbbb, v.aabb.ovov) * -2.0
-    t3new_bbabba += einsum("la,ijbd,kcld->ijkabc", t1.bb, t2.bbbb, v.aabb.ovov) * 2.0
-    t3new_bbabba += einsum("lb,ijad,kcld->ijkabc", t1.bb, t2.bbbb, v.aabb.ovov) * -2.0
-    t3new_bbabba += einsum("kd,lc,imab,jmld->ijkabc", t1.aa, t1.aa, t2.bbbb, v.bbaa.ooov) * 2.0
-    t3new_bbabba += einsum("kd,lc,jmab,imld->ijkabc", t1.aa, t1.aa, t2.bbbb, v.bbaa.ooov) * -2.0
-    t3new_bbabba += einsum("kd,lc,ijae,ldbe->ijkabc", t1.aa, t1.aa, t2.bbbb, v.aabb.ovvv) * -2.0
-    t3new_bbabba += einsum("kd,lc,ijbe,ldae->ijkabc", t1.aa, t1.aa, t2.bbbb, v.aabb.ovvv) * 2.0
-    t3new_bbabba += einsum("kd,la,mjcb,ilmd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ooov)
-    t3new_bbabba += einsum("kd,la,micb,jlmd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ooov) * -1.0
-    t3new_bbabba += einsum("kd,lb,mjca,ilmd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ooov) * -1.0
-    t3new_bbabba += einsum("kd,lb,mica,jlmd->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ooov)
-    t3new_bbabba += einsum("lc,ma,kjdb,imld->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ooov)
-    t3new_bbabba += einsum("lc,ma,kidb,jmld->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ooov) * -1.0
-    t3new_bbabba += einsum("lc,mb,kjda,imld->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ooov) * -1.0
-    t3new_bbabba += einsum("lc,mb,kida,jmld->ijkabc", t1.aa, t1.bb, t2.abab, v.bbaa.ooov)
-    t3new_bbabba += einsum("kd,ie,ljcb,ldae->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ovvv) * -1.0
-    t3new_bbabba += einsum("kd,ie,ljca,ldbe->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ovvv)
-    t3new_bbabba += einsum("kd,je,licb,ldae->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ovvv)
-    t3new_bbabba += einsum("kd,je,lica,ldbe->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ovvv) * -1.0
-    t3new_bbabba += einsum("lc,id,kjeb,lead->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ovvv) * -1.0
-    t3new_bbabba += einsum("lc,id,kjea,lebd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ovvv)
-    t3new_bbabba += einsum("lc,jd,kieb,lead->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ovvv)
-    t3new_bbabba += einsum("lc,jd,kiea,lebd->ijkabc", t1.aa, t1.bb, t2.abab, v.aabb.ovvv) * -1.0
-    t3new_bbabba += einsum("lc,id,jmab,klmd->ijkabc", t1.aa, t1.bb, t2.bbbb, v.aabb.ooov) * -2.0
-    t3new_bbabba += einsum("lc,jd,imab,klmd->ijkabc", t1.aa, t1.bb, t2.bbbb, v.aabb.ooov) * 2.0
-    t3new_bbabba += einsum("lc,ma,ijbd,klmd->ijkabc", t1.aa, t1.bb, t2.bbbb, v.aabb.ooov) * -2.0
-    t3new_bbabba += einsum("lc,mb,ijad,klmd->ijkabc", t1.aa, t1.bb, t2.bbbb, v.aabb.ooov) * 2.0
-    t3new_bbabba += einsum("kd,ie,jlab,lecd->ijkabc", t1.aa, t1.bb, t2.bbbb, v.bbaa.ovvv) * 2.0
-    t3new_bbabba += einsum("kd,je,ilab,lecd->ijkabc", t1.aa, t1.bb, t2.bbbb, v.bbaa.ovvv) * -2.0
-    t3new_bbabba += einsum("kd,la,ijbe,lecd->ijkabc", t1.aa, t1.bb, t2.bbbb, v.bbaa.ovvv) * 2.0
-    t3new_bbabba += einsum("kd,lb,ijae,lecd->ijkabc", t1.aa, t1.bb, t2.bbbb, v.bbaa.ovvv) * -2.0
-    t3new_bbabba += einsum("id,la,kmcb,jlmd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov) * -1.0
-    t3new_bbabba += einsum("id,la,kmcb,jmld->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov)
-    t3new_bbabba += einsum("id,la,mjcb,kmld->ijkabc", t1.bb, t1.bb, t2.abab, v.aabb.ooov)
-    t3new_bbabba += einsum("id,lb,kmca,jlmd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov)
-    t3new_bbabba += einsum("id,lb,kmca,jmld->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov) * -1.0
-    t3new_bbabba += einsum("id,lb,mjca,kmld->ijkabc", t1.bb, t1.bb, t2.abab, v.aabb.ooov) * -1.0
-    t3new_bbabba += einsum("jd,la,kmcb,ilmd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov)
-    t3new_bbabba += einsum("jd,la,kmcb,imld->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov) * -1.0
-    t3new_bbabba += einsum("jd,la,micb,kmld->ijkabc", t1.bb, t1.bb, t2.abab, v.aabb.ooov) * -1.0
-    t3new_bbabba += einsum("jd,lb,kmca,ilmd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov) * -1.0
-    t3new_bbabba += einsum("jd,lb,kmca,imld->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov)
-    t3new_bbabba += einsum("jd,lb,mica,kmld->ijkabc", t1.bb, t1.bb, t2.abab, v.aabb.ooov)
-    t3new_bbabba += einsum("la,mb,kjcd,ilmd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov)
-    t3new_bbabba += einsum("la,mb,kjcd,imld->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov) * -1.0
-    t3new_bbabba += einsum("la,mb,kicd,jlmd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov) * -1.0
-    t3new_bbabba += einsum("la,mb,kicd,jmld->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ooov)
-    t3new_bbabba += einsum("id,je,klcb,ldae->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv)
-    t3new_bbabba += einsum("id,je,klca,ldbe->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv) * -1.0
-    t3new_bbabba += einsum("id,je,klcb,lead->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv) * -1.0
-    t3new_bbabba += einsum("id,je,klca,lebd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv)
-    t3new_bbabba += einsum("id,la,kjce,ldbe->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv) * -1.0
-    t3new_bbabba += einsum("id,la,kjeb,ldce->ijkabc", t1.bb, t1.bb, t2.abab, v.bbaa.ovvv) * -1.0
-    t3new_bbabba += einsum("id,la,kjce,lebd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv)
-    t3new_bbabba += einsum("id,lb,kjce,ldae->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv)
-    t3new_bbabba += einsum("id,lb,kjea,ldce->ijkabc", t1.bb, t1.bb, t2.abab, v.bbaa.ovvv)
-    t3new_bbabba += einsum("id,lb,kjce,lead->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv) * -1.0
-    t3new_bbabba += einsum("jd,la,kice,ldbe->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv)
-    t3new_bbabba += einsum("jd,la,kieb,ldce->ijkabc", t1.bb, t1.bb, t2.abab, v.bbaa.ovvv)
-    t3new_bbabba += einsum("jd,la,kice,lebd->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv) * -1.0
-    t3new_bbabba += einsum("jd,lb,kice,ldae->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv) * -1.0
-    t3new_bbabba += einsum("jd,lb,kiea,ldce->ijkabc", t1.bb, t1.bb, t2.abab, v.bbaa.ovvv) * -1.0
-    t3new_bbabba += einsum("jd,lb,kice,lead->ijkabc", t1.bb, t1.bb, t2.abab, v.bbbb.ovvv)
-    t3new_bbabba += einsum("kd,lc,ie,jmab,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.bbbb, v.aabb.ovov) * -2.0
-    t3new_bbabba += einsum("kd,lc,je,imab,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.bbbb, v.aabb.ovov) * 2.0
-    t3new_bbabba += einsum("kd,lc,ma,ijbe,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.bbbb, v.aabb.ovov) * -2.0
-    t3new_bbabba += einsum("kd,lc,mb,ijae,ldme->ijkabc", t1.aa, t1.aa, t1.bb, t2.bbbb, v.aabb.ovov) * 2.0
-    t3new_bbabba += einsum("kd,ie,la,mjcb,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.abab, v.bbaa.ovov)
-    t3new_bbabba += einsum("kd,ie,lb,mjca,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.abab, v.bbaa.ovov) * -1.0
-    t3new_bbabba += einsum("kd,je,la,micb,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.abab, v.bbaa.ovov) * -1.0
-    t3new_bbabba += einsum("kd,je,lb,mica,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.abab, v.bbaa.ovov)
-    t3new_bbabba += einsum("lc,id,ma,kjeb,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.abab, v.aabb.ovov)
-    t3new_bbabba += einsum("lc,id,mb,kjea,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_bbabba += einsum("lc,jd,ma,kieb,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.abab, v.aabb.ovov) * -1.0
-    t3new_bbabba += einsum("lc,jd,mb,kiea,lemd->ijkabc", t1.aa, t1.bb, t1.bb, t2.abab, v.aabb.ovov)
-    t3new_bbabba += einsum("id,je,la,kmcb,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.abab, v.bbbb.ovov)
-    t3new_bbabba += einsum("id,je,la,kmcb,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t3new_bbabba += einsum("id,je,lb,kmca,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t3new_bbabba += einsum("id,je,lb,kmca,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.abab, v.bbbb.ovov)
-    t3new_bbabba += einsum("id,la,mb,kjce,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.abab, v.bbbb.ovov)
-    t3new_bbabba += einsum("id,la,mb,kjce,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t3new_bbabba += einsum("jd,la,mb,kice,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.abab, v.bbbb.ovov) * -1.0
-    t3new_bbabba += einsum("jd,la,mb,kice,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.abab, v.bbbb.ovov)
-
-    # T3 amplitudes
+    t3new_bbabba += einsum(x373, (0, 1, 2, 3, 4, 5), (0, 1, 4, 2, 3, 5)) * -1.0
+    t3new_bbabba += einsum(x373, (0, 1, 2, 3, 4, 5), (0, 1, 4, 3, 2, 5))
+    t3new_bbabba += einsum(x373, (0, 1, 2, 3, 4, 5), (1, 0, 4, 2, 3, 5))
+    t3new_bbabba += einsum(x373, (0, 1, 2, 3, 4, 5), (1, 0, 4, 3, 2, 5)) * -1.0
+    x374 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x374 += einsum(f.bb.vv, (0, 1), t3.bbabba, (2, 3, 4, 5, 1, 6), (2, 3, 0, 5, 4, 6))
+    x375 = np.zeros((nvir[1], nvir[1], nocc[0], nocc[0]), dtype=np.float64)
+    x375 += einsum(v.bbaa.vvoo, (0, 1, 2, 3), (1, 0, 3, 2))
+    x375 += einsum(x133, (0, 1, 2, 3), (1, 0, 3, 2))
+    x376 = np.zeros((nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x376 += einsum(x375, (0, 1, 2, 3), t1.aa, (2, 4), (0, 1, 3, 4))
+    x377 = np.zeros((nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x377 += einsum(v.bbaa.vvov, (0, 1, 2, 3), (1, 0, 2, 3)) * -1.0
+    x377 += einsum(x298, (0, 1, 2, 3), (0, 1, 2, 3))
+    x377 += einsum(x174, (0, 1, 2, 3), (1, 0, 2, 3)) * -1.0
+    x377 += einsum(x376, (0, 1, 2, 3), (1, 0, 2, 3))
+    x378 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x378 += einsum(x377, (0, 1, 2, 3), t2.bbbb, (4, 5, 0, 6), (4, 5, 1, 6, 2, 3)) * 2.0
+    x379 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x379 += einsum(f.bb.ov, (0, 1), t3.bbabba, (2, 3, 4, 5, 1, 6), (0, 2, 3, 5, 4, 6))
+    x380 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x380 += einsum(x138, (0, 1, 2, 3), t2.bbbb, (4, 5, 1, 6), (4, 5, 0, 6, 2, 3))
+    x381 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x381 += einsum(x379, (0, 1, 2, 3, 4, 5), (0, 2, 1, 3, 4, 5)) * -1.0
+    x381 += einsum(x380, (0, 1, 2, 3, 4, 5), (2, 1, 0, 3, 4, 5))
+    x382 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x382 += einsum(x381, (0, 1, 2, 3, 4, 5), t1.bb, (0, 6), (1, 2, 3, 6, 4, 5)) * 2.0
+    x383 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x383 += einsum(x374, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 4, 5)) * 2.0
+    x383 += einsum(x378, (0, 1, 2, 3, 4, 5), (1, 0, 3, 2, 4, 5))
+    x383 += einsum(x382, (0, 1, 2, 3, 4, 5), (0, 1, 3, 2, 4, 5)) * -1.0
+    t3new_abbabb += einsum(x383, (0, 1, 2, 3, 4, 5), (4, 1, 0, 5, 2, 3))
+    t3new_abbabb += einsum(x383, (0, 1, 2, 3, 4, 5), (4, 1, 0, 5, 3, 2)) * -1.0
+    t3new_babbab += einsum(x383, (0, 1, 2, 3, 4, 5), (0, 4, 1, 2, 5, 3)) * -1.0
+    t3new_babbab += einsum(x383, (0, 1, 2, 3, 4, 5), (0, 4, 1, 3, 5, 2))
+    t3new_bbabba += einsum(x383, (0, 1, 2, 3, 4, 5), (0, 1, 4, 2, 3, 5)) * -1.0
+    t3new_bbabba += einsum(x383, (0, 1, 2, 3, 4, 5), (0, 1, 4, 3, 2, 5))
+    x384 = np.zeros((nocc[1], nocc[1], nocc[0], nvir[0]), dtype=np.float64)
+    x384 += einsum(t2.baba, (0, 1, 2, 3), f.bb.ov, (4, 2), (4, 0, 1, 3))
+    x385 = np.zeros((nocc[1], nocc[1], nocc[0], nvir[0]), dtype=np.float64)
+    x385 += einsum(x357, (0, 1, 2, 3), t1.aa, (2, 4), (0, 1, 3, 4))
+    x386 = np.zeros((nocc[1], nocc[1], nocc[0], nvir[0]), dtype=np.float64)
+    x386 += einsum(v.bbaa.ooov, (0, 1, 2, 3), (1, 0, 2, 3))
+    x386 += einsum(x384, (0, 1, 2, 3), (0, 1, 2, 3))
+    x386 += einsum(x177, (0, 1, 2, 3), (1, 0, 2, 3))
+    x386 += einsum(x385, (0, 1, 2, 3), (1, 0, 2, 3)) * -1.0
+    x387 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x387 += einsum(x386, (0, 1, 2, 3), t2.bbbb, (0, 4, 5, 6), (1, 4, 5, 6, 2, 3)) * 2.0
+    x388 = np.zeros((nocc[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x388 += einsum(v.bbaa.ovov, (0, 1, 2, 3), (0, 1, 2, 3))
+    x388 += einsum(x50, (0, 1, 2, 3), (0, 1, 2, 3))
+    x389 = np.zeros((nocc[1], nocc[1], nocc[0], nvir[0]), dtype=np.float64)
+    x389 += einsum(t1.bb, (0, 1), x388, (2, 1, 3, 4), (2, 0, 3, 4))
+    x390 = np.zeros((nocc[1], nocc[1], nocc[0], nvir[0]), dtype=np.float64)
+    x390 += einsum(t1.aa, (0, 1), x360, (2, 3, 4, 0), (3, 2, 4, 1))
+    x391 = np.zeros((nocc[1], nocc[1], nocc[0], nvir[0]), dtype=np.float64)
+    x391 += einsum(x389, (0, 1, 2, 3), (1, 0, 2, 3))
+    x391 += einsum(x390, (0, 1, 2, 3), (0, 1, 2, 3)) * -1.0
+    x392 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x392 += einsum(x391, (0, 1, 2, 3), t2.bbbb, (1, 4, 5, 6), (0, 4, 5, 6, 2, 3)) * 2.0
+    x393 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x393 += einsum(t3.bbabba, (0, 1, 2, 3, 4, 5), x339, (0, 6), (6, 1, 3, 4, 2, 5)) * 2.0
+    x394 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x394 += einsum(x387, (0, 1, 2, 3, 4, 5), (1, 0, 3, 2, 4, 5)) * -1.0
+    x394 += einsum(x392, (0, 1, 2, 3, 4, 5), (0, 1, 3, 2, 4, 5))
+    x394 += einsum(x393, (0, 1, 2, 3, 4, 5), (0, 1, 3, 2, 4, 5))
+    t3new_abbabb += einsum(x394, (0, 1, 2, 3, 4, 5), (4, 0, 1, 5, 2, 3))
+    t3new_abbabb += einsum(x394, (0, 1, 2, 3, 4, 5), (4, 1, 0, 5, 2, 3)) * -1.0
+    t3new_babbab += einsum(x394, (0, 1, 2, 3, 4, 5), (0, 4, 1, 2, 5, 3))
+    t3new_babbab += einsum(x394, (0, 1, 2, 3, 4, 5), (1, 4, 0, 2, 5, 3)) * -1.0
+    t3new_bbabba += einsum(x394, (0, 1, 2, 3, 4, 5), (0, 1, 4, 2, 3, 5))
+    t3new_bbabba += einsum(x394, (0, 1, 2, 3, 4, 5), (1, 0, 4, 2, 3, 5)) * -1.0
+    x395 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x395 += einsum(x266, (0, 1), t3.bbabba, (2, 3, 4, 5, 6, 0), (2, 3, 5, 6, 4, 1)) * 2.0
+    t3new_abbabb += einsum(x395, (0, 1, 2, 3, 4, 5), (4, 1, 0, 5, 3, 2))
+    t3new_babbab += einsum(x395, (0, 1, 2, 3, 4, 5), (1, 4, 0, 3, 5, 2))
+    t3new_bbabba += einsum(x395, (0, 1, 2, 3, 4, 5), (1, 0, 4, 3, 2, 5))
+    x396 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1], nocc[0], nvir[0]), dtype=np.float64)
+    x396 += einsum(t3.bbabba, (0, 1, 2, 3, 4, 5), x271, (2, 6), (0, 1, 3, 4, 6, 5)) * 2.0
+    t3new_abbabb += einsum(x396, (0, 1, 2, 3, 4, 5), (4, 1, 0, 5, 3, 2)) * -1.0
+    t3new_babbab += einsum(x396, (0, 1, 2, 3, 4, 5), (1, 4, 0, 3, 5, 2)) * -1.0
+    t3new_bbabba += einsum(x396, (0, 1, 2, 3, 4, 5), (1, 0, 4, 3, 2, 5)) * -1.0
+    x397 = np.zeros((nocc[1], nocc[1], nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x397 += einsum(t2.bbbb, (0, 1, 2, 3), v.bbbb.oooo, (4, 5, 6, 1), (0, 5, 4, 6, 2, 3))
+    x398 = np.zeros((nocc[1], nocc[1], nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x398 += einsum(x229, (0, 1, 2, 3), t2.bbbb, (4, 2, 5, 6), (1, 0, 4, 3, 5, 6))
+    x399 = np.zeros((nocc[1], nocc[1], nocc[1], nocc[1]), dtype=np.float64)
+    x399 += einsum(x184, (0, 1, 2, 3), (0, 2, 1, 3)) * -1.0
+    x399 += einsum(x184, (0, 1, 2, 3), (0, 2, 3, 1))
+    x400 = np.zeros((nocc[1], nocc[1], nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x400 += einsum(x399, (0, 1, 2, 3), t2.bbbb, (3, 4, 5, 6), (0, 1, 2, 4, 5, 6))
+    x401 = np.zeros((nocc[1], nocc[1], nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x401 += einsum(x397, (0, 1, 2, 3, 4, 5), (0, 2, 1, 3, 5, 4)) * -1.0
+    x401 += einsum(x398, (0, 1, 2, 3, 4, 5), (0, 1, 3, 2, 5, 4)) * -1.0
+    x401 += einsum(x400, (0, 1, 2, 3, 4, 5), (0, 3, 2, 1, 5, 4)) * -1.0
+    x402 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
+    x402 += einsum(t1.bb, (0, 1), x401, (2, 3, 0, 4, 5, 6), (2, 3, 4, 5, 6, 1)) * 2.0
     t3new_bbbbbb = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
-    t3new_bbbbbb += einsum("il,jklabc->ijkabc", f.bb.oo, t3.bbbbbb) * -6.0
-    t3new_bbbbbb += einsum("jl,iklabc->ijkabc", f.bb.oo, t3.bbbbbb) * 6.0
-    t3new_bbbbbb += einsum("kl,ijlabc->ijkabc", f.bb.oo, t3.bbbbbb) * -6.0
-    t3new_bbbbbb += einsum("ad,ijkbcd->ijkabc", f.bb.vv, t3.bbbbbb) * 6.0
-    t3new_bbbbbb += einsum("bd,ijkacd->ijkabc", f.bb.vv, t3.bbbbbb) * -6.0
-    t3new_bbbbbb += einsum("cd,ijkabd->ijkabc", f.bb.vv, t3.bbbbbb) * 6.0
-    t3new_bbbbbb += einsum("ilab,jlkc->ijkabc", t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("ilac,jlkb->ijkabc", t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("ilbc,jlka->ijkabc", t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("ilab,kljc->ijkabc", t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("ilac,kljb->ijkabc", t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("ilbc,klja->ijkabc", t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("jlab,ilkc->ijkabc", t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("jlac,ilkb->ijkabc", t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("jlbc,ilka->ijkabc", t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("jlab,klic->ijkabc", t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("jlac,klib->ijkabc", t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("jlbc,klia->ijkabc", t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("klab,iljc->ijkabc", t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("klac,iljb->ijkabc", t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("klbc,ilja->ijkabc", t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("klab,jlic->ijkabc", t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("klac,jlib->ijkabc", t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("klbc,jlia->ijkabc", t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("ikbd,jacd->ijkabc", t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("ikcd,jabd->ijkabc", t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("ikad,jbcd->ijkabc", t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("ikcd,jbad->ijkabc", t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("ikad,jcbd->ijkabc", t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("ikbd,jcad->ijkabc", t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("ijbd,kacd->ijkabc", t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("ijcd,kabd->ijkabc", t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("ijad,kbcd->ijkabc", t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("ijcd,kbad->ijkabc", t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("ijad,kcbd->ijkabc", t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("ijbd,kcad->ijkabc", t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("jkbd,iacd->ijkabc", t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("jkcd,iabd->ijkabc", t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("jkad,ibcd->ijkabc", t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("jkcd,ibad->ijkabc", t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("jkad,icbd->ijkabc", t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("jkbd,icad->ijkabc", t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("ld,id,jklabc->ijkabc", f.bb.ov, t1.bb, t3.bbbbbb) * -6.0
-    t3new_bbbbbb += einsum("ld,jd,iklabc->ijkabc", f.bb.ov, t1.bb, t3.bbbbbb) * 6.0
-    t3new_bbbbbb += einsum("ld,kd,ijlabc->ijkabc", f.bb.ov, t1.bb, t3.bbbbbb) * -6.0
-    t3new_bbbbbb += einsum("ld,la,ijkbcd->ijkabc", f.bb.ov, t1.bb, t3.bbbbbb) * -6.0
-    t3new_bbbbbb += einsum("ld,lb,ijkacd->ijkabc", f.bb.ov, t1.bb, t3.bbbbbb) * 6.0
-    t3new_bbbbbb += einsum("ld,lc,ijkabd->ijkabc", f.bb.ov, t1.bb, t3.bbbbbb) * -6.0
-    t3new_bbbbbb += einsum("ld,ikad,jlbc->ijkabc", f.bb.ov, t2.bbbb, t2.bbbb) * -4.0
-    t3new_bbbbbb += einsum("ld,ikbd,jlac->ijkabc", f.bb.ov, t2.bbbb, t2.bbbb) * 4.0
-    t3new_bbbbbb += einsum("ld,ikcd,jlab->ijkabc", f.bb.ov, t2.bbbb, t2.bbbb) * -4.0
-    t3new_bbbbbb += einsum("ld,ilac,jkbd->ijkabc", f.bb.ov, t2.bbbb, t2.bbbb) * -4.0
-    t3new_bbbbbb += einsum("ld,ilab,jkcd->ijkabc", f.bb.ov, t2.bbbb, t2.bbbb) * 4.0
-    t3new_bbbbbb += einsum("ld,ilbc,jkad->ijkabc", f.bb.ov, t2.bbbb, t2.bbbb) * 4.0
-    t3new_bbbbbb += einsum("ld,ijad,klbc->ijkabc", f.bb.ov, t2.bbbb, t2.bbbb) * 4.0
-    t3new_bbbbbb += einsum("ld,ijbd,klac->ijkabc", f.bb.ov, t2.bbbb, t2.bbbb) * -4.0
-    t3new_bbbbbb += einsum("ld,ijcd,klab->ijkabc", f.bb.ov, t2.bbbb, t2.bbbb) * 4.0
-    t3new_bbbbbb += einsum("id,jlac,klbd->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * 2.0
-    t3new_bbbbbb += einsum("id,jlab,klcd->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * -2.0
-    t3new_bbbbbb += einsum("id,jlbc,klad->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * -2.0
-    t3new_bbbbbb += einsum("id,klac,jlbd->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * -2.0
-    t3new_bbbbbb += einsum("id,klab,jlcd->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * 2.0
-    t3new_bbbbbb += einsum("id,klbc,jlad->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * 2.0
-    t3new_bbbbbb += einsum("jd,ilac,klbd->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * -2.0
-    t3new_bbbbbb += einsum("jd,ilab,klcd->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * 2.0
-    t3new_bbbbbb += einsum("jd,ilbc,klad->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * 2.0
-    t3new_bbbbbb += einsum("jd,klac,ilbd->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * 2.0
-    t3new_bbbbbb += einsum("jd,klab,ilcd->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * -2.0
-    t3new_bbbbbb += einsum("jd,klbc,ilad->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * -2.0
-    t3new_bbbbbb += einsum("kd,ilac,jlbd->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * 2.0
-    t3new_bbbbbb += einsum("kd,ilab,jlcd->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * -2.0
-    t3new_bbbbbb += einsum("kd,ilbc,jlad->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * -2.0
-    t3new_bbbbbb += einsum("kd,jlac,ilbd->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * -2.0
-    t3new_bbbbbb += einsum("kd,jlab,ilcd->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * 2.0
-    t3new_bbbbbb += einsum("kd,jlbc,ilad->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * 2.0
-    t3new_bbbbbb += einsum("la,imbc,jlkm->ijkabc", t1.bb, t2.bbbb, v.bbbb.oooo) * -2.0
-    t3new_bbbbbb += einsum("la,imbc,jmkl->ijkabc", t1.bb, t2.bbbb, v.bbbb.oooo) * 2.0
-    t3new_bbbbbb += einsum("la,jmbc,ilkm->ijkabc", t1.bb, t2.bbbb, v.bbbb.oooo) * 2.0
-    t3new_bbbbbb += einsum("la,jmbc,imkl->ijkabc", t1.bb, t2.bbbb, v.bbbb.oooo) * -2.0
-    t3new_bbbbbb += einsum("la,kmbc,iljm->ijkabc", t1.bb, t2.bbbb, v.bbbb.oooo) * -2.0
-    t3new_bbbbbb += einsum("la,kmbc,imjl->ijkabc", t1.bb, t2.bbbb, v.bbbb.oooo) * 2.0
-    t3new_bbbbbb += einsum("lb,imac,jlkm->ijkabc", t1.bb, t2.bbbb, v.bbbb.oooo) * 2.0
-    t3new_bbbbbb += einsum("lb,imac,jmkl->ijkabc", t1.bb, t2.bbbb, v.bbbb.oooo) * -2.0
-    t3new_bbbbbb += einsum("lb,jmac,ilkm->ijkabc", t1.bb, t2.bbbb, v.bbbb.oooo) * -2.0
-    t3new_bbbbbb += einsum("lb,jmac,imkl->ijkabc", t1.bb, t2.bbbb, v.bbbb.oooo) * 2.0
-    t3new_bbbbbb += einsum("lb,kmac,iljm->ijkabc", t1.bb, t2.bbbb, v.bbbb.oooo) * 2.0
-    t3new_bbbbbb += einsum("lb,kmac,imjl->ijkabc", t1.bb, t2.bbbb, v.bbbb.oooo) * -2.0
-    t3new_bbbbbb += einsum("lc,imab,jlkm->ijkabc", t1.bb, t2.bbbb, v.bbbb.oooo) * -2.0
-    t3new_bbbbbb += einsum("lc,imab,jmkl->ijkabc", t1.bb, t2.bbbb, v.bbbb.oooo) * 2.0
-    t3new_bbbbbb += einsum("lc,jmab,ilkm->ijkabc", t1.bb, t2.bbbb, v.bbbb.oooo) * 2.0
-    t3new_bbbbbb += einsum("lc,jmab,imkl->ijkabc", t1.bb, t2.bbbb, v.bbbb.oooo) * -2.0
-    t3new_bbbbbb += einsum("lc,kmab,iljm->ijkabc", t1.bb, t2.bbbb, v.bbbb.oooo) * -2.0
-    t3new_bbbbbb += einsum("lc,kmab,imjl->ijkabc", t1.bb, t2.bbbb, v.bbbb.oooo) * 2.0
-    t3new_bbbbbb += einsum("la,ikbd,jlcd->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * 2.0
-    t3new_bbbbbb += einsum("la,ikcd,jlbd->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * -2.0
-    t3new_bbbbbb += einsum("la,ijbd,klcd->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * -2.0
-    t3new_bbbbbb += einsum("la,ijcd,klbd->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * 2.0
-    t3new_bbbbbb += einsum("la,jkbd,ilcd->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * -2.0
-    t3new_bbbbbb += einsum("la,jkcd,ilbd->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * 2.0
-    t3new_bbbbbb += einsum("lb,ikad,jlcd->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * -2.0
-    t3new_bbbbbb += einsum("lb,ikcd,jlad->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * 2.0
-    t3new_bbbbbb += einsum("lb,ijad,klcd->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * 2.0
-    t3new_bbbbbb += einsum("lb,ijcd,klad->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * -2.0
-    t3new_bbbbbb += einsum("lb,jkad,ilcd->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * 2.0
-    t3new_bbbbbb += einsum("lb,jkcd,ilad->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * -2.0
-    t3new_bbbbbb += einsum("lc,ikad,jlbd->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * 2.0
-    t3new_bbbbbb += einsum("lc,ikbd,jlad->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * -2.0
-    t3new_bbbbbb += einsum("lc,ijad,klbd->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * -2.0
-    t3new_bbbbbb += einsum("lc,ijbd,klad->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * 2.0
-    t3new_bbbbbb += einsum("lc,jkad,ilbd->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * -2.0
-    t3new_bbbbbb += einsum("lc,jkbd,ilad->ijkabc", t1.bb, t2.bbbb, v.bbbb.oovv) * 2.0
-    t3new_bbbbbb += einsum("id,jlbc,kald->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("id,jlac,kbld->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("id,jlab,kcld->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("id,klbc,jald->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("id,klac,jbld->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("id,klab,jcld->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("jd,ilbc,kald->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("jd,ilac,kbld->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("jd,ilab,kcld->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("jd,klbc,iald->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("jd,klac,ibld->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("jd,klab,icld->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("kd,ilbc,jald->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("kd,ilac,jbld->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("kd,ilab,jcld->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("kd,jlbc,iald->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("kd,jlac,ibld->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("kd,jlab,icld->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("la,ikcd,jbld->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("la,ikbd,jcld->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("la,ijcd,kbld->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("la,ijbd,kcld->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("la,jkcd,ibld->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("la,jkbd,icld->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("lb,ikcd,jald->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("lb,ikad,jcld->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("lb,ijcd,kald->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("lb,ijad,kcld->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("lb,jkcd,iald->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("lb,jkad,icld->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("lc,ikbd,jald->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("lc,ikad,jbld->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("lc,ijbd,kald->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("lc,ijad,kbld->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("lc,jkbd,iald->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("lc,jkad,ibld->ijkabc", t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("id,jkbe,adce->ijkabc", t1.bb, t2.bbbb, v.bbbb.vvvv) * 2.0
-    t3new_bbbbbb += einsum("id,jkce,adbe->ijkabc", t1.bb, t2.bbbb, v.bbbb.vvvv) * -2.0
-    t3new_bbbbbb += einsum("id,jkbe,aecd->ijkabc", t1.bb, t2.bbbb, v.bbbb.vvvv) * -2.0
-    t3new_bbbbbb += einsum("id,jkce,aebd->ijkabc", t1.bb, t2.bbbb, v.bbbb.vvvv) * 2.0
-    t3new_bbbbbb += einsum("id,jkae,bdce->ijkabc", t1.bb, t2.bbbb, v.bbbb.vvvv) * -2.0
-    t3new_bbbbbb += einsum("id,jkae,becd->ijkabc", t1.bb, t2.bbbb, v.bbbb.vvvv) * 2.0
-    t3new_bbbbbb += einsum("jd,ikbe,adce->ijkabc", t1.bb, t2.bbbb, v.bbbb.vvvv) * -2.0
-    t3new_bbbbbb += einsum("jd,ikce,adbe->ijkabc", t1.bb, t2.bbbb, v.bbbb.vvvv) * 2.0
-    t3new_bbbbbb += einsum("jd,ikbe,aecd->ijkabc", t1.bb, t2.bbbb, v.bbbb.vvvv) * 2.0
-    t3new_bbbbbb += einsum("jd,ikce,aebd->ijkabc", t1.bb, t2.bbbb, v.bbbb.vvvv) * -2.0
-    t3new_bbbbbb += einsum("jd,ikae,bdce->ijkabc", t1.bb, t2.bbbb, v.bbbb.vvvv) * 2.0
-    t3new_bbbbbb += einsum("jd,ikae,becd->ijkabc", t1.bb, t2.bbbb, v.bbbb.vvvv) * -2.0
-    t3new_bbbbbb += einsum("kd,ijbe,adce->ijkabc", t1.bb, t2.bbbb, v.bbbb.vvvv) * 2.0
-    t3new_bbbbbb += einsum("kd,ijce,adbe->ijkabc", t1.bb, t2.bbbb, v.bbbb.vvvv) * -2.0
-    t3new_bbbbbb += einsum("kd,ijbe,aecd->ijkabc", t1.bb, t2.bbbb, v.bbbb.vvvv) * -2.0
-    t3new_bbbbbb += einsum("kd,ijce,aebd->ijkabc", t1.bb, t2.bbbb, v.bbbb.vvvv) * 2.0
-    t3new_bbbbbb += einsum("kd,ijae,bdce->ijkabc", t1.bb, t2.bbbb, v.bbbb.vvvv) * -2.0
-    t3new_bbbbbb += einsum("kd,ijae,becd->ijkabc", t1.bb, t2.bbbb, v.bbbb.vvvv) * 2.0
-    t3new_bbbbbb += einsum("id,la,jmbc,klmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("id,la,jmbc,kmld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("id,la,kmbc,jlmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("id,la,kmbc,jmld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("id,lb,jmac,klmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("id,lb,jmac,kmld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("id,lb,kmac,jlmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("id,lb,kmac,jmld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("id,lc,jmab,klmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("id,lc,jmab,kmld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("id,lc,kmab,jlmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("id,lc,kmab,jmld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("jd,la,imbc,klmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("jd,la,imbc,kmld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("jd,la,kmbc,ilmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("jd,la,kmbc,imld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("jd,lb,imac,klmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("jd,lb,imac,kmld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("jd,lb,kmac,ilmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("jd,lb,kmac,imld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("jd,lc,imab,klmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("jd,lc,imab,kmld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("jd,lc,kmab,ilmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("jd,lc,kmab,imld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("kd,la,imbc,jlmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("kd,la,imbc,jmld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("kd,la,jmbc,ilmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("kd,la,jmbc,imld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("kd,lb,imac,jlmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("kd,lb,imac,jmld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("kd,lb,jmac,ilmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("kd,lb,jmac,imld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("kd,lc,imab,jlmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("kd,lc,imab,jmld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("kd,lc,jmab,ilmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("kd,lc,jmab,imld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("la,mb,ikcd,jlmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("la,mb,ikcd,jmld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("la,mb,ijcd,klmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("la,mb,ijcd,kmld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("la,mb,jkcd,ilmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("la,mb,jkcd,imld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("la,mc,ikbd,jlmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("la,mc,ikbd,jmld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("la,mc,ijbd,klmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("la,mc,ijbd,kmld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("la,mc,jkbd,ilmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("la,mc,jkbd,imld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("lb,mc,ikad,jlmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("lb,mc,ikad,jmld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("lb,mc,ijad,klmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("lb,mc,ijad,kmld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("lb,mc,jkad,ilmd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * -2.0
-    t3new_bbbbbb += einsum("lb,mc,jkad,imld->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ooov) * 2.0
-    t3new_bbbbbb += einsum("id,je,klac,ldbe->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("id,je,klab,ldce->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("id,je,klbc,ldae->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("id,je,klac,lebd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("id,je,klab,lecd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("id,je,klbc,lead->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("id,ke,jlac,ldbe->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("id,ke,jlab,ldce->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("id,ke,jlbc,ldae->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("id,ke,jlac,lebd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("id,ke,jlab,lecd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("id,ke,jlbc,lead->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("id,la,jkbe,ldce->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("id,la,jkce,ldbe->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("id,la,jkbe,lecd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("id,la,jkce,lebd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("id,lb,jkae,ldce->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("id,lb,jkce,ldae->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("id,lb,jkae,lecd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("id,lb,jkce,lead->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("id,lc,jkae,ldbe->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("id,lc,jkbe,ldae->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("id,lc,jkae,lebd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("id,lc,jkbe,lead->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("jd,ke,ilac,ldbe->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("jd,ke,ilab,ldce->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("jd,ke,ilbc,ldae->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("jd,ke,ilac,lebd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("jd,ke,ilab,lecd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("jd,ke,ilbc,lead->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("jd,la,ikbe,ldce->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("jd,la,ikce,ldbe->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("jd,la,ikbe,lecd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("jd,la,ikce,lebd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("jd,lb,ikae,ldce->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("jd,lb,ikce,ldae->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("jd,lb,ikae,lecd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("jd,lb,ikce,lead->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("jd,lc,ikae,ldbe->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("jd,lc,ikbe,ldae->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("jd,lc,ikae,lebd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("jd,lc,ikbe,lead->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("kd,la,ijbe,ldce->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("kd,la,ijce,ldbe->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("kd,la,ijbe,lecd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("kd,la,ijce,lebd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("kd,lb,ijae,ldce->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("kd,lb,ijce,ldae->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("kd,lb,ijae,lecd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("kd,lb,ijce,lead->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("kd,lc,ijae,ldbe->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("kd,lc,ijbe,ldae->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("kd,lc,ijae,lebd->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * 2.0
-    t3new_bbbbbb += einsum("kd,lc,ijbe,lead->ijkabc", t1.bb, t1.bb, t2.bbbb, v.bbbb.ovvv) * -2.0
-    t3new_bbbbbb += einsum("id,je,la,kmbc,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("id,je,la,kmbc,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("id,je,lb,kmac,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("id,je,lb,kmac,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("id,je,lc,kmab,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("id,je,lc,kmab,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("id,ke,la,jmbc,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("id,ke,la,jmbc,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("id,ke,lb,jmac,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("id,ke,lb,jmac,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("id,ke,lc,jmab,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("id,ke,lc,jmab,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("id,la,mb,jkce,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("id,la,mb,jkce,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("id,la,mc,jkbe,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("id,la,mc,jkbe,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("id,lb,mc,jkae,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("id,lb,mc,jkae,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("jd,ke,la,imbc,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("jd,ke,la,imbc,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("jd,ke,lb,imac,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("jd,ke,lb,imac,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("jd,ke,lc,imab,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("jd,ke,lc,imab,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("jd,la,mb,ikce,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("jd,la,mb,ikce,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("jd,la,mc,ikbe,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("jd,la,mc,ikbe,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("jd,lb,mc,ikae,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("jd,lb,mc,ikae,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("kd,la,mb,ijce,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("kd,la,mb,ijce,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("kd,la,mc,ijbe,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
-    t3new_bbbbbb += einsum("kd,la,mc,ijbe,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("kd,lb,mc,ijae,ldme->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * -2.0
-    t3new_bbbbbb += einsum("kd,lb,mc,ijae,lemd->ijkabc", t1.bb, t1.bb, t1.bb, t2.bbbb, v.bbbb.ovov) * 2.0
+    t3new_bbbbbb += einsum(x402, (0, 1, 2, 3, 4, 5), (0, 1, 2, 5, 4, 3))
+    t3new_bbbbbb += einsum(x402, (0, 1, 2, 3, 4, 5), (0, 1, 2, 4, 5, 3)) * -1.0
+    t3new_bbbbbb += einsum(x402, (0, 1, 2, 3, 4, 5), (0, 1, 2, 4, 3, 5))
+    t3new_bbbbbb += einsum(x402, (0, 1, 2, 3, 4, 5), (0, 2, 1, 5, 4, 3)) * -1.0
+    t3new_bbbbbb += einsum(x402, (0, 1, 2, 3, 4, 5), (0, 2, 1, 4, 5, 3))
+    t3new_bbbbbb += einsum(x402, (0, 1, 2, 3, 4, 5), (0, 2, 1, 4, 3, 5)) * -1.0
+    t3new_bbbbbb += einsum(x402, (0, 1, 2, 3, 4, 5), (1, 0, 2, 5, 4, 3)) * -1.0
+    t3new_bbbbbb += einsum(x402, (0, 1, 2, 3, 4, 5), (1, 0, 2, 4, 5, 3))
+    t3new_bbbbbb += einsum(x402, (0, 1, 2, 3, 4, 5), (1, 0, 2, 4, 3, 5)) * -1.0
+    t3new_bbbbbb += einsum(x402, (0, 1, 2, 3, 4, 5), (2, 0, 1, 5, 4, 3))
+    t3new_bbbbbb += einsum(x402, (0, 1, 2, 3, 4, 5), (2, 0, 1, 4, 5, 3)) * -1.0
+    t3new_bbbbbb += einsum(x402, (0, 1, 2, 3, 4, 5), (2, 0, 1, 4, 3, 5))
+    t3new_bbbbbb += einsum(x402, (0, 1, 2, 3, 4, 5), (1, 2, 0, 5, 4, 3))
+    t3new_bbbbbb += einsum(x402, (0, 1, 2, 3, 4, 5), (1, 2, 0, 4, 5, 3)) * -1.0
+    t3new_bbbbbb += einsum(x402, (0, 1, 2, 3, 4, 5), (1, 2, 0, 4, 3, 5))
+    t3new_bbbbbb += einsum(x402, (0, 1, 2, 3, 4, 5), (2, 1, 0, 5, 4, 3)) * -1.0
+    t3new_bbbbbb += einsum(x402, (0, 1, 2, 3, 4, 5), (2, 1, 0, 4, 5, 3))
+    t3new_bbbbbb += einsum(x402, (0, 1, 2, 3, 4, 5), (2, 1, 0, 4, 3, 5)) * -1.0
+    x403 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
+    x403 += einsum(t2.bbbb, (0, 1, 2, 3), v.bbbb.ovvv, (4, 5, 6, 3), (0, 1, 4, 2, 5, 6))
+    x404 = np.zeros((nocc[1], nocc[1], nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x404 += einsum(t2.bbbb, (0, 1, 2, 3), v.bbbb.ooov, (4, 5, 6, 3), (0, 1, 5, 4, 6, 2))
+    x405 = np.zeros((nocc[1], nocc[1], nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x405 += einsum(t1.bb, (0, 1), x404, (2, 3, 4, 5, 0, 6), (2, 3, 4, 5, 1, 6))
+    x406 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x406 += einsum(v.bbbb.oovv, (0, 1, 2, 3), (1, 0, 3, 2))
+    x406 += einsum(v.bbbb.ovov, (0, 1, 2, 3), (2, 0, 1, 3)) * -1.0
+    x407 = np.zeros((nocc[1], nocc[1], nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x407 += einsum(t2.bbbb, (0, 1, 2, 3), x406, (4, 5, 2, 6), (4, 5, 0, 1, 6, 3))
+    x408 = np.zeros((nocc[1], nocc[1], nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x408 += einsum(x405, (0, 1, 2, 3, 4, 5), (0, 1, 3, 2, 4, 5))
+    x408 += einsum(x407, (0, 1, 2, 3, 4, 5), (3, 2, 1, 0, 5, 4))
+    x409 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
+    x409 += einsum(x408, (0, 1, 2, 3, 4, 5), t1.bb, (2, 6), (0, 1, 3, 4, 5, 6)) * 2.0
+    x410 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
+    x410 += einsum(x403, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 4, 5)) * 2.0
+    x410 += einsum(x409, (0, 1, 2, 3, 4, 5), (0, 1, 2, 5, 3, 4))
+    t3new_bbbbbb += einsum(x410, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 4, 5)) * -1.0
+    t3new_bbbbbb += einsum(x410, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 5, 4))
+    t3new_bbbbbb += einsum(x410, (0, 1, 2, 3, 4, 5), (0, 1, 2, 4, 3, 5))
+    t3new_bbbbbb += einsum(x410, (0, 1, 2, 3, 4, 5), (0, 1, 2, 5, 3, 4)) * -1.0
+    t3new_bbbbbb += einsum(x410, (0, 1, 2, 3, 4, 5), (0, 1, 2, 4, 5, 3)) * -1.0
+    t3new_bbbbbb += einsum(x410, (0, 1, 2, 3, 4, 5), (0, 1, 2, 5, 4, 3))
+    t3new_bbbbbb += einsum(x410, (0, 1, 2, 3, 4, 5), (0, 2, 1, 3, 4, 5))
+    t3new_bbbbbb += einsum(x410, (0, 1, 2, 3, 4, 5), (0, 2, 1, 3, 5, 4)) * -1.0
+    t3new_bbbbbb += einsum(x410, (0, 1, 2, 3, 4, 5), (0, 2, 1, 4, 3, 5)) * -1.0
+    t3new_bbbbbb += einsum(x410, (0, 1, 2, 3, 4, 5), (0, 2, 1, 5, 3, 4))
+    t3new_bbbbbb += einsum(x410, (0, 1, 2, 3, 4, 5), (0, 2, 1, 4, 5, 3))
+    t3new_bbbbbb += einsum(x410, (0, 1, 2, 3, 4, 5), (0, 2, 1, 5, 4, 3)) * -1.0
+    t3new_bbbbbb += einsum(x410, (0, 1, 2, 3, 4, 5), (2, 1, 0, 3, 4, 5))
+    t3new_bbbbbb += einsum(x410, (0, 1, 2, 3, 4, 5), (2, 1, 0, 3, 5, 4)) * -1.0
+    t3new_bbbbbb += einsum(x410, (0, 1, 2, 3, 4, 5), (2, 1, 0, 4, 3, 5)) * -1.0
+    t3new_bbbbbb += einsum(x410, (0, 1, 2, 3, 4, 5), (2, 1, 0, 5, 3, 4))
+    t3new_bbbbbb += einsum(x410, (0, 1, 2, 3, 4, 5), (2, 1, 0, 4, 5, 3))
+    t3new_bbbbbb += einsum(x410, (0, 1, 2, 3, 4, 5), (2, 1, 0, 5, 4, 3)) * -1.0
+    x411 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
+    x411 += einsum(x336, (0, 1), t3.bbbbbb, (2, 3, 4, 0, 5, 6), (2, 3, 4, 1, 5, 6)) * 6.0
+    t3new_bbbbbb += einsum(x411, (0, 1, 2, 3, 4, 5), (1, 2, 0, 3, 4, 5))
+    t3new_bbbbbb += einsum(x411, (0, 1, 2, 3, 4, 5), (1, 2, 0, 4, 3, 5)) * -1.0
+    t3new_bbbbbb += einsum(x411, (0, 1, 2, 3, 4, 5), (1, 2, 0, 4, 5, 3))
+    x412 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
+    x412 += einsum(t2.bbbb, (0, 1, 2, 3), v.bbbb.ooov, (4, 1, 5, 6), (0, 4, 5, 2, 3, 6))
+    x413 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x413 += einsum(t1.bb, (0, 1), x194, (2, 3, 1, 4), (0, 2, 3, 4))
+    x414 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
+    x414 += einsum(t2.bbbb, (0, 1, 2, 3), x413, (4, 5, 1, 6), (4, 5, 0, 2, 3, 6))
+    x415 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x415 += einsum(t1.bb, (0, 1), x406, (2, 3, 1, 4), (2, 3, 0, 4))
+    x416 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
+    x416 += einsum(t2.bbbb, (0, 1, 2, 3), x415, (4, 0, 5, 6), (5, 4, 1, 6, 2, 3)) * 2.0
+    x417 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
+    x417 += einsum(x412, (0, 1, 2, 3, 4, 5), (0, 1, 2, 4, 3, 5)) * -2.0
+    x417 += einsum(x414, (0, 1, 2, 3, 4, 5), (0, 1, 2, 4, 3, 5)) * -2.0
+    x417 += einsum(x416, (0, 1, 2, 3, 4, 5), (0, 2, 1, 5, 4, 3))
+    t3new_bbbbbb += einsum(x417, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 4, 5)) * -1.0
+    t3new_bbbbbb += einsum(x417, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 5, 4))
+    t3new_bbbbbb += einsum(x417, (0, 1, 2, 3, 4, 5), (0, 1, 2, 5, 3, 4)) * -1.0
+    t3new_bbbbbb += einsum(x417, (0, 1, 2, 3, 4, 5), (0, 2, 1, 3, 4, 5))
+    t3new_bbbbbb += einsum(x417, (0, 1, 2, 3, 4, 5), (0, 2, 1, 3, 5, 4)) * -1.0
+    t3new_bbbbbb += einsum(x417, (0, 1, 2, 3, 4, 5), (0, 2, 1, 5, 3, 4))
+    t3new_bbbbbb += einsum(x417, (0, 1, 2, 3, 4, 5), (1, 0, 2, 3, 4, 5))
+    t3new_bbbbbb += einsum(x417, (0, 1, 2, 3, 4, 5), (1, 0, 2, 3, 5, 4)) * -1.0
+    t3new_bbbbbb += einsum(x417, (0, 1, 2, 3, 4, 5), (1, 0, 2, 5, 3, 4))
+    t3new_bbbbbb += einsum(x417, (0, 1, 2, 3, 4, 5), (2, 0, 1, 3, 4, 5)) * -1.0
+    t3new_bbbbbb += einsum(x417, (0, 1, 2, 3, 4, 5), (2, 0, 1, 3, 5, 4))
+    t3new_bbbbbb += einsum(x417, (0, 1, 2, 3, 4, 5), (2, 0, 1, 5, 3, 4)) * -1.0
+    t3new_bbbbbb += einsum(x417, (0, 1, 2, 3, 4, 5), (1, 2, 0, 3, 4, 5)) * -1.0
+    t3new_bbbbbb += einsum(x417, (0, 1, 2, 3, 4, 5), (1, 2, 0, 3, 5, 4))
+    t3new_bbbbbb += einsum(x417, (0, 1, 2, 3, 4, 5), (1, 2, 0, 5, 3, 4)) * -1.0
+    t3new_bbbbbb += einsum(x417, (0, 1, 2, 3, 4, 5), (2, 1, 0, 3, 4, 5))
+    t3new_bbbbbb += einsum(x417, (0, 1, 2, 3, 4, 5), (2, 1, 0, 3, 5, 4)) * -1.0
+    t3new_bbbbbb += einsum(x417, (0, 1, 2, 3, 4, 5), (2, 1, 0, 5, 3, 4))
+    x418 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
+    x418 += einsum(x214, (0, 1, 2, 3), t2.bbbb, (4, 5, 6, 2), (0, 4, 5, 6, 3, 1))
+    x419 = np.zeros((nocc[1], nocc[1], nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x419 += einsum(x25, (0, 1, 2, 3), t2.bbbb, (4, 5, 6, 3), (0, 4, 5, 2, 1, 6))
+    x420 = np.zeros((nocc[1], nocc[1], nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x420 += einsum(t1.bb, (0, 1), x419, (2, 3, 4, 5, 0, 6), (2, 3, 4, 5, 1, 6))
+    x421 = np.zeros((nocc[1], nocc[1], nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x421 += einsum(t2.bbbb, (0, 1, 2, 3), x199, (4, 5, 2, 6), (4, 5, 0, 1, 6, 3)) * -1.0
+    x422 = np.zeros((nocc[1], nocc[1], nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
+    x422 += einsum(x420, (0, 1, 2, 3, 4, 5), (0, 2, 1, 3, 4, 5)) * -1.0
+    x422 += einsum(x421, (0, 1, 2, 3, 4, 5), (0, 3, 2, 1, 5, 4)) * -1.0
+    x423 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
+    x423 += einsum(t1.bb, (0, 1), x422, (2, 3, 4, 0, 5, 6), (2, 3, 4, 5, 6, 1)) * 2.0
+    x424 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
+    x424 += einsum(x418, (0, 1, 2, 3, 4, 5), (0, 2, 1, 3, 4, 5)) * -2.0
+    x424 += einsum(x423, (0, 1, 2, 3, 4, 5), (0, 2, 1, 5, 3, 4)) * -1.0
+    t3new_bbbbbb += einsum(x424, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 4, 5)) * -1.0
+    t3new_bbbbbb += einsum(x424, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 5, 4))
+    t3new_bbbbbb += einsum(x424, (0, 1, 2, 3, 4, 5), (0, 1, 2, 4, 3, 5))
+    t3new_bbbbbb += einsum(x424, (0, 1, 2, 3, 4, 5), (0, 1, 2, 5, 3, 4)) * -1.0
+    t3new_bbbbbb += einsum(x424, (0, 1, 2, 3, 4, 5), (0, 1, 2, 4, 5, 3)) * -1.0
+    t3new_bbbbbb += einsum(x424, (0, 1, 2, 3, 4, 5), (0, 1, 2, 5, 4, 3))
+    t3new_bbbbbb += einsum(x424, (0, 1, 2, 3, 4, 5), (2, 0, 1, 3, 4, 5)) * -1.0
+    t3new_bbbbbb += einsum(x424, (0, 1, 2, 3, 4, 5), (2, 0, 1, 3, 5, 4))
+    t3new_bbbbbb += einsum(x424, (0, 1, 2, 3, 4, 5), (2, 0, 1, 4, 3, 5))
+    t3new_bbbbbb += einsum(x424, (0, 1, 2, 3, 4, 5), (2, 0, 1, 5, 3, 4)) * -1.0
+    t3new_bbbbbb += einsum(x424, (0, 1, 2, 3, 4, 5), (2, 0, 1, 4, 5, 3)) * -1.0
+    t3new_bbbbbb += einsum(x424, (0, 1, 2, 3, 4, 5), (2, 0, 1, 5, 4, 3))
+    t3new_bbbbbb += einsum(x424, (0, 1, 2, 3, 4, 5), (2, 1, 0, 3, 4, 5))
+    t3new_bbbbbb += einsum(x424, (0, 1, 2, 3, 4, 5), (2, 1, 0, 3, 5, 4)) * -1.0
+    t3new_bbbbbb += einsum(x424, (0, 1, 2, 3, 4, 5), (2, 1, 0, 4, 3, 5)) * -1.0
+    t3new_bbbbbb += einsum(x424, (0, 1, 2, 3, 4, 5), (2, 1, 0, 5, 3, 4))
+    t3new_bbbbbb += einsum(x424, (0, 1, 2, 3, 4, 5), (2, 1, 0, 4, 5, 3))
+    t3new_bbbbbb += einsum(x424, (0, 1, 2, 3, 4, 5), (2, 1, 0, 5, 4, 3)) * -1.0
+    x425 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1]), dtype=np.float64)
+    x425 += einsum(f.bb.ov, (0, 1), t2.bbbb, (2, 3, 4, 1), (0, 2, 3, 4))
+    x426 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
+    x426 += einsum(t2.bbbb, (0, 1, 2, 3), x425, (1, 4, 5, 6), (5, 4, 0, 6, 2, 3)) * -1.0
+    t3new_bbbbbb += einsum(x426, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 5, 4)) * -4.0
+    t3new_bbbbbb += einsum(x426, (0, 1, 2, 3, 4, 5), (0, 1, 2, 5, 3, 4)) * 4.0
+    t3new_bbbbbb += einsum(x426, (0, 1, 2, 3, 4, 5), (0, 1, 2, 5, 4, 3)) * -4.0
+    t3new_bbbbbb += einsum(x426, (0, 1, 2, 3, 4, 5), (0, 2, 1, 3, 5, 4)) * 4.0
+    t3new_bbbbbb += einsum(x426, (0, 1, 2, 3, 4, 5), (0, 2, 1, 5, 3, 4)) * -4.0
+    t3new_bbbbbb += einsum(x426, (0, 1, 2, 3, 4, 5), (0, 2, 1, 5, 4, 3)) * 4.0
+    t3new_bbbbbb += einsum(x426, (0, 1, 2, 3, 4, 5), (2, 1, 0, 3, 5, 4)) * 4.0
+    t3new_bbbbbb += einsum(x426, (0, 1, 2, 3, 4, 5), (2, 1, 0, 5, 3, 4)) * -4.0
+    t3new_bbbbbb += einsum(x426, (0, 1, 2, 3, 4, 5), (2, 1, 0, 5, 4, 3)) * 4.0
+    x427 = np.zeros((nocc[1], nocc[1], nocc[1], nvir[1], nvir[1], nvir[1]), dtype=np.float64)
+    x427 += einsum(x339, (0, 1), t3.bbbbbb, (0, 2, 3, 4, 5, 6), (1, 2, 3, 4, 5, 6)) * 6.0
+    t3new_bbbbbb += einsum(x427, (0, 1, 2, 3, 4, 5), (0, 1, 2, 3, 4, 5)) * -1.0
+    t3new_bbbbbb += einsum(x427, (0, 1, 2, 3, 4, 5), (2, 0, 1, 3, 4, 5)) * -1.0
+    t3new_bbbbbb += einsum(x427, (0, 1, 2, 3, 4, 5), (2, 1, 0, 3, 4, 5))
 
     t1new.aa = t1new_aa
     t1new.bb = t1new_bb
