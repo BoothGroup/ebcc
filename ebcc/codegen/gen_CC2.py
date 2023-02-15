@@ -1,72 +1,24 @@
 """Script to generate equations for the CC2 model.
 """
 
-import warnings
-import sympy
-import drudge
-from fractions import Fraction
-from qwick.index import Idx
-from qwick.operator import FOperator
-from qwick.expression import *
-from qwick.convenience import *
-from qwick import codegen
-from ebcc.util import pack_2e, einsum, wick
+import itertools
+from ebcc.codegen import common
+import qccg
+from qccg import index, tensor, read, write
+import pdaggerq
 
-from dummy_spark import SparkContext
-ctx = SparkContext()
-dr = drudge.Drudge(ctx)
+# Spin integration mode
+spin = "rhf"
 
-warnings.simplefilter("ignore", UserWarning)
+# pdaggerq setup
+pq = pdaggerq.pq_helper("fermi")
+pq.set_print_level(0)
 
-# Rank of fermion, boson, coupling operators:
-rank = ("SD", "", "")
-
-# Spin setting:
-spin = "ghf"  # {"ghf", "rhf", "uhf"}
-
-# Indices
-occs = i, j, k, l = [Idx(n, "occ") for n in range(4)]
-virs = a, b, c, d = [Idx(n, "vir") for n in range(4)]
-sizes = common.get_sizes(200, 500, 0, spin)
-
-# Tensors
-(F, V), _ = wick.get_hamiltonian(rank=rank, separate=True)
-H = F + V
-bra = bra1, bra2 = wick.get_bra_spaces(rank=rank, occs=occs, virs=virs)
-ket = ket1, ket2 = wick.get_ket_spaces(rank=rank, occs=occs, virs=virs)
-braip = bra1ip, bra2ip = wick.get_bra_ip_spaces(rank=rank, occs=occs, virs=virs)
-braea = bra1ea, bra2ea = wick.get_bra_ea_spaces(rank=rank, occs=occs, virs=virs)
-ketip = ket1ip, ket2ip = wick.get_ket_ip_spaces(rank=rank, occs=occs, virs=virs)
-ketea = ket1ea, ket2ea = wick.get_ket_ea_spaces(rank=rank, occs=occs, virs=virs)
-rip = r1ip, r2ip = wick.get_r_ip_spaces(rank=rank, occs=occs, virs=virs)
-rea = r1ea, r2ea = wick.get_r_ea_spaces(rank=rank, occs=occs, virs=virs)
-T1, _ = wick.get_excitation_ansatz(rank=("S", *rank[1:]), occs=occs, virs=virs)
-T2, _ = wick.get_excitation_ansatz(rank=("D", *rank[1:]), occs=occs, virs=virs)
-T = T1 + T2
-L1, _ = wick.get_deexcitation_ansatz(rank=("S", *rank[1:]), occs=occs, virs=virs)
-L2, _ = wick.get_deexcitation_ansatz(rank=("D", *rank[1:]), occs=occs, virs=virs)
-L = L1 + L2
-Hbars = wick.construct_hbar(H, T, max_commutator=5)
-Hbar = Hbars[-2]
-Hbars_f_t2 = wick.construct_hbar(F, T2, max_commutator=5)
-Hbars_v_t1 = wick.construct_hbar(V, T1, max_commutator=5)
-Hbars_partial = [x+y for x, y in zip(Hbars_f_t2, Hbars_v_t1)]
-Hbar_partial = Hbars_partial[-2]
-
-# Printer
-printer = common.get_printer(spin)
+# Printer setup
 FunctionPrinter = common.get_function_printer(spin)
-
-# Get prefix and spin transformation function according to setting:
-transform_spin, prefix = common.get_transformation_function(spin)
-
-# Declare particle types:
-particles = common.particles
-
-# Timer:
 timer = common.Stopwatch()
 
-with common.FilePrinter("%sCC2" % prefix.upper()) as file_printer:
+with common.FilePrinter("%sCC2" % spin[0].upper()) as file_printer:
     # Get energy expression:
     with FunctionPrinter(
             file_printer,
@@ -76,16 +28,35 @@ with common.FilePrinter("%sCC2" % prefix.upper()) as file_printer:
             return_dict=False,
             timer=timer,
     ) as function_printer:
-        out = wick.apply_wick(Hbar)
-        out.resolve()
-        expr = AExpression(Ex=out)
-        terms, indices = codegen.wick_to_sympy(expr, particles, return_value="e_cc")
-        terms = transform_spin(terms, indices)
-        terms = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
+        pq.clear()
+        pq.set_left_operators([["1"]])
+        pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
+        pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
+        pq.simplify()
 
-        terms = codegen.spin_integrate._flatten(terms)
-        terms = codegen.optimize(terms, sizes=sizes, optimize="exhaust", verify=True, interm_fmt="x{}")
-        function_printer.write_python(printer.doprint(terms)+"\n", comment="energy")
+        terms = pq.fully_contracted_strings()
+        terms = [term for term in terms if set(term) != {'+1.00000000000000', 'f(i,i)'}]
+        terms = [term for term in terms if set(term) != {'-0.50000000000000', '<j,i||j,i>'}]
+
+        qccg.clear()
+        qccg.set_spin(spin)
+
+        expression = read.from_pdaggerq(terms, index_spins={})
+        expression = expression.expand_spin_orbitals()
+        output = tensor.Scalar("e_cc")
+
+        expressions, outputs = qccg.optimisation.optimise_expression_gristmill(
+                (expression,),
+                (output,),
+        )
+        einsums = write.write_opt_einsums(
+                expressions,
+                outputs,
+                (output,),
+                indent=4,
+                einsum_function="einsum",
+        )
+        function_printer.write_python(einsums+"\n", comment="energy")
 
     # Get amplitudes function:
     with FunctionPrinter(
@@ -94,32 +65,80 @@ with common.FilePrinter("%sCC2" % prefix.upper()) as file_printer:
             ["f", "v", "nocc", "nvir", "t1", "t2"],
             ["t1new", "t2new"],
             spin_cases={
-                "t1new": ["aa", "bb"],
-                "t2new": ["abab", "baba", "aaaa", "bbbb"],
+                "t1new": [x+x for x in ("a", "b")],
+                "t2new": [x+x for x in ("aa", "ab", "ba", "bb")],
             },
             timer=timer,
     ) as function_printer:
         # T1 residuals:
-        S = bra1 * Hbar
-        out = wick.apply_wick(S)
-        out.resolve()
-        expr = AExpression(Ex=out)
-        terms, indices = codegen.wick_to_sympy(expr, particles, return_value="t1new")
-        terms = transform_spin(terms, indices, project_rhf=[(codegen.ALPHA, codegen.ALPHA)])
-        terms_t1 = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
+        pq.clear()
+        pq.set_left_operators([["e1(i,a)"]])
+        pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
+        pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
+        pq.simplify()
+        terms_t1 = pq.fully_contracted_strings()
 
         # T2 residuals:
-        S = bra2 * Hbar_partial
-        out = wick.apply_wick(S)
-        out.resolve()
-        expr = AExpression(Ex=out)
-        terms, indices = codegen.wick_to_sympy(expr, particles, return_value="t2new")
-        terms = transform_spin(terms, indices, project_rhf=[(codegen.ALPHA, codegen.BETA, codegen.ALPHA, codegen.BETA)])
-        terms_t2 = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
+        pq.clear()
+        pq.set_left_operators([["e2(i,j,b,a)"]])
+        pq.add_st_operator(1.0, ["f"], ["t2"])
+        pq.add_st_operator(1.0, ["v"], ["t1"])
+        pq.simplify()
+        terms_t2 = pq.fully_contracted_strings()
 
-        terms = codegen.spin_integrate._flatten([terms_t1, terms_t2])
-        terms = codegen.optimize(terms, sizes=sizes, optimize="trav", verify=False, interm_fmt="x{}")
-        function_printer.write_python(printer.doprint(terms)+"\n", comment="T1 and T2 amplitudes")
+        expressions = []
+        outputs = []
+        for n, terms in enumerate([terms_t1, terms_t2]):
+            if spin == "ghf":
+                spins_list = [(None,) * (n+1)]
+            elif spin == "rhf":
+                spins_list = [(["a", "b"] * (n+1))[:n+1]]
+            elif spin == "uhf":
+                spins_list = list(itertools.product("ab", repeat=n+1))
+
+            for spins in spins_list:
+                qccg.clear()
+                qccg.set_spin(spin)
+
+                if spin == "rhf":
+                    occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1], ["o", "o"][:n+1], ["r", "r"][:n+1])
+                    vir = index.index_factory(index.ExternalIndex, ["a", "b"][:n+1], ["v", "v"][:n+1], ["r", "r"][:n+1])
+                    output = tensor.FermionicAmplitude("t%dnew" % (n+1), occ, vir)
+                    shape = ", ".join(["nocc"] * (n+1) + ["nvir"] * (n+1))
+                elif spin == "uhf":
+                    occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1], ["o", "o"][:n+1], spins)
+                    vir = index.index_factory(index.ExternalIndex, ["a", "b"][:n+1], ["v", "v"][:n+1], spins)
+                    output = tensor.FermionicAmplitude("t%dnew" % (n+1), occ, vir)
+                    shape = ", ".join(["nocc[%d]" % "ab".index(s) for s in spins] + ["nvir[%d]" % "ab".index(s) for s in spins])
+                elif spin == "ghf":
+                    occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1], ["o", "o"][:n+1], [None, None][:n+1])
+                    vir = index.index_factory(index.ExternalIndex, ["a", "b"][:n+1], ["v", "v"][:n+1], [None, None][:n+1])
+                    output = tensor.FermionicAmplitude("t%dnew" % (n+1), occ, vir)
+                    shape = ", ".join(["nocc"] * (n+1) + ["nvir"] * (n+1))
+
+                index_spins = {index.character: s for index, s in zip(occ+vir, spins+spins)}
+                expression = read.from_pdaggerq(terms, index_spins=index_spins)
+
+                expression = expression.expand_spin_orbitals()
+
+                expressions.append(expression)
+                outputs.append(output)
+
+        final_outputs = outputs
+        # Dummies change, canonicalise_dummies messes up the indices FIXME
+        expressions, outputs = qccg.optimisation.optimise_expression_gristmill(
+                expressions,
+                outputs,
+                strat="exhaust",
+        )
+        einsums = write.write_opt_einsums(
+                expressions,
+                outputs,
+                final_outputs,
+                indent=4,
+                einsum_function="einsum",
+        )
+        function_printer.write_python(einsums+"\n", comment="T amplitudes")
 
     # Get lambda amplitudes function:
     with FunctionPrinter(
@@ -128,60 +147,89 @@ with common.FilePrinter("%sCC2" % prefix.upper()) as file_printer:
             ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2"],
             ["l1new", "l2new"],
             spin_cases={
-                "l1new": ["aa", "bb"],
-                "l2new": ["abab", "baba", "aaaa", "bbbb"],
+                "l1new": [x+x for x in ("a", "b")],
+                "l2new": [x+x for x in ("aa", "ab", "ba", "bb")],
             },
             timer=timer,
     ) as function_printer:
-        # L1 residuals <0|Hbar|singles> (not proportional to lambda):
-        S = Hbar * ket1
-        out = wick.apply_wick(S)
-        out.resolve()
-        expr1 = AExpression(Ex=out)
-        expr1 = expr1.get_connected()
-        expr1.sort_tensors()
+        # L1 residuals:
+        pq.clear()
+        pq.set_left_operators([["1"]])
+        pq.set_right_operators([["1"]])
+        pq.add_st_operator(1.0, ["f", "e1(a,i)"], ["t1", "t2"])
+        pq.add_st_operator(1.0, ["v", "e1(a,i)"], ["t1", "t2"])
+        pq.set_left_operators([["l1"], ["l2"]])
+        pq.add_st_operator( 1.0, ["f", "e1(a,i)"], ["t1", "t2"])
+        pq.add_st_operator( 1.0, ["v", "e1(a,i)"], ["t1", "t2"])
+        pq.add_st_operator(-1.0, ["e1(a,i)", "f"], ["t1", "t2"])
+        pq.add_st_operator(-1.0, ["e1(a,i)", "v"], ["t1", "t2"])
+        pq.simplify()
+        terms_l1 = pq.fully_contracted_strings()
 
-        # L1 residuals <0|(L Hbar)_c|singles> (connected pieces proportional to Lambda):
-        S = L * Hbar * ket1
-        out = wick.apply_wick(S)
-        out.resolve()
-        expr2 = AExpression(Ex=out)
-        expr2 = expr2.get_connected()
-        expr2.sort_tensors()
-        terms, indices = codegen.wick_to_sympy(expr1+expr2, particles, return_value="l1new")
-        terms = transform_spin(terms, indices, project_rhf=[(codegen.ALPHA, codegen.ALPHA)])
-        terms_l1 = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
+        # L2 residuals:
+        pq.clear()
+        pq.set_left_operators([["1"]])
+        pq.set_right_operators([["1"]])
+        pq.add_st_operator(1.0, ["f", "e2(a,b,j,i)"], ["t2"])
+        pq.add_st_operator(1.0, ["v", "e2(a,b,j,i)"], ["t1"])
+        pq.set_left_operators([["l1"], ["l2"]])
+        pq.add_st_operator( 1.0, ["f", "e2(a,b,j,i)"], ["t2"])
+        pq.add_st_operator( 1.0, ["v", "e2(a,b,j,i)"], ["t1"])
+        pq.add_st_operator(-1.0, ["e2(a,b,j,i)", "f"], ["t2"])
+        pq.add_st_operator(-1.0, ["e2(a,b,j,i)", "v"], ["t1"])
+        pq.simplify()
+        terms_l2 = pq.fully_contracted_strings()
 
-        # L2 residuals <0|Hbar|doubles> (not proportional to lambda):
-        S = Hbar_partial * ket2
-        out = wick.apply_wick(S)
-        out.resolve()
-        expr1 = AExpression(Ex=out)
-        expr1 = expr1.get_connected()
-        expr1.sort_tensors()
+        expressions = []
+        outputs = []
+        for n, terms in enumerate([terms_l1, terms_l2]):
+            if spin == "ghf":
+                spins_list = [(None,) * (n+1)]
+            elif spin == "rhf":
+                spins_list = [(["a", "b"] * (n+1))[:n+1]]
+            elif spin == "uhf":
+                spins_list = list(itertools.product("ab", repeat=n+1))
 
-        # L2 residuals <0|L Hbar|doubles> (connected pieces proportional to lambda):
-        S = L * Hbar_partial * ket2
-        out = wick.apply_wick(S)
-        out.resolve()
-        expr2 = AExpression(Ex=out)
-        expr2 = expr2.get_connected()
-        expr2.sort_tensors()
+            for spins in spins_list:
+                qccg.clear()
+                qccg.set_spin(spin)
 
-        # L2 residuals (disonnected pieces proportional to lambda):
-        P1 = PE1("occ", "vir")
-        S = Hbar_partial * P1 * L * ket2
-        out = wick.apply_wick(S)
-        out.resolve()
-        expr3 = AExpression(Ex=out)
-        expr3.sort_tensors()
-        terms, indices = codegen.wick_to_sympy(expr1+expr2+expr3, particles, return_value="l2new")
-        terms = transform_spin(terms, indices, project_rhf=[(codegen.ALPHA, codegen.BETA, codegen.ALPHA, codegen.BETA)])
-        terms_l2 = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
+                if spin == "rhf":
+                    occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1], ["o", "o"][:n+1], ["r", "r"][:n+1])
+                    vir = index.index_factory(index.ExternalIndex, ["a", "b"][:n+1], ["v", "v"][:n+1], ["r", "r"][:n+1])
+                    output = tensor.FermionicAmplitude("l%dnew" % (n+1), vir, occ)
+                    shape = ", ".join(["nvir"] * (n+1) + ["nocc"] * (n+1))
+                elif spin == "uhf":
+                    occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1], ["o", "o"][:n+1], spins)
+                    vir = index.index_factory(index.ExternalIndex, ["a", "b"][:n+1], ["v", "v"][:n+1], spins)
+                    output = tensor.FermionicAmplitude("l%dnew" % (n+1), vir, occ)
+                    shape = ", ".join(["nvir[%d]" % "ab".index(s) for s in spins] + ["nocc[%d]" % "ab".index(s) for s in spins])
+                elif spin == "ghf":
+                    occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1], ["o", "o"][:n+1], [None, None][:n+1])
+                    vir = index.index_factory(index.ExternalIndex, ["a", "b"][:n+1], ["v", "v"][:n+1], [None, None][:n+1])
+                    output = tensor.FermionicAmplitude("l%dnew" % (n+1), vir, occ)
+                    shape = ", ".join(["nvir"] * (n+1) + ["nocc"] * (n+1))
 
-        terms = codegen.spin_integrate._flatten([terms_l1, terms_l2])
-        terms = codegen.optimize(terms, sizes=sizes, optimize="trav", verify=False, interm_fmt="x{}")
-        function_printer.write_python(printer.doprint(terms)+"\n", comment="L1 and L2 amplitudes")
+                index_spins = {index.character: s for index, s in zip(vir+occ, spins+spins)}
+                expression = read.from_pdaggerq(terms, index_spins=index_spins)
+                expression = expression.expand_spin_orbitals()
+
+                expressions.append(expression)
+                outputs.append(output)
+
+        final_outputs = outputs
+        expressions, outputs = qccg.optimisation.optimise_expression_gristmill(
+                expressions,
+                outputs,
+        )
+        einsums = write.write_opt_einsums(
+                expressions,
+                outputs,
+                final_outputs,
+                indent=4,
+                einsum_function="einsum",
+        )
+        function_printer.write_python(einsums+"\n", comment="L amplitudes")
 
     # Get 1RDM expressions:
     with FunctionPrinter(
@@ -197,50 +245,80 @@ with common.FilePrinter("%sCC2" % prefix.upper()) as file_printer:
     ) as function_printer:
         if spin != "uhf":
             function_printer.write_python(
-                    "    delta_oo = np.eye(nocc)\n"
-                    "    delta_vv = np.eye(nvir)\n"
+                    "    delta = Namespace(oo=np.eye(nocc), vv=np.eye(nvir))\n"
             )
         else:
             function_printer.write_python(
-                    "    delta_oo = Namespace()\n"
-                    "    delta_oo.aa = np.eye(nocc[0])\n"
-                    "    delta_oo.bb = np.eye(nocc[1])\n"
-                    "    delta_vv = Namespace()\n"
-                    "    delta_vv.aa = np.eye(nvir[0])\n"
-                    "    delta_vv.bb = np.eye(nvir[1])\n"
+                    "    delta = Namespace(aa=Namespace(), bb=Namespace())\n"
+                    "    delta.aa = Namespace(oo=np.eye(nocc[0]), vv=np.eye(nvir[0]))\n"
+                    "    delta.bb = Namespace(oo=np.eye(nocc[1]), vv=np.eye(nvir[1]))\n"
             )
 
-        def case(i, j, return_value, comment=None):
-            ops = [FOperator(j, True), FOperator(i, False)]
-            P = Expression([Term(1, [], [Tensor([i, j], "")], ops, [])])
-            mid = wick.bch(P, T, max_commutator=2)[-1]
-            full = mid + L * mid
-            out = wick.apply_wick(full)
-            out.resolve()
-            expr = AExpression(Ex=out)
-            terms, indices = codegen.wick_to_sympy(expr, particles, return_value=return_value)
-            terms = transform_spin(terms, indices)
-            terms = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
-            return terms
+        if spin == "ghf":
+            spins_list = [(None, None)]
+        elif spin == "rhf":
+            spins_list = [("a", "a")]
+        elif spin == "uhf":
+            spins_list = [("a", "a"), ("b", "b")]
 
-        # Blocks:
-        terms = [
-            case(i, j, "rdm1_f_oo", comment="oo block"),
-            case(i, a, "rdm1_f_ov", comment="ov block"),
-            case(a, i, "rdm1_f_vo", comment="vo block"),
-            case(a, b, "rdm1_f_vv", comment="vv block"),
-        ]
-        terms = codegen.spin_integrate._flatten(terms)
+        expressions = []
+        outputs = []
+        terms_rdm1 = []
+        for sectors, indices in [("oo", "ij"), ("ov", "ia"), ("vo", "ai"), ("vv", "ab")]:
+            pq.clear()
+            pq.set_left_operators([["1"], ["l1"], ["l2"]])
+            pq.add_st_operator(1.0, ["e1(%s,%s)" % tuple(indices)], ["t1", "t2"])
+            pq.simplify()
+            terms = pq.fully_contracted_strings()
 
-        terms = codegen.optimize(terms, sizes=sizes, optimize="trav", verify=False, interm_fmt="x{}")
-        function_printer.write_python(printer.doprint(terms)+"\n", comment="1RDM")
+            for spins in spins_list:
+                qccg.clear()
+                qccg.set_spin(spin)
+
+                if spin == "rhf":
+                    inds = index.index_factory(index.ExternalIndex, indices, sectors, "rr")
+                    output = tensor.RDM1(inds)
+                    shape = ", ".join(["nocc" if o == "o" else "nvir" for o in sectors])
+                elif spin == "uhf":
+                    inds = index.index_factory(index.ExternalIndex, indices, sectors, spins)
+                    output = tensor.RDM1(inds)
+                    shape = ", ".join(["nocc[%d]" % "ab".index(s) if o == "o" else "nvir[%d]" % "ab".index(s) for o, s in zip(sectors, spins)])
+                elif spin == "ghf":
+                    inds = index.index_factory(index.ExternalIndex, indices, sectors, [None]*2)
+                    output = tensor.RDM1(inds)
+                    shape = ", ".join(["nocc" if o == "o" else "nvir" for o in sectors])
+
+                index_spins = {index.character: s for index, s in zip(inds, spins+spins)}
+                expression = read.from_pdaggerq(terms, index_spins=index_spins)
+                expression = expression.expand_spin_orbitals()
+
+                if spin == "rhf":
+                    expression = expression * 2
+
+                expressions.append(expression)
+                outputs.append(output)
+
+        final_outputs = outputs
+        expressions, outputs = qccg.optimisation.optimise_expression_gristmill(
+                expressions,
+                outputs,
+        )
+        einsums = write.write_opt_einsums(
+                expressions,
+                outputs,
+                final_outputs,
+                indent=4,
+                einsum_function="einsum",
+                add_occupancies={"f", "v", "rdm1_f", "rdm2_f", "delta"},
+        )
+        function_printer.write_python(einsums+"\n", comment="RDM1")
 
         if spin != "uhf":
             function_printer.write_python("    rdm1_f = np.block([[rdm1_f_oo, rdm1_f_ov], [rdm1_f_vo, rdm1_f_vv]])\n")
         else:
             function_printer.write_python(
-                "    rdm1_f_aa = np.block([[rdm1_f_oo_aa, rdm1_f_ov_aa], [rdm1_f_vo_aa, rdm1_f_vv_aa]])\n"
-                "    rdm1_f_bb = np.block([[rdm1_f_oo_bb, rdm1_f_ov_bb], [rdm1_f_vo_bb, rdm1_f_vv_bb]])\n"
+                "    rdm1_f_aa = np.block([[rdm1_f_aa_oo, rdm1_f_aa_ov], [rdm1_f_aa_vo, rdm1_f_aa_vv]])\n"
+                "    rdm1_f_bb = np.block([[rdm1_f_bb_oo, rdm1_f_bb_ov], [rdm1_f_bb_vo, rdm1_f_bb_vv]])\n"
             )
 
     # Get 2RDM expressions:
@@ -257,73 +335,94 @@ with common.FilePrinter("%sCC2" % prefix.upper()) as file_printer:
     ) as function_printer:
         if spin != "uhf":
             function_printer.write_python(
-                    "    delta_oo = np.eye(nocc)\n"
-                    "    delta_vv = np.eye(nvir)\n"
+                    "    delta = Namespace(oo=np.eye(nocc), vv=np.eye(nvir))\n"
             )
         else:
             function_printer.write_python(
-                    "    delta_oo = Namespace()\n"
-                    "    delta_oo.aa = np.eye(nocc[0])\n"
-                    "    delta_oo.bb = np.eye(nocc[1])\n"
-                    "    delta_vv = Namespace()\n"
-                    "    delta_vv.aa = np.eye(nvir[0])\n"
-                    "    delta_vv.bb = np.eye(nvir[1])\n"
+                    "    delta = Namespace(aa=Namespace(), bb=Namespace())\n"
+                    "    delta.aa = Namespace(oo=np.eye(nocc[0]), vv=np.eye(nvir[0]))\n"
+                    "    delta.bb = Namespace(oo=np.eye(nocc[1]), vv=np.eye(nvir[1]))\n"
             )
 
-        def case(i, j, k, l, return_value, comment=None):
-            ops = [FOperator(i, True), FOperator(j, True), FOperator(l, False), FOperator(k, False)]
-            P = Expression([Term(1, [], [Tensor([i, j, k, l], "")], ops, [])])
-            mid = wick.bch(P, T, max_commutator=4)[-1]
-            full = mid + L * mid
-            out = wick.apply_wick(full)
-            out.resolve()
-            expr = AExpression(Ex=out)
-            expr.sort_tensors()
-            terms, indices = codegen.wick_to_sympy(expr, particles, return_value=return_value)
-            terms = transform_spin(terms, indices)
-            terms = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
-            return terms
-
-        # FIXME for ghf
-        if spin != "ghf":
-            transpose = lambda name: name[:-3] + name[-2] + name[-3] + name[-1]
+        if spin == "ghf":
+            spins_list = [(None, None, None, None)]
         else:
-            transpose = lambda name: name
+            spins_list = [("a", "a", "a", "a"), ("a", "b", "a", "b"), ("b", "a", "b", "a"), ("b", "b", "b", "b")]
 
-        # Blocks:  NOTE: transposed is applied
-        terms = [
-            case(i, j, k, l, transpose("rdm2_f_oooo"), comment="oooo block"),
-            case(i, j, k, a, transpose("rdm2_f_ooov"), comment="ooov block"),
-            case(i, j, a, k, transpose("rdm2_f_oovo"), comment="oovo block"),
-            case(i, a, j, k, transpose("rdm2_f_ovoo"), comment="ovoo block"),
-            case(a, i, j, k, transpose("rdm2_f_vooo"), comment="vooo block"),
-            case(i, j, a, b, transpose("rdm2_f_oovv"), comment="oovv block"),
-            case(i, a, j, b, transpose("rdm2_f_ovov"), comment="ovov block"),
-            case(i, a, b, j, transpose("rdm2_f_ovvo"), comment="ovvo block"),
-            case(a, i, j, b, transpose("rdm2_f_voov"), comment="voov block"),
-            case(a, i, b, j, transpose("rdm2_f_vovo"), comment="vovo block"),
-            case(a, b, i, j, transpose("rdm2_f_vvoo"), comment="vvoo block"),
-            case(i, a, b, c, transpose("rdm2_f_ovvv"), comment="ovvv block"),
-            case(a, i, b, c, transpose("rdm2_f_vovv"), comment="vovv block"),
-            case(a, b, i, c, transpose("rdm2_f_vvov"), comment="vvov block"),
-            case(a, b, c, i, transpose("rdm2_f_vvvo"), comment="vvvo block"),
-            case(a, b, c, d, transpose("rdm2_f_vvvv"), comment="vvvv block"),
-        ]
-        terms = codegen.spin_integrate._flatten(terms)
+        expressions = []
+        outputs = []
+        terms_rdm1 = []
+        for sectors, indices in [
+                ("oooo", "ijkl"), ("ooov", "ijka"), ("oovo", "ijak"), ("ovoo", "iajk"),
+                ("vooo", "aijk"), ("oovv", "ijab"), ("ovov", "iajb"), ("ovvo", "iabj"),
+                ("voov", "aijb"), ("vovo", "aibj"), ("vvoo", "abij"), ("ovvv", "iabc"),
+                ("vovv", "aibc"), ("vvov", "abic"), ("vvvo", "abci"), ("vvvv", "abcd"),
+        ]:
+            pq.clear()
+            pq.set_left_operators([["1"], ["l1"], ["l2"]])
+            pq.add_st_operator(1.0, ["e2(%s,%s,%s,%s)" % tuple(indices[:2]+indices[2:][::-1])], ["t1", "t2"])
+            pq.simplify()
+            terms = pq.fully_contracted_strings()
 
-        terms = codegen.optimize(terms, sizes=sizes, optimize="trav", verify=False, interm_fmt="x{}")
-        function_printer.write_python(printer.doprint(terms)+"\n", comment="2RDM")
+            for spins in spins_list:
+                qccg.clear()
+                qccg.set_spin(spin)
+
+                if spin == "rhf":
+                    inds = index.index_factory(index.ExternalIndex, indices, sectors, "rrrr")
+                    output = tensor.RDM2(inds)
+                    shape = ", ".join(["nocc" if o == "o" else "nvir" for o in sectors])
+                elif spin == "uhf":
+                    inds = index.index_factory(index.ExternalIndex, indices, sectors, spins)
+                    output = tensor.RDM2(inds)
+                    shape = ", ".join(["nocc[%d]" % "ab".index(s) if o == "o" else "nvir[%d]" % "ab".index(s) for o, s in zip(sectors, spins)])
+                elif spin == "ghf":
+                    inds = index.index_factory(index.ExternalIndex, indices, sectors, [None]*4)
+                    output = tensor.RDM2(inds)
+                    shape = ", ".join(["nocc" if o == "o" else "nvir" for o in sectors])
+
+                index_spins = {index.character: s for index, s in zip(inds, spins+spins)}
+                expression = read.from_pdaggerq(terms, index_spins=index_spins)
+                expression = expression.expand_spin_orbitals()
+
+                expressions.append(expression)
+                outputs.append(output)
+
+        final_outputs = outputs
+        expressions, outputs = qccg.optimisation.optimise_expression_gristmill(
+                expressions,
+                outputs,
+        )
+        einsums = write.write_opt_einsums(
+                expressions,
+                outputs,
+                final_outputs,
+                indent=4,
+                einsum_function="einsum",
+                add_occupancies={"f", "v", "rdm1_f", "rdm2_f", "delta"},
+        )
+
+        function_printer.write_python(einsums+"\n", comment="RDM2")
 
         if spin != "uhf":
             function_printer.write_python("    rdm2_f = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s" % x for x in common.ov_2e]))
         else:
             function_printer.write_python(""
-                    + "    rdm2_f_aaaa = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_aaaa" % x for x in common.ov_2e])
-                    + "    rdm2_f_aabb = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_aabb" % x for x in common.ov_2e])
-                    + "    rdm2_f_bbaa = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_bbaa" % x for x in common.ov_2e])
-                    + "    rdm2_f_bbbb = pack_2e(%s)\n" % ", ".join(["rdm2_f_%s_bbbb" % x for x in common.ov_2e])
+                    + "    rdm2_f_aaaa = pack_2e(%s)\n" % ", ".join(["rdm2_f_aaaa_%s" % x for x in common.ov_2e])
+                    + "    rdm2_f_abab = pack_2e(%s)\n" % ", ".join(["rdm2_f_abab_%s" % x for x in common.ov_2e])
+                    + "    rdm2_f_baba = pack_2e(%s)\n" % ", ".join(["rdm2_f_baba_%s" % x for x in common.ov_2e])
+                    + "    rdm2_f_bbbb = pack_2e(%s)\n" % ", ".join(["rdm2_f_bbbb_%s" % x for x in common.ov_2e])
             )
 
-        # TODO fix
+        if spin == "rhf":
+            function_printer.write_python("    rdm2_f = rdm2_f.swapaxes(1, 2)\n")
+        elif spin == "uhf":
+            function_printer.write_python(""
+                    + "    rdm2_f_aaaa = rdm2_f_aaaa.swapaxes(1, 2)\n"
+                    + "    rdm2_f_aabb = rdm2_f_abab.swapaxes(1, 2)\n"
+                    + "    rdm2_f_bbaa = rdm2_f_baba.swapaxes(1, 2)\n"
+                    + "    rdm2_f_bbbb = rdm2_f_bbbb.swapaxes(1, 2)\n"
+            )
+
         if spin == "ghf":
-            function_printer.write_python("    rdm2_f = rdm2_f.transpose(0, 2, 1, 3)\n")
+            function_printer.write_python("    rdm2_f = rdm2_f.swapaxes(1, 2)\n")

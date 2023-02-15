@@ -426,3 +426,6 @@ with common.FilePrinter("%sCCSD" % spin[0].upper()) as file_printer:
                     + "    rdm2_f_bbaa = rdm2_f_baba.swapaxes(1, 2)\n"
                     + "    rdm2_f_bbbb = rdm2_f_bbbb.swapaxes(1, 2)\n"
             )
+
+        if spin == "ghf":
+            function_printer.write_python("    rdm2_f = rdm2_f.swapaxes(1, 2)\n")
