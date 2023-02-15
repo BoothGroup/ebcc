@@ -1,6 +1,4 @@
 """Script to generate equations for the CC3 model.
-
-This uses pdaggerq and qccg instead of qwick.
 """
 
 import itertools
@@ -47,14 +45,17 @@ with common.FilePrinter("%sCC3" % spin[0].upper()) as file_printer:
         expression = expression.expand_spin_orbitals()
         output = tensor.Scalar("e_cc")
 
-        expressions = [expression]
-        outputs = [output]
-        if spin == "rhf":
-            expressions, outputs = qccg.optimisation.optimise_expression(
-                    expressions,
-                    outputs,
-            )
-        einsums = write.write_opt_einsums(expressions, outputs, (output,), indent=4, einsum_function="einsum")
+        expressions, outputs = qccg.optimisation.optimise_expression_gristmill(
+                (expression,),
+                (output,),
+        )
+        einsums = write.write_opt_einsums(
+                expressions,
+                outputs,
+                (output,),
+                indent=4,
+                einsum_function="einsum",
+        )
         function_printer.write_python(einsums+"\n", comment="energy")
 
     # Get amplitudes function:
@@ -121,7 +122,7 @@ with common.FilePrinter("%sCC3" % spin[0].upper()) as file_printer:
                 elif spin == "uhf":
                     occ = index.index_factory(index.ExternalIndex, ["i", "j", "k"][:n+1], ["o", "o", "o"][:n+1], spins)
                     vir = index.index_factory(index.ExternalIndex, ["a", "b", "c"][:n+1], ["v", "v", "v"][:n+1], spins)
-                    output = tensor.FermionicAmplitude("t%dnew_%s" % (n+1, "".join(spins+spins)), occ, vir)
+                    output = tensor.FermionicAmplitude("t%dnew" % (n+1), occ, vir)
                     shape = ", ".join(["nocc[%d]" % "ab".index(s) for s in spins] + ["nvir[%d]" % "ab".index(s) for s in spins])
                 elif spin == "ghf":
                     occ = index.index_factory(index.ExternalIndex, ["i", "j", "k"][:n+1], ["o", "o", "o"][:n+1], [None, None, None][:n+1])
@@ -137,10 +138,17 @@ with common.FilePrinter("%sCC3" % spin[0].upper()) as file_printer:
                 outputs.append(output)
 
         final_outputs = outputs
-        if spin == "rhf":
-            expressions, outputs = qccg.optimisation.optimise_expression(
-                    expressions,
-                    outputs,
-            )
-        einsums = write.write_opt_einsums(expressions, outputs, final_outputs, indent=4, einsum_function="einsum")
+        # Dummies change, canonicalise_dummies messes up the indices FIXME
+        expressions, outputs = qccg.optimisation.optimise_expression_gristmill(
+                expressions,
+                outputs,
+                strat="exhaust",
+        )
+        einsums = write.write_opt_einsums(
+                expressions,
+                outputs,
+                final_outputs,
+                indent=4,
+                einsum_function="einsum",
+        )
         function_printer.write_python(einsums+"\n", comment="T amplitudes")
