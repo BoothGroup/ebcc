@@ -4,7 +4,7 @@ The models implemented are generated algorithmically from expressions over secon
 
 ### Second quantized expressions
 
-Expressions in terms of second quantized expressions are generated using [`qwick`](https://github.com/obackhouse/qwick), a `C++` version of the [`wick`](https://github.com/awhite862/wick) package. These expressions are generated in spin-orbital notation, providing the models for `GEBCC`.
+Expressions in terms of second quantized expressions are generated using [`qwick`](https://github.com/obackhouse/qwick), a `C++` version of the [`wick`](https://github.com/awhite862/wick) package, and [`pdagger`](https://github.com/edeprince3/pdaggerq). These expressions are generated in spin-orbital notation, providing the models for `GEBCC`.
 
 ### Spin integration
 
