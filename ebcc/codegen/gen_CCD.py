@@ -1,4 +1,4 @@
-"""Script to generate equations for the CCSD model.
+"""Script to generate equations for the CCD model.
 """
 
 import itertools
@@ -8,7 +8,7 @@ from qccg import index, tensor, read, write
 import pdaggerq
 
 # Spin integration mode
-spin = "rhf"
+spin = "ghf"
 
 # pdaggerq setup
 pq = pdaggerq.pq_helper("fermi")
@@ -18,20 +18,20 @@ pq.set_print_level(0)
 FunctionPrinter = common.get_function_printer(spin)
 timer = common.Stopwatch()
 
-with common.FilePrinter("%sCCSD" % spin[0].upper()) as file_printer:
+with common.FilePrinter("%sCCD" % spin[0].upper()) as file_printer:
     # Get energy expression:
     with FunctionPrinter(
             file_printer,
             "energy",
-            ["f", "v", "nocc", "nvir", "t1", "t2"],
+            ["f", "v", "nocc", "nvir", "t2"],
             ["e_cc"],
             return_dict=False,
             timer=timer,
     ) as function_printer:
         pq.clear()
         pq.set_left_operators([["1"]])
-        pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
-        pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
+        pq.add_st_operator(1.0, ["f"], ["t2"])
+        pq.add_st_operator(1.0, ["v"], ["t2"])
         pq.simplify()
 
         terms = pq.fully_contracted_strings()
@@ -62,67 +62,57 @@ with common.FilePrinter("%sCCSD" % spin[0].upper()) as file_printer:
     with FunctionPrinter(
             file_printer,
             "update_amps",
-            ["f", "v", "nocc", "nvir", "t1", "t2"],
-            ["t1new", "t2new"],
+            ["f", "v", "nocc", "nvir", "t2"],
+            ["t2new"],
             spin_cases={
-                "t1new": [x+x for x in ("a", "b")],
                 "t2new": [x+x for x in ("aa", "ab", "ba", "bb")],
             },
             timer=timer,
     ) as function_printer:
-        # T1 residuals:
-        pq.clear()
-        pq.set_left_operators([["e1(i,a)"]])
-        pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
-        pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
-        pq.simplify()
-        terms_t1 = pq.fully_contracted_strings()
-
         # T2 residuals:
         pq.clear()
         pq.set_left_operators([["e2(i,j,b,a)"]])
-        pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
-        pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
+        pq.add_st_operator(1.0, ["f"], ["t2"])
+        pq.add_st_operator(1.0, ["v"], ["t2"])
         pq.simplify()
-        terms_t2 = pq.fully_contracted_strings()
+        terms = pq.fully_contracted_strings()
+
+        if spin == "ghf":
+            spins_list = [(None, None, None, None)]
+        elif spin == "rhf":
+            spins_list = [("a", "b", "a", "b")]
+        elif spin == "uhf":
+            spins_list = list(itertools.product("ab", repeat=2))
 
         expressions = []
         outputs = []
-        for n, terms in enumerate([terms_t1, terms_t2]):
-            if spin == "ghf":
-                spins_list = [(None,) * (n+1)]
-            elif spin == "rhf":
-                spins_list = [(["a", "b"] * (n+1))[:n+1]]
+        for spins in spins_list:
+            qccg.clear()
+            qccg.set_spin(spin)
+
+            if spin == "rhf":
+                occ = index.index_factory(index.ExternalIndex, "ij", "oo", "rr")
+                vir = index.index_factory(index.ExternalIndex, "ab", "vv", "rr")
+                output = tensor.FermionicAmplitude("t2new", occ, vir)
+                shape = "nocc, nocc, nvir, nvir"
             elif spin == "uhf":
-                spins_list = list(itertools.product("ab", repeat=n+1))
+                occ = index.index_factory(index.ExternalIndex, "ij", "oo", spins)
+                vir = index.index_factory(index.ExternalIndex, "ab", "vv", spins)
+                output = tensor.FermionicAmplitude("t2new", occ, vir)
+                shape = "nocc[%d], nocc[%d], nvir[%d], nvir[%d]" % tuple("ab".index(s) for s in (spins+spins))
+            elif spin == "ghf":
+                occ = index.index_factory(index.ExternalIndex, "ij", "oo", [None, None])
+                vir = index.index_factory(index.ExternalIndex, "ab", "vv", [None, None])
+                output = tensor.FermionicAmplitude("t2new", occ, vir)
+                shape = "nocc, nocc, nvir, nvir"
 
-            for spins in spins_list:
-                qccg.clear()
-                qccg.set_spin(spin)
+            index_spins = {index.character: s for index, s in zip(occ+vir, spins+spins)}
+            expression = read.from_pdaggerq(terms, index_spins=index_spins)
 
-                if spin == "rhf":
-                    occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1], ["o", "o"][:n+1], ["r", "r"][:n+1])
-                    vir = index.index_factory(index.ExternalIndex, ["a", "b"][:n+1], ["v", "v"][:n+1], ["r", "r"][:n+1])
-                    output = tensor.FermionicAmplitude("t%dnew" % (n+1), occ, vir)
-                    shape = ", ".join(["nocc"] * (n+1) + ["nvir"] * (n+1))
-                elif spin == "uhf":
-                    occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1], ["o", "o"][:n+1], spins)
-                    vir = index.index_factory(index.ExternalIndex, ["a", "b"][:n+1], ["v", "v"][:n+1], spins)
-                    output = tensor.FermionicAmplitude("t%dnew" % (n+1), occ, vir)
-                    shape = ", ".join(["nocc[%d]" % "ab".index(s) for s in spins] + ["nvir[%d]" % "ab".index(s) for s in spins])
-                elif spin == "ghf":
-                    occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1], ["o", "o"][:n+1], [None, None][:n+1])
-                    vir = index.index_factory(index.ExternalIndex, ["a", "b"][:n+1], ["v", "v"][:n+1], [None, None][:n+1])
-                    output = tensor.FermionicAmplitude("t%dnew" % (n+1), occ, vir)
-                    shape = ", ".join(["nocc"] * (n+1) + ["nvir"] * (n+1))
+            expression = expression.expand_spin_orbitals()
 
-                index_spins = {index.character: s for index, s in zip(occ+vir, spins+spins)}
-                expression = read.from_pdaggerq(terms, index_spins=index_spins)
-
-                expression = expression.expand_spin_orbitals()
-
-                expressions.append(expression)
-                outputs.append(output)
+            expressions.append(expression)
+            outputs.append(output)
 
         final_outputs = outputs
         # Dummies change, canonicalise_dummies messes up the indices FIXME
@@ -144,78 +134,62 @@ with common.FilePrinter("%sCCSD" % spin[0].upper()) as file_printer:
     with FunctionPrinter(
             file_printer,
             "update_lams",
-            ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2"],
-            ["l1new", "l2new"],
+            ["f", "v", "nocc", "nvir", "t2", "l2"],
+            ["l2new"],
             spin_cases={
-                "l1new": [x+x for x in ("a", "b")],
                 "l2new": [x+x for x in ("aa", "ab", "ba", "bb")],
             },
             timer=timer,
     ) as function_printer:
-        # L1 residuals:
-        pq.clear()
-        pq.set_left_operators([["1"]])
-        pq.set_right_operators([["1"]])
-        pq.add_st_operator(1.0, ["f", "e1(a,i)"], ["t1", "t2"])
-        pq.add_st_operator(1.0, ["v", "e1(a,i)"], ["t1", "t2"])
-        pq.set_left_operators([["l1"], ["l2"]])
-        pq.add_st_operator( 1.0, ["f", "e1(a,i)"], ["t1", "t2"])
-        pq.add_st_operator( 1.0, ["v", "e1(a,i)"], ["t1", "t2"])
-        pq.add_st_operator(-1.0, ["e1(a,i)", "f"], ["t1", "t2"])
-        pq.add_st_operator(-1.0, ["e1(a,i)", "v"], ["t1", "t2"])
-        pq.simplify()
-        terms_l1 = pq.fully_contracted_strings()
-
         # L2 residuals:
         pq.clear()
         pq.set_left_operators([["1"]])
         pq.set_right_operators([["1"]])
-        pq.add_st_operator(1.0, ["f", "e2(a,b,j,i)"], ["t1", "t2"])
-        pq.add_st_operator(1.0, ["v", "e2(a,b,j,i)"], ["t1", "t2"])
-        pq.set_left_operators([["l1"], ["l2"]])
-        pq.add_st_operator( 1.0, ["f", "e2(a,b,j,i)"], ["t1", "t2"])
-        pq.add_st_operator( 1.0, ["v", "e2(a,b,j,i)"], ["t1", "t2"])
-        pq.add_st_operator(-1.0, ["e2(a,b,j,i)", "f"], ["t1", "t2"])
-        pq.add_st_operator(-1.0, ["e2(a,b,j,i)", "v"], ["t1", "t2"])
+        pq.add_st_operator(1.0, ["f", "e2(a,b,j,i)"], ["t2"])
+        pq.add_st_operator(1.0, ["v", "e2(a,b,j,i)"], ["t2"])
+        pq.set_left_operators([["l2"]])
+        pq.add_st_operator( 1.0, ["f", "e2(a,b,j,i)"], ["t2"])
+        pq.add_st_operator( 1.0, ["v", "e2(a,b,j,i)"], ["t2"])
+        pq.add_st_operator(-1.0, ["e2(a,b,j,i)", "f"], ["t2"])
+        pq.add_st_operator(-1.0, ["e2(a,b,j,i)", "v"], ["t2"])
         pq.simplify()
-        terms_l2 = pq.fully_contracted_strings()
+        terms = pq.fully_contracted_strings()
+
+        if spin == "ghf":
+            spins_list = [(None, None, None, None)]
+        elif spin == "rhf":
+            spins_list = [("a", "b", "a", "b")]
+        elif spin == "uhf":
+            spins_list = list(itertools.product("ab", repeat=2))
 
         expressions = []
         outputs = []
-        for n, terms in enumerate([terms_l1, terms_l2]):
-            if spin == "ghf":
-                spins_list = [(None,) * (n+1)]
-            elif spin == "rhf":
-                spins_list = [(["a", "b"] * (n+1))[:n+1]]
+        for spins in spins_list:
+            qccg.clear()
+            qccg.set_spin(spin)
+
+            if spin == "rhf":
+                occ = index.index_factory(index.ExternalIndex, "ij", "oo", "rr")
+                vir = index.index_factory(index.ExternalIndex, "ab", "vv", "rr")
+                output = tensor.FermionicAmplitude("l2new", vir, occ)
+                shape = "nvir, nvir, nocc, nocc"
             elif spin == "uhf":
-                spins_list = list(itertools.product("ab", repeat=n+1))
+                occ = index.index_factory(index.ExternalIndex, "ij", "oo", spins)
+                vir = index.index_factory(index.ExternalIndex, "ab", "vv", spins)
+                output = tensor.FermionicAmplitude("l2new", vir, occ)
+                shape = "nvir[%d], nvir[%d], nocc[%d], nocc[%d]" % tuple("ab".index(s) for s in (spins + spins))
+            elif spin == "ghf":
+                occ = index.index_factory(index.ExternalIndex, "ij", "oo", [None, None])
+                vir = index.index_factory(index.ExternalIndex, "ab", "vv", [None, None])
+                output = tensor.FermionicAmplitude("l2new", vir, occ)
+                shape = "nvir, nvir, nocc, nocc"
 
-            for spins in spins_list:
-                qccg.clear()
-                qccg.set_spin(spin)
+            index_spins = {index.character: s for index, s in zip(vir+occ, spins+spins)}
+            expression = read.from_pdaggerq(terms, index_spins=index_spins)
+            expression = expression.expand_spin_orbitals()
 
-                if spin == "rhf":
-                    occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1], ["o", "o"][:n+1], ["r", "r"][:n+1])
-                    vir = index.index_factory(index.ExternalIndex, ["a", "b"][:n+1], ["v", "v"][:n+1], ["r", "r"][:n+1])
-                    output = tensor.FermionicAmplitude("l%dnew" % (n+1), vir, occ)
-                    shape = ", ".join(["nvir"] * (n+1) + ["nocc"] * (n+1))
-                elif spin == "uhf":
-                    occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1], ["o", "o"][:n+1], spins)
-                    vir = index.index_factory(index.ExternalIndex, ["a", "b"][:n+1], ["v", "v"][:n+1], spins)
-                    output = tensor.FermionicAmplitude("l%dnew" % (n+1), vir, occ)
-                    shape = ", ".join(["nvir[%d]" % "ab".index(s) for s in spins] + ["nocc[%d]" % "ab".index(s) for s in spins])
-                elif spin == "ghf":
-                    occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1], ["o", "o"][:n+1], [None, None][:n+1])
-                    vir = index.index_factory(index.ExternalIndex, ["a", "b"][:n+1], ["v", "v"][:n+1], [None, None][:n+1])
-                    output = tensor.FermionicAmplitude("l%dnew" % (n+1), vir, occ)
-                    shape = ", ".join(["nvir"] * (n+1) + ["nocc"] * (n+1))
-
-                index_spins = {index.character: s for index, s in zip(vir+occ, spins+spins)}
-                expression = read.from_pdaggerq(terms, index_spins=index_spins)
-                expression = expression.expand_spin_orbitals()
-
-                expressions.append(expression)
-                outputs.append(output)
+            expressions.append(expression)
+            outputs.append(output)
 
         final_outputs = outputs
         expressions, outputs = qccg.optimisation.optimise_expression_gristmill(
@@ -235,7 +209,7 @@ with common.FilePrinter("%sCCSD" % spin[0].upper()) as file_printer:
     with FunctionPrinter(
             file_printer,
             "make_rdm1_f",
-            ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2"],
+            ["f", "v", "nocc", "nvir", "t2", "l2"],
             ["rdm1_f"],
             spin_cases={
                 "rdm1_f": ["aa", "bb"],
@@ -261,13 +235,15 @@ with common.FilePrinter("%sCCSD" % spin[0].upper()) as file_printer:
         elif spin == "uhf":
             spins_list = [("a", "a"), ("b", "b")]
 
+        zero_expressions = []
+        zero_outputs = []
         expressions = []
         outputs = []
         terms_rdm1 = []
         for sectors, indices in [("oo", "ij"), ("ov", "ia"), ("vo", "ai"), ("vv", "ab")]:
             pq.clear()
-            pq.set_left_operators([["1"], ["l1"], ["l2"]])
-            pq.add_st_operator(1.0, ["e1(%s,%s)" % tuple(indices)], ["t1", "t2"])
+            pq.set_left_operators([["1"], ["l2"]])
+            pq.add_st_operator(1.0, ["e1(%s,%s)" % tuple(indices)], ["t2"])
             pq.simplify()
             terms = pq.fully_contracted_strings()
 
@@ -295,22 +271,35 @@ with common.FilePrinter("%sCCSD" % spin[0].upper()) as file_printer:
                 if spin == "rhf":
                     expression = expression * 2
 
-                expressions.append(expression)
-                outputs.append(output)
+                # D_{i,a} and D_{a,i} are zero
+                if set(contraction.factor for contraction in expression.contractions) not in (set(), {0}):
+                    expressions.append(expression)
+                    outputs.append(output)
+                else:
+                    zero_expressions.append(expression)
+                    zero_outputs.append(output)
 
-        final_outputs = outputs
+        final_outputs = outputs + zero_outputs
         expressions, outputs = qccg.optimisation.optimise_expression_gristmill(
                 expressions,
                 outputs,
         )
         einsums = write.write_opt_einsums(
-                expressions,
-                outputs,
+                expressions + zero_expressions,
+                outputs + zero_outputs,
                 final_outputs,
                 indent=4,
                 einsum_function="einsum",
                 add_occupancies={"f", "v", "rdm1_f", "rdm2_f", "delta"},
         )
+        for output, expression in zip(zero_outputs, zero_expressions):
+            einsums += "\n" + write.write_einsum(
+                    expression,
+                    output,
+                    indent=4,
+                    einsum_function="einsum",
+                    add_occupancies={"f", "v", "rdm1_f", "rdm2_f", "delta"},
+            )
         function_printer.write_python(einsums+"\n", comment="RDM1")
 
         if spin != "uhf":
@@ -325,7 +314,7 @@ with common.FilePrinter("%sCCSD" % spin[0].upper()) as file_printer:
     with FunctionPrinter(
             file_printer,
             "make_rdm2_f",
-            ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2"],
+            ["f", "v", "nocc", "nvir", "t2", "l2"],
             ["rdm2_f"],
             spin_cases={
                 "rdm2_f": ["aaaa", "aabb", "bbaa", "bbbb"],
@@ -349,6 +338,8 @@ with common.FilePrinter("%sCCSD" % spin[0].upper()) as file_printer:
         else:
             spins_list = [("a", "a", "a", "a"), ("a", "b", "a", "b"), ("b", "a", "b", "a"), ("b", "b", "b", "b")]
 
+        zero_expressions = []
+        zero_outputs = []
         expressions = []
         outputs = []
         terms_rdm1 = []
@@ -359,8 +350,8 @@ with common.FilePrinter("%sCCSD" % spin[0].upper()) as file_printer:
                 ("vovv", "aibc"), ("vvov", "abic"), ("vvvo", "abci"), ("vvvv", "abcd"),
         ]:
             pq.clear()
-            pq.set_left_operators([["1"], ["l1"], ["l2"]])
-            pq.add_st_operator(1.0, ["e2(%s,%s,%s,%s)" % tuple(indices[:2]+indices[2:][::-1])], ["t1", "t2"])
+            pq.set_left_operators([["1"], ["l2"]])
+            pq.add_st_operator(1.0, ["e2(%s,%s,%s,%s)" % tuple(indices[:2]+indices[2:][::-1])], ["t2"])
             pq.simplify()
             terms = pq.fully_contracted_strings()
 
@@ -385,10 +376,14 @@ with common.FilePrinter("%sCCSD" % spin[0].upper()) as file_printer:
                 expression = read.from_pdaggerq(terms, index_spins=index_spins)
                 expression = expression.expand_spin_orbitals()
 
-                expressions.append(expression)
-                outputs.append(output)
+                if set(contraction.factor for contraction in expression.contractions) not in (set(), {0}):
+                    expressions.append(expression)
+                    outputs.append(output)
+                else:
+                    zero_expressions.append(expression)
+                    zero_outputs.append(output)
 
-        final_outputs = outputs
+        final_outputs = outputs + zero_outputs
         expressions, outputs = qccg.optimisation.optimise_expression_gristmill(
                 expressions,
                 outputs,
@@ -401,6 +396,14 @@ with common.FilePrinter("%sCCSD" % spin[0].upper()) as file_printer:
                 einsum_function="einsum",
                 add_occupancies={"f", "v", "rdm1_f", "rdm2_f", "delta"},
         )
+        for output, expression in zip(zero_outputs, zero_expressions):
+            einsums += "\n" + write.write_einsum(
+                    expression,
+                    output,
+                    indent=4,
+                    einsum_function="einsum",
+                    add_occupancies={"f", "v", "rdm1_f", "rdm2_f", "delta"},
+            )
 
         function_printer.write_python(einsums+"\n", comment="RDM2")
 

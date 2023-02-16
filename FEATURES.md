@@ -2,6 +2,7 @@ The following table summarises the available methods and routines for the ansatz
 
 | Ansatz      |   T   |   Λ   |  IP   |  EA   |  EE   |  DM1  |  DM2  |  BDM  |
 | :---------: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| CCD         |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |   -   |
 | CCSD        |  RUG  |  RUG  |  UG   |  UG   |  UG   |  RUG  |  RUG  |   -   |
 | CCSDT       |  Rug  |       |       |       |       |       |       |   -   |
 | CCSD(T)     |  Rug  |       |       |       |       |       |       |   -   |
