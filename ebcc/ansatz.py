@@ -8,6 +8,7 @@ import numpy as np
 from ebcc import METHOD_TYPES, util
 
 named_ansatzes = {
+    "CCD": ("CCD", "", 0, 0),
     "CCSD": ("CCSD", "", 0, 0),
     "CCSDT": ("CCSDT", "", 0, 0),
     "CCSD(T)": ("CCSD(T)", "", 0, 0),
