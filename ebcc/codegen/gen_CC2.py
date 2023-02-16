@@ -8,7 +8,7 @@ from qccg import index, tensor, read, write
 import pdaggerq
 
 # Spin integration mode
-spin = "rhf"
+spin = "ghf"
 
 # pdaggerq setup
 pq = pdaggerq.pq_helper("fermi")
@@ -81,7 +81,7 @@ with common.FilePrinter("%sCC2" % spin[0].upper()) as file_printer:
         # T2 residuals:
         pq.clear()
         pq.set_left_operators([["e2(i,j,b,a)"]])
-        pq.add_st_operator(1.0, ["f"], ["t2"])
+        pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
         pq.add_st_operator(1.0, ["v"], ["t1"])
         pq.simplify()
         terms_t2 = pq.fully_contracted_strings()
@@ -170,12 +170,12 @@ with common.FilePrinter("%sCC2" % spin[0].upper()) as file_printer:
         pq.clear()
         pq.set_left_operators([["1"]])
         pq.set_right_operators([["1"]])
-        pq.add_st_operator(1.0, ["f", "e2(a,b,j,i)"], ["t2"])
+        pq.add_st_operator(1.0, ["f", "e2(a,b,j,i)"], ["t1", "t2"])
         pq.add_st_operator(1.0, ["v", "e2(a,b,j,i)"], ["t1"])
         pq.set_left_operators([["l1"], ["l2"]])
-        pq.add_st_operator( 1.0, ["f", "e2(a,b,j,i)"], ["t2"])
+        pq.add_st_operator( 1.0, ["f", "e2(a,b,j,i)"], ["t1", "t2"])
         pq.add_st_operator( 1.0, ["v", "e2(a,b,j,i)"], ["t1"])
-        pq.add_st_operator(-1.0, ["e2(a,b,j,i)", "f"], ["t2"])
+        pq.add_st_operator(-1.0, ["e2(a,b,j,i)", "f"], ["t1", "t2"])
         pq.add_st_operator(-1.0, ["e2(a,b,j,i)", "v"], ["t1"])
         pq.simplify()
         terms_l2 = pq.fully_contracted_strings()
