@@ -12,6 +12,7 @@ import numpy as np
 from pyscf import ao2mo, lib, scf
 
 from ebcc import METHOD_TYPES, default_log, init_logging, reom, util
+from ebcc.brueckner import BruecknerREBCC
 from ebcc.ansatz import Ansatz
 from ebcc.space import Space
 
@@ -315,6 +316,7 @@ class REBCC(AbstractEBCC):
     Options = Options
     Amplitudes = Amplitudes
     ERIs = ERIs
+    Brueckner = BruecknerREBCC
 
     def __init__(
         self,
@@ -556,6 +558,19 @@ class REBCC(AbstractEBCC):
         # Update attributes:
         self.lambdas = lambdas
         self.converged_lambda = converged
+
+    def brueckner(self):
+        """Run the Brueckner orbital coupled cluster calculation.
+
+        Returns
+        -------
+        e_cc : float
+            Correlation energy.
+        """
+
+        bcc = self.Brueckner(self)
+
+        return bcc.kernel()
 
     @staticmethod
     def _convert_mf(mf):

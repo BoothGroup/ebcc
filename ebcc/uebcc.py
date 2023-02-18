@@ -10,6 +10,7 @@ import numpy as np
 from pyscf import ao2mo, lib
 
 from ebcc import rebcc, ueom, util
+from ebcc.brueckner import BruecknerUEBCC
 from ebcc.space import Space
 
 
@@ -105,6 +106,7 @@ class ERIs(types.SimpleNamespace):
 class UEBCC(rebcc.REBCC):
     Amplitudes = Amplitudes
     ERIs = ERIs
+    Brueckner = BruecknerUEBCC
 
     @staticmethod
     def _convert_mf(mf):

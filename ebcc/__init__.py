@@ -182,6 +182,7 @@ del _factory
 
 from ebcc.ansatz import Ansatz
 from ebcc.space import Space
+from ebcc.brueckner import BruecknerREBCC, BruecknerUEBCC, BruecknerGEBCC
 
 # --- List available methods:
 
