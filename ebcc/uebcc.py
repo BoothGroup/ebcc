@@ -45,8 +45,10 @@ class ERIs(types.SimpleNamespace):
         self.mo_coeff = mo_coeff
         slices = [
             {
+                "x": space.correlated,
                 "o": space.correlated_occupied,
                 "v": space.correlated_virtual,
+                "x": space.active,
                 "O": space.active_occupied,
                 "V": space.active_virtual,
             }
@@ -522,8 +524,10 @@ class UEBCC(rebcc.REBCC):
 
         slices = [
             {
+                "x": space.correlated,
                 "o": space.correlated_occupied,
                 "v": space.correlated_virtual,
+                "X": space.active,
                 "O": space.active_occupied,
                 "V": space.active_virtual,
             }
@@ -568,8 +572,10 @@ class UEBCC(rebcc.REBCC):
     def get_fock(self):
         slices = [
             {
+                "x": space.correlated,
                 "o": space.correlated_occupied,
                 "v": space.correlated_virtual,
+                "X": space.active,
                 "O": space.active_occupied,
                 "V": space.active_virtual,
             }

@@ -69,8 +69,10 @@ class ERIs(types.SimpleNamespace):
 
         if self.slices is None:
             self.slices = {
+                "x": self.space.correlated,
                 "o": self.space.correlated_occupied,
                 "v": self.space.correlated_virtual,
+                "X": self.space.active,
                 "O": self.space.active_occupied,
                 "V": self.space.active_virtual,
             }
@@ -1867,8 +1869,10 @@ class REBCC(AbstractEBCC):
         """
 
         slices = {
+            "x": self.space.correlated,
             "o": self.space.correlated_occupied,
             "v": self.space.correlated_virtual,
+            "X": self.space.active,
             "O": self.space.active_occupied,
             "V": self.space.active_virtual,
         }
@@ -1896,8 +1900,10 @@ class REBCC(AbstractEBCC):
         """
 
         slices = {
+            "x": self.space.correlated,
             "o": self.space.correlated_occupied,
             "v": self.space.correlated_virtual,
+            "X": self.space.active,
             "O": self.space.active_occupied,
             "V": self.space.active_virtual,
         }

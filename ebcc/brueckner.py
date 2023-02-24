@@ -12,8 +12,6 @@ import scipy.linalg
 
 from ebcc import util, NullLogger, init_logging
 
-# TODO U, G
-
 
 @dataclasses.dataclass
 class Options:
@@ -42,7 +40,7 @@ class Options:
 
 class BruecknerREBCC:
     """
-    Brueckner orbital self-consistency for coypled cluster
+    Brueckner orbital self-consistency for coupled cluster
     calculations. Iteratively solve for a new mean-field that
     presents a vanishing T1 under the given ansatz.
 
@@ -79,7 +77,7 @@ class BruecknerREBCC:
         self.mf = cc.mf
         self.cc = cc
 
-        # Amplitudes:
+        # Attributes:
         self.converged = False
 
         # Logging:
