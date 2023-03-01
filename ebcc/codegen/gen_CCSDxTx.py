@@ -1,18 +1,19 @@
-"""Script to generate equations for the CCSD model.
+"""Script to generate equations for the CCSD(T) model.
 
 This uses pdaggerq and qccg instead of qwick.
 """
-
-# TODO substitute t3 into e_pert
 
 import itertools
 from ebcc.codegen import common
 import qccg
 from qccg import index, tensor, read, write
+from qccg.contraction import insert
 import pdaggerq
 
+# TODO N^4 memory
+
 # Spin integration mode
-spin = "ghf"
+spin = "uhf"
 
 # pdaggerq setup
 pq = pdaggerq.pq_helper("fermi")
@@ -49,18 +50,21 @@ with common.FilePrinter("%sCCSDxTx" % spin[0].upper()) as file_printer:
         qccg.clear()
         qccg.set_spin(spin)
 
-        expression = read.from_pdaggerq(terms, {})
+        expression = read.from_pdaggerq(terms, index_spins={})
         expression = expression.expand_spin_orbitals()
         output = tensor.Scalar("e_cc")
 
-        expressions = [expression]
-        outputs = [output]
-        if spin == "rhf":
-            expressions, outputs = qccg.optimisation.optimise_expression(
-                    expression,
-                    output,
-            )
-        einsums = write.write_opt_einsums(expressions, outputs, (output,), indent=4)
+        expressions, outputs = qccg.optimisation.optimise_expression_gristmill(
+                (expression,),
+                (output,),
+        )
+        einsums = write.write_opt_einsums(
+                expressions,
+                outputs,
+                (output,),
+                indent=4,
+                einsum_function="einsum",
+        )
         function_printer.write_python(einsums+"\n", comment="energy")
 
     # Get amplitudes function:
@@ -93,7 +97,7 @@ with common.FilePrinter("%sCCSDxTx" % spin[0].upper()) as file_printer:
 
         expressions = []
         outputs = []
-        for n, (terms, name) in enumerate([(terms_t1, "T1"), (terms_t2, "T2")]):
+        for n, terms in enumerate([terms_t1, terms_t2]):
             if spin == "ghf":
                 spins_list = [(None,) * (n+1)]
             elif spin == "rhf":
@@ -113,7 +117,7 @@ with common.FilePrinter("%sCCSDxTx" % spin[0].upper()) as file_printer:
                 elif spin == "uhf":
                     occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1], ["o", "o"][:n+1], spins)
                     vir = index.index_factory(index.ExternalIndex, ["a", "b"][:n+1], ["v", "v"][:n+1], spins)
-                    output = tensor.FermionicAmplitude("t%dnew_%s" % (n+1, "".join(spins+spins)), occ, vir)
+                    output = tensor.FermionicAmplitude("t%dnew" % (n+1), occ, vir)
                     shape = ", ".join(["nocc[%d]" % "ab".index(s) for s in spins] + ["nvir[%d]" % "ab".index(s) for s in spins])
                 elif spin == "ghf":
                     occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1], ["o", "o"][:n+1], [None, None][:n+1])
@@ -121,20 +125,28 @@ with common.FilePrinter("%sCCSDxTx" % spin[0].upper()) as file_printer:
                     output = tensor.FermionicAmplitude("t%dnew" % (n+1), occ, vir)
                     shape = ", ".join(["nocc"] * (n+1) + ["nvir"] * (n+1))
 
-                index_spins = {index.character: spin for index, spin in zip(occ+vir, spins+spins)}
+                index_spins = {index.character: s for index, s in zip(occ+vir, spins+spins)}
                 expression = read.from_pdaggerq(terms, index_spins=index_spins)
+
                 expression = expression.expand_spin_orbitals()
 
                 expressions.append(expression)
                 outputs.append(output)
 
         final_outputs = outputs
-        if spin == "rhf":
-            expressions, outputs = qccg.optimisation.optimise_expression(
-                    expressions,
-                    outputs,
-            )
-        einsums = write.write_opt_einsums(expressions, outputs, final_outputs, indent=4)
+        # Dummies change, canonicalise_dummies messes up the indices FIXME
+        expressions, outputs = qccg.optimisation.optimise_expression_gristmill(
+                expressions,
+                outputs,
+                strat="exhaust",
+        )
+        einsums = write.write_opt_einsums(
+                expressions,
+                outputs,
+                final_outputs,
+                indent=4,
+                einsum_function="einsum",
+        )
         function_printer.write_python(einsums+"\n", comment="T amplitudes")
 
     # Get perturbative energy expression:
@@ -148,7 +160,6 @@ with common.FilePrinter("%sCCSDxTx" % spin[0].upper()) as file_printer:
     ) as function_printer:
         pq.clear()
         pq.set_left_operators([["e3(i,j,k,c,b,a)"]])
-        pq.add_st_operator(1.0, ["f"], ["t3"])
         pq.add_commutator(1.0, ["v"], ["t2"])
         pq.simplify()
         terms = pq.fully_contracted_strings()
@@ -174,7 +185,7 @@ with common.FilePrinter("%sCCSDxTx" % spin[0].upper()) as file_printer:
             elif spin == "uhf":
                 occ = index.index_factory(index.ExternalIndex, "ijk", "ooo", spins)
                 vir = index.index_factory(index.ExternalIndex, "abc", "vvv", spins)
-                output = tensor.FermionicAmplitude("t3_%s" % "".join(spins+spins), occ, vir)
+                output = tensor.FermionicAmplitude("t3", occ, vir)
                 shape = ", ".join(["nocc[%d]" % "ab".index(s) for s in spins] + ["nvir[%d]" % "ab".index(s) for s in spins])
             elif spin == "ghf":
                 occ = index.index_factory(index.ExternalIndex, "ijk", "ooo", [None, None, None])
@@ -184,44 +195,40 @@ with common.FilePrinter("%sCCSDxTx" % spin[0].upper()) as file_printer:
 
             index_spins = {index.character: spin for index, spin in zip(occ+vir, spins+spins)}
             expression = read.from_pdaggerq(terms, index_spins=index_spins)
-            expression = expression.__class__([
-                    contraction for contraction in expression.contractions
-                    if not any(tensor.symbol == "t3" for tensor in contraction.tensors)
-            ])
             expression = expression.expand_spin_orbitals()
 
             expressions.append(expression)
             outputs.append(output)
 
-        final_outputs = outputs
-        if spin == "rhf":
-            expressions, outputs = qccg.optimisation.optimise_expression(
-                    expressions,
-                    outputs,
-            )
-        einsums = write.write_opt_einsums(expressions, outputs, final_outputs, indent=4, einsum_function="einsum")
-        function_printer.write_python(einsums, comment="T3 amplitude")
+        expressions_t3, outputs_t3 = expressions, outputs
+
+        #final_outputs = outputs
+        #if spin == "rhf":
+        #    expressions, outputs = qccg.optimisation.optimise_expression(
+        #            expressions,
+        #            outputs,
+        #    )
+        #einsums = write.write_opt_einsums(expressions, outputs, final_outputs, indent=4, einsum_function="einsum")
+        #function_printer.write_python(einsums, comment="T3 amplitude")
 
         # FIXME messy
         if spin != "uhf":
             lines = [
                     "    e_ia = direct_sum(\"i-a->ia\", np.diag(f.oo), np.diag(f.vv))",
-                    "    e_ijkabc = direct_sum(\"ia+jb+kc->ijkabc\", e_ia, e_ia, e_ia)",
-                    "    t3 /= e_ijkabc",
-                    "    del e_ijkabc",
+                    "    denom3 = 1 / direct_sum(\"ia+jb+kc->ijkabc\", e_ia, e_ia, e_ia)",
             ]
         else:
-            lines = []
+            lines = [
+                    "    denom3 = Namespace()",
+            ]
             for spins in spins_list:
                 lines += [
-                        "    e_{spins}{spins}_ijkabc = direct_sum(".format(spins="".join(spins)),
+                        "    denom3.{spins}{spins} = 1 / direct_sum(".format(spins="".join(spins)),
                         "            \"ia+jb+kc->ijkabc\",",
                         "            direct_sum(\"i-a->ia\", np.diag(f.{s}{s}.oo), np.diag(f.{s}{s}.vv)),".format(s=spins[0]),
                         "            direct_sum(\"i-a->ia\", np.diag(f.{s}{s}.oo), np.diag(f.{s}{s}.vv)),".format(s=spins[1]),
                         "            direct_sum(\"i-a->ia\", np.diag(f.{s}{s}.oo), np.diag(f.{s}{s}.vv)),".format(s=spins[2]),
                         "    )",
-                        "    t3_{spins}{spins} /= e_{spins}{spins}_ijkabc".format(spins="".join(spins)),
-                        "    del e_{spins}{spins}_ijkabc".format(spins="".join(spins)),
                 ]
         function_printer.write_python("\n".join(lines)+"\n")
 
@@ -236,15 +243,44 @@ with common.FilePrinter("%sCCSDxTx" % spin[0].upper()) as file_printer:
         expression = read.from_pdaggerq(terms)
         expression = expression.expand_spin_orbitals()
 
-        expressions = [expression]
-        outputs = [output]
-        final_outputs = [output]
-        if spin == "rhf":
-            expressions, outputs = qccg.optimisation.optimise_expression(
-                    expressions,
-                    outputs,
+        contractions = []
+        for c in expression.contractions:
+            tensors = [c.factor]
+            for t in c.tensors:
+                tensors.append(t)
+                if t.symbol == "t3":
+                    class TempTensor(tensor.ATensor):
+                        @property
+                        def perms(self):
+                            for p1 in itertools.permutations([0,1,2]):
+                                for p2 in itertools.permutations([3,4,5]):
+                                    perm = p1 + p2
+                                    if all(self.indices[i].spin == self.indices[p].spin for i, p in enumerate(perm)):
+                                        yield (perm, 1)
+                    denom = TempTensor("denom3", t.indices)
+                    tensors.append(denom)
+            contractions.append(c.__class__(tensors))
+        expression = expression.__class__(contractions)
+
+        expression = insert(expression, expressions_t3, outputs_t3)
+
+        # Dummies change, canonicalise_dummies messes up the indices FIXME
+        if spin == "uhf":
+            expressions = (expression,)
+            outputs = (output,)
+        else:
+            expressions, outputs = qccg.optimisation.optimise_expression_gristmill(
+                    (expression,),
+                    (output,),
+                    strat="exhaust" if spin == "ghf" else "greedy",  # FIXME
             )
-        einsums = write.write_opt_einsums(expressions, outputs, final_outputs, indent=4, einsum_function="einsum")
+        einsums = write.write_opt_einsums(
+                expressions,
+                outputs,
+                (output,),
+                indent=4,
+                einsum_function="einsum",
+        )
         # FIXME messy
         if spin == "uhf":
             einsums = einsums.replace("t3.", "t3_")
