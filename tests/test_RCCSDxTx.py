@@ -57,6 +57,9 @@ class RCCSD_T_PySCF_Tests(unittest.TestCase):
         self.assertTrue(self.ccsd_ref.converged)
 
     def test_energy(self):
+        a = self.ccsd_ref.e_corr
+        b = self.ccsd.e_corr
+        self.assertAlmostEqual(a, b, 8)
         a = self.ccsd_ref.e_tot
         b = self.ccsd.e_tot
         self.assertAlmostEqual(a, b, 8)
