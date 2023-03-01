@@ -47,14 +47,17 @@ with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
         expression = expression.expand_spin_orbitals()
         output = tensor.Scalar("e_cc")
 
-        expressions = [expression]
-        outputs = [output]
-        if spin == "rhf":
-            expressions, outputs = qccg.optimisation.optimise_expression(
-                    expressions,
-                    outputs,
-            )
-        einsums = write.write_opt_einsums(expressions, outputs, (output,), indent=4, einsum_function="einsum")
+        expressions, outputs = qccg.optimisation.optimise_expression_gristmill(
+                (expression,),
+                (output,),
+        )
+        einsums = write.write_opt_einsums(
+                expressions,
+                outputs,
+                (output,),
+                indent=4,
+                einsum_function="einsum",
+        )
         function_printer.write_python(einsums+"\n", comment="energy")
 
     # Get amplitudes function:
@@ -96,7 +99,7 @@ with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
 
         expressions = []
         outputs = []
-        for n, (terms, name) in enumerate([(terms_t1, "T1"), (terms_t2, "T2"), (terms_t3, "T3")]):
+        for n, terms in enumerate([terms_t1, terms_t2]):
             if spin == "ghf":
                 spins_list = [(None,) * (n+1)]
             elif spin == "rhf":
@@ -124,18 +127,26 @@ with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
                     output = tensor.FermionicAmplitude("t%dnew" % (n+1), occ, vir)
                     shape = ", ".join(["nocc"] * (n+1) + ["nvir"] * (n+1))
 
-                index_spins = {index.character: spin for index, spin in zip(occ+vir, spins+spins)}
+                index_spins = {index.character: s for index, s in zip(occ+vir, spins+spins)}
                 expression = read.from_pdaggerq(terms, index_spins=index_spins)
+
                 expression = expression.expand_spin_orbitals()
 
                 expressions.append(expression)
                 outputs.append(output)
 
         final_outputs = outputs
-        if spin == "rhf":
-            expressions, outputs = qccg.optimisation.optimise_expression(
-                    expressions,
-                    outputs,
-            )
-        einsums = write.write_opt_einsums(expressions, outputs, final_outputs, indent=4, einsum_function="einsum")
+        # Dummies change, canonicalise_dummies messes up the indices FIXME
+        expressions, outputs = qccg.optimisation.optimise_expression_gristmill(
+                expressions,
+                outputs,
+                strat="exhaust",
+        )
+        einsums = write.write_opt_einsums(
+                expressions,
+                outputs,
+                final_outputs,
+                indent=4,
+                einsum_function="einsum",
+        )
         function_printer.write_python(einsums+"\n", comment="T amplitudes")
