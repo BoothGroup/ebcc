@@ -561,7 +561,7 @@ class REBCC(AbstractEBCC):
         self.lambdas = lambdas
         self.converged_lambda = converged
 
-    def brueckner(self):
+    def brueckner(self, *args, **kwargs):
         """Run the Brueckner orbital coupled cluster calculation.
 
         Returns
@@ -570,7 +570,7 @@ class REBCC(AbstractEBCC):
             Correlation energy.
         """
 
-        bcc = self.Brueckner(self)
+        bcc = self.Brueckner(self, *args, **kwargs)
 
         return bcc.kernel()
 
