@@ -253,9 +253,9 @@ class UEBCC(rebcc.REBCC):
                 amplitudes["t%d" % n] = tn
             else:
                 tn = util.Namespace()
-                for comb in util.generate_spin_combinations(3):
-                    shape = tuple(self.space["ab".index(s)].ncocc for s in comb[:3])
-                    shape += tuple(self.space["ab".index(s)].ncvir for s in comb[3:])
+                for comb in util.generate_spin_combinations(n):
+                    shape = tuple(self.space["ab".index(s)].ncocc for s in comb[:n])
+                    shape += tuple(self.space["ab".index(s)].ncvir for s in comb[n:])
                     amp = np.zeros(shape)
                     setattr(tn, comb, amp)
                 amplitudes["t%d" % n] = tn

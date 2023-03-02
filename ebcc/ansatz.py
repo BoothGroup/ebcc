@@ -11,6 +11,7 @@ named_ansatzes = {
     "CCD": ("CCD", "", 0, 0),
     "CCSD": ("CCSD", "", 0, 0),
     "CCSDT": ("CCSDT", "", 0, 0),
+    "CCSDTQ": ("CCSDTQ", "", 0, 0),
     "CCSD(T)": ("CCSD(T)", "", 0, 0),
     "CC2": ("CC2", "", 0, 0),
     "CC3": ("CC3", "", 0, 0),
