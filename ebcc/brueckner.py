@@ -6,11 +6,11 @@ import dataclasses
 import logging
 from typing import Union
 
-from pyscf import lib
 import numpy as np
 import scipy.linalg
+from pyscf import lib
 
-from ebcc import util, NullLogger, init_logging
+from ebcc import NullLogger, init_logging, util
 
 
 @dataclasses.dataclass
@@ -59,11 +59,11 @@ class BruecknerREBCC:
     Options = Options
 
     def __init__(
-            self,
-            cc: "AbstractEBCC",
-            log: logging.Logger = None,
-            options: Options = None,
-            **kwargs,
+        self,
+        cc: "AbstractEBCC",
+        log: logging.Logger = None,
+        options: Options = None,
+        **kwargs,
     ):
         # Options:
         if options is None:
@@ -98,10 +98,12 @@ class BruecknerREBCC:
         if u_tot is None:
             u_tot = np.eye(self.cc.space.ncorr)
 
-        t1_block = np.block([
-            [np.zeros((self.cc.space.ncocc, self.cc.space.ncocc)), -t1],
-            [t1.T, np.zeros((self.cc.space.ncvir, self.cc.space.ncvir))],
-        ])
+        t1_block = np.block(
+            [
+                [np.zeros((self.cc.space.ncocc, self.cc.space.ncocc)), -t1],
+                [t1.T, np.zeros((self.cc.space.ncvir, self.cc.space.ncvir))],
+            ]
+        )
 
         u = scipy.linalg.expm(t1_block)
 
@@ -118,8 +120,7 @@ class BruecknerREBCC:
         return u, u_tot
 
     def transform_amplitudes(self, u, amplitudes=None):
-        """Transform the amplitudes into the Brueckner orbital basis.
-        """
+        """Transform the amplitudes into the Brueckner orbital basis."""
 
         if amplitudes is None:
             amplitudes = self.cc.amplitudes
@@ -132,9 +133,9 @@ class BruecknerREBCC:
         for n in self.cc.ansatz.correlated_cluster_ranks[0]:
             args = [self.cc.amplitudes["t%d" % n], tuple(range(n * 2))]
             for i in range(n):
-                args += [ci, (i, i+n*2)]
+                args += [ci, (i, i + n * 2)]
             for i in range(n):
-                args += [ca, (i+n, i+n*3)]
+                args += [ca, (i + n, i + n * 3)]
             args += [tuple(range(n * 2, n * 4))]
             self.cc.amplitudes["t%d" % n] = util.einsum(*args)
 
@@ -149,8 +150,7 @@ class BruecknerREBCC:
         return self.cc.amplitudes
 
     def get_t1_norm(self, amplitudes=None):
-        """Get the norm of the T1 amplitude.
-        """
+        """Get the norm of the T1 amplitude."""
 
         if amplitudes is None:
             amplitudes = self.cc.amplitudes
@@ -165,8 +165,7 @@ class BruecknerREBCC:
         return mo_coeff[:, self.cc.space.correlated]
 
     def mo_update_correlated(self, mo_coeff, mo_coeff_corr):
-        """Update the correlated slice of a set of MO coefficients.
-        """
+        """Update the correlated slice of a set of MO coefficients."""
 
         mo_coeff[:, self.cc.space.correlated] = mo_coeff_corr
 
@@ -200,7 +199,9 @@ class BruecknerREBCC:
         u_tot = None
 
         self.cc.log.output("Solving for Brueckner orbitals.")
-        self.cc.log.info("%4s %16s %10s %16s %16s", "Iter", "Energy (corr.)", "Converged", "Δ(Energy)", "|T1|")
+        self.cc.log.info(
+            "%4s %16s %10s %16s %16s", "Iter", "Energy (corr.)", "Converged", "Δ(Energy)", "|T1|"
+        )
         self.cc.log.info("%4d %16.10f %10s", 0, self.cc.e_corr, self.cc.converged)
 
         converged = False
@@ -212,10 +213,10 @@ class BruecknerREBCC:
             mo_coeff_new_corr = util.einsum("...pi,...ij->...pj", mo_coeff_ref, u_tot)
             mo_coeff_new = self.mo_update_correlated(mo_coeff_new, mo_coeff_new_corr)
             u = util.einsum(
-                    "...pq,...pi,...pj->...ij",
-                    self.mf.get_ovlp(),
-                    self.mo_to_correlated(self.mf.mo_coeff),
-                    mo_coeff_new_corr,
+                "...pq,...pi,...pj->...ij",
+                self.mf.get_ovlp(),
+                self.mo_to_correlated(self.mf.mo_coeff),
+                mo_coeff_new_corr,
             )
 
             # Transform mean-field and amplitudes:
@@ -227,21 +228,23 @@ class BruecknerREBCC:
             e_prev = self.cc.e_tot
             with lib.temporary_env(self.cc, log=NullLogger()):
                 self.cc.__init__(
-                        self.mf,
-                        log=self.cc.log,
-                        ansatz=self.cc.ansatz,
-                        space=self.cc.space,
-                        omega=self.cc.omega,
-                        g=self.cc.bare_g,
-                        G=self.cc.bare_G,
-                        options=self.cc.options,
+                    self.mf,
+                    log=self.cc.log,
+                    ansatz=self.cc.ansatz,
+                    space=self.cc.space,
+                    omega=self.cc.omega,
+                    g=self.cc.bare_g,
+                    G=self.cc.bare_G,
+                    options=self.cc.options,
                 )
                 self.cc.amplitudes = amplitudes
                 self.cc.kernel()
             de = abs(e_prev - self.cc.e_tot)
             dt = self.get_t1_norm()
 
-            self.cc.log.info("%4d %16.10f %10s %16.5g %16.5g", niter, self.cc.e_corr, self.cc.converged, de, dt)
+            self.cc.log.info(
+                "%4d %16.10f %10s %16.5g %16.5g", niter, self.cc.e_corr, self.cc.converged, de, dt
+            )
 
             # Check for convergence:
             converged = de < self.options.e_tol and dt < self.options.t_tol
@@ -268,26 +271,36 @@ class BruecknerUEBCC(BruecknerREBCC):
         if t1 is None:
             t1 = self.cc.t1
         if u_tot is None:
-            u_tot = np.array([
-                np.eye(self.cc.space[0].ncorr),
-                np.eye(self.cc.space[1].ncorr),
-            ])
+            u_tot = np.array(
+                [
+                    np.eye(self.cc.space[0].ncorr),
+                    np.eye(self.cc.space[1].ncorr),
+                ]
+            )
 
-        t1_block = np.array([
-            np.block([
-                [np.zeros((self.cc.space[0].ncocc, self.cc.space[0].ncocc)), -t1.aa],
-                [t1.aa.T, np.zeros((self.cc.space[0].ncvir, self.cc.space[0].ncvir))],
-            ]),
-            np.block([
-                [np.zeros((self.cc.space[1].ncocc, self.cc.space[1].ncocc)), -t1.bb],
-                [t1.bb.T, np.zeros((self.cc.space[1].ncvir, self.cc.space[1].ncvir))],
-            ]),
-        ])
+        t1_block = np.array(
+            [
+                np.block(
+                    [
+                        [np.zeros((self.cc.space[0].ncocc, self.cc.space[0].ncocc)), -t1.aa],
+                        [t1.aa.T, np.zeros((self.cc.space[0].ncvir, self.cc.space[0].ncvir))],
+                    ]
+                ),
+                np.block(
+                    [
+                        [np.zeros((self.cc.space[1].ncocc, self.cc.space[1].ncocc)), -t1.bb],
+                        [t1.bb.T, np.zeros((self.cc.space[1].ncvir, self.cc.space[1].ncvir))],
+                    ]
+                ),
+            ]
+        )
 
-        u = np.array([
-            scipy.linalg.expm(t1_block[0]),
-            scipy.linalg.expm(t1_block[1]),
-        ])
+        u = np.array(
+            [
+                scipy.linalg.expm(t1_block[0]),
+                scipy.linalg.expm(t1_block[1]),
+            ]
+        )
 
         u_tot = util.einsum("npq,nqi->npi", u_tot, u)
         if scipy.linalg.det(u_tot[0]) < 0:
@@ -295,17 +308,21 @@ class BruecknerUEBCC(BruecknerREBCC):
         if scipy.linalg.det(u_tot[1]) < 0:
             u_tot[1][:, 0] *= -1
 
-        a = np.array([
-            scipy.linalg.logm(u_tot[0]),
-            scipy.linalg.logm(u_tot[1]),
-        ])
+        a = np.array(
+            [
+                scipy.linalg.logm(u_tot[0]),
+                scipy.linalg.logm(u_tot[1]),
+            ]
+        )
         if diis is not None:
             a = diis.update(a, xerr=np.array([t1.aa, t1.bb]))
 
-        u_tot = np.array([
-            scipy.linalg.expm(a[0]),
-            scipy.linalg.expm(a[1]),
-        ])
+        u_tot = np.array(
+            [
+                scipy.linalg.expm(a[0]),
+                scipy.linalg.expm(a[1]),
+            ]
+        )
 
         return u, u_tot
 
@@ -314,17 +331,17 @@ class BruecknerUEBCC(BruecknerREBCC):
             amplitudes = self.cc.amplitudes
 
         nocc = (self.cc.space[0].ncocc, self.cc.space[1].ncocc)
-        ci = {"a": u[0][:nocc[0], :nocc[0]], "b": u[1][:nocc[1], :nocc[1]]}
-        ca = {"a": u[0][nocc[0]:, nocc[0]:], "b": u[1][nocc[1]:, nocc[1]:]}
+        ci = {"a": u[0][: nocc[0], : nocc[0]], "b": u[1][: nocc[1], : nocc[1]]}
+        ca = {"a": u[0][nocc[0] :, nocc[0] :], "b": u[1][nocc[1] :, nocc[1] :]}
 
         # Transform T amplitudes:
         for n in self.cc.ansatz.correlated_cluster_ranks[0]:
             for comb in util.generate_spin_combinations(n):
                 args = [getattr(self.cc.amplitudes["t%d" % n], comb), tuple(range(n * 2))]
             for i in range(n):
-                args += [ci[comb[i]], (i, i+n*2)]
+                args += [ci[comb[i]], (i, i + n * 2)]
             for i in range(n):
-                args += [ca[comb[i+n]], (i+n, i+n*3)]
+                args += [ca[comb[i + n]], (i + n, i + n * 3)]
             args += [tuple(range(n * 2, n * 4))]
             setattr(self.cc.amplitudes["t%d" % n], comb, util.einsum(*args))
 
@@ -342,15 +359,17 @@ class BruecknerUEBCC(BruecknerREBCC):
         if amplitudes is None:
             amplitudes = self.cc.amplitudes
 
-        return np.linalg.norm([
-            amplitudes["t1"].aa.ravel(),
-            amplitudes["t1"].bb.ravel(),
-        ])
+        return np.linalg.norm(
+            [
+                amplitudes["t1"].aa.ravel(),
+                amplitudes["t1"].bb.ravel(),
+            ]
+        )
 
     def mo_to_correlated(self, mo_coeff):
         return (
-                mo_coeff[0][:, self.cc.space[0].correlated],
-                mo_coeff[1][:, self.cc.space[1].correlated],
+            mo_coeff[0][:, self.cc.space[0].correlated],
+            mo_coeff[1][:, self.cc.space[1].correlated],
         )
 
     def mo_update_correlated(self, mo_coeff, mo_coeff_corr):

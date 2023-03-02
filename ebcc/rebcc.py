@@ -12,8 +12,8 @@ import numpy as np
 from pyscf import ao2mo, lib, scf
 
 from ebcc import METHOD_TYPES, default_log, init_logging, reom, util
-from ebcc.brueckner import BruecknerREBCC
 from ebcc.ansatz import Ansatz
+from ebcc.brueckner import BruecknerREBCC
 from ebcc.space import Space
 
 # TODO test bosonic RDMs and lambdas - only regression atm
