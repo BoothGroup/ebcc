@@ -6,7 +6,7 @@ import pytest
 
 import numpy as np
 from pyscf import cc, gto, lib, scf
-from pyscf.cc.bccd import bccd_kernel_
+#from pyscf.cc.bccd import bccd_kernel_
 
 from ebcc import REBCC, UEBCC, GEBCC, NullLogger, Space
 
@@ -32,7 +32,11 @@ class RBCCD_PySCF_Tests(unittest.TestCase):
         ccsd_ref.conv_tol = 1e-10
         ccsd_ref.max_cycle = 200
         ccsd_ref.kernel()
-        ccsd_ref = bccd_kernel_(ccsd_ref, verbose=0)
+        # TODO when in pyscf release version
+        #ccsd_ref = bccd_kernel_(ccsd_ref, verbose=0)
+        cls._pyscf_bccd_results = {
+                "e_tot": -7.881447504050691, 
+        }
 
         ccsd = REBCC(
                 mf,
@@ -46,22 +50,24 @@ class RBCCD_PySCF_Tests(unittest.TestCase):
         cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris = mf, ccsd_ref, ccsd, eris
 
     @classmethod
-    def teardownclass(cls):
+    def tearDownClass(cls):
         del cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris
+        del cls._pyscf_bccd_results
 
     def test_converged(self):
         self.assertTrue(self.ccsd.converged)
         self.assertTrue(self.ccsd_ref.converged)
 
     def test_energy(self):
-        a = self.ccsd_ref.e_tot
+        #a = self.ccsd_ref.e_tot
+        a = self._pyscf_bccd_results["e_tot"]
         b = self.ccsd.e_tot
         self.assertAlmostEqual(a, b, 8)
 
-    def test_t2_amplitudes(self):
-        a = self.ccsd_ref.t2
-        b = self.ccsd.t2
-        np.testing.assert_almost_equal(a, b, 6)
+    #def test_t2_amplitudes(self):
+    #    a = self.ccsd_ref.t2
+    #    b = self.ccsd.t2
+    #    np.testing.assert_almost_equal(a, b, 6)
 
 
 @pytest.mark.reference
@@ -86,7 +92,11 @@ class RBCCD_Frozen_PySCF_Tests(RBCCD_PySCF_Tests):
         ccsd_ref.max_cycle = 200
         ccsd_ref.frozen = 1
         ccsd_ref.kernel()
-        ccsd_ref = bccd_kernel_(ccsd_ref, verbose=0)
+        # TODO when in pyscf release version
+        #ccsd_ref = bccd_kernel_(ccsd_ref, verbose=0)
+        cls._pyscf_bccd_results = {
+                "e_tot": -7.881227958827942, 
+        }
 
         space = Space(
                 mf.mo_occ > 0,
@@ -128,7 +138,11 @@ class UBCCD_PySCF_Tests(unittest.TestCase):
         ccsd_ref.conv_tol = 1e-10
         ccsd_ref.max_cycle = 200
         ccsd_ref.kernel()
-        ccsd_ref = bccd_kernel_(ccsd_ref, verbose=0)
+        # TODO when in pyscf release version
+        #ccsd_ref = bccd_kernel_(ccsd_ref, verbose=0)
+        cls._pyscf_bccd_results = {
+                "e_tot": -7.998789085509077, 
+        }
 
         ccsd = UEBCC(
                 mf,
@@ -142,15 +156,17 @@ class UBCCD_PySCF_Tests(unittest.TestCase):
         cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris = mf, ccsd_ref, ccsd, eris
 
     @classmethod
-    def teardownclass(cls):
+    def tearDownClass(cls):
         del cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris
+        del cls._pyscf_bccd_results
 
     def test_converged(self):
         self.assertTrue(self.ccsd.converged)
         self.assertTrue(self.ccsd_ref.converged)
 
     def test_energy(self):
-        a = self.ccsd_ref.e_tot
+        #a = self.ccsd_ref.e_tot
+        a = self._pyscf_bccd_results["e_tot"]
         b = self.ccsd.e_tot
         self.assertAlmostEqual(a, b, 8)
 
@@ -177,7 +193,11 @@ class UBCCD_Frozen_PySCF_Tests(unittest.TestCase):
         ccsd_ref.max_cycle = 200
         ccsd_ref.frozen = 1
         ccsd_ref.kernel()
-        ccsd_ref = bccd_kernel_(ccsd_ref, verbose=0)
+        # TODO when in pyscf release version
+        #ccsd_ref = bccd_kernel_(ccsd_ref, verbose=0)
+        cls._pyscf_bccd_results = {
+                "e_tot": -7.998530643494347, 
+        }
 
         space = (
             Space(
@@ -205,15 +225,17 @@ class UBCCD_Frozen_PySCF_Tests(unittest.TestCase):
         cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris = mf, ccsd_ref, ccsd, eris
 
     @classmethod
-    def teardownclass(cls):
+    def tearDownClass(cls):
         del cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris
+        del cls._pyscf_bccd_results
 
     def test_converged(self):
         self.assertTrue(self.ccsd.converged)
         self.assertTrue(self.ccsd_ref.converged)
 
     def test_energy(self):
-        a = self.ccsd_ref.e_tot
+        #a = self.ccsd_ref.e_tot
+        a = self._pyscf_bccd_results["e_tot"]
         b = self.ccsd.e_tot
         self.assertAlmostEqual(a, b, 8)
 
@@ -239,7 +261,11 @@ class GBCCD_PySCF_Tests(unittest.TestCase):
         ccsd_ref.conv_tol = 1e-10
         ccsd_ref.max_cycle = 200
         ccsd_ref.kernel()
-        ccsd_ref = bccd_kernel_(ccsd_ref, verbose=0)
+        # TODO when in pyscf release version
+        #ccsd_ref = bccd_kernel_(ccsd_ref, verbose=0)
+        cls._pyscf_bccd_results = {
+                "e_tot": -7.881447503600422, 
+        }
 
         ccsd = GEBCC(
                 mf,
@@ -248,12 +274,12 @@ class GBCCD_PySCF_Tests(unittest.TestCase):
         )
         ccsd.options.e_tol = 1e-10
         eris = ccsd.get_eris()
-        ccsd.brueckner()
+        ccsd.brueckner(max_iter=50)
 
         cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris = mf, ccsd_ref, ccsd, eris
 
     @classmethod
-    def teardownclass(cls):
+    def tearDownClass(cls):
         del cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris
 
     def test_converged(self):
@@ -261,7 +287,8 @@ class GBCCD_PySCF_Tests(unittest.TestCase):
         self.assertTrue(self.ccsd_ref.converged)
 
     def test_energy(self):
-        a = self.ccsd_ref.e_tot
+        #a = self.ccsd_ref.e_tot
+        a = self._pyscf_bccd_results["e_tot"]
         b = self.ccsd.e_tot
         self.assertAlmostEqual(a, b, 8)
 
