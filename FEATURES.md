@@ -12,6 +12,7 @@ The following table summarises the available methods and routines for the ansatz
 | CCD         |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |   -   |
 | CCSD        |  RUG  |  RUG  |  UG   |  UG   |  UG   |  RUG  |  RUG  |   -   |
 | CCSDT       |  Rug  |       |       |       |       |       |       |   -   |
+| CCSDTQ      |   g   |       |       |       |       |       |       |   -   |
 | CCSD(T)     |  RuG  |       |       |       |       |       |       |   -   |
 | CC2         |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |   -   |
 | CC3         |  RUG  |       |       |       |       |       |       |   -   |
