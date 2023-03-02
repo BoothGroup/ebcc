@@ -176,8 +176,8 @@ class RCCSD_PySCF_Tests(unittest.TestCase):
         cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris = mf, ccsd_ref, ccsd, eris
 
     @classmethod
-    def tearDownClass(cls):
-        del cls.mf, cls.ccsd_ref, cls.ccsd
+    def teardownclass(cls):
+        del cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris
 
     def test_converged(self):
         self.assertTrue(self.ccsd.converged)

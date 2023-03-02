@@ -10,6 +10,7 @@ import scipy.linalg
 from pyscf import ao2mo, lib, scf
 
 from ebcc import geom, rebcc, uebcc, util
+from ebcc.brueckner import BruecknerGEBCC
 from ebcc.space import Space
 
 
@@ -68,6 +69,7 @@ class ERIs(rebcc.ERIs):
 class GEBCC(rebcc.REBCC):
     Amplitudes = Amplitudes
     ERIs = ERIs
+    Brueckner = BruecknerGEBCC
 
     @staticmethod
     def _convert_mf(mf):

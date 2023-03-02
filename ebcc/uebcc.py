@@ -10,6 +10,7 @@ import numpy as np
 from pyscf import ao2mo, lib
 
 from ebcc import rebcc, ueom, util
+from ebcc.brueckner import BruecknerUEBCC
 from ebcc.space import Space
 
 
@@ -44,8 +45,10 @@ class ERIs(types.SimpleNamespace):
         self.mo_coeff = mo_coeff
         slices = [
             {
+                "x": space.correlated,
                 "o": space.correlated_occupied,
                 "v": space.correlated_virtual,
+                "x": space.active,
                 "O": space.active_occupied,
                 "V": space.active_virtual,
             }
@@ -105,6 +108,7 @@ class ERIs(types.SimpleNamespace):
 class UEBCC(rebcc.REBCC):
     Amplitudes = Amplitudes
     ERIs = ERIs
+    Brueckner = BruecknerUEBCC
 
     @staticmethod
     def _convert_mf(mf):
@@ -520,8 +524,10 @@ class UEBCC(rebcc.REBCC):
 
         slices = [
             {
+                "x": space.correlated,
                 "o": space.correlated_occupied,
                 "v": space.correlated_virtual,
+                "X": space.active,
                 "O": space.active_occupied,
                 "V": space.active_virtual,
             }
@@ -566,8 +572,10 @@ class UEBCC(rebcc.REBCC):
     def get_fock(self):
         slices = [
             {
+                "x": space.correlated,
                 "o": space.correlated_occupied,
                 "v": space.correlated_virtual,
+                "X": space.active,
                 "O": space.active_occupied,
                 "V": space.active_virtual,
             }
