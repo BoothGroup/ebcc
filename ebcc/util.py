@@ -62,8 +62,7 @@ class Namespace:
 
 
 class Timer:
-    """Class for recording timings.
-    """
+    """Class for recording timings."""
 
     def __init__(self):
         self.t_init = time.perf_counter()
@@ -80,8 +79,7 @@ class Timer:
     __call__ = lap
 
     def total(self):
-        """Return the time elapsed since the initialisation.
-        """
+        """Return the time elapsed since the initialisation."""
         return time.perf_counter() - self.t_init
 
     @staticmethod
@@ -308,7 +306,7 @@ def get_symmetry_factor(*numbers):
     for n in numbers:
         ntot += max(0, n - 1)
 
-    return 1.0 / (2.0 ** ntot)
+    return 1.0 / (2.0**ntot)
 
 
 def inherit_docstrings(cls):
@@ -353,8 +351,7 @@ def antisymmetrise_array(v, axes=(0, 1)):
 
 
 def is_mixed_spin(spin):
-    """Return a boolean indicating if a list of spins are mixed.
-    """
+    """Return a boolean indicating if a list of spins are mixed."""
     return len(set(spin)) != 1
 
 

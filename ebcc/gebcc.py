@@ -318,7 +318,10 @@ class GEBCC(rebcc.REBCC):
 
     def make_rdm2_f(self, eris=None, amplitudes=None, lambdas=None, hermitise=True):
         func, kwargs = self._load_function(
-            "make_rdm2_f", eris=eris, amplitudes=amplitudes, lambdas=lambdas,
+            "make_rdm2_f",
+            eris=eris,
+            amplitudes=amplitudes,
+            lambdas=lambdas,
         )
 
         dm = func(**kwargs)

@@ -35,7 +35,10 @@ class Space:
     """
 
     def __init__(
-        self, occupied: np.ndarray, frozen: np.ndarray, active: np.ndarray,
+        self,
+        occupied: np.ndarray,
+        frozen: np.ndarray,
+        active: np.ndarray,
     ):
         self.occupied = np.asarray(occupied, dtype=bool)
         self.frozen = np.asarray(frozen, dtype=bool)
