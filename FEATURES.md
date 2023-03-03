@@ -1,12 +1,22 @@
+- Coupled cluster calculations using a wide range of ansatzes, as summarised below
+- Lambda equation solver
+- Equation-of-motion solver
+- Density matrices
+- Brueckner orbital calculations
+- Frozen and active space constraints
+
 The following table summarises the available methods and routines for the ansatz currently treated by code generation, in the three spin cases:
 
 | Ansatz      |   T   |   Λ   |  IP   |  EA   |  EE   |  DM1  |  DM2  |  BDM  |
 | :---------: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| CCD         |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |   -   |
 | CCSD        |  RUG  |  RUG  |  UG   |  UG   |  UG   |  RUG  |  RUG  |   -   |
 | CCSDT       |  Rug  |       |       |       |       |       |       |   -   |
-| CCSD(T)     |  Rug  |       |       |       |       |       |       |   -   |
+| CCSDTQ      |   g   |       |       |       |       |       |       |   -   |
+| CCSD(T)     |  RuG  |       |       |       |       |       |       |   -   |
 | CC2         |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |   -   |
 | CC3         |  RUG  |       |       |       |       |       |       |   -   |
+| QCISD       |  RUG  |       |       |       |       |       |       |   -   |
 | CCSD-S-1-1  |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |  RUG  |
 | CCSD-SD-1-1 |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |  RUG  |
 | CCSD-SD-1-2 |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |  RUG  |

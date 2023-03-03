@@ -35,20 +35,9 @@ The implemented models are built upon the mean-field objects of
 >>> ccsd = EBCC(mf)
 >>> ccsd.kernel()
 
-
-Code generation
----------------
-
-The models implemented are generated algorithmically from expressions
-over second quantized operators. Expressions are generated using
-`qwick <https://github.com/obackhouse/qwick>`_ with optimisation of
-common subexpressions and contraction order achieved using
-`drudge <https://github.com/tschijnmo/drudge>`_ and
-`gristmill <https://github.com/tschijnmo/gristmill>`_.
-
 """
 
-__version__ = "1.0.0a"
+__version__ = "1.2.0"
 
 import logging
 import os
@@ -192,6 +181,7 @@ del _factory
 # --- Other imports:
 
 from ebcc.ansatz import Ansatz
+from ebcc.brueckner import BruecknerGEBCC, BruecknerREBCC, BruecknerUEBCC
 from ebcc.space import Space
 
 # --- List available methods:

@@ -10,6 +10,7 @@ import numpy as np
 from pyscf import ao2mo, lib
 
 from ebcc import rebcc, ueom, util
+from ebcc.brueckner import BruecknerUEBCC
 from ebcc.space import Space
 
 
@@ -44,8 +45,10 @@ class ERIs(types.SimpleNamespace):
         self.mo_coeff = mo_coeff
         slices = [
             {
+                "x": space.correlated,
                 "o": space.correlated_occupied,
                 "v": space.correlated_virtual,
+                "x": space.active,
                 "O": space.active_occupied,
                 "V": space.active_virtual,
             }
@@ -105,6 +108,7 @@ class ERIs(types.SimpleNamespace):
 class UEBCC(rebcc.REBCC):
     Amplitudes = Amplitudes
     ERIs = ERIs
+    Brueckner = BruecknerUEBCC
 
     @staticmethod
     def _convert_mf(mf):
@@ -253,9 +257,9 @@ class UEBCC(rebcc.REBCC):
                 amplitudes["t%d" % n] = tn
             else:
                 tn = util.Namespace()
-                for comb in util.generate_spin_combinations(3):
-                    shape = tuple(self.space["ab".index(s)].ncocc for s in comb[:3])
-                    shape += tuple(self.space["ab".index(s)].ncvir for s in comb[3:])
+                for comb in util.generate_spin_combinations(n):
+                    shape = tuple(self.space["ab".index(s)].ncocc for s in comb[:n])
+                    shape += tuple(self.space["ab".index(s)].ncvir for s in comb[n:])
                     amp = np.zeros(shape)
                     setattr(tn, comb, amp)
                 amplitudes["t%d" % n] = tn
@@ -520,8 +524,10 @@ class UEBCC(rebcc.REBCC):
 
         slices = [
             {
+                "x": space.correlated,
                 "o": space.correlated_occupied,
                 "v": space.correlated_virtual,
+                "X": space.active,
                 "O": space.active_occupied,
                 "V": space.active_virtual,
             }
@@ -566,8 +572,10 @@ class UEBCC(rebcc.REBCC):
     def get_fock(self):
         slices = [
             {
+                "x": space.correlated,
                 "o": space.correlated_occupied,
                 "v": space.correlated_virtual,
+                "X": space.active,
                 "O": space.active_occupied,
                 "V": space.active_virtual,
             }

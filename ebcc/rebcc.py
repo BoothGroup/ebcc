@@ -13,6 +13,7 @@ from pyscf import ao2mo, lib, scf
 
 from ebcc import METHOD_TYPES, default_log, init_logging, reom, util
 from ebcc.ansatz import Ansatz
+from ebcc.brueckner import BruecknerREBCC
 from ebcc.space import Space
 
 # TODO test bosonic RDMs and lambdas - only regression atm
@@ -68,8 +69,10 @@ class ERIs(types.SimpleNamespace):
 
         if self.slices is None:
             self.slices = {
+                "x": self.space.correlated,
                 "o": self.space.correlated_occupied,
                 "v": self.space.correlated_virtual,
+                "X": self.space.active,
                 "O": self.space.active_occupied,
                 "V": self.space.active_virtual,
             }
@@ -315,6 +318,7 @@ class REBCC(AbstractEBCC):
     Options = Options
     Amplitudes = Amplitudes
     ERIs = ERIs
+    Brueckner = BruecknerREBCC
 
     def __init__(
         self,
@@ -556,6 +560,19 @@ class REBCC(AbstractEBCC):
         # Update attributes:
         self.lambdas = lambdas
         self.converged_lambda = converged
+
+    def brueckner(self, *args, **kwargs):
+        """Run the Brueckner orbital coupled cluster calculation.
+
+        Returns
+        -------
+        e_cc : float
+            Correlation energy.
+        """
+
+        bcc = self.Brueckner(self, *args, **kwargs)
+
+        return bcc.kernel()
 
     @staticmethod
     def _convert_mf(mf):
@@ -1852,8 +1869,10 @@ class REBCC(AbstractEBCC):
         """
 
         slices = {
+            "x": self.space.correlated,
             "o": self.space.correlated_occupied,
             "v": self.space.correlated_virtual,
+            "X": self.space.active,
             "O": self.space.active_occupied,
             "V": self.space.active_virtual,
         }
@@ -1881,8 +1900,10 @@ class REBCC(AbstractEBCC):
         """
 
         slices = {
+            "x": self.space.correlated,
             "o": self.space.correlated_occupied,
             "v": self.space.correlated_virtual,
+            "X": self.space.active,
             "O": self.space.active_occupied,
             "V": self.space.active_virtual,
         }
