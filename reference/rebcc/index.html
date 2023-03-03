@@ -1,0 +1,5218 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../../features/">
+      
+      
+        <link rel="next" href="../uebcc/">
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.1.0">
+    
+    
+      
+        <title>rebcc - ebcc</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.402914a4.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.a0c5b2b5.min.css">
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="" data-md-color-accent="">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#ebcc.rebcc" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="ebcc" class="md-header__button md-logo" aria-label="ebcc" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ebcc
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              rebcc
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="ebcc" class="md-nav__button md-logo" aria-label="ebcc" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    ebcc
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        Home
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/" class="md-nav__link">
+        Features
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          Code Reference
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          Code Reference
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          rebcc
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        rebcc
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.rebcc" class="md-nav__link">
+    ebcc.rebcc
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.rebcc.AbstractEBCC" class="md-nav__link">
+    AbstractEBCC
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.rebcc.Amplitudes" class="md-nav__link">
+    Amplitudes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.rebcc.ERIs" class="md-nav__link">
+    ERIs
+  </a>
+  
+    <nav class="md-nav" aria-label="ERIs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.ERIs.__getattr__" class="md-nav__link">
+    __getattr__()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.rebcc.Options" class="md-nav__link">
+    Options
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC" class="md-nav__link">
+    REBCC
+  </a>
+  
+    <nav class="md-nav" aria-label="REBCC">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC--methods" class="md-nav__link">
+    Methods
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.bare_fock" class="md-nav__link">
+    bare_fock
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.xi" class="md-nav__link">
+    xi
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.const" class="md-nav__link">
+    const
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.mo_coeff" class="md-nav__link">
+    mo_coeff
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.mo_occ" class="md-nav__link">
+    mo_occ
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.nbos" class="md-nav__link">
+    nbos
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.eo" class="md-nav__link">
+    eo
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.ev" class="md-nav__link">
+    ev
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.e_tot" class="md-nav__link">
+    e_tot
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.kernel" class="md-nav__link">
+    kernel()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.solve_lambda" class="md-nav__link">
+    solve_lambda()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.brueckner" class="md-nav__link">
+    brueckner()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.init_space" class="md-nav__link">
+    init_space()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.init_amps" class="md-nav__link">
+    init_amps()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.init_lams" class="md-nav__link">
+    init_lams()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.energy" class="md-nav__link">
+    energy()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.energy_perturbative" class="md-nav__link">
+    energy_perturbative()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.update_amps" class="md-nav__link">
+    update_amps()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.update_lams" class="md-nav__link">
+    update_lams()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_sing_b_dm" class="md-nav__link">
+    make_sing_b_dm()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_rdm1_b" class="md-nav__link">
+    make_rdm1_b()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_rdm1_f" class="md-nav__link">
+    make_rdm1_f()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_rdm2_f" class="md-nav__link">
+    make_rdm2_f()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_eb_coup_rdm" class="md-nav__link">
+    make_eb_coup_rdm()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.hbar_matvec_ip" class="md-nav__link">
+    hbar_matvec_ip()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.hbar_matvec_ea" class="md-nav__link">
+    hbar_matvec_ea()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.hbar_matvec_ee" class="md-nav__link">
+    hbar_matvec_ee()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_ip_mom_bras" class="md-nav__link">
+    make_ip_mom_bras()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_ea_mom_bras" class="md-nav__link">
+    make_ea_mom_bras()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_ee_mom_bras" class="md-nav__link">
+    make_ee_mom_bras()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_ip_mom_kets" class="md-nav__link">
+    make_ip_mom_kets()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_ea_mom_kets" class="md-nav__link">
+    make_ea_mom_kets()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_ee_mom_kets" class="md-nav__link">
+    make_ee_mom_kets()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_ip_1mom" class="md-nav__link">
+    make_ip_1mom()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_ea_1mom" class="md-nav__link">
+    make_ea_1mom()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.amplitudes_to_vector" class="md-nav__link">
+    amplitudes_to_vector()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.vector_to_amplitudes" class="md-nav__link">
+    vector_to_amplitudes()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.lambdas_to_vector" class="md-nav__link">
+    lambdas_to_vector()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.vector_to_lambdas" class="md-nav__link">
+    vector_to_lambdas()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.excitations_to_vector_ip" class="md-nav__link">
+    excitations_to_vector_ip()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.excitations_to_vector_ea" class="md-nav__link">
+    excitations_to_vector_ea()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.excitations_to_vector_ee" class="md-nav__link">
+    excitations_to_vector_ee()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.vector_to_excitations_ip" class="md-nav__link">
+    vector_to_excitations_ip()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.vector_to_excitations_ea" class="md-nav__link">
+    vector_to_excitations_ea()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.vector_to_excitations_ee" class="md-nav__link">
+    vector_to_excitations_ee()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.get_mean_field_G" class="md-nav__link">
+    get_mean_field_G()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.get_g" class="md-nav__link">
+    get_g()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.get_fock" class="md-nav__link">
+    get_fock()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.get_eris" class="md-nav__link">
+    get_eris()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../uebcc/" class="md-nav__link">
+        uebcc
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gebcc/" class="md-nav__link">
+        gebcc
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reom/" class="md-nav__link">
+        reom
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ueom/" class="md-nav__link">
+        ueom
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../geom/" class="md-nav__link">
+        geom
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../brueckner/" class="md-nav__link">
+        brueckner
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../space/" class="md-nav__link">
+        space
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansatz/" class="md-nav__link">
+        ansatz
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../util/" class="md-nav__link">
+        util
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.rebcc" class="md-nav__link">
+    ebcc.rebcc
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.rebcc.AbstractEBCC" class="md-nav__link">
+    AbstractEBCC
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.rebcc.Amplitudes" class="md-nav__link">
+    Amplitudes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.rebcc.ERIs" class="md-nav__link">
+    ERIs
+  </a>
+  
+    <nav class="md-nav" aria-label="ERIs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.ERIs.__getattr__" class="md-nav__link">
+    __getattr__()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.rebcc.Options" class="md-nav__link">
+    Options
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC" class="md-nav__link">
+    REBCC
+  </a>
+  
+    <nav class="md-nav" aria-label="REBCC">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC--methods" class="md-nav__link">
+    Methods
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.bare_fock" class="md-nav__link">
+    bare_fock
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.xi" class="md-nav__link">
+    xi
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.const" class="md-nav__link">
+    const
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.mo_coeff" class="md-nav__link">
+    mo_coeff
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.mo_occ" class="md-nav__link">
+    mo_occ
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.nbos" class="md-nav__link">
+    nbos
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.eo" class="md-nav__link">
+    eo
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.ev" class="md-nav__link">
+    ev
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.e_tot" class="md-nav__link">
+    e_tot
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.kernel" class="md-nav__link">
+    kernel()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.solve_lambda" class="md-nav__link">
+    solve_lambda()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.brueckner" class="md-nav__link">
+    brueckner()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.init_space" class="md-nav__link">
+    init_space()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.init_amps" class="md-nav__link">
+    init_amps()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.init_lams" class="md-nav__link">
+    init_lams()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.energy" class="md-nav__link">
+    energy()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.energy_perturbative" class="md-nav__link">
+    energy_perturbative()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.update_amps" class="md-nav__link">
+    update_amps()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.update_lams" class="md-nav__link">
+    update_lams()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_sing_b_dm" class="md-nav__link">
+    make_sing_b_dm()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_rdm1_b" class="md-nav__link">
+    make_rdm1_b()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_rdm1_f" class="md-nav__link">
+    make_rdm1_f()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_rdm2_f" class="md-nav__link">
+    make_rdm2_f()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_eb_coup_rdm" class="md-nav__link">
+    make_eb_coup_rdm()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.hbar_matvec_ip" class="md-nav__link">
+    hbar_matvec_ip()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.hbar_matvec_ea" class="md-nav__link">
+    hbar_matvec_ea()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.hbar_matvec_ee" class="md-nav__link">
+    hbar_matvec_ee()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_ip_mom_bras" class="md-nav__link">
+    make_ip_mom_bras()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_ea_mom_bras" class="md-nav__link">
+    make_ea_mom_bras()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_ee_mom_bras" class="md-nav__link">
+    make_ee_mom_bras()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_ip_mom_kets" class="md-nav__link">
+    make_ip_mom_kets()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_ea_mom_kets" class="md-nav__link">
+    make_ea_mom_kets()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_ee_mom_kets" class="md-nav__link">
+    make_ee_mom_kets()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_ip_1mom" class="md-nav__link">
+    make_ip_1mom()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.make_ea_1mom" class="md-nav__link">
+    make_ea_1mom()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.amplitudes_to_vector" class="md-nav__link">
+    amplitudes_to_vector()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.vector_to_amplitudes" class="md-nav__link">
+    vector_to_amplitudes()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.lambdas_to_vector" class="md-nav__link">
+    lambdas_to_vector()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.vector_to_lambdas" class="md-nav__link">
+    vector_to_lambdas()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.excitations_to_vector_ip" class="md-nav__link">
+    excitations_to_vector_ip()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.excitations_to_vector_ea" class="md-nav__link">
+    excitations_to_vector_ea()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.excitations_to_vector_ee" class="md-nav__link">
+    excitations_to_vector_ee()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.vector_to_excitations_ip" class="md-nav__link">
+    vector_to_excitations_ip()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.vector_to_excitations_ea" class="md-nav__link">
+    vector_to_excitations_ea()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.vector_to_excitations_ee" class="md-nav__link">
+    vector_to_excitations_ee()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.get_mean_field_G" class="md-nav__link">
+    get_mean_field_G()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.get_g" class="md-nav__link">
+    get_g()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.get_fock" class="md-nav__link">
+    get_fock()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.rebcc.REBCC.get_eris" class="md-nav__link">
+    get_eris()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  <h1>rebcc</h1>
+
+<div class="doc doc-object doc-module">
+
+
+<a id="ebcc.rebcc"></a>
+  <div class="doc doc-contents first">
+  
+      <p>Restricted electron-boson coupled cluster.</p>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 class="doc doc-heading" id="ebcc.rebcc.AbstractEBCC">
+        <code>ebcc.rebcc.AbstractEBCC</code>
+
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>Abstract base class for EBCC objects.</p>
+
+
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 class="doc doc-heading" id="ebcc.rebcc.Amplitudes">
+        <code>ebcc.rebcc.Amplitudes</code>
+
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code>dict</code></p>
+
+  
+      <p>Amplitude container class. Consists of a dictionary with keys
+that are strings of the name of each amplitude, and values are
+arrays whose dimension depends on the particular amplitude.</p>
+
+
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 class="doc doc-heading" id="ebcc.rebcc.ERIs">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">ERIs</span><span class="p">(</span><span class="n">ebcc</span><span class="p">,</span> <span class="n">array</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">slices</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mo_coeff</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code>types.<span title="types.SimpleNamespace">SimpleNamespace</span></code></p>
+
+  
+      <p>Electronic repulsion integral container class. Consists of a
+just-in-time namespace containing blocks of the integrals, with
+keys that are length-4 strings of <code>"o"</code> or <code>"v"</code> signifying
+whether the corresponding dimension is occupied or virtual.
+Additionally, capital letters letter <code>"O"</code> or <code>"V"</code> signify
+active orbitals, whereas lowercase correlated plus active.</p>
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.ERIs.__getattr__">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">ERIs</span><span class="o">.</span><span class="fm">__getattr__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Just-in-time attribute getter.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 class="doc doc-heading" id="ebcc.rebcc.Options">
+        <code>ebcc.rebcc.Options</code>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>Options for EBCC calculations.</p>
+
+  <p><strong>Attributes:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>shift</code></td>
+          <td>
+                <code>bool, optional</code>
+          </td>
+          <td><p>If <code>True</code>, shift the boson operators such that the Hamiltonian
+is normal-ordered with respect to a coherent state. This
+removes the bosonic coupling to the static mean-field density,
+introducing a constant energy shift. Default value is <code>True</code>.</p></td>
+        </tr>
+        <tr>
+          <td><code>e_tol</code></td>
+          <td>
+                <code>float, optional</code>
+          </td>
+          <td><p>Threshold for convergence in the correlation energy. Default
+value is 1e-8.</p></td>
+        </tr>
+        <tr>
+          <td><code>t_tol</code></td>
+          <td>
+                <code>float, optional</code>
+          </td>
+          <td><p>Threshold for convergence in the amplitude norm. Default value
+is 1e-8.</p></td>
+        </tr>
+        <tr>
+          <td><code>max_iter</code></td>
+          <td>
+                <code>int, optional</code>
+          </td>
+          <td><p>Maximum number of iterations. Default value is 200.</p></td>
+        </tr>
+        <tr>
+          <td><code>diis_space</code></td>
+          <td>
+                <code>int, optional</code>
+          </td>
+          <td><p>Number of amplitudes to use in DIIS extrapolation. Default
+value is 12.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 class="doc doc-heading" id="ebcc.rebcc.REBCC">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="p">(</span><span class="n">mf</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ansatz</span><span class="o">=</span><span class="s1">&#39;CCSD&#39;</span><span class="p">,</span> <span class="n">space</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">omega</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">G</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mo_coeff</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mo_occ</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">fock</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code><a class="autorefs autorefs-internal" title="ebcc.rebcc.AbstractEBCC" href="#ebcc.rebcc.AbstractEBCC">AbstractEBCC</a></code></p>
+
+  
+      <p>Restricted electron-boson coupled cluster class.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>mf</code></td>
+          <td>
+                <code>pyscf.<span title="pyscf.scf">scf</span>.<span title="pyscf.scf.hf">hf</span>.<span title="pyscf.scf.hf.SCF">SCF</span></code>
+          </td>
+          <td><p>PySCF mean-field object.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>log</code></td>
+          <td>
+                <code>logging.<span title="logging.Logger">Logger</span>, optional</code>
+          </td>
+          <td><p>Log to print output to. Default value is the global logger
+which outputs to <code>sys.stderr</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>ansatz</code></td>
+          <td>
+                <code>str or Ansatz, optional</code>
+          </td>
+          <td><p>Overall ansatz, as a string representation or an Ansatz
+object. If None, construct from the individual ansatz
+parameters, otherwise override them. Default value is None.</p></td>
+          <td>
+                <code>&#39;CCSD&#39;</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>space</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="ebcc.space.Space" href="../space/#ebcc.space.Space">Space</a>, optional</code>
+          </td>
+          <td><p>Space object defining the size of frozen, correlated and
+active fermionic spaces. If None, all fermionic degrees of
+freedom are assumed correlated. Default value is None.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>omega</code></td>
+          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span>(<a class="autorefs autorefs-internal" title="ebcc.rebcc.REBCC.nbos" href="#ebcc.rebcc.REBCC.nbos">nbos</a>), optional</code>
+          </td>
+          <td><p>Bosonic frequencies. Default value is None.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>g</code></td>
+          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span>(<a class="autorefs autorefs-internal" title="ebcc.rebcc.REBCC.nbos" href="#ebcc.rebcc.REBCC.nbos">nbos</a>, <span title="ebcc.rebcc.REBCC.nmo">nmo</span>, <span title="ebcc.rebcc.REBCC.nmo">nmo</span>), optional</code>
+          </td>
+          <td><p>Electron-boson coupling matrix corresponding to the bosonic
+annihilation operator i.e.</p>
+<p>.. math:: g_{xpq} p^\dagger q b</p>
+<p>The creation part is assume to be the fermionic transpose of
+this tensor to retain hermiticity in the overall Hamiltonian.
+Default value is None.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>G</code></td>
+          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span>(<a class="autorefs autorefs-internal" title="ebcc.rebcc.REBCC.nbos" href="#ebcc.rebcc.REBCC.nbos">nbos</a>), optional</code>
+          </td>
+          <td><p>Boson non-conserving term of the Hamiltonian i.e.</p>
+<p>.. math:: G_x (b^\dagger + b)</p>
+<p>Default value is None.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>mo_coeff</code></td>
+          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span>, optional</code>
+          </td>
+          <td><p>Molecular orbital coefficients. Default value is <code>mf.mo_coeff</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>mo_occ</code></td>
+          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span>, optional</code>
+          </td>
+          <td><p>Molecular orbital occupancies. Default value is <code>mf.mo_occ</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>fock</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="ebcc.util" href="../util/#ebcc.util">util</a>.<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../util/#ebcc.util.Namespace">Namespace</a>, optional</code>
+          </td>
+          <td><p>Fock input. Default value is calculated using <code>get_fock()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>options</code></td>
+          <td>
+                <code>dataclasses.<span title="dataclasses.dataclass">dataclass</span>, optional</code>
+          </td>
+          <td><p>Object containing the options. Default value is <code>Options</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>**kwargs</code></td>
+          <td>
+                <code>dict</code>
+          </td>
+          <td><p>Additional keyword arguments used to update <code>options</code>.</p></td>
+          <td>
+                <code>{}</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Attributes:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>mf</code></td>
+          <td>
+                <code>pyscf.<span title="pyscf.scf">scf</span>.<span title="pyscf.scf.hf">hf</span>.<span title="pyscf.scf.hf.SCF">SCF</span></code>
+          </td>
+          <td><p>PySCF mean-field object.</p></td>
+        </tr>
+        <tr>
+          <td><code>log</code></td>
+          <td>
+                <code>logging.<span title="logging.Logger">Logger</span></code>
+          </td>
+          <td><p>Log to print output to.</p></td>
+        </tr>
+        <tr>
+          <td><code>options</code></td>
+          <td>
+                <code>dataclasses.<span title="dataclasses.dataclass">dataclass</span></code>
+          </td>
+          <td><p>Object containing the options.</p></td>
+        </tr>
+        <tr>
+          <td><code>e_corr</code></td>
+          <td>
+                <code>float</code>
+          </td>
+          <td><p>Correlation energy.</p></td>
+        </tr>
+        <tr>
+          <td><code>amplitudes</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span></code>
+          </td>
+          <td><p>Cluster amplitudes.</p></td>
+        </tr>
+        <tr>
+          <td><code>lambdas</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span></code>
+          </td>
+          <td><p>Cluster lambda amplitudes.</p></td>
+        </tr>
+        <tr>
+          <td><code>converged</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td><p>Whether the coupled cluster equations converged.</p></td>
+        </tr>
+        <tr>
+          <td><code>converged_lambda</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td><p>Whether the lambda coupled cluster equations converged.</p></td>
+        </tr>
+        <tr>
+          <td><code>omega</code></td>
+          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span>(<a class="autorefs autorefs-internal" title="ebcc.rebcc.REBCC.nbos" href="#ebcc.rebcc.REBCC.nbos">nbos</a>)</code>
+          </td>
+          <td><p>Bosonic frequencies.</p></td>
+        </tr>
+        <tr>
+          <td><code>g</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="ebcc.util" href="../util/#ebcc.util">util</a>.<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../util/#ebcc.util.Namespace">Namespace</a></code>
+          </td>
+          <td><p>Namespace containing blocks of the electron-boson coupling
+matrix. Each attribute should be a length-3 string of <code>b</code>,
+<code>o</code> or <code>v</code> signifying whether the corresponding axis is
+bosonic, occupied or virtual.</p></td>
+        </tr>
+        <tr>
+          <td><code>G</code></td>
+          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span>(<a class="autorefs autorefs-internal" title="ebcc.rebcc.REBCC.nbos" href="#ebcc.rebcc.REBCC.nbos">nbos</a>)</code>
+          </td>
+          <td><p>Mean-field boson non-conserving term of the Hamiltonian.</p></td>
+        </tr>
+        <tr>
+          <td><code>bare_G</code></td>
+          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span>(<a class="autorefs autorefs-internal" title="ebcc.rebcc.REBCC.nbos" href="#ebcc.rebcc.REBCC.nbos">nbos</a>)</code>
+          </td>
+          <td><p>Boson non-conserving term of the Hamiltonian.</p></td>
+        </tr>
+        <tr>
+          <td><code>fock</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="ebcc.util" href="../util/#ebcc.util">util</a>.<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../util/#ebcc.util.Namespace">Namespace</a></code>
+          </td>
+          <td><p>Namespace containing blocks of the Fock matrix. Each
+attribute should be a length-2 string of <code>o</code> or <code>v</code>
+signifying whether the corresponding axis is occupied or
+virtual.</p></td>
+        </tr>
+        <tr>
+          <td><code>bare_fock</code></td>
+          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span>(<span title="ebcc.rebcc.REBCC.nmo">nmo</span>, <span title="ebcc.rebcc.REBCC.nmo">nmo</span>)</code>
+          </td>
+          <td><p>The mean-field Fock matrix in the MO basis.</p></td>
+        </tr>
+        <tr>
+          <td><code>xi</code></td>
+          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span>(<a class="autorefs autorefs-internal" title="ebcc.rebcc.REBCC.nbos" href="#ebcc.rebcc.REBCC.nbos">nbos</a>)</code>
+          </td>
+          <td><p>Shift in bosonic operators to diagonalise the phononic
+Hamiltonian.</p></td>
+        </tr>
+        <tr>
+          <td><code>const</code></td>
+          <td>
+                <code>float</code>
+          </td>
+          <td><p>Shift in the energy from moving to polaritonic basis.</p></td>
+        </tr>
+        <tr>
+          <td><code>name</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td><p>Name of the method.</p></td>
+        </tr>
+    </tbody>
+  </table>
+      <h4 id="ebcc.rebcc.REBCC--methods">Methods</h4>
+<p>init_amps(eris=None)
+    Initialise the amplitudes.
+init_lams(amplitudes=None)
+    Initialise the lambda amplitudes.
+kernel(eris=None)
+    Run the coupled cluster calculation.
+solve_lambda(amplitudes=None, eris=None)
+    Solve the lambda coupled cluster equations.
+energy(eris=None, amplitudes=None)
+    Compute the correlation energy.
+update_amps(eris=None, amplitudes=None)
+    Update the amplitudes.
+update_lams(eris=None, amplitudes=None, lambdas=None)
+    Update the lambda amplitudes.
+make_sing_b_dm(eris=None, amplitudes=None, lambdas=None)
+    Build the single boson density matrix.
+make_rdm1_b(eris=None, amplitudes=None, lambdas=None,
+            unshifted=None, hermitise=None)
+    Build the bosonic one-particle reduced density matrix.
+make_rdm1_f(eris=None, amplitudes=None, lambdas=None,
+            hermitise=None)
+    Build the fermionic one-particle reduced density matrix.
+make_rdm2_f(eris=None, amplitudes=None, lambdas=None,
+            hermitise=None)
+    Build the fermionic two-particle reduced density matrix.
+make_eb_coup_rdm(eris=None, amplitudes=None, lambdas=None,
+                 unshifted=True, hermitise=True)
+    Build the electron-boson coupling reduced density matrices.
+hbar_matvec_ip(r1, r2, eris=None, amplitudes=None)
+    Compute the product between a state vector and the EOM
+    Hamiltonian for the IP.
+hbar_matvec_ea(r1, r2, eris=None, amplitudes=None)
+    Compute the product between a state vector and the EOM
+    Hamiltonian for the EA.
+hbar_matvec_ee(r1, r2, eris=None, amplitudes=None)
+    Compute the product between a state vector and the EOM
+    Hamiltonian for the EE.
+make_ip_mom_bras(eris=None, amplitudes=None, lambdas=None)
+    Get the bra IP vectors to construct EOM moments.
+make_ea_mom_bras(eris=None, amplitudes=None, lambdas=None)
+    Get the bra EA vectors to construct EOM moments.
+make_ee_mom_bras(eris=None, amplitudes=None, lambdas=None)
+    Get the bra EE vectors to construct EOM moments.
+make_ip_mom_kets(eris=None, amplitudes=None, lambdas=None)
+    Get the ket IP vectors to construct EOM moments.
+make_ea_mom_kets(eris=None, amplitudes=None, lambdas=None)
+    Get the ket EA vectors to construct EOM moments.
+make_ee_mom_kets(eris=None, amplitudes=None, lambdas=None)
+    Get the ket EE vectors to construct EOM moments.
+amplitudes_to_vector(amplitudes)
+    Construct a vector containing all of the amplitudes used in
+    the given ansatz.
+vector_to_amplitudes(vector)
+    Construct all of the amplitudes used in the given ansatz from
+    a vector.
+lambdas_to_vector(lambdas)
+    Construct a vector containing all of the lambda amplitudes
+    used in the given ansatz.
+vector_to_lambdas(vector)
+    Construct all of the lambdas used in the given ansatz from a
+    vector.
+excitations_to_vector_ip(<em>excitations)
+    Construct a vector containing all of the excitation amplitudes
+    used in the given ansatz for the IP.
+excitations_to_vector_ea(</em>excitations)
+    Construct a vector containing all of the excitation amplitudes
+    used in the given ansatz for the EA.
+excitations_to_vector_ee(*excitations)
+    Construct a vector containing all of the excitation amplitudes
+    used in the given ansatz for the EE.
+vector_to_excitations_ip(vector)
+    Construct all of the excitation amplitudes used in the given
+    ansatz from a vector for the IP.
+vector_to_excitations_ea(vector)
+    Construct a vector containing all of the excitation amplitudes
+    used in the given ansatz for the EA.
+vector_to_excitations_ee(vector)
+    Construct a vector containing all of the excitation amplitudes
+    used in the given ansatz for the EE.
+get_mean_field_G()
+    Get the mean-field boson non-conserving term of the
+    Hamiltonian.
+get_g(g)
+    Get the blocks of the electron-boson coupling matrix
+    corresponding to the bosonic annihilation operator.
+get_fock()
+    Get the blocks of the Fock matrix, shifted due to bosons
+    where the ansatz requires.
+get_eris()
+    Get blocks of the ERIs.</p>
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.bare_fock">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">bare_fock</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the mean-field Fock matrix in the MO basis, including
+frozen parts.</p>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>bare_fock</code></td>          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span>(<span title="ebcc.rebcc.REBCC.nmo">nmo</span>, <span title="ebcc.rebcc.REBCC.nmo">nmo</span>)</code>
+          </td>
+          <td><p>The mean-field Fock matrix in the MO basis.</p></td>
+        </tr>
+    </tbody>
+  </table>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.xi">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">xi</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the shift in bosonic operators to diagonalise the
+phononic Hamiltonian.</p>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>xi</code></td>          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span>(<a class="autorefs autorefs-internal" title="ebcc.rebcc.REBCC.nbos" href="#ebcc.rebcc.REBCC.nbos">nbos</a>)</code>
+          </td>
+          <td><p>Shift in bosonic operators to diagonalise the phononic
+Hamiltonian.</p></td>
+        </tr>
+    </tbody>
+  </table>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.const">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">const</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the shift in the energy from moving to polaritonic
+basis.</p>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>const</code></td>          <td>
+                <code>float</code>
+          </td>
+          <td><p>Shift in the energy from moving to polaritonic basis.</p></td>
+        </tr>
+    </tbody>
+  </table>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.mo_coeff">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">mo_coeff</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the molecular orbital coefficients.</p>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>mo_coeff</code></td>          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span></code>
+          </td>
+          <td><p>Molecular orbital coefficients.</p></td>
+        </tr>
+    </tbody>
+  </table>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.mo_occ">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">mo_occ</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the molecular orbital occupancies.</p>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>mo_occ</code></td>          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span></code>
+          </td>
+          <td><p>Molecular orbital occupancies.</p></td>
+        </tr>
+    </tbody>
+  </table>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.nbos">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">nbos</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the number of bosonic degrees of freedom.</p>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>nbos</code></td>          <td>
+                <code>int</code>
+          </td>
+          <td><p>Number of bosonic degrees of freedom.</p></td>
+        </tr>
+    </tbody>
+  </table>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.eo">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">eo</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the diagonal of the occupied Fock matrix in MO basis,
+shifted due to bosons where the ansatz requires.</p>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>eo</code></td>          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span>(naocc)</code>
+          </td>
+          <td><p>Diagonal of the occupied Fock matrix in MO basis.</p></td>
+        </tr>
+    </tbody>
+  </table>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.ev">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">ev</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the diagonal of the virtual Fock matrix in MO basis,
+shifted due to bosons where the ansatz requires.</p>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>ev</code></td>          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span>(navir)</code>
+          </td>
+          <td><p>Diagonal of the virtual Fock matrix in MO basis.</p></td>
+        </tr>
+    </tbody>
+  </table>
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.e_tot">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">e_tot</span></code>
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Return the total energy (mean-field plus correlation).</p>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>e_tot</code></td>          <td>
+                <code>float</code>
+          </td>
+          <td><p>Total energy.</p></td>
+        </tr>
+    </tbody>
+  </table>
+  </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.kernel">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">kernel</span><span class="p">(</span><span class="n">eris</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Run the coupled cluster calculation.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>eris</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.ERIs">ERIs</span>, optional</code>
+          </td>
+          <td><p>Electronic repulsion integrals. Default value is generated
+using <code>self.get_eris()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>e_cc</code></td>          <td>
+                <code>float</code>
+          </td>
+          <td><p>Correlation energy.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.solve_lambda">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">solve_lambda</span><span class="p">(</span><span class="n">amplitudes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">eris</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Solve the lambda coupled cluster equations.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>eris</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.ERIs">ERIs</span>, optional</code>
+          </td>
+          <td><p>Electronic repulsion integrals. Default value is generated
+using <code>self.get_eris()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>amplitudes</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster amplitudes. Default value is generated using
+<code>self.init_amps()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.brueckner">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">brueckner</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Run the Brueckner orbital coupled cluster calculation.</p>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>e_cc</code></td>          <td>
+                <code>float</code>
+          </td>
+          <td><p>Correlation energy.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.init_space">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">init_space</span><span class="p">()</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Initialise the default Space object.</p>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>space</code></td>          <td>
+                <code><a class="autorefs autorefs-internal" title="ebcc.space.Space" href="../space/#ebcc.space.Space">Space</a></code>
+          </td>
+          <td><p>Space object in which all fermionic degrees of freedom are
+considered inactive.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.init_amps">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">init_amps</span><span class="p">(</span><span class="n">eris</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Initialise the amplitudes.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>eris</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.ERIs">ERIs</span>, optional</code>
+          </td>
+          <td><p>Electronic repulsion integrals. Default value is generated
+using <code>self.get_eris()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>amplitudes</code></td>          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span></code>
+          </td>
+          <td><p>Cluster amplitudes.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.init_lams">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">init_lams</span><span class="p">(</span><span class="n">amplitudes</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Initialise the lambda amplitudes.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>amplitudes</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster amplitudes. Default value is generated using
+<code>self.init_amps()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>lambdas</code></td>          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span></code>
+          </td>
+          <td><p>Updated cluster lambda amplitudes.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.energy">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">energy</span><span class="p">(</span><span class="n">eris</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Compute the correlation energy.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>eris</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.ERIs">ERIs</span>, optional</code>
+          </td>
+          <td><p>Electronic repulsion integrals. Default value is generated
+using <code>self.get_eris()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>amplitudes</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster amplitudes. Default value is generated using
+<code>self.init_amps()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>e_cc</code></td>          <td>
+                <code>float</code>
+          </td>
+          <td><p>Correlation energy.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.energy_perturbative">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">energy_perturbative</span><span class="p">(</span><span class="n">eris</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lambdas</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Compute the perturbative part to the correlation energy.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>eris</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.ERIs">ERIs</span>, optional</code>
+          </td>
+          <td><p>Electronic repulsion integrals. Default value is generated
+using <code>self.get_eris()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>amplitudes</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster amplitudes. Default value is generated using
+<code>self.init_amps()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>e_pert</code></td>          <td>
+                <code>float</code>
+          </td>
+          <td><p>Perturbative correction to the correlation energy.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.update_amps">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">update_amps</span><span class="p">(</span><span class="n">eris</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Update the amplitudes.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>eris</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.ERIs">ERIs</span>, optional</code>
+          </td>
+          <td><p>Electronic repulsion integrals. Default value is generated
+using <code>self.get_eris()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>amplitudes</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster amplitudes. Default value is generated using
+<code>self.init_amps()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>amplitudes</code></td>          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span></code>
+          </td>
+          <td><p>Updated cluster amplitudes.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.update_lams">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">update_lams</span><span class="p">(</span><span class="n">eris</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lambdas</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Update the lambda amplitudes.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>eris</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.ERIs">ERIs</span>, optional</code>
+          </td>
+          <td><p>Electronic repulsion integrals. Default value is generated
+using <code>self.get_eris()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>amplitudes</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster amplitudes. Default value is generated using
+<code>self.init_amps()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>lambdas</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster lambda amplitudes. Default value is generated
+using <code>self.init_lams()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>lambdas</code></td>          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span></code>
+          </td>
+          <td><p>Updated cluster lambda amplitudes.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.make_sing_b_dm">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">make_sing_b_dm</span><span class="p">(</span><span class="n">eris</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lambdas</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Build the single boson density matrix:</p>
+<p>..math :: \langle b^+ \rangle</p>
+<p>and</p>
+<p>..math :: \langle b \rangle</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>eris</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.ERIs">ERIs</span>, optional</code>
+          </td>
+          <td><p>Electronic repulsion integrals. Default value is generated
+using <code>self.get_eris()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>amplitudes</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster amplitudes. Default value is generated using
+<code>self.init_amps()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>lambdas</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster lambda amplitudes. Default value is generated
+using <code>self.init_lams()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>dm_b</code></td>          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span>(<a class="autorefs autorefs-internal" title="ebcc.rebcc.REBCC.nbos" href="#ebcc.rebcc.REBCC.nbos">nbos</a>)</code>
+          </td>
+          <td><p>Single boson density matrix.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.make_rdm1_b">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">make_rdm1_b</span><span class="p">(</span><span class="n">eris</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lambdas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">unshifted</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">hermitise</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Build the bosonic one-particle reduced density matrix:</p>
+<p>..math :: \langle b^+ b \rangle</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>eris</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.ERIs">ERIs</span>, optional</code>
+          </td>
+          <td><p>Electronic repulsion integrals. Default value is generated
+using <code>self.get_eris()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>amplitudes</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster amplitudes. Default value is generated using
+<code>self.init_amps()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>lambdas</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster lambda amplitudes. Default value is generated
+using <code>self.init_lams()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>unshifted</code></td>
+          <td>
+                <code>bool, optional</code>
+          </td>
+          <td><p>If <code>self.shift</code> is <code>True</code>, then <code>unshifted=True</code> applies
+the reverse transformation such that the bosonic operators
+are defined with respect to the unshifted bosons. Default
+value is True. Has no effect if <code>self.shift</code> is <code>False</code>.</p></td>
+          <td>
+                <code>True</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>hermitise</code></td>
+          <td>
+                <code>bool, optional</code>
+          </td>
+          <td><p>Force Hermiticity in the output. Default value is <code>True</code>.</p></td>
+          <td>
+                <code>True</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>rdm1_b</code></td>          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span>(<a class="autorefs autorefs-internal" title="ebcc.rebcc.REBCC.nbos" href="#ebcc.rebcc.REBCC.nbos">nbos</a>, <a class="autorefs autorefs-internal" title="ebcc.rebcc.REBCC.nbos" href="#ebcc.rebcc.REBCC.nbos">nbos</a>)</code>
+          </td>
+          <td><p>Bosonic one-particle reduced density matrix.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.make_rdm1_f">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">make_rdm1_f</span><span class="p">(</span><span class="n">eris</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lambdas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hermitise</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Build the fermionic one-particle reduced density matrix:</p>
+<p>..math :: \langle i^+ j \rangle</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>eris</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.ERIs">ERIs</span>, optional</code>
+          </td>
+          <td><p>Electronic repulsion integrals. Default value is generated
+using <code>self.get_eris()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>amplitudes</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster amplitudes. Default value is generated using
+<code>self.init_amps()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>lambdas</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster lambda amplitudes. Default value is generated
+using <code>self.init_lams()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>hermitise</code></td>
+          <td>
+                <code>bool, optional</code>
+          </td>
+          <td><p>Force Hermiticity in the output. Default value is <code>True</code>.</p></td>
+          <td>
+                <code>True</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>rdm1_f</code></td>          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span>(<span title="ebcc.rebcc.REBCC.nmo">nmo</span>, <span title="ebcc.rebcc.REBCC.nmo">nmo</span>)</code>
+          </td>
+          <td><p>Fermionic one-particle reduced density matrix.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.make_rdm2_f">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">make_rdm2_f</span><span class="p">(</span><span class="n">eris</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lambdas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hermitise</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Build the fermionic two-particle reduced density matrix:</p>
+<p>..math :: \Gamma_{ijkl} = \langle i^+ j^+ l k \rangle</p>
+<p>which is stored in Chemist's notation.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>eris</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.ERIs">ERIs</span>, optional</code>
+          </td>
+          <td><p>Electronic repulsion integrals. Default value is generated
+using <code>self.get_eris()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>amplitudes</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster amplitudes. Default value is generated using
+<code>self.init_amps()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>lambdas</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster lambda amplitudes. Default value is generated
+using <code>self.init_lams()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>hermitise</code></td>
+          <td>
+                <code>bool, optional</code>
+          </td>
+          <td><p>Force Hermiticity in the output. Default value is <code>True</code>.</p></td>
+          <td>
+                <code>True</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>rdm2_f</code></td>          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span>(<span title="ebcc.rebcc.REBCC.nmo">nmo</span>, <span title="ebcc.rebcc.REBCC.nmo">nmo</span>, <span title="ebcc.rebcc.REBCC.nmo">nmo</span>, <span title="ebcc.rebcc.REBCC.nmo">nmo</span>)</code>
+          </td>
+          <td><p>Fermionic two-particle reduced density matrix.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.make_eb_coup_rdm">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">make_eb_coup_rdm</span><span class="p">(</span><span class="n">eris</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lambdas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">unshifted</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">hermitise</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Build the electron-boson coupling reduced density matrices:</p>
+<p>..math :: \langle b^+ i^+ j \rangle</p>
+<p>and</p>
+<p>..math :: \langle b i^+ j \rangle</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>eris</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.ERIs">ERIs</span>, optional</code>
+          </td>
+          <td><p>Electronic repulsion integrals. Default value is generated
+using <code>self.get_eris()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>amplitudes</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster amplitudes. Default value is generated using
+<code>self.init_amps()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>lambdas</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster lambda amplitudes. Default value is generated
+using <code>self.init_lams()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>unshifted</code></td>
+          <td>
+                <code>bool, optional</code>
+          </td>
+          <td><p>If <code>self.shift</code> is <code>True</code>, then <code>unshifted=True</code> applies
+the reverse transformation such that the bosonic operators
+are defined with respect to the unshifted bosons. Default
+value is True. Has no effect if <code>self.shift</code> is <code>False</code>.</p></td>
+          <td>
+                <code>True</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>hermitise</code></td>
+          <td>
+                <code>bool, optional</code>
+          </td>
+          <td><p>Force Hermiticity in the output. Default value is <code>True</code>.</p></td>
+          <td>
+                <code>True</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>dm_eb</code></td>          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span>(2, <a class="autorefs autorefs-internal" title="ebcc.rebcc.REBCC.nbos" href="#ebcc.rebcc.REBCC.nbos">nbos</a>, <span title="ebcc.rebcc.REBCC.nmo">nmo</span>, <span title="ebcc.rebcc.REBCC.nmo">nmo</span>)</code>
+          </td>
+          <td><p>Electron-boson coupling reduce density matrices. First
+index corresponds to creation and second to annihilation
+of the bosonic index.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.hbar_matvec_ip">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">hbar_matvec_ip</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="n">eris</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Compute the product between a state vector and the EOM
+Hamiltonian for the IP.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>vectors</code></td>
+          <td>
+                <code>dict of (str, numpy.ndarray)</code>
+          </td>
+          <td><p>Dictionary containing the vectors in each sector. Keys are
+strings of the name of each vector, and values are arrays
+whose dimension depends on the particular sector.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>eris</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.ERIs">ERIs</span>, optional</code>
+          </td>
+          <td><p>Electronic repulsion integrals. Default value is generated
+using <code>self.get_eris()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>amplitudes</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster amplitudes. Default value is generated using
+<code>self.init_amps()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>vectors</code></td>          <td>
+                <code>dict of (str, numpy.ndarray)</code>
+          </td>
+          <td><p>Dictionary containing the vectors in each sector resulting
+from the matrix-vector product with the input vectors.
+Keys are strings of the name of each vector, and values
+are arrays whose dimension depends on the particular
+sector.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.hbar_matvec_ea">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">hbar_matvec_ea</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="n">eris</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Compute the product between a state vector and the EOM
+Hamiltonian for the EA.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>vectors</code></td>
+          <td>
+                <code>dict of (str, numpy.ndarray)</code>
+          </td>
+          <td><p>Dictionary containing the vectors in each sector. Keys are
+strings of the name of each vector, and values are arrays
+whose dimension depends on the particular sector.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>eris</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.ERIs">ERIs</span>, optional</code>
+          </td>
+          <td><p>Electronic repulsion integrals. Default value is generated
+using <code>self.get_eris()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>amplitudes</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster amplitudes. Default value is generated using
+<code>self.init_amps()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>vectors</code></td>          <td>
+                <code>dict of (str, numpy.ndarray)</code>
+          </td>
+          <td><p>Dictionary containing the vectors in each sector resulting
+from the matrix-vector product with the input vectors.
+Keys are strings of the name of each vector, and values
+are arrays whose dimension depends on the particular
+sector.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.hbar_matvec_ee">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">hbar_matvec_ee</span><span class="p">(</span><span class="n">r1</span><span class="p">,</span> <span class="n">r2</span><span class="p">,</span> <span class="n">eris</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Compute the product between a state vector and the EOM
+Hamiltonian for the EE.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>vectors</code></td>
+          <td>
+                <code>dict of (str, numpy.ndarray)</code>
+          </td>
+          <td><p>Dictionary containing the vectors in each sector. Keys are
+strings of the name of each vector, and values are arrays
+whose dimension depends on the particular sector.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>eris</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.ERIs">ERIs</span>, optional</code>
+          </td>
+          <td><p>Electronic repulsion integrals. Default value is generated
+using <code>self.get_eris()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>amplitudes</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster amplitudes. Default value is generated using
+<code>self.init_amps()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>vectors</code></td>          <td>
+                <code>dict of (str, numpy.ndarray)</code>
+          </td>
+          <td><p>Dictionary containing the vectors in each sector resulting
+from the matrix-vector product with the input vectors.
+Keys are strings of the name of each vector, and values
+are arrays whose dimension depends on the particular
+sector.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.make_ip_mom_bras">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">make_ip_mom_bras</span><span class="p">(</span><span class="n">eris</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lambdas</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the bra IP vectors to construct EOM moments.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>eris</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.ERIs">ERIs</span>, optional</code>
+          </td>
+          <td><p>Electronic repulsion integrals. Default value is generated
+using <code>self.get_eris()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>amplitudes</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster amplitudes. Default value is generated using
+<code>self.init_amps()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>lambdas</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster lambda amplitudes. Default value is generated
+using <code>self.init_lams()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>bras</code></td>          <td>
+                <code>dict of (str, numpy.ndarray)</code>
+          </td>
+          <td><p>Dictionary containing the bra vectors in each sector. Keys
+are strings of the name of each sector, and values are
+arrays whose dimension depends on the particular sector.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.make_ea_mom_bras">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">make_ea_mom_bras</span><span class="p">(</span><span class="n">eris</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lambdas</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the bra EA vectors to construct EOM moments.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>eris</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.ERIs">ERIs</span>, optional</code>
+          </td>
+          <td><p>Electronic repulsion integrals. Default value is generated
+using <code>self.get_eris()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>amplitudes</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster amplitudes. Default value is generated using
+<code>self.init_amps()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>lambdas</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster lambda amplitudes. Default value is generated
+using <code>self.init_lams()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>bras</code></td>          <td>
+                <code>dict of (str, numpy.ndarray)</code>
+          </td>
+          <td><p>Dictionary containing the bra vectors in each sector. Keys
+are strings of the name of each sector, and values are
+arrays whose dimension depends on the particular sector.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.make_ee_mom_bras">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">make_ee_mom_bras</span><span class="p">(</span><span class="n">eris</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lambdas</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the bra EE vectors to construct EOM moments.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>eris</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.ERIs">ERIs</span>, optional</code>
+          </td>
+          <td><p>Electronic repulsion integrals. Default value is generated
+using <code>self.get_eris()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>amplitudes</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster amplitudes. Default value is generated using
+<code>self.init_amps()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>lambdas</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster lambda amplitudes. Default value is generated
+using <code>self.init_lams()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>bras</code></td>          <td>
+                <code>dict of (str, numpy.ndarray)</code>
+          </td>
+          <td><p>Dictionary containing the bra vectors in each sector. Keys
+are strings of the name of each sector, and values are
+arrays whose dimension depends on the particular sector.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.make_ip_mom_kets">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">make_ip_mom_kets</span><span class="p">(</span><span class="n">eris</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lambdas</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the ket IP vectors to construct EOM moments.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>eris</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.ERIs">ERIs</span>, optional</code>
+          </td>
+          <td><p>Electronic repulsion integrals. Default value is generated
+using <code>self.get_eris()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>amplitudes</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster amplitudes. Default value is generated using
+<code>self.init_amps()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>lambdas</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster lambda amplitudes. Default value is generated
+using <code>self.init_lams()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>kets</code></td>          <td>
+                <code>dict of (str, numpy.ndarray)</code>
+          </td>
+          <td><p>Dictionary containing the ket vectors in each sector. Keys
+are strings of the name of each sector, and values are
+arrays whose dimension depends on the particular sector.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.make_ea_mom_kets">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">make_ea_mom_kets</span><span class="p">(</span><span class="n">eris</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lambdas</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the ket IP vectors to construct EOM moments.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>eris</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.ERIs">ERIs</span>, optional</code>
+          </td>
+          <td><p>Electronic repulsion integrals. Default value is generated
+using <code>self.get_eris()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>amplitudes</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster amplitudes. Default value is generated using
+<code>self.init_amps()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>lambdas</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster lambda amplitudes. Default value is generated
+using <code>self.init_lams()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>kets</code></td>          <td>
+                <code>dict of (str, numpy.ndarray)</code>
+          </td>
+          <td><p>Dictionary containing the ket vectors in each sector. Keys
+are strings of the name of each sector, and values are
+arrays whose dimension depends on the particular sector.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.make_ee_mom_kets">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">make_ee_mom_kets</span><span class="p">(</span><span class="n">eris</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lambdas</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the ket EE vectors to construct EOM moments.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>eris</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.ERIs">ERIs</span>, optional</code>
+          </td>
+          <td><p>Electronic repulsion integrals. Default value is generated
+using <code>self.get_eris()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>amplitudes</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster amplitudes. Default value is generated using
+<code>self.init_amps()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>lambdas</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster lambda amplitudes. Default value is generated
+using <code>self.init_lams()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>kets</code></td>          <td>
+                <code>dict of (str, numpy.ndarray)</code>
+          </td>
+          <td><p>Dictionary containing the ket vectors in each sector. Keys
+are strings of the name of each sector, and values are
+arrays whose dimension depends on the particular sector.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.make_ip_1mom">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">make_ip_1mom</span><span class="p">(</span><span class="n">eris</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lambdas</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Build the first fermionic hole single-particle moment.</p>
+<p>.. math:: T_{pq} = \langle c_p^+ (H - E_0) c_q \rangle</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>eris</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.ERIs">ERIs</span>, optional</code>
+          </td>
+          <td><p>Electronic repulsion integrals. Default value is generated
+using <code>self.get_eris()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>amplitudes</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster amplitudes. Default value is generated using
+<code>self.init_amps()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>lambdas</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster lambda amplitudes. Default value is generated
+using <code>self.init_lams()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>mom</code></td>          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span>(<span title="ebcc.rebcc.REBCC.nmo">nmo</span>, <span title="ebcc.rebcc.REBCC.nmo">nmo</span>)</code>
+          </td>
+          <td><p>Array of the first moment.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.make_ea_1mom">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">make_ea_1mom</span><span class="p">(</span><span class="n">eris</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lambdas</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Build the first fermionic particle single-particle moment.</p>
+<p>.. math:: T_{pq} = \langle c_p (H - E_0) c_q^+ \rangle</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>eris</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.ERIs">ERIs</span>, optional</code>
+          </td>
+          <td><p>Electronic repulsion integrals. Default value is generated
+using <code>self.get_eris()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>amplitudes</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster amplitudes. Default value is generated using
+<code>self.init_amps()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>lambdas</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster lambda amplitudes. Default value is generated
+using <code>self.init_lams()</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>mom</code></td>          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span>(<span title="ebcc.rebcc.REBCC.nmo">nmo</span>, <span title="ebcc.rebcc.REBCC.nmo">nmo</span>)</code>
+          </td>
+          <td><p>Array of the first moment.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.amplitudes_to_vector">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">amplitudes_to_vector</span><span class="p">(</span><span class="n">amplitudes</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Construct a vector containing all of the amplitudes used in
+the given ansatz.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>amplitudes</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster amplitudes. Default value is generated using
+<code>self.init_amps()</code>.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>vector</code></td>          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span></code>
+          </td>
+          <td><p>Single vector consisting of all the amplitudes flattened
+and concatenated. Size depends on the ansatz.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.vector_to_amplitudes">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">vector_to_amplitudes</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Construct all of the amplitudes used in the given ansatz
+from a vector.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>vector</code></td>
+          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span></code>
+          </td>
+          <td><p>Single vector consisting of all the amplitudes flattened
+and concatenated. Size depends on the ansatz.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>amplitudes</code></td>          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span></code>
+          </td>
+          <td><p>Cluster amplitudes.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.lambdas_to_vector">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">lambdas_to_vector</span><span class="p">(</span><span class="n">lambdas</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Construct a vector containing all of the lambda amplitudes
+used in the given ansatz.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>lambdas</code></td>
+          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span>, optional</code>
+          </td>
+          <td><p>Cluster lambda amplitudes. Default value is generated
+using <code>self.init_lams()</code>.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>vector</code></td>          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span></code>
+          </td>
+          <td><p>Single vector consisting of all the lambdas flattened
+and concatenated. Size depends on the ansatz.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.vector_to_lambdas">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">vector_to_lambdas</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Construct all of the lambdas used in the given ansatz
+from a vector.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>vector</code></td>
+          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span></code>
+          </td>
+          <td><p>Single vector consisting of all the lambdas flattened
+and concatenated. Size depends on the ansatz.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>lambdas</code></td>          <td>
+                <code><span title="ebcc.rebcc.REBCC.Amplitudes">Amplitudes</span></code>
+          </td>
+          <td><p>Cluster lambda amplitudes.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.excitations_to_vector_ip">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">excitations_to_vector_ip</span><span class="p">(</span><span class="o">*</span><span class="n">excitations</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Construct a vector containing all of the excitation
+amplitudes used in the given ansatz for the IP.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>*excitations</code></td>
+          <td>
+                <code>iterable of numpy.ndarray</code>
+          </td>
+          <td><p>Dictionary containing the excitations. Keys are strings of
+the name of each excitations, and values are arrays whose
+dimension depends on the particular excitation amplitude.</p></td>
+          <td>
+                <code>()</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>vector</code></td>          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span></code>
+          </td>
+          <td><p>Single vector consisting of all the excitations flattened
+and concatenated. Size depends on the ansatz.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.excitations_to_vector_ea">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">excitations_to_vector_ea</span><span class="p">(</span><span class="o">*</span><span class="n">excitations</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Construct a vector containing all of the excitation
+amplitudes used in the given ansatz for the EA.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>*excitations</code></td>
+          <td>
+                <code>iterable of numpy.ndarray</code>
+          </td>
+          <td><p>Dictionary containing the excitations. Keys are strings of
+the name of each excitations, and values are arrays whose
+dimension depends on the particular excitation amplitude.</p></td>
+          <td>
+                <code>()</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>vector</code></td>          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span></code>
+          </td>
+          <td><p>Single vector consisting of all the excitations flattened
+and concatenated. Size depends on the ansatz.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.excitations_to_vector_ee">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">excitations_to_vector_ee</span><span class="p">(</span><span class="o">*</span><span class="n">excitations</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Construct a vector containing all of the excitation
+amplitudes used in the given ansatz for the EE.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>*excitations</code></td>
+          <td>
+                <code>iterable of numpy.ndarray</code>
+          </td>
+          <td><p>Dictionary containing the excitations. Keys are strings of
+the name of each excitations, and values are arrays whose
+dimension depends on the particular excitation amplitude.</p></td>
+          <td>
+                <code>()</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>vector</code></td>          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span></code>
+          </td>
+          <td><p>Single vector consisting of all the excitations flattened
+and concatenated. Size depends on the ansatz.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.vector_to_excitations_ip">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">vector_to_excitations_ip</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Construct all of the excitation amplitudes used in the
+given ansatz from a vector for the IP.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>vector</code></td>
+          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span></code>
+          </td>
+          <td><p>Single vector consisting of all the excitations flattened
+and concatenated. Size depends on the ansatz.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>excitations</code></td>          <td>
+                <code>tuple of numpy.ndarray</code>
+          </td>
+          <td><p>Dictionary containing the excitations. Keys are strings of
+the name of each excitations, and values are arrays whose
+dimension depends on the particular excitation amplitude.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.vector_to_excitations_ea">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">vector_to_excitations_ea</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Construct a vector containing all of the excitation
+amplitudes used in the given ansatz for the EA.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>vector</code></td>
+          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span></code>
+          </td>
+          <td><p>Single vector consisting of all the excitations flattened
+and concatenated. Size depends on the ansatz.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>excitations</code></td>          <td>
+                <code>tuple of numpy.ndarray</code>
+          </td>
+          <td><p>Dictionary containing the excitations. Keys are strings of
+the name of each excitations, and values are arrays whose
+dimension depends on the particular excitation amplitude.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.vector_to_excitations_ee">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">vector_to_excitations_ee</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Construct a vector containing all of the excitation
+amplitudes used in the given ansatz for the EE.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>vector</code></td>
+          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span></code>
+          </td>
+          <td><p>Single vector consisting of all the excitations flattened
+and concatenated. Size depends on the ansatz.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>excitations</code></td>          <td>
+                <code>tuple of numpy.ndarray</code>
+          </td>
+          <td><p>Dictionary containing the excitations. Keys are strings of
+the name of each excitations, and values are arrays whose
+dimension depends on the particular excitation amplitude.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.get_mean_field_G">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">get_mean_field_G</span><span class="p">()</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the mean-field boson non-conserving term of the
+Hamiltonian.</p>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>G_mf</code></td>          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span>(<a class="autorefs autorefs-internal" title="ebcc.rebcc.REBCC.nbos" href="#ebcc.rebcc.REBCC.nbos">nbos</a>)</code>
+          </td>
+          <td><p>Mean-field boson non-conserving term of the Hamiltonian.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.get_g">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">get_g</span><span class="p">(</span><span class="n">g</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Get blocks of the electron-boson coupling matrix
+corresponding to the bosonic annihilation operator.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>g</code></td>
+          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span>(<a class="autorefs autorefs-internal" title="ebcc.rebcc.REBCC.nbos" href="#ebcc.rebcc.REBCC.nbos">nbos</a>, <span title="ebcc.rebcc.REBCC.nmo">nmo</span>, <span title="ebcc.rebcc.REBCC.nmo">nmo</span>)</code>
+          </td>
+          <td><p>Array of the electron-boson coupling matrix.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>g</code></td>          <td>
+                <code><a class="autorefs autorefs-internal" title="ebcc.util" href="../util/#ebcc.util">util</a>.<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../util/#ebcc.util.Namespace">Namespace</a></code>
+          </td>
+          <td><p>Namespace containing blocks of the electron-boson coupling
+matrix. Each attribute should be a length-3 string of
+<code>b</code>, <code>o</code> or <code>v</code> signifying whether the corresponding axis
+is bosonic, occupied or virtual.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.get_fock">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">get_fock</span><span class="p">()</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Get blocks of the Fock matrix, shifted due to bosons where
+the ansatz requires.</p>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>fock</code></td>          <td>
+                <code><a class="autorefs autorefs-internal" title="ebcc.util" href="../util/#ebcc.util">util</a>.<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../util/#ebcc.util.Namespace">Namespace</a></code>
+          </td>
+          <td><p>Namespace containing blocks of the Fock matrix. Each
+attribute should be a length-2 string of <code>o</code> or <code>v</code>
+signifying whether the corresponding axis is occupied or
+virtual.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.rebcc.REBCC.get_eris">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">rebcc</span><span class="o">.</span><span class="n">REBCC</span><span class="o">.</span><span class="n">get_eris</span><span class="p">(</span><span class="n">eris</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Get blocks of the ERIs.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>eris</code></td>
+          <td>
+                <code>np.ndarray or ERIs, optional.</code>
+          </td>
+          <td><p>Electronic repulsion integrals, either in the form of a
+dense array or an ERIs object. Default value is <code>None</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>eris</code></td>          <td>
+                <code><span title="ebcc.rebcc.REBCC.ERIs">ERIs</span>, optional</code>
+          </td>
+          <td><p>Electronic repulsion integrals. Default value is generated
+using <code>self.ERIs()</code>.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.ce72ebac.min.js"></script>
+      
+    
+  </body>
+</html>

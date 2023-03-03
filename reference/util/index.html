@@ -1,0 +1,1803 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../ansatz/">
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.1.0">
+    
+    
+      
+        <title>util - ebcc</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.402914a4.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.a0c5b2b5.min.css">
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="" data-md-color-accent="">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#ebcc.util" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="ebcc" class="md-header__button md-logo" aria-label="ebcc" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            ebcc
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              util
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="ebcc" class="md-nav__button md-logo" aria-label="ebcc" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54Z"/></svg>
+
+    </a>
+    ebcc
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        Home
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/" class="md-nav__link">
+        Features
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          Code Reference
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          Code Reference
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../rebcc/" class="md-nav__link">
+        rebcc
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../uebcc/" class="md-nav__link">
+        uebcc
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gebcc/" class="md-nav__link">
+        gebcc
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../reom/" class="md-nav__link">
+        reom
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ueom/" class="md-nav__link">
+        ueom
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../geom/" class="md-nav__link">
+        geom
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../brueckner/" class="md-nav__link">
+        brueckner
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../space/" class="md-nav__link">
+        space
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ansatz/" class="md-nav__link">
+        ansatz
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          util
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        util
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util" class="md-nav__link">
+    ebcc.util
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.Namespace" class="md-nav__link">
+    Namespace
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.Timer" class="md-nav__link">
+    Timer
+  </a>
+  
+    <nav class="md-nav" aria-label="Timer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.util.Timer.lap" class="md-nav__link">
+    lap()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.util.Timer.total" class="md-nav__link">
+    total()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.factorial" class="md-nav__link">
+    factorial()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.permute_string" class="md-nav__link">
+    permute_string()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.tril_indices_ndim" class="md-nav__link">
+    tril_indices_ndim()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.ntril_ndim" class="md-nav__link">
+    ntril_ndim()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.generate_spin_combinations" class="md-nav__link">
+    generate_spin_combinations()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.permutations_with_signs" class="md-nav__link">
+    permutations_with_signs()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.get_symmetry_factor" class="md-nav__link">
+    get_symmetry_factor()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.inherit_docstrings" class="md-nav__link">
+    inherit_docstrings()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.antisymmetrise_array" class="md-nav__link">
+    antisymmetrise_array()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.is_mixed_spin" class="md-nav__link">
+    is_mixed_spin()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.compress_axes" class="md-nav__link">
+    compress_axes()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.decompress_axes" class="md-nav__link">
+    decompress_axes()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.get_compressed_size" class="md-nav__link">
+    get_compressed_size()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.symmetrise" class="md-nav__link">
+    symmetrise()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.einsum" class="md-nav__link">
+    einsum()
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util" class="md-nav__link">
+    ebcc.util
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.Namespace" class="md-nav__link">
+    Namespace
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.Timer" class="md-nav__link">
+    Timer
+  </a>
+  
+    <nav class="md-nav" aria-label="Timer">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.util.Timer.lap" class="md-nav__link">
+    lap()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ebcc.util.Timer.total" class="md-nav__link">
+    total()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.factorial" class="md-nav__link">
+    factorial()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.permute_string" class="md-nav__link">
+    permute_string()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.tril_indices_ndim" class="md-nav__link">
+    tril_indices_ndim()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.ntril_ndim" class="md-nav__link">
+    ntril_ndim()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.generate_spin_combinations" class="md-nav__link">
+    generate_spin_combinations()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.permutations_with_signs" class="md-nav__link">
+    permutations_with_signs()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.get_symmetry_factor" class="md-nav__link">
+    get_symmetry_factor()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.inherit_docstrings" class="md-nav__link">
+    inherit_docstrings()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.antisymmetrise_array" class="md-nav__link">
+    antisymmetrise_array()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.is_mixed_spin" class="md-nav__link">
+    is_mixed_spin()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.compress_axes" class="md-nav__link">
+    compress_axes()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.decompress_axes" class="md-nav__link">
+    decompress_axes()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.get_compressed_size" class="md-nav__link">
+    get_compressed_size()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.symmetrise" class="md-nav__link">
+    symmetrise()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ebcc.util.einsum" class="md-nav__link">
+    einsum()
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  <h1>util</h1>
+
+<div class="doc doc-object doc-module">
+
+
+<a id="ebcc.util"></a>
+  <div class="doc doc-contents first">
+  
+      <p>Utility functions.</p>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 class="doc doc-heading" id="ebcc.util.Namespace">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">Namespace</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>Replacement for <code>SimpleNamespace</code>, which does not trivially allow
+conversion to a <code>dict</code> for heterogenously nested objects.</p>
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 class="doc doc-heading" id="ebcc.util.Timer">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">Timer</span><span class="p">()</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>Class for recording timings.</p>
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.util.Timer.lap">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">Timer</span><span class="o">.</span><span class="n">lap</span><span class="p">()</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Return the time elapsed since the previous call. Also
+aliased to <code>__call__</code>.</p>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 class="doc doc-heading" id="ebcc.util.Timer.total">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">Timer</span><span class="o">.</span><span class="n">total</span><span class="p">()</span></code>
+
+</h3>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Return the time elapsed since the initialisation.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 class="doc doc-heading" id="ebcc.util.factorial">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">factorial</span><span class="p">(</span><span class="n">n</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Compute the factorial of an integer.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>n</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td><p>Integer value.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>nfac</code></td>          <td>
+                <code>int</code>
+          </td>
+          <td><p>Factorial :math:<code>n!</code>.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 class="doc doc-heading" id="ebcc.util.permute_string">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">permute_string</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">permutation</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Permute a string.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>string</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td><p>Input string.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>permutation</code></td>
+          <td>
+                <code>iterable of int</code>
+          </td>
+          <td><p>Integer permutation.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 class="doc doc-heading" id="ebcc.util.tril_indices_ndim">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">tril_indices_ndim</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dims</span><span class="p">,</span> <span class="n">include_diagonal</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Return lower triangular indices for a multidimensional array.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>n</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td><p>Side length of array.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>dims</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td><p>Number of dimensions in the array.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>include_diagonal</code></td>
+          <td>
+                <code>bool, optional</code>
+          </td>
+          <td><p>Whether or not to include the diagonal in the triangle.</p></td>
+          <td>
+                <code>False</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>tril</code></td>          <td>
+                <code>tuple of numpy.ndarray</code>
+          </td>
+          <td><p>Indices for each dimension to extract the n-dimensional lower
+triangle.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 class="doc doc-heading" id="ebcc.util.ntril_ndim">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">ntril_ndim</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dims</span><span class="p">,</span> <span class="n">include_diagonal</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Return the number of elements in an n-dimensional lower triangle.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>n</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td><p>Side length of array.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>dims</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td><p>Number of dimensions in the array.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>include_diagonal</code></td>
+          <td>
+                <code>bool, optional</code>
+          </td>
+          <td><p>Whether or not to include the diagonal in the triangle.</p></td>
+          <td>
+                <code>False</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>count</code></td>          <td>
+                <code>int</code>
+          </td>
+          <td><p>Number of elements in the n-dimensional lower triangle.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 class="doc doc-heading" id="ebcc.util.generate_spin_combinations">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">generate_spin_combinations</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">excited</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Generate combinations of spin components for a given number
+of occupied and virtual axes.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>n</code></td>
+          <td>
+                <code>int</code>
+          </td>
+          <td><p>Order of cluster amplitude.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>excited</code></td>
+          <td>
+                <code>bool, optional</code>
+          </td>
+          <td><p>If True, treat the amplitudes as excited. Default value is
+<code>False</code>.</p></td>
+          <td>
+                <code>False</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Yields:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>spin</code></td>          <td>
+                <code>str</code>
+          </td>
+          <td><p>String of spin combination.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+<p><strong>Examples:</strong></p>
+    <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">generate_spin_combinations</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">[&#39;aa&#39;, &#39;bb&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">generate_spin_combinations</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="go">[&#39;aaaa&#39;, &#39;abab&#39;, &#39;baba&#39;, &#39;bbbb&#39;]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">generate_spin_combinations</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">excited</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="go">[&#39;aaa&#39;, &#39;aba&#39;, &#39;bab&#39;, &#39;bbb&#39;]</span>
+</code></pre></div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 class="doc doc-heading" id="ebcc.util.permutations_with_signs">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">permutations_with_signs</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Generate permutations of <code>seq</code>, yielding also a sign which is
+equal to +1 for an even number of swaps, and -1 for an odd number
+of swaps.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>seq</code></td>
+          <td>
+                <code>iterable</code>
+          </td>
+          <td><p>Sequence to permute.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>perms_and_signs</code></td>          <td>
+                <code>list of tuple of (iterable, int)</code>
+          </td>
+          <td><p>List of permutations of <code>seq</code>, where each permutation is a
+<code>tuple</code> of the permuted sequence and the associated sign.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 class="doc doc-heading" id="ebcc.util.get_symmetry_factor">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">get_symmetry_factor</span><span class="p">(</span><span class="o">*</span><span class="n">numbers</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Get a floating point value corresponding to the factor from
+the neglection of symmetry in repeated indices.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>numbers</code></td>
+          <td>
+                <code>tuple of int</code>
+          </td>
+          <td><p>Multiplicity of each distinct degree of freedom.</p></td>
+          <td>
+                <code>()</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+<p><strong>Examples:</strong></p>
+    <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">build_symmetry_factor</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="go">1.0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">build_symmetry_factor</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="go">0.25</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">build_symmetry_factor</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="go">0.125</span>
+</code></pre></div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 class="doc doc-heading" id="ebcc.util.inherit_docstrings">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">inherit_docstrings</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Decorator to inherit docstrings from superclass.</p>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 class="doc doc-heading" id="ebcc.util.antisymmetrise_array">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">antisymmetrise_array</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Antisymmetrise an array.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>v</code></td>
+          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span></code>
+          </td>
+          <td><p>Array to antisymmetrise.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>axes</code></td>
+          <td>
+                <code>tuple of int</code>
+          </td>
+          <td><p>Axes to perform the antisymmetrisation upon. Default value is
+<code>(0, 1)</code>.</p></td>
+          <td>
+                <code>(0, 1)</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+      <p>Returns
+v_as : numpy.ndarray
+    Antisymmetrised array.</p>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 class="doc doc-heading" id="ebcc.util.is_mixed_spin">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">is_mixed_spin</span><span class="p">(</span><span class="n">spin</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Return a boolean indicating if a list of spins are mixed.</p>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 class="doc doc-heading" id="ebcc.util.compress_axes">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">compress_axes</span><span class="p">(</span><span class="n">subscript</span><span class="p">,</span> <span class="n">array</span><span class="p">,</span> <span class="n">include_diagonal</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Compress an array into lower-triangular representations using
+an einsum-like input.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>subscript</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td><p>Einsum-like subscript, where repeated characters are considered
+part of the same set of indices to be compressed.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>array</code></td>
+          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span></code>
+          </td>
+          <td><p>Array to compress.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>include_diagonal</code></td>
+          <td>
+                <code>bool, optional</code>
+          </td>
+          <td><p>If <code>True</code>, include the diagonal elements in the compression.
+Default value is <code>False</code>.</p></td>
+          <td>
+                <code>False</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>array_flat</code></td>          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span></code>
+          </td>
+          <td><p>Compressed array, the number of dimensions will be equal to the
+number of unique characters in <code>subscript</code>, and the size of
+each dimension will correspond to the output of <code>ntril_ndim</code>
+for that particular set of indices.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+<p><strong>Examples:</strong></p>
+    <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">t2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">compress_axes</span><span class="p">(</span><span class="s2">&quot;iiaa&quot;</span><span class="p">,</span> <span class="n">t2</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(6, 45)</span>
+</code></pre></div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 class="doc doc-heading" id="ebcc.util.decompress_axes">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">decompress_axes</span><span class="p">(</span><span class="n">subscript</span><span class="p">,</span> <span class="n">array_flat</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include_diagonal</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">symmetry</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Reverse operation of <code>compress_axes</code>, subscript input is the
+same. The input symmetry is a string of the same length as
+subscript, with a "+" indicating symmetry and "-" antisymmetry.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>subscript</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td><p>Einsum-like subscript, where repeated characters are considered
+part of the same set of indices to be compressed.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>array_flat</code></td>
+          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span></code>
+          </td>
+          <td><p>Array to decompress.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>shape</code></td>
+          <td>
+                <code>tuple of int</code>
+          </td>
+          <td><p>Shape of the output array.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>include_diagonal</code></td>
+          <td>
+                <code>bool, optional</code>
+          </td>
+          <td><p>If <code>True</code>, include the diagonal elements in the compression.
+Default value is <code>False</code>.</p></td>
+          <td>
+                <code>False</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>symmetry</code></td>
+          <td>
+                <code>str, optional</code>
+          </td>
+          <td><p>Symmetry of the decompression. For each index in <code>subscript</code>,
+a <code>+</code> indcates symmetry and <code>-</code> indicates antisymmetry. The
+value of <code>symmetry</code> must be the same for repeated characters
+in the corresponding <code>subscript</code>.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>array</code></td>          <td>
+                <code>numpy.<span title="numpy.ndarray">ndarray</span></code>
+          </td>
+          <td><p>Decompressed array.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+<p><strong>Examples:</strong></p>
+    <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">t2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">6</span><span class="p">,</span> <span class="mi">45</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">decompress_axes</span><span class="p">(</span><span class="s2">&quot;iiaa&quot;</span><span class="p">,</span> <span class="n">t2</span><span class="p">,</span> <span class="n">symmetry</span><span class="o">=</span><span class="s2">&quot;----&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span>
+<span class="go">(4, 4, 10, 10)</span>
+</code></pre></div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 class="doc doc-heading" id="ebcc.util.get_compressed_size">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">get_compressed_size</span><span class="p">(</span><span class="n">subscript</span><span class="p">,</span> <span class="o">**</span><span class="n">sizes</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Get the size of a compressed representation of a matrix
+based on the subscript input to <code>compressed_axes</code> and the
+sizes of each character.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>subscript</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td><p>Einsum-like subscript, where repeated characters are considered
+part of the same set of indices to be compressed.</p></td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>**sizes</code></td>
+          <td>
+                <code>dict of </code>
+          </td>
+          <td><p>Sizes of each character in the subscript.</p></td>
+          <td>
+                <code>{}</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+<p><strong>Examples:</strong></p>
+    <div class="highlight"><pre><span></span><code><span class="gp">&gt;&gt;&gt; </span><span class="n">get_compressed_shape</span><span class="p">(</span><span class="s2">&quot;iiaa&quot;</span><span class="p">,</span> <span class="n">i</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="go">30</span>
+</code></pre></div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 class="doc doc-heading" id="ebcc.util.symmetrise">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">symmetrise</span><span class="p">(</span><span class="n">subscript</span><span class="p">,</span> <span class="n">array</span><span class="p">,</span> <span class="n">symmetry</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">apply_factor</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Enforce a symmetry in an array. <code>subscript</code> and <code>symmetry</code> are
+as <code>decompress_axes</code>.</p>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 class="doc doc-heading" id="ebcc.util.einsum">
+<code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="o">*</span><span class="n">operands</span><span class="p">,</span> <span class="n">symmetry</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+</h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Dispatch an einsum. If <code>symmetry</code>, then assume that all arrays
+are totally symmetric within occupied, virtual and bosonic
+sectors. If <code>symmetry</code> is an iterable, then it should provide
+permutations corresponding to each input array which give the
+desired symmetry.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "../..", "features": [], "search": "../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.ce72ebac.min.js"></script>
+      
+    
+  </body>
+</html>
