@@ -37,7 +37,7 @@ The implemented models are built upon the mean-field objects of
 
 """
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 import logging
 import os
