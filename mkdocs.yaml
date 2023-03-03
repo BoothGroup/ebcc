@@ -30,6 +30,7 @@ plugins:
 
 nav:
 - Home: "index.md"
+- Features: "features.md"
 - Code Reference:
   - rebcc: reference/rebcc.md
   - uebcc: reference/uebcc.md
