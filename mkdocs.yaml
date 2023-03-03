@@ -1,10 +1,43 @@
 site_name: ebcc
 
+watch:
+- ebcc
+
+theme:
+  name: material
+
 plugins:
+- search
+- gen-files:
+    scripts:
+    - docs/gen_files.py
+- section-index
+- include-markdown
 - mkdocstrings:
-    enabled: !ENV [ENABLE_MKDOCSTRINGS, true]
-    default_handler : python
-    handles:
+    default_handler: python
+    handlers:
         python:
-            options:
+            rendering:
                 show_source: false
+            options:
+                docstring_style: numpy
+                members_order: source
+                line_length: 72
+                merge_init_into_class: true
+                show_if_no_docstring: false
+                show_root_members_full_path: true
+                show_object_full_path: true
+
+nav:
+- Home: "index.md"
+- Code Reference:
+  - rebcc: reference/rebcc.md
+  - uebcc: reference/uebcc.md
+  - gebcc: reference/gebcc.md
+  - reom: reference/reom.md
+  - ueom: reference/ueom.md
+  - geom: reference/geom.md
+  - brueckner: reference/brueckner.md
+  - space: reference/space.md
+  - ansatz: reference/ansatz.md
+  - util: reference/util.md

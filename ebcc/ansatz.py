@@ -106,7 +106,7 @@ class Ansatz:
 
         Parameters
         ----------
-        input : str
+        string : str
             Input string
 
         Returns

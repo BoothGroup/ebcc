@@ -49,7 +49,14 @@ dev = [
     "pytest",
     "pytest-cov",
     "mkdocs",
+    "mkdocs-gen-files",
+    "mkdocs-section-index",
+    "mkdocs-autorefs",
+    "mkdocs-material",
+    "mkdocs-material-extensions",
+    "mkdocs-include-markdown-plugin",
     "mkdocstrings",
+    "mkdocstrings-python",
 ]
 
 [tool.black]

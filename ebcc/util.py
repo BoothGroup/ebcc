@@ -1,4 +1,4 @@
-"""Utilities.
+"""Utility functions.
 """
 
 import functools
@@ -25,8 +25,8 @@ ModelNotImplemented = NotImplementedError
 
 
 class Namespace:
-    """Replacement for SimpleNamespace, which does not trivially allow
-    conversion to a dict for heterogenously nested objects.
+    """Replacement for `SimpleNamespace`, which does not trivially allow
+    conversion to a `dict` for heterogenously nested objects.
     """
 
     def __init__(self, **kwargs):
@@ -62,24 +62,30 @@ class Namespace:
 
 
 class Timer:
+    """Class for recording timings.
+    """
+
     def __init__(self):
         self.t_init = time.perf_counter()
         self.t_prev = time.perf_counter()
         self.t_curr = time.perf_counter()
 
     def lap(self):
+        """Return the time elapsed since the previous call. Also
+        aliased to `__call__`.
+        """
         self.t_prev, self.t_curr = self.t_curr, time.perf_counter()
         return self.t_curr - self.t_prev
 
     __call__ = lap
 
     def total(self):
+        """Return the time elapsed since the initialisation.
+        """
         return time.perf_counter() - self.t_init
 
     @staticmethod
     def format_time(seconds, precision=2):
-        """Return a formatted time."""
-
         seconds, milliseconds = divmod(seconds, 1)
         milliseconds *= 1000
         minutes, seconds = divmod(seconds, 60)
@@ -99,7 +105,18 @@ class Timer:
 
 
 def factorial(n):
-    """Return the factorial of n."""
+    """Compute the factorial of an integer.
+
+    Parameters
+    ----------
+    n : int
+        Integer value.
+
+    Returns
+    -------
+    nfac : int
+        Factorial :math:`n!`.
+    """
 
     if n in (0, 1):
         return 1
@@ -108,12 +125,36 @@ def factorial(n):
 
 
 def permute_string(string, permutation):
-    """Permute a string."""
+    """Permute a string.
+
+    Parameters
+    ----------
+    string : str
+        Input string.
+    permutation : iterable of int
+        Integer permutation.
+    """
     return "".join([string[i] for i in permutation])
 
 
 def tril_indices_ndim(n, dims, include_diagonal=False):
-    """Return lower triangular indices for a multidimensional array."""
+    """Return lower triangular indices for a multidimensional array.
+
+    Parameters
+    ----------
+    n : int
+        Side length of array.
+    dims : int
+        Number of dimensions in the array.
+    include_diagonal : bool, optional
+        Whether or not to include the diagonal in the triangle.
+
+    Returns
+    -------
+    tril : tuple of numpy.ndarray
+        Indices for each dimension to extract the n-dimensional lower
+        triangle.
+    """
 
     ranges = [np.arange(n)] * dims
 
@@ -142,7 +183,22 @@ def tril_indices_ndim(n, dims, include_diagonal=False):
 
 
 def ntril_ndim(n, dims, include_diagonal=False):
-    """Return the number of elements in an n-dimensional lower triangle."""
+    """Return the number of elements in an n-dimensional lower triangle.
+
+    Parameters
+    ----------
+    n : int
+        Side length of array.
+    dims : int
+        Number of dimensions in the array.
+    include_diagonal : bool, optional
+        Whether or not to include the diagonal in the triangle.
+
+    Returns
+    -------
+    count : int
+        Number of elements in the n-dimensional lower triangle.
+    """
 
     # FIXME hack until this function is fixed:
     if include_diagonal:
@@ -197,9 +253,20 @@ def generate_spin_combinations(n, excited=False):
 
 
 def permutations_with_signs(seq):
-    """Generate permutations of seq, yielding also a sign which is
+    """Generate permutations of `seq`, yielding also a sign which is
     equal to +1 for an even number of swaps, and -1 for an odd number
     of swaps.
+
+    Parameters
+    ----------
+    seq : iterable
+        Sequence to permute.
+
+    Returns
+    -------
+    perms_and_signs : list of tuple of (iterable, int)
+        List of permutations of `seq`, where each permutation is a
+        `tuple` of the permuted sequence and the associated sign.
     """
 
     def _permutations(seq):
@@ -245,7 +312,7 @@ def get_symmetry_factor(*numbers):
 
 
 def inherit_docstrings(cls):
-    """Inherit docstring from superclass."""
+    """Decorator to inherit docstrings from superclass."""
 
     for name, func in inspect.getmembers(cls, inspect.isfunction):
         if not func.__doc__:
@@ -257,7 +324,20 @@ def inherit_docstrings(cls):
 
 
 def antisymmetrise_array(v, axes=(0, 1)):
-    """Antisymmetrise an array."""
+    """Antisymmetrise an array.
+
+    Parameters
+    ----------
+    v : numpy.ndarray
+        Array to antisymmetrise.
+    axes : tuple of int
+        Axes to perform the antisymmetrisation upon. Default value is
+        `(0, 1)`.
+
+    Returns
+    v_as : numpy.ndarray
+        Antisymmetrised array.
+    """
 
     v_as = np.zeros_like(v)
 
@@ -273,6 +353,8 @@ def antisymmetrise_array(v, axes=(0, 1)):
 
 
 def is_mixed_spin(spin):
+    """Return a boolean indicating if a list of spins are mixed.
+    """
     return len(set(spin)) != 1
 
 
@@ -280,6 +362,27 @@ def compress_axes(subscript, array, include_diagonal=False, out=None):
     """Compress an array into lower-triangular representations using
     an einsum-like input.
 
+    Parameters
+    ----------
+    subscript : str
+        Einsum-like subscript, where repeated characters are considered
+        part of the same set of indices to be compressed.
+    array : numpy.ndarray
+        Array to compress.
+    include_diagonal : bool, optional
+        If `True`, include the diagonal elements in the compression.
+        Default value is `False`.
+
+    Returns
+    -------
+    array_flat : numpy.ndarray
+        Compressed array, the number of dimensions will be equal to the
+        number of unique characters in `subscript`, and the size of
+        each dimension will correspond to the output of `ntril_ndim`
+        for that particular set of indices.
+
+    Examples
+    --------
     >>> t2 = np.zeros((4, 4, 10, 10))
     >>> compress_axes("iiaa", t2).shape
     (6, 45)
@@ -338,6 +441,35 @@ def decompress_axes(
     """Reverse operation of `compress_axes`, subscript input is the
     same. The input symmetry is a string of the same length as
     subscript, with a "+" indicating symmetry and "-" antisymmetry.
+
+    Parameters
+    ----------
+    subscript : str
+        Einsum-like subscript, where repeated characters are considered
+        part of the same set of indices to be compressed.
+    array_flat : numpy.ndarray
+        Array to decompress.
+    shape : tuple of int
+        Shape of the output array.
+    include_diagonal : bool, optional
+        If `True`, include the diagonal elements in the compression.
+        Default value is `False`.
+    symmetry : str, optional
+        Symmetry of the decompression. For each index in `subscript`,
+        a `+` indcates symmetry and `-` indicates antisymmetry. The
+        value of `symmetry` must be the same for repeated characters
+        in the corresponding `subscript`.
+
+    Returns
+    -------
+    array : numpy.ndarray
+        Decompressed array.
+
+    Examples
+    --------
+    >>> t2 = np.zeros((6, 45))
+    >>> decompress_axes("iiaa", t2, symmetry="----").shape
+    (4, 4, 10, 10)
     """
     # FIXME: if you pass out=array here, it doesn't work - it's not touching all parts of the array??
     #        --> I guess the diagonals actually!! set out to zero first if used as input.
@@ -426,6 +558,16 @@ def get_compressed_size(subscript, **sizes):
     based on the subscript input to `compressed_axes` and the
     sizes of each character.
 
+    Parameters
+    ----------
+    subscript : str
+        Einsum-like subscript, where repeated characters are considered
+        part of the same set of indices to be compressed.
+    **sizes : dict of {str: int}
+        Sizes of each character in the subscript.
+
+    Examples
+    --------
     >>> get_compressed_shape("iiaa", i=5, a=3)
     30
     """
