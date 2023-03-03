@@ -50,5 +50,5 @@ jobs:
         with:
           key: ${{ github.ref }}
           path: .cache
-      - run: mkdocs gh-deploy --force
-        if: matrix.documentation #&& github.ref == 'refs/heads/master'
+        run: mkdocs gh-deploy --force
+        if: matrix.documentation && github.ref == 'refs/heads/master'
