@@ -38,8 +38,7 @@ class UEOM(reom.REOM):
         kets = self.kets(eris=eris)
 
         moments = util.Namespace(
-            aa=np.zeros((nmom, self.nmo, self.nmo)),
-            bb=np.zeros((nmom, self.nmo, self.nmo)),
+            aa=np.zeros((nmom, self.nmo, self.nmo)), bb=np.zeros((nmom, self.nmo, self.nmo)),
         )
 
         for spin in util.generate_spin_combinations(1):

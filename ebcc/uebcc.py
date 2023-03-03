@@ -233,10 +233,7 @@ class UEBCC(rebcc.REBCC):
         # Build T amplitudes
         for n in self.ansatz.correlated_cluster_ranks[0]:
             if n == 1:
-                tn = util.Namespace(
-                    aa=self.fock.aa.vo.T / e_ia.aa,
-                    bb=self.fock.bb.vo.T / e_ia.bb,
-                )
+                tn = util.Namespace(aa=self.fock.aa.vo.T / e_ia.aa, bb=self.fock.bb.vo.T / e_ia.bb,)
                 amplitudes["t%d" % n] = tn
             elif n == 2:
                 e_ijab = util.Namespace(
@@ -286,10 +283,7 @@ class UEBCC(rebcc.REBCC):
                         aa=lib.direct_sum("ia-x->xia", e_ia.aa, self.omega),
                         bb=lib.direct_sum("ia-x->xia", e_ia.bb, self.omega),
                     )
-                    u1n = util.Namespace(
-                        aa=h.aa.bov / e_xia.aa,
-                        bb=h.bb.bov / e_xia.bb,
-                    )
+                    u1n = util.Namespace(aa=h.aa.bov / e_xia.aa, bb=h.bb.bov / e_xia.bb,)
                     amplitudes["u%d%d" % (nf, nb)] = u1n
                 else:
                     u1n = util.Namespace(
@@ -332,11 +326,7 @@ class UEBCC(rebcc.REBCC):
         return lambdas
 
     def update_amps(self, eris=None, amplitudes=None):
-        func, kwargs = self._load_function(
-            "update_amps",
-            eris=eris,
-            amplitudes=amplitudes,
-        )
+        func, kwargs = self._load_function("update_amps", eris=eris, amplitudes=amplitudes,)
         res = func(**kwargs)
         res = {key.rstrip("new"): val for key, val in res.items()}
 
@@ -385,10 +375,7 @@ class UEBCC(rebcc.REBCC):
 
     def update_lams(self, eris=None, amplitudes=None, lambdas=None):
         func, kwargs = self._load_function(
-            "update_lams",
-            eris=eris,
-            amplitudes=amplitudes,
-            lambdas=lambdas,
+            "update_lams", eris=eris, amplitudes=amplitudes, lambdas=lambdas,
         )
         res = func(**kwargs)
         res = {key.rstrip("new"): val for key, val in res.items()}
@@ -438,10 +425,7 @@ class UEBCC(rebcc.REBCC):
 
     def make_rdm1_f(self, eris=None, amplitudes=None, lambdas=None, hermitise=True):
         func, kwargs = self._load_function(
-            "make_rdm1_f",
-            eris=eris,
-            amplitudes=amplitudes,
-            lambdas=lambdas,
+            "make_rdm1_f", eris=eris, amplitudes=amplitudes, lambdas=lambdas,
         )
 
         dm = func(**kwargs)
@@ -454,10 +438,7 @@ class UEBCC(rebcc.REBCC):
 
     def make_rdm2_f(self, eris=None, amplitudes=None, lambdas=None, hermitise=True):
         func, kwargs = self._load_function(
-            "make_rdm2_f",
-            eris=eris,
-            amplitudes=amplitudes,
-            lambdas=lambdas,
+            "make_rdm2_f", eris=eris, amplitudes=amplitudes, lambdas=lambdas,
         )
 
         dm = func(**kwargs)
@@ -483,10 +464,7 @@ class UEBCC(rebcc.REBCC):
         self, eris=None, amplitudes=None, lambdas=None, unshifted=True, hermitise=True
     ):
         func, kwargs = self._load_function(
-            "make_eb_coup_rdm",
-            eris=eris,
-            amplitudes=amplitudes,
-            lambdas=lambdas,
+            "make_eb_coup_rdm", eris=eris, amplitudes=amplitudes, lambdas=lambdas,
         )
 
         dm_eb = func(**kwargs)
@@ -968,16 +946,10 @@ class UEBCC(rebcc.REBCC):
 
     @property
     def eo(self):
-        eo = util.Namespace(
-            a=np.diag(self.fock.aa.oo),
-            b=np.diag(self.fock.bb.oo),
-        )
+        eo = util.Namespace(a=np.diag(self.fock.aa.oo), b=np.diag(self.fock.bb.oo),)
         return eo
 
     @property
     def ev(self):
-        ev = util.Namespace(
-            a=np.diag(self.fock.aa.vv),
-            b=np.diag(self.fock.bb.vv),
-        )
+        ev = util.Namespace(a=np.diag(self.fock.aa.vv), b=np.diag(self.fock.bb.vv),)
         return ev

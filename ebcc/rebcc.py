@@ -777,11 +777,7 @@ class REBCC(AbstractEBCC):
             Correlation energy.
         """
 
-        func, kwargs = self._load_function(
-            "energy",
-            eris=eris,
-            amplitudes=amplitudes,
-        )
+        func, kwargs = self._load_function("energy", eris=eris, amplitudes=amplitudes,)
 
         return func(**kwargs)
 
@@ -804,10 +800,7 @@ class REBCC(AbstractEBCC):
         """
 
         func, kwargs = self._load_function(
-            "energy_perturbative",
-            eris=eris,
-            amplitudes=amplitudes,
-            lambdas=lambdas,
+            "energy_perturbative", eris=eris, amplitudes=amplitudes, lambdas=lambdas,
         )
 
         return func(**kwargs)
@@ -830,11 +823,7 @@ class REBCC(AbstractEBCC):
             Updated cluster amplitudes.
         """
 
-        func, kwargs = self._load_function(
-            "update_amps",
-            eris=eris,
-            amplitudes=amplitudes,
-        )
+        func, kwargs = self._load_function("update_amps", eris=eris, amplitudes=amplitudes,)
         res = func(**kwargs)
         res = {key.rstrip("new"): val for key, val in res.items()}
 
@@ -887,10 +876,7 @@ class REBCC(AbstractEBCC):
         """
 
         func, kwargs = self._load_function(
-            "update_lams",
-            eris=eris,
-            amplitudes=amplitudes,
-            lambdas=lambdas,
+            "update_lams", eris=eris, amplitudes=amplitudes, lambdas=lambdas,
         )
         res = func(**kwargs)
         res = {key.rstrip("new"): val for key, val in res.items()}
@@ -950,10 +936,7 @@ class REBCC(AbstractEBCC):
         """
 
         func, kwargs = self._load_function(
-            "make_sing_b_dm",
-            eris=eris,
-            amplitudes=amplitudes,
-            lambdas=lambdas,
+            "make_sing_b_dm", eris=eris, amplitudes=amplitudes, lambdas=lambdas,
         )
 
         return func(**kwargs)
@@ -989,10 +972,7 @@ class REBCC(AbstractEBCC):
         """
 
         func, kwargs = self._load_function(
-            "make_rdm1_b",
-            eris=eris,
-            amplitudes=amplitudes,
-            lambdas=lambdas,
+            "make_rdm1_b", eris=eris, amplitudes=amplitudes, lambdas=lambdas,
         )
 
         dm = func(**kwargs)
@@ -1003,7 +983,7 @@ class REBCC(AbstractEBCC):
         if unshifted and self.options.shift:
             dm_cre, dm_ann = self.make_sing_b_dm()
             xi = self.xi
-            dm[np.diag_indices_from(dm)] -= xi * (dm_cre + dm_ann) - xi**2
+            dm[np.diag_indices_from(dm)] -= xi * (dm_cre + dm_ann) - xi ** 2
 
         return dm
 
@@ -1033,10 +1013,7 @@ class REBCC(AbstractEBCC):
         """
 
         func, kwargs = self._load_function(
-            "make_rdm1_f",
-            eris=eris,
-            amplitudes=amplitudes,
-            lambdas=lambdas,
+            "make_rdm1_f", eris=eris, amplitudes=amplitudes, lambdas=lambdas,
         )
 
         dm = func(**kwargs)
@@ -1074,10 +1051,7 @@ class REBCC(AbstractEBCC):
         """
 
         func, kwargs = self._load_function(
-            "make_rdm2_f",
-            eris=eris,
-            amplitudes=amplitudes,
-            lambdas=lambdas,
+            "make_rdm2_f", eris=eris, amplitudes=amplitudes, lambdas=lambdas,
         )
 
         dm = func(**kwargs)
@@ -1127,10 +1101,7 @@ class REBCC(AbstractEBCC):
         """
 
         func, kwargs = self._load_function(
-            "make_eb_coup_rdm",
-            eris=eris,
-            amplitudes=amplitudes,
-            lambdas=lambdas,
+            "make_eb_coup_rdm", eris=eris, amplitudes=amplitudes, lambdas=lambdas,
         )
 
         dm_eb = func(**kwargs)
@@ -1175,11 +1146,7 @@ class REBCC(AbstractEBCC):
         # TODO generalise vectors input
 
         func, kwargs = self._load_function(
-            "hbar_matvec_ip",
-            eris=eris,
-            amplitudes=amplitudes,
-            r1=r1,
-            r2=r2,
+            "hbar_matvec_ip", eris=eris, amplitudes=amplitudes, r1=r1, r2=r2,
         )
 
         return func(**kwargs)
@@ -1212,11 +1179,7 @@ class REBCC(AbstractEBCC):
         """
 
         func, kwargs = self._load_function(
-            "hbar_matvec_ea",
-            eris=eris,
-            amplitudes=amplitudes,
-            r1=r1,
-            r2=r2,
+            "hbar_matvec_ea", eris=eris, amplitudes=amplitudes, r1=r1, r2=r2,
         )
 
         return func(**kwargs)
@@ -1249,11 +1212,7 @@ class REBCC(AbstractEBCC):
         """
 
         func, kwargs = self._load_function(
-            "hbar_matvec_ee",
-            eris=eris,
-            amplitudes=amplitudes,
-            r1=r1,
-            r2=r2,
+            "hbar_matvec_ee", eris=eris, amplitudes=amplitudes, r1=r1, r2=r2,
         )
 
         return func(**kwargs)
@@ -1282,10 +1241,7 @@ class REBCC(AbstractEBCC):
         """
 
         func, kwargs = self._load_function(
-            "make_ip_mom_bras",
-            eris=eris,
-            amplitudes=amplitudes,
-            lambdas=lambdas,
+            "make_ip_mom_bras", eris=eris, amplitudes=amplitudes, lambdas=lambdas,
         )
 
         return func(**kwargs)
@@ -1314,10 +1270,7 @@ class REBCC(AbstractEBCC):
         """
 
         func, kwargs = self._load_function(
-            "make_ea_mom_bras",
-            eris=eris,
-            amplitudes=amplitudes,
-            lambdas=lambdas,
+            "make_ea_mom_bras", eris=eris, amplitudes=amplitudes, lambdas=lambdas,
         )
 
         return func(**kwargs)
@@ -1346,10 +1299,7 @@ class REBCC(AbstractEBCC):
         """
 
         func, kwargs = self._load_function(
-            "make_ee_mom_bras",
-            eris=eris,
-            amplitudes=amplitudes,
-            lambdas=lambdas,
+            "make_ee_mom_bras", eris=eris, amplitudes=amplitudes, lambdas=lambdas,
         )
 
         return func(**kwargs)
@@ -1378,10 +1328,7 @@ class REBCC(AbstractEBCC):
         """
 
         func, kwargs = self._load_function(
-            "make_ip_mom_kets",
-            eris=eris,
-            amplitudes=amplitudes,
-            lambdas=lambdas,
+            "make_ip_mom_kets", eris=eris, amplitudes=amplitudes, lambdas=lambdas,
         )
 
         return func(**kwargs)
@@ -1410,10 +1357,7 @@ class REBCC(AbstractEBCC):
         """
 
         func, kwargs = self._load_function(
-            "make_ea_mom_kets",
-            eris=eris,
-            amplitudes=amplitudes,
-            lambdas=lambdas,
+            "make_ea_mom_kets", eris=eris, amplitudes=amplitudes, lambdas=lambdas,
         )
 
         return func(**kwargs)
@@ -1442,10 +1386,7 @@ class REBCC(AbstractEBCC):
         """
 
         func, kwargs = self._load_function(
-            "make_ee_mom_kets",
-            eris=eris,
-            amplitudes=amplitudes,
-            lambdas=lambdas,
+            "make_ee_mom_kets", eris=eris, amplitudes=amplitudes, lambdas=lambdas,
         )
 
         return func(**kwargs)
@@ -1998,7 +1939,7 @@ class REBCC(AbstractEBCC):
             Shift in the energy from moving to polaritonic basis.
         """
         if self.options.shift:
-            return lib.einsum("I,I->", self.omega, self.xi**2)
+            return lib.einsum("I,I->", self.omega, self.xi ** 2)
         else:
             return 0.0
 

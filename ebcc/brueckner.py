@@ -59,11 +59,7 @@ class BruecknerREBCC:
     Options = Options
 
     def __init__(
-        self,
-        cc: "AbstractEBCC",
-        log: logging.Logger = None,
-        options: Options = None,
-        **kwargs,
+        self, cc: "AbstractEBCC", log: logging.Logger = None, options: Options = None, **kwargs,
     ):
         # Options:
         if options is None:
@@ -271,12 +267,7 @@ class BruecknerUEBCC(BruecknerREBCC):
         if t1 is None:
             t1 = self.cc.t1
         if u_tot is None:
-            u_tot = np.array(
-                [
-                    np.eye(self.cc.space[0].ncorr),
-                    np.eye(self.cc.space[1].ncorr),
-                ]
-            )
+            u_tot = np.array([np.eye(self.cc.space[0].ncorr), np.eye(self.cc.space[1].ncorr),])
 
         t1_block = np.array(
             [
@@ -295,12 +286,7 @@ class BruecknerUEBCC(BruecknerREBCC):
             ]
         )
 
-        u = np.array(
-            [
-                scipy.linalg.expm(t1_block[0]),
-                scipy.linalg.expm(t1_block[1]),
-            ]
-        )
+        u = np.array([scipy.linalg.expm(t1_block[0]), scipy.linalg.expm(t1_block[1]),])
 
         u_tot = util.einsum("npq,nqi->npi", u_tot, u)
         if scipy.linalg.det(u_tot[0]) < 0:
@@ -308,21 +294,11 @@ class BruecknerUEBCC(BruecknerREBCC):
         if scipy.linalg.det(u_tot[1]) < 0:
             u_tot[1][:, 0] *= -1
 
-        a = np.array(
-            [
-                scipy.linalg.logm(u_tot[0]),
-                scipy.linalg.logm(u_tot[1]),
-            ]
-        )
+        a = np.array([scipy.linalg.logm(u_tot[0]), scipy.linalg.logm(u_tot[1]),])
         if diis is not None:
             a = diis.update(a, xerr=np.array([t1.aa, t1.bb]))
 
-        u_tot = np.array(
-            [
-                scipy.linalg.expm(a[0]),
-                scipy.linalg.expm(a[1]),
-            ]
-        )
+        u_tot = np.array([scipy.linalg.expm(a[0]), scipy.linalg.expm(a[1]),])
 
         return u, u_tot
 
@@ -359,12 +335,7 @@ class BruecknerUEBCC(BruecknerREBCC):
         if amplitudes is None:
             amplitudes = self.cc.amplitudes
 
-        return np.linalg.norm(
-            [
-                amplitudes["t1"].aa.ravel(),
-                amplitudes["t1"].bb.ravel(),
-            ]
-        )
+        return np.linalg.norm([amplitudes["t1"].aa.ravel(), amplitudes["t1"].bb.ravel(),])
 
     def mo_to_correlated(self, mo_coeff):
         return (
