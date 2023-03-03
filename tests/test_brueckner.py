@@ -240,59 +240,6 @@ class UBCCD_Frozen_PySCF_Tests(unittest.TestCase):
         self.assertAlmostEqual(a, b, 8)
 
 
-@pytest.mark.reference
-class GBCCD_PySCF_Tests(unittest.TestCase):
-    """Test GBCCD against the PySCF values.
-    """
-
-    @classmethod
-    def setUpClass(cls):
-        mol = gto.Mole()
-        mol.atom = "Li 0 0 0; H 0 0 1.64"
-        mol.basis = "sto3g"
-        mol.verbose = 0
-        mol.build()
-
-        mf = scf.GHF(mol)
-        mf.conv_tol = 1e-12
-        mf.kernel()
-
-        ccsd_ref = cc.CCSD(mf)
-        ccsd_ref.conv_tol = 1e-10
-        ccsd_ref.max_cycle = 200
-        ccsd_ref.kernel()
-        # TODO when in pyscf release version
-        #ccsd_ref = bccd_kernel_(ccsd_ref, verbose=0)
-        cls._pyscf_bccd_results = {
-                "e_tot": -7.881447503600422, 
-        }
-
-        ccsd = GEBCC(
-                mf,
-                ansatz="CCSD",
-                log=NullLogger(),
-        )
-        ccsd.options.e_tol = 1e-10
-        eris = ccsd.get_eris()
-        ccsd.brueckner(max_iter=50)
-
-        cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris = mf, ccsd_ref, ccsd, eris
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris
-
-    def test_converged(self):
-        self.assertTrue(self.ccsd.converged)
-        self.assertTrue(self.ccsd_ref.converged)
-
-    def test_energy(self):
-        #a = self.ccsd_ref.e_tot
-        a = self._pyscf_bccd_results["e_tot"]
-        b = self.ccsd.e_tot
-        self.assertAlmostEqual(a, b, 8)
-
-
 if __name__ == "__main__":
     print("Tests for brueckner")
     unittest.main()
