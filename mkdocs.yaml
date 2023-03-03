@@ -1,0 +1,10 @@
+site_name: ebcc
+
+plugins:
+- mkdocstrings:
+    enabled: !ENV [ENABLE_MKDOCSTRINGS, true]
+    default_handler : python
+    handles:
+        python:
+            options:
+                show_source: false

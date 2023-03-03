@@ -48,6 +48,8 @@ dev = [
     "coverage[toml]",
     "pytest",
     "pytest-cov",
+    "mkdocs",
+    "mkdocstrings",
 ]
 
 [tool.black]
