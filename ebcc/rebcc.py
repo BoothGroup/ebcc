@@ -519,6 +519,13 @@ class REBCC(AbstractEBCC):
         if amplitudes is None:
             amplitudes = self.init_amps(eris=eris)
 
+        # If needed, precompute the perturbative part of the lambda
+        # amplitudes:
+        if self.ansatz.has_perturbative_correction:
+            lambdas_pert = self.update_lams(eris=eris, amplitudes=amplitudes, perturbative=True)
+        else:
+            lambdas_pert = None
+
         # Get the lambda amplitude guesses:
         if self.lambdas is None:
             lambdas = self.init_lams(amplitudes=amplitudes)
@@ -536,7 +543,12 @@ class REBCC(AbstractEBCC):
         for niter in range(1, self.options.max_iter + 1):
             # Update the lambda amplitudes, extrapolate with DIIS and calculate change:
             lambdas_prev = lambdas
-            lambdas = self.update_lams(amplitudes=amplitudes, lambdas=lambdas, eris=eris)
+            lambdas = self.update_lams(
+                    amplitudes=amplitudes,
+                    lambdas=lambdas,
+                    lambdas_pert=lambdas_pert,
+                    eris=eris,
+            )
             vector = self.lambdas_to_vector(lambdas)
             vector = diis.update(vector)
             lambdas = self.vector_to_lambdas(vector)
@@ -604,7 +616,7 @@ class REBCC(AbstractEBCC):
             if lambdas is None:
                 lambdas = self.lambdas
             if lambdas is None:
-                self.log.warning("No lambda amplitudes found, guesses will be used.")
+                self.log.warning("Using Λ = T* for %s", name)
                 lambdas = self.init_lams(amplitudes=amplitudes)
             dicts.append(lambdas)
 
@@ -865,7 +877,7 @@ class REBCC(AbstractEBCC):
 
         return res
 
-    def update_lams(self, eris=None, amplitudes=None, lambdas=None):
+    def update_lams(self, eris=None, amplitudes=None, lambdas=None, lambdas_pert=None, perturbative=False):
         """Update the lambda amplitudes.
 
         Parameters
@@ -879,6 +891,9 @@ class REBCC(AbstractEBCC):
         lambdas : Amplitudes, optional
             Cluster lambda amplitudes. Default value is generated
             using `self.init_lams()`.
+        perturbative : bool, optional
+            Whether to compute the perturbative part of the lambda
+            amplitudes. Default value is `False`.
 
         Returns
         -------
@@ -886,8 +901,11 @@ class REBCC(AbstractEBCC):
             Updated cluster lambda amplitudes.
         """
 
+        if lambdas_pert is not None:
+            lambdas.update(lambdas_pert)
+
         func, kwargs = self._load_function(
-            "update_lams",
+            "update_lams%s" % ("_perturbative" if perturbative else ""),
             eris=eris,
             amplitudes=amplitudes,
             lambdas=lambdas,
@@ -903,13 +921,15 @@ class REBCC(AbstractEBCC):
             d = functools.reduce(np.add.outer, [e_ai] * n)
             d = d.transpose(perm)
             res["l%d" % n] /= d
-            res["l%d" % n] += lambdas["l%d" % n]
+            if not perturbative:
+                res["l%d" % n] += lambdas["l%d" % n]
 
         # Divide S amplitudes:
         for n in self.ansatz.correlated_cluster_ranks[1]:
             d = functools.reduce(np.add.outer, [-self.omega] * n)
             res["ls%d" % n] /= d
-            res["ls%d" % n] += lambdas["ls%d" % n]
+            if not perturbative:
+                res["ls%d" % n] += lambdas["ls%d" % n]
 
         # Divide U amplitudes:
         for nf in self.ansatz.correlated_cluster_ranks[2]:
@@ -918,7 +938,11 @@ class REBCC(AbstractEBCC):
             for nb in self.ansatz.correlated_cluster_ranks[3]:
                 d = functools.reduce(np.add.outer, ([-self.omega] * nb) + ([e_ai] * nf))
                 res["lu%d%d" % (nf, nb)] /= d
-                res["lu%d%d" % (nf, nb)] += lambdas["lu%d%d" % (nf, nb)]
+                if not perturbative:
+                    res["lu%d%d" % (nf, nb)] += lambdas["lu%d%d" % (nf, nb)]
+
+        if perturbative:
+            res = {key+"pert": val for key, val in res.items()}
 
         return res
 
