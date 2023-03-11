@@ -383,12 +383,13 @@ class UEBCC(rebcc.REBCC):
 
         return res
 
-    def update_lams(self, eris=None, amplitudes=None, lambdas=None):
+    def update_lams(self, eris=None, amplitudes=None, lambdas=None, lambdas_pert=None):
         func, kwargs = self._load_function(
             "update_lams",
             eris=eris,
             amplitudes=amplitudes,
             lambdas=lambdas,
+            lambdas_pert=lambdas_pert,
         )
         res = func(**kwargs)
         res = {key.rstrip("new"): val for key, val in res.items()}
