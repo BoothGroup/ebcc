@@ -2,13 +2,13 @@
 """
 
 import itertools
-from ebcc.codegen import common
+from ebcc.codegen import common_no_qwick as common
 import qccg
 from qccg import index, tensor, read, write
 import pdaggerq
 
 # Spin integration mode
-spin = "rhf"
+spin = "uhf"
 
 # pdaggerq setup
 pq = pdaggerq.pq_helper("fermi")
@@ -18,7 +18,7 @@ pq.set_print_level(0)
 FunctionPrinter = common.get_function_printer(spin)
 timer = common.Stopwatch()
 
-with common.FilePrinter("%sCCSD" % spin[0].upper()) as file_printer:
+with common.FilePrinter("%sCCSD_test" % spin[0].upper()) as file_printer:
     # Get energy expression:
     with FunctionPrinter(
             file_printer,
@@ -426,3 +426,134 @@ with common.FilePrinter("%sCCSD" % spin[0].upper()) as file_printer:
 
         if spin == "ghf":
             function_printer.write_python("    rdm2_f = rdm2_f.swapaxes(1, 2)\n")
+
+    ## Get IP and EA EOM hamiltonian-vector product expressions:
+    #for ip, ip_name in [(True, "ip"), (False, "ea")]:
+    #    with FunctionPrinter(
+    #            file_printer,
+    #            "hbar_matvec_%s" % ip_name,
+    #            ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2", "r1", "r2"],
+    #            ["r1new", "r2new"],
+    #            spin_cases={
+    #                "r1new": ["a", "b"],
+    #                "r2new": ["aaa", "aba", "bab", "bbb"],
+    #            },
+    #            return_dict=False,
+    #            timer=timer,
+    #    ) as function_printer:
+    #        from fractions import Fraction
+    #        from qwick.expression import AExpression
+    #        from qwick.wick import apply_wick
+    #        from qwick.convenience import one_e, two_e, E1, E2, commute
+    #        from qwick.convenience import braEip1, braEip2, braEea1, braEea2
+    #        from qwick.convenience import Eip1, Eip2, Eea1, Eea2
+
+    #        H1 = one_e("f", ["occ", "vir"], norder=True)
+    #        H2 = two_e("v", ["occ", "vir"], norder=True)
+    #        H = H1 + H2
+
+    #        if ip:
+    #            bra1 = braEip1("occ")
+    #            bra2 = braEip2("occ", "occ", "vir")
+    #        else:
+    #            bra1 = braEea1("vir")
+    #            bra2 = braEea2("occ", "vir", "vir")
+    #        T1 = E1("t", ["occ"], ["vir"])
+    #        T2 = E2("t", ["occ"], ["vir"])
+    #        T = T1 + T2
+
+    #        if ip:
+    #            R1 = Eip1("r", ["occ"])
+    #            R2 = Eip2("r", ["occ"], ["vir"])
+    #        else:
+    #            R1 = Eea1("r", ["vir"])
+    #            R2 = Eea2("r", ["occ"], ["vir"])
+    #        R = R1 + R2
+
+    #        HT = commute(H, T)
+    #        HTT = commute(HT, T)
+    #        HTTT = commute(HTT, T)
+    #        HTTTT = commute(HTTT, T)
+    #        Hbar = H + HT + Fraction('1/2')*HTT
+
+    #        S0 = Hbar
+    #        E0 = apply_wick(S0)
+    #        E0.resolve()
+
+    #        Hbar += Fraction('1/6')*HTTT + Fraction('1/24')*HTTTT
+
+    #        out = apply_wick(bra1 * (Hbar - E0) * R)
+    #        out.resolve()
+    #        terms_r1 = repr(AExpression(Ex=out))
+
+    #        out = apply_wick(bra2 * (Hbar - E0) * R)
+    #        out.resolve()
+    #        terms_r2 = repr(AExpression(Ex=out))
+
+    #        expressions = []
+    #        outputs = []
+    #        for n, terms in enumerate([terms_r1, terms_r2]):
+    #            if spin == "ghf":
+    #                spins_lower_list = [(None,) * (n+1 if ip else n)]
+    #                spins_upper_list = [(None,) * (n if ip else n+1)]
+    #            elif spin == "rhf":
+    #                spins = "a" if n == 0 else "aba"
+    #                spins_lower_list = [tuple(spins)[:(n+1 if ip else n)]]
+    #                spins_upper_list = [tuple(spins)[(n+1 if ip else n):]]
+    #            elif spin == "uhf":
+    #                spins = ["a", "b"] if n == 0 else ["aaa", "aba", "bab", "bbb"]
+    #                spins_lower_list = [tuple(s)[:(n+1 if ip else n)] for s in spins]
+    #                spins_upper_list = [tuple(s)[(n+1 if ip else n):] for s in spins]
+
+    #            for spins_lower, spins_upper in zip(spins_lower_list, spins_upper_list):
+    #                qccg.clear()
+    #                qccg.set_spin(spin)
+
+    #                if spin == "rhf":
+    #                    occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1 if ip else n], ["o", "o"][:n+1 if ip else n], ["r", "r"][:n+1 if ip else n])
+    #                    vir = index.index_factory(index.ExternalIndex, ["a", "b"][:n if ip else n+1], ["v", "v"][:n if ip else n+1], ["r", "r"][:n if ip else n+1])
+    #                    output = tensor.FermionicAmplitude("r%dnew" % (n+1), occ, vir)
+    #                    shape = ", ".join(["nocc"] * (n+1 if ip else n) + ["nvir"] * (n if ip else n+1))
+    #                elif spin == "uhf":
+    #                    occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1 if ip else n], ["o", "o"][:n+1 if ip else n], spins_lower)
+    #                    vir = index.index_factory(index.ExternalIndex, ["a", "b"][:n if ip else n+1], ["v", "v"][:n if ip else n+1], spins_upper)
+    #                    output = tensor.FermionicAmplitude("r%dnew" % (n+1), occ, vir)
+    #                    shape = ", ".join(["nocc[%d]"] * (n+1 if ip else n) + ["nvir[%d]"] * (n if ip else n+1)) % tuple("ab".index(s) for s in (spins_lower+spins_upper))
+    #                elif spin == "ghf":
+    #                    occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1 if ip else n], ["o", "o"][:n+1 if ip else n], [None, None][:n+1 if ip else n])
+    #                    vir = index.index_factory(index.ExternalIndex, ["a", "b"][:n if ip else n+1], ["v", "v"][:n if ip else n+1], [None, None][:n if ip else n+1])
+    #                    output = tensor.FermionicAmplitude("r%dnew" % (n+1), occ, vir)
+    #                    shape = ", ".join(["nocc"] * (n+1 if ip else n) + ["nvir"] * (n if ip else n+1))
+
+    #                index_spins = {index.character: s for index, s in zip(occ+vir, spins_lower+spins_upper)}
+    #                expression = read.from_wick(terms, index_spins=index_spins)
+    #                expression = expression.expand_spin_orbitals()
+
+    #                expressions.append(expression)
+    #                outputs.append(output)
+
+    #        final_outputs = outputs
+    #        #expressions, outputs = qccg.optimisation.optimise_expression_gristmill(
+    #        #        expressions,
+    #        #        outputs,
+    #        #)
+    #        einsums = write.write_opt_einsums(
+    #                expressions,
+    #                outputs,
+    #                final_outputs,
+    #                indent=4,
+    #                einsum_function="einsum",
+    #        )
+    #        function_printer.write_python(einsums+"\n", comment="R vectors")
+
+    #        if not ip:
+    #            if spin != "uhf":
+    #                function_printer.write_python("    r2new = r2new.transpose(1, 2, 0)\n")
+    #            else:
+    #                function_printer.write_python(
+    #                        "    r2new.aaa = r2new.aaa.transpose(2, 1, 0)\n"
+    #                        "    r2new.aba = r2new.aba.transpose(2, 1, 0)\n"
+    #                        "    r2new.bab = r2new.bab.transpose(2, 1, 0)\n"
+    #                        "    r2new.bbb = r2new.bbb.transpose(2, 1, 0)\n"
+    #                )
+
