@@ -18,7 +18,7 @@ pq.set_print_level(0)
 FunctionPrinter = common.get_function_printer(spin)
 timer = common.Stopwatch()
 
-with common.FilePrinter("%sCCSD_test" % spin[0].upper()) as file_printer:
+with common.FilePrinter("%sCCSD" % spin[0].upper()) as file_printer:
     # Get energy expression:
     with FunctionPrinter(
             file_printer,

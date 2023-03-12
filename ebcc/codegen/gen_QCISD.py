@@ -8,7 +8,7 @@ from qccg import index, tensor, read, write
 import pdaggerq
 
 # Spin integration mode
-spin = "rhf"
+spin = "uhf"
 
 # pdaggerq setup
 pq = pdaggerq.pq_helper("fermi")
