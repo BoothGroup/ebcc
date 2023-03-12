@@ -48,7 +48,7 @@ class ERIs(types.SimpleNamespace):
                 "x": space.correlated,
                 "o": space.correlated_occupied,
                 "v": space.correlated_virtual,
-                "x": space.active,
+                "X": space.active,
                 "O": space.active_occupied,
                 "V": space.active_virtual,
             }
