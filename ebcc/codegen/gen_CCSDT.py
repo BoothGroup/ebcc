@@ -68,8 +68,8 @@ with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
             ["t1new", "t2new", "t3new"],
             spin_cases={
                 "t1new": [x+x for x in ("a", "b")],
-                "t2new": [x+x for x in ("aa", "ab", "ba", "bb")],
-                "t3new": [x+x for x in ("aaa", "aab", "aba", "baa", "abb", "bab", "bba", "bbb")],
+                "t2new": [x+x for x in ("aa", "ab", "bb")],
+                "t3new": [x+x for x in ("aaa", "aab", "abb", "bbb")],
             },
             timer=timer,
     ) as function_printer:
@@ -105,7 +105,7 @@ with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
             elif spin == "rhf":
                 spins_list = [(["a", "b"] * (n+1))[:n+1]]
             elif spin == "uhf":
-                spins_list = list(itertools.product("ab", repeat=n+1))
+                spins_list = [list(y) for y in sorted(set("".join(sorted(x)) for x in itertools.product("ab", repeat=n+1)))]
 
             for spins in spins_list:
                 qccg.clear()
@@ -159,8 +159,8 @@ with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
             ["l1new", "l2new", "l3new"],
             spin_cases={
                 "l1new": [x+x for x in ("a", "b")],
-                "l2new": [x+x for x in ("aa", "ab", "ba", "bb")],
-                "l3new": [x+x for x in ("aaa", "aab", "aba", "baa", "abb", "bab", "bba", "bbb")],
+                "l2new": [x+x for x in ("aa", "ab", "bb")],
+                "l3new": [x+x for x in ("aaa", "aab", "abb", "bbb")],
             },
             timer=timer,
     ) as function_printer:
@@ -214,7 +214,7 @@ with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
             elif spin == "rhf":
                 spins_list = [(["a", "b"] * (n+1))[:n+1]]
             elif spin == "uhf":
-                spins_list = list(itertools.product("ab", repeat=n+1))
+                spins_list = [list(y) for y in sorted(set("".join(sorted(x)) for x in itertools.product("ab", repeat=n+1)))]
 
             for spins in spins_list:
                 qccg.clear()
@@ -354,7 +354,7 @@ with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
             ["f", "v", "nocc", "nvir", "t1", "t2", "t3", "l1", "l2", "l3"],
             ["rdm2_f"],
             spin_cases={
-                "rdm2_f": ["aaaa", "aabb", "bbaa", "bbbb"],
+                "rdm2_f": ["aaaa", "aabb", "bbbb"],
             },
             return_dict=False,
             timer=timer,
@@ -373,7 +373,7 @@ with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
         if spin == "ghf":
             spins_list = [(None, None, None, None)]
         else:
-            spins_list = [("a", "a", "a", "a"), ("a", "b", "a", "b"), ("b", "a", "b", "a"), ("b", "b", "b", "b")]
+            spins_list = [("a", "a", "a", "a"), ("a", "b", "a", "b"), ("b", "b", "b", "b")]
 
         expressions = []
         outputs = []
@@ -436,7 +436,6 @@ with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
             function_printer.write_python(""
                     + "    rdm2_f_aaaa = pack_2e(%s)\n" % ", ".join(["rdm2_f_aaaa_%s" % x for x in common.ov_2e])
                     + "    rdm2_f_abab = pack_2e(%s)\n" % ", ".join(["rdm2_f_abab_%s" % x for x in common.ov_2e])
-                    + "    rdm2_f_baba = pack_2e(%s)\n" % ", ".join(["rdm2_f_baba_%s" % x for x in common.ov_2e])
                     + "    rdm2_f_bbbb = pack_2e(%s)\n" % ", ".join(["rdm2_f_bbbb_%s" % x for x in common.ov_2e])
             )
 
@@ -446,7 +445,6 @@ with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
             function_printer.write_python(""
                     + "    rdm2_f_aaaa = rdm2_f_aaaa.swapaxes(1, 2)\n"
                     + "    rdm2_f_aabb = rdm2_f_abab.swapaxes(1, 2)\n"
-                    + "    rdm2_f_bbaa = rdm2_f_baba.swapaxes(1, 2)\n"
                     + "    rdm2_f_bbbb = rdm2_f_bbbb.swapaxes(1, 2)\n"
             )
 

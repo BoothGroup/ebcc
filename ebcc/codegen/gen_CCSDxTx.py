@@ -75,7 +75,7 @@ with common.FilePrinter("%sCCSDxTx" % spin[0].upper()) as file_printer:
             ["t1new", "t2new"],
             spin_cases={
                 "t1new": [x+x for x in ("a", "b")],
-                "t2new": [x+x for x in ("aa", "ab", "ba", "bb")],
+                "t2new": [x+x for x in ("aa", "ab", "bb")],
             },
             timer=timer,
     ) as function_printer:
@@ -103,7 +103,7 @@ with common.FilePrinter("%sCCSDxTx" % spin[0].upper()) as file_printer:
             elif spin == "rhf":
                 spins_list = [(["a", "b"] * (n+1))[:n+1]]
             elif spin == "uhf":
-                spins_list = list(itertools.product("ab", repeat=n+1))
+                spins_list = [list(y) for y in sorted(set("".join(sorted(x)) for x in itertools.product("ab", repeat=n+1)))]
 
             for spins in spins_list:
                 qccg.clear()
@@ -169,7 +169,7 @@ with common.FilePrinter("%sCCSDxTx" % spin[0].upper()) as file_printer:
         elif spin == "rhf":
             spins_list = [("a", "b", "a")]
         elif spin == "uhf":
-            spins_list = list(itertools.product("ab", repeat=3))
+            spins_list = [list(y) for y in sorted(set("".join(sorted(x)) for x in itertools.product("ab", repeat=3)))]
 
         expressions = []
         outputs = []

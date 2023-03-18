@@ -162,7 +162,7 @@ def ntril_ndim(n, dims, include_diagonal=False):
     return out
 
 
-def generate_spin_combinations(n, excited=False):
+def generate_spin_combinations(n, excited=False, unique=False):
     """Generate combinations of spin components for a given number
     of occupied and virtual axes.
 
@@ -173,6 +173,8 @@ def generate_spin_combinations(n, excited=False):
     excited : bool, optional
         If True, treat the amplitudes as excited. Default value is
         `False`.
+    unique : bool, optional
+        If True, return only unique combinations.
 
     Yields
     ------
@@ -187,12 +189,24 @@ def generate_spin_combinations(n, excited=False):
     ['aaaa', 'abab', 'baba', 'bbbb']
     >>> generate_spin_combinations(2, excited=True)
     ['aaa', 'aba', 'bab', 'bbb']
+    >>> generate_spin_combinations(2, unique=True)
+    ['aaaa', 'abab', 'bbbb']
     """
+
+    if unique:
+        check = set()
 
     for tup in itertools.product(("a", "b"), repeat=n):
         comb = "".join(list(tup) * 2)
         if excited:
             comb = comb[:-1]
+
+        if unique:
+            sorted_comb = "".join(sorted(comb[:n])) + "".join(sorted(comb[n:]))
+            if sorted_comb in check:
+                continue
+            check.add(sorted_comb)
+
         yield comb
 
 
