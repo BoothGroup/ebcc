@@ -141,7 +141,7 @@ class UEBCC(rebcc.REBCC):
 
             for n in rcc.ansatz.correlated_cluster_ranks[0]:
                 amplitudes["t%d" % n] = util.Namespace()
-                for comb in util.generate_spin_combinations(n):
+                for comb in util.generate_spin_combinations(n, unique=True):
                     subscript = comb[:n] + comb[n:].upper()
                     tn = rcc.amplitudes["t%d" % n]
                     tn = util.symmetrise(subscript, tn, symmetry="-" * 2 * n)
@@ -153,7 +153,7 @@ class UEBCC(rebcc.REBCC):
             for nf in rcc.ansatz.correlated_cluster_ranks[2]:
                 for nb in rcc.ansatz.correlated_cluster_ranks[3]:
                     amplitudes["u%d%d" % (nf, nb)] = util.Namespace()
-                    for comb in util.generate_spin_combinations(nf):
+                    for comb in util.generate_spin_combinations(nf, unique=True):
                         tn = rcc.amplitudes["u%d%d" % (nf, nb)]
                         setattr(amplitudes["u%d%d" % (nf, nb)], comb, tn)
 
@@ -164,7 +164,7 @@ class UEBCC(rebcc.REBCC):
 
             for n in rcc.ansatz.correlated_cluster_ranks[0]:
                 lambdas["l%d" % n] = util.Namespace()
-                for comb in util.generate_spin_combinations(n):
+                for comb in util.generate_spin_combinations(n, unique=True):
                     subscript = comb[:n] + comb[n:].upper()
                     tn = rcc.lambdas["l%d" % n]
                     tn = util.symmetrise(subscript, tn, symmetry="-" * 2 * n)
@@ -176,7 +176,7 @@ class UEBCC(rebcc.REBCC):
             for nf in rcc.ansatz.correlated_cluster_ranks[2]:
                 for nb in rcc.ansatz.correlated_cluster_ranks[3]:
                     lambdas["lu%d%d" % (nf, nb)] = util.Namespace()
-                    for comb in util.generate_spin_combinations(nf):
+                    for comb in util.generate_spin_combinations(nf, unique=True):
                         tn = rcc.lambdas["lu%d%d" % (nf, nb)]
                         setattr(lambdas["lu%d%d" % (nf, nb)], comb, tn)
 
@@ -257,7 +257,7 @@ class UEBCC(rebcc.REBCC):
                 amplitudes["t%d" % n] = tn
             else:
                 tn = util.Namespace()
-                for comb in util.generate_spin_combinations(n):
+                for comb in util.generate_spin_combinations(n, unique=True):
                     shape = tuple(self.space["ab".index(s)].ncocc for s in comb[:n])
                     shape += tuple(self.space["ab".index(s)].ncvir for s in comb[n:])
                     amp = np.zeros(shape)
@@ -348,7 +348,7 @@ class UEBCC(rebcc.REBCC):
         # Divide T amplitudes:
         for n in self.ansatz.correlated_cluster_ranks[0]:
             perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
-            for comb in util.generate_spin_combinations(n):
+            for comb in util.generate_spin_combinations(n, unique=True):
                 subscript = comb[:n] + comb[n:].upper()
                 es = [getattr(e_ia, comb[i] + comb[i + n]) for i in range(n)]
                 d = functools.reduce(np.add.outer, es)
@@ -402,7 +402,7 @@ class UEBCC(rebcc.REBCC):
         # Divide T amplitudes:
         for n in self.ansatz.correlated_cluster_ranks[0]:
             perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
-            for comb in util.generate_spin_combinations(n):
+            for comb in util.generate_spin_combinations(n, unique=True):
                 subscript = comb[:n] + comb[n:].upper()
                 es = [getattr(e_ai, comb[i] + comb[i + n]) for i in range(n)]
                 d = functools.reduce(np.add.outer, es)
@@ -645,7 +645,7 @@ class UEBCC(rebcc.REBCC):
         vectors = []
 
         for n in self.ansatz.correlated_cluster_ranks[0]:
-            for spin in util.generate_spin_combinations(n):
+            for spin in util.generate_spin_combinations(n, unique=True):
                 tn = getattr(amplitudes["t%d" % n], spin)
                 subscript = spin[:n] + spin[n:].upper()
                 vectors.append(util.compress_axes(subscript, tn).ravel())
@@ -668,7 +668,7 @@ class UEBCC(rebcc.REBCC):
 
         for n in self.ansatz.correlated_cluster_ranks[0]:
             amplitudes["t%d" % n] = util.Namespace()
-            for spin in util.generate_spin_combinations(n):
+            for spin in util.generate_spin_combinations(n, unique=True):
                 subscript = spin[:n] + spin[n:].upper()
                 size = util.get_compressed_size(
                     subscript,
@@ -716,7 +716,7 @@ class UEBCC(rebcc.REBCC):
         vectors = []
 
         for n in self.ansatz.correlated_cluster_ranks[0]:
-            for spin in util.generate_spin_combinations(n):
+            for spin in util.generate_spin_combinations(n, unique=True):
                 tn = getattr(lambdas["l%d" % n], spin)
                 subscript = spin[:n] + spin[n:].upper()
                 vectors.append(util.compress_axes(subscript, tn).ravel())
@@ -740,7 +740,7 @@ class UEBCC(rebcc.REBCC):
 
         for n in self.ansatz.correlated_cluster_ranks[0]:
             lambdas["l%d" % n] = util.Namespace()
-            for spin in util.generate_spin_combinations(n):
+            for spin in util.generate_spin_combinations(n, unique=True):
                 subscript = spin[:n] + spin[n:].upper()
                 size = util.get_compressed_size(
                     subscript,
@@ -789,7 +789,7 @@ class UEBCC(rebcc.REBCC):
         m = 0
 
         for n in self.ansatz.correlated_cluster_ranks[0]:
-            for spin in util.generate_spin_combinations(n, excited=True):
+            for spin in util.generate_spin_combinations(n, excited=True, unique=True):
                 vn = getattr(excitations[m], spin)
                 subscript = spin[:n] + spin[n:].upper()
                 vectors.append(util.compress_axes(subscript, vn).ravel())
@@ -830,7 +830,7 @@ class UEBCC(rebcc.REBCC):
 
         for n in self.ansatz.correlated_cluster_ranks[0]:
             amp = util.Namespace()
-            for spin in util.generate_spin_combinations(n, excited=True):
+            for spin in util.generate_spin_combinations(n, excited=True, unique=True):
                 subscript = spin[:n] + spin[n:].upper()
                 size = util.get_compressed_size(
                     subscript,
@@ -872,7 +872,7 @@ class UEBCC(rebcc.REBCC):
 
         for n in self.ansatz.correlated_cluster_ranks[0]:
             amp = util.Namespace()
-            for spin in util.generate_spin_combinations(n, excited=True):
+            for spin in util.generate_spin_combinations(n, excited=True, unique=True):
                 subscript = spin[:n] + spin[n:].upper()
                 size = util.get_compressed_size(
                     subscript,
