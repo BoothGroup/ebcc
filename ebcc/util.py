@@ -207,6 +207,13 @@ def generate_spin_combinations(n, excited=False, unique=False):
                 continue
             check.add(sorted_comb)
 
+            if not excited:  # FIXME
+                nab = (comb[:n].count("a"), comb[:n].count("b"))
+                if nab == (n // 2, n - n // 2):
+                    comb = ("ab" * n)[:n] * 2
+                elif nab == (n - n // 2, n // 2):
+                    comb = ("ba" * n)[:n] * 2
+
         yield comb
 
 

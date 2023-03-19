@@ -242,13 +242,11 @@ class UEBCC(rebcc.REBCC):
                 e_ijab = util.Namespace(
                     aaaa=lib.direct_sum("ia,jb->ijab", e_ia.aa, e_ia.aa),
                     abab=lib.direct_sum("ia,jb->ijab", e_ia.aa, e_ia.bb),
-                    baba=lib.direct_sum("ia,jb->ijab", e_ia.bb, e_ia.aa),
                     bbbb=lib.direct_sum("ia,jb->ijab", e_ia.bb, e_ia.bb),
                 )
                 tn = util.Namespace(
                     aaaa=eris.aaaa.ovov.swapaxes(1, 2) / e_ijab.aaaa,
                     abab=eris.aabb.ovov.swapaxes(1, 2) / e_ijab.abab,
-                    baba=eris.bbaa.ovov.swapaxes(1, 2) / e_ijab.baba,
                     bbbb=eris.bbbb.ovov.swapaxes(1, 2) / e_ijab.bbbb,
                 )
                 # TODO generalise:
@@ -475,7 +473,6 @@ class UEBCC(rebcc.REBCC):
 
             dm.aaaa = transpose2(transpose1(dm.aaaa))
             dm.aabb = transpose2(dm.aabb)
-            dm.bbaa = transpose2(dm.bbaa)
             dm.bbbb = transpose2(transpose1(dm.bbbb))
 
         return dm
