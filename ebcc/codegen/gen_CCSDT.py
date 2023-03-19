@@ -5,6 +5,7 @@ This uses pdaggerq and qccg instead of qwick.
 
 import itertools
 from ebcc.codegen import common
+from ebcc.util import generate_spin_combinations
 import qccg
 from qccg import index, tensor, read, write
 import pdaggerq
@@ -69,7 +70,7 @@ with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
             spin_cases={
                 "t1new": [x+x for x in ("a", "b")],
                 "t2new": [x+x for x in ("aa", "ab", "bb")],
-                "t3new": [x+x for x in ("aaa", "aab", "abb", "bbb")],
+                "t3new": [x+x for x in ("aaa", "aba", "bab", "bbb")],
             },
             timer=timer,
     ) as function_printer:
@@ -105,7 +106,7 @@ with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
             elif spin == "rhf":
                 spins_list = [(["a", "b"] * (n+1))[:n+1]]
             elif spin == "uhf":
-                spins_list = [list(y) for y in sorted(set("".join(sorted(x)) for x in itertools.product("ab", repeat=n+1)))]
+                spins_list = [x[:n+1] for x in generate_spin_combinations(n+1, unique=True)]
 
             for spins in spins_list:
                 qccg.clear()
@@ -160,7 +161,7 @@ with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
             spin_cases={
                 "l1new": [x+x for x in ("a", "b")],
                 "l2new": [x+x for x in ("aa", "ab", "bb")],
-                "l3new": [x+x for x in ("aaa", "aab", "abb", "bbb")],
+                "l3new": [x+x for x in ("aaa", "aba", "bab", "bbb")],
             },
             timer=timer,
     ) as function_printer:
@@ -214,7 +215,7 @@ with common.FilePrinter("%sCCSDT" % spin[0].upper()) as file_printer:
             elif spin == "rhf":
                 spins_list = [(["a", "b"] * (n+1))[:n+1]]
             elif spin == "uhf":
-                spins_list = [list(y) for y in sorted(set("".join(sorted(x)) for x in itertools.product("ab", repeat=n+1)))]
+                spins_list = [x[:n+1] for x in generate_spin_combinations(n+1, unique=True)]
 
             for spins in spins_list:
                 qccg.clear()

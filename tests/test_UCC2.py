@@ -73,7 +73,6 @@ class UCC2_PySCF_Tests(unittest.TestCase):
         a = self.ccsd_ref.t2
         b = self.ccsd.t2
         np.testing.assert_almost_equal(a, b.abab, 6)
-        np.testing.assert_almost_equal(a, b.baba, 6)
 
 
 @pytest.mark.regression
@@ -123,11 +122,9 @@ class UCC2_Tests(unittest.TestCase):
         ca, cb = self.ccsd.mf.mo_coeff
         dmaaaa = util.einsum("ijkl,pi,qj,rk,sl->pqrs", dm.aaaa, ca, ca, ca, ca)
         dmaabb = util.einsum("ijkl,pi,qj,rk,sl->pqrs", dm.aabb, ca, ca, cb, cb)
-        dmbbaa = util.einsum("ijkl,pi,qj,rk,sl->pqrs", dm.bbaa, cb, cb, ca, ca)
         dmbbbb = util.einsum("ijkl,pi,qj,rk,sl->pqrs", dm.bbbb, cb, cb, cb, cb)
         self.assertAlmostEqual(lib.fp(dmaaaa), 0.708602503074179, 6)
         self.assertAlmostEqual(lib.fp(dmaabb), 1.617909309590978, 6)
-        self.assertAlmostEqual(lib.fp(dmbbaa), 0.956408154692302, 6)
         self.assertAlmostEqual(lib.fp(dmbbbb), 2.231837825282723, 6)
 
 

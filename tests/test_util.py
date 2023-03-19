@@ -70,6 +70,12 @@ class Util_Tests(unittest.TestCase):
         ]:
             self.assertEqual(set(util.generate_spin_combinations(n)), combs)
         for n, combs in [
+                (1, {"aa", "bb"}),
+                (2, {"aaaa", "abab", "bbbb"}),
+                (3, {"aaaaaa", "abaaba", "babbab", "bbbbbb"}),
+        ]:
+            self.assertEqual(set(util.generate_spin_combinations(n, unique=True)), combs)
+        for n, combs in [
                 (1, {"a", "b"}),
                 (2, {"aaa", "aba", "bab", "bbb"}),
                 (3, {"aaaaa", "aabaa", "abaab", "baaba", "abbab", "babba", "bbabb", "bbbbb"}),

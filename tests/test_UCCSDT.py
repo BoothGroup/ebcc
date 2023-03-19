@@ -107,13 +107,11 @@ class UCCSDT_Tests(unittest.TestCase):
         h_bb = np.linalg.multi_dot((c[1].T, h, c[1]))
         v_aaaa = self.uccsdt.get_eris().aaaa.xxxx
         v_aabb = self.uccsdt.get_eris().aabb.xxxx
-        v_bbaa = self.uccsdt.get_eris().bbaa.xxxx
         v_bbbb = self.uccsdt.get_eris().bbbb.xxxx
         e_rdm = util.einsum("pq,pq->", h_aa, dm1.aa)
         e_rdm += util.einsum("pq,pq->", h_bb, dm1.bb)
         e_rdm += util.einsum("pqrs,pqrs->", v_aaaa, dm2.aaaa) * 0.5
-        e_rdm += util.einsum("pqrs,pqrs->", v_aabb, dm2.aabb) * 0.5
-        e_rdm += util.einsum("pqrs,pqrs->", v_bbaa, dm2.bbaa) * 0.5
+        e_rdm += util.einsum("pqrs,pqrs->", v_aabb, dm2.aabb)
         e_rdm += util.einsum("pqrs,pqrs->", v_bbbb, dm2.bbbb) * 0.5
         e_rdm += self.mf.mol.energy_nuc()
 

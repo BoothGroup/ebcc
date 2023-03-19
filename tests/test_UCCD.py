@@ -82,7 +82,7 @@ class UCCD_PySCF_Tests(unittest.TestCase):
     def test_rdm2(self):
         a = self.ccd_ref.make_rdm2()
         b = self.ccd.make_rdm2_f(eris=self.eris)
-        b = b.aabb + b.bbaa + b.aaaa + b.bbbb
+        b = 2 * b.aabb + b.aaaa + b.bbbb
         np.testing.assert_almost_equal(a, b, 6, verbose=True)
 
 

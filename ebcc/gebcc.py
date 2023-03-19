@@ -137,7 +137,7 @@ class GEBCC(rebcc.REBCC):
 
             for n in ucc.ansatz.correlated_cluster_ranks[0]:
                 amplitudes["t%d" % n] = np.zeros((space.ncocc,) * n + (space.ncvir,) * n)
-                for comb in util.generate_spin_combinations(n):
+                for comb in util.generate_spin_combinations(n, unique=True):
                     done = set()
                     for perm, sign in util.permutations_with_signs(tuple(range(n))):
                         combn = util.permute_string(comb[:n], perm) + comb[n:]
@@ -164,7 +164,7 @@ class GEBCC(rebcc.REBCC):
                     amplitudes["u%d%d" % (nf, nb)] = np.zeros(
                         (nbos,) * nb + (space.ncocc,) * nf + (space.ncvir,) * nf
                     )
-                    for comb in util.generate_spin_combinations(nf):
+                    for comb in util.generate_spin_combinations(nf, unique=True):
                         done = set()
                         for perm, sign in util.permutations_with_signs(tuple(range(nf))):
                             combn = util.permute_string(comb[:nf], perm) + comb[nf:]
@@ -204,7 +204,7 @@ class GEBCC(rebcc.REBCC):
 
             for n in ucc.ansatz.correlated_cluster_ranks[0]:
                 lambdas["l%d" % n] = np.zeros((space.ncvir,) * n + (space.ncocc,) * n)
-                for comb in util.generate_spin_combinations(n):
+                for comb in util.generate_spin_combinations(n, unique=True):
                     done = set()
                     for perm, sign in util.permutations_with_signs(tuple(range(n))):
                         combn = util.permute_string(comb[:n], perm) + comb[n:]
@@ -229,7 +229,7 @@ class GEBCC(rebcc.REBCC):
                     lambdas["lu%d%d" % (nf, nb)] = np.zeros(
                         (nbos,) * nb + (space.ncvir,) * nf + (space.ncocc,) * nf
                     )
-                    for comb in util.generate_spin_combinations(nf):
+                    for comb in util.generate_spin_combinations(nf, unique=True):
                         done = set()
                         for perm, sign in util.permutations_with_signs(tuple(range(nf))):
                             combn = util.permute_string(comb[:nf], perm) + comb[nf:]

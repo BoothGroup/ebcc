@@ -5,6 +5,7 @@ This uses pdaggerq and qccg instead of qwick.
 
 import itertools
 from ebcc.codegen import common
+from ebcc.util import generate_spin_combinations
 import qccg
 from qccg import index, tensor, read, write
 from qccg.contraction import insert
@@ -103,7 +104,7 @@ with common.FilePrinter("%sCCSDxTx" % spin[0].upper()) as file_printer:
             elif spin == "rhf":
                 spins_list = [(["a", "b"] * (n+1))[:n+1]]
             elif spin == "uhf":
-                spins_list = [list(y) for y in sorted(set("".join(sorted(x)) for x in itertools.product("ab", repeat=n+1)))]
+                spins_list = [x[:n+1] for x in generate_spin_combinations(n+1, unique=True)]
 
             for spins in spins_list:
                 qccg.clear()
@@ -169,7 +170,7 @@ with common.FilePrinter("%sCCSDxTx" % spin[0].upper()) as file_printer:
         elif spin == "rhf":
             spins_list = [("a", "b", "a")]
         elif spin == "uhf":
-            spins_list = [list(y) for y in sorted(set("".join(sorted(x)) for x in itertools.product("ab", repeat=3)))]
+            spins_list = [x[:3] for x in generate_spin_combinations(3, unique=True)]
 
         expressions = []
         outputs = []
