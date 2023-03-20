@@ -335,8 +335,10 @@ with common.FilePrinter("%sCCD" % spin[0].upper()) as file_printer:
 
         if spin == "ghf":
             spins_list = [(None, None, None, None)]
-        else:
+        elif spin == "uhf":
             spins_list = [("a", "a", "a", "a"), ("a", "b", "a", "b"), ("b", "b", "b", "b")]
+        else:
+            spins_list = [("a", "a", "a", "a"), ("a", "b", "a", "b"), ("b", "a", "b", "a"), ("b", "b", "b", "b")]
 
         zero_expressions = []
         zero_outputs = []

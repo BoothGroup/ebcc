@@ -8,7 +8,7 @@ from qccg import index, tensor, read, write
 import pdaggerq
 
 # Spin integration mode
-spin = "uhf"
+spin = "rhf"
 
 # pdaggerq setup
 pq = pdaggerq.pq_helper("fermi")
@@ -346,8 +346,10 @@ with common.FilePrinter("%sCCSD" % spin[0].upper()) as file_printer:
 
         if spin == "ghf":
             spins_list = [(None, None, None, None)]
-        else:
+        elif spin == "uhf":
             spins_list = [("a", "a", "a", "a"), ("a", "b", "a", "b"), ("b", "b", "b", "b")]
+        else:
+            spins_list = [("a", "a", "a", "a"), ("a", "b", "a", "b"), ("b", "a", "b", "a"), ("b", "b", "b", "b")]
 
         expressions = []
         outputs = []
