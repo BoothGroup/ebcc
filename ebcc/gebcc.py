@@ -148,8 +148,12 @@ class GEBCC(rebcc.REBCC):
                             mask = np.ix_(
                                 *([occs[c] for c in combn[:n]] + [virs[c] for c in combn[n:]])
                             )
-                            transpose = tuple(lperm) + tuple(p+n for p in uperm)
-                            amp = getattr(ucc.amplitudes["t%d" % n], comb).transpose(transpose) * lsign * usign
+                            transpose = tuple(lperm) + tuple(p + n for p in uperm)
+                            amp = (
+                                getattr(ucc.amplitudes["t%d" % n], comb).transpose(transpose)
+                                * lsign
+                                * usign
+                            )
                             for perm, sign in util.permutations_with_signs(tuple(range(n))):
                                 transpose = tuple(perm) + tuple(range(n, 2 * n))
                                 if util.permute_string(comb[:n], perm) == comb[:n]:
@@ -176,7 +180,10 @@ class GEBCC(rebcc.REBCC):
                                     continue
                                 mask = np.ix_(
                                     *([range(nbos)] * nb),
-                                    *([occs[c] for c in combn[:nf]] + [virs[c] for c in combn[nf:]]),
+                                    *(
+                                        [occs[c] for c in combn[:nf]]
+                                        + [virs[c] for c in combn[nf:]]
+                                    ),
                                 )
                                 transpose = (
                                     tuple(range(nb))
@@ -187,7 +194,8 @@ class GEBCC(rebcc.REBCC):
                                     getattr(ucc.amplitudes["u%d%d" % (nf, nb)], comb).transpose(
                                         transpose
                                     )
-                                    * lsign * usign
+                                    * lsign
+                                    * usign
                                 )
                                 for perm, sign in util.permutations_with_signs(tuple(range(nf))):
                                     transpose = (
@@ -219,12 +227,18 @@ class GEBCC(rebcc.REBCC):
                             mask = np.ix_(
                                 *([virs[c] for c in combn[:n]] + [occs[c] for c in combn[n:]])
                             )
-                            transpose = tuple(lperm) + tuple(p+n for p in uperm)
-                            amp = getattr(ucc.lambdas["l%d" % n], comb).transpose(transpose) * lsign * usign
+                            transpose = tuple(lperm) + tuple(p + n for p in uperm)
+                            amp = (
+                                getattr(ucc.lambdas["l%d" % n], comb).transpose(transpose)
+                                * lsign
+                                * usign
+                            )
                             for perm, sign in util.permutations_with_signs(tuple(range(n))):
                                 transpose = tuple(perm) + tuple(range(n, 2 * n))
                                 if util.permute_string(comb[:n], perm) == comb[:n]:
-                                    lambdas["l%d" % n][mask] += amp.transpose(transpose).copy() * sign
+                                    lambdas["l%d" % n][mask] += (
+                                        amp.transpose(transpose).copy() * sign
+                                    )
                             done.add(combn)
 
             for n in ucc.ansatz.correlated_cluster_ranks[1]:
@@ -245,7 +259,10 @@ class GEBCC(rebcc.REBCC):
                                     continue
                                 mask = np.ix_(
                                     *([range(nbos)] * nb),
-                                    *([virs[c] for c in combn[:nf]] + [occs[c] for c in combn[nf:]]),
+                                    *(
+                                        [virs[c] for c in combn[:nf]]
+                                        + [occs[c] for c in combn[nf:]]
+                                    ),
                                 )
                                 transpose = (
                                     tuple(range(nb))
@@ -253,8 +270,11 @@ class GEBCC(rebcc.REBCC):
                                     + tuple(p + nb + nf for p in uperm)
                                 )
                                 amp = (
-                                    getattr(ucc.lambdas["lu%d%d" % (nf, nb)], comb).transpose(transpose)
-                                    * lsign * usign
+                                    getattr(ucc.lambdas["lu%d%d" % (nf, nb)], comb).transpose(
+                                        transpose
+                                    )
+                                    * lsign
+                                    * usign
                                 )
                                 for perm, sign in util.permutations_with_signs(tuple(range(nf))):
                                     transpose = (
