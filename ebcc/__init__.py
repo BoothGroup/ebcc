@@ -123,7 +123,12 @@ def init_logging(log):
 
 # --- Types of ansatz supporting by the EBCC solvers:
 
-METHOD_TYPES = ["CC", "LCC", "QCI", "QCC"]
+METHOD_TYPES = ["MP", "CC", "LCC", "QCI", "QCC"]
+
+
+# --- Import NumPy here to allow drop-in replacements
+
+import numpy
 
 
 # --- General constructor:

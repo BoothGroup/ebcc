@@ -99,13 +99,11 @@ class UCCSD_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(self.ccsd.t1.bb, uebcc.t1.bb, 6)
         np.testing.assert_almost_equal(self.ccsd.t2.aaaa, uebcc.t2.aaaa, 6)
         np.testing.assert_almost_equal(self.ccsd.t2.abab, uebcc.t2.abab, 6)
-        np.testing.assert_almost_equal(self.ccsd.t2.baba, uebcc.t2.baba, 6)
         np.testing.assert_almost_equal(self.ccsd.t2.bbbb, uebcc.t2.bbbb, 6)
         np.testing.assert_almost_equal(self.ccsd.l1.aa, uebcc.l1.aa, 5)
         np.testing.assert_almost_equal(self.ccsd.l1.bb, uebcc.l1.bb, 5)
         np.testing.assert_almost_equal(self.ccsd.l2.aaaa, uebcc.l2.aaaa, 5)
         np.testing.assert_almost_equal(self.ccsd.l2.abab, uebcc.l2.abab, 5)
-        np.testing.assert_almost_equal(self.ccsd.l2.baba, uebcc.l2.baba, 5)
         np.testing.assert_almost_equal(self.ccsd.l2.bbbb, uebcc.l2.bbbb, 5)
 
     def test_ip_moments(self):
@@ -141,7 +139,7 @@ class UCCSD_Tests(unittest.TestCase):
         for i in range(a.shape[0]):
             b[i, :nmo, :nmo, :nmo, :nmo] = t.aaaa[i]
             b[i, :nmo, :nmo, nmo:, nmo:] = t.aabb[i]
-            b[i, nmo:, nmo:, :nmo, :nmo] = t.bbaa[i]
+            b[i, nmo:, nmo:, :nmo, :nmo] = t.aabb.transpose(2, 3, 0, 1)[i]
             b[i, nmo:, nmo:, nmo:, nmo:] = t.bbbb[i]
         b = b[:, self.fsort][:, :, self.fsort][:, :, :, self.fsort][:, :, :, :, self.fsort]
         for x, y in zip(a, b):
@@ -189,7 +187,7 @@ class UCCSD_PySCF_Tests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        del cls.mf, cls.ccsd_ref, cls.ccsd
+        del cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris
 
     def test_energy(self):
         a = self.ccsd_ref.e_tot
@@ -300,7 +298,7 @@ class UCCSD_PySCF_Frozen_Tests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        del cls.mf, cls.ccsd_ref, cls.ccsd
+        del cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris
 
     def test_energy(self):
         a = self.ccsd_ref.e_tot

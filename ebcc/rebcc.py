@@ -439,45 +439,49 @@ class REBCC(AbstractEBCC):
         # Get the initial energy:
         e_cc = e_init = self.energy(amplitudes=amplitudes, eris=eris)
 
-        # Set up DIIS:
-        diis = lib.diis.DIIS()
-        diis.space = self.options.diis_space
-
         self.log.output("Solving for excitation amplitudes.")
         self.log.info("%4s %16s %16s %16s", "Iter", "Energy (corr.)", "Δ(Energy)", "Δ(Amplitudes)")
         self.log.info("%4d %16.10f", 0, e_init)
 
-        converged = False
-        for niter in range(1, self.options.max_iter + 1):
-            # Update the amplitudes, extrapolate with DIIS and calculate change:
-            amplitudes_prev = amplitudes
-            amplitudes = self.update_amps(amplitudes=amplitudes, eris=eris)
-            vector = self.amplitudes_to_vector(amplitudes)
-            vector = diis.update(vector)
-            amplitudes = self.vector_to_amplitudes(vector)
-            dt = np.linalg.norm(vector - self.amplitudes_to_vector(amplitudes_prev), ord=np.inf)
+        if not self.ansatz.is_one_shot:
+            # Set up DIIS:
+            diis = lib.diis.DIIS()
+            diis.space = self.options.diis_space
 
-            # Update the energy and calculate change:
-            e_prev = e_cc
-            e_cc = self.energy(amplitudes=amplitudes, eris=eris)
-            de = abs(e_prev - e_cc)
+            converged = False
+            for niter in range(1, self.options.max_iter + 1):
+                # Update the amplitudes, extrapolate with DIIS and calculate change:
+                amplitudes_prev = amplitudes
+                amplitudes = self.update_amps(amplitudes=amplitudes, eris=eris)
+                vector = self.amplitudes_to_vector(amplitudes)
+                vector = diis.update(vector)
+                amplitudes = self.vector_to_amplitudes(vector)
+                dt = np.linalg.norm(vector - self.amplitudes_to_vector(amplitudes_prev), ord=np.inf)
 
-            self.log.info("%4d %16.10f %16.5g %16.5g", niter, e_cc, de, dt)
+                # Update the energy and calculate change:
+                e_prev = e_cc
+                e_cc = self.energy(amplitudes=amplitudes, eris=eris)
+                de = abs(e_prev - e_cc)
 
-            # Check for convergence:
-            converged = de < self.options.e_tol and dt < self.options.t_tol
-            if converged:
-                self.log.output("Converged.")
-                break
+                self.log.info("%4d %16.10f %16.5g %16.5g", niter, e_cc, de, dt)
+
+                # Check for convergence:
+                converged = de < self.options.e_tol and dt < self.options.t_tol
+                if converged:
+                    self.log.output("Converged.")
+                    break
+            else:
+                self.log.warning("Failed to converge.")
+
+            # Include perturbative correction if required:
+            if self.ansatz.has_perturbative_correction:
+                self.log.info("Computing perturbative energy correction.")
+                e_pert = self.energy_perturbative(amplitudes=amplitudes, eris=eris)
+                e_cc += e_pert
+                self.log.info("E(pert) = %.10f", e_pert)
+
         else:
-            self.log.warning("Failed to converge.")
-
-        # Include perturbative correction if required:
-        if self.ansatz.has_perturbative_correction:
-            self.log.info("Computing perturbative energy correction.")
-            e_pert = self.energy_perturbative(amplitudes=amplitudes, eris=eris)
-            e_cc += e_pert
-            self.log.info("E(pert) = %.10f", e_pert)
+            converged = True
 
         # Update attributes:
         self.e_corr = e_cc
@@ -519,6 +523,13 @@ class REBCC(AbstractEBCC):
         if amplitudes is None:
             amplitudes = self.init_amps(eris=eris)
 
+        # If needed, precompute the perturbative part of the lambda
+        # amplitudes:
+        if self.ansatz.has_perturbative_correction:
+            lambdas_pert = self.update_lams(eris=eris, amplitudes=amplitudes, perturbative=True)
+        else:
+            lambdas_pert = None
+
         # Get the lambda amplitude guesses:
         if self.lambdas is None:
             lambdas = self.init_lams(amplitudes=amplitudes)
@@ -536,7 +547,12 @@ class REBCC(AbstractEBCC):
         for niter in range(1, self.options.max_iter + 1):
             # Update the lambda amplitudes, extrapolate with DIIS and calculate change:
             lambdas_prev = lambdas
-            lambdas = self.update_lams(amplitudes=amplitudes, lambdas=lambdas, eris=eris)
+            lambdas = self.update_lams(
+                amplitudes=amplitudes,
+                lambdas=lambdas,
+                lambdas_pert=lambdas_pert,
+                eris=eris,
+            )
             vector = self.lambdas_to_vector(lambdas)
             vector = diis.update(vector)
             lambdas = self.vector_to_lambdas(vector)
@@ -604,7 +620,7 @@ class REBCC(AbstractEBCC):
             if lambdas is None:
                 lambdas = self.lambdas
             if lambdas is None:
-                self.log.warning("No lambda amplitudes found, guesses will be used.")
+                self.log.warning("Using Λ = T* for %s", name)
                 lambdas = self.init_lams(amplitudes=amplitudes)
             dicts.append(lambdas)
 
@@ -865,7 +881,9 @@ class REBCC(AbstractEBCC):
 
         return res
 
-    def update_lams(self, eris=None, amplitudes=None, lambdas=None):
+    def update_lams(
+        self, eris=None, amplitudes=None, lambdas=None, lambdas_pert=None, perturbative=False
+    ):
         """Update the lambda amplitudes.
 
         Parameters
@@ -879,6 +897,9 @@ class REBCC(AbstractEBCC):
         lambdas : Amplitudes, optional
             Cluster lambda amplitudes. Default value is generated
             using `self.init_lams()`.
+        perturbative : bool, optional
+            Whether to compute the perturbative part of the lambda
+            amplitudes. Default value is `False`.
 
         Returns
         -------
@@ -886,8 +907,11 @@ class REBCC(AbstractEBCC):
             Updated cluster lambda amplitudes.
         """
 
+        if lambdas_pert is not None:
+            lambdas.update(lambdas_pert)
+
         func, kwargs = self._load_function(
-            "update_lams",
+            "update_lams%s" % ("_perturbative" if perturbative else ""),
             eris=eris,
             amplitudes=amplitudes,
             lambdas=lambdas,
@@ -903,13 +927,15 @@ class REBCC(AbstractEBCC):
             d = functools.reduce(np.add.outer, [e_ai] * n)
             d = d.transpose(perm)
             res["l%d" % n] /= d
-            res["l%d" % n] += lambdas["l%d" % n]
+            if not perturbative:
+                res["l%d" % n] += lambdas["l%d" % n]
 
         # Divide S amplitudes:
         for n in self.ansatz.correlated_cluster_ranks[1]:
             d = functools.reduce(np.add.outer, [-self.omega] * n)
             res["ls%d" % n] /= d
-            res["ls%d" % n] += lambdas["ls%d" % n]
+            if not perturbative:
+                res["ls%d" % n] += lambdas["ls%d" % n]
 
         # Divide U amplitudes:
         for nf in self.ansatz.correlated_cluster_ranks[2]:
@@ -918,7 +944,11 @@ class REBCC(AbstractEBCC):
             for nb in self.ansatz.correlated_cluster_ranks[3]:
                 d = functools.reduce(np.add.outer, ([-self.omega] * nb) + ([e_ai] * nf))
                 res["lu%d%d" % (nf, nb)] /= d
-                res["lu%d%d" % (nf, nb)] += lambdas["lu%d%d" % (nf, nb)]
+                if not perturbative:
+                    res["lu%d%d" % (nf, nb)] += lambdas["lu%d%d" % (nf, nb)]
+
+        if perturbative:
+            res = {key + "pert": val for key, val in res.items()}
 
         return res
 

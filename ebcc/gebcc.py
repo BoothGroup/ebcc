@@ -137,24 +137,30 @@ class GEBCC(rebcc.REBCC):
 
             for n in ucc.ansatz.correlated_cluster_ranks[0]:
                 amplitudes["t%d" % n] = np.zeros((space.ncocc,) * n + (space.ncvir,) * n)
-                for comb in util.generate_spin_combinations(n):
+                for comb in util.generate_spin_combinations(n, unique=True):
                     done = set()
-                    for perm, sign in util.permutations_with_signs(tuple(range(n))):
-                        combn = util.permute_string(comb[:n], perm) + comb[n:]
-                        if combn in done:
-                            continue
-                        mask = np.ix_(
-                            *([occs[c] for c in combn[:n]] + [virs[c] for c in combn[n:]])
-                        )
-                        transpose = tuple(perm) + tuple(range(n, 2 * n))
-                        amp = getattr(ucc.amplitudes["t%d" % n], comb).transpose(transpose) * sign
-                        for perm, sign in util.permutations_with_signs(tuple(range(n))):
-                            transpose = tuple(perm) + tuple(range(n, 2 * n))
-                            if util.permute_string(comb[:n], perm) == comb[:n]:
-                                amplitudes["t%d" % n][mask] += (
-                                    amp.transpose(transpose).copy() * sign
-                                )
-                        done.add(combn)
+                    for lperm, lsign in util.permutations_with_signs(tuple(range(n))):
+                        for uperm, usign in util.permutations_with_signs(tuple(range(n))):
+                            combn = util.permute_string(comb[:n], lperm)
+                            combn += util.permute_string(comb[n:], uperm)
+                            if combn in done:
+                                continue
+                            mask = np.ix_(
+                                *([occs[c] for c in combn[:n]] + [virs[c] for c in combn[n:]])
+                            )
+                            transpose = tuple(lperm) + tuple(p + n for p in uperm)
+                            amp = (
+                                getattr(ucc.amplitudes["t%d" % n], comb).transpose(transpose)
+                                * lsign
+                                * usign
+                            )
+                            for perm, sign in util.permutations_with_signs(tuple(range(n))):
+                                transpose = tuple(perm) + tuple(range(n, 2 * n))
+                                if util.permute_string(comb[:n], perm) == comb[:n]:
+                                    amplitudes["t%d" % n][mask] += (
+                                        amp.transpose(transpose).copy() * sign
+                                    )
+                            done.add(combn)
 
             for n in ucc.ansatz.correlated_cluster_ranks[1]:
                 amplitudes["s%d" % n] = ucc.amplitudes["s%d" % n].copy()
@@ -166,36 +172,42 @@ class GEBCC(rebcc.REBCC):
                     )
                     for comb in util.generate_spin_combinations(nf):
                         done = set()
-                        for perm, sign in util.permutations_with_signs(tuple(range(nf))):
-                            combn = util.permute_string(comb[:nf], perm) + comb[nf:]
-                            if combn in done:
-                                continue
-                            mask = np.ix_(
-                                *([range(nbos)] * nb),
-                                *([occs[c] for c in combn[:nf]] + [virs[c] for c in combn[nf:]]),
-                            )
-                            transpose = (
-                                tuple(range(nb))
-                                + tuple(p + nb for p in perm)
-                                + tuple(p + nb + nf for p in perm)
-                            )
-                            amp = (
-                                getattr(ucc.amplitudes["u%d%d" % (nf, nb)], comb).transpose(
-                                    transpose
+                        for lperm, lsign in util.permutations_with_signs(tuple(range(nf))):
+                            for uperm, usign in util.permutations_with_signs(tuple(range(nf))):
+                                combn = util.permute_string(comb[:nf], lperm)
+                                combn += util.permute_string(comb[nf:], uperm)
+                                if combn in done:
+                                    continue
+                                mask = np.ix_(
+                                    *([range(nbos)] * nb),
+                                    *(
+                                        [occs[c] for c in combn[:nf]]
+                                        + [virs[c] for c in combn[nf:]]
+                                    ),
                                 )
-                                * sign
-                            )
-                            for perm, sign in util.permutations_with_signs(tuple(range(nf))):
                                 transpose = (
                                     tuple(range(nb))
-                                    + tuple(p + nb for p in perm)
-                                    + tuple(range(nb + nf, nb + 2 * nf))
+                                    + tuple(p + nb for p in lperm)
+                                    + tuple(p + nb + nf for p in uperm)
                                 )
-                                if util.permute_string(comb[:nf], perm) == comb[:nf]:
-                                    amplitudes["u%d%d" % (nf, nb)][mask] += (
-                                        amp.transpose(transpose).copy() * sign
+                                amp = (
+                                    getattr(ucc.amplitudes["u%d%d" % (nf, nb)], comb).transpose(
+                                        transpose
                                     )
-                            done.add(combn)
+                                    * lsign
+                                    * usign
+                                )
+                                for perm, sign in util.permutations_with_signs(tuple(range(nf))):
+                                    transpose = (
+                                        tuple(range(nb))
+                                        + tuple(p + nb for p in perm)
+                                        + tuple(range(nb + nf, nb + 2 * nf))
+                                    )
+                                    if util.permute_string(comb[:nf], perm) == comb[:nf]:
+                                        amplitudes["u%d%d" % (nf, nb)][mask] += (
+                                            amp.transpose(transpose).copy() * sign
+                                        )
+                                done.add(combn)
 
             gcc.amplitudes = amplitudes
 
@@ -204,22 +216,30 @@ class GEBCC(rebcc.REBCC):
 
             for n in ucc.ansatz.correlated_cluster_ranks[0]:
                 lambdas["l%d" % n] = np.zeros((space.ncvir,) * n + (space.ncocc,) * n)
-                for comb in util.generate_spin_combinations(n):
+                for comb in util.generate_spin_combinations(n, unique=True):
                     done = set()
-                    for perm, sign in util.permutations_with_signs(tuple(range(n))):
-                        combn = util.permute_string(comb[:n], perm) + comb[n:]
-                        if combn in done:
-                            continue
-                        mask = np.ix_(
-                            *([virs[c] for c in combn[:n]] + [occs[c] for c in combn[n:]])
-                        )
-                        transpose = tuple(perm) + tuple(range(n, 2 * n))
-                        amp = getattr(ucc.lambdas["l%d" % n], comb).transpose(transpose) * sign
-                        for perm, sign in util.permutations_with_signs(tuple(range(n))):
-                            transpose = tuple(perm) + tuple(range(n, 2 * n))
-                            if util.permute_string(comb[:n], perm) == comb[:n]:
-                                lambdas["l%d" % n][mask] += amp.transpose(transpose).copy() * sign
-                        done.add(combn)
+                    for lperm, lsign in util.permutations_with_signs(tuple(range(n))):
+                        for uperm, usign in util.permutations_with_signs(tuple(range(n))):
+                            combn = util.permute_string(comb[:n], lperm)
+                            combn += util.permute_string(comb[n:], uperm)
+                            if combn in done:
+                                continue
+                            mask = np.ix_(
+                                *([virs[c] for c in combn[:n]] + [occs[c] for c in combn[n:]])
+                            )
+                            transpose = tuple(lperm) + tuple(p + n for p in uperm)
+                            amp = (
+                                getattr(ucc.lambdas["l%d" % n], comb).transpose(transpose)
+                                * lsign
+                                * usign
+                            )
+                            for perm, sign in util.permutations_with_signs(tuple(range(n))):
+                                transpose = tuple(perm) + tuple(range(n, 2 * n))
+                                if util.permute_string(comb[:n], perm) == comb[:n]:
+                                    lambdas["l%d" % n][mask] += (
+                                        amp.transpose(transpose).copy() * sign
+                                    )
+                            done.add(combn)
 
             for n in ucc.ansatz.correlated_cluster_ranks[1]:
                 lambdas["ls%d" % n] = ucc.lambdas["ls%d" % n].copy()
@@ -229,36 +249,44 @@ class GEBCC(rebcc.REBCC):
                     lambdas["lu%d%d" % (nf, nb)] = np.zeros(
                         (nbos,) * nb + (space.ncvir,) * nf + (space.ncocc,) * nf
                     )
-                    for comb in util.generate_spin_combinations(nf):
+                    for comb in util.generate_spin_combinations(nf, unique=True):
                         done = set()
-                        for perm, sign in util.permutations_with_signs(tuple(range(nf))):
-                            combn = util.permute_string(comb[:nf], perm) + comb[nf:]
-                            if combn in done:
-                                continue
-                            mask = np.ix_(
-                                *([range(nbos)] * nb),
-                                *([virs[c] for c in combn[:nf]] + [occs[c] for c in combn[nf:]]),
-                            )
-                            transpose = (
-                                tuple(range(nb))
-                                + tuple(p + nb for p in perm)
-                                + tuple(p + nb + nf for p in perm)
-                            )
-                            amp = (
-                                getattr(ucc.lambdas["lu%d%d" % (nf, nb)], comb).transpose(transpose)
-                                * sign
-                            )
-                            for perm, sign in util.permutations_with_signs(tuple(range(nf))):
+                        for lperm, lsign in util.permutations_with_signs(tuple(range(nf))):
+                            for uperm, usign in util.permutations_with_signs(tuple(range(nf))):
+                                combn = util.permute_string(comb[:nf], lperm)
+                                combn += util.permute_string(comb[nf:], uperm)
+                                if combn in done:
+                                    continue
+                                mask = np.ix_(
+                                    *([range(nbos)] * nb),
+                                    *(
+                                        [virs[c] for c in combn[:nf]]
+                                        + [occs[c] for c in combn[nf:]]
+                                    ),
+                                )
                                 transpose = (
                                     tuple(range(nb))
-                                    + tuple(p + nb for p in perm)
-                                    + tuple(range(nb + nf, nb + 2 * nf))
+                                    + tuple(p + nb for p in lperm)
+                                    + tuple(p + nb + nf for p in uperm)
                                 )
-                                if util.permute_string(comb[:nf], perm) == comb[:nf]:
-                                    lambdas["lu%d%d" % (nf, nb)][mask] += (
-                                        amp.transpose(transpose).copy() * sign
+                                amp = (
+                                    getattr(ucc.lambdas["lu%d%d" % (nf, nb)], comb).transpose(
+                                        transpose
                                     )
-                            done.add(combn)
+                                    * lsign
+                                    * usign
+                                )
+                                for perm, sign in util.permutations_with_signs(tuple(range(nf))):
+                                    transpose = (
+                                        tuple(range(nb))
+                                        + tuple(p + nb for p in perm)
+                                        + tuple(range(nb + nf, nb + 2 * nf))
+                                    )
+                                    if util.permute_string(comb[:nf], perm) == comb[:nf]:
+                                        lambdas["lu%d%d" % (nf, nb)][mask] += (
+                                            amp.transpose(transpose).copy() * sign
+                                        )
+                                done.add(combn)
 
             gcc.lambdas = lambdas
 

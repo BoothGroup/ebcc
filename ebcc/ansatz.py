@@ -8,6 +8,8 @@ import numpy as np
 from ebcc import METHOD_TYPES, util
 
 named_ansatzes = {
+    "MP2": ("MP2", "", 0, 0),
+    "MP3": ("MP3", "", 0, 0),
     "CCD": ("CCD", "", 0, 0),
     "CCSD": ("CCSD", "", 0, 0),
     "CCSDT": ("CCSDT", "", 0, 0),
@@ -156,6 +158,22 @@ class Ansatz:
         )
 
     @property
+    def is_one_shot(self):
+        """Return a boolean indicating whether the ansatz is simply
+        a one-shot energy calculation e.g. MP2.
+
+        Returns
+        -------
+        one_shot : bool
+            Boolean indicating if the ansatz is a one-shot energy
+            calculation.
+        """
+        return all(
+            ansatz.startswith("MP") or ansatz == ""
+            for ansatz in (self.fermion_ansatz, self.boson_ansatz)
+        )
+
+    @property
     def correlated_cluster_ranks(self):
         """Get a list of cluster operator rank numbers for each of
         the fermionic, bosonic, and coupling ansatzes, for the
@@ -197,6 +215,11 @@ class Ansatz:
                     if op.startswith(method_type):
                         op = op.lstrip(method_type)
                         break
+
+            # If it's Moller-Plesset perturbation theory, we only
+            # need to initialise second-order amplitudes
+            if method_type == "MP":
+                op = "D"
 
             # Remove any lower case characters, as these correspond
             # to active space

@@ -336,7 +336,7 @@ class BruecknerUEBCC(BruecknerREBCC):
 
         # Transform T amplitudes:
         for n in self.cc.ansatz.correlated_cluster_ranks[0]:
-            for comb in util.generate_spin_combinations(n):
+            for comb in util.generate_spin_combinations(n, unique=True):
                 args = [getattr(self.cc.amplitudes["t%d" % n], comb), tuple(range(n * 2))]
             for i in range(n):
                 args += [ci[comb[i]], (i, i + n * 2)]

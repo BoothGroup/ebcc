@@ -284,7 +284,7 @@ class RCCSD_PySCF_Frozen_Tests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        del cls.mf, cls.ccsd_ref, cls.ccsd
+        del cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris
 
     def test_converged(self):
         self.assertTrue(self.ccsd.converged)

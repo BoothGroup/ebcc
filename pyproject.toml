@@ -76,6 +76,7 @@ src_paths = [
 skip_glob = [
     "ebcc/__pycache__/*",
     "ebcc/codegen/*",
+    "ebcc/__init__.py",
 ]
 
 [tool.coverage.run]
