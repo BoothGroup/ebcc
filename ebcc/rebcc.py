@@ -544,10 +544,10 @@ class REBCC(AbstractEBCC):
             # Update the lambda amplitudes, extrapolate with DIIS and calculate change:
             lambdas_prev = lambdas
             lambdas = self.update_lams(
-                    amplitudes=amplitudes,
-                    lambdas=lambdas,
-                    lambdas_pert=lambdas_pert,
-                    eris=eris,
+                amplitudes=amplitudes,
+                lambdas=lambdas,
+                lambdas_pert=lambdas_pert,
+                eris=eris,
             )
             vector = self.lambdas_to_vector(lambdas)
             vector = diis.update(vector)
@@ -877,7 +877,9 @@ class REBCC(AbstractEBCC):
 
         return res
 
-    def update_lams(self, eris=None, amplitudes=None, lambdas=None, lambdas_pert=None, perturbative=False):
+    def update_lams(
+        self, eris=None, amplitudes=None, lambdas=None, lambdas_pert=None, perturbative=False
+    ):
         """Update the lambda amplitudes.
 
         Parameters
@@ -942,7 +944,7 @@ class REBCC(AbstractEBCC):
                     res["lu%d%d" % (nf, nb)] += lambdas["lu%d%d" % (nf, nb)]
 
         if perturbative:
-            res = {key+"pert": val for key, val in res.items()}
+            res = {key + "pert": val for key, val in res.items()}
 
         return res
 

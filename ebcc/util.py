@@ -635,8 +635,7 @@ def einsum(*operands, symmetry=False, **kwargs):  # pragma: no cover
 
 
 def unique(lst):
-    """Get unique elements of a list.
-    """
+    """Get unique elements of a list."""
 
     done = set()
     out = []
@@ -673,7 +672,9 @@ def einsum_symmetric(*operands, symmetries=[], symmetrise_dummies=False, **kwarg
 
     # Make sure that external and dummy variables are compressed
     # separately
-    not_used = [char for char in "abcdefghijklmnopqrstuvwxyz" if not any(char in s for s in symmetries)]
+    not_used = [
+        char for char in "abcdefghijklmnopqrstuvwxyz" if not any(char in s for s in symmetries)
+    ]
     for i, symmetry in enumerate(symmetries):
         char_map = {}
         new_symmetry = ""
@@ -714,8 +715,8 @@ def einsum_symmetric(*operands, symmetries=[], symmetrise_dummies=False, **kwarg
 
     # Compress the inputs
     args_flat = [
-            compress_axes(subscript, arg, include_diagonal=True)
-            for subscript, arg in zip(subscripts_flat, args)
+        compress_axes(subscript, arg, include_diagonal=True)
+        for subscript, arg in zip(subscripts_flat, args)
     ]
 
     # Get the factors for the compressed dummies  # TODO improve
@@ -734,13 +735,15 @@ def einsum_symmetric(*operands, symmetries=[], symmetrise_dummies=False, **kwarg
         # Apply the factors
         for i in range(len(args)):
             factors = []
-            for inds in itertools.product(*[
+            for inds in itertools.product(
+                *[
                     itertools.combinations_with_replacement(
                         range(args[i].shape[subscripts_flat[i].index(x)]),
                         subscripts_flat[i].count(x),
                     )
                     for x in unique(list(subscripts_flat[i]))
-            ]):
+                ]
+            ):
                 factor = 1
                 for dumm, tup in zip(dummies_flat[i], inds):
                     if dumm:
@@ -757,6 +760,8 @@ def einsum_symmetric(*operands, symmetries=[], symmetrise_dummies=False, **kwarg
 
     # Decompress the output
     shape = tuple(sizes[i] for i in out)
-    out = decompress_axes(subscripts_flat[-1], out_flat, include_diagonal=True, shape=shape, symmetry="+"*len(shape))
+    out = decompress_axes(
+        subscripts_flat[-1], out_flat, include_diagonal=True, shape=shape, symmetry="+" * len(shape)
+    )
 
     return out
