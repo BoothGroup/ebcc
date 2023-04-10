@@ -8,7 +8,7 @@ from qccg import index, tensor, read, write
 import pdaggerq
 
 # Order
-order = 2
+order = 3
 
 # Spin integration mode
 spin = "uhf"
@@ -31,7 +31,10 @@ with common.FilePrinter("%sMP%d" % (spin[0].upper(), order)) as file_printer:
             return_dict=False,
             timer=timer,
     ) as function_printer:
-        terms = [hugenholtz.get_pdaggerq(graph) for graph in hugenholtz.get_hugenholtz_diagrams(order)]
+        terms = sum([
+                [hugenholtz.get_pdaggerq(graph) for graph in hugenholtz.get_hugenholtz_diagrams(n)]
+                for n in range(2, order+1)
+        ], [])
 
         qccg.clear()
         qccg.set_spin(spin)
