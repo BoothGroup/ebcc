@@ -9,6 +9,7 @@ from ebcc import METHOD_TYPES, util
 
 named_ansatzes = {
     "MP2": ("MP2", "", 0, 0),
+    "MP3": ("MP3", "", 0, 0),
     "CCD": ("CCD", "", 0, 0),
     "CCSD": ("CCSD", "", 0, 0),
     "CCSDT": ("CCSDT", "", 0, 0),
@@ -218,7 +219,7 @@ class Ansatz:
             # If it's Moller-Plesset perturbation theory, we only
             # need to initialise second-order amplitudes
             if method_type == "MP":
-                op = {"2": "D", "3": "T", "4": "Q"}.get(op, op)
+                op = "D"
 
             # Remove any lower case characters, as these correspond
             # to active space
