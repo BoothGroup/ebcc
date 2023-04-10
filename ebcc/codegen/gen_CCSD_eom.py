@@ -662,3 +662,141 @@ with common.FilePrinter("%sCCSD_eom" % prefix.upper()) as file_printer:
         #                + "    ree1new = Namespace(aa=ree1new_aa, bb=ree1new_bb)\n"
         #                + "    ree2new = Namespace(aaaa=ree2new_aaaa, abab=ree2new_abab, baba=ree2new_baba, bbbb=ree2new_bbbb)\n"
         #        )
+
+
+
+# WIP porting the moments:
+#
+#    # Get moment expressions:
+#    for is_ket, ket_name in [(True, "ket"), (False, "bra")]:
+#        for excitation_type in ["ip", "ea"]:
+#            with FunctionPrinter(
+#                    file_printer,
+#                    "make_%s_mom_%ss" % (excitation_type, ket_name),
+#                    ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2"],
+#                    ["%s1" % ket_name, "%s2" % ket_name],
+#                    spin_cases = {
+#                        ("%s1" % ket_name): ("aa", "bb"),
+#                        ("%s2" % ket_name): ("aaaa", "abab", "baba", "bbbb"),
+#                    },
+#                    return_dict=False,
+#                    timer=timer,
+#            ) as function_printer:
+#                from fractions import Fraction
+#                from qwick.index import Idx
+#                from qwick.expression import AExpression
+#                from qwick.wick import apply_wick
+#                from qwick.convenience import one_e, two_e, E1, E2, commute
+#                from qwick.convenience import braEip1, braEip2, braEea1, braEea2, braE1, braE2
+#                from qwick.convenience import ketEip1, ketEip2, ketEea1, ketEea2, ketE1, ketE2
+#                from qwick.convenience import Eip1, Eip2, Eea1, Eea2
+#
+#                H1 = one_e("f", ["occ", "vir"], norder=True)
+#                H2 = two_e("v", ["occ", "vir"], norder=True)
+#                H = H1 + H2
+#
+#                if is_ket:
+#                    if excitation_type == "ip":
+#                        space1 = braEip1("occ")
+#                        space2 = braEip2("occ", "occ", "vir")
+#                    elif excitation_type == "ea":
+#                        space1 = braEip1("vir")
+#                        space2 = braEip2("occ", "vir", "vir")
+#                else:
+#                    if excitation_type == "ip":
+#                        space1 = ketEip1("occ")
+#                        space2 = ketEip2("occ", "occ", "vir")
+#                    elif excitation_type == "ea":
+#                        space1 = ketEip1("vir")
+#                        space2 = ketEip2("occ", "vir", "vir")
+#
+#                indices = [Idx(0, "occ"), Idx(0, "vir")]
+#                index_names = ["o", "v"]
+#
+#                if spin != "uhf":
+#                    function_printer.write_python(
+#                            "    delta_oo = np.eye(nocc)\n"
+#                            "    delta_vv = np.eye(nvir)\n"
+#                    )
+#                else:
+#                    function_printer.write_python(
+#                            "    delta_oo = Namespace()\n"
+#                            "    delta_oo.aa = np.eye(nocc[0])\n"
+#                            "    delta_oo.bb = np.eye(nocc[1])\n"
+#                            "    delta_vv = Namespace()\n"
+#                            "    delta_vv.aa = np.eye(nvir[0])\n"
+#                            "    delta_vv.bb = np.eye(nvir[1])\n"
+#                    )
+#
+#                all_terms = []
+#                for space_no, space in enumerate([space1, space2]):
+#                    for ind, ind_name in zip(indices, index_names):
+#                        return_value = "%s%d_%s" % (ket_name, space_no+1, ind_name)
+#
+#                        ops = [FOperator(ind, (excitation_type != "ip") if is_ket else excitation_type == "ip")]
+#                        R = Expression([Term(1, [], [Tensor([ind], "")], ops, [])])
+#                        mid = wick.bch(R, T, max_commutator=4)[-1]
+#
+#                        if is_ket:
+#                            full = space * mid
+#                        else:
+#                            full = (L * mid + mid) * space
+#
+#                        out = wick.apply_wick(full)
+#                        out.resolve()
+#                        expr = AExpression(Ex=out)
+#
+#                        if len(expr.terms) == 0:
+#                            # Bit of a hack to make sure the term definition remains  TODO as a function
+#                            term = Term(0, [], [t for t in out.terms[0].tensors if t.name == ""], [], [])
+#                            expr = AExpression(terms=[ATerm(term)], simplify=False)
+#
+#
+#                        terms, indices = codegen.wick_to_sympy(expr, particles, return_value=return_value)
+#                        if all(all(f == 0 for f in term.rhs) for term in terms):
+#                            if spin != "uhf":
+#                                name = terms[0].lhs.base.name
+#                                shape = []
+#                                for index in terms[0].lhs.external_indices:
+#                                    shape.append("nocc" if index.space is codegen.OCCUPIED else "nvir" if index.space is codegen.VIRTUAL else "nbos")
+#                                function_printer.write_python("    %s = %s((%s), dtype=%s)" % (name, printer._zeros, ", ".join(shape), printer._dtype))
+#                            else:
+#                                spins = [[(0, 0), (1, 1)], [(0, 0, 0, 0), (0, 1, 0, 1), (1, 0, 1, 0), (1, 1, 1, 1)]][space_no]
+#                                for sps in spins:
+#                                    name = terms[0].lhs.base.name + ("_%s" % "".join(["ab"[sp] for sp in sps]))
+#                                    shape = []
+#                                    for index, sp in zip(terms[0].lhs.external_indices, sps):
+#                                        shape.append(("nocc[%d]" % sp) if index.space is codegen.OCCUPIED else ("nvir[%d]" % sp) if index.space is codegen.VIRTUAL else "nbos")
+#                                    function_printer.write_python("    %s = %s((%s), dtype=%s)" % (name, printer._zeros, ", ".join(shape), printer._dtype))
+#                        else:
+#                            terms = transform_spin(terms, indices)
+#                            terms = [codegen.sympy_to_drudge(group, indices, dr=dr, restricted=spin!="uhf") for group in terms]
+#                            all_terms.append(terms)
+#
+#                all_terms = codegen.spin_integrate._flatten(all_terms)
+#                all_terms = codegen.optimize(all_terms, sizes=sizes, optimize="exhaust", verify=False, interm_fmt="x{}")
+#                function_printer.write_python(printer.doprint(all_terms)+"\n")
+#
+#                if spin != "uhf":
+#                    function_printer.write_python(""
+#                            + "    %s1 = np.concatenate([%s1_o, %s1_v], axis=%d)\n" % ((ket_name,) * 3 + ((1 if is_ket else 0),))
+#                            + "    %s2 = np.concatenate([%s2_o, %s2_v], axis=%d)\n" % ((ket_name,) * 3 + ((3 if is_ket else 0),))
+#                    )
+#                else:
+#                    function_printer.write_python(""
+#                            + "    %s1_aa = np.concatenate([%s1_o_aa, %s1_v_aa], axis=%d)\n" % ((ket_name,) * 3 + ((1 if is_ket else 0),))
+#                            + "    %s1_bb = np.concatenate([%s1_o_bb, %s1_v_bb], axis=%d)\n" % ((ket_name,) * 3 + ((1 if is_ket else 0),))
+#                            + "    %s2_aaaa = np.concatenate([%s2_o_aaaa, %s2_v_aaaa], axis=%d)\n" % ((ket_name,) * 3 + ((3 if is_ket else 0),))
+#                            + "    %s2_abab = np.concatenate([%s2_o_abab, %s2_v_abab], axis=%d)\n" % ((ket_name,) * 3 + ((3 if is_ket else 0),))
+#                            + "    %s2_baba = np.concatenate([%s2_o_baba, %s2_v_baba], axis=%d)\n" % ((ket_name,) * 3 + ((3 if is_ket else 0),))
+#                            + "    %s2_bbbb = np.concatenate([%s2_o_bbbb, %s2_v_bbbb], axis=%d)\n" % ((ket_name,) * 3 + ((3 if is_ket else 0),))
+#                    )
+#
+#                if spin == "uhf" and excitation_type != "ip":
+#                    # FIXME why?
+#                    function_printer.write_python(""
+#                            + "    %s2_aaaa *= -1\n" % ket_name
+#                            + "    %s2_abab *= -1\n" % ket_name
+#                            + "    %s2_baba *= -1\n" % ket_name
+#                            + "    %s2_bbbb *= -1\n" % ket_name
+#                    )
