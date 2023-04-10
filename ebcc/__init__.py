@@ -126,6 +126,11 @@ def init_logging(log):
 METHOD_TYPES = ["CC", "LCC", "QCI", "QCC"]
 
 
+# --- Import NumPy here to allow drop-in replacements
+
+import numpy
+
+
 # --- General constructor:
 
 from ebcc.gebcc import GEBCC
