@@ -439,45 +439,49 @@ class REBCC(AbstractEBCC):
         # Get the initial energy:
         e_cc = e_init = self.energy(amplitudes=amplitudes, eris=eris)
 
-        # Set up DIIS:
-        diis = lib.diis.DIIS()
-        diis.space = self.options.diis_space
-
         self.log.output("Solving for excitation amplitudes.")
         self.log.info("%4s %16s %16s %16s", "Iter", "Energy (corr.)", "Δ(Energy)", "Δ(Amplitudes)")
         self.log.info("%4d %16.10f", 0, e_init)
 
-        converged = False
-        for niter in range(1, self.options.max_iter + 1):
-            # Update the amplitudes, extrapolate with DIIS and calculate change:
-            amplitudes_prev = amplitudes
-            amplitudes = self.update_amps(amplitudes=amplitudes, eris=eris)
-            vector = self.amplitudes_to_vector(amplitudes)
-            vector = diis.update(vector)
-            amplitudes = self.vector_to_amplitudes(vector)
-            dt = np.linalg.norm(vector - self.amplitudes_to_vector(amplitudes_prev), ord=np.inf)
+        if not self.ansatz.is_one_shot:
+            # Set up DIIS:
+            diis = lib.diis.DIIS()
+            diis.space = self.options.diis_space
 
-            # Update the energy and calculate change:
-            e_prev = e_cc
-            e_cc = self.energy(amplitudes=amplitudes, eris=eris)
-            de = abs(e_prev - e_cc)
+            converged = False
+            for niter in range(1, self.options.max_iter + 1):
+                # Update the amplitudes, extrapolate with DIIS and calculate change:
+                amplitudes_prev = amplitudes
+                amplitudes = self.update_amps(amplitudes=amplitudes, eris=eris)
+                vector = self.amplitudes_to_vector(amplitudes)
+                vector = diis.update(vector)
+                amplitudes = self.vector_to_amplitudes(vector)
+                dt = np.linalg.norm(vector - self.amplitudes_to_vector(amplitudes_prev), ord=np.inf)
 
-            self.log.info("%4d %16.10f %16.5g %16.5g", niter, e_cc, de, dt)
+                # Update the energy and calculate change:
+                e_prev = e_cc
+                e_cc = self.energy(amplitudes=amplitudes, eris=eris)
+                de = abs(e_prev - e_cc)
 
-            # Check for convergence:
-            converged = de < self.options.e_tol and dt < self.options.t_tol
-            if converged:
-                self.log.output("Converged.")
-                break
+                self.log.info("%4d %16.10f %16.5g %16.5g", niter, e_cc, de, dt)
+
+                # Check for convergence:
+                converged = de < self.options.e_tol and dt < self.options.t_tol
+                if converged:
+                    self.log.output("Converged.")
+                    break
+            else:
+                self.log.warning("Failed to converge.")
+
+            # Include perturbative correction if required:
+            if self.ansatz.has_perturbative_correction:
+                self.log.info("Computing perturbative energy correction.")
+                e_pert = self.energy_perturbative(amplitudes=amplitudes, eris=eris)
+                e_cc += e_pert
+                self.log.info("E(pert) = %.10f", e_pert)
+
         else:
-            self.log.warning("Failed to converge.")
-
-        # Include perturbative correction if required:
-        if self.ansatz.has_perturbative_correction:
-            self.log.info("Computing perturbative energy correction.")
-            e_pert = self.energy_perturbative(amplitudes=amplitudes, eris=eris)
-            e_cc += e_pert
-            self.log.info("E(pert) = %.10f", e_pert)
+            converged = True
 
         # Update attributes:
         self.e_corr = e_cc

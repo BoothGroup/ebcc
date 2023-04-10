@@ -250,8 +250,8 @@ class UEBCC(rebcc.REBCC):
                     bbbb=eris.bbbb.ovov.swapaxes(1, 2) / e_ijab.bbbb,
                 )
                 # TODO generalise:
-                tn.aaaa = tn.aaaa - tn.aaaa.swapaxes(0, 1)
-                tn.bbbb = tn.bbbb - tn.bbbb.swapaxes(0, 1)
+                tn.aaaa = 0.5 * (tn.aaaa - tn.aaaa.swapaxes(0, 1))
+                tn.bbbb = 0.5 * (tn.bbbb - tn.bbbb.swapaxes(0, 1))
                 amplitudes["t%d" % n] = tn
             else:
                 tn = util.Namespace()

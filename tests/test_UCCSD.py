@@ -187,7 +187,7 @@ class UCCSD_PySCF_Tests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        del cls.mf, cls.ccsd_ref, cls.ccsd
+        del cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris
 
     def test_energy(self):
         a = self.ccsd_ref.e_tot
@@ -298,7 +298,7 @@ class UCCSD_PySCF_Frozen_Tests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        del cls.mf, cls.ccsd_ref, cls.ccsd
+        del cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris
 
     def test_energy(self):
         a = self.ccsd_ref.e_tot
