@@ -10,6 +10,7 @@ def energy(f=None, v=None, nocc=None, nvir=None, t2=None, **kwargs):
     x0 += einsum(v.ovov, (0, 1, 2, 3), (0, 2, 1, 3))
     e_mp = 0
     e_mp += einsum(t2, (0, 1, 2, 3), x0, (0, 1, 2, 3), ()) * 2.0
+    del x0
 
     return e_mp
 
