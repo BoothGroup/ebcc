@@ -61,6 +61,7 @@ class GCCSD_S_1_1_Tests(unittest.TestCase):
                 log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-12
+        ccsd.options.t_tol = 1e-10
         eris = ccsd.get_eris()
         ccsd.kernel(eris=eris)
         ccsd.solve_lambda(eris=eris)
