@@ -1,6 +1,7 @@
 """Script to generate equations for the CCSD model.
 """
 
+import sys
 import itertools
 from ebcc.codegen import common_no_qwick as common
 import qccg
@@ -8,7 +9,7 @@ from qccg import index, tensor, read, write
 import pdaggerq
 
 # Spin integration mode
-spin = "uhf"
+spin = sys.argv[-1] if sys.argv[-1] in {"rhf", "uhf", "ghf"} else "ghf"
 
 # pdaggerq setup
 pq = pdaggerq.pq_helper("fermi")
@@ -18,7 +19,7 @@ pq.set_print_level(0)
 FunctionPrinter = common.get_function_printer(spin)
 timer = common.Stopwatch()
 
-with common.FilePrinter("%sCCSD_test" % spin[0].upper()) as file_printer:
+with common.FilePrinter("%sCCSD" % spin[0].upper()) as file_printer:
     file_printer.write_c_structs(spin)
 
     # Get energy expression:
@@ -454,141 +455,141 @@ with common.FilePrinter("%sCCSD_test" % spin[0].upper()) as file_printer:
             function_printer.write_python("    rdm2_f = rdm2_f.swapaxes(1, 2)\n")
 
     # WIP:
-    # Get EOM hamiltonian-vector product expressions:
-    for excitation_type in ["ip", "ea", "ee"]:
-        with FunctionPrinter(
-                file_printer,
-                "hbar_matvec_%s" % excitation_type,
-                ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2", "r1", "r2"],
-                ["r1new", "r2new"],
-                spin_cases={
-                    "r1new": ["a", "b"] if excitation_type != "ee" else ["aa", "bb"],
-                    "r2new": ["aaa", "aba", "bab", "bbb"] if excitation_type != "ee" else ["aaaa", "abab", "baba", "bbbb"],
-                },
-                return_dict=False,
-                timer=timer,
-        ) as function_printer:
-            from fractions import Fraction
-            from qwick.expression import AExpression
-            from qwick.wick import apply_wick
-            from qwick.convenience import one_e, two_e, E1, E2, commute
-            from qwick.convenience import braEip1, braEip2, braEea1, braEea2, braE1, braE2
-            from qwick.convenience import Eip1, Eip2, Eea1, Eea2
+    ## Get EOM hamiltonian-vector product expressions:
+    #for excitation_type in ["ip", "ea", "ee"]:
+    #    with FunctionPrinter(
+    #            file_printer,
+    #            "hbar_matvec_%s" % excitation_type,
+    #            ["f", "v", "nocc", "nvir", "t1", "t2", "l1", "l2", "r1", "r2"],
+    #            ["r1new", "r2new"],
+    #            spin_cases={
+    #                "r1new": ["a", "b"] if excitation_type != "ee" else ["aa", "bb"],
+    #                "r2new": ["aaa", "aba", "bab", "bbb"] if excitation_type != "ee" else ["aaaa", "abab", "baba", "bbbb"],
+    #            },
+    #            return_dict=False,
+    #            timer=timer,
+    #    ) as function_printer:
+    #        from fractions import Fraction
+    #        from qwick.expression import AExpression
+    #        from qwick.wick import apply_wick
+    #        from qwick.convenience import one_e, two_e, E1, E2, commute
+    #        from qwick.convenience import braEip1, braEip2, braEea1, braEea2, braE1, braE2
+    #        from qwick.convenience import Eip1, Eip2, Eea1, Eea2
 
-            H1 = one_e("f", ["occ", "vir"], norder=True)
-            H2 = two_e("v", ["occ", "vir"], norder=True)
-            H = H1 + H2
+    #        H1 = one_e("f", ["occ", "vir"], norder=True)
+    #        H2 = two_e("v", ["occ", "vir"], norder=True)
+    #        H = H1 + H2
 
-            if excitation_type == "ip":
-                bra1 = braEip1("occ")
-                bra2 = braEip2("occ", "occ", "vir")
-            elif excitation_type == "ea":
-                bra1 = braEea1("vir")
-                bra2 = braEea2("occ", "vir", "vir")
-            elif excitation_type == "ee":
-                bra1 = braE1("occ", "vir")
-                bra2 = braE2("occ", "vir", "occ", "vir")
-            T1 = E1("t", ["occ"], ["vir"])
-            T2 = E2("t", ["occ"], ["vir"])
-            T = T1 + T2
+    #        if excitation_type == "ip":
+    #            bra1 = braEip1("occ")
+    #            bra2 = braEip2("occ", "occ", "vir")
+    #        elif excitation_type == "ea":
+    #            bra1 = braEea1("vir")
+    #            bra2 = braEea2("occ", "vir", "vir")
+    #        elif excitation_type == "ee":
+    #            bra1 = braE1("occ", "vir")
+    #            bra2 = braE2("occ", "vir", "occ", "vir")
+    #        T1 = E1("t", ["occ"], ["vir"])
+    #        T2 = E2("t", ["occ"], ["vir"])
+    #        T = T1 + T2
 
-            if excitation_type == "ip":
-                R1 = Eip1("r", ["occ"])
-                R2 = Eip2("r", ["occ"], ["vir"])
-            elif excitation_type == "ea":
-                R1 = Eea1("r", ["vir"])
-                R2 = Eea2("r", ["occ"], ["vir"])
-            elif excitation_type == "ee":
-                R1 = E1("r", ["occ"], ["vir"])
-                R2 = E2("r", ["occ"], ["vir"])
-            R = R1 + R2
+    #        if excitation_type == "ip":
+    #            R1 = Eip1("r", ["occ"])
+    #            R2 = Eip2("r", ["occ"], ["vir"])
+    #        elif excitation_type == "ea":
+    #            R1 = Eea1("r", ["vir"])
+    #            R2 = Eea2("r", ["occ"], ["vir"])
+    #        elif excitation_type == "ee":
+    #            R1 = E1("r", ["occ"], ["vir"])
+    #            R2 = E2("r", ["occ"], ["vir"])
+    #        R = R1 + R2
 
-            HT = commute(H, T)
-            HTT = commute(HT, T)
-            HTTT = commute(HTT, T)
-            HTTTT = commute(HTTT, T)
-            Hbar = H + HT + Fraction('1/2')*HTT
+    #        HT = commute(H, T)
+    #        HTT = commute(HT, T)
+    #        HTTT = commute(HTT, T)
+    #        HTTTT = commute(HTTT, T)
+    #        Hbar = H + HT + Fraction('1/2')*HTT
 
-            S0 = Hbar
-            E0 = apply_wick(S0)
-            E0.resolve()
+    #        S0 = Hbar
+    #        E0 = apply_wick(S0)
+    #        E0.resolve()
 
-            Hbar += Fraction('1/6')*HTTT + Fraction('1/24')*HTTTT
+    #        Hbar += Fraction('1/6')*HTTT + Fraction('1/24')*HTTTT
 
-            out = apply_wick(bra1 * (Hbar - E0) * R)
-            out.resolve()
-            terms_r1 = repr(AExpression(Ex=out))
+    #        out = apply_wick(bra1 * (Hbar - E0) * R)
+    #        out.resolve()
+    #        terms_r1 = repr(AExpression(Ex=out))
 
-            out = apply_wick(bra2 * (Hbar - E0) * R)
-            out.resolve()
-            terms_r2 = repr(AExpression(Ex=out))
+    #        out = apply_wick(bra2 * (Hbar - E0) * R)
+    #        out.resolve()
+    #        terms_r2 = repr(AExpression(Ex=out))
 
-            expressions = []
-            outputs = []
-            for n, terms in enumerate([terms_r1, terms_r2]):
-                if excitation_type == "ip":
-                    nlower, nupper = (n+1, n)
-                elif excitation_type == "ea":
-                    nlower, nupper = (n, n+1)
-                elif excitation_type == "ee":
-                    nlower, nupper = (n+1, n+1)
+    #        expressions = []
+    #        outputs = []
+    #        for n, terms in enumerate([terms_r1, terms_r2]):
+    #            if excitation_type == "ip":
+    #                nlower, nupper = (n+1, n)
+    #            elif excitation_type == "ea":
+    #                nlower, nupper = (n, n+1)
+    #            elif excitation_type == "ee":
+    #                nlower, nupper = (n+1, n+1)
 
-                if spin == "ghf":
-                    spins_lower_list = [(None,) * nlower]
-                    spins_upper_list = [(None,) * nupper]
-                elif spin == "rhf":
-                    if excitation_type != "ee":
-                        spins = "a" if n == 0 else "aba"
-                    else:
-                        spins = "aa" if n == 0 else "abab"
-                    spins_lower_list = [tuple(spins)[:nlower]]
-                    spins_upper_list = [tuple(spins)[nlower:]]
-                elif spin == "uhf":
-                    if excitation_type != "ee":
-                        spins = ["a", "b"] if n == 0 else ["aaa", "aba", "bab", "bbb"]
-                    else:
-                        spins = ["aa", "bb"] if n == 0 else ["aaaa", "abab", "baba", "bbbb"]
-                    spins_lower_list = [tuple(s)[:nlower] for s in spins]
-                    spins_upper_list = [tuple(s)[nlower:] for s in spins]
+    #            if spin == "ghf":
+    #                spins_lower_list = [(None,) * nlower]
+    #                spins_upper_list = [(None,) * nupper]
+    #            elif spin == "rhf":
+    #                if excitation_type != "ee":
+    #                    spins = "a" if n == 0 else "aba"
+    #                else:
+    #                    spins = "aa" if n == 0 else "abab"
+    #                spins_lower_list = [tuple(spins)[:nlower]]
+    #                spins_upper_list = [tuple(spins)[nlower:]]
+    #            elif spin == "uhf":
+    #                if excitation_type != "ee":
+    #                    spins = ["a", "b"] if n == 0 else ["aaa", "aba", "bab", "bbb"]
+    #                else:
+    #                    spins = ["aa", "bb"] if n == 0 else ["aaaa", "abab", "baba", "bbbb"]
+    #                spins_lower_list = [tuple(s)[:nlower] for s in spins]
+    #                spins_upper_list = [tuple(s)[nlower:] for s in spins]
 
-                for spins_lower, spins_upper in zip(spins_lower_list, spins_upper_list):
-                    qccg.clear()
-                    qccg.set_spin(spin)
+    #            for spins_lower, spins_upper in zip(spins_lower_list, spins_upper_list):
+    #                qccg.clear()
+    #                qccg.set_spin(spin)
 
-                    if spin == "rhf":
-                        occ = index.index_factory(index.ExternalIndex, ["i", "j"][:nlower], ["o", "o"][:nlower], ["r", "r"][:nlower])
-                        vir = index.index_factory(index.ExternalIndex, ["a", "b"][:nupper], ["v", "v"][:nupper], ["r", "r"][:nupper])
-                        output = tensor.FermionicAmplitude("r%dnew" % (n+1), occ, vir)
-                        shape = ", ".join(["nocc"] * nlower + ["nvir"] * nupper)
-                    elif spin == "uhf":
-                        occ = index.index_factory(index.ExternalIndex, ["i", "j"][:nlower], ["o", "o"][:nlower], spins_lower)
-                        vir = index.index_factory(index.ExternalIndex, ["a", "b"][:nupper], ["v", "v"][:nupper], spins_upper)
-                        output = tensor.FermionicAmplitude("r%dnew" % (n+1), occ, vir)
-                        shape = ", ".join(["nocc[%d]"] * nlower + ["nvir[%d]"] * nupper) % tuple("ab".index(s) for s in (spins_lower+spins_upper))
-                    elif spin == "ghf":
-                        occ = index.index_factory(index.ExternalIndex, ["i", "j"][:nlower], ["o", "o"][:nlower], [None, None][:nlower])
-                        vir = index.index_factory(index.ExternalIndex, ["a", "b"][:nupper], ["v", "v"][:nupper], [None, None][:nupper])
-                        output = tensor.FermionicAmplitude("r%dnew" % (n+1), occ, vir)
-                        shape = ", ".join(["nocc"] * nlower + ["nvir"] * nupper)
+    #                if spin == "rhf":
+    #                    occ = index.index_factory(index.ExternalIndex, ["i", "j"][:nlower], ["o", "o"][:nlower], ["r", "r"][:nlower])
+    #                    vir = index.index_factory(index.ExternalIndex, ["a", "b"][:nupper], ["v", "v"][:nupper], ["r", "r"][:nupper])
+    #                    output = tensor.FermionicAmplitude("r%dnew" % (n+1), occ, vir)
+    #                    shape = ", ".join(["nocc"] * nlower + ["nvir"] * nupper)
+    #                elif spin == "uhf":
+    #                    occ = index.index_factory(index.ExternalIndex, ["i", "j"][:nlower], ["o", "o"][:nlower], spins_lower)
+    #                    vir = index.index_factory(index.ExternalIndex, ["a", "b"][:nupper], ["v", "v"][:nupper], spins_upper)
+    #                    output = tensor.FermionicAmplitude("r%dnew" % (n+1), occ, vir)
+    #                    shape = ", ".join(["nocc[%d]"] * nlower + ["nvir[%d]"] * nupper) % tuple("ab".index(s) for s in (spins_lower+spins_upper))
+    #                elif spin == "ghf":
+    #                    occ = index.index_factory(index.ExternalIndex, ["i", "j"][:nlower], ["o", "o"][:nlower], [None, None][:nlower])
+    #                    vir = index.index_factory(index.ExternalIndex, ["a", "b"][:nupper], ["v", "v"][:nupper], [None, None][:nupper])
+    #                    output = tensor.FermionicAmplitude("r%dnew" % (n+1), occ, vir)
+    #                    shape = ", ".join(["nocc"] * nlower + ["nvir"] * nupper)
 
-                    index_spins = {index.character: s for index, s in zip(occ+vir, spins_lower+spins_upper)}
-                    expression = read.from_wick(terms, index_spins=index_spins)
-                    expression = expression.expand_spin_orbitals()
+    #                index_spins = {index.character: s for index, s in zip(occ+vir, spins_lower+spins_upper)}
+    #                expression = read.from_wick(terms, index_spins=index_spins)
+    #                expression = expression.expand_spin_orbitals()
 
-                    expressions.append(expression)
-                    outputs.append(output)
+    #                expressions.append(expression)
+    #                outputs.append(output)
 
-            final_outputs = outputs
-            #expressions, outputs = qccg.optimisation.optimise_expression_gristmill(
-            #        expressions,
-            #        outputs,
-            #)
-            einsums = write.write_opt_einsums(
-                    expressions,
-                    outputs,
-                    final_outputs,
-                    indent=4,
-                    einsum_function="einsum",
-            )
-            function_printer.write_python(einsums+"\n", comment="R vectors")
+    #        final_outputs = outputs
+    #        #expressions, outputs = qccg.optimisation.optimise_expression_gristmill(
+    #        #        expressions,
+    #        #        outputs,
+    #        #)
+    #        einsums = write.write_opt_einsums(
+    #                expressions,
+    #                outputs,
+    #                final_outputs,
+    #                indent=4,
+    #                einsum_function="einsum",
+    #        )
+    #        function_printer.write_python(einsums+"\n", comment="R vectors")
 

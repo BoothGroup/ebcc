@@ -1,6 +1,7 @@
 """Script to generate equations for the CC3 model.
 """
 
+import sys
 import itertools
 from ebcc.codegen import common
 from ebcc.util import generate_spin_combinations
@@ -9,7 +10,7 @@ from qccg import index, tensor, read, write
 import pdaggerq
 
 # Spin integration mode
-spin = "uhf"
+spin = sys.argv[-1] if sys.argv[-1] in {"rhf", "uhf", "ghf"} else "ghf"
 
 # pdaggerq setup
 pq = pdaggerq.pq_helper("fermi")

@@ -3,6 +3,7 @@
 This uses pdaggerq and qccg instead of qwick.
 """
 
+import sys
 import itertools
 from ebcc.codegen import common
 from ebcc.util import generate_spin_combinations
@@ -14,7 +15,7 @@ import pdaggerq
 # TODO N^4 memory
 
 # Spin integration mode
-spin = "uhf"
+spin = sys.argv[-1] if sys.argv[-1] in {"rhf", "uhf", "ghf"} else "ghf"
 
 # pdaggerq setup
 pq = pdaggerq.pq_helper("fermi")

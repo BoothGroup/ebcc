@@ -1,6 +1,7 @@
 """Script to generate equations for the MPn model.
 """
 
+import sys
 import itertools
 from ebcc.codegen import common, hugenholtz
 import qccg
@@ -11,7 +12,7 @@ import pdaggerq
 order = 3
 
 # Spin integration mode
-spin = "uhf"
+spin = sys.argv[-1] if sys.argv[-1] in {"rhf", "uhf", "ghf"} else "ghf"
 
 # Printer setup
 FunctionPrinter = common.get_function_printer(spin)
