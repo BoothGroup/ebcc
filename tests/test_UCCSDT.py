@@ -23,8 +23,8 @@ class UCCSDT_Tests(unittest.TestCase):
     def setUpClass(cls):
         mol = gto.Mole()
         mol.atom = "H 0 0 0; H 0 0 1"
-        mol.basis = "6-31g"
-        mol.charge = -2
+        mol.basis = "6-311g"
+        mol.charge = -4
         mol.verbose = 0
         mol.build()
 
@@ -37,8 +37,9 @@ class UCCSDT_Tests(unittest.TestCase):
                 log=NullLogger(),
         )
         uccsdt.options.e_tol = 1e-10
-        uccsdt.options.t_tol = 1e-8
+        uccsdt.options.t_tol = 1e-9
         uccsdt.kernel()
+        uccsdt.solve_lambda()
 
         gccsdt = GEBCC(
                 mf,
@@ -46,11 +47,11 @@ class UCCSDT_Tests(unittest.TestCase):
                 log=NullLogger(),
         )
         gccsdt.options.e_tol = 1e-10
-        gccsdt.options.t_tol = 1e-8
+        gccsdt.options.t_tol = 1e-9
         gccsdt.kernel()
 
-        osort = list(itertools.chain(*zip(range(uccsdt.nocc[0], uccsdt.nocc[0]+uccsdt.nocc[1]), range(uccsdt.nocc[0]))))
-        vsort = list(itertools.chain(*zip(range(uccsdt.nvir[0], uccsdt.nvir[0]+uccsdt.nvir[1]), range(uccsdt.nvir[1]))))
+        osort = list(itertools.chain(*zip(range(uccsdt.nocc[0]), range(uccsdt.nocc[0], uccsdt.nocc[0]+uccsdt.nocc[1]))))
+        vsort = list(itertools.chain(*zip(range(uccsdt.nvir[1]), range(uccsdt.nvir[0], uccsdt.nvir[0]+uccsdt.nvir[1]))))
 
         cls.mf, cls.uccsdt, cls.gccsdt = mf, uccsdt, gccsdt
         cls.osort, cls.vsort = osort, vsort

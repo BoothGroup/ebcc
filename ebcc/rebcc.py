@@ -6,15 +6,16 @@ import functools
 import importlib
 import logging
 import types
-from typing import Any, Sequence, Union
+from typing import Any, Union
 
 import numpy as np
-from pyscf import ao2mo, lib, scf
+from pyscf import lib, scf
 
 from ebcc import METHOD_TYPES, default_log, init_logging, reom, util
 from ebcc.ansatz import Ansatz
 from ebcc.brueckner import BruecknerREBCC
 from ebcc.space import Space
+from ebcc.eris import RERIs
 
 # TODO test bosonic RDMs and lambdas - only regression atm
 # TODO math in docstrings
@@ -25,12 +26,6 @@ from ebcc.space import Space
 # TODO fix TensorSymm and benchmark third order again
 
 
-class AbstractEBCC:
-    """Abstract base class for EBCC objects."""
-
-    pass
-
-
 class Amplitudes(dict):
     """Amplitude container class. Consists of a dictionary with keys
     that are strings of the name of each amplitude, and values are
@@ -38,66 +33,6 @@ class Amplitudes(dict):
     """
 
     pass
-
-
-class ERIs(types.SimpleNamespace):
-    """Electronic repulsion integral container class. Consists of a
-    just-in-time namespace containing blocks of the integrals, with
-    keys that are length-4 strings of `"o"` or `"v"` signifying
-    whether the corresponding dimension is occupied or virtual.
-    Additionally, capital letters letter `"O"` or `"V"` signify
-    active orbitals, whereas lowercase correlated plus active.
-    """
-
-    def __init__(
-        self,
-        ebcc: AbstractEBCC,
-        array: np.ndarray = None,
-        slices: Sequence[slice] = None,
-        mo_coeff: np.ndarray = None,
-    ):
-        self.mf = ebcc.mf
-        self.space = ebcc.space
-        self.slices = slices
-        self.mo_coeff = mo_coeff
-        self.array = array
-
-        if self.mo_coeff is None:
-            self.mo_coeff = ebcc.mo_coeff
-        if not (isinstance(self.mo_coeff, (tuple, list)) or self.mo_coeff.ndim == 3):
-            self.mo_coeff = [self.mo_coeff] * 4
-
-        if self.slices is None:
-            self.slices = {
-                "x": self.space.correlated,
-                "o": self.space.correlated_occupied,
-                "v": self.space.correlated_virtual,
-                "X": self.space.active,
-                "O": self.space.active_occupied,
-                "V": self.space.active_virtual,
-            }
-        if not isinstance(self.slices, (tuple, list)):
-            self.slices = [self.slices] * 4
-
-    def __getattr__(self, key: str) -> np.ndarray:
-        """Just-in-time attribute getter."""
-
-        if self.array is None:
-            if key not in self.__dict__.keys():
-                coeffs = []
-                for i, k in enumerate(key):
-                    coeffs.append(self.mo_coeff[i][:, self.slices[i][k]])
-                block = ao2mo.incore.general(self.mf._eri, coeffs, compact=False)
-                block = block.reshape([c.shape[-1] for c in coeffs])
-                self.__dict__[key] = block
-            return self.__dict__[key]
-        else:
-            slices = []
-            for i, k in enumerate(key):
-                slices.append(self.slices[i][k])
-            si, sj, sk, sl = slices
-            block = self.array[si][:, sj][:, :, sk][:, :, :, sl]
-            return block
 
 
 @dataclasses.dataclass
@@ -131,7 +66,7 @@ class Options:
     diis_space: int = 12
 
 
-class REBCC(AbstractEBCC):
+class REBCC(util.AbstractEBCC):
     """Restricted electron-boson coupled cluster class.
 
     Parameters
@@ -317,7 +252,7 @@ class REBCC(AbstractEBCC):
 
     Options = Options
     Amplitudes = Amplitudes
-    ERIs = ERIs
+    ERIs = RERIs
     Brueckner = BruecknerREBCC
 
     def __init__(
