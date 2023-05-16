@@ -12,6 +12,7 @@ from pyscf import ao2mo, lib, scf
 from ebcc import geom, rebcc, uebcc, util
 from ebcc.brueckner import BruecknerGEBCC
 from ebcc.space import Space
+from ebcc.eris import GERIs
 
 
 class Amplitudes(rebcc.Amplitudes):
@@ -27,48 +28,10 @@ class Amplitudes(rebcc.Amplitudes):
     pass
 
 
-class ERIs(rebcc.ERIs):
-    """Electronic repulsion integral container class. Consists of a
-    namespace containing blocks of the integrals, with keys that are
-    length-4 strings of `"o"` or `"v"` signifying whether the
-    corresponding dimension is occupied or virtual.
-    """
-
-    def __init__(
-        self,
-        ebcc: rebcc.AbstractEBCC,
-        array: np.ndarray = None,
-        slices: Sequence[slice] = None,
-        mo_coeff: np.ndarray = None,
-    ):
-        if array is None:
-            rebcc.ERIs.__init__(self, ebcc, slices=slices, mo_coeff=mo_coeff)
-
-            mo_a = [mo[: self.mf.mol.nao] for mo in self.mo_coeff]
-            mo_b = [mo[self.mf.mol.nao :] for mo in self.mo_coeff]
-
-            eri = ao2mo.kernel(self.mf._eri, mo_a)
-            eri += ao2mo.kernel(self.mf._eri, mo_b)
-            eri += ao2mo.kernel(self.mf._eri, mo_a[:2] + mo_b[2:])
-            eri += ao2mo.kernel(self.mf._eri, mo_b[:2] + mo_a[2:])
-
-            eri = ao2mo.addons.restore(1, eri, ebcc.nmo)
-            eri = eri.reshape((ebcc.nmo,) * 4)
-            eri = eri.transpose(0, 2, 1, 3) - eri.transpose(0, 2, 3, 1)
-        else:
-            eri = array
-
-        self.eri = eri
-
-    def __getattr__(self, key: str) -> np.ndarray:
-        i, j, k, l = (self.slices[i][k] for i, k in enumerate(key))
-        return self.eri[i][:, j][:, :, k][:, :, :, l]
-
-
 @util.inherit_docstrings
 class GEBCC(rebcc.REBCC):
     Amplitudes = Amplitudes
-    ERIs = ERIs
+    ERIs = GERIs
     Brueckner = BruecknerGEBCC
 
     @staticmethod

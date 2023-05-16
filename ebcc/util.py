@@ -24,6 +24,12 @@ Inherited = InheritedType()
 ModelNotImplemented = NotImplementedError
 
 
+class AbstractEBCC:
+    """Abstract base class for EBCC objects."""
+
+    pass
+
+
 class Namespace:
     """Replacement for SimpleNamespace, which does not trivially allow
     conversion to a dict for heterogenously nested objects.
