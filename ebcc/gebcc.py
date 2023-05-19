@@ -13,6 +13,7 @@ from ebcc import geom, rebcc, uebcc, util
 from ebcc.brueckner import BruecknerGEBCC
 from ebcc.space import Space
 from ebcc.eris import GERIs
+from ebcc.fock import GFock
 
 
 class Amplitudes(rebcc.Amplitudes):

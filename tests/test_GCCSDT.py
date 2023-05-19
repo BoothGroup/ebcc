@@ -69,7 +69,7 @@ class GCCSDT_Tests(unittest.TestCase):
         c = mf.to_ghf().mo_coeff
         h = mf.to_ghf().get_hcore()
         h = np.linalg.multi_dot((c.T, h, c))
-        v = ccsdt.get_eris().eri
+        v = ccsdt.get_eris().array
         e_rdm = util.einsum("pq,pq->", h, dm1)
         e_rdm += util.einsum("pqrs,pqrs->", v, dm2) * 0.5
         e_rdm += mol.energy_nuc()

@@ -11,12 +11,32 @@ from ebcc import util
 
 
 class RERIs(types.SimpleNamespace):
-    """Electronic repulsion integral container class. Consists of a
-    just-in-time namespace containing blocks of the integrals, with
-    keys that are length-4 strings of `"o"` or `"v"` signifying
-    whether the corresponding dimension is occupied or virtual.
-    Additionally, capital letters letter `"O"` or `"V"` signify
-    active orbitals, whereas lowercase correlated plus active.
+    """
+    Electronic repulsion integral container class for `REBCC`. Consists
+    of a just-in-time namespace containing blocks of the integrals.
+
+    The default slices are:
+        * `"x"`: correlated
+        * `"o"`: correlated occupied
+        * `"v"`: correlated virtual
+        * `"X"`: active
+        * `"O"`: active occupied
+        * `"V"`: active virtual
+
+    Parameters
+    ----------
+    ebcc : AbstractEBCC
+        The EBCC object.
+    array : np.ndarray, optional
+        The array of integrals in the MO basis. If provided, do not
+        perform just-in-time transformations but instead slice the
+        array.  Default value is `None`.
+    slices : Sequence[slice], optional
+        The slices to use for each dimension. If provided, the default
+        slices outlined above are used.
+    mo_coeff : np.ndarray, optional
+        The MO coefficients. If not provided, the MO coefficients from
+        `ebcc` are used.  Default value is `None`.
     """
 
     def __init__(
@@ -71,10 +91,24 @@ class RERIs(types.SimpleNamespace):
 
 
 class UERIs(types.SimpleNamespace):
-    """Electronic repulsion integral container class. Consists of a
-    namespace with keys that are length-4 string of `"a"` or `"b"`
-    signifying whether the corresponding dimension is alpha or beta
-    spin, and values are of type `rebcc.ERIs`.
+    """
+    Electronic repulsion integral container class for `UEBCC`. Consists
+    of a namespace of `REBCC` objects, one for each spin signature.
+
+    Parameters
+    ----------
+    ebcc : AbstractEBCC
+        The EBCC object.
+    array : Sequence[np.ndarray], optional
+        The array of integrals in the MO basis. If provided, do not
+        perform just-in-time transformations but instead slice the
+        array.  Default value is `None`.
+    slices : Sequence[Sequence[slice]], optional
+        The slices to use for each spin and each dimension therein.
+        If provided, the default slices outlined above are used.
+    mo_coeff : Sequence[np.ndarray], optional
+        The MO coefficients for each spin. If not provided, the MO
+        coefficients from `ebcc` are used.  Default value is `None`.
     """
 
     def __init__(
@@ -82,21 +116,25 @@ class UERIs(types.SimpleNamespace):
         ebcc: util.AbstractEBCC,
         array: Sequence[np.ndarray] = None,
         mo_coeff: Sequence[np.ndarray] = None,
+        slices: Sequence[Sequence[slice]] = None,
     ):
         self.mf = ebcc.mf
         self.space = ebcc.space
+        self.slices = slices
         self.mo_coeff = mo_coeff
-        slices = [
-            {
-                "x": space.correlated,
-                "o": space.correlated_occupied,
-                "v": space.correlated_virtual,
-                "X": space.active,
-                "O": space.active_occupied,
-                "V": space.active_virtual,
-            }
-            for space in self.space
-        ]
+
+        if self.slices is None:
+            self.slices = [
+                {
+                    "x": space.correlated,
+                    "o": space.correlated_occupied,
+                    "v": space.correlated_virtual,
+                    "X": space.active,
+                    "O": space.active_occupied,
+                    "V": space.active_virtual,
+                }
+                for space in self.space
+            ]
 
         if self.mo_coeff is None:
             self.mo_coeff = ebcc.mo_coeff
@@ -124,35 +162,31 @@ class UERIs(types.SimpleNamespace):
         self.aaaa = RERIs(
             ebcc,
             arrays[0],
-            slices=[slices[i] for i in (0, 0, 0, 0)],
+            slices=[self.slices[i] for i in (0, 0, 0, 0)],
             mo_coeff=[self.mo_coeff[i] for i in (0, 0, 0, 0)],
         )
         self.aabb = RERIs(
             ebcc,
             arrays[1],
-            slices=[slices[i] for i in (0, 0, 1, 1)],
+            slices=[self.slices[i] for i in (0, 0, 1, 1)],
             mo_coeff=[self.mo_coeff[i] for i in (0, 0, 1, 1)],
         )
         self.bbaa = RERIs(
             ebcc,
             arrays[2],
-            slices=[slices[i] for i in (1, 1, 0, 0)],
+            slices=[self.slices[i] for i in (1, 1, 0, 0)],
             mo_coeff=[self.mo_coeff[i] for i in (1, 1, 0, 0)],
         )
         self.bbbb = RERIs(
             ebcc,
             arrays[3],
-            slices=[slices[i] for i in (1, 1, 1, 1)],
+            slices=[self.slices[i] for i in (1, 1, 1, 1)],
             mo_coeff=[self.mo_coeff[i] for i in (1, 1, 1, 1)],
         )
 
 
 class GERIs(RERIs):
-    """Electronic repulsion integral container class. Consists of a
-    namespace containing blocks of the integrals, with keys that are
-    length-4 strings of `"o"` or `"v"` signifying whether the
-    corresponding dimension is occupied or virtual.
-    """
+    __doc__ = __doc__.replace("REBCC", "GEBCC")
 
     def __init__(
         self,
@@ -161,25 +195,22 @@ class GERIs(RERIs):
         slices: Sequence[slice] = None,
         mo_coeff: np.ndarray = None,
     ):
+        if mo_coeff is None:
+            mo_coeff = ebcc.mo_coeff
+        if not (isinstance(mo_coeff, (tuple, list)) or mo_coeff.ndim == 3):
+            mo_coeff = [mo_coeff] * 4
+
         if array is None:
-            RERIs.__init__(self, ebcc, slices=slices, mo_coeff=mo_coeff)
+            mo_a = [mo[: ebcc.mf.mol.nao] for mo in mo_coeff]
+            mo_b = [mo[ebcc.mf.mol.nao :] for mo in mo_coeff]
 
-            mo_a = [mo[: self.mf.mol.nao] for mo in self.mo_coeff]
-            mo_b = [mo[self.mf.mol.nao :] for mo in self.mo_coeff]
+            array = ao2mo.kernel(ebcc.mf._eri, mo_a)
+            array += ao2mo.kernel(ebcc.mf._eri, mo_b)
+            array += ao2mo.kernel(ebcc.mf._eri, mo_a[:2] + mo_b[2:])
+            array += ao2mo.kernel(ebcc.mf._eri, mo_b[:2] + mo_a[2:])
 
-            eri = ao2mo.kernel(self.mf._eri, mo_a)
-            eri += ao2mo.kernel(self.mf._eri, mo_b)
-            eri += ao2mo.kernel(self.mf._eri, mo_a[:2] + mo_b[2:])
-            eri += ao2mo.kernel(self.mf._eri, mo_b[:2] + mo_a[2:])
+            array = ao2mo.addons.restore(1, array, ebcc.nmo)
+            array = array.reshape((ebcc.nmo,) * 4)
+            array = array.transpose(0, 2, 1, 3) - array.transpose(0, 2, 3, 1)
 
-            eri = ao2mo.addons.restore(1, eri, ebcc.nmo)
-            eri = eri.reshape((ebcc.nmo,) * 4)
-            eri = eri.transpose(0, 2, 1, 3) - eri.transpose(0, 2, 3, 1)
-        else:
-            eri = array
-
-        self.eri = eri
-
-    def __getattr__(self, key: str) -> np.ndarray:
-        i, j, k, l = (self.slices[i][k] for i, k in enumerate(key))
-        return self.eri[i][:, j][:, :, k][:, :, :, l]
+        RERIs.__init__(self, ebcc, slices=slices, mo_coeff=mo_coeff, array=array)
