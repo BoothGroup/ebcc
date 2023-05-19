@@ -9,7 +9,7 @@ import numpy as np
 from ebcc import util
 
 
-class RFock(types.SimpleNamespace):
+class RFock(util.Namespace):
     """
     Fock matrix container class for `REBCC`.
 
@@ -48,6 +48,8 @@ class RFock(types.SimpleNamespace):
         mo_coeff: np.ndarray = None,
         g: util.Namespace = None,
     ):
+        util.Namespace.__init__(self)
+
         self.mf = ebcc.mf
         self.space = ebcc.space
         self.slices = slices
@@ -99,7 +101,7 @@ class RFock(types.SimpleNamespace):
         return self.__dict__[key]
 
 
-class UFock(types.SimpleNamespace):
+class UFock(util.Namespace):
     """
     Fock matrix container class for `REBCC`. Consists of a namespace
     of `RFock` objects, on for each spin signature.
@@ -127,6 +129,8 @@ class UFock(types.SimpleNamespace):
         slices: Sequence[Sequence[slice]] = None,
         mo_coeff: Sequence[np.ndarray] = None,
     ):
+        util.Namespace.__init__(self)
+
         self.mf = ebcc.mf
         self.space = ebcc.space
         self.slices = slices

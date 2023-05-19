@@ -10,7 +10,7 @@ from pyscf import ao2mo
 from ebcc import util
 
 
-class RERIs(types.SimpleNamespace):
+class RERIs(util.Namespace):
     """
     Electronic repulsion integral container class for `REBCC`. Consists
     of a just-in-time namespace containing blocks of the integrals.
@@ -46,6 +46,8 @@ class RERIs(types.SimpleNamespace):
         slices: Sequence[slice] = None,
         mo_coeff: np.ndarray = None,
     ):
+        util.Namespace.__init__(self)
+
         self.mf = ebcc.mf
         self.space = ebcc.space
         self.slices = slices
@@ -90,7 +92,7 @@ class RERIs(types.SimpleNamespace):
             return block
 
 
-class UERIs(types.SimpleNamespace):
+class UERIs(util.Namespace):
     """
     Electronic repulsion integral container class for `UEBCC`. Consists
     of a namespace of `REBCC` objects, one for each spin signature.
@@ -118,6 +120,8 @@ class UERIs(types.SimpleNamespace):
         mo_coeff: Sequence[np.ndarray] = None,
         slices: Sequence[Sequence[slice]] = None,
     ):
+        util.Namespace.__init__(self)
+
         self.mf = ebcc.mf
         self.space = ebcc.space
         self.slices = slices
@@ -195,6 +199,8 @@ class GERIs(RERIs):
         slices: Sequence[slice] = None,
         mo_coeff: np.ndarray = None,
     ):
+        util.Namespace.__init__(self)
+
         if mo_coeff is None:
             mo_coeff = ebcc.mo_coeff
         if not (isinstance(mo_coeff, (tuple, list)) or mo_coeff.ndim == 3):
