@@ -14,9 +14,9 @@ from pyscf import lib, scf
 from ebcc import METHOD_TYPES, default_log, init_logging, reom, util
 from ebcc.ansatz import Ansatz
 from ebcc.brueckner import BruecknerREBCC
-from ebcc.space import Space
 from ebcc.eris import RERIs
 from ebcc.fock import RFock
+from ebcc.space import Space
 
 # TODO test bosonic RDMs and lambdas - only regression atm
 # TODO math in docstrings

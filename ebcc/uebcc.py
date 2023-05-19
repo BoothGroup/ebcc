@@ -11,9 +11,9 @@ from pyscf import ao2mo, lib
 
 from ebcc import rebcc, ueom, util
 from ebcc.brueckner import BruecknerUEBCC
-from ebcc.space import Space
 from ebcc.eris import UERIs
 from ebcc.fock import UFock
+from ebcc.space import Space
 
 
 class Amplitudes(rebcc.Amplitudes):
