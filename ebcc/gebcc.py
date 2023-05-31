@@ -11,8 +11,9 @@ from pyscf import ao2mo, lib, scf
 
 from ebcc import geom, rebcc, uebcc, util
 from ebcc.brueckner import BruecknerGEBCC
-from ebcc.space import Space
 from ebcc.eris import GERIs
+from ebcc.fock import GFock
+from ebcc.space import Space
 
 
 class Amplitudes(rebcc.Amplitudes):
@@ -67,14 +68,14 @@ class GEBCC(rebcc.REBCC):
             g = None
 
         occupied = np.zeros((nocc + nvir,), dtype=bool)
-        occupied[slices["a"]] = ucc.space[0].occupied.copy()
-        occupied[slices["b"]] = ucc.space[1].occupied.copy()
+        occupied[slices["a"]] = ucc.space[0]._occupied.copy()
+        occupied[slices["b"]] = ucc.space[1]._occupied.copy()
         frozen = np.zeros((nocc + nvir,), dtype=bool)
-        frozen[slices["a"]] = ucc.space[0].frozen.copy()
-        frozen[slices["b"]] = ucc.space[1].frozen.copy()
+        frozen[slices["a"]] = ucc.space[0]._frozen.copy()
+        frozen[slices["b"]] = ucc.space[1]._frozen.copy()
         active = np.zeros((nocc + nvir,), dtype=bool)
-        active[slices["a"]] = ucc.space[0].active.copy()
-        active[slices["b"]] = ucc.space[1].active.copy()
+        active[slices["a"]] = ucc.space[0]._active.copy()
+        active[slices["b"]] = ucc.space[1]._active.copy()
         space = Space(occupied, frozen, active)
 
         gcc = cls(

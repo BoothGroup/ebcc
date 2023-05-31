@@ -14,8 +14,9 @@ from pyscf import lib, scf
 from ebcc import METHOD_TYPES, default_log, init_logging, reom, util
 from ebcc.ansatz import Ansatz
 from ebcc.brueckner import BruecknerREBCC
-from ebcc.space import Space
 from ebcc.eris import RERIs
+from ebcc.fock import RFock
+from ebcc.space import Space
 
 # TODO test bosonic RDMs and lambdas - only regression atm
 # TODO math in docstrings
@@ -1837,9 +1838,10 @@ class REBCC(util.AbstractEBCC):
             "x": self.space.correlated,
             "o": self.space.correlated_occupied,
             "v": self.space.correlated_virtual,
-            "X": self.space.active,
             "O": self.space.active_occupied,
             "V": self.space.active_virtual,
+            "i": self.space.inactive_occupied,
+            "a": self.space.inactive_virtual,
         }
 
         class Blocks:
@@ -1847,7 +1849,7 @@ class REBCC(util.AbstractEBCC):
                 assert key[0] == "b"
                 i = slices[key[1]]
                 j = slices[key[2]]
-                return g[:, i][:, :, j].copy()
+                return g[:, i, j].copy()
 
         return Blocks()
 
@@ -1864,33 +1866,7 @@ class REBCC(util.AbstractEBCC):
             virtual.
         """
 
-        slices = {
-            "x": self.space.correlated,
-            "o": self.space.correlated_occupied,
-            "v": self.space.correlated_virtual,
-            "X": self.space.active,
-            "O": self.space.active_occupied,
-            "V": self.space.active_virtual,
-        }
-
-        bare_fock = self.bare_fock
-
-        class Blocks:
-            def __getattr__(selffer, key):
-                i = slices[key[0]]
-                j = slices[key[1]]
-                fock = bare_fock[i][:, j].copy()
-
-                if self.options.shift:
-                    xi = self.xi
-                    g = self.g.__getattr__("b" + key) + self.g.__getattr__(
-                        "b" + key[::-1]
-                    ).transpose(0, 2, 1)
-                    fock -= util.einsum("I,Ipq->pq", xi, g)
-
-                return fock
-
-        return Blocks()
+        return RFock(self, array=self.bare_fock)
 
     def get_eris(self, eris=None):
         """Get blocks of the ERIs.

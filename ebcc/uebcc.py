@@ -11,8 +11,9 @@ from pyscf import ao2mo, lib
 
 from ebcc import rebcc, ueom, util
 from ebcc.brueckner import BruecknerUEBCC
-from ebcc.space import Space
 from ebcc.eris import UERIs
+from ebcc.fock import UFock
+from ebcc.space import Space
 
 
 class Amplitudes(rebcc.Amplitudes):
@@ -449,9 +450,10 @@ class UEBCC(rebcc.REBCC):
                 "x": space.correlated,
                 "o": space.correlated_occupied,
                 "v": space.correlated_virtual,
-                "X": space.active,
                 "O": space.active_occupied,
                 "V": space.active_virtual,
+                "i": space.inactive_occupied,
+                "a": space.inactive_virtual,
             }
             for space in self.space
         ]
@@ -462,7 +464,7 @@ class UEBCC(rebcc.REBCC):
                     assert key[0] == "b"
                     i = slices[s][key[1]]
                     j = slices[s][key[2]]
-                    return g[s][:, i][:, :, j].copy()
+                    return g[s][:, i, j].copy()
 
             return Blocks()
 
@@ -492,45 +494,7 @@ class UEBCC(rebcc.REBCC):
         return xi
 
     def get_fock(self):
-        slices = [
-            {
-                "x": space.correlated,
-                "o": space.correlated_occupied,
-                "v": space.correlated_virtual,
-                "X": space.active,
-                "O": space.active_occupied,
-                "V": space.active_virtual,
-            }
-            for space in self.space
-        ]
-
-        bare_fock = self.bare_fock
-
-        def constructor(s):
-            class Blocks:
-                def __getattr__(selffer, key):
-                    i = slices[s][key[0]]
-                    j = slices[s][key[1]]
-                    focks = getattr(bare_fock, "ab"[s] * 2)
-                    fock = focks[i][:, j].copy()
-
-                    if self.options.shift:
-                        xi = self.xi
-                        gs = getattr(self.g, "ab"[s] * 2)
-                        g = +gs.__getattr__("b" + key) + gs.__getattr__("b" + key[::-1]).transpose(
-                            0, 2, 1
-                        )
-                        fock -= util.einsum("I,Ipq->pq", xi, g)
-
-                    return fock
-
-            return Blocks()
-
-        f = util.Namespace()
-        f.aa = constructor(0)
-        f.bb = constructor(1)
-
-        return f
+        return UFock(self, array=(self.bare_fock.aa, self.bare_fock.bb))
 
     def get_eris(self, eris=None):
         """Get blocks of the ERIs.
