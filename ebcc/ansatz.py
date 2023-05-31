@@ -18,6 +18,7 @@ named_ansatzes = {
     "CC2": ("CC2", "", 0, 0),
     "CC3": ("CC3", "", 0, 0),
     "QCISD": ("QCISD", "", 0, 0),
+    "CCSDt": ("CCSDt", "", 0, 0),
     "CCSD-S-1-1": ("CCSD", "S", 1, 1),
     "CCSD-SD-1-1": ("CCSD", "SD", 1, 1),
     "CCSD-SD-1-2": ("CCSD", "SD", 1, 2),
@@ -246,18 +247,27 @@ class Ansatz:
 
         Returns
         -------
-        ranks : tuple of tuple of int
+        ranks : tuple of tuple of tuple of int
             Cluster operator ranks for the fermionic, bosonic, and
-            coupling ansatzes, for the active space.
+            coupling ansatzes, for the active space.  Each rank is a
+            tuple of the ranks and the active indices for that
+            amplitude.
         """
 
         ranks = []
+        indices = []
 
         notations = {
             "s": [1],
             "d": [2],
             "t": [3],
             "q": [4],
+        }
+        active_indices = {
+            "s": [0],
+            "d": [1],
+            "t": [2],
+            "q": [3],
         }
 
         for i, op in enumerate([self.fermion_ansatz, self.boson_ansatz]):
@@ -284,9 +294,10 @@ class Ansatz:
 
             # Determine the ranks
             ranks_entry = set()
+            indices_entry = set()
             for char in op:
                 for rank in notations[char]:
-                    ranks_entry.add(rank)
+                    ranks_entry.add((rank, tuple(active_indices[char])))
             ranks.append(tuple(sorted(list(ranks_entry))))
 
         # Get the coupling ranks
