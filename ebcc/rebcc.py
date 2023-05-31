@@ -1838,9 +1838,10 @@ class REBCC(util.AbstractEBCC):
             "x": self.space.correlated,
             "o": self.space.correlated_occupied,
             "v": self.space.correlated_virtual,
-            "X": self.space.active,
             "O": self.space.active_occupied,
             "V": self.space.active_virtual,
+            "i": self.space.inactive_occupied,
+            "a": self.space.inactive_virtual,
         }
 
         class Blocks:
@@ -1848,7 +1849,7 @@ class REBCC(util.AbstractEBCC):
                 assert key[0] == "b"
                 i = slices[key[1]]
                 j = slices[key[2]]
-                return g[:, i][:, :, j].copy()
+                return g[:, i, j].copy()
 
         return Blocks()
 

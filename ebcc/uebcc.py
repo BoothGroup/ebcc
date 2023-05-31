@@ -450,9 +450,10 @@ class UEBCC(rebcc.REBCC):
                 "x": space.correlated,
                 "o": space.correlated_occupied,
                 "v": space.correlated_virtual,
-                "X": space.active,
                 "O": space.active_occupied,
                 "V": space.active_virtual,
+                "i": space.inactive_occupied,
+                "a": space.inactive_virtual,
             }
             for space in self.space
         ]
@@ -463,7 +464,7 @@ class UEBCC(rebcc.REBCC):
                     assert key[0] == "b"
                     i = slices[s][key[1]]
                     j = slices[s][key[2]]
-                    return g[s][:, i][:, :, j].copy()
+                    return g[s][:, i, j].copy()
 
             return Blocks()
 

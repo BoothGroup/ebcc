@@ -17,9 +17,10 @@ class RFock(util.Namespace):
         * `"x"`: correlated
         * `"o"`: correlated occupied
         * `"v"`: correlated virtual
-        * `"X"`: active
         * `"O"`: active occupied
         * `"V"`: active virtual
+        * `"i"`: inactive occupied
+        * `"a"`: inactive virtual
 
     Parameters
     ----------
@@ -76,9 +77,10 @@ class RFock(util.Namespace):
                 "x": self.space.correlated,
                 "o": self.space.correlated_occupied,
                 "v": self.space.correlated_virtual,
-                "X": self.space.active,
                 "O": self.space.active_occupied,
                 "V": self.space.active_virtual,
+                "i": self.space.inactive_occupied,
+                "a": self.space.inactive_virtual,
             }
         if not isinstance(self.slices, (tuple, list)):
             self.slices = [self.slices] * 2
@@ -90,7 +92,7 @@ class RFock(util.Namespace):
             ki, kj = key
             i = self.slices[0][ki]
             j = self.slices[1][kj]
-            self.__dict__[key] = self.array[i][:, j].copy()
+            self.__dict__[key] = self.array[i, j].copy()
 
             if self.shift:
                 xi = self.xi
@@ -150,9 +152,10 @@ class UFock(util.Namespace):
                     "x": space.correlated,
                     "o": space.correlated_occupied,
                     "v": space.correlated_virtual,
-                    "X": space.active,
                     "O": space.active_occupied,
                     "V": space.active_virtual,
+                    "i": space.inactive_occupied,
+                    "a": space.inactive_virtual,
                 }
                 for space in self.space
             ]
