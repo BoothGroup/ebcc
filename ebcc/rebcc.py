@@ -1849,7 +1849,7 @@ class REBCC(util.AbstractEBCC):
                 assert key[0] == "b"
                 i = slices[key[1]]
                 j = slices[key[2]]
-                return g[:, i, j].copy()
+                return g[:, i][:, :, j].copy()
 
         return Blocks()
 
