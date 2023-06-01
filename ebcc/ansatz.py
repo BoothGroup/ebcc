@@ -258,16 +258,12 @@ class Ansatz:
         indices = []
 
         notations = {
-            "s": [1],
-            "d": [2],
             "t": [3],
             "q": [4],
         }
         active_indices = {
-            "s": [0],
-            "d": [1],
-            "t": [2],
-            "q": [3],
+            "t": [2, 4],
+            "q": [2, 3, 6, 7],
         }
 
         for i, op in enumerate([self.fermion_ansatz, self.boson_ansatz]):

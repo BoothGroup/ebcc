@@ -283,22 +283,10 @@ class GEBCC(rebcc.REBCC):
 
         # Build active T amplitudes:
         for n, act in self.ansatz.active_cluster_ranks[0]:
-            if n == 1:
-                o = "".join([x.upper() if i in act else x for i, x in enumerate("o")])
-                v = "".join([x.upper() if i in act else x for i, x in enumerate("v")])
-                e_ia = lib.direct_sum("i-a->ia", getattr(self, "e"+o), getattr(self, "e"+v))
-                amplitudes["t%d" % n] = getattr(self.fock, v+o).T / e_ia
-            elif n == 2:
-                o = "".join([x.upper() if i in act else x for i, x in enumerate("oo")])
-                v = "".join([x.upper() if i in act else x for i, x in enumerate("vv")])
-                e_ia_1 = lib.direct_sum("i-a->ia", getattr(self, "e"+o[0]), getattr(self, "e"+v[0]))
-                e_ia_2 = lib.direct_sum("i-a->ia", getattr(self, "e"+o[1]), getattr(self, "e"+v[1]))
-                e_ijab = lib.direct_sum("ia,jb->ijab", e_ia_1, e_ia_2)
-                amplitudes["t%d" % n] = getattr(eris, o+v) / e_ijab
-            else:
-                shape = tuple(self.space.naocc if i in act else self.space.ncocc for i in range(n))
-                shape += tuple(self.space.navir if i in act else self.space.ncvir for i in range(n))
-                amplitudes["t%d" % n] = np.zeros(shape)
+            act = set(act)
+            shape = tuple(self.space.naocc if i in act else self.space.ncocc for i in range(n))
+            shape += tuple(self.space.navir if i+n in act else self.space.ncvir for i in range(n))
+            amplitudes["t%d" % n] = np.zeros(shape)
 
         if self.boson_ansatz:
             # Only true for real-valued couplings:
