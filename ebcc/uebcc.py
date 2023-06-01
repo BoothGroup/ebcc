@@ -464,7 +464,7 @@ class UEBCC(rebcc.REBCC):
                     assert key[0] == "b"
                     i = slices[s][key[1]]
                     j = slices[s][key[2]]
-                    return g[s][:, i, j].copy()
+                    return g[s][:, i][:, :, j].copy()
 
             return Blocks()
 
