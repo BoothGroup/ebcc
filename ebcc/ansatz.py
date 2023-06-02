@@ -262,7 +262,7 @@ class Ansatz:
             "q": [4],
         }
         active_indices = {
-            "t": [2, 4],
+            "t": [2, 5],
             "q": [2, 3, 6, 7],
         }
 
