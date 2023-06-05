@@ -1,6 +1,7 @@
 """Utilities.
 """
 
+import ctypes
 import functools
 import inspect
 import itertools
@@ -8,7 +9,6 @@ import logging
 import sys
 import time
 import types
-import ctypes
 
 import numpy as np
 from pyscf.lib import direct_sum, dot
@@ -29,6 +29,7 @@ NUMPY_EINSUM_SIZE = 2000
 
 class InheritedType:
     pass
+
 
 Inherited = InheritedType()
 
@@ -632,7 +633,11 @@ def contract(subscript, *args, **kwargs):
         for i, s in zip(inp, arg.shape):
             if i in ranges:
                 if ranges[i] != s:
-                    raise EinsumOperandError("Incompatible shapes for einsum: {} with A={}, B={}".format(subscript, a.shape, b.shape))
+                    raise EinsumOperandError(
+                        "Incompatible shapes for einsum: {} with A={}, B={}".format(
+                            subscript, a.shape, b.shape
+                        )
+                    )
             ranges[i] = s
 
     if not FOUND_TBLIS:
@@ -683,7 +688,9 @@ def contract(subscript, *args, **kwargs):
             shape_ct_flat = (at.shape[0], bt.shape[1])
             order_c = [out.index(idx) for idx in inp_ct]
             buf = buf.transpose(order_c)
-            buf = np.asarray(buf.reshape(shape_ct_flat), order="F" if buf.flags.f_contiguous else "C")
+            buf = np.asarray(
+                buf.reshape(shape_ct_flat), order="F" if buf.flags.f_contiguous else "C"
+            )
 
         # Perform the contraction
         ct = dot(at, bt, alpha=alpha, beta=beta, c=buf)
@@ -725,10 +732,24 @@ def contract(subscript, *args, **kwargs):
 
         # Perform the contraction
         tblis_einsum.libtblis.as_einsum(
-                a, a.ndim, shape_a, strides_a, inp_a.encode("ascii"),
-                b, b.ndim, shape_b, strides_b, inp_b.encode("ascii"),
-                c, c.ndim, shape_c, strides_c, out.encode("ascii"),
-                tblis_dtype, alpha, beta,
+            a,
+            a.ndim,
+            shape_a,
+            strides_a,
+            inp_a.encode("ascii"),
+            b,
+            b.ndim,
+            shape_b,
+            strides_b,
+            inp_b.encode("ascii"),
+            c,
+            c.ndim,
+            shape_c,
+            strides_c,
+            out.encode("ascii"),
+            tblis_dtype,
+            alpha,
+            beta,
         )
 
     return c
