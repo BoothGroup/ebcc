@@ -10,8 +10,11 @@ import time
 import types
 
 import numpy as np
-from pyscf.lib import direct_sum
+from pyscf.lib import direct_sum, dot
 from pyscf.lib import einsum as pyscf_einsum
+
+
+NUMPY_EINSUM_SIZE = 2000
 
 
 class InheritedType:
@@ -544,94 +547,168 @@ def pack_2e(*args):
     return out
 
 
-def einsum(*operands, symmetry=False, **kwargs):  # pragma: no cover
-    """Dispatch an einsum. If `symmetry`, then assume that all arrays
-    are totally symmetric within occupied, virtual and bosonic
-    sectors. If `symmetry` is an iterable, then it should provide
-    permutations corresponding to each input array which give the
-    desired symmetry.
+class EinsumOperandError(ValueError):
+    pass
+
+
+def _fallback_einsum(*operands, **kwargs):
     """
-    # TODO custom symmetry
-    # TODO assert the symmetry?
+    Handle the fallback to `numpy.einsum`.
+    """
+
+    kwargs = kwargs.copy()
+    alpha = kwargs.pop("alpha", 1.0)
+    beta = kwargs.pop("beta", 0.0)
+    out = kwargs.pop("out", None)
+
+    res = np.einsum(*operands, **kwargs)
+    res *= alpha
+
+    if out is not None:
+        res += beta * out
+
+    return res
+
+
+def contract(subscript, *args, **kwargs):
+    """
+    Contract a pair of terms in an einsum. Supports additional keyword
+    arguments `alpha` and `beta` which operate as `pyscf.lib.dot`. In
+    some cases this will still require copying, but it minimises the
+    memory overhead in simple cases.
+    """
+
+    # If this is called for more than 2 arguments, fall back
+    if len(args) > 2:
+        return _fallback_einsum(subscript, *args, **kwargs)
+
+    # Make sure that the input are numpy arrays
+    a, b = args
+    a = np.asarray(a)
+    b = np.asarray(b)
+
+    # Check if we should use NumPy
+    if min(a.size, b.size) < NUMPY_EINSUM_SIZE:
+        return _fallback_einsum(subscript, *args, **kwargs)
+
+    # Make sure it can be done via DGEMM
+    indices = subscript.replace(",", "").replace("->", "")
+    if any(indices.count(x) != 2 for x in set(indices)):
+        return _fallback_einsum(subscript, *args, **kwargs)
+
+    # Get the characters for each input and output
+    inp, out, args = np.core.einsumfunc._parse_einsum_input((subscript, a, b))
+    inp_a, inp_b = inps = inp.split(",")
+    assert len(inps) == len(args) == 2
+    assert all(len(inp) == arg.ndim for inp, arg in zip(inps, args))
+
+    # If there is an internal trace, consume it:
+    if any(len(inp) != len(set(inp)) for inp in inps):
+        # FIXME
+        return _fallback_einsum(subscript, *args, **kwargs)
+
+    # Find the dummy indices
+    dummy = set(inp_a).intersection(set(inp_b))
+    if not dummy or inp_a == dummy or inp_b == dummy:
+        return _fallback_einsum(subscript, *args, **kwargs)
+
+    # Find the sizes of the indices
+    ranges = {}
+    for inp, arg in zip(inps, args):
+        for i, s in zip(inp, arg.shape):
+            if i in ranges:
+                if ranges[i] != s:
+                    raise EinsumOperandError("Incompatible shapes for einsum: {} with A={}, B={}".format(subscript, a.shape, b.shape))
+            ranges[i] = s
+
+    # Reorder the indices appropriately
+    inp_at = list(inp_a)
+    inp_bt = list(inp_b)
+    inner_shape = 1
+    for i, n in enumerate(sorted(dummy)):
+        j = len(inp_at) - 1
+        inp_at.insert(j, inp_at.pop(inp_at.index(n)))
+        inp_bt.insert(i, inp_bt.pop(inp_bt.index(n)))
+        inner_shape *= ranges[n]
+
+    # Find transposes
+    order_a = [inp_a.index(idx) for idx in inp_at]
+    order_b = [inp_b.index(idx) for idx in inp_bt]
+
+    # Get shape and transpose for the output
+    shape_ct = []
+    inp_ct = []
+    for idx in inp_at:
+        if idx in dummy:
+            break
+        shape_ct.append(ranges[idx])
+        inp_ct.append(idx)
+    for idx in inp_bt:
+        if idx in dummy:
+            continue
+        shape_ct.append(ranges[idx])
+        inp_ct.append(idx)
+    order_ct = [inp_ct.index(idx) for idx in out]
+
+    # If any dimension has size zero, return here
+    if a.size == 0 or b.size == 0:
+        shape_c = [shape_ct[i] for i in order_ct]
+        return np.zeros(shape_c)
+
+    # Apply transposes
+    at = a.transpose(order_a)
+    bt = b.transpose(order_b)
+
+    # Find the optimal memory alignment
+    at = np.asarray(at.reshape(-1, inner_shape), order="F" if at.flags.f_contiguous else "C")
+    bt = np.asarray(bt.reshape(inner_shape, -1), order="F" if bt.flags.f_contiguous else "C")
+
+    # Get the output buffer
+    if "out" in kwargs:
+        shape_ct_flat = (at.shape[0], bt.shape[1])
+        order_c = [out.index(idx) for idx in inp_ct]
+        out = kwargs["out"].transpose(order_c)
+        out = np.asarray(out.reshape(shape_ct_flat), order="F" if out.flags.f_contiguous else "C")
+    else:
+        out = None
+
+    # Perform the contraction
+    alpha = kwargs.get("alpha", 1.0)
+    beta = kwargs.get("beta", 0.0)
+    ct = dot(at, bt, alpha=alpha, beta=beta, c=out)
+
+    # Reshape and transpose
+    ct = ct.reshape(shape_ct, order="A")
+    ct = ct.transpose(order_ct)
+
+    return ct
+
+
+def einsum(*operands, **kwargs):
+    """
+    Dispatch an einsum. Input arguments are the same as `numpy`.
+    """
 
     inp, out, args = np.core.einsumfunc._parse_einsum_input(operands)
     subscript = "%s->%s" % (inp, out)
 
-    if not symmetry:
-        return pyscf_einsum(subscript, *args, **kwargs)
+    _contract = kwargs.get("contract", contract)
 
-    raise NotImplementedError("Work in progress")
+    if len(args) < 2:
+        out = _fallback_einsum(subscript, *args, **kwargs)
+    elif len(args) < 3:
+        out = _contract(subscript, *args, **kwargs)
+    else:
+        optimize = kwargs.pop("optimize", True)
+        args = list(args)
+        contractions = np.einsum_path(subscript, *args, optimize=optimize, einsum_call=True)[1]
+        for contraction in contractions:
+            inds, idx_rm, einsum_str, remain = contraction[:4]
+            operands = [args.pop(x) for x in inds]
+            out = _contract(einsum_str, *operands)
+            args.append(out)
 
-    try:
-        # Two input arrays only:
-        assert len(args) == 2
-        assert subscript.count(",") == 1
-
-        array1, array2 = args
-        indices = set(subscript) - {",", "-", ">"}
-        lhs1, lhs2, rhs = subscript.replace("->", ",").split(",")
-
-        # No internal traces:
-        assert len(lhs1) == len(set(lhs1))
-        assert len(lhs2) == len(set(lhs2))
-
-        # No repeated external indices, and no free indices:
-        for index in lhs1 + lhs2:
-            if index in rhs:
-                assert (int(index in lhs1) + int(index in lhs2)) == 1
-            else:
-                assert index in lhs1 and index in lhs2
-
-    except AssertionError:
-        return pyscf_einsum(subscript, *args, **kwargs)
-
-    # Categorise the indices:
-    categories = {}
-    sizes = {}
-    for index in indices:
-        category = 0 if index not in rhs else (1 if index in lhs1 else 2)
-        sector = 0 if index in "ijklmnop" else (1 if index in "abcdefgh" else 2)
-        categories[index] = category * 3 + sector
-        sizes[index] = (array1.shape + array2.shape)[(lhs1 + lhs2).index(index)]
-
-    # Get compressed and flattened subscripts:
-    lhs1_comp = "".join([chr(97 + categories[i]) for i in lhs1])
-    lhs2_comp = "".join([chr(97 + categories[i]) for i in lhs2])
-    rhs_comp = "".join([chr(97 + categories[i]) for i in rhs])
-    lhs1_flat = "".join(list(dict.fromkeys(lhs1_comp)))
-    lhs2_flat = "".join(list(dict.fromkeys(lhs2_comp)))
-    rhs_flat = "".join(list(dict.fromkeys(rhs_comp)))
-
-    # Apply a factor depending on the symmetry of the dummies:
-    dummies = set(i_comp for i, i_comp in zip(lhs1, lhs1_comp) if categories[i] < 3)
-    for index in set(lhs1_comp):
-        if index in dummies:
-            mask = [i == index for i in lhs1_comp]
-            factor = np.zeros(np.array(array1.shape)[mask])
-            inds = tril_indices_ndim(factor.shape[0], factor.ndim, include_diagonal=True)
-            for perm, _ in permutations_with_signs(inds):
-                factor[tuple(perm)] += 1
-            factor = 2 ** (factor.ndim - factor)
-            lhs_factor = "".join([i for i in lhs1 if categories[i] < 3])
-            subscript = lhs1 + "," + lhs_factor + "->" + lhs1
-            array1 = pyscf_einsum(subscript, array1, factor)
-
-    # Compress the arrays:
-    array1_flat = compress_axes(lhs1_comp, array1, include_diagonal=True)
-    array2_flat = compress_axes(lhs2_comp, array2, include_diagonal=True)
-
-    # Dispatch the einsum:
-    subscript_flat = "{lhs1},{lhs2}->{rhs}".format(lhs1=lhs1_flat, lhs2=lhs2_flat, rhs=rhs_flat)
-    output_flat = pyscf_einsum(subscript_flat, array1_flat, array2_flat, **kwargs)
-
-    # Decompress the output:
-    rank = len(rhs_comp)
-    shape = tuple(sizes[i] for i in rhs)
-    output = decompress_axes(
-        rhs_comp, output_flat, include_diagonal=True, shape=shape, symmetry="+" * rank
-    )
-
-    return output
+    return out
 
 
 def unique(lst):
