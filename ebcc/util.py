@@ -8,10 +8,20 @@ import logging
 import sys
 import time
 import types
+import ctypes
 
 import numpy as np
 from pyscf.lib import direct_sum, dot
 from pyscf.lib import einsum as pyscf_einsum
+
+try:
+    try:
+        import tblis_einsum
+    except ImportError:
+        from pyscf import tblis_einsum
+    FOUND_TBLIS = True
+except ImportError:
+    FOUND_TBLIS = False
 
 
 NUMPY_EINSUM_SIZE = 2000
@@ -20,11 +30,11 @@ NUMPY_EINSUM_SIZE = 2000
 class InheritedType:
     pass
 
-
 Inherited = InheritedType()
 
 
-ModelNotImplemented = NotImplementedError
+class ModelNotImplemented(NotImplementedError):
+    pass
 
 
 class Namespace:
@@ -578,6 +588,10 @@ def contract(subscript, *args, **kwargs):
     memory overhead in simple cases.
     """
 
+    alpha = kwargs.get("alpha", 1.0)
+    beta = kwargs.get("beta", 0.0)
+    buf = kwargs.get("out", None)
+
     # If this is called for more than 2 arguments, fall back
     if len(args) > 2:
         return _fallback_einsum(subscript, *args, **kwargs)
@@ -621,67 +635,103 @@ def contract(subscript, *args, **kwargs):
                     raise EinsumOperandError("Incompatible shapes for einsum: {} with A={}, B={}".format(subscript, a.shape, b.shape))
             ranges[i] = s
 
-    # Reorder the indices appropriately
-    inp_at = list(inp_a)
-    inp_bt = list(inp_b)
-    inner_shape = 1
-    for i, n in enumerate(sorted(dummy)):
-        j = len(inp_at) - 1
-        inp_at.insert(j, inp_at.pop(inp_at.index(n)))
-        inp_bt.insert(i, inp_bt.pop(inp_bt.index(n)))
-        inner_shape *= ranges[n]
+    if not FOUND_TBLIS:
+        # Reorder the indices appropriately
+        inp_at = list(inp_a)
+        inp_bt = list(inp_b)
+        inner_shape = 1
+        for i, n in enumerate(sorted(dummy)):
+            j = len(inp_at) - 1
+            inp_at.insert(j, inp_at.pop(inp_at.index(n)))
+            inp_bt.insert(i, inp_bt.pop(inp_bt.index(n)))
+            inner_shape *= ranges[n]
 
-    # Find transposes
-    order_a = [inp_a.index(idx) for idx in inp_at]
-    order_b = [inp_b.index(idx) for idx in inp_bt]
+        # Find transposes
+        order_a = [inp_a.index(idx) for idx in inp_at]
+        order_b = [inp_b.index(idx) for idx in inp_bt]
 
-    # Get shape and transpose for the output
-    shape_ct = []
-    inp_ct = []
-    for idx in inp_at:
-        if idx in dummy:
-            break
-        shape_ct.append(ranges[idx])
-        inp_ct.append(idx)
-    for idx in inp_bt:
-        if idx in dummy:
-            continue
-        shape_ct.append(ranges[idx])
-        inp_ct.append(idx)
-    order_ct = [inp_ct.index(idx) for idx in out]
+        # Get shape and transpose for the output
+        shape_ct = []
+        inp_ct = []
+        for idx in inp_at:
+            if idx in dummy:
+                break
+            shape_ct.append(ranges[idx])
+            inp_ct.append(idx)
+        for idx in inp_bt:
+            if idx in dummy:
+                continue
+            shape_ct.append(ranges[idx])
+            inp_ct.append(idx)
+        order_ct = [inp_ct.index(idx) for idx in out]
 
-    # If any dimension has size zero, return here
-    if a.size == 0 or b.size == 0:
-        shape_c = [shape_ct[i] for i in order_ct]
-        return np.zeros(shape_c)
+        # If any dimension has size zero, return here
+        if a.size == 0 or b.size == 0:
+            shape_c = [shape_ct[i] for i in order_ct]
+            return np.zeros(shape_c)
 
-    # Apply transposes
-    at = a.transpose(order_a)
-    bt = b.transpose(order_b)
+        # Apply transposes
+        at = a.transpose(order_a)
+        bt = b.transpose(order_b)
 
-    # Find the optimal memory alignment
-    at = np.asarray(at.reshape(-1, inner_shape), order="F" if at.flags.f_contiguous else "C")
-    bt = np.asarray(bt.reshape(inner_shape, -1), order="F" if bt.flags.f_contiguous else "C")
+        # Find the optimal memory alignment
+        at = np.asarray(at.reshape(-1, inner_shape), order="F" if at.flags.f_contiguous else "C")
+        bt = np.asarray(bt.reshape(inner_shape, -1), order="F" if bt.flags.f_contiguous else "C")
 
-    # Get the output buffer
-    if "out" in kwargs:
-        shape_ct_flat = (at.shape[0], bt.shape[1])
-        order_c = [out.index(idx) for idx in inp_ct]
-        out = kwargs["out"].transpose(order_c)
-        out = np.asarray(out.reshape(shape_ct_flat), order="F" if out.flags.f_contiguous else "C")
+        # Get the output buffer
+        if buf is not None:
+            shape_ct_flat = (at.shape[0], bt.shape[1])
+            order_c = [out.index(idx) for idx in inp_ct]
+            buf = buf.transpose(order_c)
+            buf = np.asarray(buf.reshape(shape_ct_flat), order="F" if buf.flags.f_contiguous else "C")
+
+        # Perform the contraction
+        ct = dot(at, bt, alpha=alpha, beta=beta, c=buf)
+
+        # Reshape and transpose
+        ct = ct.reshape(shape_ct, order="A")
+        c = ct.transpose(order_ct)
+
     else:
-        out = None
+        # Cast the data types
+        dtype = np.result_type(a, b, alpha, beta)
+        alpha = np.asarray(alpha, dtype=dtype)
+        beta = np.asarray(beta, dtype=dtype)
+        a = np.asarray(a, dtype=dtype)
+        b = np.asarray(b, dtype=dtype)
+        tblis_dtype = tblis_einsum.tblis_dtype[dtype]
 
-    # Perform the contraction
-    alpha = kwargs.get("alpha", 1.0)
-    beta = kwargs.get("beta", 0.0)
-    ct = dot(at, bt, alpha=alpha, beta=beta, c=out)
+        # Get the shapes
+        shape_a = a.shape
+        shape_b = b.shape
+        shape_c = tuple(ranges[x] for x in out)
 
-    # Reshape and transpose
-    ct = ct.reshape(shape_ct, order="A")
-    ct = ct.transpose(order_ct)
+        # Get the output buffer
+        if buf is None:
+            order = kwargs.get("order", "C")
+            c = np.empty(shape_c, dtype=dtype, order=order)
+        else:
+            assert buf.dtype == dtype
+            assert buf.size == np.prod(shape_c)
+            c = buf.reshape(shape_c)
 
-    return ct
+        # Get the C types
+        shape_a = (ctypes.c_size_t * a.ndim)(*shape_a)
+        shape_b = (ctypes.c_size_t * b.ndim)(*shape_b)
+        shape_c = (ctypes.c_size_t * c.ndim)(*shape_c)
+        strides_a = (ctypes.c_size_t * a.ndim)(*[x // dtype.itemsize for x in a.strides])
+        strides_b = (ctypes.c_size_t * b.ndim)(*[x // dtype.itemsize for x in b.strides])
+        strides_c = (ctypes.c_size_t * c.ndim)(*[x // dtype.itemsize for x in c.strides])
+
+        # Perform the contraction
+        tblis_einsum.libtblis.as_einsum(
+                a, a.ndim, shape_a, strides_a, inp_a.encode("ascii"),
+                b, b.ndim, shape_b, strides_b, inp_b.encode("ascii"),
+                c, c.ndim, shape_c, strides_c, out.encode("ascii"),
+                tblis_dtype, alpha, beta,
+        )
+
+    return c
 
 
 def einsum(*operands, **kwargs):
