@@ -281,13 +281,6 @@ class GEBCC(rebcc.REBCC):
             else:
                 amplitudes["t%d" % n] = np.zeros((self.space.ncocc,) * n + (self.space.ncvir,) * n)
 
-        # Build active T amplitudes:
-        for n, act in self.ansatz.active_cluster_ranks[0]:
-            act = set(act)
-            shape = tuple(self.space.naocc if i in act else self.space.ncocc for i in range(n))
-            shape += tuple(self.space.navir if i+n in act else self.space.ncvir for i in range(n))
-            amplitudes["t%d" % n] = np.zeros(shape)
-
         if self.boson_ansatz:
             # Only true for real-valued couplings:
             h = self.g
@@ -299,10 +292,6 @@ class GEBCC(rebcc.REBCC):
                 amplitudes["s%d" % n] = -H / self.omega
             else:
                 amplitudes["s%d" % n] = np.zeros((self.nbos,) * n)
-
-        # Build active S amplitudes:
-        for n, act in self.ansatz.active_cluster_ranks[1]:
-            raise NotImplementedError("Active space methods with bosons")
 
         # Build U amplitudes:
         for nf in self.ansatz.correlated_cluster_ranks[2]:
@@ -316,10 +305,6 @@ class GEBCC(rebcc.REBCC):
                     amplitudes["u%d%d" % (nf, nb)] = np.zeros(
                         (self.nbos,) * nb + (self.space.ncocc, self.space.ncvir)
                     )
-
-        # Build active U amplitudes:
-        for nf, act in self.ansatz.active_cluster_ranks[2]:
-            raise NotImplementedError("Active space methods with bosons")
 
         return amplitudes
 
