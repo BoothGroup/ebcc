@@ -58,6 +58,7 @@ with common.FilePrinter("%sCCSD" % spin[0].upper()) as file_printer:
                 (output,),
                 indent=4,
                 einsum_function="einsum",
+                inplace_mode=True,
         )
         function_printer.write_python(einsums+"\n", comment="energy")
 
@@ -148,6 +149,7 @@ with common.FilePrinter("%sCCSD" % spin[0].upper()) as file_printer:
                 final_outputs,
                 indent=4,
                 einsum_function="einsum",
+                inplace_mode=True,
         )
         function_printer.write_python(einsums+"\n", comment="T amplitudes")
 
@@ -247,6 +249,7 @@ with common.FilePrinter("%sCCSD" % spin[0].upper()) as file_printer:
                 final_outputs,
                 indent=4,
                 einsum_function="einsum",
+                inplace_mode=True,
         )
         function_printer.write_python(einsums+"\n", comment="L amplitudes")
 
@@ -337,6 +340,7 @@ with common.FilePrinter("%sCCSD" % spin[0].upper()) as file_printer:
                 indent=4,
                 einsum_function="einsum",
                 add_occupancies={"f", "v", "rdm1_f", "rdm2_f", "delta"},
+                inplace_mode=True,
         )
         function_printer.write_python(einsums+"\n", comment="RDM1")
 
@@ -429,6 +433,7 @@ with common.FilePrinter("%sCCSD" % spin[0].upper()) as file_printer:
                 indent=4,
                 einsum_function="einsum",
                 add_occupancies={"f", "v", "rdm1_f", "rdm2_f", "delta"},
+                inplace_mode=True,
         )
 
         function_printer.write_python(einsums+"\n", comment="RDM2")
