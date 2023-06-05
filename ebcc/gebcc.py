@@ -11,6 +11,8 @@ from pyscf import ao2mo, lib, scf
 
 from ebcc import geom, rebcc, uebcc, util
 from ebcc.brueckner import BruecknerGEBCC
+from ebcc.eris import GERIs
+from ebcc.fock import GFock
 from ebcc.space import Space
 
 
@@ -27,48 +29,10 @@ class Amplitudes(rebcc.Amplitudes):
     pass
 
 
-class ERIs(rebcc.ERIs):
-    """Electronic repulsion integral container class. Consists of a
-    namespace containing blocks of the integrals, with keys that are
-    length-4 strings of `"o"` or `"v"` signifying whether the
-    corresponding dimension is occupied or virtual.
-    """
-
-    def __init__(
-        self,
-        ebcc: rebcc.AbstractEBCC,
-        array: np.ndarray = None,
-        slices: Sequence[slice] = None,
-        mo_coeff: np.ndarray = None,
-    ):
-        if array is None:
-            rebcc.ERIs.__init__(self, ebcc, slices=slices, mo_coeff=mo_coeff)
-
-            mo_a = [mo[: self.mf.mol.nao] for mo in self.mo_coeff]
-            mo_b = [mo[self.mf.mol.nao :] for mo in self.mo_coeff]
-
-            eri = ao2mo.kernel(self.mf._eri, mo_a)
-            eri += ao2mo.kernel(self.mf._eri, mo_b)
-            eri += ao2mo.kernel(self.mf._eri, mo_a[:2] + mo_b[2:])
-            eri += ao2mo.kernel(self.mf._eri, mo_b[:2] + mo_a[2:])
-
-            eri = ao2mo.addons.restore(1, eri, ebcc.nmo)
-            eri = eri.reshape((ebcc.nmo,) * 4)
-            eri = eri.transpose(0, 2, 1, 3) - eri.transpose(0, 2, 3, 1)
-        else:
-            eri = array
-
-        self.eri = eri
-
-    def __getattr__(self, key: str) -> np.ndarray:
-        i, j, k, l = (self.slices[i][k] for i, k in enumerate(key))
-        return self.eri[i][:, j][:, :, k][:, :, :, l]
-
-
 @util.inherit_docstrings
 class GEBCC(rebcc.REBCC):
     Amplitudes = Amplitudes
-    ERIs = ERIs
+    ERIs = GERIs
     Brueckner = BruecknerGEBCC
 
     @staticmethod
@@ -104,14 +68,14 @@ class GEBCC(rebcc.REBCC):
             g = None
 
         occupied = np.zeros((nocc + nvir,), dtype=bool)
-        occupied[slices["a"]] = ucc.space[0].occupied.copy()
-        occupied[slices["b"]] = ucc.space[1].occupied.copy()
+        occupied[slices["a"]] = ucc.space[0]._occupied.copy()
+        occupied[slices["b"]] = ucc.space[1]._occupied.copy()
         frozen = np.zeros((nocc + nvir,), dtype=bool)
-        frozen[slices["a"]] = ucc.space[0].frozen.copy()
-        frozen[slices["b"]] = ucc.space[1].frozen.copy()
+        frozen[slices["a"]] = ucc.space[0]._frozen.copy()
+        frozen[slices["b"]] = ucc.space[1]._frozen.copy()
         active = np.zeros((nocc + nvir,), dtype=bool)
-        active[slices["a"]] = ucc.space[0].active.copy()
-        active[slices["b"]] = ucc.space[1].active.copy()
+        active[slices["a"]] = ucc.space[0]._active.copy()
+        active[slices["b"]] = ucc.space[1]._active.copy()
         space = Space(occupied, frozen, active)
 
         gcc = cls(

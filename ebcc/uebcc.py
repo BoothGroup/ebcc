@@ -11,6 +11,8 @@ from pyscf import ao2mo, lib
 
 from ebcc import rebcc, ueom, util
 from ebcc.brueckner import BruecknerUEBCC
+from ebcc.eris import UERIs
+from ebcc.fock import UFock
 from ebcc.space import Space
 
 
@@ -27,87 +29,10 @@ class Amplitudes(rebcc.Amplitudes):
     pass
 
 
-class ERIs(types.SimpleNamespace):
-    """Electronic repulsion integral container class. Consists of a
-    namespace with keys that are length-4 string of `"a"` or `"b"`
-    signifying whether the corresponding dimension is alpha or beta
-    spin, and values are of type `rebcc.ERIs`.
-    """
-
-    def __init__(
-        self,
-        ebcc: rebcc.AbstractEBCC,
-        array: Sequence[np.ndarray] = None,
-        mo_coeff: Sequence[np.ndarray] = None,
-    ):
-        self.mf = ebcc.mf
-        self.space = ebcc.space
-        self.mo_coeff = mo_coeff
-        slices = [
-            {
-                "x": space.correlated,
-                "o": space.correlated_occupied,
-                "v": space.correlated_virtual,
-                "X": space.active,
-                "O": space.active_occupied,
-                "V": space.active_virtual,
-            }
-            for space in self.space
-        ]
-
-        if self.mo_coeff is None:
-            self.mo_coeff = ebcc.mo_coeff
-
-        if array is not None:
-            arrays = (array[0], array[1], array[1].transpose((2, 3, 0, 1)), array[2])
-        elif isinstance(self.mf._eri, tuple):
-            # Have spin-dependent coulomb interaction; precalculate required arrays for simplicity.
-            arrays_aabb = ao2mo.incore.general(
-                self.mf._eri[1], [self.mo_coeff[i] for i in (0, 0, 1, 1)], compact=False
-            )
-            arrays = (
-                ao2mo.incore.general(
-                    self.mf._eri[0], [self.mo_coeff[i] for i in (0, 0, 0, 0)], compact=False
-                ),
-                arrays_aabb,
-                arrays_aabb.transpose(2, 3, 0, 1),
-                ao2mo.incore.general(
-                    self.mf._eri[2], [self.mo_coeff[i] for i in (1, 1, 1, 1)], compact=False
-                ),
-            )
-        else:
-            arrays = (None, None, None, None)
-
-        self.aaaa = rebcc.ERIs(
-            ebcc,
-            arrays[0],
-            slices=[slices[i] for i in (0, 0, 0, 0)],
-            mo_coeff=[self.mo_coeff[i] for i in (0, 0, 0, 0)],
-        )
-        self.aabb = rebcc.ERIs(
-            ebcc,
-            arrays[1],
-            slices=[slices[i] for i in (0, 0, 1, 1)],
-            mo_coeff=[self.mo_coeff[i] for i in (0, 0, 1, 1)],
-        )
-        self.bbaa = rebcc.ERIs(
-            ebcc,
-            arrays[2],
-            slices=[slices[i] for i in (1, 1, 0, 0)],
-            mo_coeff=[self.mo_coeff[i] for i in (1, 1, 0, 0)],
-        )
-        self.bbbb = rebcc.ERIs(
-            ebcc,
-            arrays[3],
-            slices=[slices[i] for i in (1, 1, 1, 1)],
-            mo_coeff=[self.mo_coeff[i] for i in (1, 1, 1, 1)],
-        )
-
-
 @util.inherit_docstrings
 class UEBCC(rebcc.REBCC):
     Amplitudes = Amplitudes
-    ERIs = ERIs
+    ERIs = UERIs
     Brueckner = BruecknerUEBCC
 
     @staticmethod
@@ -525,9 +450,10 @@ class UEBCC(rebcc.REBCC):
                 "x": space.correlated,
                 "o": space.correlated_occupied,
                 "v": space.correlated_virtual,
-                "X": space.active,
                 "O": space.active_occupied,
                 "V": space.active_virtual,
+                "i": space.inactive_occupied,
+                "a": space.inactive_virtual,
             }
             for space in self.space
         ]
@@ -538,7 +464,7 @@ class UEBCC(rebcc.REBCC):
                     assert key[0] == "b"
                     i = slices[s][key[1]]
                     j = slices[s][key[2]]
-                    return g[s][:, i][:, :, j].copy()
+                    return g[s][:, i, j].copy()
 
             return Blocks()
 
@@ -568,45 +494,7 @@ class UEBCC(rebcc.REBCC):
         return xi
 
     def get_fock(self):
-        slices = [
-            {
-                "x": space.correlated,
-                "o": space.correlated_occupied,
-                "v": space.correlated_virtual,
-                "X": space.active,
-                "O": space.active_occupied,
-                "V": space.active_virtual,
-            }
-            for space in self.space
-        ]
-
-        bare_fock = self.bare_fock
-
-        def constructor(s):
-            class Blocks:
-                def __getattr__(selffer, key):
-                    i = slices[s][key[0]]
-                    j = slices[s][key[1]]
-                    focks = getattr(bare_fock, "ab"[s] * 2)
-                    fock = focks[i][:, j].copy()
-
-                    if self.options.shift:
-                        xi = self.xi
-                        gs = getattr(self.g, "ab"[s] * 2)
-                        g = +gs.__getattr__("b" + key) + gs.__getattr__("b" + key[::-1]).transpose(
-                            0, 2, 1
-                        )
-                        fock -= util.einsum("I,Ipq->pq", xi, g)
-
-                    return fock
-
-            return Blocks()
-
-        f = util.Namespace()
-        f.aa = constructor(0)
-        f.bb = constructor(1)
-
-        return f
+        return UFock(self, array=(self.bare_fock.aa, self.bare_fock.bb))
 
     def get_eris(self, eris=None):
         """Get blocks of the ERIs.

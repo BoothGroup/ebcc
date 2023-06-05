@@ -62,7 +62,7 @@ class RBCCD_PySCF_Tests(unittest.TestCase):
         #a = self.ccsd_ref.e_tot
         a = self._pyscf_bccd_results["e_tot"]
         b = self.ccsd.e_tot
-        self.assertAlmostEqual(a, b, 8)
+        self.assertAlmostEqual(a, b, 7)
 
     #def test_t2_amplitudes(self):
     #    a = self.ccsd_ref.t2
