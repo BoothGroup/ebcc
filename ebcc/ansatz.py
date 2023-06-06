@@ -239,8 +239,7 @@ class Ansatz:
 
         return tuple(ranks)
 
-    @property
-    def active_cluster_ranks(self):
+    def active_cluster_ranks(self, spin="R"):
         """Get a list of cluster operator rank numbers for each of
         the fermionic, bosonic, and coupling ansatzes, for the
         active space (see space.py).
@@ -261,10 +260,15 @@ class Ansatz:
             "t": [3],
             "q": [4],
         }
-        active_indices = {
-            "t": [2, 5],
-            "q": [2, 3, 6, 7],
-        }
+        if spin == "G":
+            active_indices = {
+                "t": (2, 5),
+                "q": (2, 3, 6, 7),
+            }
+        elif spin == "R":
+            pass
+        elif spin == "U":
+            raise NotImplementedError
 
         for i, op in enumerate([self.fermion_ansatz, self.boson_ansatz]):
             # Remove any perturbative corrections
@@ -290,10 +294,9 @@ class Ansatz:
 
             # Determine the ranks
             ranks_entry = set()
-            indices_entry = set()
             for char in op:
                 for rank in notations[char]:
-                    ranks_entry.add((rank, tuple(active_indices[char])))
+                    ranks_entry.add((rank, active_indices[char]))
             ranks.append(tuple(sorted(list(ranks_entry))))
 
         # Get the coupling ranks

@@ -836,8 +836,8 @@ class UEBCC(rebcc.REBCC):
         return tuple(excitations)
 
     @property
-    def name(self):
-        return "U" + self.ansatz.name
+    def spin_type(self):
+        return "U"
 
     @property
     def nmo(self):

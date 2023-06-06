@@ -282,7 +282,7 @@ class GEBCC(rebcc.REBCC):
                 amplitudes["t%d" % n] = np.zeros((self.space.ncocc,) * n + (self.space.ncvir,) * n)
 
         # Build active T amplitudes:
-        for n, act in self.ansatz.active_cluster_ranks[0]:
+        for n, act in self.ansatz.active_cluster_ranks(spin=self.spin_type)[0]:
             act = set(act)
             shape = tuple(self.space.naocc if i in act else self.space.ncocc for i in range(n))
             shape += tuple(self.space.navir if i+n in act else self.space.ncvir for i in range(n))
@@ -301,7 +301,7 @@ class GEBCC(rebcc.REBCC):
                 amplitudes["s%d" % n] = np.zeros((self.nbos,) * n)
 
         # Build active S amplitudes:
-        for n, act in self.ansatz.active_cluster_ranks[1]:
+        for n, act in self.ansatz.active_cluster_ranks(spin=self.spin_type)[1]:
             raise NotImplementedError("Active space methods with bosons")
 
         # Build U amplitudes:
@@ -318,7 +318,7 @@ class GEBCC(rebcc.REBCC):
                     )
 
         # Build active U amplitudes:
-        for nf, act in self.ansatz.active_cluster_ranks[2]:
+        for nf, act in self.ansatz.active_cluster_ranks(spin=self.spin_type)[2]:
             raise NotImplementedError("Active space methods with bosons")
 
         return amplitudes
@@ -491,5 +491,5 @@ class GEBCC(rebcc.REBCC):
         return xi
 
     @property
-    def name(self):
-        return "G" + self.ansatz.name
+    def spin_type(self):
+        return "G"
