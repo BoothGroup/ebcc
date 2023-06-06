@@ -579,10 +579,10 @@ def _fallback_einsum(*operands, **kwargs):
     out = kwargs.pop("out", None)
 
     res = np.einsum(*operands, **kwargs)
-    res *= alpha
+    res = alpha * res
 
     if out is not None:
-        res += beta * out
+        res = res + beta * out
 
     return res
 
