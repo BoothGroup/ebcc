@@ -45,7 +45,7 @@ class RBCCD_PySCF_Tests(unittest.TestCase):
         )
         ccsd.options.e_tol = 1e-10
         eris = ccsd.get_eris()
-        ccsd.brueckner(max_iter=100)
+        ccsd.brueckner(max_iter=100, diis_space=15)
 
         cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris = mf, ccsd_ref, ccsd, eris
 
