@@ -258,15 +258,15 @@ class Ansatz:
 
         notations = {
             "t": [3],
-            "q": [4],
         }
         if spin == "G":
             active_indices = {
-                "t": (2, 5),
-                "q": (2, 3, 6, 7),
+                "t": ((2, 5),),
             }
         elif spin == "R":
-            pass
+            active_indices = {
+                "t": ((2, 5),),
+            }
         elif spin == "U":
             raise NotImplementedError
 

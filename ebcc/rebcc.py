@@ -650,11 +650,15 @@ class REBCC(util.AbstractEBCC):
                 amplitudes["t%d" % n] = np.zeros((self.space.ncocc,) * n + (self.space.ncvir,) * n)
 
         # Build active T amplitudes:
-        for n, act in self.ansatz.active_cluster_ranks(spin=self.spin_type)[0]:
-            act = set(act)
-            shape = tuple(self.space.naocc if i in act else self.space.ncocc for i in range(n))
-            shape += tuple(self.space.navir if i+n in act else self.space.ncvir for i in range(n))
-            amplitudes["t%d" % n] = np.zeros(shape)
+        for n, acts in self.ansatz.active_cluster_ranks(spin=self.spin_type)[0]:
+            amplitudes["t%d" % n] = util.Namespace()
+            for act in acts:
+                act = set(act)
+                shape = tuple(self.space.naocc if i in act else self.space.ncocc for i in range(n))
+                shape += tuple(self.space.navir if i+n in act else self.space.ncvir for i in range(n))
+                key = "".join(["O" if i in act else "o" for i in range(n)])
+                key += "".join(["V" if i+n in act else "v" for i in range(n)])
+                setattr(amplitudes["t%d" % n], key, np.zeros(shape))
 
         if self.boson_ansatz:
             # Only true for real-valued couplings:
@@ -820,19 +824,22 @@ class REBCC(util.AbstractEBCC):
             res["t%d" % n] += amplitudes["t%d" % n]
 
         # Divide active T amplitudes:
-        for n, act in self.ansatz.active_cluster_ranks(spin=self.spin_type)[0]:
-            act = set(act)
-            perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
-            o = "".join([x.upper() if i in act else x for i, x in enumerate("o" * n)])
-            v = "".join([x.upper() if i+n in act else x for i, x in enumerate("v" * n)])
-            e_ia_list = [
-                lib.direct_sum("i-a->ia", getattr(self, "e"+oi), getattr(self, "e"+vi))
-                for oi, vi in zip(o, v)
-            ]
-            d = functools.reduce(np.add.outer, e_ia_list)
-            d = d.transpose(perm)
-            res["t%d" % n] /= d
-            res["t%d" % n] += amplitudes["t%d" % n]
+        for n, acts in self.ansatz.active_cluster_ranks(spin=self.spin_type)[0]:
+            for act in acts:
+                act = set(act)
+                perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
+                o = "".join([x.upper() if i in act else x for i, x in enumerate("o" * n)])
+                v = "".join([x.upper() if i+n in act else x for i, x in enumerate("v" * n)])
+                e_ia_list = [
+                    lib.direct_sum("i-a->ia", getattr(self, "e"+oi), getattr(self, "e"+vi))
+                    for oi, vi in zip(o, v)
+                ]
+                d = functools.reduce(np.add.outer, e_ia_list)
+                d = d.transpose(perm)
+                key = "".join(["O" if i in act else "o" for i in range(n)])
+                key += "".join(["V" if i+n in act else "v" for i in range(n)])
+                setattr(res["t%d" % n], key, getattr(res["t%d" % n], key) / d)
+                setattr(res["t%d" % n], key, getattr(res["t%d" % n], key) + getattr(amplitudes["t%d" % n], key))
 
         # Divide S amplitudes:
         for n in self.ansatz.correlated_cluster_ranks[1]:
@@ -1540,8 +1547,11 @@ class REBCC(util.AbstractEBCC):
         for n in self.ansatz.correlated_cluster_ranks[0]:
             vectors.append(amplitudes["t%d" % n].ravel())
 
-        for n, act in self.ansatz.active_cluster_ranks(spin=self.spin_type)[0]:
-            vectors.append(amplitudes["t%d" % n].ravel())
+        for n, acts in self.ansatz.active_cluster_ranks(spin=self.spin_type)[0]:
+            for act in acts:
+                key = "".join(["O" if i in act else "o" for i in range(n)])
+                key += "".join(["V" if i+n in act else "v" for i in range(n)])
+                vectors.append(getattr(amplitudes["t%d" % n], key).ravel())
 
         for n in self.ansatz.correlated_cluster_ranks[1]:
             vectors.append(amplitudes["s%d" % n].ravel())
@@ -1583,13 +1593,16 @@ class REBCC(util.AbstractEBCC):
             amplitudes["t%d" % n] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
-        for n, act in self.ansatz.active_cluster_ranks(spin=self.spin_type)[0]:
-            act = set(act)
-            shape = tuple(self.space.naocc if i in act else self.space.ncocc for i in range(n))
-            shape += tuple(self.space.navir if i+n in act else self.space.ncvir for i in range(n))
-            size = np.prod(shape)
-            amplitudes["t%d" % n] = vector[i0 : i0 + size].reshape(shape)
-            i0 += size
+        for n, acts in self.ansatz.active_cluster_ranks(spin=self.spin_type)[0]:
+            for act in acts:
+                act = set(act)
+                shape = tuple(self.space.naocc if i in act else self.space.ncocc for i in range(n))
+                shape += tuple(self.space.navir if i+n in act else self.space.ncvir for i in range(n))
+                size = np.prod(shape)
+                key = "".join(["O" if i in act else "o" for i in range(n)])
+                key += "".join(["V" if i+n in act else "v" for i in range(n)])
+                setattr(amplitudes["t%d" % n], key, vector[i0 : i0 + size].reshape(shape))
+                i0 += size
 
         for n in self.ansatz.correlated_cluster_ranks[1]:
             shape = (self.nbos,) * n
@@ -1634,8 +1647,11 @@ class REBCC(util.AbstractEBCC):
         for n in self.ansatz.correlated_cluster_ranks[0]:
             vectors.append(lambdas["l%d" % n].ravel())
 
-        for n, act in self.ansatz.active_cluster_ranks(spin=self.spin_type)[0]:
-            vectors.append(lambdas["l%d" % n].ravel())
+        for n, acts in self.ansatz.active_cluster_ranks(spin=self.spin_type)[0]:
+            for act in acts:
+                key = "".join(["V" if i in act else "v" for i in range(n)])
+                key += "".join(["O" if i+n in act else "o" for i in range(n)])
+                vectors.append(getattr(lambdas["l%d" % n], key).ravel())
 
         for n in self.ansatz.correlated_cluster_ranks[1]:
             vectors.append(lambdas["ls%d" % n].ravel())
@@ -1677,13 +1693,16 @@ class REBCC(util.AbstractEBCC):
             lambdas["l%d" % n] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
-        for n, act in self.ansatz.active_cluster_ranks(spin=self.spin_type)[0]:
-            act = set(act)
-            shape = tuple(self.space.navir if i in act else self.space.ncvir for i in range(n))
-            shape += tuple(self.space.naocc if i+n in act else self.space.ncocc for i in range(n))
-            size = np.prod(shape)
-            lambdas["l%d" % n] = vector[i0 : i0 + size].reshape(shape)
-            i0 += size
+        for n, acts in self.ansatz.active_cluster_ranks(spin=self.spin_type)[0]:
+            for act in acts:
+                act = set(act)
+                shape = tuple(self.space.navir if i in act else self.space.ncvir for i in range(n))
+                shape += tuple(self.space.naocc if i+n in act else self.space.ncocc for i in range(n))
+                size = np.prod(shape)
+                key = "".join(["V" if i in act else "v" for i in range(n)])
+                key += "".join(["O" if i+n in act else "o" for i in range(n)])
+                setattr(lambdas["l%d" % n], key, vector[i0 : i0 + size].reshape(shape))
+                i0 += size
 
         for n in self.ansatz.correlated_cluster_ranks[1]:
             shape = (self.nbos,) * n
