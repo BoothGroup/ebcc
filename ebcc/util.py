@@ -9,6 +9,7 @@ import logging
 import sys
 import time
 import types
+from collections.abc import Mapping
 
 import numpy as np
 from pyscf.lib import direct_sum, dot
@@ -44,7 +45,7 @@ class AbstractEBCC:
     pass
 
 
-class Namespace:
+class Namespace(Mapping):
     """Replacement for SimpleNamespace, which does not trivially allow
     conversion to a dict for heterogenously nested objects.
     """
@@ -71,14 +72,16 @@ class Namespace:
     __setattr__ = __setitem__
 
     def __iter__(self):
-        for key in self._keys:
-            yield (key, self[key])
+        yield from {key: self[key] for key in self._keys}
 
     def __eq__(self, other):
         return dict(self) == dict(other)
 
     def __contains__(self, key):
         return key in self._keys
+
+    def __len__(self, other):
+        return len(self._keys)
 
 
 class Timer:

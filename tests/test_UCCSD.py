@@ -5,6 +5,7 @@ import itertools
 import os
 import pickle
 import unittest
+import tempfile
 
 import numpy as np
 import pytest
@@ -344,6 +345,48 @@ class UCCSD_PySCF_Frozen_Tests(unittest.TestCase):
         e1 = self.ccsd.ee_eom(nroots=5).kernel()
         e2, v2 = self.ccsd_ref.eeccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
+
+
+@pytest.mark.reference
+class UCCSD_Dump_Tests(UCCSD_PySCF_Tests):
+    """Test UCCSD against the PySCF after dumping and loading.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        mol = gto.Mole()
+        mol.atom = "O 0 0 0; O 0 0 1"
+        mol.basis = "6-31g"
+        mol.spin = 2
+        mol.verbose = 0
+        mol.build()
+
+        mf = scf.RHF(mol)
+        mf.conv_tol = 1e-12
+        mf.kernel()
+        mf = mf.to_uhf()
+
+        ccsd_ref = cc.UCCSD(mf)
+        ccsd_ref.conv_tol = 1e-12
+        ccsd_ref.conv_tol_normt = 1e-12
+        ccsd_ref.kernel()
+        ccsd_ref.solve_lambda()
+
+        ccsd = UEBCC(
+                mf,
+                ansatz="CCSD",
+                log=NullLogger(),
+        )
+        ccsd.options.e_tol = 1e-12
+        eris = ccsd.get_eris()
+        ccsd.kernel(eris=eris)
+        ccsd.solve_lambda(eris=eris)
+
+        cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris = mf, ccsd_ref, ccsd, eris
+
+        file = "%s/ebcc.h5" % tempfile.gettempdir()
+        cls.ccsd.write(file)
+        cls.ccsd = cls.ccsd.__class__.read(file, log=cls.ccsd.log)
 
 
 if __name__ == "__main__":

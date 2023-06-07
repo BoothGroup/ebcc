@@ -5,6 +5,7 @@ import itertools
 import os
 import pickle
 import unittest
+import tempfile
 
 import numpy as np
 import pytest
@@ -144,6 +145,64 @@ class RCCSD_SD_1_2_NoShift_Tests(RCCSD_SD_1_2_Tests):
         self.assertAlmostEqual(lib.fp(self.ccsd.make_rdm1_b()),       0.009432763560355, 6)
         self.assertAlmostEqual(lib.fp(self.ccsd.make_sing_b_dm()),    0.343097457676634, 6)
         self.assertAlmostEqual(lib.fp(self.ccsd.make_eb_coup_rdm()), -2.128888460564522, 6)
+
+
+@pytest.mark.reference
+class RCCSD_SD_1_2_Dump_Tests(RCCSD_SD_1_2_Tests):
+    """Test RCCSD-SD-1-2 after dumping and loading the data.
+    """
+
+    shift = True
+
+    @classmethod
+    def setUpClass(cls):
+        path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_data.pkl")
+        with open(path, "rb") as f:
+            data = pickle.load(f)
+            mo_coeff = data["mo_coeff"]
+            data = data[(2, 2, 2)]
+
+        mol = gto.Mole()
+        mol.atom = "H 0 0 0; F 0 0 1.1"
+        mol.basis = "6-31g"
+        mol.verbose = 0
+        mol.build()
+
+        mf = scf.RHF(mol)
+        mf.conv_tol = 1e-12
+        mf.kernel()
+        mf.mo_coeff = mo_coeff
+
+        nmo = mf.mo_occ.size
+        nbos = 5
+        np.random.seed(12345)
+        g = np.random.random((nbos, nmo, nmo)) * 0.02
+        g = 0.5 * (g + g.transpose(0, 2, 1).conj())
+        omega = np.random.random((nbos,)) * 5.0
+
+        ccsd = REBCC(
+                mf,
+                ansatz="CCSD-SD-1-2",
+                g=g,
+                omega=omega,
+                shift=cls.shift,
+                log=NullLogger(),
+        )
+        ccsd.options.e_tol = 1e-12
+        eris = ccsd.get_eris()
+        ccsd.kernel(eris=eris)
+        ccsd.solve_lambda(eris=eris)
+
+        osort = list(itertools.chain(*zip(range(ccsd.nocc), range(ccsd.nocc, 2*ccsd.nocc))))
+        vsort = list(itertools.chain(*zip(range(ccsd.nvir), range(ccsd.nvir, 2*ccsd.nvir))))
+        fsort = list(itertools.chain(*zip(range(ccsd.nmo), range(ccsd.nmo, 2*ccsd.nmo))))
+
+        cls.mf, cls.ccsd, cls.eris, cls.data = mf, ccsd, eris, data
+        cls.osort, cls.vsort, cls.fsort = osort, vsort, fsort
+
+        file = "%s/ebcc.h5" % tempfile.gettempdir()
+        cls.ccsd.write(file)
+        cls.ccsd = cls.ccsd.__class__.read(file, log=cls.ccsd.log)
 
 
 
