@@ -14,6 +14,7 @@ from pyscf import lib, scf
 from ebcc import METHOD_TYPES, default_log, init_logging, reom, util
 from ebcc.ansatz import Ansatz
 from ebcc.brueckner import BruecknerREBCC
+from ebcc.dump import Dump
 from ebcc.eris import RERIs
 from ebcc.fock import RFock
 from ebcc.space import Space
@@ -27,7 +28,7 @@ from ebcc.space import Space
 # TODO fix TensorSymm and benchmark third order again
 
 
-class Amplitudes(dict):
+class Amplitudes(util.Namespace):
     """Amplitude container class. Consists of a dictionary with keys
     that are strings of the name of each amplitude, and values are
     arrays whose dimension depends on the particular amplitude.
@@ -525,6 +526,21 @@ class REBCC(util.AbstractEBCC):
         bcc = self.Brueckner(self, *args, **kwargs)
 
         return bcc.kernel()
+
+    def write(self, file: str):
+        """Write the EBCC data to a file."""
+
+        writer = Dump(file)
+        writer.write(self)
+
+    @classmethod
+    def read(cls, file: str, log: logging.Logger = None):
+        """Read the EBCC data from a file."""
+
+        reader = Dump(file)
+        cc = reader.read(cls=cls, log=log)
+
+        return cc
 
     @staticmethod
     def _convert_mf(mf):
@@ -1960,8 +1976,12 @@ class REBCC(util.AbstractEBCC):
         return self.ansatz.boson_coupling_rank
 
     @property
+    def spin_type(self):
+        return "R"
+
+    @property
     def name(self):
-        return "R" + self.ansatz.name
+        return self.spin_type + self.ansatz.name
 
     @property
     def mo_coeff(self):

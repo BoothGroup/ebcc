@@ -4,6 +4,7 @@
 import os
 import pickle
 import unittest
+import tempfile
 
 import numpy as np
 import pytest
@@ -305,6 +306,45 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
         e_rdm += util.einsum("pqrs,pqrs->", v, dm2) * 0.5
         e_rdm += self.mf.mol.energy_nuc()
         self.assertAlmostEqual(e_rdm, self.ccsd_ref.e_tot)
+
+
+@pytest.mark.reference
+class GCCSD_Dump_Tests(GCCSD_PySCF_Tests):
+    """Test GCCSD against PySCF after dumping and loading.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        mol = gto.Mole()
+        mol.atom = "O 0 0 0.1173; H 0 0.7572 -0.4692; H 0 -0.7572 -0.4692"
+        mol.basis = "sto3g"
+        mol.verbose = 0
+        mol.build()
+
+        mf = scf.RHF(mol)
+        mf.conv_tol = 1e-12
+        mf.kernel()
+
+        ccsd_ref = cc.GCCSD(mf)
+        ccsd_ref.conv_tol = 1e-12
+        ccsd_ref.kernel()
+        ccsd_ref.solve_lambda()
+
+        ccsd = GEBCC(
+                mf,
+                ansatz="CCSD",
+                log=NullLogger(),
+        )
+        ccsd.options.e_tol = 1e-12
+        eris = ccsd.get_eris()
+        ccsd.kernel(eris=eris)
+        ccsd.solve_lambda(eris=eris)
+
+        cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris = mf, ccsd_ref, ccsd, eris
+
+        file = "%s/ebcc.h5" % tempfile.gettempdir()
+        cls.ccsd.write(file)
+        cls.ccsd = cls.ccsd.__class__.read(file, log=cls.ccsd.log)
 
 
 if __name__ == "__main__":
