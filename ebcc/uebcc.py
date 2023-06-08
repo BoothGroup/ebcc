@@ -11,10 +11,12 @@ from pyscf import ao2mo, lib
 
 from ebcc import rebcc, ueom, util
 from ebcc.brueckner import BruecknerUEBCC
+from ebcc.eris import UERIs
+from ebcc.fock import UFock
 from ebcc.space import Space
 
 
-class Amplitudes(rebcc.Amplitudes):
+class Amplitudes(util.Namespace):
     """Amplitude container class. Consists of a dictionary with keys
     that are strings of the name of each amplitude. Values are
     namespaces with keys indicating whether each fermionic dimension
@@ -27,87 +29,10 @@ class Amplitudes(rebcc.Amplitudes):
     pass
 
 
-class ERIs(types.SimpleNamespace):
-    """Electronic repulsion integral container class. Consists of a
-    namespace with keys that are length-4 string of `"a"` or `"b"`
-    signifying whether the corresponding dimension is alpha or beta
-    spin, and values are of type `rebcc.ERIs`.
-    """
-
-    def __init__(
-        self,
-        ebcc: rebcc.AbstractEBCC,
-        array: Sequence[np.ndarray] = None,
-        mo_coeff: Sequence[np.ndarray] = None,
-    ):
-        self.mf = ebcc.mf
-        self.space = ebcc.space
-        self.mo_coeff = mo_coeff
-        slices = [
-            {
-                "x": space.correlated,
-                "o": space.correlated_occupied,
-                "v": space.correlated_virtual,
-                "x": space.active,
-                "O": space.active_occupied,
-                "V": space.active_virtual,
-            }
-            for space in self.space
-        ]
-
-        if self.mo_coeff is None:
-            self.mo_coeff = ebcc.mo_coeff
-
-        if array is not None:
-            arrays = (array[0], array[1], array[1].transpose((2, 3, 0, 1)), array[2])
-        elif isinstance(self.mf._eri, tuple):
-            # Have spin-dependent coulomb interaction; precalculate required arrays for simplicity.
-            arrays_aabb = ao2mo.incore.general(
-                self.mf._eri[1], [self.mo_coeff[i] for i in (0, 0, 1, 1)], compact=False
-            )
-            arrays = (
-                ao2mo.incore.general(
-                    self.mf._eri[0], [self.mo_coeff[i] for i in (0, 0, 0, 0)], compact=False
-                ),
-                arrays_aabb,
-                arrays_aabb.transpose(2, 3, 0, 1),
-                ao2mo.incore.general(
-                    self.mf._eri[2], [self.mo_coeff[i] for i in (1, 1, 1, 1)], compact=False
-                ),
-            )
-        else:
-            arrays = (None, None, None, None)
-
-        self.aaaa = rebcc.ERIs(
-            ebcc,
-            arrays[0],
-            slices=[slices[i] for i in (0, 0, 0, 0)],
-            mo_coeff=[self.mo_coeff[i] for i in (0, 0, 0, 0)],
-        )
-        self.aabb = rebcc.ERIs(
-            ebcc,
-            arrays[1],
-            slices=[slices[i] for i in (0, 0, 1, 1)],
-            mo_coeff=[self.mo_coeff[i] for i in (0, 0, 1, 1)],
-        )
-        self.bbaa = rebcc.ERIs(
-            ebcc,
-            arrays[2],
-            slices=[slices[i] for i in (1, 1, 0, 0)],
-            mo_coeff=[self.mo_coeff[i] for i in (1, 1, 0, 0)],
-        )
-        self.bbbb = rebcc.ERIs(
-            ebcc,
-            arrays[3],
-            slices=[slices[i] for i in (1, 1, 1, 1)],
-            mo_coeff=[self.mo_coeff[i] for i in (1, 1, 1, 1)],
-        )
-
-
 @util.inherit_docstrings
 class UEBCC(rebcc.REBCC):
     Amplitudes = Amplitudes
-    ERIs = ERIs
+    ERIs = UERIs
     Brueckner = BruecknerUEBCC
 
     @staticmethod
@@ -141,7 +66,7 @@ class UEBCC(rebcc.REBCC):
 
             for n in rcc.ansatz.correlated_cluster_ranks[0]:
                 amplitudes["t%d" % n] = util.Namespace()
-                for comb in util.generate_spin_combinations(n):
+                for comb in util.generate_spin_combinations(n, unique=True):
                     subscript = comb[:n] + comb[n:].upper()
                     tn = rcc.amplitudes["t%d" % n]
                     tn = util.symmetrise(subscript, tn, symmetry="-" * 2 * n)
@@ -153,7 +78,7 @@ class UEBCC(rebcc.REBCC):
             for nf in rcc.ansatz.correlated_cluster_ranks[2]:
                 for nb in rcc.ansatz.correlated_cluster_ranks[3]:
                     amplitudes["u%d%d" % (nf, nb)] = util.Namespace()
-                    for comb in util.generate_spin_combinations(nf):
+                    for comb in util.generate_spin_combinations(nf, unique=True):
                         tn = rcc.amplitudes["u%d%d" % (nf, nb)]
                         setattr(amplitudes["u%d%d" % (nf, nb)], comb, tn)
 
@@ -164,7 +89,7 @@ class UEBCC(rebcc.REBCC):
 
             for n in rcc.ansatz.correlated_cluster_ranks[0]:
                 lambdas["l%d" % n] = util.Namespace()
-                for comb in util.generate_spin_combinations(n):
+                for comb in util.generate_spin_combinations(n, unique=True):
                     subscript = comb[:n] + comb[n:].upper()
                     tn = rcc.lambdas["l%d" % n]
                     tn = util.symmetrise(subscript, tn, symmetry="-" * 2 * n)
@@ -176,7 +101,7 @@ class UEBCC(rebcc.REBCC):
             for nf in rcc.ansatz.correlated_cluster_ranks[2]:
                 for nb in rcc.ansatz.correlated_cluster_ranks[3]:
                     lambdas["lu%d%d" % (nf, nb)] = util.Namespace()
-                    for comb in util.generate_spin_combinations(nf):
+                    for comb in util.generate_spin_combinations(nf, unique=True):
                         tn = rcc.lambdas["lu%d%d" % (nf, nb)]
                         setattr(lambdas["lu%d%d" % (nf, nb)], comb, tn)
 
@@ -242,22 +167,20 @@ class UEBCC(rebcc.REBCC):
                 e_ijab = util.Namespace(
                     aaaa=lib.direct_sum("ia,jb->ijab", e_ia.aa, e_ia.aa),
                     abab=lib.direct_sum("ia,jb->ijab", e_ia.aa, e_ia.bb),
-                    baba=lib.direct_sum("ia,jb->ijab", e_ia.bb, e_ia.aa),
                     bbbb=lib.direct_sum("ia,jb->ijab", e_ia.bb, e_ia.bb),
                 )
                 tn = util.Namespace(
                     aaaa=eris.aaaa.ovov.swapaxes(1, 2) / e_ijab.aaaa,
                     abab=eris.aabb.ovov.swapaxes(1, 2) / e_ijab.abab,
-                    baba=eris.bbaa.ovov.swapaxes(1, 2) / e_ijab.baba,
                     bbbb=eris.bbbb.ovov.swapaxes(1, 2) / e_ijab.bbbb,
                 )
                 # TODO generalise:
-                tn.aaaa = tn.aaaa - tn.aaaa.swapaxes(0, 1)
-                tn.bbbb = tn.bbbb - tn.bbbb.swapaxes(0, 1)
+                tn.aaaa = 0.5 * (tn.aaaa - tn.aaaa.swapaxes(0, 1))
+                tn.bbbb = 0.5 * (tn.bbbb - tn.bbbb.swapaxes(0, 1))
                 amplitudes["t%d" % n] = tn
             else:
                 tn = util.Namespace()
-                for comb in util.generate_spin_combinations(n):
+                for comb in util.generate_spin_combinations(n, unique=True):
                     shape = tuple(self.space["ab".index(s)].ncocc for s in comb[:n])
                     shape += tuple(self.space["ab".index(s)].ncvir for s in comb[n:])
                     amp = np.zeros(shape)
@@ -348,7 +271,7 @@ class UEBCC(rebcc.REBCC):
         # Divide T amplitudes:
         for n in self.ansatz.correlated_cluster_ranks[0]:
             perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
-            for comb in util.generate_spin_combinations(n):
+            for comb in util.generate_spin_combinations(n, unique=True):
                 subscript = comb[:n] + comb[n:].upper()
                 es = [getattr(e_ia, comb[i] + comb[i + n]) for i in range(n)]
                 d = functools.reduce(np.add.outer, es)
@@ -383,12 +306,13 @@ class UEBCC(rebcc.REBCC):
 
         return res
 
-    def update_lams(self, eris=None, amplitudes=None, lambdas=None):
+    def update_lams(self, eris=None, amplitudes=None, lambdas=None, lambdas_pert=None):
         func, kwargs = self._load_function(
             "update_lams",
             eris=eris,
             amplitudes=amplitudes,
             lambdas=lambdas,
+            lambdas_pert=lambdas_pert,
         )
         res = func(**kwargs)
         res = {key.rstrip("new"): val for key, val in res.items()}
@@ -401,7 +325,7 @@ class UEBCC(rebcc.REBCC):
         # Divide T amplitudes:
         for n in self.ansatz.correlated_cluster_ranks[0]:
             perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
-            for comb in util.generate_spin_combinations(n):
+            for comb in util.generate_spin_combinations(n, unique=True):
                 subscript = comb[:n] + comb[n:].upper()
                 es = [getattr(e_ai, comb[i] + comb[i + n]) for i in range(n)]
                 d = functools.reduce(np.add.outer, es)
@@ -474,7 +398,6 @@ class UEBCC(rebcc.REBCC):
 
             dm.aaaa = transpose2(transpose1(dm.aaaa))
             dm.aabb = transpose2(dm.aabb)
-            dm.bbaa = transpose2(dm.bbaa)
             dm.bbbb = transpose2(transpose1(dm.bbbb))
 
         return dm
@@ -527,9 +450,10 @@ class UEBCC(rebcc.REBCC):
                 "x": space.correlated,
                 "o": space.correlated_occupied,
                 "v": space.correlated_virtual,
-                "X": space.active,
                 "O": space.active_occupied,
                 "V": space.active_virtual,
+                "i": space.inactive_occupied,
+                "a": space.inactive_virtual,
             }
             for space in self.space
         ]
@@ -540,7 +464,7 @@ class UEBCC(rebcc.REBCC):
                     assert key[0] == "b"
                     i = slices[s][key[1]]
                     j = slices[s][key[2]]
-                    return g[s][:, i][:, :, j].copy()
+                    return g[s][:, i, j].copy()
 
             return Blocks()
 
@@ -570,45 +494,7 @@ class UEBCC(rebcc.REBCC):
         return xi
 
     def get_fock(self):
-        slices = [
-            {
-                "x": space.correlated,
-                "o": space.correlated_occupied,
-                "v": space.correlated_virtual,
-                "X": space.active,
-                "O": space.active_occupied,
-                "V": space.active_virtual,
-            }
-            for space in self.space
-        ]
-
-        bare_fock = self.bare_fock
-
-        def constructor(s):
-            class Blocks:
-                def __getattr__(selffer, key):
-                    i = slices[s][key[0]]
-                    j = slices[s][key[1]]
-                    focks = getattr(bare_fock, "ab"[s] * 2)
-                    fock = focks[i][:, j].copy()
-
-                    if self.options.shift:
-                        xi = self.xi
-                        gs = getattr(self.g, "ab"[s] * 2)
-                        g = +gs.__getattr__("b" + key) + gs.__getattr__("b" + key[::-1]).transpose(
-                            0, 2, 1
-                        )
-                        fock -= util.einsum("I,Ipq->pq", xi, g)
-
-                    return fock
-
-            return Blocks()
-
-        f = util.Namespace()
-        f.aa = constructor(0)
-        f.bb = constructor(1)
-
-        return f
+        return UFock(self, array=(self.bare_fock.aa, self.bare_fock.bb))
 
     def get_eris(self, eris=None):
         """Get blocks of the ERIs.
@@ -644,7 +530,7 @@ class UEBCC(rebcc.REBCC):
         vectors = []
 
         for n in self.ansatz.correlated_cluster_ranks[0]:
-            for spin in util.generate_spin_combinations(n):
+            for spin in util.generate_spin_combinations(n, unique=True):
                 tn = getattr(amplitudes["t%d" % n], spin)
                 subscript = spin[:n] + spin[n:].upper()
                 vectors.append(util.compress_axes(subscript, tn).ravel())
@@ -667,7 +553,7 @@ class UEBCC(rebcc.REBCC):
 
         for n in self.ansatz.correlated_cluster_ranks[0]:
             amplitudes["t%d" % n] = util.Namespace()
-            for spin in util.generate_spin_combinations(n):
+            for spin in util.generate_spin_combinations(n, unique=True):
                 subscript = spin[:n] + spin[n:].upper()
                 size = util.get_compressed_size(
                     subscript,
@@ -715,7 +601,7 @@ class UEBCC(rebcc.REBCC):
         vectors = []
 
         for n in self.ansatz.correlated_cluster_ranks[0]:
-            for spin in util.generate_spin_combinations(n):
+            for spin in util.generate_spin_combinations(n, unique=True):
                 tn = getattr(lambdas["l%d" % n], spin)
                 subscript = spin[:n] + spin[n:].upper()
                 vectors.append(util.compress_axes(subscript, tn).ravel())
@@ -739,7 +625,7 @@ class UEBCC(rebcc.REBCC):
 
         for n in self.ansatz.correlated_cluster_ranks[0]:
             lambdas["l%d" % n] = util.Namespace()
-            for spin in util.generate_spin_combinations(n):
+            for spin in util.generate_spin_combinations(n, unique=True):
                 subscript = spin[:n] + spin[n:].upper()
                 size = util.get_compressed_size(
                     subscript,
@@ -788,7 +674,7 @@ class UEBCC(rebcc.REBCC):
         m = 0
 
         for n in self.ansatz.correlated_cluster_ranks[0]:
-            for spin in util.generate_spin_combinations(n, excited=True):
+            for spin in util.generate_spin_combinations(n, excited=True, unique=True):
                 vn = getattr(excitations[m], spin)
                 subscript = spin[:n] + spin[n:].upper()
                 vectors.append(util.compress_axes(subscript, vn).ravel())
@@ -829,7 +715,7 @@ class UEBCC(rebcc.REBCC):
 
         for n in self.ansatz.correlated_cluster_ranks[0]:
             amp = util.Namespace()
-            for spin in util.generate_spin_combinations(n, excited=True):
+            for spin in util.generate_spin_combinations(n, excited=True, unique=True):
                 subscript = spin[:n] + spin[n:].upper()
                 size = util.get_compressed_size(
                     subscript,
@@ -871,7 +757,7 @@ class UEBCC(rebcc.REBCC):
 
         for n in self.ansatz.correlated_cluster_ranks[0]:
             amp = util.Namespace()
-            for spin in util.generate_spin_combinations(n, excited=True):
+            for spin in util.generate_spin_combinations(n, excited=True, unique=True):
                 subscript = spin[:n] + spin[n:].upper()
                 size = util.get_compressed_size(
                     subscript,
@@ -950,8 +836,8 @@ class UEBCC(rebcc.REBCC):
         return tuple(excitations)
 
     @property
-    def name(self):
-        return "U" + self.ansatz.name
+    def spin_type(self):
+        return "U"
 
     @property
     def nmo(self):

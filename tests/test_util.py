@@ -70,6 +70,12 @@ class Util_Tests(unittest.TestCase):
         ]:
             self.assertEqual(set(util.generate_spin_combinations(n)), combs)
         for n, combs in [
+                (1, {"aa", "bb"}),
+                (2, {"aaaa", "abab", "bbbb"}),
+                (3, {"aaaaaa", "abaaba", "babbab", "bbbbbb"}),
+        ]:
+            self.assertEqual(set(util.generate_spin_combinations(n, unique=True)), combs)
+        for n, combs in [
                 (1, {"a", "b"}),
                 (2, {"aaa", "aba", "bab", "bbb"}),
                 (3, {"aaaaa", "aabaa", "abaab", "baaba", "abbab", "babba", "bbabb", "bbbbb"}),
@@ -151,6 +157,70 @@ class Util_Tests(unittest.TestCase):
         self.assertAlmostEqual(ebcc.CC2(uhf, e_tol=1e-10, log=log).kernel(), e_cc2_u, 8)
         self.assertAlmostEqual(ebcc.CC2(ghf, e_tol=1e-10, log=log).kernel(), e_cc2_g, 8)
 
+    def test_einsum(self):
+        # Tests the einsum implementation
+        _size = util.NUMPY_EINSUM_SIZE
+        util.NUMPY_EINSUM_SIZE = 0
+
+        x = np.random.random((10, 11, 12, 13))
+        y = np.random.random((13, 12, 5, 6))
+        z = np.random.random((6, 5, 7, 8))
+
+        a = np.einsum("ijkl,lkab->ijab", x, y)
+        b = util.einsum("ijkl,lkab->ijab", x, y)
+        np.testing.assert_almost_equal(a, b)
+
+        b[:] = 0
+        b = util.einsum("ijkl,lkab->ijab", x, y, out=b, alpha=1.0, beta=0.0)
+        np.testing.assert_almost_equal(a, b)
+
+        b = util.einsum("ijkl,lkab->ijab", x, y, out=b, alpha=1.0, beta=1.0)
+        np.testing.assert_almost_equal(a*2, b)
+
+        b = util.einsum("ijkl,lkab->ijab", x, y, out=b, alpha=2.0, beta=0.0)
+        np.testing.assert_almost_equal(a*2, b)
+
+        a = np.einsum("ijkl,lkab,bacd->ijcd", x, y, z)
+        b = util.einsum("ijkl,lkab,bacd->ijcd", x, y, z)
+        np.testing.assert_almost_equal(a, b)
+
+        x = np.asfortranarray(np.random.random((5, 5, 5)))
+        y = np.asfortranarray(np.random.random((5, 5, 5)))
+        z = np.asfortranarray(np.random.random((5, 5, 5)))
+
+        a = np.einsum("ijk,jki,kji->ik", x, y, z)
+        b = util.einsum("ijk,jki,kji->ik", x, y, z)
+        np.testing.assert_almost_equal(a, b)
+
+        a = np.einsum("ijk,jki,kji->ik", x, y, z)
+        b = util.einsum("ijk,jki,kji->ik", x, y, z, alpha=0.5, beta=0.5)
+        np.testing.assert_almost_equal(a, b)
+
+        a = np.einsum("iik,kjj->ij", x, y)
+        b = util.einsum("iik,kjj->ij", x, y)
+        np.testing.assert_almost_equal(a, b)
+
+        a = np.einsum("ijk,ijk->", x, y)
+        b = util.einsum("ijk,ijk->", x, y)
+        np.testing.assert_almost_equal(a, b)
+
+        z = np.random.random((5, 5))
+
+        a = np.einsum("ijk,jk->", x, z)
+        b = util.einsum("ijk,jk->", x, z)
+        np.testing.assert_almost_equal(a, b)
+
+        a = np.einsum("ijk,kl->il", x, z)
+        b = util.einsum("ijk,kl->il", x, z)
+        np.testing.assert_almost_equal(a, b)
+
+        x = np.random.random((5, 5, 0))
+
+        a = np.einsum("ikl,jkl->ij", x, x)
+        b = util.einsum("ikl,jkl->ij", x, x)
+        np.testing.assert_almost_equal(a, b)
+
+        util.NUMPY_EINSUM_SIZE = _size
 
 
 if __name__ == "__main__":

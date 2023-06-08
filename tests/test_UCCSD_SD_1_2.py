@@ -5,6 +5,7 @@ import itertools
 import os
 import pickle
 import unittest
+import tempfile
 
 import numpy as np
 import pytest
@@ -119,7 +120,6 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
         self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l1"].bb),   -0.05224794749064056, 5)
         self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l2"].aaaa),  0.02916600243912396, 5)
         self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l2"].abab), -0.05259350959254097, 5)
-        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l2"].baba), -0.05259350959253986, 5)
         self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l2"].bbbb),  0.02916600243912393, 5)
         self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["ls1"]),      0.01144092890558732, 5)
         self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["ls1"]),      0.01144092890558732, 5)
@@ -138,7 +138,6 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
         self.assertAlmostEqual(lib.fp(rdm1_f.bb),     1.529259451075522, 6)
         self.assertAlmostEqual(lib.fp(rdm2_f.aaaa), -12.786827602840134, 6)
         self.assertAlmostEqual(lib.fp(rdm2_f.aabb),  11.890660368984713, 6)
-        self.assertAlmostEqual(lib.fp(rdm2_f.bbaa),  11.890660368984715, 6)
         self.assertAlmostEqual(lib.fp(rdm2_f.bbbb), -12.786827602840136, 6)
         self.assertAlmostEqual(lib.fp(rdm1_b),        0.035528092227729, 6)
         self.assertAlmostEqual(lib.fp(dm_b),          0.020426308220055, 6)
@@ -178,7 +177,6 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(uebcc1.amplitudes["t1"].bb,   uebcc2.amplitudes["t1"].bb,   5)
         np.testing.assert_almost_equal(uebcc1.amplitudes["t2"].aaaa, uebcc2.amplitudes["t2"].aaaa, 5)
         np.testing.assert_almost_equal(uebcc1.amplitudes["t2"].abab, uebcc2.amplitudes["t2"].abab, 5)
-        np.testing.assert_almost_equal(uebcc1.amplitudes["t2"].baba, uebcc2.amplitudes["t2"].baba, 5)
         np.testing.assert_almost_equal(uebcc1.amplitudes["t2"].bbbb, uebcc2.amplitudes["t2"].bbbb, 5)
         np.testing.assert_almost_equal(uebcc1.amplitudes["s1"],      uebcc2.amplitudes["s1"],      5)
         np.testing.assert_almost_equal(uebcc1.amplitudes["s1"],      uebcc2.amplitudes["s1"],      5)
@@ -191,7 +189,6 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(uebcc1.lambdas["l1"].bb,   uebcc2.lambdas["l1"].bb,   5)
         np.testing.assert_almost_equal(uebcc1.lambdas["l2"].aaaa, uebcc2.lambdas["l2"].aaaa, 5)
         np.testing.assert_almost_equal(uebcc1.lambdas["l2"].abab, uebcc2.lambdas["l2"].abab, 5)
-        np.testing.assert_almost_equal(uebcc1.lambdas["l2"].baba, uebcc2.lambdas["l2"].baba, 5)
         np.testing.assert_almost_equal(uebcc1.lambdas["l2"].bbbb, uebcc2.lambdas["l2"].bbbb, 5)
         np.testing.assert_almost_equal(uebcc1.lambdas["ls1"],     uebcc2.lambdas["ls1"],     5)
         np.testing.assert_almost_equal(uebcc1.lambdas["ls1"],     uebcc2.lambdas["ls1"],     5)
@@ -215,7 +212,6 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(uebcc1_rdm1_f.bb,   uebcc2_rdm1_f.bb,   6)
         np.testing.assert_almost_equal(uebcc1_rdm2_f.aaaa, uebcc2_rdm2_f.aaaa, 6)
         np.testing.assert_almost_equal(uebcc1_rdm2_f.aabb, uebcc2_rdm2_f.aabb, 6)
-        np.testing.assert_almost_equal(uebcc1_rdm2_f.bbaa, uebcc2_rdm2_f.bbaa, 6)
         np.testing.assert_almost_equal(uebcc1_rdm2_f.bbbb, uebcc2_rdm2_f.bbbb, 6)
         np.testing.assert_almost_equal(uebcc1_rdm1_b,      uebcc2_rdm1_b,      6)
         np.testing.assert_almost_equal(uebcc1_dm_b,        uebcc2_dm_b,        6)
@@ -237,7 +233,6 @@ class UCCSD_SD_1_2_NoShift_Tests(UCCSD_SD_1_2_Tests):
         self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l1"].bb),   -0.052514383878909804, 5)
         self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l2"].aaaa),  0.029627372142994383, 5)
         self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l2"].abab), -0.052474614602499456, 5)
-        self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l2"].baba), -0.052474614602498866, 5)
         self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["l2"].bbbb),  0.029627372142994424, 5)
         self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["ls1"]),      0.199397081277302200, 5)
         self.assertAlmostEqual(lib.fp(self.ccsd.lambdas["ls1"]),      0.199397081277302200, 5)
@@ -256,12 +251,71 @@ class UCCSD_SD_1_2_NoShift_Tests(UCCSD_SD_1_2_Tests):
         self.assertAlmostEqual(lib.fp(rdm1_f.bb),     1.528453985001563, 6)
         self.assertAlmostEqual(lib.fp(rdm2_f.aaaa), -12.796158496372168, 6)
         self.assertAlmostEqual(lib.fp(rdm2_f.aabb),  11.888759742067261, 6)
-        self.assertAlmostEqual(lib.fp(rdm2_f.bbaa),  11.888759742067258, 6)
         self.assertAlmostEqual(lib.fp(rdm2_f.bbbb), -12.796158496372172, 6)
         self.assertAlmostEqual(lib.fp(rdm1_b),        0.009432763864565, 6)
         self.assertAlmostEqual(lib.fp(dm_b),          0.343097464069136, 6)
         self.assertAlmostEqual(lib.fp(dm_eb.aa),     -1.064444250615477, 6)
         self.assertAlmostEqual(lib.fp(dm_eb.bb),     -1.064444250615478, 6)
+
+
+@pytest.mark.reference
+class UCCSD_SD_1_2_Dump_Tests(UCCSD_SD_1_2_Tests):
+    """Test UCCSD-SD-1-2 after dumping and loading the data.
+    """
+
+    shift = True
+
+    @classmethod
+    def setUpClass(cls):
+        path = os.path.join(os.path.dirname(os.path.realpath(__file__)), "test_data.pkl")
+        with open(path, "rb") as f:
+            data = pickle.load(f)
+            mo_coeff = data["mo_coeff"]
+            data = data[(2, 2, 2)]
+
+        mol = gto.Mole()
+        mol.atom = "H 0 0 0; F 0 0 1.1"
+        mol.basis = "6-31g"
+        mol.verbose = 0
+        mol.build()
+
+        mf = scf.RHF(mol)
+        mf.conv_tol = 1e-12
+        mf.kernel()
+        mf.mo_coeff = mo_coeff
+        mf = mf.to_uhf()
+
+        nmo = mf.mo_occ[0].size
+        nbos = 5
+        np.random.seed(12345)
+        g = np.random.random((nbos, nmo, nmo)) * 0.02
+        g = 0.5 * (g + g.transpose(0, 2, 1).conj())
+        omega = np.random.random((nbos,)) * 5.0
+
+        ccsd = UEBCC(
+                mf,
+                ansatz="CCSD-SD-1-2",
+                g=g,
+                omega=omega,
+                shift=cls.shift,
+                log=NullLogger(),
+        )
+        ccsd.options.e_tol = 1e-12
+        eris = ccsd.get_eris()
+        ccsd.kernel(eris=eris)
+        ccsd.solve_lambda(eris=eris)
+
+        osort = list(itertools.chain(*zip(range(ccsd.nocc[0]), range(ccsd.nocc[0], ccsd.nocc[0]+ccsd.nocc[1]))))
+        vsort = list(itertools.chain(*zip(range(ccsd.nvir[1]), range(ccsd.nvir[0], ccsd.nvir[0]+ccsd.nvir[1]))))
+        fsort = list(itertools.chain(*zip(range(ccsd.nmo), range(ccsd.nmo, 2*ccsd.nmo))))
+
+        cls.mf, cls.ccsd, cls.eris, cls.data = mf, ccsd, eris, data
+        cls.osort, cls.vsort, cls.fsort = osort, vsort, fsort
+        cls.g, cls.omega = g, omega
+
+        file = "%s/ebcc.h5" % tempfile.gettempdir()
+        cls.ccsd.write(file)
+        cls.ccsd = cls.ccsd.__class__.read(file, log=cls.ccsd.log)
 
 
 if __name__ == "__main__":

@@ -5,6 +5,7 @@ import itertools
 import os
 import pickle
 import unittest
+import tempfile
 
 import numpy as np
 import pytest
@@ -99,13 +100,11 @@ class UCCSD_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(self.ccsd.t1.bb, uebcc.t1.bb, 6)
         np.testing.assert_almost_equal(self.ccsd.t2.aaaa, uebcc.t2.aaaa, 6)
         np.testing.assert_almost_equal(self.ccsd.t2.abab, uebcc.t2.abab, 6)
-        np.testing.assert_almost_equal(self.ccsd.t2.baba, uebcc.t2.baba, 6)
         np.testing.assert_almost_equal(self.ccsd.t2.bbbb, uebcc.t2.bbbb, 6)
         np.testing.assert_almost_equal(self.ccsd.l1.aa, uebcc.l1.aa, 5)
         np.testing.assert_almost_equal(self.ccsd.l1.bb, uebcc.l1.bb, 5)
         np.testing.assert_almost_equal(self.ccsd.l2.aaaa, uebcc.l2.aaaa, 5)
         np.testing.assert_almost_equal(self.ccsd.l2.abab, uebcc.l2.abab, 5)
-        np.testing.assert_almost_equal(self.ccsd.l2.baba, uebcc.l2.baba, 5)
         np.testing.assert_almost_equal(self.ccsd.l2.bbbb, uebcc.l2.bbbb, 5)
 
     def test_ip_moments(self):
@@ -141,7 +140,7 @@ class UCCSD_Tests(unittest.TestCase):
         for i in range(a.shape[0]):
             b[i, :nmo, :nmo, :nmo, :nmo] = t.aaaa[i]
             b[i, :nmo, :nmo, nmo:, nmo:] = t.aabb[i]
-            b[i, nmo:, nmo:, :nmo, :nmo] = t.bbaa[i]
+            b[i, nmo:, nmo:, :nmo, :nmo] = t.aabb.transpose(2, 3, 0, 1)[i]
             b[i, nmo:, nmo:, nmo:, nmo:] = t.bbbb[i]
         b = b[:, self.fsort][:, :, self.fsort][:, :, :, self.fsort][:, :, :, :, self.fsort]
         for x, y in zip(a, b):
@@ -189,7 +188,7 @@ class UCCSD_PySCF_Tests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        del cls.mf, cls.ccsd_ref, cls.ccsd
+        del cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris
 
     def test_energy(self):
         a = self.ccsd_ref.e_tot
@@ -300,7 +299,7 @@ class UCCSD_PySCF_Frozen_Tests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        del cls.mf, cls.ccsd_ref, cls.ccsd
+        del cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris
 
     def test_energy(self):
         a = self.ccsd_ref.e_tot
@@ -346,6 +345,48 @@ class UCCSD_PySCF_Frozen_Tests(unittest.TestCase):
         e1 = self.ccsd.ee_eom(nroots=5).kernel()
         e2, v2 = self.ccsd_ref.eeccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
+
+
+@pytest.mark.reference
+class UCCSD_Dump_Tests(UCCSD_PySCF_Tests):
+    """Test UCCSD against the PySCF after dumping and loading.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        mol = gto.Mole()
+        mol.atom = "O 0 0 0; O 0 0 1"
+        mol.basis = "6-31g"
+        mol.spin = 2
+        mol.verbose = 0
+        mol.build()
+
+        mf = scf.RHF(mol)
+        mf.conv_tol = 1e-12
+        mf.kernel()
+        mf = mf.to_uhf()
+
+        ccsd_ref = cc.UCCSD(mf)
+        ccsd_ref.conv_tol = 1e-12
+        ccsd_ref.conv_tol_normt = 1e-12
+        ccsd_ref.kernel()
+        ccsd_ref.solve_lambda()
+
+        ccsd = UEBCC(
+                mf,
+                ansatz="CCSD",
+                log=NullLogger(),
+        )
+        ccsd.options.e_tol = 1e-12
+        eris = ccsd.get_eris()
+        ccsd.kernel(eris=eris)
+        ccsd.solve_lambda(eris=eris)
+
+        cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris = mf, ccsd_ref, ccsd, eris
+
+        file = "%s/ebcc.h5" % tempfile.gettempdir()
+        cls.ccsd.write(file)
+        cls.ccsd = cls.ccsd.__class__.read(file, log=cls.ccsd.log)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
 """Utility functions.
 """
 
+import ctypes
 import functools
 import inspect
 import itertools
@@ -8,10 +9,23 @@ import logging
 import sys
 import time
 import types
+from collections.abc import Mapping
 
 import numpy as np
-from pyscf.lib import direct_sum
+from pyscf.lib import direct_sum, dot
 from pyscf.lib import einsum as pyscf_einsum
+
+try:
+    try:
+        import tblis_einsum
+    except ImportError:
+        from pyscf import tblis_einsum
+    FOUND_TBLIS = True
+except ImportError:
+    FOUND_TBLIS = False
+
+
+NUMPY_EINSUM_SIZE = 2000
 
 
 class InheritedType:
@@ -21,10 +35,17 @@ class InheritedType:
 Inherited = InheritedType()
 
 
-ModelNotImplemented = NotImplementedError
+class ModelNotImplemented(NotImplementedError):
+    pass
 
 
-class Namespace:
+class AbstractEBCC:
+    """Abstract base class for EBCC objects."""
+
+    pass
+
+
+class Namespace(Mapping):
     """Replacement for `SimpleNamespace`, which does not trivially allow
     conversion to a `dict` for heterogenously nested objects.
     """
@@ -51,14 +72,16 @@ class Namespace:
     __setattr__ = __setitem__
 
     def __iter__(self):
-        for key in self._keys:
-            yield (key, self[key])
+        yield from {key: self[key] for key in self._keys}
 
     def __eq__(self, other):
         return dict(self) == dict(other)
 
     def __contains__(self, key):
         return key in self._keys
+
+    def __len__(self, other):
+        return len(self._keys)
 
 
 class Timer:
@@ -218,7 +241,7 @@ def ntril_ndim(n, dims, include_diagonal=False):
     return out
 
 
-def generate_spin_combinations(n, excited=False):
+def generate_spin_combinations(n, excited=False, unique=False):
     """Generate combinations of spin components for a given number
     of occupied and virtual axes.
 
@@ -229,6 +252,8 @@ def generate_spin_combinations(n, excited=False):
     excited : bool, optional
         If True, treat the amplitudes as excited. Default value is
         `False`.
+    unique : bool, optional
+        If True, return only unique combinations.
 
     Yields
     ------
@@ -243,12 +268,31 @@ def generate_spin_combinations(n, excited=False):
     ['aaaa', 'abab', 'baba', 'bbbb']
     >>> generate_spin_combinations(2, excited=True)
     ['aaa', 'aba', 'bab', 'bbb']
+    >>> generate_spin_combinations(2, unique=True)
+    ['aaaa', 'abab', 'bbbb']
     """
+
+    if unique:
+        check = set()
 
     for tup in itertools.product(("a", "b"), repeat=n):
         comb = "".join(list(tup) * 2)
         if excited:
             comb = comb[:-1]
+
+        if unique:
+            sorted_comb = "".join(sorted(comb[:n])) + "".join(sorted(comb[n:]))
+            if sorted_comb in check:
+                continue
+            check.add(sorted_comb)
+
+            if not excited:  # FIXME
+                nab = (comb[:n].count("a"), comb[:n].count("b"))
+                if nab == (n // 2, n - n // 2):
+                    comb = ("ab" * n)[:n] * 2
+                elif nab == (n - n // 2, n // 2):
+                    comb = ("ba" * n)[:n] * 2
+
         yield comb
 
 
@@ -665,91 +709,358 @@ def pack_2e(*args):
     return out
 
 
-def einsum(*operands, symmetry=False, **kwargs):  # pragma: no cover
-    """Dispatch an einsum. If `symmetry`, then assume that all arrays
-    are totally symmetric within occupied, virtual and bosonic
-    sectors. If `symmetry` is an iterable, then it should provide
-    permutations corresponding to each input array which give the
-    desired symmetry.
+class EinsumOperandError(ValueError):
+    pass
+
+
+def _fallback_einsum(*operands, **kwargs):
     """
-    # TODO custom symmetry
-    # TODO assert the symmetry?
+    Handle the fallback to `numpy.einsum`.
+    """
+
+    kwargs = kwargs.copy()
+    alpha = kwargs.pop("alpha", 1.0)
+    beta = kwargs.pop("beta", 0.0)
+    out = kwargs.pop("out", None)
+
+    res = np.einsum(*operands, **kwargs)
+    res *= alpha
+
+    if out is not None:
+        res += beta * out
+
+    return res
+
+
+def contract(subscript, *args, **kwargs):
+    """
+    Contract a pair of terms in an einsum. Supports additional keyword
+    arguments `alpha` and `beta` which operate as `pyscf.lib.dot`. In
+    some cases this will still require copying, but it minimises the
+    memory overhead in simple cases.
+    """
+
+    alpha = kwargs.get("alpha", 1.0)
+    beta = kwargs.get("beta", 0.0)
+    buf = kwargs.get("out", None)
+
+    # If this is called for more than 2 arguments, fall back
+    if len(args) > 2:
+        return _fallback_einsum(subscript, *args, **kwargs)
+
+    # Make sure that the input are numpy arrays
+    a, b = args
+    a = np.asarray(a)
+    b = np.asarray(b)
+
+    # Check if we should use NumPy
+    if min(a.size, b.size) < NUMPY_EINSUM_SIZE:
+        return _fallback_einsum(subscript, *args, **kwargs)
+
+    # Make sure it can be done via DGEMM
+    indices = subscript.replace(",", "").replace("->", "")
+    if any(indices.count(x) != 2 for x in set(indices)):
+        return _fallback_einsum(subscript, *args, **kwargs)
+
+    # Get the characters for each input and output
+    inp, out, args = np.core.einsumfunc._parse_einsum_input((subscript, a, b))
+    inp_a, inp_b = inps = inp.split(",")
+    assert len(inps) == len(args) == 2
+    assert all(len(inp) == arg.ndim for inp, arg in zip(inps, args))
+
+    # If there is an internal trace, consume it:
+    if any(len(inp) != len(set(inp)) for inp in inps):
+        # FIXME
+        return _fallback_einsum(subscript, *args, **kwargs)
+
+    # Find the dummy indices
+    dummy = set(inp_a).intersection(set(inp_b))
+    if not dummy or inp_a == dummy or inp_b == dummy:
+        return _fallback_einsum(subscript, *args, **kwargs)
+
+    # Find the sizes of the indices
+    ranges = {}
+    for inp, arg in zip(inps, args):
+        for i, s in zip(inp, arg.shape):
+            if i in ranges:
+                if ranges[i] != s:
+                    raise EinsumOperandError(
+                        "Incompatible shapes for einsum: {} with A={}, B={}".format(
+                            subscript, a.shape, b.shape
+                        )
+                    )
+            ranges[i] = s
+
+    if not FOUND_TBLIS:
+        # Reorder the indices appropriately
+        inp_at = list(inp_a)
+        inp_bt = list(inp_b)
+        inner_shape = 1
+        for i, n in enumerate(sorted(dummy)):
+            j = len(inp_at) - 1
+            inp_at.insert(j, inp_at.pop(inp_at.index(n)))
+            inp_bt.insert(i, inp_bt.pop(inp_bt.index(n)))
+            inner_shape *= ranges[n]
+
+        # Find transposes
+        order_a = [inp_a.index(idx) for idx in inp_at]
+        order_b = [inp_b.index(idx) for idx in inp_bt]
+
+        # Get shape and transpose for the output
+        shape_ct = []
+        inp_ct = []
+        for idx in inp_at:
+            if idx in dummy:
+                break
+            shape_ct.append(ranges[idx])
+            inp_ct.append(idx)
+        for idx in inp_bt:
+            if idx in dummy:
+                continue
+            shape_ct.append(ranges[idx])
+            inp_ct.append(idx)
+        order_ct = [inp_ct.index(idx) for idx in out]
+
+        # If any dimension has size zero, return here
+        if a.size == 0 or b.size == 0:
+            shape_c = [shape_ct[i] for i in order_ct]
+            return np.zeros(shape_c)
+
+        # Apply transposes
+        at = a.transpose(order_a)
+        bt = b.transpose(order_b)
+
+        # Find the optimal memory alignment
+        at = np.asarray(at.reshape(-1, inner_shape), order="F" if at.flags.f_contiguous else "C")
+        bt = np.asarray(bt.reshape(inner_shape, -1), order="F" if bt.flags.f_contiguous else "C")
+
+        # Get the output buffer
+        if buf is not None:
+            shape_ct_flat = (at.shape[0], bt.shape[1])
+            order_c = [out.index(idx) for idx in inp_ct]
+            buf = buf.transpose(order_c)
+            buf = np.asarray(
+                buf.reshape(shape_ct_flat), order="F" if buf.flags.f_contiguous else "C"
+            )
+
+        # Perform the contraction
+        ct = dot(at, bt, alpha=alpha, beta=beta, c=buf)
+
+        # Reshape and transpose
+        ct = ct.reshape(shape_ct, order="A")
+        c = ct.transpose(order_ct)
+
+    else:
+        # Cast the data types
+        dtype = np.result_type(a, b, alpha, beta)
+        alpha = np.asarray(alpha, dtype=dtype)
+        beta = np.asarray(beta, dtype=dtype)
+        a = np.asarray(a, dtype=dtype)
+        b = np.asarray(b, dtype=dtype)
+        tblis_dtype = tblis_einsum.tblis_dtype[dtype]
+
+        # Get the shapes
+        shape_a = a.shape
+        shape_b = b.shape
+        shape_c = tuple(ranges[x] for x in out)
+
+        # Get the output buffer
+        if buf is None:
+            order = kwargs.get("order", "C")
+            c = np.empty(shape_c, dtype=dtype, order=order)
+        else:
+            assert buf.dtype == dtype
+            assert buf.size == np.prod(shape_c)
+            c = buf.reshape(shape_c)
+
+        # Get the C types
+        shape_a = (ctypes.c_size_t * a.ndim)(*shape_a)
+        shape_b = (ctypes.c_size_t * b.ndim)(*shape_b)
+        shape_c = (ctypes.c_size_t * c.ndim)(*shape_c)
+        strides_a = (ctypes.c_size_t * a.ndim)(*[x // dtype.itemsize for x in a.strides])
+        strides_b = (ctypes.c_size_t * b.ndim)(*[x // dtype.itemsize for x in b.strides])
+        strides_c = (ctypes.c_size_t * c.ndim)(*[x // dtype.itemsize for x in c.strides])
+
+        # Perform the contraction
+        tblis_einsum.libtblis.as_einsum(
+            a,
+            a.ndim,
+            shape_a,
+            strides_a,
+            inp_a.encode("ascii"),
+            b,
+            b.ndim,
+            shape_b,
+            strides_b,
+            inp_b.encode("ascii"),
+            c,
+            c.ndim,
+            shape_c,
+            strides_c,
+            out.encode("ascii"),
+            tblis_dtype,
+            alpha,
+            beta,
+        )
+
+    return c
+
+
+def einsum(*operands, **kwargs):
+    """
+    Dispatch an einsum. Input arguments are the same as `numpy`.
+    """
 
     inp, out, args = np.core.einsumfunc._parse_einsum_input(operands)
     subscript = "%s->%s" % (inp, out)
 
-    if not symmetry:
-        return pyscf_einsum(subscript, *args, **kwargs)
+    _contract = kwargs.get("contract", contract)
 
-    raise NotImplementedError("Work in progress")
+    if len(args) < 2:
+        out = _fallback_einsum(subscript, *args, **kwargs)
+    elif len(args) < 3:
+        out = _contract(subscript, *args, **kwargs)
+    else:
+        optimize = kwargs.pop("optimize", True)
+        args = list(args)
+        contractions = np.einsum_path(subscript, *args, optimize=optimize, einsum_call=True)[1]
+        for contraction in contractions:
+            inds, idx_rm, einsum_str, remain = contraction[:4]
+            operands = [args.pop(x) for x in inds]
+            out = _contract(einsum_str, *operands)
+            args.append(out)
 
-    try:
-        # Two input arrays only:
-        assert len(args) == 2
-        assert subscript.count(",") == 1
+    return out
 
-        array1, array2 = args
-        indices = set(subscript) - {",", "-", ">"}
-        lhs1, lhs2, rhs = subscript.replace("->", ",").split(",")
 
-        # No internal traces:
-        assert len(lhs1) == len(set(lhs1))
-        assert len(lhs2) == len(set(lhs2))
+def unique(lst):
+    """Get unique elements of a list."""
 
-        # No repeated external indices, and no free indices:
-        for index in lhs1 + lhs2:
-            if index in rhs:
-                assert (int(index in lhs1) + int(index in lhs2)) == 1
-            else:
-                assert index in lhs1 and index in lhs2
+    done = set()
+    out = []
+    for el in lst:
+        if el not in done:
+            out.append(el)
+            done.add(el)
 
-    except AssertionError:
-        return pyscf_einsum(subscript, *args, **kwargs)
+    return out
 
-    # Categorise the indices:
-    categories = {}
+
+def einsum_symmetric(*operands, symmetries=[], symmetrise_dummies=False, **kwargs):
+    """Dispatch an einsum in a symmetric representation. The argument
+    `symmetries` should be an iterable of the symmetry subscripts for
+    each input and for the output array, in the format of the
+    `compress_axes` and `decompress_axes` functions. Assumes that the
+    phase of the symmetries is positive, i.e. the arrays are not
+    antisymmetric.
+    """
+
+    assert not symmetrise_dummies
+
+    inp, out, args = np.core.einsumfunc._parse_einsum_input(operands)
+    subscript = "%s->%s" % (inp, out)
+
+    # Get the sizes of each index
     sizes = {}
-    for index in indices:
-        category = 0 if index not in rhs else (1 if index in lhs1 else 2)
-        sector = 0 if index in "ijklmnop" else (1 if index in "abcdefgh" else 2)
-        categories[index] = category * 3 + sector
-        sizes[index] = (array1.shape + array2.shape)[(lhs1 + lhs2).index(index)]
+    for part, arg in zip(inp.split(","), args):
+        for p, size in zip(part, arg.shape):
+            sizes[p] = size
 
-    # Get compressed and flattened subscripts:
-    lhs1_comp = "".join([chr(97 + categories[i]) for i in lhs1])
-    lhs2_comp = "".join([chr(97 + categories[i]) for i in lhs2])
-    rhs_comp = "".join([chr(97 + categories[i]) for i in rhs])
-    lhs1_flat = "".join(list(dict.fromkeys(lhs1_comp)))
-    lhs2_flat = "".join(list(dict.fromkeys(lhs2_comp)))
-    rhs_flat = "".join(list(dict.fromkeys(rhs_comp)))
+    # Find the number of dummy indices in each input
+    dummies = [[i not in out for i in part] for part in inp.split(",")]
 
-    # Apply a factor depending on the symmetry of the dummies:
-    dummies = set(i_comp for i, i_comp in zip(lhs1, lhs1_comp) if categories[i] < 3)
-    for index in set(lhs1_comp):
-        if index in dummies:
-            mask = [i == index for i in lhs1_comp]
-            factor = np.zeros(np.array(array1.shape)[mask])
-            inds = tril_indices_ndim(factor.shape[0], factor.ndim, include_diagonal=True)
-            for perm, _ in permutations_with_signs(inds):
-                factor[tuple(perm)] += 1
-            factor = 2 ** (factor.ndim - factor)
-            lhs_factor = "".join([i for i in lhs1 if categories[i] < 3])
-            subscript = lhs1 + "," + lhs_factor + "->" + lhs1
-            array1 = pyscf_einsum(subscript, array1, factor)
+    # Make sure that external and dummy variables are compressed
+    # separately
+    not_used = [
+        char for char in "abcdefghijklmnopqrstuvwxyz" if not any(char in s for s in symmetries)
+    ]
+    for i, symmetry in enumerate(symmetries):
+        char_map = {}
+        new_symmetry = ""
+        for s, d in zip(symmetry, dummies[i]):
+            if d:
+                if (s not in char_map) or (not symmetrise_dummies):
+                    char_map[s] = not_used.pop(0)
+                new_symmetry += char_map[s]
+            else:
+                new_symmetry += s
+        symmetries[i] = new_symmetry
 
-    # Compress the arrays:
-    array1_flat = compress_axes(lhs1_comp, array1, include_diagonal=True)
-    array2_flat = compress_axes(lhs2_comp, array2, include_diagonal=True)
+    # Get the flattened subscripts
+    subscripts_flat = []
+    indices = {}
+    for part, symmetry in zip(inp.split(","), symmetries):
+        done = set()
+        part_flat = ""
+        for symm in symmetry:
+            if symm in done:
+                continue
 
-    # Dispatch the einsum:
-    subscript_flat = "{lhs1},{lhs2}->{rhs}".format(lhs1=lhs1_flat, lhs2=lhs2_flat, rhs=rhs_flat)
-    output_flat = pyscf_einsum(subscript_flat, array1_flat, array2_flat, **kwargs)
+            part_flat_contr = "".join([p for p, s in zip(part, symmetry) if s == symm])
+            part_flat_contr = "".join(sorted(part_flat_contr)[0] * len(part_flat_contr))
+            part_flat += part_flat_contr
 
-    # Decompress the output:
-    rank = len(rhs_comp)
-    shape = tuple(sizes[i] for i in rhs)
-    output = decompress_axes(
-        rhs_comp, output_flat, include_diagonal=True, shape=shape, symmetry="+" * rank
+            done.add(symm)
+
+        subscripts_flat.append(part_flat)
+
+        for i, j in zip(part, part_flat):
+            if i in indices and indices[i] != j:
+                raise ValueError
+            indices[i] = j
+
+    subscripts_flat.append("".join([indices[i] for i in out]))
+    subscripts_flat_uniq = ["".join(unique(list(subscript))) for subscript in subscripts_flat]
+
+    # Compress the inputs
+    args_flat = [
+        compress_axes(subscript, arg, include_diagonal=True)
+        for subscript, arg in zip(subscripts_flat, args)
+    ]
+
+    # Get the factors for the compressed dummies  # TODO improve
+    if symmetrise_dummies:
+        # Get a flattened version of the dummies
+        dummies_flat = []
+        for dummy, part in zip(dummies, subscripts_flat):
+            done = set()
+            dummies_flat_contr = []
+            for d, i in zip(dummy, part):
+                if i not in done:
+                    dummies_flat_contr.append(d)
+                    done.add(i)
+            dummies_flat.append(dummies_flat_contr)
+
+        # Apply the factors
+        for i in range(len(args)):
+            factors = []
+            for inds in itertools.product(
+                *[
+                    itertools.combinations_with_replacement(
+                        range(args[i].shape[subscripts_flat[i].index(x)]),
+                        subscripts_flat[i].count(x),
+                    )
+                    for x in unique(list(subscripts_flat[i]))
+                ]
+            ):
+                factor = 1
+                for dumm, tup in zip(dummies_flat[i], inds):
+                    if dumm:
+                        factor *= 2 ** (len(set(tup)) - 1)
+                factors.append(factor)
+            factors = np.array(factors).reshape(args_flat[i].shape)
+            args_flat[i] *= factors
+
+    # Dispatch the einsum
+    subscript_flat = ",".join(subscripts_flat_uniq[:-1])
+    subscript_flat += "->"
+    subscript_flat += subscripts_flat_uniq[-1]
+    out_flat = pyscf_einsum(subscript_flat, *args_flat, **kwargs)
+
+    # Decompress the output
+    shape = tuple(sizes[i] for i in out)
+    out = decompress_axes(
+        subscripts_flat[-1], out_flat, include_diagonal=True, shape=shape, symmetry="+" * len(shape)
     )
 
-    return output
+    return out
