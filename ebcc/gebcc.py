@@ -45,7 +45,18 @@ class GEBCC(rebcc.REBCC):
 
     @classmethod
     def from_uebcc(cls, ucc):
-        """Initialise a GEBCC object from an UEBCC object."""
+        """Initialise a GEBCC object from an UEBCC object.
+
+        Parameters
+        ----------
+        ucc : UEBCC
+            The UEBCC object to convert.
+
+        Returns
+        -------
+        gcc : GEBCC
+            The GEBCC object.
+        """
 
         # FIXME test for frozen/active
         orbspin = scf.addons.get_ghf_orbspin(ucc.mf.mo_energy, ucc.mf.mo_occ, False)
@@ -258,7 +269,18 @@ class GEBCC(rebcc.REBCC):
 
     @classmethod
     def from_rebcc(cls, rcc):
-        """Initialise a GEBCC object from an REBCC object."""
+        """Initialise a GEBCC object from an REBCC object.
+
+        Parameters
+        ----------
+        rcc : REBCC
+            The REBCC object to convert.
+
+        Returns
+        -------
+        gcc : GEBCC
+            The GEBCC object.
+        """
 
         ucc = uebcc.UEBCC.from_rebcc(rcc)
         gcc = cls.from_uebcc(ucc)
@@ -436,20 +458,6 @@ class GEBCC(rebcc.REBCC):
         return val
 
     def get_eris(self, eris=None):
-        """Get blocks of the ERIs.
-
-        Parameters
-        ----------
-        eris : np.ndarray or ERIs, optional.
-            Electronic repulsion integrals, either in the form of a
-            dense array or an ERIs object. Default value is `None`.
-
-        Returns
-        -------
-        eris : ERIs, optional
-            Electronic repulsion integrals. Default value is generated
-            using `self.ERIs()`.
-        """
         if (eris is None) or isinstance(eris, np.ndarray):
             return self.ERIs(self, array=eris)
         else:

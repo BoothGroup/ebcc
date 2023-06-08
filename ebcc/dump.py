@@ -14,14 +14,24 @@ from ebcc.space import Space
 
 
 class Dump:
-    """File handler for reading and writing EBCC calculations."""
+    """File handler for reading and writing EBCC calculations.
+
+    Parameters
+    ----------
+    name : str
+        The name of the file to read or write to.
+    """
 
     def __init__(self, name):
         self.name = name
 
     def write(self, ebcc: util.AbstractEBCC):
-        """
-        Write the EBCC object to the file.
+        """Write the EBCC object to the file.
+
+        Parameters
+        ----------
+        ebcc : util.AbstractEBCC
+            The EBCC object to write.
         """
 
         # Write the options
@@ -126,8 +136,19 @@ class Dump:
             dump(self.name, "lambdas", {**ebcc.lambdas})
 
     def read(self, cls: Type[util.AbstractEBCC], log: logging.Logger = None):
-        """
-        Load the file to an EBCC object.
+        """Load the file to an EBCC object.
+
+        Parameters
+        ----------
+        cls : class
+            EBCC class to construct.
+        log : logging.Logger, optional
+            Logger to use for logging.  Default value is `None`.
+
+        Returns
+        -------
+        ebcc : AbstractEBCC
+            The EBCC object.
         """
 
         # Load the options

@@ -28,6 +28,18 @@ def name_to_identifier(name):
     """Convert an ansatz name to an identifer that can be used for
     variable and file names.
 
+    Parameters
+    ----------
+    name : str
+        Name of the ansatz.
+
+    Returns
+    -------
+    iden : str
+        Identifier for the ansatz.
+
+    Examples
+    --------
     >>> identifier_to_name("CCSD(T)")
     CCSDxTx
     >>> identifier_to_name("CCSD-SD-1-2")
@@ -44,6 +56,18 @@ def name_to_identifier(name):
 def identifity_to_name(iden):
     """Convert an ansatz identifier to a name.
 
+    Parameters
+    ----------
+    iden : str
+        Identifier of the ansatz.
+
+    Returns
+    -------
+    name : str
+        Name of the ansatz.
+
+    Examples
+    --------
     >>> identifier_to_name("CCSDxTx")
     CCSD(T)
     >>> identifier_to_name("CCSD_SD_1_2")
@@ -72,6 +96,9 @@ class Ansatz:
         Rank of fermionic term in coupling. Default is 0.
     boson_coupling_rank : int, optional
         Rank of bosonic term in coupling. Default is 0.
+    module_name : str, optional
+        Name of the module containing the generated equations. If not
+        specified, the module name is generated from the ansatz name.
     """
 
     def __init__(
@@ -108,7 +135,7 @@ class Ansatz:
 
         Parameters
         ----------
-        input : str
+        string : str
             Input string
 
         Returns
