@@ -25,7 +25,7 @@ warnings.simplefilter("ignore", UserWarning)
 rank = ("SD", "SD", "SD")
 
 # Spin setting:
-spin = "uhf"  # {"ghf", "rhf", "uhf"}
+spin = sys.argv[-1] if sys.argv[-1] in {"rhf", "uhf", "ghf"} else "ghf"
 
 # Indices
 occs = i, j, k, l = [Idx(n, "occ") for n in range(4)]

@@ -9,10 +9,10 @@ from qccg import index, tensor, read, write
 import pdaggerq
 
 # Order
-order = 3
+order = int(sys.argv[-1])
 
 # Spin integration mode
-spin = sys.argv[-1] if sys.argv[-1] in {"rhf", "uhf", "ghf"} else "ghf"
+spin = sys.argv[-2] if sys.argv[-2] in {"rhf", "uhf", "ghf"} else "ghf"
 
 # Printer setup
 FunctionPrinter = common.get_function_printer(spin)
