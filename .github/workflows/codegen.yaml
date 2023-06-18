@@ -48,48 +48,48 @@ jobs:
       - name: Run code generation scripts
         run: |
           cd $HOME/ebcc/ && git checkout codegen
-          cd $HOME/ebcc/codegen && python gen_MPn.py ghf 2
-          cd $HOME/ebcc/codegen && python gen_MPn.py ghf 3
-          cd $HOME/ebcc/codegen && python gen_CC2.py ghf
-          cd $HOME/ebcc/codegen && python gen_CC3.py ghf
-          cd $HOME/ebcc/codegen && python gen_CCD.py ghf
-          cd $HOME/ebcc/codegen && python gen_CCSD.py ghf
-          cd $HOME/ebcc/codegen && python gen_CCSD_eom.py ghf
-          cat $HOME/ebcc/codegen/GCCSD_eom.py >> $HOME/ebcc/codegen/GCCSD.py
-          cd $HOME/ebcc/codegen && python gen_CCSDT.py ghf
-          cd $HOME/ebcc/codegen && python gen_CCSDTQ.py ghf
-          cd $HOME/ebcc/codegen && python gen_CCSDxTx.py ghf
-          cd $HOME/ebcc/codegen && python gen_QCISD.py ghf
-          cd $HOME/ebcc/codegen && python gen_CCSD_S_1_1.py ghf
-          cd $HOME/ebcc/codegen && python gen_CCSD_SD_1_1.py ghf
-          cd $HOME/ebcc/codegen && python gen_CCSD_SD_1_2.py ghf
-          cd $HOME/ebcc/codegen && python gen_MPn.py uhf 2
-          cd $HOME/ebcc/codegen && python gen_MPn.py uhf 3
-          cd $HOME/ebcc/codegen && python gen_CC2.py uhf
-          cd $HOME/ebcc/codegen && python gen_CC3.py uhf
-          cd $HOME/ebcc/codegen && python gen_CCD.py uhf
-          cd $HOME/ebcc/codegen && python gen_CCSD.py uhf
-          cd $HOME/ebcc/codegen && python gen_CCSD_eom.py uhf
-          cat $HOME/ebcc/codegen/UCCSD_eom.py >> $HOME/ebcc/codegen/UCCSD.py
-          cd $HOME/ebcc/codegen && python gen_CCSDT.py uhf
-          cd $HOME/ebcc/codegen && python gen_CCSDTQ.py uhf
-          cd $HOME/ebcc/codegen && python gen_CCSDxTx.py uhf
-          cd $HOME/ebcc/codegen && python gen_QCISD.py uhf
-          cd $HOME/ebcc/codegen && python gen_CCSD_S_1_1.py uhf
-          cd $HOME/ebcc/codegen && python gen_CCSD_SD_1_1.py uhf
-          cd $HOME/ebcc/codegen && python gen_CCSD_SD_1_2.py uhf
-          cd $HOME/ebcc/codegen && python gen_MPn.py rhf 2
-          cd $HOME/ebcc/codegen && python gen_MPn.py rhf 3
-          cd $HOME/ebcc/codegen && python gen_CC2.py rhf
-          cd $HOME/ebcc/codegen && python gen_CC3.py rhf
-          cd $HOME/ebcc/codegen && python gen_CCD.py rhf
-          cd $HOME/ebcc/codegen && python gen_CCSD.py rhf
-          cd $HOME/ebcc/codegen && python gen_CCSDT.py rhf
-          cd $HOME/ebcc/codegen && python gen_CCSDxTx.py rhf
-          cd $HOME/ebcc/codegen && python gen_QCISD.py rhf
-          cd $HOME/ebcc/codegen && python gen_CCSD_S_1_1.py rhf
-          cd $HOME/ebcc/codegen && python gen_CCSD_SD_1_1.py rhf
-          cd $HOME/ebcc/codegen && python gen_CCSD_SD_1_2.py rhf
+          cd $HOME/ebcc/ebcc/codegen && python gen_MPn.py ghf 2
+          cd $HOME/ebcc/ebcc/codegen && python gen_MPn.py ghf 3
+          cd $HOME/ebcc/ebcc/codegen && python gen_CC2.py ghf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CC3.py ghf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCD.py ghf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCSD.py ghf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCSD_eom.py ghf
+          cat $HOME/ebcc/ebcc/codegen/GCCSD_eom.py >> $HOME/ebcc/ebcc/codegen/GCCSD.py
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCSDT.py ghf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCSDTQ.py ghf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCSDxTx.py ghf
+          cd $HOME/ebcc/ebcc/codegen && python gen_QCISD.py ghf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCSD_S_1_1.py ghf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCSD_SD_1_1.py ghf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCSD_SD_1_2.py ghf
+          cd $HOME/ebcc/ebcc/codegen && python gen_MPn.py uhf 2
+          cd $HOME/ebcc/ebcc/codegen && python gen_MPn.py uhf 3
+          cd $HOME/ebcc/ebcc/codegen && python gen_CC2.py uhf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CC3.py uhf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCD.py uhf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCSD.py uhf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCSD_eom.py uhf
+          cat $HOME/ebcc/ebcc/codegen/UCCSD_eom.py >> $HOME/ebcc/ebcc/codegen/UCCSD.py
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCSDT.py uhf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCSDTQ.py uhf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCSDxTx.py uhf
+          cd $HOME/ebcc/ebcc/codegen && python gen_QCISD.py uhf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCSD_S_1_1.py uhf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCSD_SD_1_1.py uhf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCSD_SD_1_2.py uhf
+          cd $HOME/ebcc/ebcc/codegen && python gen_MPn.py rhf 2
+          cd $HOME/ebcc/ebcc/codegen && python gen_MPn.py rhf 3
+          cd $HOME/ebcc/ebcc/codegen && python gen_CC2.py rhf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CC3.py rhf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCD.py rhf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCSD.py rhf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCSDT.py rhf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCSDxTx.py rhf
+          cd $HOME/ebcc/ebcc/codegen && python gen_QCISD.py rhf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCSD_S_1_1.py rhf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCSD_SD_1_1.py rhf
+          cd $HOME/ebcc/ebcc/codegen && python gen_CCSD_SD_1_2.py rhf
       - name: Run unit tests
         run: |
           python -m pip install pytest pytest-cov
