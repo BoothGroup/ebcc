@@ -42,7 +42,7 @@ jobs:
         run: |
           git clone https://github.com/obackhouse/qwick
           git clone https://github.com/obackhouse/qccg
-          cd qwick/ && make
+          cd qwick/qwick && make all
           export PYTHONPATH=$PYTHONPATH:$HOME/qwick:$HOME/qccg
       - name: Run code generation scripts
         run: |
