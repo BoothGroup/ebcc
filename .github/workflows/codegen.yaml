@@ -37,9 +37,9 @@ jobs:
           cd $HOME/work && git clone https://github.com/obackhouse/qwick
           cd $HOME/work && git clone https://github.com/obackhouse/qccg
           cd $HOME/work/qwick/qwick && make all
-          export PYTHONPATH=$PYTHONPATH:$HOME/work/qwick:$HOME/work/qccg
       - name: Run code generation scripts
         run: |
+          export PYTHONPATH=$PYTHONPATH:$HOME/work/qwick:$HOME/work/qccg
           git checkout codegen
           cd ebcc/codegen && python gen_MPn.py ghf 2
           cd ebcc/codegen && python gen_MPn.py ghf 3
