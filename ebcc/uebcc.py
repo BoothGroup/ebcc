@@ -16,7 +16,7 @@ from ebcc.fock import UFock
 from ebcc.space import Space
 
 
-class Amplitudes(rebcc.Amplitudes):
+class Amplitudes(util.Namespace):
     """Amplitude container class. Consists of a dictionary with keys
     that are strings of the name of each amplitude. Values are
     namespaces with keys indicating whether each fermionic dimension
@@ -836,8 +836,8 @@ class UEBCC(rebcc.REBCC):
         return tuple(excitations)
 
     @property
-    def name(self):
-        return "U" + self.ansatz.name
+    def spin_type(self):
+        return "U"
 
     @property
     def nmo(self):
