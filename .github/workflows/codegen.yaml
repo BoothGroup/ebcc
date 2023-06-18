@@ -40,7 +40,7 @@ jobs:
           cd $HOME
       - name: Install qwick and qccg
         run: |
-          apt-get install python-pybind11
+          sudo apt-get install python-pybind11
           git clone https://github.com/obackhouse/qwick
           git clone https://github.com/obackhouse/qccg
           cd qwick/qwick && make all
