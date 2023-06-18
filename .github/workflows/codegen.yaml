@@ -34,10 +34,10 @@ jobs:
       - name: Install qwick and qccg
         run: |
           python -m pip install pybind11
-          git clone https://github.com/obackhouse/qwick
-          git clone https://github.com/obackhouse/qccg
-          cd qwick/qwick && make all
-          export PYTHONPATH=$PYTHONPATH:$HOME/qwick:$HOME/qccg
+          cd $HOME/work && git clone https://github.com/obackhouse/qwick
+          cd $HOME/work && git clone https://github.com/obackhouse/qccg
+          cd $HOME/work/qwick/qwick && make all
+          export PYTHONPATH=$PYTHONPATH:$HOME/work/qwick:$HOME/work/qccg
       - name: Run code generation scripts
         run: |
           git checkout codegen
