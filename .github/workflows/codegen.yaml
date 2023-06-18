@@ -1,0 +1,92 @@
+name: Codegen
+
+on:
+  push:
+    branches: [codegen]
+  schedule:
+    - cron: '0 2 * * 0'
+
+jobs:
+  build:
+    name: python 3.9 on ubuntu-latest
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Upgrade pip
+        run: |
+          python -m pip install --upgrade pip
+      - name: Install ebcc
+        run: |
+          python -m pip install wheel
+          python -m pip install .[dev]
+      - name: Install drudge, gristmill, etc.
+        run: |
+          python -m pip install https://github.com/tschijnmo/DummyRDD/archive/master.zip
+          python -m pip install https://github.com/tschijnmo/drudge/archive/master.zip
+          python -m pip install https://github.com/tschijnmo/gristmill/archive/master.zip
+      - name: Install qwick and qccg
+        run: |
+          git clone https://github.com/obackhouse/qwick
+          git clone https://github.com/obackhouse/qccg
+          cd qwick/
+          make
+          export PYTHONPATH=$PYTHONPATH:$HOME/qwick:$HOME/qccg
+      - name: Run code generation scripts
+        run: |
+          cd ebcc/
+          git checkout codegen
+          cd ebcc/codegen
+          python gen_MPn.py ghf 2
+          python gen_MPn.py ghf 3
+          python gen_CC2.py ghf
+          python gen_CC3.py ghf
+          python gen_CCD.py ghf
+          python gen_CCSD.py ghf
+          python gen_CCSD_eom.py ghf
+          cat GCCSD_eom.py >> GCCSD.py
+          python gen_CCSDT.py ghf
+          python gen_CCSDTQ.py ghf
+          python gen_CCSDxTx.py ghf
+          python gen_QCISD.py ghf
+          python gen_CCSD_S_1_1.py ghf
+          python gen_CCSD_SD_1_1.py ghf
+          python gen_CCSD_SD_1_2.py ghf
+          python gen_MPn.py uhf 2
+          python gen_MPn.py uhf 3
+          python gen_CC2.py uhf
+          python gen_CC3.py uhf
+          python gen_CCD.py uhf
+          python gen_CCSD.py uhf
+          python gen_CCSD_eom.py uhf
+          cat UCCSD_eom.py >> UCCSD.py
+          python gen_CCSDT.py uhf
+          python gen_CCSDTQ.py uhf
+          python gen_CCSDxTx.py uhf
+          python gen_QCISD.py uhf
+          python gen_CCSD_S_1_1.py uhf
+          python gen_CCSD_SD_1_1.py uhf
+          python gen_CCSD_SD_1_2.py uhf
+          python gen_MPn.py rhf 2
+          python gen_MPn.py rhf 3
+          python gen_CC2.py rhf
+          python gen_CC3.py rhf
+          python gen_CCD.py rhf
+          python gen_CCSD.py rhf
+          python gen_CCSDT.py rhf
+          python gen_CCSDxTx.py rhf
+          python gen_QCISD.py rhf
+          python gen_CCSD_S_1_1.py rhf
+          python gen_CCSD_SD_1_1.py rhf
+          python gen_CCSD_SD_1_2.py rhf
+      - name: Run unit tests
+        run: |
+          python -m pip install pytest pytest-cov
+          pytest --cov ebcc/
