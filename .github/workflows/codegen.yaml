@@ -25,8 +25,9 @@ jobs:
           python -m pip install --upgrade pip
       - name: Install ebcc
         run: |
-          python -m pip install wheel
-          python -m pip install .[dev]
+          python -m pip install numpy scipy h5py pyscf
+          git clone https://github.com/BoothGroup/ebcc
+          export PYTHONPATHA=$PYTHONPATH:$HOME/ebcc/
       - name: Install drudge, gristmill, etc.
         run: |
           git clone https://github.com/tschijnmo/DummyRDD
