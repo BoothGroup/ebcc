@@ -29,13 +29,13 @@ jobs:
           python -m pip install .[dev]
       - name: Install drudge, gristmill, etc.
         run: |
-          git clone https://github.com/tschijnmo/DummyRDD/archive/master.zip
+          git clone https://github.com/tschijnmo/DummyRDD
           cd DummyRDD/ && python setup.py build && python setup.py install
           cd $HOME
-          git clone https://github.com/tschijnmo/drudge/archive/master.zip
+          git clone https://github.com/tschijnmo/drudge
           cd drudge/ && python setup.py build && python setup.py install
           cd $HOME
-          git clone https://github.com/tschijnmo/gristmill/archive/master.zip
+          git clone https://github.com/tschijnmo/gristmill
           cd gristmill/ && python setup.py build && python setup.py install
           cd $HOME
       - name: Install qwick and qccg
