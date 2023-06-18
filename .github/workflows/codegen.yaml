@@ -25,6 +25,7 @@ jobs:
       - name: Install ebcc
         run: |
           git clone https://github.com/BoothGroup/ebcc
+          python -m pip install wheel setuptools>=46.1.0
           python -m pip install numpy scipy h5py pyscf
           export PYTHONPATHA=$PYTHONPATH:$HOME/ebcc/
       - name: Install drudge, gristmill, etc.
