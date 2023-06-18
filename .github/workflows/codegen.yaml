@@ -30,13 +30,13 @@ jobs:
       - name: Install drudge, gristmill, etc.
         run: |
           git clone https://github.com/tschijnmo/DummyRDD
-          cd DummyRDD/ && python setup.py build && python setup.py install
+          cd DummyRDD/ && python setup.py --user build && python setup.py --user install
           cd $HOME
           git clone https://github.com/tschijnmo/drudge
-          cd drudge/ && python setup.py build && python setup.py install
+          cd drudge/ && python setup.py --user build && python setup.py --user install
           cd $HOME
           git clone https://github.com/tschijnmo/gristmill
-          cd gristmill/ && python setup.py build && python setup.py install
+          cd gristmill/ && python setup.py --user build && python setup.py --user install
           cd $HOME
       - name: Install qwick and qccg
         run: |
