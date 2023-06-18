@@ -30,11 +30,11 @@ jobs:
       - name: Install drudge, gristmill, etc.
         run: |
           cd $HOME/work && git clone https://github.com/tschijnmo/DummyRDD
-          cd $HOME/work/DummyRDD/ && python setup.py build --user && python setup.py install --user
+          cd $HOME/work/DummyRDD/ && python setup.py build && python setup.py install
           cd $HOME/work && git clone https://github.com/tschijnmo/drudge
-          cd $HOME/work/drudge/ && python setup.py build --user && python setup.py install --user
+          cd $HOME/work/drudge/ && python setup.py build && python setup.py install
           cd $HOME/work && git clone https://github.com/tschijnmo/gristmill
-          cd $HOME/work/gristmill/ && python setup.py build --user && python setup.py install --user
+          cd $HOME/work/gristmill/ && python setup.py build && python setup.py install
       - name: Install qwick and qccg
         run: |
           python -m pip install pybind11
