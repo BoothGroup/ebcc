@@ -287,9 +287,11 @@ class GEBCC(rebcc.REBCC):
             for act in acts:
                 act = set(act)
                 shape = tuple(self.space.naocc if i in act else self.space.ncocc for i in range(n))
-                shape += tuple(self.space.navir if i+n in act else self.space.ncvir for i in range(n))
+                shape += tuple(
+                    self.space.navir if i + n in act else self.space.ncvir for i in range(n)
+                )
                 key = "".join(["O" if i in act else "o" for i in range(n)])
-                key += "".join(["V" if i+n in act else "v" for i in range(n)])
+                key += "".join(["V" if i + n in act else "v" for i in range(n)])
                 setattr(amplitudes["t%d" % n], key, np.zeros(shape))
 
         if self.boson_ansatz:

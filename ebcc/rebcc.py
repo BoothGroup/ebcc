@@ -655,9 +655,11 @@ class REBCC(util.AbstractEBCC):
             for act in acts:
                 act = set(act)
                 shape = tuple(self.space.naocc if i in act else self.space.ncocc for i in range(n))
-                shape += tuple(self.space.navir if i+n in act else self.space.ncvir for i in range(n))
+                shape += tuple(
+                    self.space.navir if i + n in act else self.space.ncvir for i in range(n)
+                )
                 key = "".join(["O" if i in act else "o" for i in range(n)])
-                key += "".join(["V" if i+n in act else "v" for i in range(n)])
+                key += "".join(["V" if i + n in act else "v" for i in range(n)])
                 setattr(amplitudes["t%d" % n], key, np.zeros(shape))
 
         if self.boson_ansatz:
@@ -829,17 +831,21 @@ class REBCC(util.AbstractEBCC):
                 act = set(act)
                 perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
                 o = "".join([x.upper() if i in act else x for i, x in enumerate("o" * n)])
-                v = "".join([x.upper() if i+n in act else x for i, x in enumerate("v" * n)])
+                v = "".join([x.upper() if i + n in act else x for i, x in enumerate("v" * n)])
                 e_ia_list = [
-                    lib.direct_sum("i-a->ia", getattr(self, "e"+oi), getattr(self, "e"+vi))
+                    lib.direct_sum("i-a->ia", getattr(self, "e" + oi), getattr(self, "e" + vi))
                     for oi, vi in zip(o, v)
                 ]
                 d = functools.reduce(np.add.outer, e_ia_list)
                 d = d.transpose(perm)
                 key = "".join(["O" if i in act else "o" for i in range(n)])
-                key += "".join(["V" if i+n in act else "v" for i in range(n)])
+                key += "".join(["V" if i + n in act else "v" for i in range(n)])
                 setattr(res["t%d" % n], key, getattr(res["t%d" % n], key) / d)
-                setattr(res["t%d" % n], key, getattr(res["t%d" % n], key) + getattr(amplitudes["t%d" % n], key))
+                setattr(
+                    res["t%d" % n],
+                    key,
+                    getattr(res["t%d" % n], key) + getattr(amplitudes["t%d" % n], key),
+                )
 
         # Divide S amplitudes:
         for n in self.ansatz.correlated_cluster_ranks[1]:
@@ -1550,7 +1556,7 @@ class REBCC(util.AbstractEBCC):
         for n, acts in self.ansatz.active_cluster_ranks(spin=self.spin_type)[0]:
             for act in acts:
                 key = "".join(["O" if i in act else "o" for i in range(n)])
-                key += "".join(["V" if i+n in act else "v" for i in range(n)])
+                key += "".join(["V" if i + n in act else "v" for i in range(n)])
                 vectors.append(getattr(amplitudes["t%d" % n], key).ravel())
 
         for n in self.ansatz.correlated_cluster_ranks[1]:
@@ -1597,10 +1603,12 @@ class REBCC(util.AbstractEBCC):
             for act in acts:
                 act = set(act)
                 shape = tuple(self.space.naocc if i in act else self.space.ncocc for i in range(n))
-                shape += tuple(self.space.navir if i+n in act else self.space.ncvir for i in range(n))
+                shape += tuple(
+                    self.space.navir if i + n in act else self.space.ncvir for i in range(n)
+                )
                 size = np.prod(shape)
                 key = "".join(["O" if i in act else "o" for i in range(n)])
-                key += "".join(["V" if i+n in act else "v" for i in range(n)])
+                key += "".join(["V" if i + n in act else "v" for i in range(n)])
                 setattr(amplitudes["t%d" % n], key, vector[i0 : i0 + size].reshape(shape))
                 i0 += size
 
@@ -1650,7 +1658,7 @@ class REBCC(util.AbstractEBCC):
         for n, acts in self.ansatz.active_cluster_ranks(spin=self.spin_type)[0]:
             for act in acts:
                 key = "".join(["V" if i in act else "v" for i in range(n)])
-                key += "".join(["O" if i+n in act else "o" for i in range(n)])
+                key += "".join(["O" if i + n in act else "o" for i in range(n)])
                 vectors.append(getattr(lambdas["l%d" % n], key).ravel())
 
         for n in self.ansatz.correlated_cluster_ranks[1]:
@@ -1697,10 +1705,12 @@ class REBCC(util.AbstractEBCC):
             for act in acts:
                 act = set(act)
                 shape = tuple(self.space.navir if i in act else self.space.ncvir for i in range(n))
-                shape += tuple(self.space.naocc if i+n in act else self.space.ncocc for i in range(n))
+                shape += tuple(
+                    self.space.naocc if i + n in act else self.space.ncocc for i in range(n)
+                )
                 size = np.prod(shape)
                 key = "".join(["V" if i in act else "v" for i in range(n)])
-                key += "".join(["O" if i+n in act else "o" for i in range(n)])
+                key += "".join(["O" if i + n in act else "o" for i in range(n)])
                 setattr(lambdas["l%d" % n], key, vector[i0 : i0 + size].reshape(shape))
                 i0 += size
 
