@@ -698,6 +698,11 @@ def contract(subscript, *args, **kwargs):
                 buf.reshape(shape_ct_flat), order="F" if buf.flags.f_contiguous else "C"
             )
 
+        # Check memory alignment of output buffer
+        if not (buf.flags.c_contiguous or buf.flags.f_contiguous):
+            # NOTE: Will almost certainly be a copy
+            buf = np.array(buf, order="C")
+
         # Perform the contraction
         ct = dot(at, bt, alpha=alpha, beta=beta, c=buf)
 
@@ -727,6 +732,11 @@ def contract(subscript, *args, **kwargs):
             assert buf.dtype == dtype
             assert buf.size == np.prod(shape_c)
             c = buf.reshape(shape_c)
+
+        # Check memory alignment of output buffer
+        if not (buf.flags.c_contiguous or buf.flags.f_contiguous):
+            # NOTE: Will almost certainly be a copy
+            buf = np.array(buf, order="C")
 
         # Get the C types
         shape_a = (ctypes.c_size_t * a.ndim)(*shape_a)
