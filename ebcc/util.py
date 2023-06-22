@@ -698,10 +698,10 @@ def contract(subscript, *args, **kwargs):
                 buf.reshape(shape_ct_flat), order="F" if buf.flags.f_contiguous else "C"
             )
 
-            # Check memory alignment of output buffer
-            if not (buf.flags.c_contiguous or buf.flags.f_contiguous):
-                # NOTE: Will almost certainly be a copy
-                buf = np.array(buf, order="C")
+        # Check memory alignment of output buffer
+        if not buf.flags.c_contiguous:
+            # NOTE: Will almost certainly be a copy
+            buf = np.array(buf, order="C")
 
         # Perform the contraction
         ct = dot(at, bt, alpha=alpha, beta=beta, c=buf)
