@@ -290,7 +290,7 @@ class REBCC(util.AbstractEBCC):
             self.ansatz = ansatz
         else:
             self.ansatz = Ansatz.from_string(ansatz)
-        self._eqns = self.ansatz._get_eqns(self.__class__.__name__[0])
+        self._eqns = self.ansatz._get_eqns(self.spin_type)
 
         # Space:
         if space is not None:
@@ -649,19 +649,6 @@ class REBCC(util.AbstractEBCC):
             else:
                 amplitudes["t%d" % n] = np.zeros((self.space.ncocc,) * n + (self.space.ncvir,) * n)
 
-        # Build active T amplitudes:
-        for n, acts in self.ansatz.active_cluster_ranks(spin=self.spin_type)[0]:
-            amplitudes["t%d" % n] = util.Namespace()
-            for act in acts:
-                act = set(act)
-                shape = tuple(self.space.naocc if i in act else self.space.ncocc for i in range(n))
-                shape += tuple(
-                    self.space.navir if i + n in act else self.space.ncvir for i in range(n)
-                )
-                key = "".join(["O" if i in act else "o" for i in range(n)])
-                key += "".join(["V" if i + n in act else "v" for i in range(n)])
-                setattr(amplitudes["t%d" % n], key, np.zeros(shape))
-
         if self.boson_ansatz:
             # Only true for real-valued couplings:
             h = self.g
@@ -673,10 +660,6 @@ class REBCC(util.AbstractEBCC):
                 amplitudes["s%d" % n] = -H / self.omega
             else:
                 amplitudes["s%d" % n] = np.zeros((self.nbos,) * n)
-
-        # Build active S amplitudes:
-        for n, act in self.ansatz.active_cluster_ranks(spin=self.spin_type)[1]:
-            raise NotImplementedError("Active space methods with bosons")
 
         # Build U amplitudes:
         for nf in self.ansatz.correlated_cluster_ranks[2]:
@@ -690,10 +673,6 @@ class REBCC(util.AbstractEBCC):
                     amplitudes["u%d%d" % (nf, nb)] = np.zeros(
                         (self.nbos,) * nb + (self.space.ncocc, self.space.ncvir)
                     )
-
-        # Build active U amplitudes:
-        for nf, act in self.ansatz.active_cluster_ranks(spin=self.spin_type)[2]:
-            raise NotImplementedError("Active space methods with bosons")
 
         return amplitudes
 
@@ -825,37 +804,11 @@ class REBCC(util.AbstractEBCC):
             res["t%d" % n] /= d
             res["t%d" % n] += amplitudes["t%d" % n]
 
-        # Divide active T amplitudes:
-        for n, acts in self.ansatz.active_cluster_ranks(spin=self.spin_type)[0]:
-            for act in acts:
-                act = set(act)
-                perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
-                o = "".join([x.upper() if i in act else x for i, x in enumerate("o" * n)])
-                v = "".join([x.upper() if i + n in act else x for i, x in enumerate("v" * n)])
-                e_ia_list = [
-                    lib.direct_sum("i-a->ia", getattr(self, "e" + oi), getattr(self, "e" + vi))
-                    for oi, vi in zip(o, v)
-                ]
-                d = functools.reduce(np.add.outer, e_ia_list)
-                d = d.transpose(perm)
-                key = "".join(["O" if i in act else "o" for i in range(n)])
-                key += "".join(["V" if i + n in act else "v" for i in range(n)])
-                setattr(res["t%d" % n], key, getattr(res["t%d" % n], key) / d)
-                setattr(
-                    res["t%d" % n],
-                    key,
-                    getattr(res["t%d" % n], key) + getattr(amplitudes["t%d" % n], key),
-                )
-
         # Divide S amplitudes:
         for n in self.ansatz.correlated_cluster_ranks[1]:
             d = functools.reduce(np.add.outer, ([-self.omega] * n))
             res["s%d" % n] /= d
             res["s%d" % n] += amplitudes["s%d" % n]
-
-        # Divide active S amplitudes:
-        for n, act in self.ansatz.active_cluster_ranks(spin=self.spin_type)[1]:
-            raise NotImplementedError("Active space methods with bosons")
 
         # Divide U amplitudes:
         for nf in self.ansatz.correlated_cluster_ranks[2]:
@@ -865,10 +818,6 @@ class REBCC(util.AbstractEBCC):
                 d = functools.reduce(np.add.outer, ([-self.omega] * nb) + ([e_ia] * nf))
                 res["u%d%d" % (nf, nb)] /= d
                 res["u%d%d" % (nf, nb)] += amplitudes["u%d%d" % (nf, nb)]
-
-        # Divide active U amplitudes:
-        for nf, act in self.ansatz.active_cluster_ranks(spin=self.spin_type)[2]:
-            raise NotImplementedError("Active space methods with bosons")
 
         return res
 
@@ -1553,24 +1502,12 @@ class REBCC(util.AbstractEBCC):
         for n in self.ansatz.correlated_cluster_ranks[0]:
             vectors.append(amplitudes["t%d" % n].ravel())
 
-        for n, acts in self.ansatz.active_cluster_ranks(spin=self.spin_type)[0]:
-            for act in acts:
-                key = "".join(["O" if i in act else "o" for i in range(n)])
-                key += "".join(["V" if i + n in act else "v" for i in range(n)])
-                vectors.append(getattr(amplitudes["t%d" % n], key).ravel())
-
         for n in self.ansatz.correlated_cluster_ranks[1]:
             vectors.append(amplitudes["s%d" % n].ravel())
-
-        for n, act in self.ansatz.active_cluster_ranks(spin=self.spin_type)[1]:
-            raise NotImplementedError("Active space methods with bosons")
 
         for nf in self.ansatz.correlated_cluster_ranks[2]:
             for nb in self.ansatz.correlated_cluster_ranks[3]:
                 vectors.append(amplitudes["u%d%d" % (nf, nb)].ravel())
-
-        for nf, act in self.ansatz.active_cluster_ranks(spin=self.spin_type)[2]:
-            raise NotImplementedError("Active space methods with bosons")
 
         return np.concatenate(vectors)
 
@@ -1599,27 +1536,11 @@ class REBCC(util.AbstractEBCC):
             amplitudes["t%d" % n] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
-        for n, acts in self.ansatz.active_cluster_ranks(spin=self.spin_type)[0]:
-            for act in acts:
-                act = set(act)
-                shape = tuple(self.space.naocc if i in act else self.space.ncocc for i in range(n))
-                shape += tuple(
-                    self.space.navir if i + n in act else self.space.ncvir for i in range(n)
-                )
-                size = np.prod(shape)
-                key = "".join(["O" if i in act else "o" for i in range(n)])
-                key += "".join(["V" if i + n in act else "v" for i in range(n)])
-                setattr(amplitudes["t%d" % n], key, vector[i0 : i0 + size].reshape(shape))
-                i0 += size
-
         for n in self.ansatz.correlated_cluster_ranks[1]:
             shape = (self.nbos,) * n
             size = np.prod(shape)
             amplitudes["s%d" % n] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
-
-        for n, act in self.ansatz.active_cluster_ranks(spin=self.spin_type)[1]:
-            raise NotImplementedError("Active space methods with bosons")
 
         for nf in self.ansatz.correlated_cluster_ranks[2]:
             for nb in self.ansatz.correlated_cluster_ranks[3]:
@@ -1627,9 +1548,6 @@ class REBCC(util.AbstractEBCC):
                 size = np.prod(shape)
                 amplitudes["u%d%d" % (nf, nb)] = vector[i0 : i0 + size].reshape(shape)
                 i0 += size
-
-        for nf, act in self.ansatz.active_cluster_ranks(spin=self.spin_type)[2]:
-            raise NotImplementedError("Active space methods with bosons")
 
         return amplitudes
 
@@ -1655,24 +1573,12 @@ class REBCC(util.AbstractEBCC):
         for n in self.ansatz.correlated_cluster_ranks[0]:
             vectors.append(lambdas["l%d" % n].ravel())
 
-        for n, acts in self.ansatz.active_cluster_ranks(spin=self.spin_type)[0]:
-            for act in acts:
-                key = "".join(["V" if i in act else "v" for i in range(n)])
-                key += "".join(["O" if i + n in act else "o" for i in range(n)])
-                vectors.append(getattr(lambdas["l%d" % n], key).ravel())
-
         for n in self.ansatz.correlated_cluster_ranks[1]:
             vectors.append(lambdas["ls%d" % n].ravel())
-
-        for n, act in self.ansatz.active_cluster_ranks(spin=self.spin_type)[1]:
-            raise NotImplementedError("Active space methods with bosons")
 
         for nf in self.ansatz.correlated_cluster_ranks[2]:
             for nb in self.ansatz.correlated_cluster_ranks[3]:
                 vectors.append(lambdas["lu%d%d" % (nf, nb)].ravel())
-
-        for nf, act in self.ansatz.active_cluster_ranks(spin=self.spin_type)[2]:
-            raise NotImplementedError("Active space methods with bosons")
 
         return np.concatenate(vectors)
 
@@ -1701,27 +1607,11 @@ class REBCC(util.AbstractEBCC):
             lambdas["l%d" % n] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
-        for n, acts in self.ansatz.active_cluster_ranks(spin=self.spin_type)[0]:
-            for act in acts:
-                act = set(act)
-                shape = tuple(self.space.navir if i in act else self.space.ncvir for i in range(n))
-                shape += tuple(
-                    self.space.naocc if i + n in act else self.space.ncocc for i in range(n)
-                )
-                size = np.prod(shape)
-                key = "".join(["V" if i in act else "v" for i in range(n)])
-                key += "".join(["O" if i + n in act else "o" for i in range(n)])
-                setattr(lambdas["l%d" % n], key, vector[i0 : i0 + size].reshape(shape))
-                i0 += size
-
         for n in self.ansatz.correlated_cluster_ranks[1]:
             shape = (self.nbos,) * n
             size = np.prod(shape)
             lambdas["ls%d" % n] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
-
-        for n, act in self.ansatz.active_cluster_ranks(spin=self.spin_type)[1]:
-            raise NotImplementedError("Active space methods with bosons")
 
         for nf in self.ansatz.correlated_cluster_ranks[2]:
             for nb in self.ansatz.correlated_cluster_ranks[3]:
@@ -1729,9 +1619,6 @@ class REBCC(util.AbstractEBCC):
                 size = np.prod(shape)
                 lambdas["lu%d%d" % (nf, nb)] = vector[i0 : i0 + size].reshape(shape)
                 i0 += size
-
-        for nf, act in self.ansatz.active_cluster_ranks(spin=self.spin_type)[2]:
-            raise NotImplementedError("Active space methods with bosons")
 
         return lambdas
 
@@ -2218,3 +2105,133 @@ class REBCC(util.AbstractEBCC):
     @property
     def l3(self):
         return self.lambdas["l3"]
+
+
+@util.inherit_docstrings
+class SplitREBCC(REBCC):
+
+    def init_amps(self, eris=None):
+        eris = self.get_eris(eris)
+
+        amplitudes = self.Amplitudes()
+
+        def get_e_ia(key):
+            ei = np.diag(getattr(self.fock, key[0] * 2))
+            ea = np.diag(getattr(self.fock, key[1] * 2))
+            return lib.direct_sum("i-a->ia", ei, ea)
+
+        # Build T amplitudes:
+        for n, keys in self.ansatz.split_cluster_ranks(spin=self.spin_type)[0]:
+            amplitudes["t%d" % n] = util.Namespace()
+            for key in keys:
+                if n == 1:
+                    e_ia = get_e_ia(key)
+                    setattr(amplitudes["t%d" % n], key, getattr(self.fock, key) / e_ia)
+                elif n == 2:
+                    key_t = key[0] + key[2] + key[1] + key[3]
+                    e_ijab = lib.direct_sum("ia,jb->ijab", get_e_ia(key_t[:2]), get_e_ia(key_t[2:]))
+                    setattr(amplitudes["t%d" % n], key, getattr(eris, key_t).swapaxes(1, 2) / e_ijab)
+                else:
+                    shape = tuple(self.space.naocc if x == "O" else self.space.niocc for x in key[:n])
+                    shape += tuple(self.space.navir if x == "V" else self.space.nivir for x in key[n:])
+                    setattr(amplitudes["t%d" % n], key, np.zeros(shape))
+
+        if self.boson_ansatz:
+            raise NotImplementedError
+
+        return amplitudes
+
+    def update_amps(self, eris=None, amplitudes=None):
+        func, kwargs = self._load_function(
+            "update_amps",
+            eris=eris,
+            amplitudes=amplitudes,
+        )
+        res = func(**kwargs)
+        res = {key.rstrip("new"): val for key, val in res.items()}
+
+        def get_e_ia(key):
+            ei = np.diag(getattr(self.fock, key[0] * 2))
+            ea = np.diag(getattr(self.fock, key[1] * 2))
+            return lib.direct_sum("i-a->ia", ei, ea)
+
+        # Divide T amplitudes:
+        for n, keys in self.ansatz.split_cluster_ranks(spin=self.spin_type)[0]:
+            for key in keys:
+                perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
+                e_ia_list = [get_e_ia(oi + vi) for oi, vi in zip(key[:n], key[n:])]
+                d = functools.reduce(np.add.outer, e_ia_list)
+                d = d.transpose(perm)
+                setattr(res["t%d" % n], key, getattr(res["t%d" % n], key) / d)
+                setattr(
+                    res["t%d" % n],
+                    key,
+                    getattr(res["t%d" % n], key) + getattr(amplitudes["t%d" % n], key),
+                )
+
+        if self.boson_ansatz:
+            raise NotImplementedError
+
+        return res
+
+    def amplitudes_to_vector(self, amplitudes):
+        vectors = []
+
+        for n, keys in self.ansatz.split_cluster_ranks(spin=self.spin_type)[0]:
+            for key in keys:
+                vectors.append(getattr(amplitudes["t%d" % n], key).ravel())
+
+        if self.boson_ansatz:
+            raise NotImplementedError
+
+        return np.concatenate(vectors)
+
+    def vector_to_amplitudes(self, vector):
+        amplitudes = self.Amplitudes()
+        i0 = 0
+
+        for n, keys in self.ansatz.split_cluster_ranks(spin=self.spin_type)[0]:
+            amplitudes["t%d" % n] = util.Namespace()
+            for key in keys:
+                shape = tuple(self.space.naocc if x == "O" else self.space.niocc for x in key[:n])
+                shape += tuple(self.space.navir if x == "V" else self.space.nivir for x in key[n:])
+                size = np.prod(shape)
+                setattr(amplitudes["t%d" % n], key, vector[i0 : i0 + size].reshape(shape))
+                i0 += size
+
+        if self.boson_ansatz:
+            raise NotImplementedError
+
+        return amplitudes
+
+    def lambdas_to_vector(self, lambdas):
+        # TODO move to SplitREBCC
+
+        vectors = []
+
+        for n, keys in self.ansatz.split_cluster_ranks(spin=self.spin_type)[0]:
+            for key in keys:
+                vectors.append(getattr(lambdas["t%d" % n], key).ravel())
+
+        if self.boson_ansatz:
+            raise NotImplementedError
+
+        return np.concatenate(vectors)
+
+    def vector_to_lambdas(self, vector):
+        lambdas = self.Amplitudes()
+        i0 = 0
+
+        for n, keys in self.ansatz.split_cluster_ranks(spin=self.spin_type)[0]:
+            amplitudes["t%d" % n] = util.Namespace()
+            for key in keys:
+                shape = tuple(self.space.navir if x == "V" else self.space.nivir for x in key[:n])
+                shape += tuple(self.space.naocc if x == "O" else self.space.niocc for x in key[n:])
+                size = np.prod(shape)
+                setattr(lambdas["t%d" % n], key, vector[i0 : i0 + size].reshape(shape))
+                i0 += size
+
+        if self.boson_ansatz:
+            raise NotImplementedError
+
+        return lambdas

@@ -281,19 +281,6 @@ class GEBCC(rebcc.REBCC):
             else:
                 amplitudes["t%d" % n] = np.zeros((self.space.ncocc,) * n + (self.space.ncvir,) * n)
 
-        # Build active T amplitudes:
-        for n, acts in self.ansatz.active_cluster_ranks(spin=self.spin_type)[0]:
-            amplitudes["t%d" % n] = util.Namespace()
-            for act in acts:
-                act = set(act)
-                shape = tuple(self.space.naocc if i in act else self.space.ncocc for i in range(n))
-                shape += tuple(
-                    self.space.navir if i + n in act else self.space.ncvir for i in range(n)
-                )
-                key = "".join(["O" if i in act else "o" for i in range(n)])
-                key += "".join(["V" if i + n in act else "v" for i in range(n)])
-                setattr(amplitudes["t%d" % n], key, np.zeros(shape))
-
         if self.boson_ansatz:
             # Only true for real-valued couplings:
             h = self.g
@@ -305,10 +292,6 @@ class GEBCC(rebcc.REBCC):
                 amplitudes["s%d" % n] = -H / self.omega
             else:
                 amplitudes["s%d" % n] = np.zeros((self.nbos,) * n)
-
-        # Build active S amplitudes:
-        for n, act in self.ansatz.active_cluster_ranks(spin=self.spin_type)[1]:
-            raise NotImplementedError("Active space methods with bosons")
 
         # Build U amplitudes:
         for nf in self.ansatz.correlated_cluster_ranks[2]:
@@ -322,10 +305,6 @@ class GEBCC(rebcc.REBCC):
                     amplitudes["u%d%d" % (nf, nb)] = np.zeros(
                         (self.nbos,) * nb + (self.space.ncocc, self.space.ncvir)
                     )
-
-        # Build active U amplitudes:
-        for nf, act in self.ansatz.active_cluster_ranks(spin=self.spin_type)[2]:
-            raise NotImplementedError("Active space methods with bosons")
 
         return amplitudes
 
@@ -499,3 +478,41 @@ class GEBCC(rebcc.REBCC):
     @property
     def spin_type(self):
         return "G"
+
+
+@util.inherit_docstrings
+class SplitGEBCC(GEBCC, rebcc.SplitREBCC):
+
+    @classmethod
+    def from_uebcc(cls, ucc):
+        raise NotImplementedError
+
+    def init_amps(self, eris=None):
+        eris = self.get_eris(eris)
+
+        amplitudes = self.Amplitudes()
+
+        def get_e_ia(key):
+            ei = np.diag(getattr(self.fock, key[0] * 2))
+            ea = np.diag(getattr(self.fock, key[1] * 2))
+            return lib.direct_sum("i-a->ia", ei, ea)
+
+        # Build T amplitudes:
+        for n, keys in self.ansatz.split_cluster_ranks(spin=self.spin_type)[0]:
+            amplitudes["t%d" % n] = util.Namespace()
+            for key in keys:
+                if n == 1:
+                    e_ia = get_e_ia(key)
+                    setattr(amplitudes["t%d" % n], key, getattr(self.fock, key) / e_ia)
+                elif n == 2:
+                    e_ijab = lib.direct_sum("ia,jb->ijab", get_e_ia(key[0] + key[2]), get_e_ia(key[1] + key[3]))
+                    setattr(amplitudes["t%d" % n], key, getattr(eris, key) / e_ijab)
+                else:
+                    shape = tuple(self.space.naocc if x == "O" else self.space.niocc for x in key[:n])
+                    shape += tuple(self.space.navir if x == "V" else self.space.nivir for x in key[n:])
+                    setattr(amplitudes["t%d" % n], key, np.zeros(shape))
+
+        if self.boson_ansatz:
+            raise NotImplementedError
+
+        return amplitudes

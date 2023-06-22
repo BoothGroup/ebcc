@@ -239,68 +239,54 @@ class Ansatz:
 
         return tuple(ranks)
 
-    def active_cluster_ranks(self, spin="R"):
+    def split_cluster_ranks(self, spin="R"):
         """Get a list of cluster operator rank numbers for each of
-        the fermionic, bosonic, and coupling ansatzes, for the
-        active space (see space.py).
+        the fermionic, bosonic, and coupling ansatzes, with splitting
+        into active and inactive spaces (see space.py).
+
+        This function should be used for ansatzes where more than one
+        space is used to define the cluster amplitudes, e.g. CCSDt.
 
         Returns
         -------
-        ranks : tuple of tuple of tuple of int
+        ranks : tuple of tuple of (int, tuple of str)
             Cluster operator ranks for the fermionic, bosonic, and
             coupling ansatzes, for the active space.  Each rank is a
-            tuple of the ranks and the active indices for that
-            amplitude.
+            tuple of the ranks and the slices for that amplitude.
         """
 
-        ranks = []
-        indices = []
+        # FIXME
 
-        notations = {
-            "t": [3],
-        }
-        if spin == "G":
-            active_indices = {
-                "t": ((2, 5),),
-            }
-        elif spin == "R":
-            active_indices = {
-                "t": ((2, 5),),
-            }
-        elif spin == "U":
-            raise NotImplementedError
+        if self.fermion_ansatz == "CCSDt":
+            if spin == "G":
+                return (
+                    (
+                        # Fermion
+                        (1, ("ia", "iV", "Oa", "OV")),
+                        (2, ("iiaa", "iiaV", "iiVV", "iOaa", "iOaV", "iOVV", "OOaa", "OOaV", "OOVV")),
+                        (3, ("iiOaaV", "iiOaVV", "iiOVVV", "iOOaaV", "iOOaVV", "iOOVVV", "OOOaaV", "OOOaVV", "OOOVVV")),
+                    ), (
+                        # Boson
+                        tuple(),
+                    ), (
+                        # Coupling
+                        tuple(),
+                    ),
+                )
+            elif spin == "R":
+                return (
+                    (
+                        # Fermion
+                        (1, ("ia", "iV", "Oa", "OV")),
+                        (2, ("iiaa", "Oiaa", "iOaa", "OOaa", "iiaV", "OiaV", "iOaV", "OOaV", "iiVa", "OiVa", "iOVa", "OOVa", "iiVV", "OiVV", "iOVV", "OOVV")),
+                        (3, ("iiOaaV", "OiOaaV", "iOOaaV", "OOOaaV", "iiOaVV", "OiOaVV", "iOOaVV", "OOOaVV", "iiOVaV", "OiOVaV", "iOOVaV", "OOOVaV", "iiOVVV", "OiOVVV", "iOOVVV", "OOOVVV",)),
+                    ), (
+                        # Boson
+                        tuple(),
+                    ), (
+                        # Coupling
+                        tuple(),
+                    ),
+                )
 
-        for i, op in enumerate([self.fermion_ansatz, self.boson_ansatz]):
-            # Remove any perturbative corrections
-            while "(" in op:
-                start = op.index("(")
-                end = op.index(")")
-                op = op[:start]
-                if (end + 1) < len(op):
-                    op += op[end + 1 :]
-
-            # Check in order of longest -> shortest string in case
-            # one method name starts with a substring equal to the
-            # name of another method
-            if i == 0:
-                for method_type in sorted(METHOD_TYPES, key=len)[::-1]:
-                    if op.startswith(method_type):
-                        op = op.lstrip(method_type)
-                        break
-
-            # Remove any lower case characters, as these correspond
-            # to active space
-            op = "".join([char for char in op if char.islower()])
-
-            # Determine the ranks
-            ranks_entry = set()
-            for char in op:
-                for rank in notations[char]:
-                    ranks_entry.add((rank, active_indices[char]))
-            ranks.append(tuple(sorted(list(ranks_entry))))
-
-        # Get the coupling ranks
-        # FIXME how to handle? if it's ever supported
-        ranks.append(tuple())
-
-        return tuple(ranks)
+        raise NotImplementedError
