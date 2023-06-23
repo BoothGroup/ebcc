@@ -33,7 +33,7 @@ jobs:
           python -m pip install --upgrade pip
       - name: Install ebcc
         run: |
-          python -m pip install wheel
+          python -m pip install wheel build
           python -m pip install .[dev]
       - name: Extract tag name
         id: tag
