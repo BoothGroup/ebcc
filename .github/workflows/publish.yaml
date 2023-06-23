@@ -13,6 +13,12 @@ jobs:
     name: python ${{ matrix.python-version }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
 
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/ebcc
+    permissions:
+      id-token: write
+
     strategy:
       fail-fast: false
       matrix:
@@ -43,7 +49,7 @@ jobs:
         run: |
           python -m build
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@master
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          password: ${{ secrets.TESTPYPI_API_TOKEN }}
           repository-url: https://test.pypi.org/legacy/
+          password: ${{ secrets.TESTPYPI_API_TOKEN }}
