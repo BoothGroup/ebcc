@@ -279,7 +279,8 @@ class Ansatz:
                         # Fermion
                         (1, ("ia", "iV", "Oa", "OV")),
                         (2, ("iiaa", "Oiaa", "iOaa", "OOaa", "iiaV", "OiaV", "iOaV", "OOaV", "iiVa", "OiVa", "iOVa", "OOVa", "iiVV", "OiVV", "iOVV", "OOVV")),
-                        (3, ("iiOaaV", "OiOaaV", "iOOaaV", "OOOaaV", "iiOaVV", "OiOaVV", "iOOaVV", "OOOaVV", "iiOVaV", "OiOVaV", "iOOVaV", "OOOVaV", "iiOVVV", "OiOVVV", "iOOVVV", "OOOVVV",)),
+                        (3, ("iiOaaV", "OiOaaV", "iOOaaV", "OOOaaV", "iiOaVV", "OiOaVV", "iOOaVV", "OOOaVV", "iiOVaV", "OiOVaV", "iOOVaV", "OOOVaV", "iiOVVV", "OiOVVV", "iOOVVV", "OOOVVV",
+                             "iiOaVa", "iOiaVa", "iOiaaV", "iOiaVV", "iOOaVa", "iOiVaV", "OiOaVa", "OOOaVa", "iOiVVV")),  # These are zero
                     ), (
                         # Boson
                         tuple(),

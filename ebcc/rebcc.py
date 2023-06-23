@@ -2158,16 +2158,19 @@ class SplitREBCC(REBCC):
         # Divide T amplitudes:
         for n, keys in self.ansatz.split_cluster_ranks(spin=self.spin_type)[0]:
             for key in keys:
-                perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
-                e_ia_list = [get_e_ia(oi + vi) for oi, vi in zip(key[:n], key[n:])]
-                d = functools.reduce(np.add.outer, e_ia_list)
-                d = d.transpose(perm)
-                setattr(res["t%d" % n], key, getattr(res["t%d" % n], key) / d)
-                setattr(
-                    res["t%d" % n],
-                    key,
-                    getattr(res["t%d" % n], key) + getattr(amplitudes["t%d" % n], key),
-                )
+                if key in res["t%d" % n]:  # FIXME
+                    perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
+                    e_ia_list = [get_e_ia(oi + vi) for oi, vi in zip(key[:n], key[n:])]
+                    d = functools.reduce(np.add.outer, e_ia_list)
+                    d = d.transpose(perm)
+                    setattr(res["t%d" % n], key, getattr(res["t%d" % n], key) / d)
+                    setattr(
+                        res["t%d" % n],
+                        key,
+                        getattr(res["t%d" % n], key) + getattr(amplitudes["t%d" % n], key),
+                    )
+                else:
+                    setattr(res["t%d" % n], key, getattr(amplitudes["t%d" % n], key))
 
         if self.boson_ansatz:
             raise NotImplementedError
