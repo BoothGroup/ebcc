@@ -37,7 +37,8 @@ jobs:
           python -m pip install .[dev]
       - name: Extract tag name
         id: tag
-        run: echo ::set-output name=TAG_NAME::$(echo $GITHUB_REF | cut -d / -f 3)
+        #run: echo ::set-output name=TAG_NAME::$(echo $GITHUB_REF | cut -d / -f 3)
+        run: echo ::set-output name=TAG_NAME::test1
       - name: Build wheel
         run: |
           python -m build
