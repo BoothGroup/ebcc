@@ -201,7 +201,7 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         mol = gto.Mole()
-        mol.atom = "O 0 0 0.1173; H 0 0.7572 -0.4692; H 0 -0.7572 -0.4692"
+        mol.atom = "Li 0 0 0; H 0 0 1.64"
         mol.basis = "sto3g"
         mol.verbose = 0
         mol.build()
@@ -210,13 +210,13 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
         mf.conv_tol = 1e-12
         mf.kernel()
 
-        ccsd_ref = cc.GCCSD(mf)
+        ccsd_ref = cc.GCCSD(mf.to_uhf().to_ghf())
         ccsd_ref.conv_tol = 1e-12
         ccsd_ref.kernel()
         ccsd_ref.solve_lambda()
 
         ccsd = GEBCC(
-                mf,
+                mf.to_uhf().to_ghf(),
                 ansatz="CCSD",
                 log=NullLogger(),
         )
@@ -316,7 +316,7 @@ class GCCSD_Dump_Tests(GCCSD_PySCF_Tests):
     @classmethod
     def setUpClass(cls):
         mol = gto.Mole()
-        mol.atom = "O 0 0 0.1173; H 0 0.7572 -0.4692; H 0 -0.7572 -0.4692"
+        mol.atom = "Li 0 0 0; H 0 0 1.64"
         mol.basis = "sto3g"
         mol.verbose = 0
         mol.build()
@@ -325,13 +325,13 @@ class GCCSD_Dump_Tests(GCCSD_PySCF_Tests):
         mf.conv_tol = 1e-12
         mf.kernel()
 
-        ccsd_ref = cc.GCCSD(mf)
+        ccsd_ref = cc.GCCSD(mf.to_uhf().to_ghf())
         ccsd_ref.conv_tol = 1e-12
         ccsd_ref.kernel()
         ccsd_ref.solve_lambda()
 
         ccsd = GEBCC(
-                mf,
+                mf.to_uhf().to_ghf(),
                 ansatz="CCSD",
                 log=NullLogger(),
         )
