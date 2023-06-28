@@ -258,7 +258,7 @@ class Ansatz:
         # FIXME
 
         if self.fermion_ansatz == "CCSDt":
-            if spin == "G":
+            if spin == "G" or spin == "U":
                 return (
                     (
                         # Fermion
