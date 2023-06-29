@@ -298,9 +298,9 @@ class Ansatz:
                 return (
                     (
                         # Fermion
-                        (1, ("ov")),
-                        (2, ("oovv")),
-                        (3, ("OOOVVV")),
+                        (1, ("ov",)),
+                        (2, ("oovv",)),
+                        (3, ("OOOVVV",)),
                     ), (
                         # Boson
                         tuple(),
