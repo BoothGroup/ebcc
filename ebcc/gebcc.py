@@ -508,8 +508,8 @@ class SplitGEBCC(GEBCC, rebcc.SplitREBCC):
                     e_ijab = lib.direct_sum("ia,jb->ijab", get_e_ia(key[0] + key[2]), get_e_ia(key[1] + key[3]))
                     setattr(amplitudes["t%d" % n], key, getattr(eris, key) / e_ijab)
                 else:
-                    shape = tuple(self.space.naocc if x == "O" else self.space.niocc for x in key[:n])
-                    shape += tuple(self.space.navir if x == "V" else self.space.nivir for x in key[n:])
+                    shape = tuple({"o": self.space.nocc, "O": self.space.naocc, "i": self.space.niocc}[k] for k in key[:n])
+                    shape += tuple({"v": self.space.nvir, "V": self.space.navir, "a": self.space.nivir}[k] for k in key[n:])
                     setattr(amplitudes["t%d" % n], key, np.zeros(shape))
 
         if self.boson_ansatz:

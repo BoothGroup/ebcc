@@ -2132,8 +2132,8 @@ class SplitREBCC(REBCC):
                     e_ijab = lib.direct_sum("ia,jb->ijab", get_e_ia(key_t[:2]), get_e_ia(key_t[2:]))
                     setattr(amplitudes["t%d" % n], key, getattr(eris, key_t).swapaxes(1, 2) / e_ijab)
                 else:
-                    shape = tuple(self.space.naocc if x == "O" else self.space.niocc for x in key[:n])
-                    shape += tuple(self.space.navir if x == "V" else self.space.nivir for x in key[n:])
+                    shape = tuple({"o": self.space.nocc, "O": self.space.naocc, "i": self.space.niocc}[k] for k in key[:n])
+                    shape += tuple({"v": self.space.nvir, "V": self.space.navir, "a": self.space.nivir}[k] for k in key[n:])
                     setattr(amplitudes["t%d" % n], key, np.zeros(shape))
 
         if self.boson_ansatz:
@@ -2196,8 +2196,8 @@ class SplitREBCC(REBCC):
         for n, keys in self.ansatz.split_cluster_ranks(spin=self.spin_type)[0]:
             amplitudes["t%d" % n] = util.Namespace()
             for key in keys:
-                shape = tuple(self.space.naocc if x == "O" else self.space.niocc for x in key[:n])
-                shape += tuple(self.space.navir if x == "V" else self.space.nivir for x in key[n:])
+                shape = tuple({"o": self.space.nocc, "O": self.space.naocc, "i": self.space.niocc}[k] for k in key[:n])
+                shape += tuple({"v": self.space.nvir, "V": self.space.navir, "a": self.space.nivir}[k] for k in key[n:])
                 size = np.prod(shape)
                 setattr(amplitudes["t%d" % n], key, vector[i0 : i0 + size].reshape(shape))
                 i0 += size
@@ -2228,8 +2228,8 @@ class SplitREBCC(REBCC):
         for n, keys in self.ansatz.split_cluster_ranks(spin=self.spin_type)[0]:
             amplitudes["t%d" % n] = util.Namespace()
             for key in keys:
-                shape = tuple(self.space.navir if x == "V" else self.space.nivir for x in key[:n])
-                shape += tuple(self.space.naocc if x == "O" else self.space.niocc for x in key[n:])
+                shape = tuple({"v": self.space.nvir, "V": self.space.navir, "a": self.space.nivir}[k] for k in key[:n])
+                shape += tuple({"o": self.space.nocc, "O": self.space.naocc, "i": self.space.niocc}[k] for k in key[n:])
                 size = np.prod(shape)
                 setattr(lambdas["t%d" % n], key, vector[i0 : i0 + size].reshape(shape))
                 i0 += size
