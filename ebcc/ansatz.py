@@ -294,20 +294,19 @@ class Ansatz:
                 )
 
         elif self.fermion_ansatz == "CCSDt'":
-            if spin == "G":
-                return (
-                    (
-                        # Fermion
-                        (1, ("ov",)),
-                        (2, ("oovv",)),
-                        (3, ("OOOVVV",)),
-                    ), (
-                        # Boson
-                        tuple(),
-                    ), (
-                        # Coupling
-                        tuple(),
-                    ),
-                )
+            return (
+                (
+                    # Fermion
+                    (1, ("ov",)),
+                    (2, ("oovv",)),
+                    (3, ("OOOVVV",)),
+                ), (
+                    # Boson
+                    tuple(),
+                ), (
+                    # Coupling
+                    tuple(),
+                ),
+            )
 
         raise NotImplementedError
