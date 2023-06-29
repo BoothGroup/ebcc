@@ -19,6 +19,7 @@ named_ansatzes = {
     "CC3": ("CC3", "", 0, 0),
     "QCISD": ("QCISD", "", 0, 0),
     "CCSDt": ("CCSDt", "", 0, 0),
+    "CCSDt'": ("CCSDt'", "", 0, 0),
     "CCSD-S-1-1": ("CCSD", "S", 1, 1),
     "CCSD-SD-1-1": ("CCSD", "SD", 1, 1),
     "CCSD-SD-1-2": ("CCSD", "SD", 1, 2),
@@ -38,6 +39,7 @@ def name_to_identifier(name):
     iden = name.replace("(", "x").replace(")", "x")
     iden = iden.replace("[", "y").replace("]", "y")
     iden = iden.replace("-", "_")
+    iden = iden.replace("'", "p")
 
     return iden
 
@@ -56,6 +58,7 @@ def identifity_to_name(iden):
         name = name.replace("x", "(", 1).replace("x", ")", 1)
     while "y" in name:
         name = name.replace("y", "(", 1).replace("y", ")", 1)
+    name = name.replace("p", "'")
 
     return name
 
@@ -281,6 +284,23 @@ class Ansatz:
                         (2, ("iiaa", "Oiaa", "iOaa", "OOaa", "iiaV", "OiaV", "iOaV", "OOaV", "iiVa", "OiVa", "iOVa", "OOVa", "iiVV", "OiVV", "iOVV", "OOVV")),
                         (3, ("iiOaaV", "OiOaaV", "iOOaaV", "OOOaaV", "iiOaVV", "OiOaVV", "iOOaVV", "OOOaVV", "iiOVaV", "OiOVaV", "iOOVaV", "OOOVaV", "iiOVVV", "OiOVVV", "iOOVVV", "OOOVVV",
                              "iiOaVa", "iOiaVa", "iOiaaV", "iOiaVV", "iOOaVa", "iOiVaV", "OiOaVa", "OOOaVa", "iOiVVV")),  # These are zero
+                    ), (
+                        # Boson
+                        tuple(),
+                    ), (
+                        # Coupling
+                        tuple(),
+                    ),
+                )
+
+        elif self.fermion_ansatz == "CCSDt'":
+            if spin == "G":
+                return (
+                    (
+                        # Fermion
+                        (1, ("ov")),
+                        (2, ("oovv")),
+                        (3, ("OOOVVV")),
                     ), (
                         # Boson
                         tuple(),
