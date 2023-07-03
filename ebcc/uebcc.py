@@ -700,11 +700,11 @@ class UEBCC(rebcc.REBCC):
             lambdas[lname] = util.Namespace()
             shape = (self.nbos,) * nb + tuple(self.space[0].size(k) for k in key[nb:])
             size = np.prod(shape)
-            lambdas[key].aa = vector[i0 : i0 + size].reshape(shape)
+            lambdas[lname].aa = vector[i0 : i0 + size].reshape(shape)
             i0 += size
             shape = (self.nbos,) * nb + tuple(self.space[1].size(k) for k in key[nb:])
             size = np.prod(shape)
-            lambdas[key].bb = vector[i0 : i0 + size].reshape(shape)
+            lambdas[lname].bb = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
         assert i0 == len(vector)

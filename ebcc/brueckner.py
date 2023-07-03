@@ -264,6 +264,10 @@ class BruecknerREBCC:
 
         return self.cc.e_corr
 
+    @property
+    def spin_type(self):
+        return self.cc.spin_type
+
 
 @util.inherit_docstrings
 class BruecknerUEBCC(BruecknerREBCC):
