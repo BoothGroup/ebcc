@@ -232,7 +232,11 @@ class REOM:
 
     @property
     def name(self):
-        return self.excitation_type.upper() + "-REOM-" + self.ebcc.name
+        return f"{self.excitation_type.upper()}-{self.spin_type}EOM-{self.ebcc.name}"
+
+    @property
+    def spin_type(self):
+        return self.ebcc.spin_type
 
     @property
     def excitation_type(self):
@@ -268,16 +272,19 @@ class IP_REOM(REOM):
 
     def diag(self, eris=None):
         parts = []
-        e_ia = lib.direct_sum("i-a->ia", self.ebcc.eo, self.ebcc.ev)
-        e_i = self.ebcc.eo
 
-        for n in self.ansatz.correlated_cluster_ranks[0]:
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            e_list = [
+                lib.direct_sum("i-a->ia", getattr(self.ebcc, "e" + o), getattr(self.ebcc, "e" + v))
+                for o, v in zip(key[:n-1], key[n:2*n-1])
+            ]
+            e_list.append(getattr(self.ebcc, "e" + key[n-1]))
             perm = list(range(0, n * 2, 2)) + list(range(1, (n - 1) * 2, 2))
-            d = functools.reduce(np.add.outer, [e_ia] * (n - 1) + [e_i])
+            d = functools.reduce(np.add.outer, e_list)
             d = d.transpose(perm)
             parts.append(d)
 
-        for n in self.ansatz.correlated_cluster_ranks[1]:
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
         return self.amplitudes_to_vector(*parts)
@@ -327,16 +334,19 @@ class EA_REOM(REOM):
 
     def diag(self, eris=None):
         parts = []
-        e_ai = lib.direct_sum("a-i->ai", self.ebcc.ev, self.ebcc.eo)
-        e_a = self.ebcc.ev
 
-        for n in self.ansatz.correlated_cluster_ranks[0]:
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            e_list = [
+                lib.direct_sum("i-a->ai", getattr(self.ebcc, "e" + o), getattr(self.ebcc, "e" + v))
+                for o, v in zip(key[:n-1], key[n:2*n-1])
+            ]
+            e_list.append(-getattr(self.ebcc, "e" + key[2*n-1]))
             perm = list(range(0, n * 2, 2)) + list(range(1, (n - 1) * 2, 2))
-            d = functools.reduce(np.add.outer, [e_ai] * (n - 1) + [e_a])
+            d = functools.reduce(np.add.outer, e_list)
             d = d.transpose(perm)
             parts.append(d)
 
-        for n in self.ansatz.correlated_cluster_ranks[1]:
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
         return self.amplitudes_to_vector(*parts)
@@ -388,13 +398,17 @@ class EE_REOM(REOM):
         parts = []
         e_ia = lib.direct_sum("a-i->ia", self.ebcc.ev, self.ebcc.eo)
 
-        for n in self.ansatz.correlated_cluster_ranks[0]:
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            e_list = [
+                lib.direct_sum("i-a->ia", getattr(self.ebcc, "e" + o), getattr(self.ebcc, "e" + v))
+                for o, v in zip(key[:n], key[n:])
+            ]
             perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
-            d = functools.reduce(np.add.outer, [e_ia] * n)
+            d = functools.reduce(np.add.outer, e_list)
             d = d.transpose(perm)
             parts.append(d)
 
-        for n in self.ansatz.correlated_cluster_ranks[1]:
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
         return self.amplitudes_to_vector(*parts)

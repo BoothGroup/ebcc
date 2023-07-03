@@ -58,6 +58,21 @@ class Space:
             out += " [" + ", ".join(parts) + "]"
         return out
 
+    def size(self, char):
+        """Convert a character in the standard `ebcc` notation to the
+        size corresponding to this space.  See `ebcc.eris` for details
+        on the default slices.
+        """
+
+        return  {
+            "o": self.ncocc,
+            "O": self.naocc,
+            "i": self.niocc,
+            "v": self.ncvir,
+            "V": self.navir,
+            "a": self.nivir,
+        }[char]
+
     # Full space:
 
     @property

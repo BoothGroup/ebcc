@@ -48,6 +48,7 @@ class GEBCC(rebcc.REBCC):
         """Initialise a GEBCC object from an UEBCC object."""
 
         # FIXME test for frozen/active
+        # FIXME won't work with active spaces
         orbspin = scf.addons.get_ghf_orbspin(ucc.mf.mo_energy, ucc.mf.mo_occ, False)
         nocc = sum(ucc.nocc)
         nvir = sum(ucc.nvir)
@@ -99,8 +100,8 @@ class GEBCC(rebcc.REBCC):
         if has_amps:
             amplitudes = cls.Amplitudes()
 
-            for n in ucc.ansatz.correlated_cluster_ranks[0]:
-                amplitudes["t%d" % n] = np.zeros((space.ncocc,) * n + (space.ncvir,) * n)
+            for name, key, n in ucc.ansatz.fermionic_cluster_ranks(spin_type=ucc.spin_type):
+                amplitudes[name] = np.zeros((space.ncocc,) * n + (space.ncvir,) * n)
                 for comb in util.generate_spin_combinations(n, unique=True):
                     done = set()
                     for lperm, lsign in util.permutations_with_signs(tuple(range(n))):
@@ -114,72 +115,72 @@ class GEBCC(rebcc.REBCC):
                             )
                             transpose = tuple(lperm) + tuple(p + n for p in uperm)
                             amp = (
-                                getattr(ucc.amplitudes["t%d" % n], comb).transpose(transpose)
+                                getattr(ucc.amplitudes[name], comb).transpose(transpose)
                                 * lsign
                                 * usign
                             )
                             for perm, sign in util.permutations_with_signs(tuple(range(n))):
                                 transpose = tuple(perm) + tuple(range(n, 2 * n))
                                 if util.permute_string(comb[:n], perm) == comb[:n]:
-                                    amplitudes["t%d" % n][mask] += (
+                                    amplitudes[name][mask] += (
                                         amp.transpose(transpose).copy() * sign
                                     )
                             done.add(combn)
 
-            for n in ucc.ansatz.correlated_cluster_ranks[1]:
-                amplitudes["s%d" % n] = ucc.amplitudes["s%d" % n].copy()
+            for name, key, n in ucc.ansatz.bosonic_cluster_ranks(spin_type=ucc.spin_type):
+                amplitudes[name] = ucc.amplitudes[name].copy()
 
-            for nf in ucc.ansatz.correlated_cluster_ranks[2]:
-                for nb in ucc.ansatz.correlated_cluster_ranks[3]:
-                    amplitudes["u%d%d" % (nf, nb)] = np.zeros(
-                        (nbos,) * nb + (space.ncocc,) * nf + (space.ncvir,) * nf
-                    )
-                    for comb in util.generate_spin_combinations(nf):
-                        done = set()
-                        for lperm, lsign in util.permutations_with_signs(tuple(range(nf))):
-                            for uperm, usign in util.permutations_with_signs(tuple(range(nf))):
-                                combn = util.permute_string(comb[:nf], lperm)
-                                combn += util.permute_string(comb[nf:], uperm)
-                                if combn in done:
-                                    continue
-                                mask = np.ix_(
-                                    *([range(nbos)] * nb),
-                                    *(
-                                        [occs[c] for c in combn[:nf]]
-                                        + [virs[c] for c in combn[nf:]]
-                                    ),
+            for name, key, nf, nb in ucc.ansatz.coupling_cluster_ranks(spin_type=ucc.spin_type):
+                amplitudes[name] = np.zeros(
+                    (nbos,) * nb + (space.ncocc,) * nf + (space.ncvir,) * nf
+                )
+                for comb in util.generate_spin_combinations(nf):
+                    done = set()
+                    for lperm, lsign in util.permutations_with_signs(tuple(range(nf))):
+                        for uperm, usign in util.permutations_with_signs(tuple(range(nf))):
+                            combn = util.permute_string(comb[:nf], lperm)
+                            combn += util.permute_string(comb[nf:], uperm)
+                            if combn in done:
+                                continue
+                            mask = np.ix_(
+                                *([range(nbos)] * nb),
+                                *(
+                                    [occs[c] for c in combn[:nf]]
+                                    + [virs[c] for c in combn[nf:]]
+                                ),
+                            )
+                            transpose = (
+                                tuple(range(nb))
+                                + tuple(p + nb for p in lperm)
+                                + tuple(p + nb + nf for p in uperm)
+                            )
+                            amp = (
+                                getattr(ucc.amplitudes[name], comb).transpose(
+                                    transpose
                                 )
+                                * lsign
+                                * usign
+                            )
+                            for perm, sign in util.permutations_with_signs(tuple(range(nf))):
                                 transpose = (
                                     tuple(range(nb))
-                                    + tuple(p + nb for p in lperm)
-                                    + tuple(p + nb + nf for p in uperm)
+                                    + tuple(p + nb for p in perm)
+                                    + tuple(range(nb + nf, nb + 2 * nf))
                                 )
-                                amp = (
-                                    getattr(ucc.amplitudes["u%d%d" % (nf, nb)], comb).transpose(
-                                        transpose
+                                if util.permute_string(comb[:nf], perm) == comb[:nf]:
+                                    amplitudes[name][mask] += (
+                                        amp.transpose(transpose).copy() * sign
                                     )
-                                    * lsign
-                                    * usign
-                                )
-                                for perm, sign in util.permutations_with_signs(tuple(range(nf))):
-                                    transpose = (
-                                        tuple(range(nb))
-                                        + tuple(p + nb for p in perm)
-                                        + tuple(range(nb + nf, nb + 2 * nf))
-                                    )
-                                    if util.permute_string(comb[:nf], perm) == comb[:nf]:
-                                        amplitudes["u%d%d" % (nf, nb)][mask] += (
-                                            amp.transpose(transpose).copy() * sign
-                                        )
-                                done.add(combn)
+                            done.add(combn)
 
             gcc.amplitudes = amplitudes
 
         if has_lams:
             lambdas = gcc.init_lams()  # Easier this way - but have to build ERIs...
 
-            for n in ucc.ansatz.correlated_cluster_ranks[0]:
-                lambdas["l%d" % n] = np.zeros((space.ncvir,) * n + (space.ncocc,) * n)
+            for name, key, n in ucc.ansatz.fermionic_cluster_ranks(spin_type=ucc.spin_type):
+                lname = name.replace("t", "l")
+                lambdas[lname] = np.zeros((space.ncvir,) * n + (space.ncocc,) * n)
                 for comb in util.generate_spin_combinations(n, unique=True):
                     done = set()
                     for lperm, lsign in util.permutations_with_signs(tuple(range(n))):
@@ -193,64 +194,65 @@ class GEBCC(rebcc.REBCC):
                             )
                             transpose = tuple(lperm) + tuple(p + n for p in uperm)
                             amp = (
-                                getattr(ucc.lambdas["l%d" % n], comb).transpose(transpose)
+                                getattr(ucc.lambdas[lname], comb).transpose(transpose)
                                 * lsign
                                 * usign
                             )
                             for perm, sign in util.permutations_with_signs(tuple(range(n))):
                                 transpose = tuple(perm) + tuple(range(n, 2 * n))
                                 if util.permute_string(comb[:n], perm) == comb[:n]:
-                                    lambdas["l%d" % n][mask] += (
+                                    lambdas[lname][mask] += (
                                         amp.transpose(transpose).copy() * sign
                                     )
                             done.add(combn)
 
-            for n in ucc.ansatz.correlated_cluster_ranks[1]:
-                lambdas["ls%d" % n] = ucc.lambdas["ls%d" % n].copy()
+            for name, key, n in ucc.ansatz.bosonic_cluster_ranks(spin_type=ucc.spin_type):
+                lname = "l" + name
+                lambdas[lname] = ucc.lambdas[lname].copy()
 
-            for nf in ucc.ansatz.correlated_cluster_ranks[2]:
-                for nb in ucc.ansatz.correlated_cluster_ranks[3]:
-                    lambdas["lu%d%d" % (nf, nb)] = np.zeros(
-                        (nbos,) * nb + (space.ncvir,) * nf + (space.ncocc,) * nf
-                    )
-                    for comb in util.generate_spin_combinations(nf, unique=True):
-                        done = set()
-                        for lperm, lsign in util.permutations_with_signs(tuple(range(nf))):
-                            for uperm, usign in util.permutations_with_signs(tuple(range(nf))):
-                                combn = util.permute_string(comb[:nf], lperm)
-                                combn += util.permute_string(comb[nf:], uperm)
-                                if combn in done:
-                                    continue
-                                mask = np.ix_(
-                                    *([range(nbos)] * nb),
-                                    *(
-                                        [virs[c] for c in combn[:nf]]
-                                        + [occs[c] for c in combn[nf:]]
-                                    ),
+            for name, key, nf, nb in ucc.ansatz.coupling_cluster_ranks(spin_type=ucc.spin_type):
+                lname = "l" + name
+                lambdas[lname] = np.zeros(
+                    (nbos,) * nb + (space.ncvir,) * nf + (space.ncocc,) * nf
+                )
+                for comb in util.generate_spin_combinations(nf, unique=True):
+                    done = set()
+                    for lperm, lsign in util.permutations_with_signs(tuple(range(nf))):
+                        for uperm, usign in util.permutations_with_signs(tuple(range(nf))):
+                            combn = util.permute_string(comb[:nf], lperm)
+                            combn += util.permute_string(comb[nf:], uperm)
+                            if combn in done:
+                                continue
+                            mask = np.ix_(
+                                *([range(nbos)] * nb),
+                                *(
+                                    [virs[c] for c in combn[:nf]]
+                                    + [occs[c] for c in combn[nf:]]
+                                ),
+                            )
+                            transpose = (
+                                tuple(range(nb))
+                                + tuple(p + nb for p in lperm)
+                                + tuple(p + nb + nf for p in uperm)
+                            )
+                            amp = (
+                                getattr(ucc.lambdas[lname], comb).transpose(
+                                    transpose
                                 )
+                                * lsign
+                                * usign
+                            )
+                            for perm, sign in util.permutations_with_signs(tuple(range(nf))):
                                 transpose = (
                                     tuple(range(nb))
-                                    + tuple(p + nb for p in lperm)
-                                    + tuple(p + nb + nf for p in uperm)
+                                    + tuple(p + nb for p in perm)
+                                    + tuple(range(nb + nf, nb + 2 * nf))
                                 )
-                                amp = (
-                                    getattr(ucc.lambdas["lu%d%d" % (nf, nb)], comb).transpose(
-                                        transpose
+                                if util.permute_string(comb[:nf], perm) == comb[:nf]:
+                                    lambdas[lname][mask] += (
+                                        amp.transpose(transpose).copy() * sign
                                     )
-                                    * lsign
-                                    * usign
-                                )
-                                for perm, sign in util.permutations_with_signs(tuple(range(nf))):
-                                    transpose = (
-                                        tuple(range(nb))
-                                        + tuple(p + nb for p in perm)
-                                        + tuple(range(nb + nf, nb + 2 * nf))
-                                    )
-                                    if util.permute_string(comb[:nf], perm) == comb[:nf]:
-                                        lambdas["lu%d%d" % (nf, nb)][mask] += (
-                                            amp.transpose(transpose).copy() * sign
-                                        )
-                                done.add(combn)
+                            done.add(combn)
 
             gcc.lambdas = lambdas
 
@@ -267,19 +269,27 @@ class GEBCC(rebcc.REBCC):
 
     def init_amps(self, eris=None):
         eris = self.get_eris(eris)
-
         amplitudes = self.Amplitudes()
-        e_ia = lib.direct_sum("i-a->ia", self.eo, self.ev)
 
         # Build T amplitudes:
-        for n in self.ansatz.correlated_cluster_ranks[0]:
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             if n == 1:
-                amplitudes["t%d" % n] = self.fock.vo.T / e_ia
+                ei = getattr(self, "e" + key[0])
+                ea = getattr(self, "e" + key[1])
+                e_ia = lib.direct_sum("i-a->ia", ei, ea)
+                amplitudes[name] = getattr(self.fock, key) / e_ia
             elif n == 2:
-                e_ijab = lib.direct_sum("ia,jb->ijab", e_ia, e_ia)
-                amplitudes["t%d" % n] = eris.oovv / e_ijab
+                ei = getattr(self, "e" + key[0])
+                ej = getattr(self, "e" + key[1])
+                ea = getattr(self, "e" + key[2])
+                eb = getattr(self, "e" + key[3])
+                e_ia = lib.direct_sum("i-a->ia", ei, ea)
+                e_jb = lib.direct_sum("i-a->ia", ej, eb)
+                e_ijab = lib.direct_sum("ia,jb->ijab", e_ia, e_jb)
+                amplitudes[name] = getattr(eris, key) / e_ijab
             else:
-                amplitudes["t%d" % n] = np.zeros((self.space.ncocc,) * n + (self.space.ncvir,) * n)
+                shape = tuple(self.space.size(k) for k in key)
+                amplitudes[name] = np.zeros(shape)
 
         if self.boson_ansatz:
             # Only true for real-valued couplings:
@@ -287,24 +297,25 @@ class GEBCC(rebcc.REBCC):
             H = self.G
 
         # Build S amplitudes:
-        for n in self.ansatz.correlated_cluster_ranks[1]:
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             if n == 1:
-                amplitudes["s%d" % n] = -H / self.omega
+                amplitudes[name] = -H / self.omega
             else:
-                amplitudes["s%d" % n] = np.zeros((self.nbos,) * n)
+                shape = (self.nbos,) * n
+                amplitudes[name] = np.zeros(shape)
 
         # Build U amplitudes:
-        for nf in self.ansatz.correlated_cluster_ranks[2]:
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             if nf != 1:
                 raise util.ModelNotImplemented
-            for nb in self.ansatz.correlated_cluster_ranks[3]:
-                if n == 1:
-                    e_xia = lib.direct_sum("ia-x->xia", e_ia, self.omega)
-                    amplitudes["u%d%d" % (nf, nb)] = h.bov / e_xia
-                else:
-                    amplitudes["u%d%d" % (nf, nb)] = np.zeros(
-                        (self.nbos,) * nb + (self.space.ncocc, self.space.ncvir)
-                    )
+            if n == 1:
+                ei = getattr(self, "e" + key[1])
+                ea = getattr(self, "e" + key[2])
+                e_xia = lib.direct_sum("i-a-x->xia", ei, ea, self.omega)
+                amplitudes[name] = getattr(h, key) / e_xia
+            else:
+                shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
+                amplitudes[name] = np.zeros(shape)
 
         return amplitudes
 
@@ -328,17 +339,16 @@ class GEBCC(rebcc.REBCC):
         vectors = []
         m = 0
 
-        for n in self.ansatz.correlated_cluster_ranks[0]:
-            subscript = "i" * n + "a" * (n - 1)
-            vectors.append(util.compress_axes(subscript, excitations[m]).ravel())
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            key = key[:-1]
+            vectors.append(util.compress_axes(key, excitations[m]).ravel())
             m += 1
 
-        for n in self.ansatz.correlated_cluster_ranks[1]:
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
-        for nf in self.ansatz.correlated_cluster_ranks[2]:
-            for nb in self.ansatz.correlated_cluster_ranks[3]:
-                raise util.ModelNotImplemented
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            raise util.ModelNotImplemented
 
         return np.concatenate(vectors)
 
@@ -346,17 +356,15 @@ class GEBCC(rebcc.REBCC):
         vectors = []
         m = 0
 
-        for n in self.ansatz.correlated_cluster_ranks[0]:
-            subscript = "i" * n + "a" * n
-            vectors.append(util.compress_axes(subscript, excitations[m]).ravel())
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            vectors.append(util.compress_axes(key, excitations[m]).ravel())
             m += 1
 
-        for n in self.ansatz.correlated_cluster_ranks[1]:
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
-        for nf in self.ansatz.correlated_cluster_ranks[2]:
-            for nb in self.ansatz.correlated_cluster_ranks[3]:
-                raise util.ModelNotImplemented
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            raise util.ModelNotImplemented
 
         return np.concatenate(vectors)
 
@@ -364,21 +372,20 @@ class GEBCC(rebcc.REBCC):
         excitations = []
         i0 = 0
 
-        for n in self.ansatz.correlated_cluster_ranks[0]:
-            subscript = "i" * n + "a" * (n - 1)
-            size = util.get_compressed_size(subscript, i=self.space.ncocc, a=self.space.ncvir)
-            shape = tuple([self.space.ncocc] * n + [self.space.ncvir] * (n - 1))
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            key = key[:-1]
+            size = util.get_compressed_size(key, **{k: self.space.size(k) for k in set(key)})
+            shape = tuple(self.space.size(k) for k in key)
             vn_tril = vector[i0 : i0 + size]
-            vn = util.decompress_axes(subscript, vn_tril, shape=shape)
+            vn = util.decompress_axes(key, vn_tril, shape=shape)
             excitations.append(vn)
             i0 += size
 
-        for n in self.ansatz.correlated_cluster_ranks[1]:
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
-        for nf in self.ansatz.correlated_cluster_ranks[2]:
-            for nb in self.ansatz.correlated_cluster_ranks[3]:
-                raise util.ModelNotImplemented
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            raise util.ModelNotImplemented
 
         return tuple(excitations)
 
@@ -386,21 +393,20 @@ class GEBCC(rebcc.REBCC):
         excitations = []
         i0 = 0
 
-        for n in self.ansatz.correlated_cluster_ranks[0]:
-            subscript = "a" * n + "i" * (n - 1)
-            size = util.get_compressed_size(subscript, i=self.space.ncocc, a=self.space.ncvir)
-            shape = tuple([self.space.ncvir] * n + [self.space.ncocc] * (n - 1))
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            key = key[n:] + key[:n-1]
+            size = util.get_compressed_size(key, **{k: self.space.size(k) for k in set(key)})
+            shape = tuple(self.space.size(k) for k in key)
             vn_tril = vector[i0 : i0 + size]
-            vn = util.decompress_axes(subscript, vn_tril, shape=shape)
+            vn = util.decompress_axes(key, vn_tril, shape=shape)
             excitations.append(vn)
             i0 += size
 
-        for n in self.ansatz.correlated_cluster_ranks[1]:
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
-        for nf in self.ansatz.correlated_cluster_ranks[2]:
-            for nb in self.ansatz.correlated_cluster_ranks[3]:
-                raise util.ModelNotImplemented
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            raise util.ModelNotImplemented
 
         return tuple(excitations)
 
@@ -408,21 +414,19 @@ class GEBCC(rebcc.REBCC):
         excitations = []
         i0 = 0
 
-        for n in self.ansatz.correlated_cluster_ranks[0]:
-            subscript = "i" * n + "a" * n
-            size = util.get_compressed_size(subscript, i=self.space.ncocc, a=self.space.ncvir)
-            shape = tuple([self.space.ncocc] * n + [self.space.ncvir] * n)
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            size = util.get_compressed_size(key, **{k: self.space.size(k) for k in set(key)})
+            shape = tuple(self.space.size(k) for k in key)
             vn_tril = vector[i0 : i0 + size]
-            vn = util.decompress_axes(subscript, vn_tril, shape=shape)
+            vn = util.decompress_axes(key, vn_tril, shape=shape)
             excitations.append(vn)
             i0 += size
 
-        for n in self.ansatz.correlated_cluster_ranks[1]:
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
-        for nf in self.ansatz.correlated_cluster_ranks[2]:
-            for nb in self.ansatz.correlated_cluster_ranks[3]:
-                raise util.ModelNotImplemented
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            raise util.ModelNotImplemented
 
         return tuple(excitations)
 

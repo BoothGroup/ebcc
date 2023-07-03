@@ -130,21 +130,21 @@ class BruecknerREBCC:
         ca = u[nocc:, nocc:]
 
         # Transform T amplitudes:
-        for n in self.cc.ansatz.correlated_cluster_ranks[0]:
-            args = [self.cc.amplitudes["t%d" % n], tuple(range(n * 2))]
+        for name, key, n in self.cc.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            args = [self.cc.amplitudes[name], tuple(range(n * 2))]
             for i in range(n):
                 args += [ci, (i, i + n * 2)]
             for i in range(n):
                 args += [ca, (i + n, i + n * 3)]
             args += [tuple(range(n * 2, n * 4))]
-            self.cc.amplitudes["t%d" % n] = util.einsum(*args)
+            self.cc.amplitudes[name] = util.einsum(*args)
 
         # Transform S amplitudes:
-        for n in self.cc.ansatz.correlated_cluster_ranks[1]:
+        for name, key, n in self.cc.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented  # TODO
 
         # Transform U amplitudes:
-        for n in self.cc.ansatz.correlated_cluster_ranks[2]:
+        for name, key, nf, nb in self.cc.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented  # TODO
 
         return self.cc.amplitudes
@@ -335,22 +335,22 @@ class BruecknerUEBCC(BruecknerREBCC):
         ca = {"a": u[0][nocc[0] :, nocc[0] :], "b": u[1][nocc[1] :, nocc[1] :]}
 
         # Transform T amplitudes:
-        for n in self.cc.ansatz.correlated_cluster_ranks[0]:
+        for name, key, n in self.cc.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             for comb in util.generate_spin_combinations(n, unique=True):
-                args = [getattr(self.cc.amplitudes["t%d" % n], comb), tuple(range(n * 2))]
+                args = [getattr(self.cc.amplitudes[name], comb), tuple(range(n * 2))]
             for i in range(n):
                 args += [ci[comb[i]], (i, i + n * 2)]
             for i in range(n):
                 args += [ca[comb[i + n]], (i + n, i + n * 3)]
             args += [tuple(range(n * 2, n * 4))]
-            setattr(self.cc.amplitudes["t%d" % n], comb, util.einsum(*args))
+            setattr(self.cc.amplitudes[name], comb, util.einsum(*args))
 
         # Transform S amplitudes:
-        for n in self.cc.ansatz.correlated_cluster_ranks[1]:
+        for name, key, n in self.cc.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented  # TODO
 
         # Transform U amplitudes:
-        for n in self.cc.ansatz.correlated_cluster_ranks[2]:
+        for name, key, nf, nb in self.cc.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented  # TODO
 
         return self.cc.amplitudes
