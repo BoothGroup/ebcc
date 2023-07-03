@@ -679,7 +679,10 @@ def contract(subscript, *args, **kwargs):
         # If any dimension has size zero, return here
         if a.size == 0 or b.size == 0:
             shape_c = [shape_ct[i] for i in order_ct]
-            return np.zeros(shape_c)
+            if buf is not None:
+                return buf.reshape(shape_c) * beta if beta != 1.0 else buf.reshape(shape_c)
+            else:
+                return np.zeros(shape_c)
 
         # Apply transposes
         at = a.transpose(order_a)
@@ -718,6 +721,13 @@ def contract(subscript, *args, **kwargs):
         shape_a = a.shape
         shape_b = b.shape
         shape_c = tuple(ranges[x] for x in out)
+
+        # If any dimension has size zero, return here
+        if a.size == 0 or b.size == 0:
+            if buf is not None:
+                return buf.reshape(shape_c) * beta
+            else:
+                return np.zeros(shape_c)
 
         # Get the output buffer
         if buf is None:
