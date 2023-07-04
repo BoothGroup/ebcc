@@ -188,13 +188,13 @@ with common.FilePrinter("%sCCSDtp" % spin[0].upper()) as file_printer:
         outputs = new_outputs
         expressions = new_expressions
 
-        final_outputs = outputs
+        final_outputs = outputs.copy()
         # Dummies change, canonicalise_dummies messes up the indices FIXME
-        #expressions, outputs = qccg.optimisation.optimise_expression_gristmill(
-        #        expressions,
-        #        outputs,
-        #        strat="exhaust",
-        #)
+        expressions, outputs = qccg.optimisation.optimise_expression_gristmill(
+                expressions,
+                outputs,
+                strat="exhaust",
+        )
         einsums = write.write_opt_einsums(
                 expressions,
                 outputs,
