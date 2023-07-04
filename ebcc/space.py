@@ -64,7 +64,7 @@ class Space:
         on the default slices.
         """
 
-        return  {
+        return {
             "o": self.ncocc,
             "O": self.naocc,
             "i": self.niocc,

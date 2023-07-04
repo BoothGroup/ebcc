@@ -825,7 +825,7 @@ class REBCC(util.AbstractEBCC):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
             e_ia_list = [
-                lib.direct_sum("i-a->ia", getattr(self, "e"+o), getattr(self, "e"+v))
+                lib.direct_sum("i-a->ia", getattr(self, "e" + o), getattr(self, "e" + v))
                 for o, v in zip(key[:n], key[n:])
             ]
             d = functools.reduce(np.add.outer, e_ia_list)
@@ -843,10 +843,14 @@ class REBCC(util.AbstractEBCC):
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             if nf != 1:
                 raise util.ModelNotImplemented
-            perm = list(range(nb)) + list(range(nb, nf * 2 + nb, 2)) + list(range(nb + 1, nf * 2 + nb, 2))
+            perm = (
+                list(range(nb))
+                + list(range(nb, nf * 2 + nb, 2))
+                + list(range(nb + 1, nf * 2 + nb, 2))
+            )
             e_ia_list = [
-                lib.direct_sum("i-a->ia", getattr(self, "e"+o), getattr(self, "e"+v))
-                for o, v in zip(key[nb:nf+nb], key[nf+nb:])
+                lib.direct_sum("i-a->ia", getattr(self, "e" + o), getattr(self, "e" + v))
+                for o, v in zip(key[nb : nf + nb], key[nf + nb :])
             ]
             d = functools.reduce(np.add.outer, ([-self.omega] * nb) + e_ia_list)
             d = d.transpose(perm)
@@ -899,7 +903,7 @@ class REBCC(util.AbstractEBCC):
             lname = name.replace("t", "l")
             perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
             e_ai_list = [
-                lib.direct_sum("i-a->ai", getattr(self, "e"+o), getattr(self, "e"+v))
+                lib.direct_sum("i-a->ai", getattr(self, "e" + o), getattr(self, "e" + v))
                 for o, v in zip(key[:n], key[n:])
             ]
             d = functools.reduce(np.add.outer, e_ai_list)
@@ -922,8 +926,8 @@ class REBCC(util.AbstractEBCC):
                 raise util.ModelNotImplemented
             lname = "l" + name
             e_ai_list = [
-                lib.direct_sum("i-a->ai", getattr(self, "e"+o), getattr(self, "e"+v))
-                for o, v in zip(key[nb:nf+nb], key[nf+nb:])
+                lib.direct_sum("i-a->ai", getattr(self, "e" + o), getattr(self, "e" + v))
+                for o, v in zip(key[nb : nf + nb], key[nf + nb :])
             ]
             d = functools.reduce(np.add.outer, ([-self.omega] * nb) + e_ai_list)
             res[lname] /= d
@@ -1655,7 +1659,7 @@ class REBCC(util.AbstractEBCC):
             i0 += size
 
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
-            key = key[:nb] + key[nb+nf:] + key[nb:nb+nf]
+            key = key[:nb] + key[nb + nf :] + key[nb : nb + nf]
             shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
             size = np.prod(shape)
             lambdas["l" + name] = vector[i0 : i0 + size].reshape(shape)
@@ -1792,7 +1796,7 @@ class REBCC(util.AbstractEBCC):
         i0 = 0
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            key = key[n:] + key[:n-1]
+            key = key[n:] + key[: n - 1]
             size = np.prod(shape)
             excitations.append(vector[i0 : i0 + size].reshape(shape))
             i0 += size

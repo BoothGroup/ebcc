@@ -341,7 +341,9 @@ class EE_UEOM(UEOM, reom.EE_REOM):
                 for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
                     raise util.ModelNotImplemented
 
-                for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+                for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+                    spin_type=self.spin_type
+                ):
                     raise util.ModelNotImplemented
 
                 bras.aa.append(self.amplitudes_to_vector(*amps_aa))
@@ -395,7 +397,9 @@ class EE_UEOM(UEOM, reom.EE_REOM):
                 for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
                     raise util.ModelNotImplemented
 
-                for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+                for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+                    spin_type=self.spin_type
+                ):
                     raise util.ModelNotImplemented
 
                 kets.aa.append(self.amplitudes_to_vector(*amps_aa))

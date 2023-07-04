@@ -270,7 +270,7 @@ class UEBCC(rebcc.REBCC):
             lambdas["l" + name] = util.Namespace()
             for key in dict(amplitudes[name]).keys():
                 lu1n = getattr(amplitudes[name], key).transpose(perm)
-                setattr(lambdas["l"+name], key, lu1n)
+                setattr(lambdas["l" + name], key, lu1n)
 
         return lambdas
 
@@ -318,12 +318,12 @@ class UEBCC(rebcc.REBCC):
                 aa=lib.direct_sum(
                     "i-a->ia",
                     getattr(self, "e" + key[nb]).a,
-                    getattr(self, "e" + key[nb+1]).a,
+                    getattr(self, "e" + key[nb + 1]).a,
                 ),
                 bb=lib.direct_sum(
                     "i-a->ia",
                     getattr(self, "e" + key[nb]).b,
-                    getattr(self, "e" + key[nb+1]).b,
+                    getattr(self, "e" + key[nb + 1]).b,
                 ),
             )
             d = functools.reduce(np.add.outer, ([-self.omega] * nb) + ([e_ia.aa] * nf))
@@ -388,12 +388,12 @@ class UEBCC(rebcc.REBCC):
                 aa=lib.direct_sum(
                     "i-a->ai",
                     getattr(self, "e" + key[nb]).a,
-                    getattr(self, "e" + key[nb+1]).a,
+                    getattr(self, "e" + key[nb + 1]).a,
                 ),
                 bb=lib.direct_sum(
                     "i-a->ai",
                     getattr(self, "e" + key[nb]).b,
-                    getattr(self, "e" + key[nb+1]).b,
+                    getattr(self, "e" + key[nb + 1]).b,
                 ),
             )
             d = functools.reduce(np.add.outer, ([-self.omega] * nb) + ([e_ai.aa] * nf))
@@ -696,7 +696,7 @@ class UEBCC(rebcc.REBCC):
             if nf != 1:
                 raise util.ModelNotImplemented
             lname = "l" + name
-            key = key[:nb] + key[nb+nf:] + key[nb:nb+nf]
+            key = key[:nb] + key[nb + nf :] + key[nb : nb + nf]
             lambdas[lname] = util.Namespace()
             shape = (self.nbos,) * nb + tuple(self.space[0].size(k) for k in key[nb:])
             size = np.prod(shape)
@@ -792,7 +792,7 @@ class UEBCC(rebcc.REBCC):
         i0 = 0
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            key = key[n:] + key[:n-1]
+            key = key[n:] + key[: n - 1]
             amp = util.Namespace()
             for spin in util.generate_spin_combinations(n, excited=True, unique=True):
                 subscript = spin[:n] + spin[n:].upper()

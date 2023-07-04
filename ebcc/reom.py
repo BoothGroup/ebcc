@@ -276,9 +276,9 @@ class IP_REOM(REOM):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             e_list = [
                 lib.direct_sum("i-a->ia", getattr(self.ebcc, "e" + o), getattr(self.ebcc, "e" + v))
-                for o, v in zip(key[:n-1], key[n:2*n-1])
+                for o, v in zip(key[: n - 1], key[n : 2 * n - 1])
             ]
-            e_list.append(getattr(self.ebcc, "e" + key[n-1]))
+            e_list.append(getattr(self.ebcc, "e" + key[n - 1]))
             perm = list(range(0, n * 2, 2)) + list(range(1, (n - 1) * 2, 2))
             d = functools.reduce(np.add.outer, e_list)
             d = d.transpose(perm)
@@ -338,9 +338,9 @@ class EA_REOM(REOM):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             e_list = [
                 lib.direct_sum("i-a->ai", getattr(self.ebcc, "e" + o), getattr(self.ebcc, "e" + v))
-                for o, v in zip(key[:n-1], key[n:2*n-1])
+                for o, v in zip(key[: n - 1], key[n : 2 * n - 1])
             ]
-            e_list.append(-getattr(self.ebcc, "e" + key[2*n-1]))
+            e_list.append(-getattr(self.ebcc, "e" + key[2 * n - 1]))
             perm = list(range(0, n * 2, 2)) + list(range(1, (n - 1) * 2, 2))
             d = functools.reduce(np.add.outer, e_list)
             d = d.transpose(perm)

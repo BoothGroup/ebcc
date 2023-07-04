@@ -122,9 +122,7 @@ class GEBCC(rebcc.REBCC):
                             for perm, sign in util.permutations_with_signs(tuple(range(n))):
                                 transpose = tuple(perm) + tuple(range(n, 2 * n))
                                 if util.permute_string(comb[:n], perm) == comb[:n]:
-                                    amplitudes[name][mask] += (
-                                        amp.transpose(transpose).copy() * sign
-                                    )
+                                    amplitudes[name][mask] += amp.transpose(transpose).copy() * sign
                             done.add(combn)
 
             for name, key, n in ucc.ansatz.bosonic_cluster_ranks(spin_type=ucc.spin_type):
@@ -144,10 +142,7 @@ class GEBCC(rebcc.REBCC):
                                 continue
                             mask = np.ix_(
                                 *([range(nbos)] * nb),
-                                *(
-                                    [occs[c] for c in combn[:nf]]
-                                    + [virs[c] for c in combn[nf:]]
-                                ),
+                                *([occs[c] for c in combn[:nf]] + [virs[c] for c in combn[nf:]]),
                             )
                             transpose = (
                                 tuple(range(nb))
@@ -155,9 +150,7 @@ class GEBCC(rebcc.REBCC):
                                 + tuple(p + nb + nf for p in uperm)
                             )
                             amp = (
-                                getattr(ucc.amplitudes[name], comb).transpose(
-                                    transpose
-                                )
+                                getattr(ucc.amplitudes[name], comb).transpose(transpose)
                                 * lsign
                                 * usign
                             )
@@ -168,9 +161,7 @@ class GEBCC(rebcc.REBCC):
                                     + tuple(range(nb + nf, nb + 2 * nf))
                                 )
                                 if util.permute_string(comb[:nf], perm) == comb[:nf]:
-                                    amplitudes[name][mask] += (
-                                        amp.transpose(transpose).copy() * sign
-                                    )
+                                    amplitudes[name][mask] += amp.transpose(transpose).copy() * sign
                             done.add(combn)
 
             gcc.amplitudes = amplitudes
@@ -201,9 +192,7 @@ class GEBCC(rebcc.REBCC):
                             for perm, sign in util.permutations_with_signs(tuple(range(n))):
                                 transpose = tuple(perm) + tuple(range(n, 2 * n))
                                 if util.permute_string(comb[:n], perm) == comb[:n]:
-                                    lambdas[lname][mask] += (
-                                        amp.transpose(transpose).copy() * sign
-                                    )
+                                    lambdas[lname][mask] += amp.transpose(transpose).copy() * sign
                             done.add(combn)
 
             for name, key, n in ucc.ansatz.bosonic_cluster_ranks(spin_type=ucc.spin_type):
@@ -212,9 +201,7 @@ class GEBCC(rebcc.REBCC):
 
             for name, key, nf, nb in ucc.ansatz.coupling_cluster_ranks(spin_type=ucc.spin_type):
                 lname = "l" + name
-                lambdas[lname] = np.zeros(
-                    (nbos,) * nb + (space.ncvir,) * nf + (space.ncocc,) * nf
-                )
+                lambdas[lname] = np.zeros((nbos,) * nb + (space.ncvir,) * nf + (space.ncocc,) * nf)
                 for comb in util.generate_spin_combinations(nf, unique=True):
                     done = set()
                     for lperm, lsign in util.permutations_with_signs(tuple(range(nf))):
@@ -225,10 +212,7 @@ class GEBCC(rebcc.REBCC):
                                 continue
                             mask = np.ix_(
                                 *([range(nbos)] * nb),
-                                *(
-                                    [virs[c] for c in combn[:nf]]
-                                    + [occs[c] for c in combn[nf:]]
-                                ),
+                                *([virs[c] for c in combn[:nf]] + [occs[c] for c in combn[nf:]]),
                             )
                             transpose = (
                                 tuple(range(nb))
@@ -236,9 +220,7 @@ class GEBCC(rebcc.REBCC):
                                 + tuple(p + nb + nf for p in uperm)
                             )
                             amp = (
-                                getattr(ucc.lambdas[lname], comb).transpose(
-                                    transpose
-                                )
+                                getattr(ucc.lambdas[lname], comb).transpose(transpose)
                                 * lsign
                                 * usign
                             )
@@ -249,9 +231,7 @@ class GEBCC(rebcc.REBCC):
                                     + tuple(range(nb + nf, nb + 2 * nf))
                                 )
                                 if util.permute_string(comb[:nf], perm) == comb[:nf]:
-                                    lambdas[lname][mask] += (
-                                        amp.transpose(transpose).copy() * sign
-                                    )
+                                    lambdas[lname][mask] += amp.transpose(transpose).copy() * sign
                             done.add(combn)
 
             gcc.lambdas = lambdas
@@ -394,7 +374,7 @@ class GEBCC(rebcc.REBCC):
         i0 = 0
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            key = key[n:] + key[:n-1]
+            key = key[n:] + key[: n - 1]
             size = util.get_compressed_size(key, **{k: self.space.size(k) for k in set(key)})
             shape = tuple(self.space.size(k) for k in key)
             vn_tril = vector[i0 : i0 + size]
