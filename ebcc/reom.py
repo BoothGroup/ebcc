@@ -396,11 +396,10 @@ class EE_REOM(REOM):
 
     def diag(self, eris=None):
         parts = []
-        e_ia = lib.direct_sum("a-i->ia", self.ebcc.ev, self.ebcc.eo)
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             e_list = [
-                lib.direct_sum("i-a->ia", getattr(self.ebcc, "e" + o), getattr(self.ebcc, "e" + v))
+                lib.direct_sum("a-i->ia", getattr(self.ebcc, "e" + v), getattr(self.ebcc, "e" + o))
                 for o, v in zip(key[:n], key[n:])
             ]
             perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
