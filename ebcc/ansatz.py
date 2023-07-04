@@ -18,7 +18,6 @@ named_ansatzes = {
     "CC2": ("CC2", "", 0, 0),
     "CC3": ("CC3", "", 0, 0),
     "QCISD": ("QCISD", "", 0, 0),
-    "CCSDt": ("CCSDt", "", 0, 0),
     "CCSDt'": ("CCSDt'", "", 0, 0),
     "CCSD-S-1-1": ("CCSD", "S", 1, 1),
     "CCSD-SD-1-1": ("CCSD", "SD", 1, 1),
@@ -196,29 +195,12 @@ class Ansatz:
             "S": [("t1", "ov", 1)],
             "D": [("t2", "oovv", 2)],
             "T": [("t3", "ooovvv", 3)],
-            "Q": [("t4a", "ooooovvvv", 4), ("t4b", "ooovvvvv", 4)],
+            "Q": [("t4a", "oooovvvv", 4), ("t4b", "oooovvvv", 4)],
             "t'": [("t3", "OOOVVV", 3)],
         }
         notations["2"] = notations["S"] + notations["D"]
         notations["3"] = notations["2"] + notations["T"]
         notations["4"] = notations["3"] + notations["Q"]
-        if spin_type == "R":
-            notations["t"] = [
-                ("t3", key, 3) for key in (
-                    "iiOaaV", "OiOaaV", "iOOaaV", "OOOaaV", "iiOaVV", "OiOaVV", "iOOaVV", "OOOaVV",
-                    "iiOVaV", "OiOVaV", "iOOVaV", "OOOVaV", "iiOVVV", "OiOVVV", "iOOVVV", "OOOVVV",
-                    # These are zero, FIXME:
-                    "iiOaVa", "iOiaVa", "iOiaaV", "iOiaVV", "iOOaVa", "iOiVaV", "OiOaVa", "OOOaVa",
-                    "iOiVVV",
-                )
-            ]
-        else:
-            notations["t"] = [
-                ("t3", key, 3) for key in (
-                    "iiOaaV", "iiOaVV", "iiOVVV", "iOOaaV", "iOOaVV", "iOOVVV", "OOOaaV", "OOOaVV",
-                    "OOOVVV",
-                )
-            ]
 
         # Remove any perturbative corrections
         op = self.fermion_ansatz
