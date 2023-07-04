@@ -195,9 +195,12 @@ class Ansatz:
             "S": [("t1", "ov", 1)],
             "D": [("t2", "oovv", 2)],
             "T": [("t3", "ooovvv", 3)],
-            "Q": [("t4a", "oooovvvv", 4), ("t4b", "oooovvvv", 4)],
             "t'": [("t3", "OOOVVV", 3)],
         }
+        if spin_type == "R":
+            notations["Q"] = [("t4a", "oooovvvv", 4), ("t4b", "oooovvvv", 4)]
+        else:
+            notations["Q"] = [("t4", "oooovvvv", 4)]
         notations["2"] = notations["S"] + notations["D"]
         notations["3"] = notations["2"] + notations["T"]
         notations["4"] = notations["3"] + notations["Q"]
