@@ -78,10 +78,6 @@ with common.FilePrinter("%sCCSDtp" % spin[0].upper()) as file_printer:
         for key, val in repl.items():
             einsums = einsums.replace(key, val)
 
-        function_printer.write_python("    t1 = t1.ov")
-        function_printer.write_python("    t2 = t2.oovv")
-        function_printer.write_python("    t3 = t3.OOOVVV")
-        function_printer.write_python("")
         function_printer.write_python(einsums+"\n", comment="energy")
 
     # Get amplitudes function:
@@ -230,9 +226,6 @@ with common.FilePrinter("%sCCSDtp" % spin[0].upper()) as file_printer:
         for key, val in repl.items():
             einsums = einsums.replace(key, val)
 
-        function_printer.write_python("    t1 = t1.ov")
-        function_printer.write_python("    t2 = t2.oovv")
-        function_printer.write_python("    t3 = t3.OOOVVV")
         function_printer.write_python("    nocc = space.nocc")
         function_printer.write_python("    nvir = space.nvir")
         function_printer.write_python("    naocc = space.naocc")

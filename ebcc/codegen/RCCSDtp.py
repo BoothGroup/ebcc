@@ -4,10 +4,6 @@ from ebcc import numpy as np
 from ebcc.util import pack_2e, einsum, Namespace
 
 def energy(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, t3=None, **kwargs):
-    t1 = t1.ov
-    t2 = t2.oovv
-    t3 = t3.OOOVVV
-
     # energy
     x0 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
     x0 += einsum(v.ovov, (0, 1, 2, 3), (0, 2, 3, 1))
@@ -24,9 +20,6 @@ def energy(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, t3=None, **kw
     return e_cc
 
 def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs):
-    t1 = t1.ov
-    t2 = t2.oovv
-    t3 = t3.OOOVVV
     nocc = space.nocc
     nvir = space.nvir
     naocc = space.naocc
