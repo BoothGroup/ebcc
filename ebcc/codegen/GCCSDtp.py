@@ -4,10 +4,6 @@ from ebcc import numpy as np
 from ebcc.util import pack_2e, einsum, Namespace
 
 def energy(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, t3=None, **kwargs):
-    t1 = t1.ov
-    t2 = t2.oovv
-    t3 = t3.OOOVVV
-
     # energy
     e_cc = 0
     e_cc += einsum(f.ov, (0, 1), t1, (0, 1), ())
@@ -20,9 +16,6 @@ def energy(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, t3=None, **kw
     return e_cc
 
 def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs):
-    t1 = t1.ov
-    t2 = t2.oovv
-    t3 = t3.OOOVVV
     nocc = space.nocc
     nvir = space.nvir
     naocc = space.naocc
@@ -517,10 +510,6 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     t3new += einsum(t1[np.ix_(sO,sv)], (0, 1), t1[np.ix_(so,sV)], (2, 3), t1[np.ix_(so,sV)], (4, 5), t2[np.ix_(sO,sO,sV,sv)], (6, 7, 8, 9), v.oovv, (2, 4, 1, 9), (6, 7, 0, 3, 5, 8)) * -1.0
     t3new += einsum(t1[np.ix_(sO,sv)], (0, 1), t1[np.ix_(so,sV)], (2, 3), t1[np.ix_(so,sV)], (4, 5), t2[np.ix_(sO,sO,sV,sv)], (6, 7, 8, 9), v.oovv, (2, 4, 1, 9), (6, 7, 0, 3, 8, 5))
     t3new += einsum(t1[np.ix_(sO,sv)], (0, 1), t1[np.ix_(so,sV)], (2, 3), t1[np.ix_(so,sV)], (4, 5), t2[np.ix_(sO,sO,sV,sv)], (6, 7, 8, 9), v.oovv, (2, 4, 1, 9), (6, 7, 0, 8, 3, 5)) * -1.0
-
-    t1new = Namespace(ov=t1new)
-    t2new = Namespace(oovv=t2new)
-    t3new = Namespace(OOOVVV=t3new)
 
     return {"t1new": t1new, "t2new": t2new, "t3new": t3new}
 
