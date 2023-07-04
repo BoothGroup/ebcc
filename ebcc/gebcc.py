@@ -16,7 +16,7 @@ from ebcc.fock import GFock
 from ebcc.space import Space
 
 
-class Amplitudes(rebcc.Amplitudes):
+class Amplitudes(util.Namespace):
     """Amplitude container class. Consists of a dictionary with keys
     that are strings of the name of each amplitude. Values are
     namespaces with keys indicating whether each fermionic dimension
