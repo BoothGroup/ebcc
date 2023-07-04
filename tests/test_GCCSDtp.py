@@ -198,6 +198,7 @@ class GCCSDtp_Tests(unittest.TestCase):
     #    )
     #    gccsdt.kernel()
 
+    #    # FIXME spaces are not the same
     #    active = np.zeros_like(mf.mo_occ, dtype=bool)
     #    active[np.where(mf.mo_occ > 0)[0][-1]] = True
     #    active[np.where(mf.mo_occ == 0)[0][0]] = True
