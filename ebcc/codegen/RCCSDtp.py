@@ -982,9 +982,5 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     t3new += einsum(t1[np.ix_(sO,sv)], (0, 1), t1[np.ix_(so,sV)], (2, 3), t1[np.ix_(so,sV)], (4, 5), t2[np.ix_(sO,sO,sv,sV)], (6, 7, 8, 9), v.ovov, (2, 8, 4, 1), (6, 7, 0, 3, 9, 5))
     t3new += einsum(t1[np.ix_(sO,sv)], (0, 1), t1[np.ix_(so,sV)], (2, 3), t1[np.ix_(so,sV)], (4, 5), t2[np.ix_(sO,sO,sV,sv)], (6, 7, 8, 9), v.ovov, (2, 9, 4, 1), (6, 7, 0, 8, 3, 5))
 
-    t1new = Namespace(ov=t1new)
-    t2new = Namespace(oovv=t2new)
-    t3new = Namespace(OOOVVV=t3new)
-
     return {"t1new": t1new, "t2new": t2new, "t3new": t3new}
 

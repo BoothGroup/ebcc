@@ -236,7 +236,3 @@ with common.FilePrinter("%sCCSDtp" % spin[0].upper()) as file_printer:
         function_printer.write_python("    sV = space.active[space.virtual]")
         function_printer.write_python("")
         function_printer.write_python(einsums+"\n", comment="T amplitudes")
-        function_printer.write_python("    t1new = Namespace(ov=t1new)")
-        function_printer.write_python("    t2new = Namespace(oovv=t2new)")
-        function_printer.write_python("    t3new = Namespace(OOOVVV=t3new)")
-        function_printer.write_python("")
