@@ -130,7 +130,7 @@ class GEBCC(rebcc.REBCC):
                 amplitudes[name] = ucc.amplitudes[name].copy()
 
             for name, key, nf, nb in ucc.ansatz.coupling_cluster_ranks(spin_type=ucc.spin_type):
-                shape = (nbos,) + tuple(space.size(k) for k in key)
+                shape = (nbos,) * nb + tuple(space.size(k) for k in key[nb:])
                 amplitudes[name] = np.zeros(shape)
                 for comb in util.generate_spin_combinations(nf):
                     done = set()
@@ -140,7 +140,7 @@ class GEBCC(rebcc.REBCC):
                             combn += util.permute_string(comb[nf:], uperm)
                             if combn in done:
                                 continue
-                            mask = np.ix_(range(nbos), *[slices[s][k] for s, k in zip(combn, key[nb:])])
+                            mask = np.ix_(*([range(nbos)] * nb), *[slices[s][k] for s, k in zip(combn, key[nb:])])
                             transpose = (
                                 tuple(range(nb))
                                 + tuple(p + nb for p in lperm)
@@ -197,7 +197,7 @@ class GEBCC(rebcc.REBCC):
 
             for name, key, nf, nb in ucc.ansatz.coupling_cluster_ranks(spin_type=ucc.spin_type):
                 lname = "l" + name
-                shape = (nbos,) + tuple(space.size(k) for k in key[n:] + key[:n])
+                shape = (nbos,) * nb + tuple(space.size(k) for k in key[nb+nf:] + key[nb:nb+nf])
                 lambdas[lname] = np.zeros(shape)
                 for comb in util.generate_spin_combinations(nf, unique=True):
                     done = set()
@@ -207,7 +207,7 @@ class GEBCC(rebcc.REBCC):
                             combn += util.permute_string(comb[nf:], uperm)
                             if combn in done:
                                 continue
-                            mask = np.ix_(range(nbos), *[slices[s][k] for s, k in zip(combn, key[nb+nf:]+key[nb:nb+nf])])
+                            mask = np.ix_(*([range(nbos)] * nb), *[slices[s][k] for s, k in zip(combn, key[nb+nf:]+key[nb:nb+nf])])
                             transpose = (
                                 tuple(range(nb))
                                 + tuple(p + nb for p in lperm)
