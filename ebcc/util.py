@@ -320,6 +320,65 @@ def is_mixed_spin(spin):
     return len(set(spin)) != 1
 
 
+def combine_subscripts(*subscripts, sizes=None):
+    """Combines subscripts into new unique subscripts for functions
+    such as `compress_axes`. For example, one may wish to compress an
+    amplitude according to both occupancy and spin signatures.
+
+    The output string of this function has the same length as the
+    input subscripts, where the `i`th character is an arbitrary
+    character chosen such that it is unique for a unique value of
+    `tuple(s[i] for s in subscripts)` among other values of `i`.
+
+    If `sizes` is passed, this function also returns a dictionary
+    indicating the size of each new character in the subscript
+    according to the size of the corresponding original character
+    in the dictionary `sizes`.
+
+    Parameters
+    ----------
+    subscripts : tuple of str
+        Subscripts to combine.  Each subscript must be a string of
+        the same length.
+    sizes : dict, optional
+        Dictionary of sizes for each index.  Keys should be
+        `tuple(s[i] for s in subscripts)`.  Default value is `None`.
+
+    Returns
+    -------
+    new_subscript : str
+        Output subscript.
+    new_sizes : dict, optional
+        Dictionary of the sizes of each new index.  Only returned if
+        the `sizes` keyword argument is provided.
+    """
+
+    if len(set(len(s) for s in subscripts)) != 1:
+        raise ValueError("Subscripts must be of the same length.")
+
+    char_map = {}
+    new_subscript = ""
+    new_sizes = {}
+    j = 0
+    for i in range(len(subscripts[0])):
+        key = tuple(s[i] for s in subscripts)
+        if key not in char_map:
+            if j == 91:
+                raise ValueError("Too many unique characters.")
+            char_map[key] = chr(97+j)
+            j += 1
+            if j == 123:
+                j = 65
+        new_subscript += char_map[key]
+        if sizes is not None:
+            new_sizes[char_map[key]] = sizes[key]
+
+    if sizes is None:
+        return new_subscript
+    else:
+        return new_subscript, new_sizes
+
+
 def compress_axes(subscript, array, include_diagonal=False, out=None):
     """Compress an array into lower-triangular representations using
     an einsum-like input.
