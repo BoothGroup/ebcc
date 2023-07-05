@@ -36,18 +36,18 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     t2new = Namespace()
     t3new = Namespace()
 
-    nocc = (space[0].nocc, space[1].nocc)
-    nvir = (space[0].nvir, space[1].nvir)
+    nocc = (space[0].ncocc, space[1].ncocc)
+    nvir = (space[0].ncvir, space[1].ncvir)
     naocc = (space[0].naocc, space[1].naocc)
     navir = (space[0].navir, space[1].navir)
     soa = np.ones((nocc[0],), dtype=bool)
     sva = np.ones((nvir[0],), dtype=bool)
     sob = np.ones((nocc[1],), dtype=bool)
     svb = np.ones((nvir[1],), dtype=bool)
-    sOa = space[0].active[space[0].occupied]
-    sVa = space[0].active[space[0].virtual]
-    sOb = space[1].active[space[1].occupied]
-    sVb = space[1].active[space[1].virtual]
+    sOa = space[0].active[space[0].correlated][space[0].occupied[space[0].correlated]]
+    sVa = space[0].active[space[0].correlated][space[0].virtual[space[0].correlated]]
+    sOb = space[1].active[space[1].correlated][space[1].occupied[space[1].correlated]]
+    sVb = space[1].active[space[1].correlated][space[1].virtual[space[1].correlated]]
 
     # T amplitudes
     t1new_bb = np.zeros((nocc[1], nvir[1]), dtype=np.float64)
