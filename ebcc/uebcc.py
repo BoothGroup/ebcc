@@ -596,7 +596,9 @@ class UEBCC(rebcc.REBCC):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             amplitudes[name] = util.Namespace()
             for spin in util.generate_spin_combinations(n, unique=True):
-                sizes = {(o, s): self.space[i].size(o) for o in "ovOVia" for i, s in enumerate("ab")}
+                sizes = {
+                    (o, s): self.space[i].size(o) for o in "ovOVia" for i, s in enumerate("ab")
+                }
                 subscript, sizes = util.combine_subscripts(key, spin, sizes=sizes)
                 size = util.get_compressed_size(subscript, **sizes)
                 shape = tuple(self.space["ab".index(s)].size(k) for s, k in zip(spin, key))

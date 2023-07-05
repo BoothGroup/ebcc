@@ -365,7 +365,7 @@ def combine_subscripts(*subscripts, sizes=None):
         if key not in char_map:
             if j == 91:
                 raise ValueError("Too many unique characters.")
-            char_map[key] = chr(97+j)
+            char_map[key] = chr(97 + j)
             j += 1
             if j == 123:
                 j = 65
