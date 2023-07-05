@@ -73,7 +73,7 @@ with common.FilePrinter("%sCCSDtp" % spin[0].upper()) as file_printer:
                     j += 1
                 part = "".join(einsums[i:j+1])
                 if part not in ("[0]", "[1]"):  # Spin indices
-                    part_new = ",".join(["s"+x for x in einsums[i+1:j].split(",")])
+                    part_new = ",".join(["s"+x for x in "".join(einsums[i+1:j]).split(",")])
                     repl[part] = "[np.ix_(%s)]" % part_new
                 i = j
             else:
@@ -206,6 +206,16 @@ with common.FilePrinter("%sCCSDtp" % spin[0].upper()) as file_printer:
                 indent=4,
                 einsum_function="einsum",
                 add_slices={"t1", "t2", "t1new", "t2new"},
+                custom_shapes={
+                    "t1new": "nocc, nvir",
+                    "t1new_aa": "nocc[0], nvir[0]",
+                    "t1new_bb": "nocc[1], nvir[1]",
+                    "t2new": "nocc, nocc, nvir, nvir",
+                    "t2new_aaaa": "nocc[0], nocc[0], nvir[0], nvir[0]",
+                    "t2new_abab": "nocc[0], nocc[1], nvir[0], nvir[1]",
+                    "t2new_bbbb": "nocc[1], nocc[1], nvir[1], nvir[1]",
+                    "t3new": "naocc, naocc, naocc, navir, navir, navir",
+                }
         )
 
         # Swap slices to np.ix_
@@ -219,7 +229,7 @@ with common.FilePrinter("%sCCSDtp" % spin[0].upper()) as file_printer:
                     j += 1
                 part = "".join(einsums[i:j+1])
                 if part not in ("[0]", "[1]"):  # Spin indices
-                    part_new = ",".join(["s"+x for x in einsums[i+1:j].split(",")])
+                    part_new = ",".join(["s"+x for x in "".join(einsums[i+1:j]).split(",")])
                     repl[part] = "[np.ix_(%s)]" % part_new
                 i = j
             else:
