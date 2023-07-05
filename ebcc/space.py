@@ -63,7 +63,6 @@ class Space:
         size corresponding to this space.  See `ebcc.eris` for details
         on the default slices.
         """
-
         return {
             "o": self.ncocc,
             "O": self.naocc,
@@ -72,6 +71,32 @@ class Space:
             "V": self.navir,
             "a": self.nivir,
         }[char]
+
+    def mask(self, char):
+        """Convert a character in the standard `ebcc` notation to the
+        mask corresponding to this space.  See `ebcc.eris` for details
+        on the default slices.
+        """
+        return {
+            "o": self.correlated_occupied,
+            "O": self.active_occupied,
+            "i": self.inactive_occupied,
+            "v": self.correlated_virtual,
+            "V": self.active_virtual,
+            "a": self.inactive_virtual,
+        }[char]
+
+    def omask(self, char):
+        """Like `mask`, but returns only a mask into only the occupied
+        sector.
+        """
+        return self.mask(char)[self.occupied]
+
+    def vmask(self, char):
+        """Like `mask`, but returns only a mask into only the virtual
+        sector.
+        """
+        return self.mask(char)[self.virtual]
 
     # Full space:
 

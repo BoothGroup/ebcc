@@ -107,6 +107,60 @@ class UCCSD_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(self.ccsd.l2.abab, uebcc.l2.abab, 5)
         np.testing.assert_almost_equal(self.ccsd.l2.bbbb, uebcc.l2.bbbb, 5)
 
+    def test_from_rebcc_frozen(self):
+        mf = self.mf.to_rhf()
+        occupied = mf.mo_occ > 0
+        frozen = np.zeros_like(mf.mo_occ)
+        frozen[0] = True
+        active = np.zeros_like(mf.mo_occ)
+        space = Space(occupied, frozen, active)
+
+        rebcc = REBCC(
+                mf,
+                ansatz="CCSD",
+                space=space,
+                log=NullLogger(),
+        )
+        rebcc.options.e_tol = 1e-12
+        rebcc.kernel()
+        rebcc.solve_lambda()
+
+        uebcc_1 = UEBCC.from_rebcc(rebcc)
+
+        mf = self.mf.to_uhf()
+        occupied = mf.mo_occ[0] > 0
+        frozen = np.zeros_like(mf.mo_occ[0])
+        frozen[0] = True
+        active = np.zeros_like(mf.mo_occ[0])
+        space_a = Space(occupied, frozen, active)
+        occupied = mf.mo_occ[1] > 0
+        frozen = np.zeros_like(mf.mo_occ[1])
+        frozen[0] = True
+        active = np.zeros_like(mf.mo_occ[1])
+        space_b = Space(occupied, frozen, active)
+
+        uebcc_2 = UEBCC(
+                mf,
+                ansatz="CCSD",
+                space=(space_a, space_b),
+                log=NullLogger(),
+        )
+        uebcc_2.options.e_tol = 1e-12
+        uebcc_2.kernel()
+        uebcc_2.solve_lambda()
+
+        self.assertAlmostEqual(uebcc_2.energy(), uebcc_1.energy(), 8)
+        np.testing.assert_almost_equal(uebcc_2.t1.aa, uebcc_1.t1.aa, 6)
+        np.testing.assert_almost_equal(uebcc_2.t1.bb, uebcc_1.t1.bb, 6)
+        np.testing.assert_almost_equal(uebcc_2.t2.aaaa, uebcc_1.t2.aaaa, 6)
+        np.testing.assert_almost_equal(uebcc_2.t2.abab, uebcc_1.t2.abab, 6)
+        np.testing.assert_almost_equal(uebcc_2.t2.bbbb, uebcc_1.t2.bbbb, 6)
+        np.testing.assert_almost_equal(uebcc_2.l1.aa, uebcc_1.l1.aa, 5)
+        np.testing.assert_almost_equal(uebcc_2.l1.bb, uebcc_1.l1.bb, 5)
+        np.testing.assert_almost_equal(uebcc_2.l2.aaaa, uebcc_1.l2.aaaa, 5)
+        np.testing.assert_almost_equal(uebcc_2.l2.abab, uebcc_1.l2.abab, 5)
+        np.testing.assert_almost_equal(uebcc_2.l2.bbbb, uebcc_1.l2.bbbb, 5)
+
     def test_ip_moments(self):
         eom = self.ccsd.ip_eom()
         a = self.data[True]["ip_moms"].transpose(2, 0, 1)

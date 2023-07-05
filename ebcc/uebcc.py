@@ -43,7 +43,6 @@ class UEBCC(rebcc.REBCC):
     def from_rebcc(cls, rcc):
         """Initialise an UEBCC object from an REBCC object."""
 
-        # FIXME won't work with active spaces
         ucc = cls(
             rcc.mf,
             log=rcc.log,
@@ -68,7 +67,7 @@ class UEBCC(rebcc.REBCC):
             for name, key, n in ucc.ansatz.fermionic_cluster_ranks(spin_type=ucc.spin_type):
                 amplitudes[name] = util.Namespace()
                 for comb in util.generate_spin_combinations(n, unique=True):
-                    subscript = comb[:n] + comb[n:].upper()
+                    subscript = util.combine_subscripts(key, comb)
                     tn = rcc.amplitudes[name]
                     tn = util.symmetrise(subscript, tn, symmetry="-" * 2 * n)
                     setattr(amplitudes[name], comb, tn)
@@ -91,7 +90,7 @@ class UEBCC(rebcc.REBCC):
                 lname = name.replace("t", "l")
                 lambdas[lname] = util.Namespace()
                 for comb in util.generate_spin_combinations(n, unique=True):
-                    subscript = comb[:n] + comb[n:].upper()
+                    subscript = util.combine_subscripts(key, comb)
                     tn = rcc.lambdas[lname]
                     tn = util.symmetrise(subscript, tn, symmetry="-" * 2 * n)
                     setattr(lambdas[lname], comb, tn)
@@ -281,7 +280,7 @@ class UEBCC(rebcc.REBCC):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
             for comb in util.generate_spin_combinations(n, unique=True):
-                subscript = comb[:n] + comb[n:].upper()
+                subscript = util.combine_subscripts(key, comb)
                 e_ia_list = [
                     lib.direct_sum(
                         "i-a->ia",
@@ -349,7 +348,7 @@ class UEBCC(rebcc.REBCC):
             lname = name.replace("t", "l")
             perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
             for comb in util.generate_spin_combinations(n, unique=True):
-                subscript = comb[:n] + comb[n:].upper()
+                subscript = util.combine_subscripts(key, comb)
                 e_ai_list = [
                     lib.direct_sum(
                         "i-a->ai",

@@ -47,15 +47,28 @@ class GEBCC(rebcc.REBCC):
     def from_uebcc(cls, ucc):
         """Initialise a GEBCC object from an UEBCC object."""
 
-        # FIXME test for frozen/active
-        # FIXME won't work with active spaces
         orbspin = scf.addons.get_ghf_orbspin(ucc.mf.mo_energy, ucc.mf.mo_occ, False)
-        nocc = sum(ucc.nocc)
-        nvir = sum(ucc.nvir)
+        nocc = ucc.space[0].nocc + ucc.space[1].nocc
+        nvir = ucc.space[0].nvir + ucc.space[1].nvir
         nbos = ucc.nbos
-        slices = {"a": np.where(orbspin == 0)[0], "b": np.where(orbspin == 1)[0]}
-        occs = {"a": np.where(orbspin[:nocc] == 0)[0], "b": np.where(orbspin[:nocc] == 1)[0]}
-        virs = {"a": np.where(orbspin[nocc:] == 0)[0], "b": np.where(orbspin[nocc:] == 1)[0]}
+        sa = np.where(orbspin == 0)[0]
+        sb = np.where(orbspin == 1)[0]
+
+        occupied = np.zeros((nocc + nvir,), dtype=bool)
+        occupied[sa] = ucc.space[0]._occupied.copy()
+        occupied[sb] = ucc.space[1]._occupied.copy()
+        frozen = np.zeros((nocc + nvir,), dtype=bool)
+        frozen[sa] = ucc.space[0]._frozen.copy()
+        frozen[sb] = ucc.space[1]._frozen.copy()
+        active = np.zeros((nocc + nvir,), dtype=bool)
+        active[sa] = ucc.space[0]._active.copy()
+        active[sb] = ucc.space[1]._active.copy()
+        space = Space(occupied, frozen, active)
+
+        slices = util.Namespace(
+            a=util.Namespace(**{k: np.where(orbspin[space.mask(k)] == 0)[0] for k in "oOivVa"}),
+            b=util.Namespace(**{k: np.where(orbspin[space.mask(k)] == 1)[0] for k in "oOivVa"}),
+        )
 
         if ucc.bare_g is not None:
             if np.asarray(ucc.bare_g).ndim == 3:
@@ -63,21 +76,10 @@ class GEBCC(rebcc.REBCC):
             else:
                 bare_g_a, bare_g_b = ucc.bare_g
             g = np.zeros((ucc.nbos, ucc.nmo * 2, ucc.nmo * 2))
-            g[np.ix_(range(ucc.nbos), slices["a"], slices["a"])] = bare_g_a.copy()
-            g[np.ix_(range(ucc.nbos), slices["b"], slices["b"])] = bare_g_b.copy()
+            g[np.ix_(range(ucc.nbos), sa, sa)] = bare_g_a.copy()
+            g[np.ix_(range(ucc.nbos), sb, sb)] = bare_g_b.copy()
         else:
             g = None
-
-        occupied = np.zeros((nocc + nvir,), dtype=bool)
-        occupied[slices["a"]] = ucc.space[0]._occupied.copy()
-        occupied[slices["b"]] = ucc.space[1]._occupied.copy()
-        frozen = np.zeros((nocc + nvir,), dtype=bool)
-        frozen[slices["a"]] = ucc.space[0]._frozen.copy()
-        frozen[slices["b"]] = ucc.space[1]._frozen.copy()
-        active = np.zeros((nocc + nvir,), dtype=bool)
-        active[slices["a"]] = ucc.space[0]._active.copy()
-        active[slices["b"]] = ucc.space[1]._active.copy()
-        space = Space(occupied, frozen, active)
 
         gcc = cls(
             ucc.mf,
@@ -101,7 +103,8 @@ class GEBCC(rebcc.REBCC):
             amplitudes = cls.Amplitudes()
 
             for name, key, n in ucc.ansatz.fermionic_cluster_ranks(spin_type=ucc.spin_type):
-                amplitudes[name] = np.zeros((space.ncocc,) * n + (space.ncvir,) * n)
+                shape = tuple(space.size(k) for k in key)
+                amplitudes[name] = np.zeros(shape)
                 for comb in util.generate_spin_combinations(n, unique=True):
                     done = set()
                     for lperm, lsign in util.permutations_with_signs(tuple(range(n))):
@@ -110,9 +113,7 @@ class GEBCC(rebcc.REBCC):
                             combn += util.permute_string(comb[n:], uperm)
                             if combn in done:
                                 continue
-                            mask = np.ix_(
-                                *([occs[c] for c in combn[:n]] + [virs[c] for c in combn[n:]])
-                            )
+                            mask = np.ix_(*[slices[s][k] for s, k in zip(combn, key)])
                             transpose = tuple(lperm) + tuple(p + n for p in uperm)
                             amp = (
                                 getattr(ucc.amplitudes[name], comb).transpose(transpose)
@@ -129,9 +130,8 @@ class GEBCC(rebcc.REBCC):
                 amplitudes[name] = ucc.amplitudes[name].copy()
 
             for name, key, nf, nb in ucc.ansatz.coupling_cluster_ranks(spin_type=ucc.spin_type):
-                amplitudes[name] = np.zeros(
-                    (nbos,) * nb + (space.ncocc,) * nf + (space.ncvir,) * nf
-                )
+                shape = (nbos,) + tuple(space.size(k) for k in key)
+                amplitudes[name] = np.zeros(shape)
                 for comb in util.generate_spin_combinations(nf):
                     done = set()
                     for lperm, lsign in util.permutations_with_signs(tuple(range(nf))):
@@ -140,10 +140,7 @@ class GEBCC(rebcc.REBCC):
                             combn += util.permute_string(comb[nf:], uperm)
                             if combn in done:
                                 continue
-                            mask = np.ix_(
-                                *([range(nbos)] * nb),
-                                *([occs[c] for c in combn[:nf]] + [virs[c] for c in combn[nf:]]),
-                            )
+                            mask = np.ix_(range(nbos), *[slices[s][k] for s, k in zip(combn, key[nb:])])
                             transpose = (
                                 tuple(range(nb))
                                 + tuple(p + nb for p in lperm)
@@ -171,7 +168,8 @@ class GEBCC(rebcc.REBCC):
 
             for name, key, n in ucc.ansatz.fermionic_cluster_ranks(spin_type=ucc.spin_type):
                 lname = name.replace("t", "l")
-                lambdas[lname] = np.zeros((space.ncvir,) * n + (space.ncocc,) * n)
+                shape = tuple(space.size(k) for k in key[n:] + key[:n])
+                lambdas[lname] = np.zeros(shape)
                 for comb in util.generate_spin_combinations(n, unique=True):
                     done = set()
                     for lperm, lsign in util.permutations_with_signs(tuple(range(n))):
@@ -180,9 +178,7 @@ class GEBCC(rebcc.REBCC):
                             combn += util.permute_string(comb[n:], uperm)
                             if combn in done:
                                 continue
-                            mask = np.ix_(
-                                *([virs[c] for c in combn[:n]] + [occs[c] for c in combn[n:]])
-                            )
+                            mask = np.ix_(*[slices[s][k] for s, k in zip(combn, key[n:]+key[:n])])
                             transpose = tuple(lperm) + tuple(p + n for p in uperm)
                             amp = (
                                 getattr(ucc.lambdas[lname], comb).transpose(transpose)
@@ -201,7 +197,8 @@ class GEBCC(rebcc.REBCC):
 
             for name, key, nf, nb in ucc.ansatz.coupling_cluster_ranks(spin_type=ucc.spin_type):
                 lname = "l" + name
-                lambdas[lname] = np.zeros((nbos,) * nb + (space.ncvir,) * nf + (space.ncocc,) * nf)
+                shape = (nbos,) + tuple(space.size(k) for k in key[n:] + key[:n])
+                lambdas[lname] = np.zeros(shape)
                 for comb in util.generate_spin_combinations(nf, unique=True):
                     done = set()
                     for lperm, lsign in util.permutations_with_signs(tuple(range(nf))):
@@ -210,10 +207,7 @@ class GEBCC(rebcc.REBCC):
                             combn += util.permute_string(comb[nf:], uperm)
                             if combn in done:
                                 continue
-                            mask = np.ix_(
-                                *([range(nbos)] * nb),
-                                *([virs[c] for c in combn[:nf]] + [occs[c] for c in combn[nf:]]),
-                            )
+                            mask = np.ix_(range(nbos), *[slices[s][k] for s, k in zip(combn, key[nb+nf:]+key[nb:nb+nf])])
                             transpose = (
                                 tuple(range(nb))
                                 + tuple(p + nb for p in lperm)

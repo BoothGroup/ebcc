@@ -165,64 +165,67 @@ class GCCSDtp_Tests(unittest.TestCase):
         ccsdt.write(file)
         ccsdt_load = GEBCC.read(file, log=NullLogger())
 
-        np.testing.assert_allclose(ccsdt_load.t1, ccsdt.t1)
-        np.testing.assert_allclose(ccsdt_load.t2, ccsdt.t2)
-        np.testing.assert_allclose(ccsdt_load.t3, ccsdt.t3)
+        np.testing.assert_almost_equal(ccsdt_load.t1, ccsdt.t1)
+        np.testing.assert_almost_equal(ccsdt_load.t2, ccsdt.t2)
+        np.testing.assert_almost_equal(ccsdt_load.t3, ccsdt.t3)
 
-    #def test_dump_and_load(self):
-    #    mol = gto.M(
-    #            atom="H 0 0 0; Li 0 0 1",
-    #            basis="sto3g",
-    #            verbose=0,
-    #    )
+    def test_from_rebcc(self):
+        mol = gto.M(
+                atom="H 0 0 0; Li 0 0 1",
+                basis="sto3g",
+                verbose=0,
+        )
 
-    #    mf = scf.RHF(mol)
-    #    mf.kernel()
-    #    gmf = mf.to_uhf().to_ghf()
+        mf = scf.RHF(mol)
+        mf.kernel()
+        gmf = mf.to_uhf().to_ghf()
 
-    #    active = np.zeros_like(gmf.mo_occ, dtype=bool)
-    #    active[np.where(gmf.mo_occ > 0)[0][-1]] = True
-    #    active[np.where(gmf.mo_occ == 0)[0][0]] = True
-    #    gspace = Space(
-    #        gmf.mo_occ > 0,
-    #        np.zeros_like(gmf.mo_occ, dtype=bool),
-    #        active,
-    #    )
+        active = np.zeros_like(mf.mo_occ, dtype=bool)
+        active[np.where(mf.mo_occ > 0)[0][-1]] = True
+        active[np.where(mf.mo_occ == 0)[0][0]] = True
+        frozen = np.zeros_like(mf.mo_occ, dtype=bool)
+        frozen[-1] = True
+        rspace = Space(
+            mf.mo_occ > 0,
+            frozen,
+            active,
+        )
 
-    #    gccsdt = GEBCC(
-    #            gmf,
-    #            ansatz="CCSDt'",
-    #            space=gspace,
-    #            conv_tol=1e-10,
-    #            log=NullLogger(),
-    #    )
-    #    gccsdt.kernel()
+        active = np.zeros_like(gmf.mo_occ, dtype=bool)
+        active[np.isclose(gmf.mo_energy, mf.mo_energy[np.where(mf.mo_occ > 0)[0][-1]])] = True
+        active[np.isclose(gmf.mo_energy, mf.mo_energy[np.where(mf.mo_occ == 0)[0][0]])] = True
+        frozen = np.zeros_like(gmf.mo_occ, dtype=bool)
+        frozen[-1] = frozen[-2] = True
+        gspace = Space(
+            gmf.mo_occ > 0,
+            frozen,
+            active,
+        )
 
-    #    # FIXME spaces are not the same
-    #    active = np.zeros_like(mf.mo_occ, dtype=bool)
-    #    active[np.where(mf.mo_occ > 0)[0][-1]] = True
-    #    active[np.where(mf.mo_occ == 0)[0][0]] = True
-    #    rspace = Space(
-    #        mf.mo_occ > 0,
-    #        np.zeros_like(mf.mo_occ, dtype=bool),
-    #        active,
-    #    )
+        gccsdt = GEBCC(
+                gmf,
+                ansatz="CCSDt'",
+                space=gspace,
+                conv_tol=1e-10,
+                log=NullLogger(),
+        )
+        gccsdt.kernel()
 
-    #    rccsdt = REBCC(
-    #            mf,
-    #            ansatz="CCSDt'",
-    #            space=rspace,
-    #            conv_tol=1e-10,
-    #            log=NullLogger(),
-    #    )
-    #    rccsdt.kernel()
+        rccsdt = REBCC(
+                mf,
+                ansatz="CCSDt'",
+                space=rspace,
+                conv_tol=1e-10,
+                log=NullLogger(),
+        )
+        rccsdt.kernel()
 
-    #    gccsdt_load = GEBCC.from_rebcc(rccsdt)
+        gccsdt_load = GEBCC.from_rebcc(rccsdt)
 
-    #    self.assertAlmostEqual(gccsdt.e_tot, gccsdt_load.e_tot, 8)
-    #    np.testing.assert_allclose(ccsdt_load.t1, ccsdt.t1)
-    #    np.testing.assert_allclose(ccsdt_load.t2, ccsdt.t2)
-    #    np.testing.assert_allclose(ccsdt_load.t3, ccsdt.t3)
+        self.assertAlmostEqual(gccsdt.e_tot, gccsdt_load.e_tot, 8)
+        np.testing.assert_almost_equal(gccsdt_load.t1, gccsdt.t1)
+        np.testing.assert_almost_equal(gccsdt_load.t2, gccsdt.t2)
+        np.testing.assert_almost_equal(gccsdt_load.t3, gccsdt.t3)
 
 
 
