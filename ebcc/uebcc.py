@@ -116,19 +116,13 @@ class UEBCC(rebcc.REBCC):
 
         omega = np.diag(self.omega) if self.omega is not None else None
 
-        debug_space = lambda: None
-        debug_space.naocc = (self.space[0].naocc, self.space[1].naocc)
-        debug_space.navir = (self.space[0].navir, self.space[1].navir)
-        debug_space.niocc = (self.space[0].niocc, self.space[1].niocc)
-        debug_space.nivir = (self.space[0].nivir, self.space[1].nivir)
-
         kwargs = dict(
             f=self.fock,
             v=eris,
             g=self.g,
             G=self.G,
             w=omega,
-            space=debug_space,
+            space=self.space,
             nocc=(self.space[0].ncocc, self.space[1].ncocc),  # FIXME rename?
             nvir=(self.space[0].ncvir, self.space[1].ncvir),  # FIXME rename?
             nbos=self.nbos,
