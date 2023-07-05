@@ -21,19 +21,15 @@ class Space:
              |  |  frozen  |
              -  +----------+
 
-    Note that each space indicated above must be contiguous. For
-    non-contiguous spaces in any of these categories, the MO space
-    should be reordered to make them contiguous.
-
     Parameters
     ----------
-    occupied : np.ndarray or slice
+    occupied : np.ndarray
         Array containing boolean flags indicating whether or not each
         orbital is occupied.
-    frozen : np.ndarray or slice
+    frozen : np.ndarray
         Array containing boolean flags indicating whether or not each
         orbital is frozen.
-    active : np.ndarray or slice
+    active : np.ndarray
         Array containing boolean flags indicating whether or not each
         orbital is active.
     """
@@ -48,34 +44,8 @@ class Space:
         self._frozen = np.asarray(frozen, dtype=bool)
         self._active = np.asarray(active, dtype=bool)
 
-        self._set_slices(self._occupied, self._frozen, self._active)
-
-    def _set_slices(self, occupied, frozen, active):
-        """Converts the array masks into slices and sets them."""
-
-        assert occupied.size == frozen.size == active.size
-        assert not np.any(np.logical_and(frozen, active))
-
-        # Check contiguity of each space.
-        def check_contiguous(mask, name):
-            where = np.where(mask)[0]
-            if len(where):
-                if not np.all(where == np.arange(where[0], where[-1] + 1)):
-                    raise ValueError("%s space is not contiguous." % name)
-
-        check_contiguous(occupied, "Occupied")
-        check_contiguous(np.logical_and(frozen, occupied), "Frozen occupied")
-        check_contiguous(np.logical_and(active, occupied), "Active occupied")
-        check_contiguous(~occupied, "Virtual")
-        check_contiguous(np.logical_and(frozen, ~occupied), "Frozen virtual")
-        check_contiguous(np.logical_and(active, ~occupied), "Active virtual")
-
-        self.nfocc = np.sum(np.logical_and(frozen, occupied))
-        self.naocc = np.sum(np.logical_and(active, occupied))
-        self.niocc = np.sum(np.logical_and.reduce((~active, ~frozen, occupied)))
-        self.nfvir = np.sum(np.logical_and(frozen, ~occupied))
-        self.navir = np.sum(np.logical_and(active, ~occupied))
-        self.nivir = np.sum(np.logical_and.reduce((~active, ~frozen, ~occupied)))
+        assert self._occupied.size == self._frozen.size == self._active.size
+        assert not np.any(np.logical_and(self._frozen, self._active))
 
     def __repr__(self):
         out = "(%do, %dv)" % (self.nocc, self.nvir)
@@ -88,123 +58,168 @@ class Space:
             out += " [" + ", ".join(parts) + "]"
         return out
 
+    def size(self, char):
+        """Convert a character in the standard `ebcc` notation to the
+        size corresponding to this space.  See `ebcc.eris` for details
+        on the default slices.
+        """
+        return {
+            "o": self.ncocc,
+            "O": self.naocc,
+            "i": self.niocc,
+            "v": self.ncvir,
+            "V": self.navir,
+            "a": self.nivir,
+        }[char]
+
+    def mask(self, char):
+        """Convert a character in the standard `ebcc` notation to the
+        mask corresponding to this space.  See `ebcc.eris` for details
+        on the default slices.
+        """
+        return {
+            "o": self.correlated_occupied,
+            "O": self.active_occupied,
+            "i": self.inactive_occupied,
+            "v": self.correlated_virtual,
+            "V": self.active_virtual,
+            "a": self.inactive_virtual,
+        }[char]
+
+    def omask(self, char):
+        """Like `mask`, but returns only a mask into only the occupied
+        sector.
+        """
+        return self.mask(char)[self.occupied]
+
+    def vmask(self, char):
+        """Like `mask`, but returns only a mask into only the virtual
+        sector.
+        """
+        return self.mask(char)[self.virtual]
+
     # Full space:
 
     @property
-    def nocc(self):
-        return self.nfocc + self.naocc + self.niocc
+    def occupied(self):
+        return self._occupied
 
     @property
-    def nvir(self):
-        return self.nfvir + self.navir + self.nivir
+    def virtual(self):
+        return ~self.occupied
 
     @property
     def nmo(self):
-        return self.nocc + self.nvir
+        return self.occupied.size
 
     @property
-    def occ(self):
-        return slice(None, self.nocc)
+    def nocc(self):
+        return np.sum(self.occupied)
 
     @property
-    def vir(self):
-        return slice(self.nocc, None)
+    def nvir(self):
+        return np.sum(self.virtual)
 
-    occupied = occ
-    virtual = vir
-
-    # Correlated:
+    # Correlated space:
 
     @property
-    def ncocc(self):
-        return self.naocc + self.niocc
+    def correlated(self):
+        return ~self.frozen
 
     @property
-    def ncvir(self):
-        return self.navir + self.nivir
+    def correlated_occupied(self):
+        return np.logical_and(self.correlated, self.occupied)
+
+    @property
+    def correlated_virtual(self):
+        return np.logical_and(self.correlated, self.virtual)
 
     @property
     def ncorr(self):
-        return self.ncocc + self.ncvir
+        return np.sum(self.correlated)
 
     @property
-    def cocc(self):
-        return slice(self.nfocc, self.nocc)
+    def ncocc(self):
+        return np.sum(self.correlated_occupied)
 
     @property
-    def cvir(self):
-        return slice(self.nocc, self.nocc + self.ncvir)
+    def ncvir(self):
+        return np.sum(self.correlated_virtual)
+
+    # Inactive space:
 
     @property
-    def corr(self):
-        return slice(self.nfocc, self.nocc + self.ncvir)
-
-    correlated = corr
-    correlated_occupied = cocc
-    correlated_virtual = cvir
-
-    # Frozen:
+    def inactive(self):
+        return ~self.active
 
     @property
-    def nfroz(self):
-        return self.nfocc + self.nfvir
+    def inactive_occupied(self):
+        return np.logical_and(self.inactive, self.occupied)
 
     @property
-    def focc(self):
-        return slice(None, self.nfocc)
-
-    @property
-    def fvir(self):
-        return slice(self.nocc + self.ncvir, None)
-
-    @property
-    def froz(self):
-        raise ValueError("Total frozen space is not contiguous, and has no slice representation.")
-
-    frozen = froz
-    frozen_occupied = focc
-    frozen_virtual = fvir
-
-    # Active:
-
-    @property
-    def nact(self):
-        return self.naocc + self.navir
-
-    @property
-    def aocc(self):
-        return slice(self.nfocc, self.nfocc + self.naocc)
-
-    @property
-    def avir(self):
-        return slice(self.nocc + self.nivir, self.nocc + self.nivir + self.navir)
-
-    @property
-    def act(self):
-        raise ValueError("Total active space is not contiguous, and has no slice representation.")
-
-    active = act
-    active_occupied = aocc
-    active_virtual = avir
-
-    # Inactive:
+    def inactive_virtual(self):
+        return np.logical_and(self.inactive, self.virtual)
 
     @property
     def ninact(self):
-        return self.niocc + self.nivir
+        return np.sum(self.inactive)
 
     @property
-    def iocc(self):
-        return slice(self.nfocc + self.naocc, self.nocc)
+    def niocc(self):
+        return np.sum(self.inactive_occupied)
 
     @property
-    def ivir(self):
-        return slice(self.nocc, self.nocc + self.nivir)
+    def nivir(self):
+        return np.sum(self.inactive_virtual)
+
+    # Frozen space:
 
     @property
-    def inact(self):
-        return slice(self.nfocc + self.naocc, self.nocc + self.nivir)
+    def frozen(self):
+        return self._frozen
 
-    inactive = inact
-    inactive_occupied = iocc
-    inactive_virtual = ivir
+    @property
+    def frozen_occupied(self):
+        return np.logical_and(self.frozen, self.occupied)
+
+    @property
+    def frozen_virtual(self):
+        return np.logical_and(self.frozen, self.virtual)
+
+    @property
+    def nfroz(self):
+        return np.sum(self.frozen)
+
+    @property
+    def nfocc(self):
+        return np.sum(self.frozen_occupied)
+
+    @property
+    def nfvir(self):
+        return np.sum(self.frozen_virtual)
+
+    # Active space:
+
+    @property
+    def active(self):
+        return self._active
+
+    @property
+    def active_occupied(self):
+        return np.logical_and(self.active, self.occupied)
+
+    @property
+    def active_virtual(self):
+        return np.logical_and(self.active, self.virtual)
+
+    @property
+    def nact(self):
+        return np.sum(self.active)
+
+    @property
+    def naocc(self):
+        return np.sum(self.active_occupied)
+
+    @property
+    def navir(self):
+        return np.sum(self.active_virtual)

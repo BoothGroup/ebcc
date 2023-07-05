@@ -26,6 +26,7 @@ from ebcc.space import Space
 # TODO update docstrings
 # TODO orbspin with cluster spaces?
 # TODO fix TensorSymm and benchmark third order again
+# TODO active spaces for IP/EA
 
 
 class Amplitudes(util.Namespace):
@@ -290,7 +291,7 @@ class REBCC(util.AbstractEBCC):
             self.ansatz = ansatz
         else:
             self.ansatz = Ansatz.from_string(ansatz)
-        self._eqns = self.ansatz._get_eqns(self.__class__.__name__[0])
+        self._eqns = self.ansatz._get_eqns(self.spin_type)
 
         # Space:
         if space is not None:
@@ -592,6 +593,8 @@ class REBCC(util.AbstractEBCC):
         """Pack all the possible keyword arguments for generated code
         into a dictionary.
         """
+        # TODO change all APIs to take the space object instead of
+        # nocc, nvir, nbos, etc.
 
         eris = self.get_eris(eris)
 
@@ -603,6 +606,7 @@ class REBCC(util.AbstractEBCC):
             g=self.g,
             G=self.G,
             w=omega,
+            space=self.space,
             nocc=self.space.ncocc,  # FIXME rename?
             nvir=self.space.ncvir,  # FIXME rename?
             nbos=self.nbos,
@@ -647,19 +651,28 @@ class REBCC(util.AbstractEBCC):
         """
 
         eris = self.get_eris(eris)
-
         amplitudes = self.Amplitudes()
-        e_ia = lib.direct_sum("i-a->ia", self.eo, self.ev)
 
         # Build T amplitudes:
-        for n in self.ansatz.correlated_cluster_ranks[0]:
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             if n == 1:
-                amplitudes["t%d" % n] = self.fock.vo.T / e_ia
+                ei = getattr(self, "e" + key[0])
+                ea = getattr(self, "e" + key[1])
+                e_ia = lib.direct_sum("i-a->ia", ei, ea)
+                amplitudes[name] = getattr(self.fock, key) / e_ia
             elif n == 2:
-                e_ijab = lib.direct_sum("ia,jb->ijab", e_ia, e_ia)
-                amplitudes["t%d" % n] = eris.ovov.swapaxes(1, 2) / e_ijab
+                ei = getattr(self, "e" + key[0])
+                ej = getattr(self, "e" + key[1])
+                ea = getattr(self, "e" + key[2])
+                eb = getattr(self, "e" + key[3])
+                e_ia = lib.direct_sum("i-a->ia", ei, ea)
+                e_jb = lib.direct_sum("i-a->ia", ej, eb)
+                e_ijab = lib.direct_sum("ia,jb->ijab", e_ia, e_jb)
+                key_t = key[0] + key[2] + key[1] + key[3]
+                amplitudes[name] = getattr(eris, key_t).swapaxes(1, 2) / e_ijab
             else:
-                amplitudes["t%d" % n] = np.zeros((self.space.ncocc,) * n + (self.space.ncvir,) * n)
+                shape = tuple(self.space.size(k) for k in key)
+                amplitudes[name] = np.zeros(shape)
 
         if self.boson_ansatz:
             # Only true for real-valued couplings:
@@ -667,24 +680,25 @@ class REBCC(util.AbstractEBCC):
             H = self.G
 
         # Build S amplitudes:
-        for n in self.ansatz.correlated_cluster_ranks[1]:
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             if n == 1:
-                amplitudes["s%d" % n] = -H / self.omega
+                amplitudes[name] = -H / self.omega
             else:
-                amplitudes["s%d" % n] = np.zeros((self.nbos,) * n)
+                shape = (self.nbos,) * n
+                amplitudes[name] = np.zeros(shape)
 
         # Build U amplitudes:
-        for nf in self.ansatz.correlated_cluster_ranks[2]:
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             if nf != 1:
                 raise util.ModelNotImplemented
-            for nb in self.ansatz.correlated_cluster_ranks[3]:
-                if nb == 1:
-                    e_xia = lib.direct_sum("ia-x->xia", e_ia, self.omega)
-                    amplitudes["u%d%d" % (nf, nb)] = h.bov / e_xia
-                else:
-                    amplitudes["u%d%d" % (nf, nb)] = np.zeros(
-                        (self.nbos,) * nb + (self.space.ncocc, self.space.ncvir)
-                    )
+            if nb == 1:
+                ei = getattr(self, "e" + key[1])
+                ea = getattr(self, "e" + key[2])
+                e_xia = lib.direct_sum("i-a-x->xia", ei, ea, self.omega)
+                amplitudes[name] = getattr(h, key) / e_xia
+            else:
+                shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
+                amplitudes[name] = np.zeros(shape)
 
         return amplitudes
 
@@ -705,25 +719,26 @@ class REBCC(util.AbstractEBCC):
 
         if amplitudes is None:
             amplitudes = self.amplitudes
-
         lambdas = self.Amplitudes()
 
         # Build L amplitudes:
-        for n in self.ansatz.correlated_cluster_ranks[0]:
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            lname = name.replace("t", "l")
             perm = list(range(n, 2 * n)) + list(range(n))
-            lambdas["l%d" % n] = amplitudes["t%d" % n].transpose(perm)
+            lambdas[lname] = amplitudes[name].transpose(perm)
 
         # Build LS amplitudes:
-        for n in self.ansatz.correlated_cluster_ranks[1]:
-            lambdas["ls%d" % n] = amplitudes["s%d" % n]
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
+            lname = "l" + name
+            lambdas[lname] = amplitudes[name]
 
         # Build LU amplitudes:
-        for nf in self.ansatz.correlated_cluster_ranks[2]:
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             if nf != 1:
                 raise util.ModelNotImplemented
-            for nb in self.ansatz.correlated_cluster_ranks[3]:
-                perm = list(range(nb)) + [nb + 1, nb]
-                lambdas["lu%d%d" % (nf, nb)] = amplitudes["u%d%d" % (nf, nb)].transpose(perm)
+            lname = "l" + name
+            perm = list(range(nb)) + [nb + 1, nb]
+            lambdas[lname] = amplitudes[name].transpose(perm)
 
         return lambdas
 
@@ -806,30 +821,41 @@ class REBCC(util.AbstractEBCC):
         res = func(**kwargs)
         res = {key.rstrip("new"): val for key, val in res.items()}
 
-        e_ia = lib.direct_sum("i-a->ia", self.eo, self.ev)
-
         # Divide T amplitudes:
-        for n in self.ansatz.correlated_cluster_ranks[0]:
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
-            d = functools.reduce(np.add.outer, [e_ia] * n)
+            e_ia_list = [
+                lib.direct_sum("i-a->ia", getattr(self, "e" + o), getattr(self, "e" + v))
+                for o, v in zip(key[:n], key[n:])
+            ]
+            d = functools.reduce(np.add.outer, e_ia_list)
             d = d.transpose(perm)
-            res["t%d" % n] /= d
-            res["t%d" % n] += amplitudes["t%d" % n]
+            res[name] /= d
+            res[name] += amplitudes[name]
 
         # Divide S amplitudes:
-        for n in self.ansatz.correlated_cluster_ranks[1]:
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             d = functools.reduce(np.add.outer, ([-self.omega] * n))
-            res["s%d" % n] /= d
-            res["s%d" % n] += amplitudes["s%d" % n]
+            res[name] /= d
+            res[name] += amplitudes[name]
 
         # Divide U amplitudes:
-        for nf in self.ansatz.correlated_cluster_ranks[2]:
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             if nf != 1:
                 raise util.ModelNotImplemented
-            for nb in self.ansatz.correlated_cluster_ranks[3]:
-                d = functools.reduce(np.add.outer, ([-self.omega] * nb) + ([e_ia] * nf))
-                res["u%d%d" % (nf, nb)] /= d
-                res["u%d%d" % (nf, nb)] += amplitudes["u%d%d" % (nf, nb)]
+            perm = (
+                list(range(nb))
+                + list(range(nb, nf * 2 + nb, 2))
+                + list(range(nb + 1, nf * 2 + nb, 2))
+            )
+            e_ia_list = [
+                lib.direct_sum("i-a->ia", getattr(self, "e" + o), getattr(self, "e" + v))
+                for o, v in zip(key[nb : nf + nb], key[nf + nb :])
+            ]
+            d = functools.reduce(np.add.outer, ([-self.omega] * nb) + e_ia_list)
+            d = d.transpose(perm)
+            res[name] /= d
+            res[name] += amplitudes[name]
 
         return res
 
@@ -858,6 +884,7 @@ class REBCC(util.AbstractEBCC):
         lambdas : Amplitudes
             Updated cluster lambda amplitudes.
         """
+        # TODO active
 
         if lambdas_pert is not None:
             lambdas.update(lambdas_pert)
@@ -871,33 +898,41 @@ class REBCC(util.AbstractEBCC):
         res = func(**kwargs)
         res = {key.rstrip("new"): val for key, val in res.items()}
 
-        e_ai = lib.direct_sum("i-a->ai", self.eo, self.ev)
-
         # Divide T amplitudes:
-        for n in self.ansatz.correlated_cluster_ranks[0]:
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            lname = name.replace("t", "l")
             perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
-            d = functools.reduce(np.add.outer, [e_ai] * n)
+            e_ai_list = [
+                lib.direct_sum("i-a->ai", getattr(self, "e" + o), getattr(self, "e" + v))
+                for o, v in zip(key[:n], key[n:])
+            ]
+            d = functools.reduce(np.add.outer, e_ai_list)
             d = d.transpose(perm)
-            res["l%d" % n] /= d
+            res[lname] /= d
             if not perturbative:
-                res["l%d" % n] += lambdas["l%d" % n]
+                res[lname] += lambdas[lname]
 
         # Divide S amplitudes:
-        for n in self.ansatz.correlated_cluster_ranks[1]:
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
+            lname = "l" + name
             d = functools.reduce(np.add.outer, [-self.omega] * n)
-            res["ls%d" % n] /= d
+            res[lname] /= d
             if not perturbative:
-                res["ls%d" % n] += lambdas["ls%d" % n]
+                res[lname] += lambdas[lname]
 
         # Divide U amplitudes:
-        for nf in self.ansatz.correlated_cluster_ranks[2]:
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             if nf != 1:
                 raise util.ModelNotImplemented
-            for nb in self.ansatz.correlated_cluster_ranks[3]:
-                d = functools.reduce(np.add.outer, ([-self.omega] * nb) + ([e_ai] * nf))
-                res["lu%d%d" % (nf, nb)] /= d
-                if not perturbative:
-                    res["lu%d%d" % (nf, nb)] += lambdas["lu%d%d" % (nf, nb)]
+            lname = "l" + name
+            e_ai_list = [
+                lib.direct_sum("i-a->ai", getattr(self, "e" + o), getattr(self, "e" + v))
+                for o, v in zip(key[nb : nf + nb], key[nf + nb :])
+            ]
+            d = functools.reduce(np.add.outer, ([-self.omega] * nb) + e_ai_list)
+            res[lname] /= d
+            if not perturbative:
+                res[lname] += lambdas[lname]
 
         if perturbative:
             res = {key + "pert": val for key, val in res.items()}
@@ -1510,15 +1545,14 @@ class REBCC(util.AbstractEBCC):
 
         vectors = []
 
-        for n in self.ansatz.correlated_cluster_ranks[0]:
-            vectors.append(amplitudes["t%d" % n].ravel())
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            vectors.append(amplitudes[name].ravel())
 
-        for n in self.ansatz.correlated_cluster_ranks[1]:
-            vectors.append(amplitudes["s%d" % n].ravel())
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
+            vectors.append(amplitudes[name].ravel())
 
-        for nf in self.ansatz.correlated_cluster_ranks[2]:
-            for nb in self.ansatz.correlated_cluster_ranks[3]:
-                vectors.append(amplitudes["u%d%d" % (nf, nb)].ravel())
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            vectors.append(amplitudes[name].ravel())
 
         return np.concatenate(vectors)
 
@@ -1541,24 +1575,23 @@ class REBCC(util.AbstractEBCC):
         amplitudes = self.Amplitudes()
         i0 = 0
 
-        for n in self.ansatz.correlated_cluster_ranks[0]:
-            shape = (self.space.ncocc,) * n + (self.space.ncvir,) * n
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            shape = tuple(self.space.size(k) for k in key)
             size = np.prod(shape)
-            amplitudes["t%d" % n] = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
-        for n in self.ansatz.correlated_cluster_ranks[1]:
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * n
             size = np.prod(shape)
-            amplitudes["s%d" % n] = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
-        for nf in self.ansatz.correlated_cluster_ranks[2]:
-            for nb in self.ansatz.correlated_cluster_ranks[3]:
-                shape = (self.nbos,) * nb + (self.space.ncocc, self.space.ncvir) * nf
-                size = np.prod(shape)
-                amplitudes["u%d%d" % (nf, nb)] = vector[i0 : i0 + size].reshape(shape)
-                i0 += size
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
+            size = np.prod(shape)
+            amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
+            i0 += size
 
         return amplitudes
 
@@ -1581,15 +1614,14 @@ class REBCC(util.AbstractEBCC):
 
         vectors = []
 
-        for n in self.ansatz.correlated_cluster_ranks[0]:
-            vectors.append(lambdas["l%d" % n].ravel())
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            vectors.append(lambdas[name.replace("t", "l")].ravel())
 
-        for n in self.ansatz.correlated_cluster_ranks[1]:
-            vectors.append(lambdas["ls%d" % n].ravel())
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
+            vectors.append(lambdas["l" + name].ravel())
 
-        for nf in self.ansatz.correlated_cluster_ranks[2]:
-            for nb in self.ansatz.correlated_cluster_ranks[3]:
-                vectors.append(lambdas["lu%d%d" % (nf, nb)].ravel())
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            vectors.append(lambdas["l" + name].ravel())
 
         return np.concatenate(vectors)
 
@@ -1612,24 +1644,26 @@ class REBCC(util.AbstractEBCC):
         lambdas = self.Amplitudes()
         i0 = 0
 
-        for n in self.ansatz.correlated_cluster_ranks[0]:
-            shape = (self.space.ncvir,) * n + (self.space.ncocc,) * n
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            lname = name.replace("t", "l")
+            key = key[n:] + key[:n]
+            shape = tuple(self.space.size(k) for k in key)
             size = np.prod(shape)
-            lambdas["l%d" % n] = vector[i0 : i0 + size].reshape(shape)
+            lambdas[lname] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
-        for n in self.ansatz.correlated_cluster_ranks[1]:
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * n
             size = np.prod(shape)
-            lambdas["ls%d" % n] = vector[i0 : i0 + size].reshape(shape)
+            lambdas["l" + name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
-        for nf in self.ansatz.correlated_cluster_ranks[2]:
-            for nb in self.ansatz.correlated_cluster_ranks[3]:
-                shape = (self.nbos,) * nb + (self.space.ncvir, self.space.ncocc) * nf
-                size = np.prod(shape)
-                lambdas["lu%d%d" % (nf, nb)] = vector[i0 : i0 + size].reshape(shape)
-                i0 += size
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            key = key[:nb] + key[nb + nf :] + key[nb : nb + nf]
+            shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
+            size = np.prod(shape)
+            lambdas["l" + name] = vector[i0 : i0 + size].reshape(shape)
+            i0 += size
 
         return lambdas
 
@@ -1654,16 +1688,15 @@ class REBCC(util.AbstractEBCC):
         vectors = []
         m = 0
 
-        for n in self.ansatz.correlated_cluster_ranks[0]:
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             vectors.append(excitations[m].ravel())
             m += 1
 
-        for n in self.ansatz.correlated_cluster_ranks[1]:
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
-        for nf in self.ansatz.correlated_cluster_ranks[2]:
-            for nb in self.ansatz.correlated_cluster_ranks[3]:
-                raise util.ModelNotImplemented
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            raise util.ModelNotImplemented
 
         return np.concatenate(vectors)
 
@@ -1726,18 +1759,18 @@ class REBCC(util.AbstractEBCC):
         excitations = []
         i0 = 0
 
-        for n in self.ansatz.correlated_cluster_ranks[0]:
-            shape = (self.space.ncocc,) * n + (self.space.ncvir,) * (n - 1)
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            key = key[:-1]
+            shape = tuple(self.space.size(k) for k in key)
             size = np.prod(shape)
             excitations.append(vector[i0 : i0 + size].reshape(shape))
             i0 += size
 
-        for n in self.ansatz.correlated_cluster_ranks[1]:
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
-        for nf in self.ansatz.correlated_cluster_ranks[2]:
-            for nb in self.ansatz.correlated_cluster_ranks[3]:
-                raise util.ModelNotImplemented
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            raise util.ModelNotImplemented
 
         return tuple(excitations)
 
@@ -1762,18 +1795,17 @@ class REBCC(util.AbstractEBCC):
         excitations = []
         i0 = 0
 
-        for n in self.ansatz.correlated_cluster_ranks[0]:
-            shape = (self.space.ncvir,) * n + (self.space.ncocc,) * (n - 1)
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            key = key[n:] + key[: n - 1]
             size = np.prod(shape)
             excitations.append(vector[i0 : i0 + size].reshape(shape))
             i0 += size
 
-        for n in self.ansatz.correlated_cluster_ranks[1]:
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
-        for nf in self.ansatz.correlated_cluster_ranks[2]:
-            for nb in self.ansatz.correlated_cluster_ranks[3]:
-                raise util.ModelNotImplemented
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            raise util.ModelNotImplemented
 
         return tuple(excitations)
 
@@ -1798,18 +1830,17 @@ class REBCC(util.AbstractEBCC):
         excitations = []
         i0 = 0
 
-        for n in self.ansatz.correlated_cluster_ranks[0]:
-            shape = (self.space.ncocc,) * n + (self.space.ncvir,) * n
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            shape = tuple(self.space.size(k) for k in key)
             size = np.prod(shape)
             excitations.append(vector[i0 : i0 + size].reshape(shape))
             i0 += size
 
-        for n in self.ansatz.correlated_cluster_ranks[1]:
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
-        for nf in self.ansatz.correlated_cluster_ranks[2]:
-            for nb in self.ansatz.correlated_cluster_ranks[3]:
-                raise util.ModelNotImplemented
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            raise util.ModelNotImplemented
 
         return tuple(excitations)
 
@@ -1865,7 +1896,7 @@ class REBCC(util.AbstractEBCC):
                 assert key[0] == "b"
                 i = slices[key[1]]
                 j = slices[key[2]]
-                return g[:, i, j].copy()
+                return g[:, i][:, :, j].copy()
 
         return Blocks()
 
@@ -2041,7 +2072,7 @@ class REBCC(util.AbstractEBCC):
 
         Returns
         -------
-        eo : numpy.ndarray (naocc,)
+        eo : numpy.ndarray (ncocc,)
             Diagonal of the occupied Fock matrix in MO basis.
         """
         return np.diag(self.fock.oo)
@@ -2053,10 +2084,34 @@ class REBCC(util.AbstractEBCC):
 
         Returns
         -------
-        ev : numpy.ndarray (navir,)
+        ev : numpy.ndarray (ncvir,)
             Diagonal of the virtual Fock matrix in MO basis.
         """
         return np.diag(self.fock.vv)
+
+    @property
+    def eO(self):
+        """Get the diagonal of the active occupied Fock matrix in MO
+        basis, shifted due to bosons where the ansatz requires.
+
+        Returns
+        -------
+        eO : numpy.ndarray (naocc,)
+            Diagonal of the active occupied Fock matrix in MO basis.
+        """
+        return np.diag(self.fock.OO)
+
+    @property
+    def eV(self):
+        """Get the diagonal of the active virtual Fock matrix in MO
+        basis, shifted due to bosons where the ansatz requires.
+
+        Returns
+        -------
+        eV : numpy.ndarray (navir,)
+            Diagonal of the active virtual Fock matrix in MO basis.
+        """
+        return np.diag(self.fock.VV)
 
     @property
     def e_tot(self):

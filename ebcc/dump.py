@@ -105,25 +105,29 @@ class Dump:
 
         # Write the amplitudes
         if ebcc.spin_type == "U":
-            dump(
-                self.name,
-                "amplitudes",
-                {
-                    key: ({**val} if isinstance(val, (util.Namespace, dict)) else val)
-                    for key, val in ebcc.amplitudes.items()
-                },
-            )
-            dump(
-                self.name,
-                "lambdas",
-                {
-                    key: ({**val} if isinstance(val, (util.Namespace, dict)) else val)
-                    for key, val in ebcc.lambdas.items()
-                },
-            )
+            if ebcc.amplitudes is not None:
+                dump(
+                    self.name,
+                    "amplitudes",
+                    {
+                        key: ({**val} if isinstance(val, (util.Namespace, dict)) else val)
+                        for key, val in ebcc.amplitudes.items()
+                    },
+                )
+            if ebcc.lambdas is not None:
+                dump(
+                    self.name,
+                    "lambdas",
+                    {
+                        key: ({**val} if isinstance(val, (util.Namespace, dict)) else val)
+                        for key, val in ebcc.lambdas.items()
+                    },
+                )
         else:
-            dump(self.name, "amplitudes", {**ebcc.amplitudes})
-            dump(self.name, "lambdas", {**ebcc.lambdas})
+            if ebcc.amplitudes is not None:
+                dump(self.name, "amplitudes", {**ebcc.amplitudes})
+            if ebcc.lambdas is not None:
+                dump(self.name, "lambdas", {**ebcc.lambdas})
 
     def read(self, cls: Type[util.AbstractEBCC], log: logging.Logger = None):
         """
@@ -132,7 +136,9 @@ class Dump:
 
         # Load the options
         dic = load(self.name, "options")
-        options = cls.Options(**dic)
+        options = cls.Options()
+        for key, val in dic.items():
+            setattr(options, key, val)
 
         # Load the miscellaneous data
         misc = load(self.name, "misc")
