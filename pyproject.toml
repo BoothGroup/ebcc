@@ -1,6 +1,6 @@
 [project]
 name = "ebcc"
-version = "1.2.2"
+version = "1.3.0"
 description = "Coupled cluster calculations on electron-boson systems"
 keywords = [
     "quantum", "chemistry",
