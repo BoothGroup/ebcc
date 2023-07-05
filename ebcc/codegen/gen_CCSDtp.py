@@ -73,7 +73,7 @@ with common.FilePrinter("%sCCSDtp" % spin[0].upper()) as file_printer:
                     j += 1
                 part = "".join(einsums[i:j+1])
                 if part not in ("[0]", "[1]"):  # Spin indices
-                    part_new = "".join([x if x == "," else "s"+x for x in einsums[i+1:j]])
+                    part_new = ",".join(["s"+x for x in einsums[i+1:j].split(",")])
                     repl[part] = "[np.ix_(%s)]" % part_new
                 i = j
             else:
@@ -219,7 +219,7 @@ with common.FilePrinter("%sCCSDtp" % spin[0].upper()) as file_printer:
                     j += 1
                 part = "".join(einsums[i:j+1])
                 if part not in ("[0]", "[1]"):  # Spin indices
-                    part_new = "".join([x if x == "," else "s"+x for x in einsums[i+1:j]])
+                    part_new = ",".join(["s"+x for x in einsums[i+1:j].split(",")])
                     repl[part] = "[np.ix_(%s)]" % part_new
                 i = j
             else:
