@@ -62,6 +62,7 @@ with common.FilePrinter("%sCCSDtp" % spin[0].upper()) as file_printer:
                 einsum_function="einsum",
         )
 
+        # Swap slices to np.ix_
         i = 0
         einsums = list(einsums)
         repl = {}
@@ -70,7 +71,10 @@ with common.FilePrinter("%sCCSDtp" % spin[0].upper()) as file_printer:
                 j = i+1
                 while einsums[j] != "]":
                     j += 1
-                repl["".join(einsums[i:j+1])] = "[np.ix_(%s)]" % einsums[i+1:j]
+                part = "".join(einsums[i:j+1])
+                if part not in ("[0]", "[1]"):  # Spin indices
+                    part_new = "".join([x if x == "," else "s"+x for x in einsums[i+1:j]])
+                    repl[part] = "[np.ix_(%s)]" % part_new
                 i = j
             else:
                 i += 1
@@ -202,13 +206,9 @@ with common.FilePrinter("%sCCSDtp" % spin[0].upper()) as file_printer:
                 indent=4,
                 einsum_function="einsum",
                 add_slices={"t1", "t2", "t1new", "t2new"},
-                custom_shapes={
-                    "t1new": "(nocc, nvir)",
-                    "t2new": "(nocc, nocc, nvir, nvir)",
-                    "t3new": "(naocc, naocc, naocc, navir, navir, navir)",
-                },
         )
 
+        # Swap slices to np.ix_
         i = 0
         einsums = list(einsums)
         repl = {}
@@ -217,8 +217,10 @@ with common.FilePrinter("%sCCSDtp" % spin[0].upper()) as file_printer:
                 j = i+1
                 while einsums[j] != "]":
                     j += 1
-                part = [x if x == "," else "s"+x for x in einsums[i+1:j]]
-                repl["".join(einsums[i:j+1])] = "[np.ix_(%s)]" % "".join(part)
+                part = "".join(einsums[i:j+1])
+                if part not in ("[0]", "[1]"):  # Spin indices
+                    part_new = "".join([x if x == "," else "s"+x for x in einsums[i+1:j]])
+                    repl[part] = "[np.ix_(%s)]" % part_new
                 i = j
             else:
                 i += 1
@@ -226,13 +228,27 @@ with common.FilePrinter("%sCCSDtp" % spin[0].upper()) as file_printer:
         for key, val in repl.items():
             einsums = einsums.replace(key, val)
 
-        function_printer.write_python("    nocc = space.nocc")
-        function_printer.write_python("    nvir = space.nvir")
-        function_printer.write_python("    naocc = space.naocc")
-        function_printer.write_python("    navir = space.navir")
-        function_printer.write_python("    so = np.ones((nocc,), dtype=bool)")  # hack to avoid v clash
-        function_printer.write_python("    sv = np.ones((nvir,), dtype=bool)")  # hack to avoid v clash
-        function_printer.write_python("    sO = space.active[space.occupied]")
-        function_printer.write_python("    sV = space.active[space.virtual]")
+        if spin != "uhf":
+            function_printer.write_python("    nocc = space.nocc")
+            function_printer.write_python("    nvir = space.nvir")
+            function_printer.write_python("    naocc = space.naocc")
+            function_printer.write_python("    navir = space.navir")
+            function_printer.write_python("    so = np.ones((nocc,), dtype=bool)")
+            function_printer.write_python("    sv = np.ones((nvir,), dtype=bool)")
+            function_printer.write_python("    sO = space.active[space.occupied]")
+            function_printer.write_python("    sV = space.active[space.virtual]")
+        else:
+            function_printer.write_python("    nocc = (space[0].nocc, space[1].nocc)")
+            function_printer.write_python("    nvir = (space[0].nvir, space[1].nvir)")
+            function_printer.write_python("    naocc = (space[0].naocc, space[1].naocc)")
+            function_printer.write_python("    navir = (space[0].navir, space[1].navir)")
+            function_printer.write_python("    soa = np.ones((nocc[0],), dtype=bool)")
+            function_printer.write_python("    sva = np.ones((nvir[0],), dtype=bool)")
+            function_printer.write_python("    sob = np.ones((nocc[1],), dtype=bool)")
+            function_printer.write_python("    svb = np.ones((nvir[1],), dtype=bool)")
+            function_printer.write_python("    sOa = space[0].active[space[0].occupied]")
+            function_printer.write_python("    sVa = space[0].active[space[0].virtual]")
+            function_printer.write_python("    sOb = space[1].active[space[1].occupied]")
+            function_printer.write_python("    sVb = space[1].active[space[1].virtual]")
         function_printer.write_python("")
         function_printer.write_python(einsums+"\n", comment="T amplitudes")
