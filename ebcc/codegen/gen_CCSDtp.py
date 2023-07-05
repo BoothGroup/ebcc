@@ -214,7 +214,6 @@ with common.FilePrinter("%sCCSDtp" % spin[0].upper()) as file_printer:
                     "t2new_aaaa": "nocc[0], nocc[0], nvir[0], nvir[0]",
                     "t2new_abab": "nocc[0], nocc[1], nvir[0], nvir[1]",
                     "t2new_bbbb": "nocc[1], nocc[1], nvir[1], nvir[1]",
-                    "t3new": "naocc, naocc, naocc, navir, navir, navir",
                 }
         )
 
