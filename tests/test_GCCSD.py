@@ -12,7 +12,7 @@ import scipy.linalg
 from types import SimpleNamespace
 from pyscf import cc, gto, lib, scf
 
-from ebcc import REBCC, UEBCC, GEBCC, NullLogger, util
+from ebcc import REBCC, UEBCC, GEBCC, Space, NullLogger, util
 
 # TODO test more excitations in EOM
 
@@ -176,6 +176,107 @@ class GCCSD_Tests(unittest.TestCase):
         uebcc = UEBCC(
                 mf,
                 ansatz="CCSD",
+                log=NullLogger(),
+        )
+        uebcc.options.e_tol = 1e-12
+        eris = uebcc.get_eris()
+        uebcc.kernel(eris=eris)
+        uebcc.solve_lambda(eris=eris)
+        gebcc2 = GEBCC.from_uebcc(uebcc)
+
+        self.assertAlmostEqual(gebcc1.energy(), gebcc2.energy())
+        np.testing.assert_almost_equal(gebcc1.t1, gebcc2.t1, 6)
+        np.testing.assert_almost_equal(gebcc1.t2, gebcc2.t2, 6)
+        np.testing.assert_almost_equal(gebcc1.l1, gebcc2.l1, 5)
+        np.testing.assert_almost_equal(gebcc1.l2, gebcc2.l2, 5)
+        np.testing.assert_almost_equal(gebcc1.make_rdm1_f(), gebcc2.make_rdm1_f(), 6)
+        np.testing.assert_almost_equal(gebcc1.make_rdm2_f(), gebcc2.make_rdm2_f(), 6)
+
+    @pytest.mark.regression
+    def test_from_rebcc_frozen(self):
+        mf = self.mf
+        gmf = mf.to_uhf().to_ghf()
+
+        occupied = gmf.mo_occ > 0
+        frozen = np.zeros_like(gmf.mo_occ)
+        frozen[:2] = True
+        active = np.zeros_like(gmf.mo_occ)
+        space = Space(occupied, frozen, active)
+
+        gebcc1 = GEBCC(
+                gmf,
+                ansatz="CCSD",
+                space=space,
+                log=NullLogger(),
+        )
+        gebcc1.options.e_tol = 1e-12
+        eris = gebcc1.get_eris()
+        gebcc1.kernel(eris=eris)
+        gebcc1.solve_lambda(eris=eris)
+
+        occupied = mf.mo_occ > 0
+        frozen = np.zeros_like(mf.mo_occ)
+        frozen[0] = True
+        active = np.zeros_like(mf.mo_occ)
+        space = Space(occupied, frozen, active)
+
+        rebcc = REBCC(
+                mf,
+                ansatz="CCSD",
+                space=space,
+                log=NullLogger(),
+        )
+        rebcc.options.e_tol = 1e-12
+        eris = rebcc.get_eris()
+        rebcc.kernel(eris=eris)
+        rebcc.solve_lambda(eris=eris)
+        gebcc2 = GEBCC.from_rebcc(rebcc)
+
+        self.assertAlmostEqual(gebcc1.energy(), gebcc2.energy())
+        np.testing.assert_almost_equal(gebcc1.t1, gebcc2.t1, 6)
+        np.testing.assert_almost_equal(gebcc1.t2, gebcc2.t2, 6)
+        np.testing.assert_almost_equal(gebcc1.l1, gebcc2.l1, 5)
+        np.testing.assert_almost_equal(gebcc1.l2, gebcc2.l2, 5)
+        np.testing.assert_almost_equal(gebcc1.make_rdm1_f(), gebcc2.make_rdm1_f(), 6)
+        np.testing.assert_almost_equal(gebcc1.make_rdm2_f(), gebcc2.make_rdm2_f(), 6)
+
+    @pytest.mark.regression
+    def test_from_uebcc_frozen(self):
+        mf = self.mf.to_uhf()
+        gmf = mf.to_ghf()
+
+        occupied = gmf.mo_occ > 0
+        frozen = np.zeros_like(gmf.mo_occ)
+        frozen[:2] = True
+        active = np.zeros_like(gmf.mo_occ)
+        space = Space(occupied, frozen, active)
+
+        gebcc1 = GEBCC(
+                mf,
+                ansatz="CCSD",
+                space=space,
+                log=NullLogger(),
+        )
+        gebcc1.options.e_tol = 1e-12
+        eris = gebcc1.get_eris()
+        gebcc1.kernel(eris=eris)
+        gebcc1.solve_lambda(eris=eris)
+
+        occupied = mf.mo_occ[0] > 0
+        frozen = np.zeros_like(mf.mo_occ[0])
+        frozen[0] = True
+        active = np.zeros_like(mf.mo_occ[0])
+        space_a = Space(occupied, frozen, active)
+        occupied = mf.mo_occ[1] > 0
+        frozen = np.zeros_like(mf.mo_occ[1])
+        frozen[0] = True
+        active = np.zeros_like(mf.mo_occ[1])
+        space_b = Space(occupied, frozen, active)
+
+        uebcc = UEBCC(
+                mf,
+                ansatz="CCSD",
+                space=(space_a, space_b),
                 log=NullLogger(),
         )
         uebcc.options.e_tol = 1e-12

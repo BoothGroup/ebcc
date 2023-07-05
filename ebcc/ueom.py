@@ -58,10 +58,6 @@ class UEOM(reom.REOM):
 
         return moments
 
-    @property
-    def name(self):
-        return self.excitation_type.upper() + "-UEOM-" + self.ebcc.name
-
 
 @util.inherit_docstrings
 class IP_UEOM(UEOM, reom.IP_REOM):
@@ -75,7 +71,7 @@ class IP_UEOM(UEOM, reom.IP_REOM):
         )
         e_i = self.ebcc.eo
 
-        for n in self.ansatz.correlated_cluster_ranks[0]:
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             spin_part = util.Namespace()
             for comb in util.generate_spin_combinations(n, excited=True):
                 tensors = []
@@ -90,7 +86,7 @@ class IP_UEOM(UEOM, reom.IP_REOM):
                 setattr(spin_part, comb, d)
             parts.append(spin_part)
 
-        for n in self.ansatz.correlated_cluster_ranks[1]:
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
         return self.amplitudes_to_vector(*parts)
@@ -104,7 +100,7 @@ class IP_UEOM(UEOM, reom.IP_REOM):
             amps_b = []
 
             m = 0
-            for n in self.ansatz.correlated_cluster_ranks[0]:
+            for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
                 amp_a = util.Namespace()
                 amp_b = util.Namespace()
                 for spin in util.generate_spin_combinations(n, excited=True):
@@ -117,12 +113,11 @@ class IP_UEOM(UEOM, reom.IP_REOM):
                 amps_b.append(amp_b)
                 m += 1
 
-            for n in self.ansatz.correlated_cluster_ranks[1]:
+            for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
                 raise util.ModelNotImplemented
 
-            for nf in self.ansatz.correlated_cluster_ranks[2]:
-                for nb in self.ansatz.correlated_cluster_ranks[3]:
-                    raise util.ModelNotImplemented
+            for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+                raise util.ModelNotImplemented
 
             bras.a.append(self.amplitudes_to_vector(*amps_a))
             bras.b.append(self.amplitudes_to_vector(*amps_b))
@@ -142,7 +137,7 @@ class IP_UEOM(UEOM, reom.IP_REOM):
             amps_b = []
 
             m = 0
-            for n in self.ansatz.correlated_cluster_ranks[0]:
+            for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
                 amp_a = util.Namespace()
                 amp_b = util.Namespace()
                 for spin in util.generate_spin_combinations(n, excited=True):
@@ -155,12 +150,11 @@ class IP_UEOM(UEOM, reom.IP_REOM):
                 amps_b.append(amp_b)
                 m += 1
 
-            for n in self.ansatz.correlated_cluster_ranks[1]:
+            for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
                 raise util.ModelNotImplemented
 
-            for nf in self.ansatz.correlated_cluster_ranks[2]:
-                for nb in self.ansatz.correlated_cluster_ranks[3]:
-                    raise util.ModelNotImplemented
+            for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+                raise util.ModelNotImplemented
 
             kets.a.append(self.amplitudes_to_vector(*amps_a))
             kets.b.append(self.amplitudes_to_vector(*amps_b))
@@ -183,7 +177,7 @@ class EA_UEOM(UEOM, reom.EA_REOM):
         )
         e_a = self.ebcc.ev
 
-        for n in self.ansatz.correlated_cluster_ranks[0]:
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             spin_part = util.Namespace()
             for comb in util.generate_spin_combinations(n, excited=True):
                 tensors = []
@@ -198,7 +192,7 @@ class EA_UEOM(UEOM, reom.EA_REOM):
                 setattr(spin_part, comb, d)
             parts.append(spin_part)
 
-        for n in self.ansatz.correlated_cluster_ranks[1]:
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
         return self.amplitudes_to_vector(*parts)
@@ -212,7 +206,7 @@ class EA_UEOM(UEOM, reom.EA_REOM):
             amps_b = []
 
             m = 0
-            for n in self.ansatz.correlated_cluster_ranks[0]:
+            for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
                 amp_a = util.Namespace()
                 amp_b = util.Namespace()
                 for spin in util.generate_spin_combinations(n, excited=True):
@@ -225,12 +219,11 @@ class EA_UEOM(UEOM, reom.EA_REOM):
                 amps_b.append(amp_b)
                 m += 1
 
-            for n in self.ansatz.correlated_cluster_ranks[1]:
+            for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
                 raise util.ModelNotImplemented
 
-            for nf in self.ansatz.correlated_cluster_ranks[2]:
-                for nb in self.ansatz.correlated_cluster_ranks[3]:
-                    raise util.ModelNotImplemented
+            for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+                raise util.ModelNotImplemented
 
             bras.a.append(self.amplitudes_to_vector(*amps_a))
             bras.b.append(self.amplitudes_to_vector(*amps_b))
@@ -250,7 +243,7 @@ class EA_UEOM(UEOM, reom.EA_REOM):
             amps_b = []
 
             m = 0
-            for n in self.ansatz.correlated_cluster_ranks[0]:
+            for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
                 amp_a = util.Namespace()
                 amp_b = util.Namespace()
                 for spin in util.generate_spin_combinations(n, excited=True):
@@ -263,12 +256,11 @@ class EA_UEOM(UEOM, reom.EA_REOM):
                 amps_b.append(amp_b)
                 m += 1
 
-            for n in self.ansatz.correlated_cluster_ranks[1]:
+            for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
                 raise util.ModelNotImplemented
 
-            for nf in self.ansatz.correlated_cluster_ranks[2]:
-                for nb in self.ansatz.correlated_cluster_ranks[3]:
-                    raise util.ModelNotImplemented
+            for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+                raise util.ModelNotImplemented
 
             kets.a.append(self.amplitudes_to_vector(*amps_a))
             kets.b.append(self.amplitudes_to_vector(*amps_b))
@@ -293,7 +285,7 @@ class EE_UEOM(UEOM, reom.EE_REOM):
             bb=lib.direct_sum("i-a->ia", self.ebcc.eo.b, self.ebcc.ev.b),
         )
 
-        for n in self.ansatz.correlated_cluster_ranks[0]:
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             spin_part = util.Namespace()
             for comb in util.generate_spin_combinations(n):
                 tensors = []
@@ -305,7 +297,7 @@ class EE_UEOM(UEOM, reom.EE_REOM):
                 setattr(spin_part, comb, d)
             parts.append(spin_part)
 
-        for n in self.ansatz.correlated_cluster_ranks[1]:
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
         return self.amplitudes_to_vector(*parts)
@@ -322,7 +314,7 @@ class EE_UEOM(UEOM, reom.EE_REOM):
                 amps_bb = []
 
                 m = 0
-                for n in self.ansatz.correlated_cluster_ranks[0]:
+                for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
                     amp_aa = util.Namespace()
                     amp_bb = util.Namespace()
                     for spin in util.generate_spin_combinations(n):
@@ -346,12 +338,13 @@ class EE_UEOM(UEOM, reom.EE_REOM):
                     amps_bb.append(amp_bb)
                     m += 1
 
-                for n in self.ansatz.correlated_cluster_ranks[1]:
+                for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
                     raise util.ModelNotImplemented
 
-                for nf in self.ansatz.correlated_cluster_ranks[2]:
-                    for nb in self.ansatz.correlated_cluster_ranks[3]:
-                        raise util.ModelNotImplemented
+                for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+                    spin_type=self.spin_type
+                ):
+                    raise util.ModelNotImplemented
 
                 bras.aa.append(self.amplitudes_to_vector(*amps_aa))
                 bras.bb.append(self.amplitudes_to_vector(*amps_bb))
@@ -377,7 +370,7 @@ class EE_UEOM(UEOM, reom.EE_REOM):
                 amps_bb = []
 
                 m = 0
-                for n in self.ansatz.correlated_cluster_ranks[0]:
+                for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
                     amp_aa = util.Namespace()
                     amp_bb = util.Namespace()
                     for spin in util.generate_spin_combinations(n):
@@ -401,12 +394,13 @@ class EE_UEOM(UEOM, reom.EE_REOM):
                     amps_bb.append(amp_bb)
                     m += 1
 
-                for n in self.ansatz.correlated_cluster_ranks[1]:
+                for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
                     raise util.ModelNotImplemented
 
-                for nf in self.ansatz.correlated_cluster_ranks[2]:
-                    for nb in self.ansatz.correlated_cluster_ranks[3]:
-                        raise util.ModelNotImplemented
+                for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+                    spin_type=self.spin_type
+                ):
+                    raise util.ModelNotImplemented
 
                 kets.aa.append(self.amplitudes_to_vector(*amps_aa))
                 kets.bb.append(self.amplitudes_to_vector(*amps_bb))
