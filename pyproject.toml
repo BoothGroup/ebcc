@@ -44,6 +44,7 @@ dev = [
     "isort>=5.10.1",
     "flake8>=3.8.4",
     "flake8-pyproject>=1.2.3",
+    "flake8-bugbear>=23.0.0",
     "flake8-docstrings>=1.6.0",
     "coverage[toml]>=5.5.0",
     "pytest>=6.2.4",
@@ -89,6 +90,7 @@ ignore = [
     "D202",  # No blank lines allowed after function docstring
     "D205",  # 1 blank line required between summary line and description
     "D400",  # First line should end with a period
+    "B007",  # Loop control variable not used within the loop body
 ]
 per-file-ignores = [
     "__init__.py:E402,W605,F401,F811,D103",

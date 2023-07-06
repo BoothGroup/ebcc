@@ -473,7 +473,10 @@ class EE_REOM(REOM):
         """Construct the moments of the EOM Hamiltonian."""
 
         if not diagonal_only:
-            warnings.warn("Constructing EE moments with `diagonal_only=False` will be very slow.")
+            warnings.warn(
+                "Constructing EE moments with `diagonal_only=False` will be very slow.",
+                stacklevel=2,
+            )
 
         if eris is None:
             eris = self.ebcc.get_eris()

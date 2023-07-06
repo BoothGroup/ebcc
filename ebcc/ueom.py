@@ -433,7 +433,10 @@ class EE_UEOM(UEOM, reom.EE_REOM):
         raise util.ModelNotImplemented("EE moments for UEBCC not working.")
 
         if not diagonal_only:
-            warnings.warn("Constructing EE moments with `diagonal_only=False` will be very slow.")
+            warnings.warn(
+                "Constructing EE moments with `diagonal_only=False` will be very slow.",
+                stacklevel=2,
+            )
 
         if eris is None:
             eris = self.ebcc.get_eris()

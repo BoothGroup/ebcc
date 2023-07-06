@@ -364,7 +364,8 @@ def inherit_docstrings(cls, warn_if_missing=True):
                             "Could not inherit docstring for function {} in {}".format(
                                 name,
                                 cls.__name__,
-                            )
+                            ),
+                            stacklevel=2,
                         )
 
     return cls
@@ -380,7 +381,7 @@ def has_docstring(cls_or_func, warn_if_missing=True):
     """
 
     if warn_if_missing and not cls_or_func.__doc__:
-        warnings.warn("Missing docstring in {}".format(cls_or_func.__name__))
+        warnings.warn("Missing docstring in {}".format(cls_or_func.__name__), stacklevel=2)
 
     return cls_or_func
 
