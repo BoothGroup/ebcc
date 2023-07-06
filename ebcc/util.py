@@ -9,6 +9,7 @@ import logging
 import sys
 import time
 import types
+import warnings
 from collections.abc import Mapping
 
 import numpy as np
@@ -36,12 +37,6 @@ Inherited = InheritedType()
 
 
 class ModelNotImplemented(NotImplementedError):
-    pass
-
-
-class AbstractEBCC:
-    """Abstract base class for EBCC objects."""
-
     pass
 
 
@@ -288,7 +283,7 @@ def get_symmetry_factor(*numbers):
     return 1.0 / (2.0**ntot)
 
 
-def inherit_docstrings(cls):
+def inherit_docstrings(cls, warn_if_missing=True):
     """Inherit docstring from superclass."""
 
     for name, func in inspect.getmembers(cls, inspect.isfunction):
@@ -296,6 +291,12 @@ def inherit_docstrings(cls):
             for parent in cls.__mro__[1:]:
                 if hasattr(parent, name):
                     func.__doc__ = getattr(parent, name).__doc__
+                else:
+                    if warn_if_missing and not func.__doc__ and not name.startswith("_"):
+                        warnings.warn(
+                            "Could not inherit docstring for function {} in {}".format(
+                            name, cls.__name__,
+                        ))
 
     return cls
 

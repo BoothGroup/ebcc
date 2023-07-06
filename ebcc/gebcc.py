@@ -3,7 +3,6 @@
 
 import functools
 import itertools
-from typing import Sequence
 
 import numpy as np
 import scipy.linalg
@@ -16,22 +15,10 @@ from ebcc.fock import GFock
 from ebcc.space import Space
 
 
-class Amplitudes(util.Namespace):
-    """Amplitude container class. Consists of a dictionary with keys
-    that are strings of the name of each amplitude. Values are
-    namespaces with keys indicating whether each fermionic dimension
-    is alpha (`"a"`) or beta (`"b"`) spin, and values are arrays whose
-    dimension depends on the particular amplitude. For purely bosonic
-    amplitudes the values of `Amplitudes` are simply arrays, with no
-    fermionic spins to index.
-    """
-
-    pass
-
-
 @util.inherit_docstrings
 class GEBCC(rebcc.REBCC):
-    Amplitudes = Amplitudes
+    __doc__ = __doc__.replace("Restricted", "Generalised", 1)
+
     ERIs = GERIs
     Brueckner = BruecknerGEBCC
 
@@ -45,7 +32,18 @@ class GEBCC(rebcc.REBCC):
 
     @classmethod
     def from_uebcc(cls, ucc):
-        """Initialise a GEBCC object from an UEBCC object."""
+        """Initialise a GEBCC object from an UEBCC object.
+
+        Parameters
+        ----------
+        ucc : UEBCC
+            The UEBCC object to initialise from.
+
+        Returns
+        -------
+        gcc : GEBCC
+            The GEBCC object.
+        """
 
         orbspin = scf.addons.get_ghf_orbspin(ucc.mf.mo_energy, ucc.mf.mo_occ, False)
         nocc = ucc.space[0].nocc + ucc.space[1].nocc
@@ -100,7 +98,7 @@ class GEBCC(rebcc.REBCC):
         has_lams = ucc.lambdas is not None
 
         if has_amps:
-            amplitudes = cls.Amplitudes()
+            amplitudes = util.Namespace()
 
             for name, key, n in ucc.ansatz.fermionic_cluster_ranks(spin_type=ucc.spin_type):
                 shape = tuple(space.size(k) for k in key)
@@ -245,7 +243,18 @@ class GEBCC(rebcc.REBCC):
 
     @classmethod
     def from_rebcc(cls, rcc):
-        """Initialise a GEBCC object from an REBCC object."""
+        """Initialise a GEBCC object from an REBCC object.
+
+        Parameters
+        ----------
+        rcc : REBCC
+            The REBCC object to initialise from.
+
+        Returns
+        -------
+        gcc : GEBCC
+            The GEBCC object.
+        """
 
         ucc = uebcc.UEBCC.from_rebcc(rcc)
         gcc = cls.from_uebcc(ucc)
@@ -254,7 +263,7 @@ class GEBCC(rebcc.REBCC):
 
     def init_amps(self, eris=None):
         eris = self.get_eris(eris)
-        amplitudes = self.Amplitudes()
+        amplitudes = util.Namespace()
 
         # Build T amplitudes:
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -445,12 +454,18 @@ class GEBCC(rebcc.REBCC):
             return eris
 
     def ip_eom(self, options=None, **kwargs):
+        """Get the IP EOM object.
+        """
         return geom.IP_GEOM(self, options=options, **kwargs)
 
     def ea_eom(self, options=None, **kwargs):
+        """Get the EA EOM object.
+        """
         return geom.EA_GEOM(self, options=options, **kwargs)
 
     def ee_eom(self, options=None, **kwargs):
+        """Get the EE EOM object.
+        """
         return geom.EE_GEOM(self, options=options, **kwargs)
 
     @property

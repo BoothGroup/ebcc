@@ -14,14 +14,24 @@ from ebcc.space import Space
 
 
 class Dump:
-    """File handler for reading and writing EBCC calculations."""
+    """File handler for reading and writing EBCC calculations.
+
+    Attributes
+    ----------
+    name : str
+        The name of the file.
+    """
 
     def __init__(self, name):
         self.name = name
 
-    def write(self, ebcc: util.AbstractEBCC):
-        """
-        Write the EBCC object to the file.
+    def write(self, ebcc):
+        """Write the EBCC object to the file.
+
+        Parameters
+        ----------
+        ebcc : EBCC
+            The EBCC object to write.
         """
 
         # Write the options
@@ -129,9 +139,20 @@ class Dump:
             if ebcc.lambdas is not None:
                 dump(self.name, "lambdas", {**ebcc.lambdas})
 
-    def read(self, cls: Type[util.AbstractEBCC], log: logging.Logger = None):
-        """
-        Load the file to an EBCC object.
+    def read(self, cls, log=None):
+        """Load the file to an EBCC object.
+
+        Parameters
+        ----------
+        cls : type
+            EBCC class to load the file to.
+        log : Logger, optional
+            Logger to assign to the EBCC object.
+
+        Returns
+        -------
+        ebcc : EBCC
+            The EBCC object loaded from the file.
         """
 
         # Load the options
@@ -207,18 +228,18 @@ class Dump:
         lambdas = load(self.name, "lambdas")
         if spin_type == "U":
             amplitudes = {
-                key: (cls.Amplitudes(**val) if isinstance(val, dict) else val)
+                key: (util.Namespace(**val) if isinstance(val, dict) else val)
                 for key, val in amplitudes.items()
             }
             lambdas = {
-                key: (cls.Amplitudes(**val) if isinstance(val, dict) else val)
+                key: (util.Namespace(**val) if isinstance(val, dict) else val)
                 for key, val in lambdas.items()
             }
-            amplitudes = cls.Amplitudes(**amplitudes)
-            lambdas = cls.Amplitudes(**lambdas)
+            amplitudes = util.Namespace(**amplitudes)
+            lambdas = util.Namespace(**lambdas)
         else:
-            amplitudes = cls.Amplitudes(**amplitudes)
-            lambdas = cls.Amplitudes(**lambdas)
+            amplitudes = util.Namespace(**amplitudes)
+            lambdas = util.Namespace(**lambdas)
 
         # Initialise the EBCC object
         cc = cls(

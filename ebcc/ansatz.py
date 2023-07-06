@@ -29,6 +29,18 @@ def name_to_identifier(name):
     """Convert an ansatz name to an identifer that can be used for
     variable and file names.
 
+    Parameters
+    ----------
+    name : str
+        Name of the ansatz.
+
+    Returns
+    -------
+    iden : str
+        Identifier for the ansatz.
+
+    Examples
+    --------
     >>> identifier_to_name("CCSD(T)")
     CCSDxTx
     >>> identifier_to_name("CCSD-SD-1-2")
@@ -46,6 +58,18 @@ def name_to_identifier(name):
 def identifity_to_name(iden):
     """Convert an ansatz identifier to a name.
 
+    Parameters
+    ----------
+    iden : str
+        Identifier for the ansatz.
+
+    Returns
+    -------
+    name : str
+        Name of the ansatz.
+
+    Examples
+    --------
     >>> identifier_to_name("CCSDxTx")
     CCSD(T)
     >>> identifier_to_name("CCSD_SD_1_2")
@@ -75,6 +99,10 @@ class Ansatz:
         Rank of fermionic term in coupling. Default is 0.
     boson_coupling_rank : int, optional
         Rank of bosonic term in coupling. Default is 0.
+    module_name : str, optional
+        Name of the module containing the generated equations. If
+        `None`, the module name is generated from the ansatz name.
+        Default value is `None`.
     """
 
     def __init__(
@@ -180,6 +208,11 @@ class Ansatz:
         """Get a list of cluster operator ranks for the fermionic
         space.
 
+        Parameters
+        ----------
+        spin_type : str, optional
+            Spin type of the cluster operator. Default value is `"G"`.
+
         Returns
         -------
         ranks : list of tuples
@@ -246,6 +279,11 @@ class Ansatz:
         """Get a list of cluster operator ranks for the bosonic
         space.
 
+        Parameters
+        ----------
+        spin_type : str, optional
+            Spin type of the cluster operator. Default value is `"G"`.
+
         Returns
         -------
         ranks : list of tuples
@@ -292,6 +330,11 @@ class Ansatz:
     def coupling_cluster_ranks(self, spin_type="G"):
         """Get a list of cluster operator ranks for the coupling
         between fermionic and bosonic spaces.
+
+        Parameters
+        ----------
+        spin_type : str, optional
+            Spin type of the cluster operator. Default value is `"G"`.
 
         Returns
         -------

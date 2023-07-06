@@ -14,6 +14,12 @@ from ebcc import util
 # TODO docstrings
 
 
+class EOM:
+    """Base class for equation-of-motion methods.
+    """
+    pass
+
+
 @dataclasses.dataclass
 class Options:
     """Options for EOM calculations.
@@ -39,7 +45,7 @@ class Options:
     max_space: int = 12
 
 
-class REOM:
+class REOM(EOM):
     """Restricted equation-of-motion base class."""
 
     Options = Options
@@ -74,22 +80,32 @@ class REOM:
         self.v = None
 
     def amplitudes_to_vector(self, *amplitudes):
+        """Convert the amplitudes to a vector."""
         raise NotImplementedError
 
     def vector_to_amplitudes(self, vector):
+        """Convert the vector to amplitudes."""
         raise NotImplementedError
 
     def matvec(self, vector, eris=None):
+        """Apply the EOM Hamiltonian to a vector."""
         raise NotImplementedError
 
     def diag(self, eris=None):
+        """Find the diagonal of the EOM Hamiltonian."""
         raise NotImplementedError
 
     def bras(self, eris=None):
+        """Construct the bra vectors."""
         raise NotImplementedError
 
     def kets(self, eris=None):
+        """Construct the ket vectors."""
         raise NotImplementedError
+
+    def dot_braket(self, bra, ket):
+        """Find the dot-product between the bra and the ket."""
+        return np.dot(bra, ket)
 
     def get_pick(self, guesses=None, real_system=True):
         """Pick eigenvalues which match the criterion."""
@@ -309,9 +325,6 @@ class IP_REOM(REOM):
         )
         return kets
 
-    def dot_braket(self, bra, ket):
-        return np.dot(bra, ket)
-
     @property
     def excitation_type(self):
         return "ip"
@@ -370,9 +383,6 @@ class EA_REOM(REOM):
             [self.amplitudes_to_vector(*[b[..., i] for b in kets_raw]) for i in range(self.nmo)]
         )
         return kets
-
-    def dot_braket(self, bra, ket):
-        return np.dot(bra, ket)
 
     @property
     def excitation_type(self):
@@ -434,9 +444,6 @@ class EE_REOM(REOM):
             ]
         )
         return kets
-
-    def dot_braket(self, bra, ket):
-        return np.dot(bra, ket)
 
     def moments(self, nmom, eris=None, amplitudes=None, hermitise=True, diagonal_only=True):
         """Construct the moments of the EOM Hamiltonian."""

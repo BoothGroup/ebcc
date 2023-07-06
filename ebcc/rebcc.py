@@ -6,7 +6,6 @@ import functools
 import importlib
 import logging
 import types
-from typing import Any, Union
 
 import numpy as np
 from pyscf import lib, scf
@@ -19,22 +18,8 @@ from ebcc.eris import RERIs
 from ebcc.fock import RFock
 from ebcc.space import Space
 
-# TODO test bosonic RDMs and lambdas - only regression atm
-# TODO math in docstrings
-# TODO resolve G vs bare_G confusion
-# TODO warnings if amplitudes/lambdas are not converged when calling i.e. DM funcs
-# TODO update docstrings
-# TODO orbspin with cluster spaces?
-# TODO fix TensorSymm and benchmark third order again
-# TODO active spaces for IP/EA
 
-
-class Amplitudes(util.Namespace):
-    """Amplitude container class. Consists of a dictionary with keys
-    that are strings of the name of each amplitude, and values are
-    arrays whose dimension depends on the particular amplitude.
-    """
-
+class EBCC:
     pass
 
 
@@ -69,7 +54,7 @@ class Options:
     diis_space: int = 12
 
 
-class REBCC(util.AbstractEBCC):
+class REBCC(EBCC):
     """Restricted electron-boson coupled cluster class.
 
     Parameters
@@ -125,9 +110,9 @@ class REBCC(util.AbstractEBCC):
         Object containing the options.
     e_corr : float
         Correlation energy.
-    amplitudes : Amplitudes
+    amplitudes : Namespace
         Cluster amplitudes.
-    lambdas : Amplitudes
+    lambdas : Namespace
         Cluster lambda amplitudes.
     converged : bool
         Whether the coupled cluster equations converged.
@@ -254,23 +239,22 @@ class REBCC(util.AbstractEBCC):
     """
 
     Options = Options
-    Amplitudes = Amplitudes
     ERIs = RERIs
     Brueckner = BruecknerREBCC
 
     def __init__(
         self,
-        mf: scf.hf.SCF,
-        log: logging.Logger = None,
-        ansatz: Union[str, Ansatz] = "CCSD",
-        space: Space = None,
-        omega: np.ndarray = None,
-        g: np.ndarray = None,
-        G: np.ndarray = None,
-        mo_coeff: np.ndarray = None,
-        mo_occ: np.ndarray = None,
-        fock: util.Namespace = None,
-        options: Options = None,
+        mf,
+        log=None,
+        ansatz="CCSD",
+        space=None,
+        omega=None,
+        g=None,
+        G=None,
+        mo_coeff=None,
+        mo_occ=None,
+        fock=None,
+        options=None,
         **kwargs,
     ):
         # Options:
@@ -347,7 +331,7 @@ class REBCC(util.AbstractEBCC):
         self.log.info("Space: %s", self.space)
         self.log.debug("")
 
-    def kernel(self, eris: Union[ERIs, np.ndarray] = None) -> float:
+    def kernel(self, eris=None):
         """Run the coupled cluster calculation.
 
         Parameters
@@ -436,7 +420,7 @@ class REBCC(util.AbstractEBCC):
 
         return e_cc
 
-    def solve_lambda(self, amplitudes: Amplitudes = None, eris: Union[ERIs, np.ndarray] = None):
+    def solve_lambda(self, amplitudes=None, eris=None):
         """Solve the lambda coupled cluster equations.
 
         Parameters
@@ -444,7 +428,7 @@ class REBCC(util.AbstractEBCC):
         eris : ERIs, optional
             Electronic repulsion integrals. Default value is generated
             using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
+        amplitudes : Namespace, optional
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
         """
@@ -528,15 +512,34 @@ class REBCC(util.AbstractEBCC):
 
         return bcc.kernel()
 
-    def write(self, file: str):
-        """Write the EBCC data to a file."""
+    def write(self, file):
+        """Write the EBCC data to a file.
+
+        Parameters
+        ----------
+        file : str
+            Path of file to write to.
+        """
 
         writer = Dump(file)
         writer.write(self)
 
     @classmethod
-    def read(cls, file: str, log: logging.Logger = None):
-        """Read the EBCC data from a file."""
+    def read(cls, file, log=None):
+        """Read the data from a file.
+
+        Parameters
+        ----------
+        file : str
+            Path of file to read from.
+        log : Logger, optional
+            Logger to assign to the EBCC object.
+
+        Returns
+        -------
+        ebcc : EBCC
+            The EBCC object loaded from the file.
+        """
 
         reader = Dump(file)
         cc = reader.read(cls=cls, log=log)
@@ -646,12 +649,12 @@ class REBCC(util.AbstractEBCC):
 
         Returns
         -------
-        amplitudes : Amplitudes
+        amplitudes : Namespace
             Cluster amplitudes.
         """
 
         eris = self.get_eris(eris)
-        amplitudes = self.Amplitudes()
+        amplitudes = util.Namespace()
 
         # Build T amplitudes:
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -707,19 +710,19 @@ class REBCC(util.AbstractEBCC):
 
         Parameters
         ----------
-        amplitudes : Amplitudes, optional
+        amplitudes : Namespace, optional
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
 
         Returns
         -------
-        lambdas : Amplitudes
-            Updated cluster lambda amplitudes.
+        lambdas : Namespace
+            Cluster lambda amplitudes.
         """
 
         if amplitudes is None:
             amplitudes = self.amplitudes
-        lambdas = self.Amplitudes()
+        lambdas = util.Namespace()
 
         # Build L amplitudes:
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -750,7 +753,7 @@ class REBCC(util.AbstractEBCC):
         eris : ERIs, optional
             Electronic repulsion integrals. Default value is generated
             using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
+        amplitudes : Namespace, optional
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
 
@@ -776,7 +779,7 @@ class REBCC(util.AbstractEBCC):
         eris : ERIs, optional
             Electronic repulsion integrals. Default value is generated
             using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
+        amplitudes : Namespace, optional
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
 
@@ -803,13 +806,13 @@ class REBCC(util.AbstractEBCC):
         eris : ERIs, optional
             Electronic repulsion integrals. Default value is generated
             using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
+        amplitudes : Namespace, optional
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
 
         Returns
         -------
-        amplitudes : Amplitudes
+        amplitudes : Namespace
             Updated cluster amplitudes.
         """
 
@@ -869,10 +872,10 @@ class REBCC(util.AbstractEBCC):
         eris : ERIs, optional
             Electronic repulsion integrals. Default value is generated
             using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
+        amplitudes : Namespace, optional
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
-        lambdas : Amplitudes, optional
+        lambdas : Namespace, optional
             Cluster lambda amplitudes. Default value is generated
             using `self.init_lams()`.
         perturbative : bool, optional
@@ -881,7 +884,7 @@ class REBCC(util.AbstractEBCC):
 
         Returns
         -------
-        lambdas : Amplitudes
+        lambdas : Namespace
             Updated cluster lambda amplitudes.
         """
         # TODO active
@@ -953,10 +956,10 @@ class REBCC(util.AbstractEBCC):
         eris : ERIs, optional
             Electronic repulsion integrals. Default value is generated
             using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
+        amplitudes : Namespace, optional
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
-        lambdas : Amplitudes, optional
+        lambdas : Namespace, optional
             Cluster lambda amplitudes. Default value is generated
             using `self.init_lams()`.
 
@@ -985,10 +988,10 @@ class REBCC(util.AbstractEBCC):
         eris : ERIs, optional
             Electronic repulsion integrals. Default value is generated
             using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
+        amplitudes : Namespace, optional
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
-        lambdas : Amplitudes, optional
+        lambdas : Namespace, optional
             Cluster lambda amplitudes. Default value is generated
             using `self.init_lams()`.
         unshifted : bool, optional
@@ -1034,10 +1037,10 @@ class REBCC(util.AbstractEBCC):
         eris : ERIs, optional
             Electronic repulsion integrals. Default value is generated
             using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
+        amplitudes : Namespace, optional
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
-        lambdas : Amplitudes, optional
+        lambdas : Namespace, optional
             Cluster lambda amplitudes. Default value is generated
             using `self.init_lams()`.
         hermitise : bool, optional
@@ -1075,10 +1078,10 @@ class REBCC(util.AbstractEBCC):
         eris : ERIs, optional
             Electronic repulsion integrals. Default value is generated
             using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
+        amplitudes : Namespace, optional
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
-        lambdas : Amplitudes, optional
+        lambdas : Namespace, optional
             Cluster lambda amplitudes. Default value is generated
             using `self.init_lams()`.
         hermitise : bool, optional
@@ -1121,10 +1124,10 @@ class REBCC(util.AbstractEBCC):
         eris : ERIs, optional
             Electronic repulsion integrals. Default value is generated
             using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
+        amplitudes : Namespace, optional
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
-        lambdas : Amplitudes, optional
+        lambdas : Namespace, optional
             Cluster lambda amplitudes. Default value is generated
             using `self.init_lams()`.
         unshifted : bool, optional
@@ -1176,7 +1179,7 @@ class REBCC(util.AbstractEBCC):
         eris : ERIs, optional
             Electronic repulsion integrals. Default value is generated
             using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
+        amplitudes : Namespace, optional
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
 
@@ -1214,7 +1217,7 @@ class REBCC(util.AbstractEBCC):
         eris : ERIs, optional
             Electronic repulsion integrals. Default value is generated
             using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
+        amplitudes : Namespace, optional
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
 
@@ -1251,7 +1254,7 @@ class REBCC(util.AbstractEBCC):
         eris : ERIs, optional
             Electronic repulsion integrals. Default value is generated
             using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
+        amplitudes : Namespace, optional
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
 
@@ -1283,10 +1286,10 @@ class REBCC(util.AbstractEBCC):
         eris : ERIs, optional
             Electronic repulsion integrals. Default value is generated
             using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
+        amplitudes : Namespace, optional
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
-        lambdas : Amplitudes, optional
+        lambdas : Namespace, optional
             Cluster lambda amplitudes. Default value is generated
             using `self.init_lams()`.
 
@@ -1315,10 +1318,10 @@ class REBCC(util.AbstractEBCC):
         eris : ERIs, optional
             Electronic repulsion integrals. Default value is generated
             using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
+        amplitudes : Namespace, optional
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
-        lambdas : Amplitudes, optional
+        lambdas : Namespace, optional
             Cluster lambda amplitudes. Default value is generated
             using `self.init_lams()`.
 
@@ -1347,10 +1350,10 @@ class REBCC(util.AbstractEBCC):
         eris : ERIs, optional
             Electronic repulsion integrals. Default value is generated
             using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
+        amplitudes : Namespace, optional
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
-        lambdas : Amplitudes, optional
+        lambdas : Namespace, optional
             Cluster lambda amplitudes. Default value is generated
             using `self.init_lams()`.
 
@@ -1379,10 +1382,10 @@ class REBCC(util.AbstractEBCC):
         eris : ERIs, optional
             Electronic repulsion integrals. Default value is generated
             using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
+        amplitudes : Namespace, optional
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
-        lambdas : Amplitudes, optional
+        lambdas : Namespace, optional
             Cluster lambda amplitudes. Default value is generated
             using `self.init_lams()`.
 
@@ -1411,10 +1414,10 @@ class REBCC(util.AbstractEBCC):
         eris : ERIs, optional
             Electronic repulsion integrals. Default value is generated
             using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
+        amplitudes : Namespace, optional
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
-        lambdas : Amplitudes, optional
+        lambdas : Namespace, optional
             Cluster lambda amplitudes. Default value is generated
             using `self.init_lams()`.
 
@@ -1443,10 +1446,10 @@ class REBCC(util.AbstractEBCC):
         eris : ERIs, optional
             Electronic repulsion integrals. Default value is generated
             using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
+        amplitudes : Namespace, optional
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
-        lambdas : Amplitudes, optional
+        lambdas : Namespace, optional
             Cluster lambda amplitudes. Default value is generated
             using `self.init_lams()`.
 
@@ -1477,10 +1480,10 @@ class REBCC(util.AbstractEBCC):
         eris : ERIs, optional
             Electronic repulsion integrals. Default value is generated
             using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
+        amplitudes : Namespace, optional
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
-        lambdas : Amplitudes, optional
+        lambdas : Namespace, optional
             Cluster lambda amplitudes. Default value is generated
             using `self.init_lams()`.
 
@@ -1502,10 +1505,10 @@ class REBCC(util.AbstractEBCC):
         eris : ERIs, optional
             Electronic repulsion integrals. Default value is generated
             using `self.get_eris()`.
-        amplitudes : Amplitudes, optional
+        amplitudes : Namespace, optional
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
-        lambdas : Amplitudes, optional
+        lambdas : Namespace, optional
             Cluster lambda amplitudes. Default value is generated
             using `self.init_lams()`.
 
@@ -1532,7 +1535,7 @@ class REBCC(util.AbstractEBCC):
 
         Parameters
         ----------
-        amplitudes : Amplitudes, optional
+        amplitudes : Namespace, optional
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
 
@@ -1568,11 +1571,11 @@ class REBCC(util.AbstractEBCC):
 
         Returns
         -------
-        amplitudes : Amplitudes
+        amplitudes : Namespace
             Cluster amplitudes.
         """
 
-        amplitudes = self.Amplitudes()
+        amplitudes = util.Namespace()
         i0 = 0
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -1601,7 +1604,7 @@ class REBCC(util.AbstractEBCC):
 
         Parameters
         ----------
-        lambdas : Amplitudes, optional
+        lambdas : Namespace, optional
             Cluster lambda amplitudes. Default value is generated
             using `self.init_lams()`.
 
@@ -1637,11 +1640,11 @@ class REBCC(util.AbstractEBCC):
 
         Returns
         -------
-        lambdas : Amplitudes
+        lambdas : Namespace
             Cluster lambda amplitudes.
         """
 
-        lambdas = self.Amplitudes()
+        lambdas = util.Namespace()
         i0 = 0
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -1874,7 +1877,7 @@ class REBCC(util.AbstractEBCC):
 
         Returns
         -------
-        g : util.Namespace
+        g : Namespace
             Namespace containing blocks of the electron-boson coupling
             matrix. Each attribute should be a length-3 string of
             `b`, `o` or `v` signifying whether the corresponding axis
@@ -1906,7 +1909,7 @@ class REBCC(util.AbstractEBCC):
 
         Returns
         -------
-        fock : util.Namespace
+        fock : Namespace
             Namespace containing blocks of the Fock matrix. Each
             attribute should be a length-2 string of `o` or `v`
             signifying whether the corresponding axis is occupied or

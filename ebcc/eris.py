@@ -1,16 +1,19 @@
 """Electronic repulsion integral containers.
 """
 
-import types
-from typing import Sequence
-
 import numpy as np
 from pyscf import ao2mo
 
 from ebcc import util
 
 
-class RERIs(util.Namespace):
+class ERIs(util.Namespace):
+    """Base class for electronic repulsion integrals.
+    """
+    pass
+
+
+class RERIs(ERIs):
     """
     Electronic repulsion integral container class for `REBCC`. Consists
     of a just-in-time namespace containing blocks of the integrals.
@@ -24,15 +27,15 @@ class RERIs(util.Namespace):
         * `"i"`: inactive occupied
         * `"a"`: inactive virtual
 
-    Parameters
+    Attributes
     ----------
-    ebcc : AbstractEBCC
+    ebcc : REBCC
         The EBCC object.
     array : np.ndarray, optional
         The array of integrals in the MO basis. If provided, do not
         perform just-in-time transformations but instead slice the
         array.  Default value is `None`.
-    slices : Sequence[slice], optional
+    slices : iterable of slice, optional
         The slices to use for each dimension. If provided, the default
         slices outlined above are used.
     mo_coeff : np.ndarray, optional
@@ -40,13 +43,7 @@ class RERIs(util.Namespace):
         `ebcc` are used.  Default value is `None`.
     """
 
-    def __init__(
-        self,
-        ebcc: util.AbstractEBCC,
-        array: np.ndarray = None,
-        slices: Sequence[slice] = None,
-        mo_coeff: np.ndarray = None,
-    ):
+    def __init__(self, ebcc, array=None, slices=None, mo_coeff=None):
         util.Namespace.__init__(self)
 
         self.mf = ebcc.mf
@@ -73,7 +70,7 @@ class RERIs(util.Namespace):
         if not isinstance(self.slices, (tuple, list)):
             self.slices = [self.slices] * 4
 
-    def __getattr__(self, key: str) -> np.ndarray:
+    def __getattr__(self, key):
         """Just-in-time attribute getter."""
 
         if self.array is None:
@@ -94,34 +91,29 @@ class RERIs(util.Namespace):
             return block
 
 
-class UERIs(util.Namespace):
+@util.inherit_docstrings
+class UERIs(ERIs):
     """
     Electronic repulsion integral container class for `UEBCC`. Consists
     of a namespace of `REBCC` objects, one for each spin signature.
 
-    Parameters
+    Attributes
     ----------
-    ebcc : AbstractEBCC
+    ebcc : UEBCC
         The EBCC object.
-    array : Sequence[np.ndarray], optional
+    array : iterable of np.ndarray, optional
         The array of integrals in the MO basis. If provided, do not
         perform just-in-time transformations but instead slice the
         array.  Default value is `None`.
-    slices : Sequence[Sequence[slice]], optional
+    slices : iterable of iterable of slice, optional
         The slices to use for each spin and each dimension therein.
         If provided, the default slices outlined above are used.
-    mo_coeff : Sequence[np.ndarray], optional
+    mo_coeff : iterable of np.ndarray, optional
         The MO coefficients for each spin. If not provided, the MO
         coefficients from `ebcc` are used.  Default value is `None`.
     """
 
-    def __init__(
-        self,
-        ebcc: util.AbstractEBCC,
-        array: Sequence[np.ndarray] = None,
-        mo_coeff: Sequence[np.ndarray] = None,
-        slices: Sequence[Sequence[slice]] = None,
-    ):
+    def __init__(self, ebcc, array=None, slices=None, mo_coeff=None):
         util.Namespace.__init__(self)
 
         self.mf = ebcc.mf
@@ -192,16 +184,11 @@ class UERIs(util.Namespace):
         )
 
 
+@util.inherit_docstrings
 class GERIs(RERIs):
     __doc__ = __doc__.replace("REBCC", "GEBCC")
 
-    def __init__(
-        self,
-        ebcc: util.AbstractEBCC,
-        array: np.ndarray = None,
-        slices: Sequence[slice] = None,
-        mo_coeff: np.ndarray = None,
-    ):
+    def __init__(self, ebcc, array=None, slices=None, mo_coeff=None):
         util.Namespace.__init__(self)
 
         if mo_coeff is None:

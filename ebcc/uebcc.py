@@ -16,22 +16,8 @@ from ebcc.fock import UFock
 from ebcc.space import Space
 
 
-class Amplitudes(util.Namespace):
-    """Amplitude container class. Consists of a dictionary with keys
-    that are strings of the name of each amplitude. Values are
-    namespaces with keys indicating whether each fermionic dimension
-    is alpha (`"a"`) or beta (`"b"`) spin, and values are arrays whose
-    dimension depends on the particular amplitude. For purely bosonic
-    amplitudes the values of `Amplitudes` are simply arrays, with no
-    fermionic spins to index.
-    """
-
-    pass
-
-
 @util.inherit_docstrings
 class UEBCC(rebcc.REBCC):
-    Amplitudes = Amplitudes
     ERIs = UERIs
     Brueckner = BruecknerUEBCC
 
@@ -62,7 +48,7 @@ class UEBCC(rebcc.REBCC):
         has_lams = rcc.lambdas is not None
 
         if has_amps:
-            amplitudes = cls.Amplitudes()
+            amplitudes = util.Namespace()
 
             for name, key, n in ucc.ansatz.fermionic_cluster_ranks(spin_type=ucc.spin_type):
                 amplitudes[name] = util.Namespace()
@@ -84,7 +70,7 @@ class UEBCC(rebcc.REBCC):
             ucc.amplitudes = amplitudes
 
         if has_lams:
-            lambdas = cls.Amplitudes()
+            lambdas = util.Namespace()
 
             for name, key, n in ucc.ansatz.fermionic_cluster_ranks(spin_type=ucc.spin_type):
                 lname = name.replace("t", "l")
@@ -150,7 +136,7 @@ class UEBCC(rebcc.REBCC):
 
     def init_amps(self, eris=None):
         eris = self.get_eris(eris)
-        amplitudes = self.Amplitudes()
+        amplitudes = util.Namespace()
 
         # Build T amplitudes
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -240,7 +226,7 @@ class UEBCC(rebcc.REBCC):
         if amplitudes is None:
             amplitudes = self.amplitudes
 
-        lambdas = self.Amplitudes()
+        lambdas = util.Namespace()
 
         # Build L amplitudes:
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -560,12 +546,15 @@ class UEBCC(rebcc.REBCC):
             return eris
 
     def ip_eom(self, options=None, **kwargs):
+        """Get the IP EOM object."""
         return ueom.IP_UEOM(self, options=options, **kwargs)
 
     def ea_eom(self, options=None, **kwargs):
+        """Get the EA EOM object."""
         return ueom.EA_UEOM(self, options=options, **kwargs)
 
     def ee_eom(self, options=None, **kwargs):
+        """Get the EE EOM object."""
         return ueom.EE_UEOM(self, options=options, **kwargs)
 
     def amplitudes_to_vector(self, amplitudes):
@@ -589,7 +578,7 @@ class UEBCC(rebcc.REBCC):
         return np.concatenate(vectors)
 
     def vector_to_amplitudes(self, vector):
-        amplitudes = self.Amplitudes()
+        amplitudes = util.Namespace()
         i0 = 0
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -651,7 +640,7 @@ class UEBCC(rebcc.REBCC):
         return np.concatenate(vectors)
 
     def vector_to_lambdas(self, vector):
-        lambdas = self.Amplitudes()
+        lambdas = util.Namespace()
         i0 = 0
         spin_indices = {"a": 0, "b": 1}
 

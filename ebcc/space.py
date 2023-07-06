@@ -62,6 +62,16 @@ class Space:
         """Convert a character in the standard `ebcc` notation to the
         size corresponding to this space.  See `ebcc.eris` for details
         on the default slices.
+
+        Parameters
+        ----------
+        char : str
+            The character to convert.
+
+        Returns
+        -------
+        n : int
+            The size of the space.
         """
         return {
             "o": self.ncocc,
@@ -76,6 +86,16 @@ class Space:
         """Convert a character in the standard `ebcc` notation to the
         mask corresponding to this space.  See `ebcc.eris` for details
         on the default slices.
+
+        Parameters
+        ----------
+        char : str
+            The character to convert.
+
+        Returns
+        -------
+        mask : np.ndarray
+            The mask corresponding to the space.
         """
         return {
             "o": self.correlated_occupied,
@@ -89,12 +109,32 @@ class Space:
     def omask(self, char):
         """Like `mask`, but returns only a mask into only the occupied
         sector.
+
+        Parameters
+        ----------
+        char : str
+            The character to convert.
+
+        Returns
+        -------
+        mask : np.ndarray
+            The mask corresponding to the space.
         """
         return self.mask(char)[self.occupied]
 
     def vmask(self, char):
         """Like `mask`, but returns only a mask into only the virtual
         sector.
+
+        Parameters
+        ----------
+        char : str
+            The character to convert.
+
+        Returns
+        -------
+        mask : np.ndarray
+            The mask corresponding to the space.
         """
         return self.mask(char)[self.virtual]
 

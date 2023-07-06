@@ -46,7 +46,7 @@ class BruecknerREBCC:
 
     Parameters
     ----------
-    cc : AbstractEBCC
+    cc : EBCC
         EBCC coupled cluster object.
     log : logging.Logger, optional
         Log to print output to. Default value is `cc.log`.
@@ -58,13 +58,7 @@ class BruecknerREBCC:
 
     Options = Options
 
-    def __init__(
-        self,
-        cc: "AbstractEBCC",
-        log: logging.Logger = None,
-        options: Options = None,
-        **kwargs,
-    ):
+    def __init__(self, cc, log=None, options=None, **kwargs):
         # Options:
         if options is None:
             options = self.Options()
@@ -91,6 +85,25 @@ class BruecknerREBCC:
     def get_rotation_matrix(self, u_tot=None, diis=None, t1=None):
         """Update the rotation matrix, and also return the total
         rotation matrix.
+
+        Parameters
+        ----------
+        u_tot : np.ndarray, optional
+            Total rotation matrix.  If `None`, then it is assumed to
+            be the identity matrix. Default value is `None`.
+        diis : DIIS, optional
+            DIIS object.  If `None`, then DIIS is not used.  Default
+            value is `None`.
+        t1 : np.ndarray, optional
+            T1 amplitudes.  If `None`, then `cc.t1` is used.  Default
+            value is `None`.
+
+        Returns
+        -------
+        u : np.ndarray
+            Rotation matrix.
+        u_tot : np.ndarray
+            Total rotation matrix.
         """
 
         if t1 is None:
@@ -120,7 +133,21 @@ class BruecknerREBCC:
         return u, u_tot
 
     def transform_amplitudes(self, u, amplitudes=None):
-        """Transform the amplitudes into the Brueckner orbital basis."""
+        """Transform the amplitudes into the Brueckner orbital basis.
+
+        Parameters
+        ----------
+        u : np.ndarray
+            Rotation matrix.
+        amplitudes : Namespace, optional
+            Amplitudes.  If `None`, then `cc.amplitudes` is used.
+            Default value is `None`.
+
+        Returns
+        -------
+        amplitudes : Namespace
+            Rotated amplitudes.
+        """
 
         if amplitudes is None:
             amplitudes = self.cc.amplitudes
@@ -150,7 +177,19 @@ class BruecknerREBCC:
         return self.cc.amplitudes
 
     def get_t1_norm(self, amplitudes=None):
-        """Get the norm of the T1 amplitude."""
+        """Get the norm of the T1 amplitude.
+
+        Parameters
+        ----------
+        amplitudes : Namespace, optional
+            Amplitudes.  If `None`, then `cc.amplitudes` is used.
+            Default value is `None`.
+
+        Returns
+        -------
+        t1_norm : float
+            Norm of the T1 amplitude.
+        """
 
         if amplitudes is None:
             amplitudes = self.cc.amplitudes
@@ -160,12 +199,35 @@ class BruecknerREBCC:
     def mo_to_correlated(self, mo_coeff):
         """For a given set of MO coefficients, return the correlated
         slice.
+
+        Parameters
+        ----------
+        mo_coeff : np.ndarray
+            MO coefficients.
+
+        Returns
+        -------
+        mo_coeff_corr : np.ndarray
+            Correlated slice of the MO coefficients.
         """
 
         return mo_coeff[:, self.cc.space.correlated]
 
     def mo_update_correlated(self, mo_coeff, mo_coeff_corr):
-        """Update the correlated slice of a set of MO coefficients."""
+        """Update the correlated slice of a set of MO coefficients.
+
+        Parameters
+        ----------
+        mo_coeff : np.ndarray
+            MO coefficients.
+        mo_coeff_corr : np.ndarray
+            Correlated slice of the MO coefficients.
+
+        Returns
+        -------
+        mo_coeff : np.ndarray
+            Updated MO coefficients.
+        """
 
         mo_coeff[:, self.cc.space.correlated] = mo_coeff_corr
 

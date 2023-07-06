@@ -1,17 +1,19 @@
 """Fock matrix containers.
 """
 
-import types
-from typing import Sequence
-
 import numpy as np
 
 from ebcc import util
 
 
-class RFock(util.Namespace):
+class Fock(util.Namespace):
+    """Base class for Fock matrices.
     """
-    Fock matrix container class for `REBCC`.
+    pass
+
+
+class RFock(Fock):
+    """Fock matrix container class for `REBCC`.
 
     The default slices are:
         * `"x"`: correlated
@@ -24,13 +26,13 @@ class RFock(util.Namespace):
 
     Parameters
     ----------
-    ebcc : AbstractEBCC
+    ebcc : REBCC
         The EBCC object.
     array : np.ndarray, optional
         The array of the Fock matrix in the MO basis. If provided, do
         not perform just-in-time transformations but instead slice the
         array.  Default value is `None`.
-    slices : Sequence[slice], optional
+    slices : iterable of slice, optional
         The slices to use for each dimension. If provided, the default
         slices outlined above are used.
     mo_coeff : np.ndarray, optional
@@ -41,14 +43,7 @@ class RFock(util.Namespace):
         matrix.  Default value is `None`.
     """
 
-    def __init__(
-        self,
-        ebcc: util.AbstractEBCC,
-        array: np.ndarray = None,
-        slices: Sequence[slice] = None,
-        mo_coeff: np.ndarray = None,
-        g: util.Namespace = None,
-    ):
+    def __init__(self, ebcc, array=None, slices=None, mo_coeff=None, g=None):
         util.Namespace.__init__(self)
 
         self.mf = ebcc.mf
@@ -103,34 +98,28 @@ class RFock(util.Namespace):
         return self.__dict__[key]
 
 
-class UFock(util.Namespace):
-    """
-    Fock matrix container class for `REBCC`. Consists of a namespace
+@util.inherit_docstrings
+class UFock(Fock):
+    """Fock matrix container class for `UEBCC`. Consists of a namespace
     of `RFock` objects, on for each spin signature.
 
     Parameters
     ----------
-    ebcc : AbstractEBCC
+    ebcc : UEBCC
         The EBCC object.
-    array : Sequence[np.ndarray], optional
+    array : iterable of np.ndarray, optional
         The array of the Fock matrix in the MO basis. If provided, do
         not perform just-in-time transformations but instead slice the
         array.  Default value is `None`.
-    slices : Sequence[Sequence[slice]], optional
+    slices : iterable of iterable of slice, optional
         The slices to use for each dimension. If provided, the default
         slices outlined above are used.
-    mo_coeff : Sequence[np.ndarray], optional
+    mo_coeff : iterable of np.ndarray, optional
         The MO coefficients. If not provided, the MO coefficients from
         `ebcc` are used.  Default value is `None`.
     """
 
-    def __init__(
-        self,
-        ebcc: util.AbstractEBCC,
-        array: Sequence[np.ndarray] = None,
-        slices: Sequence[Sequence[slice]] = None,
-        mo_coeff: Sequence[np.ndarray] = None,
-    ):
+    def __init__(self, ebcc, array=None, slices=None, mo_coeff=None):
         util.Namespace.__init__(self)
 
         self.mf = ebcc.mf
@@ -183,5 +172,6 @@ class UFock(util.Namespace):
         )
 
 
+@util.inherit_docstrings
 class GFock(RFock):
     __doc__ = RFock.__doc__.replace("REBCC", "GEBCC")
