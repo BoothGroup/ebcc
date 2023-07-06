@@ -1,15 +1,13 @@
-"""Electronic repulsion integral containers.
-"""
+"""Electronic repulsion integral containers."""
 
-import numpy as np
 from pyscf import ao2mo
 
 from ebcc import util
 
 
 class ERIs(util.Namespace):
-    """Base class for electronic repulsion integrals.
-    """
+    """Base class for electronic repulsion integrals."""
+
     pass
 
 
@@ -141,7 +139,8 @@ class UERIs(ERIs):
         if array is not None:
             arrays = (array[0], array[1], array[1].transpose((2, 3, 0, 1)), array[2])
         elif isinstance(self.mf._eri, tuple):
-            # Have spin-dependent coulomb interaction; precalculate required arrays for simplicity.
+            # Have spin-dependent coulomb interaction; precalculate
+            # required arrays for simplicity.
             arrays_aabb = ao2mo.incore.general(
                 self.mf._eri[1], [self.mo_coeff[i] for i in (0, 0, 1, 1)], compact=False
             )

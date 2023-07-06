@@ -1,7 +1,5 @@
-"""Unrestricted equation-of-motion solver.
-"""
+"""Unrestricted equation-of-motion solver."""
 
-import dataclasses
 import functools
 import warnings
 
@@ -28,6 +26,7 @@ class UEOM(reom.REOM):
     def _quasiparticle_weight(self, r1):
         return np.linalg.norm(r1.a) ** 2 + np.linalg.norm(r1.b) ** 2
 
+    @util.has_docstring
     def moments(self, nmom, eris=None, amplitudes=None, hermitise=True):
         if eris is None:
             eris = self.ebcc.get_eris()
@@ -63,6 +62,7 @@ class UEOM(reom.REOM):
 class IP_UEOM(UEOM, reom.IP_REOM):
     """Unrestricted equation-of-motion class for ionisation potentials."""
 
+    @util.has_docstring
     def diag(self, eris=None):
         parts = []
         e_ia = util.Namespace(
@@ -91,6 +91,7 @@ class IP_UEOM(UEOM, reom.IP_REOM):
 
         return self.amplitudes_to_vector(*parts)
 
+    @util.has_docstring
     def bras(self, eris=None):
         bras_raw = list(self._bras(eris=eris))
         bras = util.Namespace(a=[], b=[])
@@ -127,6 +128,7 @@ class IP_UEOM(UEOM, reom.IP_REOM):
 
         return bras
 
+    @util.has_docstring
     def kets(self, eris=None):
         kets_raw = list(self._kets(eris=eris))
         kets = util.Namespace(a=[], b=[])
@@ -169,6 +171,7 @@ class IP_UEOM(UEOM, reom.IP_REOM):
 class EA_UEOM(UEOM, reom.EA_REOM):
     """Unrestricted equation-of-motion class for electron affinities."""
 
+    @util.has_docstring
     def diag(self, eris=None):
         parts = []
         e_ai = util.Namespace(
@@ -197,6 +200,7 @@ class EA_UEOM(UEOM, reom.EA_REOM):
 
         return self.amplitudes_to_vector(*parts)
 
+    @util.has_docstring
     def bras(self, eris=None):
         bras_raw = list(self._bras(eris=eris))
         bras = util.Namespace(a=[], b=[])
@@ -233,6 +237,7 @@ class EA_UEOM(UEOM, reom.EA_REOM):
 
         return bras
 
+    @util.has_docstring
     def kets(self, eris=None):
         kets_raw = list(self._kets(eris=eris))
         kets = util.Namespace(a=[], b=[])
@@ -278,6 +283,7 @@ class EE_UEOM(UEOM, reom.EE_REOM):
     def _quasiparticle_weight(self, r1):
         return np.linalg.norm(r1.aa) ** 2 + np.linalg.norm(r1.bb) ** 2
 
+    @util.has_docstring
     def diag(self, eris=None):
         parts = []
         e_ia = util.Namespace(
@@ -302,6 +308,7 @@ class EE_UEOM(UEOM, reom.EE_REOM):
 
         return self.amplitudes_to_vector(*parts)
 
+    @util.has_docstring
     def bras(self, eris=None):  # pragma: no cover
         raise util.ModelNotImplemented("EE moments for UEBCC not working.")
 
@@ -357,6 +364,7 @@ class EE_UEOM(UEOM, reom.EE_REOM):
 
         return bras
 
+    @util.has_docstring
     def kets(self, eris=None):  # pragma: no cover
         raise util.ModelNotImplemented("EE moments for UEBCC not working.")
 
@@ -413,8 +421,14 @@ class EE_UEOM(UEOM, reom.EE_REOM):
 
         return kets
 
+    @util.has_docstring
     def moments(
-        self, nmom, eris=None, amplitudes=None, hermitise=True, diagonal_only=True
+        self,
+        nmom,
+        eris=None,
+        amplitudes=None,
+        hermitise=True,
+        diagonal_only=True,
     ):  # pragma: no cover
         raise util.ModelNotImplemented("EE moments for UEBCC not working.")
 

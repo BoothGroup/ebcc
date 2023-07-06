@@ -1,10 +1,5 @@
-"""File dumping and reading functionality.
-"""
+"""File dumping and reading functionality."""
 
-import logging
-from typing import Type
-
-import h5py
 from pyscf import scf
 from pyscf.lib.chkfile import dump, dump_mol, load, load_mol
 
@@ -14,7 +9,8 @@ from ebcc.space import Space
 
 
 class Dump:
-    """File handler for reading and writing EBCC calculations.
+    """
+    File handler for reading and writing EBCC calculations.
 
     Attributes
     ----------
@@ -26,7 +22,8 @@ class Dump:
         self.name = name
 
     def write(self, ebcc):
-        """Write the EBCC object to the file.
+        """
+        Write the EBCC object to the file.
 
         Parameters
         ----------
@@ -96,10 +93,6 @@ class Dump:
 
         # Write the Fock matrix
         # TODO write the Fock matrix class instead
-        dic = {
-            "bare_fock": ebcc.bare_fock,
-        }
-        dump(self.name, "fock", dic)
 
         # Write miscellaneous data
         kwargs = {
@@ -140,7 +133,8 @@ class Dump:
                 dump(self.name, "lambdas", {**ebcc.lambdas})
 
     def read(self, cls, log=None):
-        """Load the file to an EBCC object.
+        """
+        Load the file to an EBCC object.
 
         Parameters
         ----------
@@ -220,8 +214,6 @@ class Dump:
 
         # Load the Fock matrix
         # TODO load the Fock matrix class instead
-        dic = load(self.name, "fock")
-        bare_fock = dic.get("bare_fock", None)
 
         # Load the amplitudes
         amplitudes = load(self.name, "amplitudes")

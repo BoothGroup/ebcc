@@ -1,9 +1,6 @@
-"""Ansatz definition.
-"""
+"""Ansatz definition."""
 
 import importlib
-
-import numpy as np
 
 from ebcc import METHOD_TYPES, util
 
@@ -27,8 +24,9 @@ named_ansatzes = {
 
 def name_to_identifier(name):
     """
-    Convert an ansatz name to an identifer that can be used for
-    variable and file names.
+    Convert an ansatz name to an identifier. The identifier is used as for
+    the filename of the module containing the generated equations, where
+    the name may contain illegal characters.
 
     Parameters
     ----------
@@ -57,7 +55,9 @@ def name_to_identifier(name):
 
 
 def identifity_to_name(iden):
-    """Convert an ansatz identifier to a name.
+    """
+    Convert an ansatz identifier to a name. Inverse operation of
+    `name_to_identifier`.
 
     Parameters
     ----------
@@ -88,7 +88,8 @@ def identifity_to_name(iden):
 
 
 class Ansatz:
-    """Ansatz class.
+    """
+    Ansatz class.
 
     Parameters
     ----------
@@ -101,9 +102,9 @@ class Ansatz:
     boson_coupling_rank : int, optional
         Rank of bosonic term in coupling. Default is 0.
     module_name : str, optional
-        Name of the module containing the generated equations. If
-        `None`, the module name is generated from the ansatz name.
-        Default value is `None`.
+        Name of the module containing the generated equations. If `None`,
+        the module name is generated from the ansatz name. Default value is
+        `None`.
     """
 
     def __init__(
@@ -121,10 +122,7 @@ class Ansatz:
         self.module_name = module_name
 
     def _get_eqns(self, prefix):
-        """
-        Get the module which contains the generated equations for the
-        current model.
-        """
+        """Get the module containing the generated equations."""
 
         if self.module_name is None:
             name = prefix + name_to_identifier(self.name)
@@ -137,7 +135,8 @@ class Ansatz:
 
     @classmethod
     def from_string(cls, string):
-        """Build an Ansatz from a string for the default ansatzes.
+        """
+        Build an Ansatz from a string for the default ansatzes.
 
         Parameters
         ----------
@@ -156,7 +155,8 @@ class Ansatz:
         return cls(*named_ansatzes[string])
 
     def __repr__(self):
-        """Get a string with the name of the method.
+        """
+        Get a string with the name of the method.
 
         Returns
         -------
@@ -173,6 +173,7 @@ class Ansatz:
 
     @property
     def name(self):
+        """Get the name of the ansatz."""
         return repr(self)
 
     @property
@@ -194,8 +195,8 @@ class Ansatz:
     @property
     def is_one_shot(self):
         """
-        Return a boolean indicating whether the ansatz is simply a
-        one-shot energy calculation e.g. MP2.
+        Return a boolean indicating whether the ansatz is simply a one-shot
+        energy calculation e.g. MP2.
 
         Returns
         -------
@@ -280,8 +281,8 @@ class Ansatz:
         return ranks
 
     def bosonic_cluster_ranks(self, spin_type="G"):
-        """Get a list of cluster operator ranks for the bosonic
-        space.
+        """
+        Get a list of cluster operator ranks for the bosonic space.
 
         Parameters
         ----------
@@ -332,8 +333,9 @@ class Ansatz:
         return ranks
 
     def coupling_cluster_ranks(self, spin_type="G"):
-        """Get a list of cluster operator ranks for the coupling
-        between fermionic and bosonic spaces.
+        """
+        Get a list of cluster operator ranks for the coupling between
+        fermionic and bosonic spaces.
 
         Parameters
         ----------
@@ -344,8 +346,7 @@ class Ansatz:
         -------
         ranks : list of tuple
             List of cluster operator ranks, each element is a tuple
-            containing the name, slice, fermionic rank and bosonic
-            rank.
+            containing the name, slice, fermionic rank and bosonic rank.
         """
 
         ranks = []

@@ -1,19 +1,15 @@
-"""Utilities.
-"""
+"""Utilities."""
 
 import ctypes
 import functools
 import inspect
 import itertools
-import logging
-import sys
 import time
-import types
 import warnings
 from collections.abc import Mapping
 
 import numpy as np
-from pyscf.lib import direct_sum, dot
+from pyscf.lib import direct_sum, dot  # noqa: F401
 from pyscf.lib import einsum as pyscf_einsum
 
 try:
@@ -30,6 +26,8 @@ NUMPY_EINSUM_SIZE = 2000
 
 
 class InheritedType:
+    """Type for an inherited variable in `Options` classes."""
+
     pass
 
 
@@ -37,12 +35,18 @@ Inherited = InheritedType()
 
 
 class ModelNotImplemented(NotImplementedError):
+    """Error for unsupported models."""
+
     pass
 
 
 class Namespace(Mapping):
-    """Replacement for SimpleNamespace, which does not trivially allow
+    """
+    Replacement for SimpleNamespace, which does not trivially allow
     conversion to a dict for heterogenously nested objects.
+
+    Attributes can be added and removed, using either string indexing or
+    accessing the attribute directly.
     """
 
     def __init__(self, **kwargs):
@@ -51,15 +55,18 @@ class Namespace(Mapping):
             self[key] = val
 
     def __setitem__(self, key, val):
+        """Set an attribute."""
         self._keys.add(key)
         self.__dict__[key] = val
 
     def __getitem__(self, key):
+        """Get an attribute."""
         if key not in self._keys:
             raise IndexError(key)
         return self.__dict__[key]
 
     def __delitem__(self, key):
+        """Delete an attribute."""
         if key not in self._keys:
             raise IndexError(key)
         del self.__dict__[key]
@@ -67,31 +74,39 @@ class Namespace(Mapping):
     __setattr__ = __setitem__
 
     def __iter__(self):
+        """Iterate over the namespace as a dictionary."""
         yield from {key: self[key] for key in self._keys}
 
     def __eq__(self, other):
+        """Check equality."""
         return dict(self) == dict(other)
 
     def __contains__(self, key):
+        """Check if an attribute exists."""
         return key in self._keys
 
     def __len__(self, other):
+        """Return the number of attributes."""
         return len(self._keys)
 
 
 class Timer:
+    """Timer class."""
+
     def __init__(self):
         self.t_init = time.perf_counter()
         self.t_prev = time.perf_counter()
         self.t_curr = time.perf_counter()
 
     def lap(self):
+        """Return the time since the last call to `lap`."""
         self.t_prev, self.t_curr = self.t_curr, time.perf_counter()
         return self.t_curr - self.t_prev
 
     __call__ = lap
 
     def total(self):
+        """Return the total time since initialization."""
         return time.perf_counter() - self.t_init
 
     @staticmethod
@@ -117,8 +132,7 @@ class Timer:
 
 
 def factorial(n):
-    """Return the factorial of n."""
-
+    """Return the factorial of `n`."""
     if n in (0, 1):
         return 1
     else:
@@ -126,12 +140,47 @@ def factorial(n):
 
 
 def permute_string(string, permutation):
-    """Permute a string."""
+    """
+    Permute a string.
+
+    Parameters
+    ----------
+    string : str
+        String to permute.
+    permutation : list of int
+        Permutation to apply.
+
+    Returns
+    -------
+    permuted : str
+        Permuted string.
+
+    Examples
+    --------
+    >>> permute_string("abcd", [2, 0, 3, 1])
+    "cbda"
+    """
     return "".join([string[i] for i in permutation])
 
 
 def tril_indices_ndim(n, dims, include_diagonal=False):
-    """Return lower triangular indices for a multidimensional array."""
+    """
+    Return lower triangular indices for a multidimensional array.
+
+    Parameters
+    ----------
+    n : int
+        Size of each dimension.
+    dims : int
+        Number of dimensions.
+    include_diagonal : bool, optional
+        If `True`, include diagonal elements. Default value is `False`.
+
+    Returns
+    -------
+    tril : tuple of ndarray
+        Lower triangular indices for each dimension.
+    """
 
     ranges = [np.arange(n)] * dims
 
@@ -160,7 +209,7 @@ def tril_indices_ndim(n, dims, include_diagonal=False):
 
 
 def ntril_ndim(n, dims, include_diagonal=False):
-    """Return the number of elements in an n-dimensional lower triangle."""
+    """Return `len(tril_indices_ndim(n, dims, include_diagonal))`."""
 
     # FIXME hack until this function is fixed:
     if include_diagonal:
@@ -181,8 +230,9 @@ def ntril_ndim(n, dims, include_diagonal=False):
 
 
 def generate_spin_combinations(n, excited=False, unique=False):
-    """Generate combinations of spin components for a given number
-    of occupied and virtual axes.
+    """
+    Generate combinations of spin components for a given number of
+    occupied and virtual axes.
 
     Parameters
     ----------
@@ -236,9 +286,19 @@ def generate_spin_combinations(n, excited=False, unique=False):
 
 
 def permutations_with_signs(seq):
-    """Generate permutations of seq, yielding also a sign which is
-    equal to +1 for an even number of swaps, and -1 for an odd number
-    of swaps.
+    """
+    Return permutations of seq, yielding also a sign which is equal to +1
+    for an even number of swaps, and -1 for an odd number of swaps.
+
+    Parameters
+    ----------
+    seq : iterable
+        Sequence to permute.
+
+    Returns
+    -------
+    permuted : list of tuple
+        List of tuples of the form (permuted, sign).
     """
 
     def _permutations(seq):
@@ -258,13 +318,19 @@ def permutations_with_signs(seq):
 
 
 def get_symmetry_factor(*numbers):
-    """Get a floating point value corresponding to the factor from
-    the neglection of symmetry in repeated indices.
+    """
+    Get a floating point value corresponding to the factor from the
+    neglection of symmetry in repeated indices.
 
     Parameters
     ----------
     numbers : tuple of int
         Multiplicity of each distinct degree of freedom.
+
+    Returns
+    -------
+    factor : float
+        Symmetry factor.
 
     Examples
     --------
@@ -284,10 +350,11 @@ def get_symmetry_factor(*numbers):
 
 
 def inherit_docstrings(cls, warn_if_missing=True):
-    """Inherit docstring from superclass."""
+    """Inherit docstrings for a class and its methods from superclass."""
 
     for name, func in inspect.getmembers(cls, inspect.isfunction):
         if not func.__doc__:
+            cls.__doc__ = cls.__mro__[1].__doc__
             for parent in cls.__mro__[1:]:
                 if hasattr(parent, name):
                     func.__doc__ = getattr(parent, name).__doc__
@@ -295,14 +362,45 @@ def inherit_docstrings(cls, warn_if_missing=True):
                     if warn_if_missing and not func.__doc__ and not name.startswith("_"):
                         warnings.warn(
                             "Could not inherit docstring for function {} in {}".format(
-                            name, cls.__name__,
-                        ))
+                                name,
+                                cls.__name__,
+                            )
+                        )
 
     return cls
 
 
+def has_docstring(cls_or_func, warn_if_missing=True):
+    """
+    Do nothing, except warn if a docstring doesn't exist on `cls_or_func`
+    if `warn_if_missing`.
+
+    Simple marker to tell a static linter or a human that a class or
+    function has a docstring, even if it doesn't appear in the source code.
+    """
+
+    if warn_if_missing and not cls_or_func.__doc__:
+        warnings.warn("Missing docstring in {}".format(cls_or_func.__name__))
+
+    return cls_or_func
+
+
 def antisymmetrise_array(v, axes=(0, 1)):
-    """Antisymmetrise an array."""
+    """
+    Antisymmetrise an array.
+
+    Parameters
+    ----------
+    v : ndarray
+        Array to antisymmetrise.
+    axes : tuple of int, optional
+        Axes to antisymmetrise over. Default value is `(0, 1)`.
+
+    Returns
+    -------
+    v_as : ndarray
+        Antisymmetrised array.
+    """
 
     v_as = np.zeros_like(v)
 
@@ -318,40 +416,44 @@ def antisymmetrise_array(v, axes=(0, 1)):
 
 
 def is_mixed_spin(spin):
+    """Return a boolean indicating if a list of spins is mixed."""
     return len(set(spin)) != 1
 
 
 def combine_subscripts(*subscripts, sizes=None):
-    """Combines subscripts into new unique subscripts for functions
-    such as `compress_axes`. For example, one may wish to compress an
-    amplitude according to both occupancy and spin signatures.
+    """
+    Combine subscripts into new unique subscripts for functions such as
+    `compress_axes`.
 
-    The output string of this function has the same length as the
-    input subscripts, where the `i`th character is an arbitrary
-    character chosen such that it is unique for a unique value of
+    For example, one may wish to compress an amplitude according to both
+    occupancy and spin signatures.
+
+    The output string of this function has the same length as the input
+    subscripts, where the `i`th character is an arbitrary character chosen
+    such that it is unique for a unique value of
     `tuple(s[i] for s in subscripts)` among other values of `i`.
 
     If `sizes` is passed, this function also returns a dictionary
-    indicating the size of each new character in the subscript
-    according to the size of the corresponding original character
-    in the dictionary `sizes`.
+    indicating the size of each new character in the subscript according to
+    the size of the corresponding original character in the dictionary
+    `sizes`.
 
     Parameters
     ----------
     subscripts : tuple of str
-        Subscripts to combine.  Each subscript must be a string of
-        the same length.
+        Subscripts to combine. Each subscript must be a string of the same
+        length.
     sizes : dict, optional
-        Dictionary of sizes for each index.  Keys should be
-        `tuple(s[i] for s in subscripts)`.  Default value is `None`.
+        Dictionary of sizes for each index. Keys should be
+        `tuple(s[i] for s in subscripts)`. Default value is `None`.
 
     Returns
     -------
     new_subscript : str
         Output subscript.
     new_sizes : dict, optional
-        Dictionary of the sizes of each new index.  Only returned if
-        the `sizes` keyword argument is provided.
+        Dictionary of the sizes of each new index. Only returned if the
+        `sizes` keyword argument is provided.
     """
 
     if len(set(len(s) for s in subscripts)) != 1:
@@ -380,10 +482,31 @@ def combine_subscripts(*subscripts, sizes=None):
         return new_subscript, new_sizes
 
 
-def compress_axes(subscript, array, include_diagonal=False, out=None):
-    """Compress an array into lower-triangular representations using
-    an einsum-like input.
+def compress_axes(subscript, array, include_diagonal=False):
+    """
+    Compress an array into lower-triangular representations using an
+    einsum-like input.
 
+    Parameters
+    ----------
+    subscript : str
+        Subscript for the input array. The output array will have a
+        compressed representation of the input array according to this
+        subscript, where repeated characters indicate symmetrically
+        equivalent axes.
+    array : numpy.ndarray
+        Array to compress.
+    include_diagonal : bool, optional
+        Whether to include the diagonal elements of the input array in the
+        output array. Default value is `False`.
+
+    Returns
+    -------
+    compressed_array : numpy.ndarray
+        Compressed array.
+
+    Examples
+    --------
     >>> t2 = np.zeros((4, 4, 10, 10))
     >>> compress_axes("iiaa", t2).shape
     (6, 45)
@@ -437,14 +560,41 @@ def compress_axes(subscript, array, include_diagonal=False, out=None):
 
 
 def decompress_axes(
-    subscript, array_flat, shape=None, include_diagonal=False, symmetry=None, out=None
+    subscript,
+    array_flat,
+    shape=None,
+    include_diagonal=False,
+    symmetry=None,
+    out=None,
 ):
-    """Reverse operation of `compress_axes`, subscript input is the
-    same. The input symmetry is a string of the same length as
-    subscript, with a "+" indicating symmetry and "-" antisymmetry.
     """
-    # FIXME: if you pass out=array here, it doesn't work - it's not touching all parts of the array??
-    #        --> I guess the diagonals actually!! set out to zero first if used as input.
+    Reverse operation of `compress_axes`, subscript input is the same. One
+    of `shape` or `out` must be passed.
+
+    Parameters
+    ----------
+    subscript : str
+        Subscript for the output array. The input array will have a
+        compressed representation of the output array according to this
+        subscript, where repeated characters indicate symmetrically
+        equivalent axes.
+    array_flat : numpy.ndarray
+        Array to decompress.
+    shape : tuple of int, optional
+        Shape of the output array. Must be passed if `out` is `None`.
+        Default value is `None`.
+    include_diagonal : bool, optional
+        Whether to include the diagonal elements of the output array in the
+        input array. Default value is `False`.
+    symmetry : str, optional
+        Symmetry of the output array, with a `"+"` indicating symmetry and
+        `"-"` indicating antisymmetry for each dimension in the
+        decompressed array. If `None`, defaults to fully symmetric (i.e.
+        all characters are `"+"`). Default value is `None`.
+    out : numpy.ndarray, optional
+        Output array. If `None`, a new array is created, and `shape` must
+        be passed. Default value is `None`.
+    """
 
     assert "->" not in subscript
     assert shape is not None or out is not None
@@ -458,6 +608,7 @@ def decompress_axes(
         array = np.zeros(shape)
     else:
         array = out
+        out[:] = 0.0
 
     # Substitute the input characters so that they are ordered:
     subs = {}
@@ -526,10 +677,24 @@ def decompress_axes(
 
 
 def get_compressed_size(subscript, **sizes):
-    """Get the size of a compressed representation of a matrix
-    based on the subscript input to `compressed_axes` and the
-    sizes of each character.
+    """
+    Get the size of a compressed representation of a matrix based on the
+    subscript input to `compressed_axes` and the sizes of each character.
 
+    Parameters
+    ----------
+    subscript : str
+        Subscript for the output array. See `compressed_axes` for details.
+    **sizes : int
+        Sizes of each character in the subscript.
+
+    Returns
+    -------
+    n : int
+        Size of the compressed representation of the array.
+
+    Examples
+    --------
     >>> get_compressed_shape("iiaa", i=5, a=3)
     30
     """
@@ -543,8 +708,31 @@ def get_compressed_size(subscript, **sizes):
 
 
 def symmetrise(subscript, array, symmetry=None, apply_factor=True):
-    """Enforce a symmetry in an array. `subscript` and `symmetry` are
-    as `decompress_axes`.
+    """
+    Enforce a symmetry in an array.
+
+    Parameters
+    ----------
+    subscript : str
+        Subscript for the input array. The output array will have a
+        compressed representation of the input array according to this
+        subscript, where repeated characters indicate symmetrically
+        equivalent axes.
+    array : numpy.ndarray
+        Array to compress.
+    symmetry : str, optional
+        Symmetry of the output array, with a `"+"` indicating symmetry and
+        `"-"` indicating antisymmetry for each dimension in the
+        decompressed array. If `None`, defaults to fully symmetric (i.e.
+        all characters are `"+"`). Default value is `None`.
+    apply_factor : bool, optional
+        Whether to apply a factor of to the output array, to account for
+        the symmetry. Default value is `True`.
+
+    Returns
+    -------
+    array : numpy.ndarray
+        Symmetrised array.
     """
 
     # Substitute the input characters so that they are ordered:
@@ -608,7 +796,7 @@ ov_2e = [
 ]
 
 
-def pack_2e(*args):
+def pack_2e(*args):  # noqa
     # TODO remove
     # args should be in the order of ov_2e
 
@@ -628,13 +816,13 @@ def pack_2e(*args):
 
 
 class EinsumOperandError(ValueError):
+    """Exception for invalid inputs to `einsum`."""
+
     pass
 
 
 def _fallback_einsum(*operands, **kwargs):
-    """
-    Handle the fallback to `numpy.einsum`.
-    """
+    """Handle the fallback to `numpy.einsum`."""
 
     kwargs = kwargs.copy()
     alpha = kwargs.pop("alpha", 1.0)
@@ -653,9 +841,30 @@ def _fallback_einsum(*operands, **kwargs):
 def contract(subscript, *args, **kwargs):
     """
     Contract a pair of terms in an einsum. Supports additional keyword
-    arguments `alpha` and `beta` which operate as `pyscf.lib.dot`. In
-    some cases this will still require copying, but it minimises the
-    memory overhead in simple cases.
+    arguments `alpha` and `beta` which operate as `pyscf.lib.dot`. In some
+    cases this will still require copying, but it minimises the memory
+    overhead in simple cases.
+
+    Parameters
+    ----------
+    subscript : str
+        Subscript representation of the contraction.
+    args : tuple of numpy.ndarray
+        Arrays to contract.
+    alpha : float, optional
+        Scaling factor for contraction. Default value is `1.0`.
+    beta : float, optional
+        Scaling factor for the output. Default value is `0.0`.
+    out : numpy.ndarray, optional
+        Output array. If `None`, a new array is created. Default value is
+        `None`.
+    **kwargs : dict
+        Additional keyword arguments to `numpy.einsum`.
+
+    Returns
+    -------
+    array : numpy.ndarray
+        Result of the contraction.
     """
 
     alpha = kwargs.get("alpha", 1.0)
@@ -835,9 +1044,7 @@ def contract(subscript, *args, **kwargs):
 
 
 def einsum(*operands, **kwargs):
-    """
-    Dispatch an einsum. Input arguments are the same as `numpy`.
-    """
+    """Dispatch an einsum. Input arguments are the same as `numpy`."""
 
     inp, out, args = np.core.einsumfunc._parse_einsum_input(operands)
     subscript = "%s->%s" % (inp, out)
@@ -874,7 +1081,7 @@ def unique(lst):
     return out
 
 
-def einsum_symmetric(*operands, symmetries=[], symmetrise_dummies=False, **kwargs):
+def einsum_symmetric(*operands, symmetries=[], symmetrise_dummies=False, **kwargs):  # noqa
     """Dispatch an einsum in a symmetric representation. The argument
     `symmetries` should be an iterable of the symmetry subscripts for
     each input and for the output array, in the format of the
@@ -886,7 +1093,6 @@ def einsum_symmetric(*operands, symmetries=[], symmetrise_dummies=False, **kwarg
     assert not symmetrise_dummies
 
     inp, out, args = np.core.einsumfunc._parse_einsum_input(operands)
-    subscript = "%s->%s" % (inp, out)
 
     # Get the sizes of each index
     sizes = {}

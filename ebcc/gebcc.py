@@ -1,12 +1,7 @@
-"""General electron-boson coupled cluster.
-"""
-
-import functools
-import itertools
+"""General electron-boson coupled cluster."""
 
 import numpy as np
-import scipy.linalg
-from pyscf import ao2mo, lib, scf
+from pyscf import lib, scf
 
 from ebcc import geom, rebcc, uebcc, util
 from ebcc.brueckner import BruecknerGEBCC
@@ -20,6 +15,7 @@ class GEBCC(rebcc.REBCC):
     __doc__ = __doc__.replace("Restricted", "Generalised", 1)
 
     ERIs = GERIs
+    Fock = GFock
     Brueckner = BruecknerGEBCC
 
     @staticmethod
@@ -32,7 +28,7 @@ class GEBCC(rebcc.REBCC):
 
     @classmethod
     def from_uebcc(cls, ucc):
-        """Initialise a GEBCC object from an UEBCC object.
+        """Initialise a `GEBCC` object from an `UEBCC` object.
 
         Parameters
         ----------
@@ -243,7 +239,8 @@ class GEBCC(rebcc.REBCC):
 
     @classmethod
     def from_rebcc(cls, rcc):
-        """Initialise a GEBCC object from an REBCC object.
+        """
+        Initialise a `GEBCC` object from an `REBCC` object.
 
         Parameters
         ----------
@@ -261,6 +258,7 @@ class GEBCC(rebcc.REBCC):
 
         return gcc
 
+    @util.has_docstring
     def init_amps(self, eris=None):
         eris = self.get_eris(eris)
         amplitudes = util.Namespace()
@@ -313,6 +311,7 @@ class GEBCC(rebcc.REBCC):
 
         return amplitudes
 
+    @util.has_docstring
     def make_rdm2_f(self, eris=None, amplitudes=None, lambdas=None, hermitise=True):
         func, kwargs = self._load_function(
             "make_rdm2_f",
@@ -329,6 +328,7 @@ class GEBCC(rebcc.REBCC):
 
         return dm
 
+    @util.has_docstring
     def excitations_to_vector_ip(self, *excitations):
         vectors = []
         m = 0
@@ -346,6 +346,7 @@ class GEBCC(rebcc.REBCC):
 
         return np.concatenate(vectors)
 
+    @util.has_docstring
     def excitations_to_vector_ee(self, *excitations):
         vectors = []
         m = 0
@@ -362,6 +363,7 @@ class GEBCC(rebcc.REBCC):
 
         return np.concatenate(vectors)
 
+    @util.has_docstring
     def vector_to_excitations_ip(self, vector):
         excitations = []
         i0 = 0
@@ -383,6 +385,7 @@ class GEBCC(rebcc.REBCC):
 
         return tuple(excitations)
 
+    @util.has_docstring
     def vector_to_excitations_ea(self, vector):
         excitations = []
         i0 = 0
@@ -404,6 +407,7 @@ class GEBCC(rebcc.REBCC):
 
         return tuple(excitations)
 
+    @util.has_docstring
     def vector_to_excitations_ee(self, vector):
         excitations = []
         i0 = 0
@@ -424,6 +428,7 @@ class GEBCC(rebcc.REBCC):
 
         return tuple(excitations)
 
+    @util.has_docstring
     def get_mean_field_G(self):
         val = lib.einsum("Ipp->I", self.g.boo)
         val -= self.xi * self.omega
@@ -433,8 +438,10 @@ class GEBCC(rebcc.REBCC):
 
         return val
 
+    @util.has_docstring
     def get_eris(self, eris=None):
-        """Get blocks of the ERIs.
+        """
+        Get blocks of the ERIs.
 
         Parameters
         ----------
@@ -453,22 +460,20 @@ class GEBCC(rebcc.REBCC):
         else:
             return eris
 
+    @util.has_docstring
     def ip_eom(self, options=None, **kwargs):
-        """Get the IP EOM object.
-        """
         return geom.IP_GEOM(self, options=options, **kwargs)
 
+    @util.has_docstring
     def ea_eom(self, options=None, **kwargs):
-        """Get the EA EOM object.
-        """
         return geom.EA_GEOM(self, options=options, **kwargs)
 
+    @util.has_docstring
     def ee_eom(self, options=None, **kwargs):
-        """Get the EE EOM object.
-        """
         return geom.EE_GEOM(self, options=options, **kwargs)
 
     @property
+    @util.has_docstring
     def xi(self):
         if self.options.shift:
             xi = lib.einsum("Iii->I", self.g.boo)
@@ -480,5 +485,6 @@ class GEBCC(rebcc.REBCC):
         return xi
 
     @property
+    @util.has_docstring
     def spin_type(self):
         return "G"

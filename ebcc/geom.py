@@ -1,5 +1,4 @@
-"""Generalised equation-of-motion solver.
-"""
+"""Generalised equation-of-motion solver."""
 
 from ebcc import reom, util
 
@@ -9,6 +8,7 @@ class GEOM(reom.REOM):
     """Generalised equation-of-motion base class."""
 
     @property
+    @util.has_docstring
     def name(self):
         return self.excitation_type.upper() + "-GEOM-" + self.ebcc.name
 

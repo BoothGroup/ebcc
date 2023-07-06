@@ -1,19 +1,17 @@
-"""Fock matrix containers.
-"""
-
-import numpy as np
+"""Fock matrix containers."""
 
 from ebcc import util
 
 
 class Fock(util.Namespace):
-    """Base class for Fock matrices.
-    """
+    """Base class for Fock matrices."""
+
     pass
 
 
 class RFock(Fock):
-    """Fock matrix container class for `REBCC`.
+    """
+    Fock matrix container class for `REBCC`.
 
     The default slices are:
         * `"x"`: correlated
@@ -100,8 +98,9 @@ class RFock(Fock):
 
 @util.inherit_docstrings
 class UFock(Fock):
-    """Fock matrix container class for `UEBCC`. Consists of a namespace
-    of `RFock` objects, on for each spin signature.
+    """
+    Fock matrix container class for `UEBCC`. Consists of a namespace of
+    `RFock` objects, on for each spin signature.
 
     Parameters
     ----------

@@ -1,16 +1,12 @@
-"""Restricted electron-boson coupled cluster.
-"""
+"""Restricted electron-boson coupled cluster."""
 
 import dataclasses
 import functools
-import importlib
-import logging
-import types
 
 import numpy as np
-from pyscf import lib, scf
+from pyscf import lib
 
-from ebcc import METHOD_TYPES, default_log, init_logging, reom, util
+from ebcc import default_log, init_logging, reom, util
 from ebcc.ansatz import Ansatz
 from ebcc.brueckner import BruecknerREBCC
 from ebcc.dump import Dump
@@ -20,31 +16,34 @@ from ebcc.space import Space
 
 
 class EBCC:
+    """Base class for EBCC."""
+
     pass
 
 
 @dataclasses.dataclass
 class Options:
-    """Options for EBCC calculations.
+    """
+    Options for EBCC calculations.
 
     Attributes
     ----------
     shift : bool, optional
-        If `True`, shift the boson operators such that the Hamiltonian
-        is normal-ordered with respect to a coherent state. This
-        removes the bosonic coupling to the static mean-field density,
-        introducing a constant energy shift. Default value is `True`.
+        If `True`, shift the boson operators such that the Hamiltonian is
+        normal-ordered with respect to a coherent state. This removes the
+        bosonic coupling to the static mean-field density, introducing a
+        constant energy shift. Default value is `True`.
     e_tol : float, optional
-        Threshold for convergence in the correlation energy. Default
-        value is 1e-8.
+        Threshold for convergence in the correlation energy. Default value
+        is `1e-8`.
     t_tol : float, optional
-        Threshold for convergence in the amplitude norm. Default value
-        is 1e-8.
+        Threshold for convergence in the amplitude norm. Default value is
+        `1e-8`.
     max_iter : int, optional
-        Maximum number of iterations. Default value is 200.
+        Maximum number of iterations. Default value is `200`.
     diis_space : int, optional
-        Number of amplitudes to use in DIIS extrapolation. Default
-        value is 12.
+        Number of amplitudes to use in DIIS extrapolation. Default value is
+        `12`.
     """
 
     shift: bool = True
@@ -55,40 +54,41 @@ class Options:
 
 
 class REBCC(EBCC):
-    """Restricted electron-boson coupled cluster class.
+    r"""
+    Restricted electron-boson coupled cluster class.
 
     Parameters
     ----------
     mf : pyscf.scf.hf.SCF
         PySCF mean-field object.
     log : logging.Logger, optional
-        Log to print output to. Default value is the global logger
-        which outputs to `sys.stderr`.
+        Log to print output to. Default value is the global logger which
+        outputs to `sys.stderr`.
     ansatz : str or Ansatz, optional
-        Overall ansatz, as a string representation or an Ansatz
-        object. If None, construct from the individual ansatz
-        parameters, otherwise override them. Default value is None.
+        Overall ansatz, as a string representation or an `Ansatz` object.
+        If `None`, construct from the individual ansatz parameters,
+        otherwise override them. Default value is `None`.
     space : Space, optional
-        Space object defining the size of frozen, correlated and
-        active fermionic spaces. If None, all fermionic degrees of
-        freedom are assumed correlated. Default value is None.
+        Space object defining the size of frozen, correlated and active
+        fermionic spaces. If `None`, all fermionic degrees of freedom are
+        assumed correlated. Default value is `None`.
     omega : numpy.ndarray (nbos,), optional
-        Bosonic frequencies. Default value is None.
+        Bosonic frequencies. Default value is `None`.
     g : numpy.ndarray (nbos, nmo, nmo), optional
         Electron-boson coupling matrix corresponding to the bosonic
         annihilation operator i.e.
 
-        .. math:: g_{xpq} p^\\dagger q b
+        .. math:: g_{xpq} p^\dagger q b
 
-        The creation part is assume to be the fermionic transpose of
-        this tensor to retain hermiticity in the overall Hamiltonian.
-        Default value is None.
+        The creation part is assume to be the fermionic transpose of this
+        tensor to retain hermiticity in the overall Hamiltonian. Default
+        value is `None`.
     G : numpy.ndarray (nbos,), optional
         Boson non-conserving term of the Hamiltonian i.e.
 
-        .. math:: G_x (b^\\dagger + b)
+        .. math:: G_x (b^\dagger + b)
 
-        Default value is None.
+        Default value is `None`.
     mo_coeff : numpy.ndarray, optional
         Molecular orbital coefficients. Default value is `mf.mo_coeff`.
     mo_occ : numpy.ndarray, optional
@@ -96,7 +96,7 @@ class REBCC(EBCC):
     fock : util.Namespace, optional
         Fock input. Default value is calculated using `get_fock()`.
     options : dataclasses.dataclass, optional
-        Object containing the options. Default value is `Options`.
+        Object containing the options. Default value is `Options()`.
     **kwargs : dict
         Additional keyword arguments used to update `options`.
 
@@ -121,24 +121,22 @@ class REBCC(EBCC):
     omega : numpy.ndarray (nbos,)
         Bosonic frequencies.
     g : util.Namespace
-        Namespace containing blocks of the electron-boson coupling
-        matrix. Each attribute should be a length-3 string of `b`,
-        `o` or `v` signifying whether the corresponding axis is
-        bosonic, occupied or virtual.
+        Namespace containing blocks of the electron-boson coupling matrix.
+        Each attribute should be a length-3 string of `b`, `o` or `v`
+        signifying whether the corresponding axis is bosonic, occupied, or
+        virtual.
     G : numpy.ndarray (nbos,)
         Mean-field boson non-conserving term of the Hamiltonian.
     bare_G : numpy.ndarray (nbos,)
         Boson non-conserving term of the Hamiltonian.
     fock : util.Namespace
-        Namespace containing blocks of the Fock matrix. Each
-        attribute should be a length-2 string of `o` or `v`
-        signifying whether the corresponding axis is occupied or
-        virtual.
+        Namespace containing blocks of the Fock matrix. Each attribute
+        should be a length-2 string of `o` or `v` signifying whether the
+        corresponding axis is occupied or virtual.
     bare_fock : numpy.ndarray (nmo, nmo)
         The mean-field Fock matrix in the MO basis.
     xi : numpy.ndarray (nbos,)
-        Shift in bosonic operators to diagonalise the phononic
-        Hamiltonian.
+        Shift in bosonic operators to diagonalise the phononic Hamiltonian.
     const : float
         Shift in the energy from moving to polaritonic basis.
     name : str
@@ -162,27 +160,25 @@ class REBCC(EBCC):
         Update the lambda amplitudes.
     make_sing_b_dm(eris=None, amplitudes=None, lambdas=None)
         Build the single boson density matrix.
-    make_rdm1_b(eris=None, amplitudes=None, lambdas=None,
-                unshifted=None, hermitise=None)
+    make_rdm1_b(eris=None, amplitudes=None, lambdas=None, unshifted=None,
+                hermitise=None)
         Build the bosonic one-particle reduced density matrix.
-    make_rdm1_f(eris=None, amplitudes=None, lambdas=None,
-                hermitise=None)
+    make_rdm1_f(eris=None, amplitudes=None, lambdas=None, hermitise=None)
         Build the fermionic one-particle reduced density matrix.
-    make_rdm2_f(eris=None, amplitudes=None, lambdas=None,
-                hermitise=None)
+    make_rdm2_f(eris=None, amplitudes=None, lambdas=None, hermitise=None)
         Build the fermionic two-particle reduced density matrix.
     make_eb_coup_rdm(eris=None, amplitudes=None, lambdas=None,
                      unshifted=True, hermitise=True)
         Build the electron-boson coupling reduced density matrices.
     hbar_matvec_ip(r1, r2, eris=None, amplitudes=None)
-        Compute the product between a state vector and the EOM
-        Hamiltonian for the IP.
+        Compute the product between a state vector and the EOM Hamiltonian
+        for the IP.
     hbar_matvec_ea(r1, r2, eris=None, amplitudes=None)
-        Compute the product between a state vector and the EOM
-        Hamiltonian for the EA.
+        Compute the product between a state vector and the EOM Hamiltonian
+        for the EA.
     hbar_matvec_ee(r1, r2, eris=None, amplitudes=None)
-        Compute the product between a state vector and the EOM
-        Hamiltonian for the EE.
+        Compute the product between a state vector and the EOM Hamiltonian
+        for the EE.
     make_ip_mom_bras(eris=None, amplitudes=None, lambdas=None)
         Get the bra IP vectors to construct EOM moments.
     make_ea_mom_bras(eris=None, amplitudes=None, lambdas=None)
@@ -196,14 +192,14 @@ class REBCC(EBCC):
     make_ee_mom_kets(eris=None, amplitudes=None, lambdas=None)
         Get the ket EE vectors to construct EOM moments.
     amplitudes_to_vector(amplitudes)
-        Construct a vector containing all of the amplitudes used in
-        the given ansatz.
+        Construct a vector containing all of the amplitudes used in the
+        given ansatz.
     vector_to_amplitudes(vector)
-        Construct all of the amplitudes used in the given ansatz from
-        a vector.
+        Construct all of the amplitudes used in the given ansatz from a
+        vector.
     lambdas_to_vector(lambdas)
-        Construct a vector containing all of the lambda amplitudes
-        used in the given ansatz.
+        Construct a vector containing all of the lambda amplitudes used in
+        the given ansatz.
     vector_to_lambdas(vector)
         Construct all of the lambdas used in the given ansatz from a
         vector.
@@ -226,20 +222,20 @@ class REBCC(EBCC):
         Construct a vector containing all of the excitation amplitudes
         used in the given ansatz for the EE.
     get_mean_field_G()
-        Get the mean-field boson non-conserving term of the
-        Hamiltonian.
+        Get the mean-field boson non-conserving term of the Hamiltonian.
     get_g(g)
-        Get the blocks of the electron-boson coupling matrix
-        corresponding to the bosonic annihilation operator.
+        Get the blocks of the electron-boson coupling matrix corresponding
+        to the bosonic annihilation operator.
     get_fock()
-        Get the blocks of the Fock matrix, shifted due to bosons
-        where the ansatz requires.
+        Get the blocks of the Fock matrix, shifted due to bosons where the
+        ansatz requires.
     get_eris()
         Get blocks of the ERIs.
     """
 
     Options = Options
     ERIs = RERIs
+    Fock = RFock
     Brueckner = BruecknerREBCC
 
     def __init__(
@@ -332,7 +328,8 @@ class REBCC(EBCC):
         self.log.debug("")
 
     def kernel(self, eris=None):
-        """Run the coupled cluster calculation.
+        """
+        Run the coupled cluster calculation.
 
         Parameters
         ----------
@@ -372,7 +369,8 @@ class REBCC(EBCC):
 
             converged = False
             for niter in range(1, self.options.max_iter + 1):
-                # Update the amplitudes, extrapolate with DIIS and calculate change:
+                # Update the amplitudes, extrapolate with DIIS and
+                # calculate change:
                 amplitudes_prev = amplitudes
                 amplitudes = self.update_amps(amplitudes=amplitudes, eris=eris)
                 vector = self.amplitudes_to_vector(amplitudes)
@@ -421,7 +419,8 @@ class REBCC(EBCC):
         return e_cc
 
     def solve_lambda(self, amplitudes=None, eris=None):
-        """Solve the lambda coupled cluster equations.
+        """
+        Solve the lambda coupled cluster equations.
 
         Parameters
         ----------
@@ -467,7 +466,8 @@ class REBCC(EBCC):
 
         converged = False
         for niter in range(1, self.options.max_iter + 1):
-            # Update the lambda amplitudes, extrapolate with DIIS and calculate change:
+            # Update the lambda amplitudes, extrapolate with DIIS and
+            # calculate change:
             lambdas_prev = lambdas
             lambdas = self.update_lams(
                 amplitudes=amplitudes,
@@ -500,7 +500,8 @@ class REBCC(EBCC):
         self.converged_lambda = converged
 
     def brueckner(self, *args, **kwargs):
-        """Run the Brueckner orbital coupled cluster calculation.
+        """
+        Run a Brueckner orbital coupled cluster calculation.
 
         Returns
         -------
@@ -513,7 +514,8 @@ class REBCC(EBCC):
         return bcc.kernel()
 
     def write(self, file):
-        """Write the EBCC data to a file.
+        """
+        Write the EBCC data to a file.
 
         Parameters
         ----------
@@ -526,7 +528,8 @@ class REBCC(EBCC):
 
     @classmethod
     def read(cls, file, log=None):
-        """Read the data from a file.
+        """
+        Read the data from a file.
 
         Parameters
         ----------
@@ -548,14 +551,16 @@ class REBCC(EBCC):
 
     @staticmethod
     def _convert_mf(mf):
-        """Convert the input PySCF mean-field object to the one
-        required for the current class.
+        """
+        Convert the input PySCF mean-field object to the one required for
+        the current class.
         """
         return mf.to_rhf()
 
     def _load_function(self, name, eris=False, amplitudes=False, lambdas=False, **kwargs):
-        """Load a function from the generated code, and return a dict
-        of arguments.
+        """
+        Load a function from the generated code, and return a dict of
+        arguments.
         """
 
         if not (eris is False):
@@ -593,7 +598,8 @@ class REBCC(EBCC):
         return func, kwargs
 
     def _pack_codegen_kwargs(self, *extra_kwargs, eris=None):
-        """Pack all the possible keyword arguments for generated code
+        """
+        Pack all the possible keyword arguments for generated code
         into a dictionary.
         """
         # TODO change all APIs to take the space object instead of
@@ -621,7 +627,8 @@ class REBCC(EBCC):
         return kwargs
 
     def init_space(self):
-        """Initialise the default Space object.
+        """
+        Initialise the default `Space` object.
 
         Returns
         -------
@@ -639,7 +646,8 @@ class REBCC(EBCC):
         return space
 
     def init_amps(self, eris=None):
-        """Initialise the amplitudes.
+        """
+        Initialise the amplitudes.
 
         Parameters
         ----------
@@ -706,7 +714,8 @@ class REBCC(EBCC):
         return amplitudes
 
     def init_lams(self, amplitudes=None):
-        """Initialise the lambda amplitudes.
+        """
+        Initialise the lambda amplitudes.
 
         Parameters
         ----------
@@ -746,7 +755,8 @@ class REBCC(EBCC):
         return lambdas
 
     def energy(self, eris=None, amplitudes=None):
-        """Compute the correlation energy.
+        """
+        Compute the correlation energy.
 
         Parameters
         ----------
@@ -772,7 +782,8 @@ class REBCC(EBCC):
         return func(**kwargs)
 
     def energy_perturbative(self, eris=None, amplitudes=None, lambdas=None):
-        """Compute the perturbative part to the correlation energy.
+        """
+        Compute the perturbative part to the correlation energy.
 
         Parameters
         ----------
@@ -799,7 +810,8 @@ class REBCC(EBCC):
         return func(**kwargs)
 
     def update_amps(self, eris=None, amplitudes=None):
-        """Update the amplitudes.
+        """
+        Update the amplitudes.
 
         Parameters
         ----------
@@ -863,9 +875,15 @@ class REBCC(EBCC):
         return res
 
     def update_lams(
-        self, eris=None, amplitudes=None, lambdas=None, lambdas_pert=None, perturbative=False
+        self,
+        eris=None,
+        amplitudes=None,
+        lambdas=None,
+        lambdas_pert=None,
+        perturbative=False,
     ):
-        """Update the lambda amplitudes.
+        """
+        Update the lambda amplitudes.
 
         Parameters
         ----------
@@ -876,8 +894,8 @@ class REBCC(EBCC):
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
         lambdas : Namespace, optional
-            Cluster lambda amplitudes. Default value is generated
-            using `self.init_lams()`.
+            Cluster lambda amplitudes. Default value is generated using
+            `self.init_lams()`.
         perturbative : bool, optional
             Whether to compute the perturbative part of the lambda
             amplitudes. Default value is `False`.
@@ -943,13 +961,14 @@ class REBCC(EBCC):
         return res
 
     def make_sing_b_dm(self, eris=None, amplitudes=None, lambdas=None):
-        """Build the single boson density matrix:
+        r"""
+        Build the single boson density matrix:
 
-        ..math :: \\langle b^+ \\rangle
+        ..math :: \langle b^+ \rangle
 
         and
 
-        ..math :: \\langle b \\rangle
+        ..math :: \langle b \rangle
 
         Parameters
         ----------
@@ -960,8 +979,8 @@ class REBCC(EBCC):
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
         lambdas : Namespace, optional
-            Cluster lambda amplitudes. Default value is generated
-            using `self.init_lams()`.
+            Cluster lambda amplitudes. Default value is generated using
+            `self.init_lams()`.
 
         Returns
         -------
@@ -979,9 +998,10 @@ class REBCC(EBCC):
         return func(**kwargs)
 
     def make_rdm1_b(self, eris=None, amplitudes=None, lambdas=None, unshifted=True, hermitise=True):
-        """Build the bosonic one-particle reduced density matrix:
+        r"""
+        Build the bosonic one-particle reduced density matrix:
 
-        ..math :: \\langle b^+ b \\rangle
+        ..math :: \langle b^+ b \rangle
 
         Parameters
         ----------
@@ -992,13 +1012,13 @@ class REBCC(EBCC):
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
         lambdas : Namespace, optional
-            Cluster lambda amplitudes. Default value is generated
-            using `self.init_lams()`.
+            Cluster lambda amplitudes. Default value is generated using
+            `self.init_lams()`.
         unshifted : bool, optional
-            If `self.shift` is `True`, then `unshifted=True` applies
-            the reverse transformation such that the bosonic operators
-            are defined with respect to the unshifted bosons. Default
-            value is True. Has no effect if `self.shift` is `False`.
+            If `self.shift` is `True`, then `unshifted=True` applies the
+            reverse transformation such that the bosonic operators are
+            defined with respect to the unshifted bosons. Default value is
+            `True`. Has no effect if `self.shift` is `False`.
         hermitise : bool, optional
             Force Hermiticity in the output. Default value is `True`.
 
@@ -1028,9 +1048,10 @@ class REBCC(EBCC):
         return dm
 
     def make_rdm1_f(self, eris=None, amplitudes=None, lambdas=None, hermitise=True):
-        """Build the fermionic one-particle reduced density matrix:
+        r"""
+        Build the fermionic one-particle reduced density matrix:
 
-        ..math :: \\langle i^+ j \\rangle
+        ..math :: \langle i^+ j \rangle
 
         Parameters
         ----------
@@ -1041,8 +1062,8 @@ class REBCC(EBCC):
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
         lambdas : Namespace, optional
-            Cluster lambda amplitudes. Default value is generated
-            using `self.init_lams()`.
+            Cluster lambda amplitudes. Default value is generated using
+            `self.init_lams()`.
         hermitise : bool, optional
             Force Hermiticity in the output. Default value is `True`.
 
@@ -1067,9 +1088,10 @@ class REBCC(EBCC):
         return dm
 
     def make_rdm2_f(self, eris=None, amplitudes=None, lambdas=None, hermitise=True):
-        """Build the fermionic two-particle reduced density matrix:
+        r"""
+        Build the fermionic two-particle reduced density matrix:
 
-        ..math :: \\Gamma_{ijkl} = \\langle i^+ j^+ l k \\rangle
+        ..math :: \Gamma_{ijkl} = \langle i^+ j^+ l k \rangle
 
         which is stored in Chemist's notation.
 
@@ -1082,8 +1104,8 @@ class REBCC(EBCC):
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
         lambdas : Namespace, optional
-            Cluster lambda amplitudes. Default value is generated
-            using `self.init_lams()`.
+            Cluster lambda amplitudes. Default value is generated using
+            `self.init_lams()`.
         hermitise : bool, optional
             Force Hermiticity in the output. Default value is `True`.
 
@@ -1109,15 +1131,21 @@ class REBCC(EBCC):
         return dm
 
     def make_eb_coup_rdm(
-        self, eris=None, amplitudes=None, lambdas=None, unshifted=True, hermitise=True
+        self,
+        eris=None,
+        amplitudes=None,
+        lambdas=None,
+        unshifted=True,
+        hermitise=True,
     ):
-        """Build the electron-boson coupling reduced density matrices:
+        r"""
+        Build the electron-boson coupling reduced density matrices:
 
-        ..math :: \\langle b^+ i^+ j \\rangle
+        ..math :: \langle b^+ i^+ j \rangle
 
         and
 
-        ..math :: \\langle b i^+ j \\rangle
+        ..math :: \langle b i^+ j \rangle
 
         Parameters
         ----------
@@ -1128,13 +1156,13 @@ class REBCC(EBCC):
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
         lambdas : Namespace, optional
-            Cluster lambda amplitudes. Default value is generated
-            using `self.init_lams()`.
+            Cluster lambda amplitudes. Default value is generated using
+            `self.init_lams()`.
         unshifted : bool, optional
-            If `self.shift` is `True`, then `unshifted=True` applies
-            the reverse transformation such that the bosonic operators
-            are defined with respect to the unshifted bosons. Default
-            value is True. Has no effect if `self.shift` is `False`.
+            If `self.shift` is `True`, then `unshifted=True` applies the
+            reverse transformation such that the bosonic operators are
+            defined with respect to the unshifted bosons. Default value is
+            `True`. Has no effect if `self.shift` is `False`.
         hermitise : bool, optional
             Force Hermiticity in the output. Default value is `True`.
 
@@ -1167,8 +1195,9 @@ class REBCC(EBCC):
         return dm_eb
 
     def hbar_matvec_ip(self, r1, r2, eris=None, amplitudes=None):
-        """Compute the product between a state vector and the EOM
-        Hamiltonian for the IP.
+        """
+        Compute the product between a state vector and the EOM Hamiltonian
+        for the IP.
 
         Parameters
         ----------
@@ -1186,11 +1215,10 @@ class REBCC(EBCC):
         Returns
         -------
         vectors : dict of (str, numpy.ndarray)
-            Dictionary containing the vectors in each sector resulting
-            from the matrix-vector product with the input vectors.
-            Keys are strings of the name of each vector, and values
-            are arrays whose dimension depends on the particular
-            sector.
+            Dictionary containing the vectors in each sector resulting from
+            the matrix-vector product with the input vectors. Keys are
+            strings of the name of each vector, and values are arrays whose
+            dimension depends on the particular sector.
         """
         # TODO generalise vectors input
 
@@ -1205,8 +1233,9 @@ class REBCC(EBCC):
         return func(**kwargs)
 
     def hbar_matvec_ea(self, r1, r2, eris=None, amplitudes=None):
-        """Compute the product between a state vector and the EOM
-        Hamiltonian for the EA.
+        """
+        Compute the product between a state vector and the EOM Hamiltonian
+        for the EA.
 
         Parameters
         ----------
@@ -1224,11 +1253,10 @@ class REBCC(EBCC):
         Returns
         -------
         vectors : dict of (str, numpy.ndarray)
-            Dictionary containing the vectors in each sector resulting
-            from the matrix-vector product with the input vectors.
-            Keys are strings of the name of each vector, and values
-            are arrays whose dimension depends on the particular
-            sector.
+            Dictionary containing the vectors in each sector resulting from
+            the matrix-vector product with the input vectors. Keys are
+            strings of the name of each vector, and values are arrays whose
+            dimension depends on the particular sector.
         """
 
         func, kwargs = self._load_function(
@@ -1242,8 +1270,9 @@ class REBCC(EBCC):
         return func(**kwargs)
 
     def hbar_matvec_ee(self, r1, r2, eris=None, amplitudes=None):
-        """Compute the product between a state vector and the EOM
-        Hamiltonian for the EE.
+        """
+        Compute the product between a state vector and the EOM Hamiltonian
+        for the EE.
 
         Parameters
         ----------
@@ -1261,11 +1290,10 @@ class REBCC(EBCC):
         Returns
         -------
         vectors : dict of (str, numpy.ndarray)
-            Dictionary containing the vectors in each sector resulting
-            from the matrix-vector product with the input vectors.
-            Keys are strings of the name of each vector, and values
-            are arrays whose dimension depends on the particular
-            sector.
+            Dictionary containing the vectors in each sector resulting from
+            the matrix-vector product with the input vectors. Keys are
+            strings of the name of each vector, and values are arrays whose
+            dimension depends on the particular sector.
         """
 
         func, kwargs = self._load_function(
@@ -1279,7 +1307,8 @@ class REBCC(EBCC):
         return func(**kwargs)
 
     def make_ip_mom_bras(self, eris=None, amplitudes=None, lambdas=None):
-        """Get the bra IP vectors to construct EOM moments.
+        """
+        Get the bra IP vectors to construct EOM moments.
 
         Parameters
         ----------
@@ -1290,15 +1319,15 @@ class REBCC(EBCC):
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
         lambdas : Namespace, optional
-            Cluster lambda amplitudes. Default value is generated
-            using `self.init_lams()`.
+            Cluster lambda amplitudes. Default value is generated using
+            `self.init_lams()`.
 
         Returns
         -------
         bras : dict of (str, numpy.ndarray)
-            Dictionary containing the bra vectors in each sector. Keys
-            are strings of the name of each sector, and values are
-            arrays whose dimension depends on the particular sector.
+            Dictionary containing the bra vectors in each sector. Keys are
+            strings of the name of each sector, and values are arrays whose
+            dimension depends on the particular sector.
         """
 
         func, kwargs = self._load_function(
@@ -1311,7 +1340,8 @@ class REBCC(EBCC):
         return func(**kwargs)
 
     def make_ea_mom_bras(self, eris=None, amplitudes=None, lambdas=None):
-        """Get the bra EA vectors to construct EOM moments.
+        """
+        Get the bra EA vectors to construct EOM moments.
 
         Parameters
         ----------
@@ -1322,15 +1352,15 @@ class REBCC(EBCC):
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
         lambdas : Namespace, optional
-            Cluster lambda amplitudes. Default value is generated
-            using `self.init_lams()`.
+            Cluster lambda amplitudes. Default value is generated using
+            `self.init_lams()`.
 
         Returns
         -------
         bras : dict of (str, numpy.ndarray)
-            Dictionary containing the bra vectors in each sector. Keys
-            are strings of the name of each sector, and values are
-            arrays whose dimension depends on the particular sector.
+            Dictionary containing the bra vectors in each sector. Keys are
+            strings of the name of each sector, and values are arrays whose
+            dimension depends on the particular sector.
         """
 
         func, kwargs = self._load_function(
@@ -1343,7 +1373,8 @@ class REBCC(EBCC):
         return func(**kwargs)
 
     def make_ee_mom_bras(self, eris=None, amplitudes=None, lambdas=None):
-        """Get the bra EE vectors to construct EOM moments.
+        """
+        Get the bra EE vectors to construct EOM moments.
 
         Parameters
         ----------
@@ -1354,15 +1385,15 @@ class REBCC(EBCC):
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
         lambdas : Namespace, optional
-            Cluster lambda amplitudes. Default value is generated
-            using `self.init_lams()`.
+            Cluster lambda amplitudes. Default value is generated using
+            `self.init_lams()`.
 
         Returns
         -------
         bras : dict of (str, numpy.ndarray)
-            Dictionary containing the bra vectors in each sector. Keys
-            are strings of the name of each sector, and values are
-            arrays whose dimension depends on the particular sector.
+            Dictionary containing the bra vectors in each sector. Keys are
+            strings of the name of each sector, and values are arrays whose
+            dimension depends on the particular sector.
         """
 
         func, kwargs = self._load_function(
@@ -1375,7 +1406,8 @@ class REBCC(EBCC):
         return func(**kwargs)
 
     def make_ip_mom_kets(self, eris=None, amplitudes=None, lambdas=None):
-        """Get the ket IP vectors to construct EOM moments.
+        """
+        Get the ket IP vectors to construct EOM moments.
 
         Parameters
         ----------
@@ -1386,15 +1418,15 @@ class REBCC(EBCC):
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
         lambdas : Namespace, optional
-            Cluster lambda amplitudes. Default value is generated
-            using `self.init_lams()`.
+            Cluster lambda amplitudes. Default value is generated using
+            `self.init_lams()`.
 
         Returns
         -------
         kets : dict of (str, numpy.ndarray)
-            Dictionary containing the ket vectors in each sector. Keys
-            are strings of the name of each sector, and values are
-            arrays whose dimension depends on the particular sector.
+            Dictionary containing the ket vectors in each sector. Keys are
+            strings of the name of each sector, and values are arrays whose
+            dimension depends on the particular sector.
         """
 
         func, kwargs = self._load_function(
@@ -1407,7 +1439,8 @@ class REBCC(EBCC):
         return func(**kwargs)
 
     def make_ea_mom_kets(self, eris=None, amplitudes=None, lambdas=None):
-        """Get the ket IP vectors to construct EOM moments.
+        """
+        Get the ket IP vectors to construct EOM moments.
 
         Parameters
         ----------
@@ -1418,15 +1451,15 @@ class REBCC(EBCC):
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
         lambdas : Namespace, optional
-            Cluster lambda amplitudes. Default value is generated
-            using `self.init_lams()`.
+            Cluster lambda amplitudes. Default value is generated using
+            `self.init_lams()`.
 
         Returns
         -------
         kets : dict of (str, numpy.ndarray)
-            Dictionary containing the ket vectors in each sector. Keys
-            are strings of the name of each sector, and values are
-            arrays whose dimension depends on the particular sector.
+            Dictionary containing the ket vectors in each sector. Keys are
+            strings of the name of each sector, and values are arrays whose
+            dimension depends on the particular sector.
         """
 
         func, kwargs = self._load_function(
@@ -1439,7 +1472,8 @@ class REBCC(EBCC):
         return func(**kwargs)
 
     def make_ee_mom_kets(self, eris=None, amplitudes=None, lambdas=None):
-        """Get the ket EE vectors to construct EOM moments.
+        """
+        Get the ket EE vectors to construct EOM moments.
 
         Parameters
         ----------
@@ -1450,15 +1484,15 @@ class REBCC(EBCC):
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
         lambdas : Namespace, optional
-            Cluster lambda amplitudes. Default value is generated
-            using `self.init_lams()`.
+            Cluster lambda amplitudes. Default value is generated using
+            `self.init_lams()`.
 
         Returns
         -------
         kets : dict of (str, numpy.ndarray)
-            Dictionary containing the ket vectors in each sector. Keys
-            are strings of the name of each sector, and values are
-            arrays whose dimension depends on the particular sector.
+            Dictionary containing the ket vectors in each sector. Keys are
+            strings of the name of each sector, and values are arrays whose
+            dimension depends on the particular sector.
         """
 
         func, kwargs = self._load_function(
@@ -1471,9 +1505,10 @@ class REBCC(EBCC):
         return func(**kwargs)
 
     def make_ip_1mom(self, eris=None, amplitudes=None, lambdas=None):
-        """Build the first fermionic hole single-particle moment.
+        r"""
+        Build the first fermionic hole single-particle moment.
 
-        .. math:: T_{pq} = \\langle c_p^+ (H - E_0) c_q \\rangle
+        .. math:: T_{pq} = \langle c_p^+ (H - E_0) c_q \rangle
 
         Parameters
         ----------
@@ -1484,8 +1519,8 @@ class REBCC(EBCC):
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
         lambdas : Namespace, optional
-            Cluster lambda amplitudes. Default value is generated
-            using `self.init_lams()`.
+            Cluster lambda amplitudes. Default value is generated using
+            `self.init_lams()`.
 
         Returns
         -------
@@ -1496,9 +1531,10 @@ class REBCC(EBCC):
         raise util.ModelNotImplemented  # TODO
 
     def make_ea_1mom(self, eris=None, amplitudes=None, lambdas=None):
-        """Build the first fermionic particle single-particle moment.
+        r"""
+        Build the first fermionic particle single-particle moment.
 
-        .. math:: T_{pq} = \\langle c_p (H - E_0) c_q^+ \\rangle
+        .. math:: T_{pq} = \langle c_p (H - E_0) c_q^+ \rangle
 
         Parameters
         ----------
@@ -1509,8 +1545,8 @@ class REBCC(EBCC):
             Cluster amplitudes. Default value is generated using
             `self.init_amps()`.
         lambdas : Namespace, optional
-            Cluster lambda amplitudes. Default value is generated
-            using `self.init_lams()`.
+            Cluster lambda amplitudes. Default value is generated using
+            `self.init_lams()`.
 
         Returns
         -------
@@ -1521,17 +1557,21 @@ class REBCC(EBCC):
         raise util.ModelNotImplemented  # TODO
 
     def ip_eom(self, options=None, **kwargs):
+        """Get the IP EOM object."""
         return reom.IP_REOM(self, options=options, **kwargs)
 
     def ea_eom(self, options=None, **kwargs):
+        """Get the EA EOM object."""
         return reom.EA_REOM(self, options=options, **kwargs)
 
     def ee_eom(self, options=None, **kwargs):
+        """Get the EE EOM object."""
         return reom.EE_REOM(self, options=options, **kwargs)
 
     def amplitudes_to_vector(self, amplitudes):
-        """Construct a vector containing all of the amplitudes used in
-        the given ansatz.
+        """
+        Construct a vector containing all of the amplitudes used in the
+        given ansatz.
 
         Parameters
         ----------
@@ -1542,8 +1582,8 @@ class REBCC(EBCC):
         Returns
         -------
         vector : numpy.ndarray
-            Single vector consisting of all the amplitudes flattened
-            and concatenated. Size depends on the ansatz.
+            Single vector consisting of all the amplitudes flattened and
+            concatenated. Size depends on the ansatz.
         """
 
         vectors = []
@@ -1560,8 +1600,9 @@ class REBCC(EBCC):
         return np.concatenate(vectors)
 
     def vector_to_amplitudes(self, vector):
-        """Construct all of the amplitudes used in the given ansatz
-        from a vector.
+        """
+        Construct all of the amplitudes used in the given ansatz from a
+        vector.
 
         Parameters
         ----------
@@ -1599,20 +1640,21 @@ class REBCC(EBCC):
         return amplitudes
 
     def lambdas_to_vector(self, lambdas):
-        """Construct a vector containing all of the lambda amplitudes
-        used in the given ansatz.
+        """
+        Construct a vector containing all of the lambda amplitudes used in
+        the given ansatz.
 
         Parameters
         ----------
         lambdas : Namespace, optional
-            Cluster lambda amplitudes. Default value is generated
-            using `self.init_lams()`.
+            Cluster lambda amplitudes. Default value is generated using
+            `self.init_lams()`.
 
         Returns
         -------
         vector : numpy.ndarray
-            Single vector consisting of all the lambdas flattened
-            and concatenated. Size depends on the ansatz.
+            Single vector consisting of all the lambdas flattened and
+            concatenated. Size depends on the ansatz.
         """
 
         vectors = []
@@ -1629,14 +1671,15 @@ class REBCC(EBCC):
         return np.concatenate(vectors)
 
     def vector_to_lambdas(self, vector):
-        """Construct all of the lambdas used in the given ansatz
-        from a vector.
+        """
+        Construct all of the lambdas used in the given ansatz from a
+        vector.
 
         Parameters
         ----------
         vector : numpy.ndarray
-            Single vector consisting of all the lambdas flattened
-            and concatenated. Size depends on the ansatz.
+            Single vector consisting of all the lambdas flattened and
+            concatenated. Size depends on the ansatz.
 
         Returns
         -------
@@ -1671,21 +1714,22 @@ class REBCC(EBCC):
         return lambdas
 
     def excitations_to_vector_ip(self, *excitations):
-        """Construct a vector containing all of the excitation
-        amplitudes used in the given ansatz for the IP.
+        """
+        Construct a vector containing all of the excitation amplitudes
+        used in the given ansatz for the IP.
 
         Parameters
         ----------
         *excitations : iterable of numpy.ndarray
-            Dictionary containing the excitations. Keys are strings of
-            the name of each excitations, and values are arrays whose
-            dimension depends on the particular excitation amplitude.
+            Dictionary containing the excitations. Keys are strings of the
+            name of each excitations, and values are arrays whose dimension
+            depends on the particular excitation amplitude.
 
         Returns
         -------
         vector : numpy.ndarray
-            Single vector consisting of all the excitations flattened
-            and concatenated. Size depends on the ansatz.
+            Single vector consisting of all the excitations flattened and
+            concatenated. Size depends on the ansatz.
         """
 
         vectors = []
@@ -1704,59 +1748,62 @@ class REBCC(EBCC):
         return np.concatenate(vectors)
 
     def excitations_to_vector_ea(self, *excitations):
-        """Construct a vector containing all of the excitation
-        amplitudes used in the given ansatz for the EA.
+        """
+        Construct a vector containing all of the excitation amplitudes
+        used in the given ansatz for the EA.
 
         Parameters
         ----------
         *excitations : iterable of numpy.ndarray
-            Dictionary containing the excitations. Keys are strings of
-            the name of each excitations, and values are arrays whose
-            dimension depends on the particular excitation amplitude.
+            Dictionary containing the excitations. Keys are strings of the
+            name of each excitations, and values are arrays whose dimension
+            depends on the particular excitation amplitude.
 
         Returns
         -------
         vector : numpy.ndarray
-            Single vector consisting of all the excitations flattened
-            and concatenated. Size depends on the ansatz.
+            Single vector consisting of all the excitations flattened and
+            concatenated. Size depends on the ansatz.
         """
         return self.excitations_to_vector_ip(*excitations)
 
     def excitations_to_vector_ee(self, *excitations):
-        """Construct a vector containing all of the excitation
-        amplitudes used in the given ansatz for the EE.
+        """
+        Construct a vector containing all of the excitation amplitudes
+        used in the given ansatz for the EE.
 
         Parameters
         ----------
         *excitations : iterable of numpy.ndarray
-            Dictionary containing the excitations. Keys are strings of
-            the name of each excitations, and values are arrays whose
-            dimension depends on the particular excitation amplitude.
+            Dictionary containing the excitations. Keys are strings of the
+            name of each excitations, and values are arrays whose dimension
+            depends on the particular excitation amplitude.
 
         Returns
         -------
         vector : numpy.ndarray
-            Single vector consisting of all the excitations flattened
-            and concatenated. Size depends on the ansatz.
+            Single vector consisting of all the excitations flattened and
+            concatenated. Size depends on the ansatz.
         """
         return self.excitations_to_vector_ip(*excitations)
 
     def vector_to_excitations_ip(self, vector):
-        """Construct all of the excitation amplitudes used in the
-        given ansatz from a vector for the IP.
+        """
+        Construct a vector containing all of the excitation amplitudes
+        used in the given ansatz for the IP.
 
         Parameters
         ----------
         vector : numpy.ndarray
-            Single vector consisting of all the excitations flattened
-            and concatenated. Size depends on the ansatz.
+            Single vector consisting of all the excitations flattened and
+            concatenated. Size depends on the ansatz.
 
         Returns
         -------
         excitations : tuple of numpy.ndarray
-            Dictionary containing the excitations. Keys are strings of
-            the name of each excitations, and values are arrays whose
-            dimension depends on the particular excitation amplitude.
+            Dictionary containing the excitations. Keys are strings of the
+            name of each excitations, and values are arrays whose dimension
+            depends on the particular excitation amplitude.
         """
 
         excitations = []
@@ -1778,21 +1825,22 @@ class REBCC(EBCC):
         return tuple(excitations)
 
     def vector_to_excitations_ea(self, vector):
-        """Construct a vector containing all of the excitation
-        amplitudes used in the given ansatz for the EA.
+        """
+        Construct a vector containing all of the excitation amplitudes
+        used in the given ansatz for the EA.
 
         Parameters
         ----------
         vector : numpy.ndarray
-            Single vector consisting of all the excitations flattened
-            and concatenated. Size depends on the ansatz.
+            Single vector consisting of all the excitations flattened and
+            concatenated. Size depends on the ansatz.
 
         Returns
         -------
         excitations : tuple of numpy.ndarray
-            Dictionary containing the excitations. Keys are strings of
-            the name of each excitations, and values are arrays whose
-            dimension depends on the particular excitation amplitude.
+            Dictionary containing the excitations. Keys are strings of the
+            name of each excitations, and values are arrays whose dimension
+            depends on the particular excitation amplitude.
         """
 
         excitations = []
@@ -1800,6 +1848,7 @@ class REBCC(EBCC):
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             key = key[n:] + key[: n - 1]
+            shape = tuple(self.space.size(k) for k in key)
             size = np.prod(shape)
             excitations.append(vector[i0 : i0 + size].reshape(shape))
             i0 += size
@@ -1813,21 +1862,22 @@ class REBCC(EBCC):
         return tuple(excitations)
 
     def vector_to_excitations_ee(self, vector):
-        """Construct a vector containing all of the excitation
-        amplitudes used in the given ansatz for the EE.
+        """
+        Construct a vector containing all of the excitation amplitudes
+        used in the given ansatz for the EE.
 
         Parameters
         ----------
         vector : numpy.ndarray
-            Single vector consisting of all the excitations flattened
-            and concatenated. Size depends on the ansatz.
+            Single vector consisting of all the excitations flattened and
+            concatenated. Size depends on the ansatz.
 
         Returns
         -------
         excitations : tuple of numpy.ndarray
-            Dictionary containing the excitations. Keys are strings of
-            the name of each excitations, and values are arrays whose
-            dimension depends on the particular excitation amplitude.
+            Dictionary containing the excitations. Keys are strings of the
+            name of each excitations, and values are arrays whose dimension
+            depends on the particular excitation amplitude.
         """
 
         excitations = []
@@ -1848,8 +1898,8 @@ class REBCC(EBCC):
         return tuple(excitations)
 
     def get_mean_field_G(self):
-        """Get the mean-field boson non-conserving term of the
-        Hamiltonian.
+        """
+        Get the mean-field boson non-conserving term of the Hamiltonian.
 
         Returns
         -------
@@ -1867,8 +1917,9 @@ class REBCC(EBCC):
         return val
 
     def get_g(self, g):
-        """Get blocks of the electron-boson coupling matrix
-        corresponding to the bosonic annihilation operator.
+        """
+        Get blocks of the electron-boson coupling matrix corresponding to
+        the bosonic annihilation operator.
 
         Parameters
         ----------
@@ -1904,19 +1955,18 @@ class REBCC(EBCC):
         return Blocks()
 
     def get_fock(self):
-        """Get blocks of the Fock matrix, shifted due to bosons where
-        the ansatz requires.
+        """
+        Get blocks of the Fock matrix, shifted due to bosons where the
+        ansatz requires.
 
         Returns
         -------
         fock : Namespace
-            Namespace containing blocks of the Fock matrix. Each
-            attribute should be a length-2 string of `o` or `v`
-            signifying whether the corresponding axis is occupied or
-            virtual.
+            Namespace containing blocks of the Fock matrix. Each attribute
+            should be a length-2 string of `o` or `v` signifying whether
+            the corresponding axis is occupied or virtual.
         """
-
-        return RFock(self, array=self.bare_fock)
+        return self.Fock(self, array=self.bare_fock)
 
     def get_eris(self, eris=None):
         """Get blocks of the ERIs.
@@ -1924,8 +1974,8 @@ class REBCC(EBCC):
         Parameters
         ----------
         eris : np.ndarray or ERIs, optional.
-            Electronic repulsion integrals, either in the form of a
-            dense array or an ERIs object. Default value is `None`.
+            Electronic repulsion integrals, either in the form of a dense
+            array or an `ERIs` object. Default value is `None`.
 
         Returns
         -------
@@ -1940,8 +1990,9 @@ class REBCC(EBCC):
 
     @property
     def bare_fock(self):
-        """Get the mean-field Fock matrix in the MO basis, including
-        frozen parts.
+        """
+        Get the mean-field Fock matrix in the MO basis, including frozen
+        parts.
 
         Returns
         -------
@@ -1958,8 +2009,9 @@ class REBCC(EBCC):
 
     @property
     def xi(self):
-        """Get the shift in bosonic operators to diagonalise the
-        phononic Hamiltonian.
+        """
+        Get the shift in bosonic operators to diagonalise the photonic
+        Hamiltonian.
 
         Returns
         -------
@@ -1980,8 +2032,8 @@ class REBCC(EBCC):
 
     @property
     def const(self):
-        """Get the shift in the energy from moving to polaritonic
-        basis.
+        """
+        Get the shift in the energy from moving to polaritonic basis.
 
         Returns
         -------
@@ -1995,31 +2047,38 @@ class REBCC(EBCC):
 
     @property
     def fermion_ansatz(self):
+        """Get a string representation of the fermion ansatz."""
         return self.ansatz.fermion_ansatz
 
     @property
     def boson_ansatz(self):
+        """Get a string representation of the boson ansatz."""
         return self.ansatz.boson_ansatz
 
     @property
     def fermion_coupling_rank(self):
+        """Get an integer representation of the fermion coupling rank."""
         return self.ansatz.fermion_coupling_rank
 
     @property
     def boson_coupling_rank(self):
+        """Get an integer representation of the boson coupling rank."""
         return self.ansatz.boson_coupling_rank
 
     @property
     def spin_type(self):
+        """Get a string represent of the spin channel."""
         return "R"
 
     @property
     def name(self):
+        """Get a string representation of the method name."""
         return self.spin_type + self.ansatz.name
 
     @property
     def mo_coeff(self):
-        """Get the molecular orbital coefficients.
+        """
+        Get the molecular orbital coefficients.
 
         Returns
         -------
@@ -2032,7 +2091,8 @@ class REBCC(EBCC):
 
     @property
     def mo_occ(self):
-        """Get the molecular orbital occupancies.
+        """
+        Get the molecular orbital occupancies.
 
         Returns
         -------
@@ -2045,19 +2105,23 @@ class REBCC(EBCC):
 
     @property
     def nmo(self):
+        """Get the number of MOs."""
         return self.space.nmo
 
     @property
     def nocc(self):
+        """Get the number of occupied MOs."""
         return self.space.nocc
 
     @property
     def nvir(self):
+        """Get the number of virtual MOs."""
         return self.space.nvir
 
     @property
     def nbos(self):
-        """Get the number of bosonic degrees of freedom.
+        """
+        Get the number of bosonic degrees of freedom.
 
         Returns
         -------
@@ -2070,8 +2134,9 @@ class REBCC(EBCC):
 
     @property
     def eo(self):
-        """Get the diagonal of the occupied Fock matrix in MO basis,
-        shifted due to bosons where the ansatz requires.
+        """
+        Get the diagonal of the occupied Fock matrix in MO basis, shifted
+        due to bosons where the ansatz requires.
 
         Returns
         -------
@@ -2082,8 +2147,9 @@ class REBCC(EBCC):
 
     @property
     def ev(self):
-        """Get the diagonal of the virtual Fock matrix in MO basis,
-        shifted due to bosons where the ansatz requires.
+        """
+        Get the diagonal of the virtual Fock matrix in MO basis, shifted
+        due to bosons where the ansatz requires.
 
         Returns
         -------
@@ -2094,8 +2160,9 @@ class REBCC(EBCC):
 
     @property
     def eO(self):
-        """Get the diagonal of the active occupied Fock matrix in MO
-        basis, shifted due to bosons where the ansatz requires.
+        """
+        Get the diagonal of the active occupied Fock matrix in MO basis,
+        shifted due to bosons where the ansatz requires.
 
         Returns
         -------
@@ -2106,8 +2173,9 @@ class REBCC(EBCC):
 
     @property
     def eV(self):
-        """Get the diagonal of the active virtual Fock matrix in MO
-        basis, shifted due to bosons where the ansatz requires.
+        """
+        Get the diagonal of the active virtual Fock matrix in MO basis,
+        shifted due to bosons where the ansatz requires.
 
         Returns
         -------
@@ -2118,7 +2186,8 @@ class REBCC(EBCC):
 
     @property
     def e_tot(self):
-        """Return the total energy (mean-field plus correlation).
+        """
+        Return the total energy (mean-field plus correlation).
 
         Returns
         -------
@@ -2129,24 +2198,30 @@ class REBCC(EBCC):
 
     @property
     def t1(self):
+        """Get the T1 amplitudes."""
         return self.amplitudes["t1"]
 
     @property
     def t2(self):
+        """Get the T2 amplitudes."""
         return self.amplitudes["t2"]
 
     @property
     def t3(self):
+        """Get the T3 amplitudes."""
         return self.amplitudes["t3"]
 
     @property
     def l1(self):
+        """Get the L1 amplitudes."""
         return self.lambdas["l1"]
 
     @property
     def l2(self):
+        """Get the L2 amplitudes."""
         return self.lambdas["l2"]
 
     @property
     def l3(self):
+        """Get the L3 amplitudes."""
         return self.lambdas["l3"]

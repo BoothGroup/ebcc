@@ -1,13 +1,9 @@
-"""Unrestricted electron-boson coupled cluster.
-"""
+"""Unrestricted electron-boson coupled cluster."""
 
 import functools
-import itertools
-import types
-from typing import Sequence
 
 import numpy as np
-from pyscf import ao2mo, lib
+from pyscf import lib
 
 from ebcc import rebcc, ueom, util
 from ebcc.brueckner import BruecknerUEBCC
@@ -19,13 +15,16 @@ from ebcc.space import Space
 @util.inherit_docstrings
 class UEBCC(rebcc.REBCC):
     ERIs = UERIs
+    Fock = UFock
     Brueckner = BruecknerUEBCC
 
     @staticmethod
+    @util.has_docstring
     def _convert_mf(mf):
         return mf.to_uhf()
 
     @classmethod
+    @util.has_docstring
     def from_rebcc(cls, rcc):
         """Initialise an UEBCC object from an REBCC object."""
 
@@ -118,6 +117,7 @@ class UEBCC(rebcc.REBCC):
 
         return kwargs
 
+    @util.has_docstring
     def init_space(self):
         space = (
             Space(
@@ -134,6 +134,7 @@ class UEBCC(rebcc.REBCC):
 
         return space
 
+    @util.has_docstring
     def init_amps(self, eris=None):
         eris = self.get_eris(eris)
         amplitudes = util.Namespace()
@@ -159,7 +160,7 @@ class UEBCC(rebcc.REBCC):
                 eb = getattr(self, "e" + key[3])
                 e_ia = util.Namespace(
                     aa=lib.direct_sum("i-a->ia", ei.a, ea.a),
-                    bb=lib.direct_sum("i-a->ia", ei.b, ea.b),
+                    bb=lib.direct_sum("i-a->ia", ej.b, eb.b),
                 )
                 e_ijab = util.Namespace(
                     aaaa=lib.direct_sum("ia,jb->ijab", e_ia.aa, e_ia.aa),
@@ -222,6 +223,7 @@ class UEBCC(rebcc.REBCC):
 
         return amplitudes
 
+    @util.has_docstring
     def init_lams(self, amplitudes=None):
         if amplitudes is None:
             amplitudes = self.amplitudes
@@ -253,6 +255,7 @@ class UEBCC(rebcc.REBCC):
 
         return lambdas
 
+    @util.has_docstring
     def update_amps(self, eris=None, amplitudes=None):
         func, kwargs = self._load_function(
             "update_amps",
@@ -318,6 +321,7 @@ class UEBCC(rebcc.REBCC):
 
         return res
 
+    @util.has_docstring
     def update_lams(self, eris=None, amplitudes=None, lambdas=None, lambdas_pert=None):
         func, kwargs = self._load_function(
             "update_lams",
@@ -388,6 +392,7 @@ class UEBCC(rebcc.REBCC):
 
         return res
 
+    @util.has_docstring
     def make_rdm1_f(self, eris=None, amplitudes=None, lambdas=None, hermitise=True):
         func, kwargs = self._load_function(
             "make_rdm1_f",
@@ -404,6 +409,7 @@ class UEBCC(rebcc.REBCC):
 
         return dm
 
+    @util.has_docstring
     def make_rdm2_f(self, eris=None, amplitudes=None, lambdas=None, hermitise=True):
         func, kwargs = self._load_function(
             "make_rdm2_f",
@@ -430,8 +436,14 @@ class UEBCC(rebcc.REBCC):
 
         return dm
 
+    @util.has_docstring
     def make_eb_coup_rdm(
-        self, eris=None, amplitudes=None, lambdas=None, unshifted=True, hermitise=True
+        self,
+        eris=None,
+        amplitudes=None,
+        lambdas=None,
+        unshifted=True,
+        hermitise=True,
     ):
         func, kwargs = self._load_function(
             "make_eb_coup_rdm",
@@ -457,6 +469,7 @@ class UEBCC(rebcc.REBCC):
 
         return dm_eb
 
+    @util.has_docstring
     def get_mean_field_G(self):
         val = lib.einsum("Ipp->I", self.g.aa.boo)
         val += lib.einsum("Ipp->I", self.g.bb.boo)
@@ -469,6 +482,7 @@ class UEBCC(rebcc.REBCC):
 
         return val
 
+    @util.has_docstring
     def get_g(self, g):
         if np.array(g).ndim != 4:
             g = np.array([g, g])
@@ -503,12 +517,14 @@ class UEBCC(rebcc.REBCC):
         return gs
 
     @property
+    @util.has_docstring
     def bare_fock(self):
         fock = lib.einsum("npq,npi,nqj->nij", self.mf.get_fock(), self.mo_coeff, self.mo_coeff)
         fock = util.Namespace(aa=fock[0], bb=fock[1])
         return fock
 
     @property
+    @util.has_docstring
     def xi(self):
         if self.options.shift:
             xi = lib.einsum("Iii->I", self.g.aa.boo)
@@ -521,9 +537,11 @@ class UEBCC(rebcc.REBCC):
 
         return xi
 
+    @util.has_docstring
     def get_fock(self):
-        return UFock(self, array=(self.bare_fock.aa, self.bare_fock.bb))
+        return self.Fock(self, array=(self.bare_fock.aa, self.bare_fock.bb))
 
+    @util.has_docstring
     def get_eris(self, eris=None):
         """Get blocks of the ERIs.
 
@@ -545,18 +563,19 @@ class UEBCC(rebcc.REBCC):
         else:
             return eris
 
+    @util.has_docstring
     def ip_eom(self, options=None, **kwargs):
-        """Get the IP EOM object."""
         return ueom.IP_UEOM(self, options=options, **kwargs)
 
+    @util.has_docstring
     def ea_eom(self, options=None, **kwargs):
-        """Get the EA EOM object."""
         return ueom.EA_UEOM(self, options=options, **kwargs)
 
+    @util.has_docstring
     def ee_eom(self, options=None, **kwargs):
-        """Get the EE EOM object."""
         return ueom.EE_UEOM(self, options=options, **kwargs)
 
+    @util.has_docstring
     def amplitudes_to_vector(self, amplitudes):
         vectors = []
 
@@ -577,6 +596,7 @@ class UEBCC(rebcc.REBCC):
 
         return np.concatenate(vectors)
 
+    @util.has_docstring
     def vector_to_amplitudes(self, vector):
         amplitudes = util.Namespace()
         i0 = 0
@@ -618,6 +638,7 @@ class UEBCC(rebcc.REBCC):
 
         return amplitudes
 
+    @util.has_docstring
     def lambdas_to_vector(self, lambdas):
         vectors = []
 
@@ -639,10 +660,10 @@ class UEBCC(rebcc.REBCC):
 
         return np.concatenate(vectors)
 
+    @util.has_docstring
     def vector_to_lambdas(self, vector):
         lambdas = util.Namespace()
         i0 = 0
-        spin_indices = {"a": 0, "b": 1}
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             lname = name.replace("t", "l")
@@ -689,6 +710,7 @@ class UEBCC(rebcc.REBCC):
 
         return lambdas
 
+    @util.has_docstring
     def excitations_to_vector_ip(self, *excitations):
         vectors = []
         m = 0
@@ -708,6 +730,7 @@ class UEBCC(rebcc.REBCC):
 
         return np.concatenate(vectors)
 
+    @util.has_docstring
     def excitations_to_vector_ee(self, *excitations):
         vectors = []
         m = 0
@@ -727,6 +750,7 @@ class UEBCC(rebcc.REBCC):
 
         return np.concatenate(vectors)
 
+    @util.has_docstring
     def vector_to_excitations_ip(self, vector):
         excitations = []
         i0 = 0
@@ -765,6 +789,7 @@ class UEBCC(rebcc.REBCC):
 
         return tuple(excitations)
 
+    @util.has_docstring
     def vector_to_excitations_ea(self, vector):
         excitations = []
         i0 = 0
@@ -803,6 +828,7 @@ class UEBCC(rebcc.REBCC):
 
         return tuple(excitations)
 
+    @util.has_docstring
     def vector_to_excitations_ee(self, vector):
         excitations = []
         i0 = 0
@@ -841,23 +867,28 @@ class UEBCC(rebcc.REBCC):
         return tuple(excitations)
 
     @property
+    @util.has_docstring
     def spin_type(self):
         return "U"
 
     @property
+    @util.has_docstring
     def nmo(self):
         assert self.mo_occ[0].size == self.mo_occ[1].size
         return self.mo_occ[0].size
 
     @property
+    @util.has_docstring
     def nocc(self):
         return tuple(np.sum(mo_occ > 0) for mo_occ in self.mo_occ)
 
     @property
+    @util.has_docstring
     def nvir(self):
         return tuple(self.nmo - nocc for nocc in self.nocc)
 
     @property
+    @util.has_docstring
     def eo(self):
         eo = util.Namespace(
             a=np.diag(self.fock.aa.oo),
@@ -866,6 +897,7 @@ class UEBCC(rebcc.REBCC):
         return eo
 
     @property
+    @util.has_docstring
     def ev(self):
         ev = util.Namespace(
             a=np.diag(self.fock.aa.vv),
@@ -874,6 +906,7 @@ class UEBCC(rebcc.REBCC):
         return ev
 
     @property
+    @util.has_docstring
     def eO(self):
         eO = util.Namespace(
             a=np.diag(self.fock.aa.OO),
@@ -882,6 +915,7 @@ class UEBCC(rebcc.REBCC):
         return eO
 
     @property
+    @util.has_docstring
     def eV(self):
         eV = util.Namespace(
             a=np.diag(self.fock.aa.VV),
