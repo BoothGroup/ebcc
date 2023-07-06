@@ -42,9 +42,11 @@ build-backend = "setuptools.build_meta"
 dev = [
     "black>=22.6.0",
     "isort>=5.10.1",
-    "coverage[toml]",
-    "pytest",
-    "pytest-cov",
+    "flake8>=3.8.4",
+    "flake8-pyproject>=1.2.3",
+    "coverage[toml]>=5.5.0",
+    "pytest>=6.2.4",
+    "pytest-cov>=4.0.0",
 ]
 
 [tool.black]
@@ -74,6 +76,32 @@ skip_glob = [
     "ebcc/codegen/*",
     "ebcc/__init__.py",
 ]
+
+[tool.pydocstringformatter]
+max-line-length = 72
+write = true
+exclude = [
+    "ebcc/codegen",
+    "ebcc/__pycache__",
+    ".git",
+]
+style = "numpydoc"
+
+[tool.flake8]
+max-line-length = 100
+ignore = ["E203", "W503"]
+per-file-ignores = [
+    "__init__.py:F401",
+]
+count = true
+include = "ebcc"
+exclude = """
+/(
+    | ebcc/codegen
+    | ebcc/__pycache__
+    | .git
+)/
+"""
 
 [tool.coverage.run]
 branch = true

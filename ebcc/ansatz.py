@@ -26,7 +26,8 @@ named_ansatzes = {
 
 
 def name_to_identifier(name):
-    """Convert an ansatz name to an identifer that can be used for
+    """
+    Convert an ansatz name to an identifer that can be used for
     variable and file names.
 
     Parameters
@@ -120,8 +121,9 @@ class Ansatz:
         self.module_name = module_name
 
     def _get_eqns(self, prefix):
-        """Get the module which contains the generated equations for
-        the current model.
+        """
+        Get the module which contains the generated equations for the
+        current model.
         """
 
         if self.module_name is None:
@@ -175,7 +177,8 @@ class Ansatz:
 
     @property
     def has_perturbative_correction(self):
-        """Return a boolean indicating whether the ansatz includes a
+        """
+        Return a boolean indicating whether the ansatz includes a
         perturbative correction e.g. CCSD(T).
 
         Returns
@@ -190,8 +193,9 @@ class Ansatz:
 
     @property
     def is_one_shot(self):
-        """Return a boolean indicating whether the ansatz is simply
-        a one-shot energy calculation e.g. MP2.
+        """
+        Return a boolean indicating whether the ansatz is simply a
+        one-shot energy calculation e.g. MP2.
 
         Returns
         -------
@@ -205,8 +209,8 @@ class Ansatz:
         )
 
     def fermionic_cluster_ranks(self, spin_type="G"):
-        """Get a list of cluster operator ranks for the fermionic
-        space.
+        """
+        Get a list of cluster operator ranks for the fermionic space.
 
         Parameters
         ----------
