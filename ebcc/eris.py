@@ -89,7 +89,7 @@ class RERIs(ERIs):
             return block
 
 
-@util.inherit_docstrings
+@util.has_docstring
 class UERIs(ERIs):
     """
     Electronic repulsion integral container class for `UEBCC`. Consists
@@ -183,7 +183,7 @@ class UERIs(ERIs):
         )
 
 
-@util.inherit_docstrings
+@util.has_docstring
 class GERIs(RERIs):
     __doc__ = __doc__.replace("REBCC", "GEBCC")
 

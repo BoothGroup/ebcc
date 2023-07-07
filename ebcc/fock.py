@@ -96,8 +96,7 @@ class RFock(Fock):
         return self.__dict__[key]
 
 
-@util.inherit_docstrings
-class UFock(Fock):
+class UFock(Fock, metaclass=util.InheritDocstrings):
     """
     Fock matrix container class for `UEBCC`. Consists of a namespace of
     `RFock` objects, on for each spin signature.
@@ -171,6 +170,6 @@ class UFock(Fock):
         )
 
 
-@util.inherit_docstrings
+@util.has_docstring
 class GFock(RFock):
     __doc__ = RFock.__doc__.replace("REBCC", "GEBCC")

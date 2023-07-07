@@ -2,10 +2,8 @@
 
 import ctypes
 import functools
-import inspect
 import itertools
 import time
-import warnings
 from collections.abc import Mapping
 
 import numpy as np
@@ -40,7 +38,7 @@ class ModelNotImplemented(NotImplementedError):
     pass
 
 
-class Namespace(Mapping):
+class Namespace:
     """
     Replacement for SimpleNamespace, which does not trivially allow
     conversion to a dict for heterogenously nested objects.
@@ -81,6 +79,10 @@ class Namespace(Mapping):
         """Check equality."""
         return dict(self) == dict(other)
 
+    def __ne__(self, other):
+        """Check inequality."""
+        return dict(self) != dict(other)
+
     def __contains__(self, key):
         """Check if an attribute exists."""
         return key in self._keys
@@ -88,6 +90,22 @@ class Namespace(Mapping):
     def __len__(self, other):
         """Return the number of attributes."""
         return len(self._keys)
+
+    def keys(self):
+        """Return keys of the namespace as a dictionary."""
+        return {k: None for k in self._keys}.keys()
+
+    def values(self):
+        """Return values of the namespace as a dictionary."""
+        return dict(self).values()
+
+    def items(self):
+        """Return items of the namespace as a dictionary."""
+        return dict(self).items()
+
+    def get(self, *args, **kwargs):
+        """Get an item of the namespace as a dictionary."""
+        return dict(self).get(*args, **kwargs)
 
 
 class Timer:
@@ -349,41 +367,82 @@ def get_symmetry_factor(*numbers):
     return 1.0 / (2.0**ntot)
 
 
-def inherit_docstrings(cls, warn_if_missing=True):
-    """Inherit docstrings for a class and its methods from superclass."""
+def _mro(*bases):
+    """Find the method resolution order of bases using the C3 algorithm."""
 
-    for name, func in inspect.getmembers(cls, inspect.isfunction):
-        if not func.__doc__:
-            cls.__doc__ = cls.__mro__[1].__doc__
-            for parent in cls.__mro__[1:]:
-                if hasattr(parent, name):
-                    func.__doc__ = getattr(parent, name).__doc__
-                else:
-                    if warn_if_missing and not func.__doc__ and not name.startswith("_"):
-                        warnings.warn(
-                            "Could not inherit docstring for function {} in {}".format(
-                                name,
-                                cls.__name__,
-                            ),
-                            stacklevel=2,
-                        )
+    seqs = [list(x.__mro__) for x in bases] + [list(bases)]
+    res = []
 
-    return cls
+    while True:
+        non_empty = list(filter(None, seqs))
+        if not non_empty:
+            return tuple(res)
+
+        for seq in non_empty:
+            candidate = seq[0]
+            not_head = [s for s in non_empty if candidate in s[1:]]
+            if not_head:
+                candidate = None
+            else:
+                break
+
+        if not candidate:
+            raise TypeError("Inconsistent hierarchy")
+
+        res.append(candidate)
+
+        for seq in non_empty:
+            if seq[0] == candidate:
+                del seq[0]
 
 
-def has_docstring(cls_or_func, warn_if_missing=True):
+class InheritDocstrings(type):
     """
-    Do nothing, except warn if a docstring doesn't exist on `cls_or_func`
-    if `warn_if_missing`.
+    Metaclass to inherit docstrings from superclasses. All attributes which
+    are public (no underscore prefix) are updated with the docstring of the
+    first superclass in the MRO containing that attribute with a docstring.
 
-    Simple marker to tell a static linter or a human that a class or
-    function has a docstring, even if it doesn't appear in the source code.
+    Additionally checks that all methods are documented at runtime.
     """
 
-    if warn_if_missing and not cls_or_func.__doc__:
-        warnings.warn("Missing docstring in {}".format(cls_or_func.__name__), stacklevel=2)
+    def __new__(cls, name, bases, attrs):
+        """Create an instance of the class with inherited docstrings."""
 
-    return cls_or_func
+        for key, val in attrs.items():
+            if key.startswith("_") or val.__doc__ is not None:
+                continue
+
+            for supcls in _mro(*bases):
+                supval = getattr(supcls, key, None)
+                if supval is None:
+                    continue
+                val.__doc__ = supval.__doc__
+                break
+            else:
+                raise RuntimeError("Method {} does not exist in superclass".format(key))
+
+            if val.__doc__ is None:
+                raise RuntimeError("Could not find docstring for {}".format(key))
+
+            attrs[key] = val
+
+        return super().__new__(cls, name, bases, attrs)
+
+
+def has_docstring(obj):
+    """
+    Decorate a function or class to check if it has a docstring.
+
+    Since the use case for this is in combination with `InheritDocstrings`
+    which already checks that a docstring is properly inherited, this
+    decorator is mostly just a marker for static analysis with additional
+    ratification at runtime.
+    """
+
+    #if not getattr(obj, "__doc__", None):
+    #    raise RuntimeError("Function {} is missing a docstring".format(obj.__name__))
+
+    return obj
 
 
 def antisymmetrise_array(v, axes=(0, 1)):

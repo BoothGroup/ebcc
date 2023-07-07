@@ -274,8 +274,7 @@ class REOM(EOM):
         return self.ebcc.nvir
 
 
-@util.inherit_docstrings
-class IP_REOM(REOM):
+class IP_REOM(REOM, metaclass=util.InheritDocstrings):
     """Restricted equation-of-motion class for ionisation potentials."""
 
     @util.has_docstring
@@ -340,8 +339,7 @@ class IP_REOM(REOM):
         return "ip"
 
 
-@util.inherit_docstrings
-class EA_REOM(REOM):
+class EA_REOM(REOM, metaclass=util.InheritDocstrings):
     """Equation-of-motion class for electron affinities."""
 
     @util.has_docstring
@@ -406,8 +404,7 @@ class EA_REOM(REOM):
         return "ea"
 
 
-@util.inherit_docstrings
-class EE_REOM(REOM):
+class EE_REOM(REOM, metaclass=util.InheritDocstrings):
     """Equation-of-motion class for neutral excitations."""
 
     @util.has_docstring

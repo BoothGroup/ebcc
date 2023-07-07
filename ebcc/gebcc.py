@@ -3,15 +3,16 @@
 import numpy as np
 from pyscf import lib, scf
 
-from ebcc import geom, rebcc, uebcc, util
+from ebcc import geom, uebcc, util
 from ebcc.brueckner import BruecknerGEBCC
 from ebcc.eris import GERIs
 from ebcc.fock import GFock
+from ebcc.rebcc import REBCC
 from ebcc.space import Space
 
 
-@util.inherit_docstrings
-class GEBCC(rebcc.REBCC):
+@util.has_docstring
+class GEBCC(REBCC, metaclass=util.InheritDocstrings):
     __doc__ = __doc__.replace("Restricted", "Generalised", 1)
 
     ERIs = GERIs
@@ -438,7 +439,6 @@ class GEBCC(rebcc.REBCC):
 
         return val
 
-    @util.has_docstring
     def get_eris(self, eris=None):
         """
         Get blocks of the ERIs.

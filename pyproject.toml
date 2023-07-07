@@ -96,7 +96,7 @@ per-file-ignores = [
     "__init__.py:E402,W605,F401,F811,D103",
 ]
 docstring-convention = "numpy"
-ignore-decorators = "inherit_docstring|has_docstring"
+ignore-decorators = "has_docstring"
 count = true
 include = "ebcc"
 exclude = """

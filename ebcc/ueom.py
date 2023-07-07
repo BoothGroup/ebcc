@@ -9,8 +9,7 @@ from pyscf import lib
 from ebcc import reom, util
 
 
-@util.inherit_docstrings
-class UEOM(reom.REOM):
+class UEOM(reom.REOM, metaclass=util.InheritDocstrings):
     """Unrestricted equation-of-motion base class."""
 
     def _argsort_guess(self, diag):
@@ -58,8 +57,7 @@ class UEOM(reom.REOM):
         return moments
 
 
-@util.inherit_docstrings
-class IP_UEOM(UEOM, reom.IP_REOM):
+class IP_UEOM(UEOM, reom.IP_REOM, metaclass=util.InheritDocstrings):
     """Unrestricted equation-of-motion class for ionisation potentials."""
 
     @util.has_docstring
@@ -167,8 +165,7 @@ class IP_UEOM(UEOM, reom.IP_REOM):
         return kets
 
 
-@util.inherit_docstrings
-class EA_UEOM(UEOM, reom.EA_REOM):
+class EA_UEOM(UEOM, reom.EA_REOM, metaclass=util.InheritDocstrings):
     """Unrestricted equation-of-motion class for electron affinities."""
 
     @util.has_docstring
@@ -276,8 +273,7 @@ class EA_UEOM(UEOM, reom.EA_REOM):
         return kets
 
 
-@util.inherit_docstrings
-class EE_UEOM(UEOM, reom.EE_REOM):
+class EE_UEOM(UEOM, reom.EE_REOM, metaclass=util.InheritDocstrings):
     """Unrestricted equation-of-motion class for neutral excitations."""
 
     def _quasiparticle_weight(self, r1):

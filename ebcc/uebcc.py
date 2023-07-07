@@ -12,19 +12,17 @@ from ebcc.fock import UFock
 from ebcc.space import Space
 
 
-@util.inherit_docstrings
-class UEBCC(rebcc.REBCC):
+@util.has_docstring
+class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
     ERIs = UERIs
     Fock = UFock
     Brueckner = BruecknerUEBCC
 
     @staticmethod
-    @util.has_docstring
     def _convert_mf(mf):
         return mf.to_uhf()
 
     @classmethod
-    @util.has_docstring
     def from_rebcc(cls, rcc):
         """Initialise an UEBCC object from an REBCC object."""
 
@@ -541,7 +539,6 @@ class UEBCC(rebcc.REBCC):
     def get_fock(self):
         return self.Fock(self, array=(self.bare_fock.aa, self.bare_fock.bb))
 
-    @util.has_docstring
     def get_eris(self, eris=None):
         """Get blocks of the ERIs.
 
@@ -582,7 +579,7 @@ class UEBCC(rebcc.REBCC):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             for spin in util.generate_spin_combinations(n, unique=True):
                 tn = getattr(amplitudes[name], spin)
-                subscript = spin[:n] + spin[n:].upper()
+                subscript = util.combine_subscripts(key, spin)
                 vectors.append(util.compress_axes(subscript, tn).ravel())
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
@@ -600,15 +597,13 @@ class UEBCC(rebcc.REBCC):
     def vector_to_amplitudes(self, vector):
         amplitudes = util.Namespace()
         i0 = 0
+        sizes = {(o, s): self.space[i].size(o) for o in "ovOVia" for i, s in enumerate("ab")}
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             amplitudes[name] = util.Namespace()
             for spin in util.generate_spin_combinations(n, unique=True):
-                sizes = {
-                    (o, s): self.space[i].size(o) for o in "ovOVia" for i, s in enumerate("ab")
-                }
-                subscript, sizes = util.combine_subscripts(key, spin, sizes=sizes)
-                size = util.get_compressed_size(subscript, **sizes)
+                subscript, csizes = util.combine_subscripts(key, spin, sizes=sizes)
+                size = util.get_compressed_size(subscript, **csizes)
                 shape = tuple(self.space["ab".index(s)].size(k) for s, k in zip(spin, key))
                 tn_tril = vector[i0 : i0 + size]
                 tn = util.decompress_axes(subscript, tn_tril, shape=shape)
@@ -644,9 +639,10 @@ class UEBCC(rebcc.REBCC):
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             lname = name.replace("t", "l")
+            key = key[n:] + key[:n]
             for spin in util.generate_spin_combinations(n, unique=True):
                 tn = getattr(lambdas[lname], spin)
-                subscript = spin[:n] + spin[n:].upper()
+                subscript = util.combine_subscripts(key, spin)
                 vectors.append(util.compress_axes(subscript, tn).ravel())
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
@@ -664,21 +660,15 @@ class UEBCC(rebcc.REBCC):
     def vector_to_lambdas(self, vector):
         lambdas = util.Namespace()
         i0 = 0
+        sizes = {(o, s): self.space[i].size(o) for o in "ovOVia" for i, s in enumerate("ab")}
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             lname = name.replace("t", "l")
             key = key[n:] + key[:n]
             lambdas[lname] = util.Namespace()
             for spin in util.generate_spin_combinations(n, unique=True):
-                subscript = spin[:n] + spin[n:].upper()
-                # FIXME this will break for active space methods
-                size = util.get_compressed_size(
-                    subscript,
-                    a=self.space[0].ncvir,
-                    b=self.space[1].ncvir,
-                    A=self.space[0].ncocc,
-                    B=self.space[1].ncocc,
-                )
+                subscript, csizes = util.combine_subscripts(key, spin, sizes=sizes)
+                size = util.get_compressed_size(subscript, **csizes)
                 shape = tuple(self.space["ab".index(s)].size(k) for s, k in zip(spin, key))
                 tn_tril = vector[i0 : i0 + size]
                 tn = util.decompress_axes(subscript, tn_tril, shape=shape)
@@ -718,7 +708,28 @@ class UEBCC(rebcc.REBCC):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             for spin in util.generate_spin_combinations(n, excited=True, unique=True):
                 vn = getattr(excitations[m], spin)
-                subscript = spin[:n] + spin[n:].upper()
+                subscript = util.combine_subscripts(key[:-1], spin)
+                vectors.append(util.compress_axes(subscript, vn).ravel())
+            m += 1
+
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
+            raise util.ModelNotImplemented
+
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            raise util.ModelNotImplemented
+
+        return np.concatenate(vectors)
+
+    @util.has_docstring
+    def excitations_to_vector_ea(self, *excitations):
+        vectors = []
+        m = 0
+
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            key = key[n:] + key[:n]
+            for spin in util.generate_spin_combinations(n, excited=True, unique=True):
+                vn = getattr(excitations[m], spin)
+                subscript = util.combine_subscripts(key[:-1], spin)
                 vectors.append(util.compress_axes(subscript, vn).ravel())
             m += 1
 
@@ -738,7 +749,7 @@ class UEBCC(rebcc.REBCC):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             for spin in util.generate_spin_combinations(n):
                 vn = getattr(excitations[m], spin)
-                subscript = spin[:n] + spin[n:].upper()
+                subscript = util.combine_subscripts(key, spin)
                 vectors.append(util.compress_axes(subscript, vn).ravel())
             m += 1
 
@@ -754,20 +765,14 @@ class UEBCC(rebcc.REBCC):
     def vector_to_excitations_ip(self, vector):
         excitations = []
         i0 = 0
+        sizes = {(o, s): self.space[i].size(o) for o in "ovOVia" for i, s in enumerate("ab")}
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             key = key[:-1]
             amp = util.Namespace()
             for spin in util.generate_spin_combinations(n, excited=True, unique=True):
-                subscript = spin[:n] + spin[n:].upper()
-                # FIXME this will break for active space methods
-                size = util.get_compressed_size(
-                    subscript,
-                    a=self.space[0].ncocc,
-                    b=self.space[1].ncocc,
-                    A=self.space[0].ncvir,
-                    B=self.space[1].ncvir,
-                )
+                subscript, csizes = util.combine_subscripts(key, spin, sizes=sizes)
+                size = util.get_compressed_size(subscript, **csizes)
                 shape = tuple(self.space["ab".index(s)].size(k) for s, k in zip(spin, key))
                 vn_tril = vector[i0 : i0 + size]
                 factor = max(
@@ -793,20 +798,14 @@ class UEBCC(rebcc.REBCC):
     def vector_to_excitations_ea(self, vector):
         excitations = []
         i0 = 0
+        sizes = {(o, s): self.space[i].size(o) for o in "ovOVia" for i, s in enumerate("ab")}
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             key = key[n:] + key[: n - 1]
             amp = util.Namespace()
             for spin in util.generate_spin_combinations(n, excited=True, unique=True):
-                subscript = spin[:n] + spin[n:].upper()
-                # FIXME this will break for active space methods
-                size = util.get_compressed_size(
-                    subscript,
-                    a=self.space[0].ncvir,
-                    b=self.space[1].ncvir,
-                    A=self.space[0].ncocc,
-                    B=self.space[1].ncocc,
-                )
+                subscript, csizes = util.combine_subscripts(key, spin, sizes=sizes)
+                size = util.get_compressed_size(subscript, **csizes)
                 shape = tuple(self.space["ab".index(s)].size(k) for s, k in zip(spin, key))
                 vn_tril = vector[i0 : i0 + size]
                 factor = max(
@@ -832,19 +831,13 @@ class UEBCC(rebcc.REBCC):
     def vector_to_excitations_ee(self, vector):
         excitations = []
         i0 = 0
+        sizes = {(o, s): self.space[i].size(o) for o in "ovOVia" for i, s in enumerate("ab")}
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             amp = util.Namespace()
             for spin in util.generate_spin_combinations(n):
-                subscript = spin[:n] + spin[n:].upper()
-                # FIXME this will break for active space methods
-                size = util.get_compressed_size(
-                    subscript,
-                    a=self.space[0].ncocc,
-                    b=self.space[1].ncocc,
-                    A=self.space[0].ncvir,
-                    B=self.space[1].ncvir,
-                )
+                subscript, csizes = util.combine_subscripts(key, spin, sizes=sizes)
+                size = util.get_compressed_size(subscript, **csizes)
                 shape = tuple(self.space["ab".index(s)].size(k) for s, k in zip(spin, key))
                 vn_tril = vector[i0 : i0 + size]
                 factor = max(

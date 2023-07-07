@@ -334,8 +334,8 @@ class BruecknerREBCC:
         return self.cc.spin_type
 
 
-@util.inherit_docstrings
-class BruecknerUEBCC(BruecknerREBCC):
+@util.has_docstring
+class BruecknerUEBCC(BruecknerREBCC, metaclass=util.InheritDocstrings):
     @util.has_docstring
     def get_rotation_matrix(self, u_tot=None, diis=None, t1=None):
         if t1 is None:
@@ -453,6 +453,6 @@ class BruecknerUEBCC(BruecknerREBCC):
         return mo_coeff
 
 
-@util.inherit_docstrings
+@util.has_docstring
 class BruecknerGEBCC(BruecknerREBCC):
     pass
