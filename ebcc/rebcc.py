@@ -667,20 +667,10 @@ class REBCC(EBCC):
         # Build T amplitudes:
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             if n == 1:
-                ei = getattr(self, "e" + key[0])
-                ea = getattr(self, "e" + key[1])
-                e_ia = lib.direct_sum("i-a->ia", ei, ea)
-                amplitudes[name] = getattr(self.fock, key) / e_ia
+                amplitudes[name] = self.fock[key] / self.energy_sum(key)
             elif n == 2:
-                ei = getattr(self, "e" + key[0])
-                ej = getattr(self, "e" + key[1])
-                ea = getattr(self, "e" + key[2])
-                eb = getattr(self, "e" + key[3])
-                e_ia = lib.direct_sum("i-a->ia", ei, ea)
-                e_jb = lib.direct_sum("i-a->ia", ej, eb)
-                e_ijab = lib.direct_sum("ia,jb->ijab", e_ia, e_jb)
                 key_t = key[0] + key[2] + key[1] + key[3]
-                amplitudes[name] = getattr(eris, key_t).swapaxes(1, 2) / e_ijab
+                amplitudes[name] = eris[key_t].swapaxes(1, 2) / self.energy_sum(key)
             else:
                 shape = tuple(self.space.size(k) for k in key)
                 amplitudes[name] = np.zeros(shape)
@@ -703,10 +693,7 @@ class REBCC(EBCC):
             if nf != 1:
                 raise util.ModelNotImplemented
             if nb == 1:
-                ei = getattr(self, "e" + key[1])
-                ea = getattr(self, "e" + key[2])
-                e_xia = lib.direct_sum("i-a-x->xia", ei, ea, self.omega)
-                amplitudes[name] = getattr(h, key) / e_xia
+                amplitudes[name] = h[key] / self.energy_sum(key)
             else:
                 shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
                 amplitudes[name] = np.zeros(shape)
@@ -838,38 +825,19 @@ class REBCC(EBCC):
 
         # Divide T amplitudes:
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
-            e_ia_list = [
-                lib.direct_sum("i-a->ia", getattr(self, "e" + o), getattr(self, "e" + v))
-                for o, v in zip(key[:n], key[n:])
-            ]
-            d = functools.reduce(np.add.outer, e_ia_list)
-            d = d.transpose(perm)
-            res[name] /= d
+            res[name] /= self.energy_sum(key)
             res[name] += amplitudes[name]
 
         # Divide S amplitudes:
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
-            d = functools.reduce(np.add.outer, ([-self.omega] * n))
-            res[name] /= d
+            res[name] /= self.energy_sum(key)
             res[name] += amplitudes[name]
 
         # Divide U amplitudes:
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             if nf != 1:
                 raise util.ModelNotImplemented
-            perm = (
-                list(range(nb))
-                + list(range(nb, nf * 2 + nb, 2))
-                + list(range(nb + 1, nf * 2 + nb, 2))
-            )
-            e_ia_list = [
-                lib.direct_sum("i-a->ia", getattr(self, "e" + o), getattr(self, "e" + v))
-                for o, v in zip(key[nb : nf + nb], key[nf + nb :])
-            ]
-            d = functools.reduce(np.add.outer, ([-self.omega] * nb) + e_ia_list)
-            d = d.transpose(perm)
-            res[name] /= d
+            res[name] /= self.energy_sum(key)
             res[name] += amplitudes[name]
 
         return res
@@ -922,22 +890,14 @@ class REBCC(EBCC):
         # Divide T amplitudes:
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             lname = name.replace("t", "l")
-            perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
-            e_ai_list = [
-                lib.direct_sum("i-a->ai", getattr(self, "e" + o), getattr(self, "e" + v))
-                for o, v in zip(key[:n], key[n:])
-            ]
-            d = functools.reduce(np.add.outer, e_ai_list)
-            d = d.transpose(perm)
-            res[lname] /= d
+            res[lname] /= self.energy_sum(key[n:] + key[:n])
             if not perturbative:
                 res[lname] += lambdas[lname]
 
         # Divide S amplitudes:
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             lname = "l" + name
-            d = functools.reduce(np.add.outer, [-self.omega] * n)
-            res[lname] /= d
+            res[lname] /= self.energy_sum(key[n:] + key[:n])
             if not perturbative:
                 res[lname] += lambdas[lname]
 
@@ -946,12 +906,7 @@ class REBCC(EBCC):
             if nf != 1:
                 raise util.ModelNotImplemented
             lname = "l" + name
-            e_ai_list = [
-                lib.direct_sum("i-a->ai", getattr(self, "e" + o), getattr(self, "e" + v))
-                for o, v in zip(key[nb : nf + nb], key[nf + nb :])
-            ]
-            d = functools.reduce(np.add.outer, ([-self.omega] * nb) + e_ai_list)
-            res[lname] /= d
+            res[lname] /= self.energy_sum(key[:nb] + key[nb+nf:] + key[nb:nb+nf])
             if not perturbative:
                 res[lname] += lambdas[lname]
 
@@ -1945,12 +1900,14 @@ class REBCC(EBCC):
             "a": self.space.inactive_virtual,
         }
 
-        class Blocks:
-            def __getattr__(selffer, key):
+        class Blocks(util.Namespace):
+            def __getitem__(selffer, key):
                 assert key[0] == "b"
                 i = slices[key[1]]
                 j = slices[key[2]]
                 return g[:, i][:, :, j].copy()
+
+            __getattr__ = __getitem__
 
         return Blocks()
 
@@ -2132,57 +2089,56 @@ class REBCC(EBCC):
             return 0
         return self.omega.shape[0]
 
-    @property
-    def eo(self):
+    def energy_sum(self, subscript, signs_dict=None):
         """
-        Get the diagonal of the occupied Fock matrix in MO basis, shifted
-        due to bosons where the ansatz requires.
+        Get a direct sum of energies.
+
+        Parameters
+        ----------
+        subscript : str
+            The direct sum subscript, where each character indicates the
+            sector for each energy. For the default slice characters, see
+            `Space`. Occupied degrees of freedom are assumed to be
+            positive, virtual and bosonic negative (the signs can be
+            changed via the `signs_dict` keyword argument).
+        signs_dict : dict, optional
+            Dictionary defining custom signs for each sector. If `None`,
+            initialised such that `["o", "O", "i"]` are positive, and
+            `["v", "V", "a", "b"]` negative. Default value is `None`.
 
         Returns
         -------
-        eo : numpy.ndarray (ncocc,)
-            Diagonal of the occupied Fock matrix in MO basis.
+        energy_sum : numpy.ndarray
+            Array of energy sums.
         """
-        return np.diag(self.fock.oo)
 
-    @property
-    def ev(self):
-        """
-        Get the diagonal of the virtual Fock matrix in MO basis, shifted
-        due to bosons where the ansatz requires.
+        n = 0
+        def next_char():
+            nonlocal n
+            if n < 26:
+                char = chr(ord("a") + n)
+            else:
+                char = chr(ord("A") + n)
+            n += 1
+            return char
 
-        Returns
-        -------
-        ev : numpy.ndarray (ncvir,)
-            Diagonal of the virtual Fock matrix in MO basis.
-        """
-        return np.diag(self.fock.vv)
+        if signs_dict is None:
+            signs_dict = {}
+        for k, s in zip("vVaoOib", "---+++-"):
+            if k not in signs_dict:
+                signs_dict[k] = s
 
-    @property
-    def eO(self):
-        """
-        Get the diagonal of the active occupied Fock matrix in MO basis,
-        shifted due to bosons where the ansatz requires.
+        energies = []
+        for key in subscript:
+            if key == "b":
+                energies.append(self.omega)
+            else:
+                energies.append(np.diag(self.fock[key + key]))
 
-        Returns
-        -------
-        eO : numpy.ndarray (naocc,)
-            Diagonal of the active occupied Fock matrix in MO basis.
-        """
-        return np.diag(self.fock.OO)
+        subscript = "".join([signs_dict[k]+next_char() for k in subscript])
+        energy_sum = lib.direct_sum(subscript, *energies)
 
-    @property
-    def eV(self):
-        """
-        Get the diagonal of the active virtual Fock matrix in MO basis,
-        shifted due to bosons where the ansatz requires.
-
-        Returns
-        -------
-        eV : numpy.ndarray (navir,)
-            Diagonal of the active virtual Fock matrix in MO basis.
-        """
-        return np.diag(self.fock.VV)
+        return energy_sum
 
     @property
     def e_tot(self):

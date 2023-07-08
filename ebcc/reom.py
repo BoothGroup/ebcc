@@ -296,15 +296,8 @@ class IP_REOM(REOM, metaclass=util.InheritDocstrings):
         parts = []
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            e_list = [
-                lib.direct_sum("i-a->ia", getattr(self.ebcc, "e" + o), getattr(self.ebcc, "e" + v))
-                for o, v in zip(key[: n - 1], key[n : 2 * n - 1])
-            ]
-            e_list.append(getattr(self.ebcc, "e" + key[n - 1]))
-            perm = list(range(0, n * 2, 2)) + list(range(1, (n - 1) * 2, 2))
-            d = functools.reduce(np.add.outer, e_list)
-            d = d.transpose(perm)
-            parts.append(d)
+            key = key[:-1]
+            parts.append(self.ebcc.energy_sum(key))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
@@ -361,15 +354,8 @@ class EA_REOM(REOM, metaclass=util.InheritDocstrings):
         parts = []
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            e_list = [
-                lib.direct_sum("i-a->ai", getattr(self.ebcc, "e" + o), getattr(self.ebcc, "e" + v))
-                for o, v in zip(key[: n - 1], key[n : 2 * n - 1])
-            ]
-            e_list.append(-getattr(self.ebcc, "e" + key[2 * n - 1]))
-            perm = list(range(0, n * 2, 2)) + list(range(1, (n - 1) * 2, 2))
-            d = functools.reduce(np.add.outer, e_list)
-            d = d.transpose(perm)
-            parts.append(d)
+            key = key[n:] + key[:n - 1]
+            parts.append(-self.ebcc.energy_sum(key))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
@@ -426,14 +412,7 @@ class EE_REOM(REOM, metaclass=util.InheritDocstrings):
         parts = []
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            e_list = [
-                lib.direct_sum("a-i->ia", getattr(self.ebcc, "e" + v), getattr(self.ebcc, "e" + o))
-                for o, v in zip(key[:n], key[n:])
-            ]
-            perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
-            d = functools.reduce(np.add.outer, e_list)
-            d = d.transpose(perm)
-            parts.append(d)
+            parts.append(-self.ebcc.energy_sum(key))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented

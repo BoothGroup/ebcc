@@ -88,6 +88,8 @@ class RERIs(ERIs):
             block = self.array[si][:, sj][:, :, sk][:, :, :, sl]
             return block
 
+    __getitem__ = __getattr__
+
 
 @util.has_docstring
 class UERIs(ERIs):

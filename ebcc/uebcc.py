@@ -53,7 +53,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
                     subscript = util.combine_subscripts(key, comb)
                     tn = rcc.amplitudes[name]
                     tn = util.symmetrise(subscript, tn, symmetry="-" * 2 * n)
-                    setattr(amplitudes[name], comb, tn)
+                    amplitudes[name][comb] = tn
 
             for name, key, n in ucc.ansatz.bosonic_cluster_ranks(spin_type=ucc.spin_type):
                 amplitudes[name] = rcc.amplitudes[name].copy()
@@ -62,7 +62,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
                 amplitudes[name] = util.Namespace()
                 for comb in util.generate_spin_combinations(nf, unique=True):
                     tn = rcc.amplitudes[name]
-                    setattr(amplitudes[name], comb, tn)
+                    amplitudes[name][comb] = tn
 
             ucc.amplitudes = amplitudes
 
@@ -76,7 +76,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
                     subscript = util.combine_subscripts(key, comb)
                     tn = rcc.lambdas[lname]
                     tn = util.symmetrise(subscript, tn, symmetry="-" * 2 * n)
-                    setattr(lambdas[lname], comb, tn)
+                    lambdas[lname][comb] = tn
 
             for name, key, n in ucc.ansatz.bosonic_cluster_ranks(spin_type=ucc.spin_type):
                 lname = "l" + name
@@ -87,7 +87,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
                 lambdas[lname] = util.Namespace()
                 for comb in util.generate_spin_combinations(nf, unique=True):
                     tn = rcc.lambdas[lname]
-                    setattr(lambdas[lname], comb, tn)
+                    lambdas[lname][comb] = tn
 
             ucc.lambdas = lambdas
 
@@ -139,48 +139,20 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         # Build T amplitudes
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            if n == 1:
-                ei = getattr(self, "e" + key[0])
-                ea = getattr(self, "e" + key[1])
-                e_ia = util.Namespace(
-                    aa=lib.direct_sum("i-a->ia", ei.a, ea.a),
-                    bb=lib.direct_sum("i-a->ia", ei.b, ea.b),
-                )
-                tn = util.Namespace(
-                    aa=getattr(self.fock.aa, key) / e_ia.aa,
-                    bb=getattr(self.fock.bb, key) / e_ia.bb,
-                )
-                amplitudes[name] = tn
-            elif n == 2:
-                ei = getattr(self, "e" + key[0])
-                ej = getattr(self, "e" + key[1])
-                ea = getattr(self, "e" + key[2])
-                eb = getattr(self, "e" + key[3])
-                e_ia = util.Namespace(
-                    aa=lib.direct_sum("i-a->ia", ei.a, ea.a),
-                    bb=lib.direct_sum("i-a->ia", ej.b, eb.b),
-                )
-                e_ijab = util.Namespace(
-                    aaaa=lib.direct_sum("ia,jb->ijab", e_ia.aa, e_ia.aa),
-                    abab=lib.direct_sum("ia,jb->ijab", e_ia.aa, e_ia.bb),
-                    bbbb=lib.direct_sum("ia,jb->ijab", e_ia.bb, e_ia.bb),
-                )
-                key_t = key[0] + key[2] + key[1] + key[3]
-                tn = util.Namespace(
-                    aaaa=getattr(eris.aaaa, key_t).swapaxes(1, 2) / e_ijab.aaaa,
-                    abab=getattr(eris.aabb, key_t).swapaxes(1, 2) / e_ijab.abab,
-                    bbbb=getattr(eris.bbbb, key_t).swapaxes(1, 2) / e_ijab.bbbb,
-                )
-                # TODO generalise:
-                tn.aaaa = 0.5 * (tn.aaaa - tn.aaaa.swapaxes(0, 1))
-                tn.bbbb = 0.5 * (tn.bbbb - tn.bbbb.swapaxes(0, 1))
-                amplitudes[name] = tn
-            else:
-                tn = util.Namespace()
-                for comb in util.generate_spin_combinations(n, unique=True):
+            tn = util.Namespace()
+            for comb in util.generate_spin_combinations(n, unique=True):
+                if n == 1:
+                    tn[comb] = self.fock[comb][key] / self.energy_sum(key, comb)
+                elif n == 2:
+                    comb_t = comb[0] + comb[2] + comb[1] + comb[3]
+                    key_t = key[0] + key[2] + key[1] + key[3]
+                    tn[comb] = eris[comb_t][key_t].swapaxes(1, 2) / self.energy_sum(key, comb)
+                    if comb in ("aaaa", "bbbb"):
+                        # TODO generalise:
+                        tn[comb] = 0.5 * (tn[comb] - tn[comb].swapaxes(0, 1))
+                else:
                     shape = tuple(self.space["ab".index(s)].size(k) for s, k in zip(comb, key))
-                    amp = np.zeros(shape)
-                    setattr(tn, comb, amp)
+                    tn[comb] = np.zeros(shape)
                 amplitudes[name] = tn
 
         if self.boson_ansatz:
@@ -201,23 +173,17 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
             if nf != 1:
                 raise util.ModelNotImplemented
             if nb == 1:
-                ei = getattr(self, "e" + key[1])
-                ea = getattr(self, "e" + key[2])
-                e_xia = util.Namespace(
-                    aa=lib.direct_sum("i-a-x->xia", ei.a, ea.a, self.omega),
-                    bb=lib.direct_sum("i-a-x->xia", ei.b, ea.b, self.omega),
+                tn = util.Namespace(
+                    aa=h.aa[key] / self.energy_sum(key, "_aa"),
+                    bb=h.bb[key] / self.energy_sum(key, "_aa"),
                 )
-                u1n = util.Namespace(
-                    aa=getattr(h.aa, key) / e_xia.aa,
-                    bb=getattr(h.bb, key) / e_xia.bb,
-                )
-                amplitudes[name] = u1n
+                amplitudes[name] = tn
             else:
-                u1n = util.Namespace(
+                tn = util.Namespace(
                     aa=np.zeros((self.nbos,) * nb + tuple(self.space[0].size(k) for k in key[nb:])),
                     bb=np.zeros((self.nbos,) * nb + tuple(self.space[0].size(k) for k in key[nb:])),
                 )
-                amplitudes[name] = u1n
+                amplitudes[name] = tn
 
         return amplitudes
 
@@ -234,8 +200,8 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
             perm = list(range(n, 2 * n)) + list(range(n))
             lambdas[lname] = util.Namespace()
             for key in dict(amplitudes[name]).keys():
-                ln = getattr(amplitudes[name], key).transpose(perm)
-                setattr(lambdas[lname], key, ln)
+                ln = amplitudes[name][key].transpose(perm)
+                lambdas[lname][key] = ln
 
         # Build LS amplitudes:
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
@@ -248,8 +214,8 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
             perm = list(range(nb)) + [nb + 1, nb]
             lambdas["l" + name] = util.Namespace()
             for key in dict(amplitudes[name]).keys():
-                lu1n = getattr(amplitudes[name], key).transpose(perm)
-                setattr(lambdas["l" + name], key, lu1n)
+                ln = amplitudes[name][key].transpose(perm)
+                lambdas[lname][key] = ln
 
         return lambdas
 
@@ -265,55 +231,29 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         # Divide T amplitudes:
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
             for comb in util.generate_spin_combinations(n, unique=True):
                 subscript = util.combine_subscripts(key, comb)
-                e_ia_list = [
-                    lib.direct_sum(
-                        "i-a->ia",
-                        getattr(getattr(self, "e" + o), so),
-                        getattr(getattr(self, "e" + v), sv),
-                    )
-                    for (o, v), (so, sv) in zip(zip(key[:n], key[n:]), zip(comb[:n], comb[n:]))
-                ]
-                d = functools.reduce(np.add.outer, e_ia_list)
-                d = d.transpose(perm)
-                tn = getattr(res[name], comb)
-                tn /= d
-                tn += getattr(amplitudes[name], comb)
+                tn = res[name][comb]
+                tn /= self.energy_sum(key, comb)
+                tn += amplitudes[name][comb]
                 tn = util.symmetrise(subscript, tn, symmetry="-" * (2 * n))
-                setattr(res[name], comb, tn)
+                res[name][comb] = tn
 
         # Divide S amplitudes:
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
-            d = functools.reduce(np.add.outer, ([-self.omega] * n))
-            res[name] /= d
+            res[name] /= self.energy_sum(key, "_" * n)
             res[name] += amplitudes[name]
 
         # Divide U amplitudes:
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             if nf != 1:
                 raise util.ModelNotImplemented
-            e_ia = util.Namespace(
-                aa=lib.direct_sum(
-                    "i-a->ia",
-                    getattr(self, "e" + key[nb]).a,
-                    getattr(self, "e" + key[nb + 1]).a,
-                ),
-                bb=lib.direct_sum(
-                    "i-a->ia",
-                    getattr(self, "e" + key[nb]).b,
-                    getattr(self, "e" + key[nb + 1]).b,
-                ),
-            )
-            d = functools.reduce(np.add.outer, ([-self.omega] * nb) + ([e_ia.aa] * nf))
             tn = res[name].aa
-            tn /= d
+            tn /= self.energy_sum(key, "_" * nb + "aa")
             tn += amplitudes[name].aa
-            d = functools.reduce(np.add.outer, ([-self.omega] * nb) + ([e_ia.bb] * nf))
             res[name].aa = tn
             tn = res[name].bb
-            tn /= d
+            tn /= self.energy_sum(key, "_" * nb + "bb")
             tn += amplitudes[name].bb
             res[name].bb = tn
 
@@ -334,30 +274,18 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
         # Divide T amplitudes:
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             lname = name.replace("t", "l")
-            perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
             for comb in util.generate_spin_combinations(n, unique=True):
                 subscript = util.combine_subscripts(key, comb)
-                e_ai_list = [
-                    lib.direct_sum(
-                        "i-a->ai",
-                        getattr(getattr(self, "e" + o), so),
-                        getattr(getattr(self, "e" + v), sv),
-                    )
-                    for (o, v), (so, sv) in zip(zip(key[:n], key[n:]), zip(comb[:n], comb[n:]))
-                ]
-                d = functools.reduce(np.add.outer, e_ai_list)
-                d = d.transpose(perm)
-                tn = getattr(res[lname], comb)
-                tn /= d
-                tn += getattr(lambdas[lname], comb)
+                tn = res[lname][comb]
+                tn /= self.energy_sum(key[n:] + key[:n], comb)
+                tn += lambdas[lname][comb]
                 tn = util.symmetrise(subscript, tn, symmetry="-" * (2 * n))
-                setattr(res[lname], comb, tn)
+                res[lname][comb] = tn
 
         # Divide S amplitudes:
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             lname = "l" + name
-            d = functools.reduce(np.add.outer, [-self.omega] * n)
-            res[lname] /= d
+            res[lname] /= self.energy_sum(key, "_" * nb)
             res[lname] += lambdas[lname]
 
         # Divide U amplitudes:
@@ -365,26 +293,12 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
             if nf != 1:
                 raise util.ModelNotImplemented
             lname = "l" + name
-            e_ai = util.Namespace(
-                aa=lib.direct_sum(
-                    "i-a->ai",
-                    getattr(self, "e" + key[nb]).a,
-                    getattr(self, "e" + key[nb + 1]).a,
-                ),
-                bb=lib.direct_sum(
-                    "i-a->ai",
-                    getattr(self, "e" + key[nb]).b,
-                    getattr(self, "e" + key[nb + 1]).b,
-                ),
-            )
-            d = functools.reduce(np.add.outer, ([-self.omega] * nb) + ([e_ai.aa] * nf))
             tn = res[lname].aa
-            tn /= d
+            tn /= self.energy_sum(key, "_" * nb + "aa")
             tn += lambdas[lname].aa
-            d = functools.reduce(np.add.outer, ([-self.omega] * nb) + ([e_ai.bb] * nf))
             res[lname].aa = tn
             tn = res[lname].bb
-            tn /= d
+            tn /= self.energy_sum(key, "_" * nb + "bb")
             tn += lambdas[lname].bb
             res[lname].bb = tn
 
@@ -499,12 +413,14 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
         ]
 
         def constructor(s):
-            class Blocks:
-                def __getattr__(selffer, key):
+            class Blocks(util.Namespace):
+                def __getitem__(selffer, key):
                     assert key[0] == "b"
                     i = slices[s][key[1]]
                     j = slices[s][key[2]]
                     return g[s][:, i][:, :, j].copy()
+
+                __getattr__ = __getitem__
 
             return Blocks()
 
@@ -578,7 +494,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             for spin in util.generate_spin_combinations(n, unique=True):
-                tn = getattr(amplitudes[name], spin)
+                tn = amplitudes[name][spin]
                 subscript = util.combine_subscripts(key, spin)
                 vectors.append(util.compress_axes(subscript, tn).ravel())
 
@@ -607,7 +523,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
                 shape = tuple(self.space["ab".index(s)].size(k) for s, k in zip(spin, key))
                 tn_tril = vector[i0 : i0 + size]
                 tn = util.decompress_axes(subscript, tn_tril, shape=shape)
-                setattr(amplitudes[name], spin, tn)
+                amplitudes[name][spin] = tn
                 i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
@@ -641,7 +557,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
             lname = name.replace("t", "l")
             key = key[n:] + key[:n]
             for spin in util.generate_spin_combinations(n, unique=True):
-                tn = getattr(lambdas[lname], spin)
+                tn = lambdas[lname][spin]
                 subscript = util.combine_subscripts(key, spin)
                 vectors.append(util.compress_axes(subscript, tn).ravel())
 
@@ -672,7 +588,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
                 shape = tuple(self.space["ab".index(s)].size(k) for s, k in zip(spin, key))
                 tn_tril = vector[i0 : i0 + size]
                 tn = util.decompress_axes(subscript, tn_tril, shape=shape)
-                setattr(lambdas[lname], spin, tn)
+                lambdas[lname][spin] = tn
                 i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
@@ -707,7 +623,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             for spin in util.generate_spin_combinations(n, excited=True, unique=True):
-                vn = getattr(excitations[m], spin)
+                vn = excitations[m][spin]
                 subscript = util.combine_subscripts(key[:-1], spin)
                 vectors.append(util.compress_axes(subscript, vn).ravel())
             m += 1
@@ -728,7 +644,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             key = key[n:] + key[:n]
             for spin in util.generate_spin_combinations(n, excited=True, unique=True):
-                vn = getattr(excitations[m], spin)
+                vn = excitations[m][spin]
                 subscript = util.combine_subscripts(key[:-1], spin)
                 vectors.append(util.compress_axes(subscript, vn).ravel())
             m += 1
@@ -748,7 +664,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             for spin in util.generate_spin_combinations(n):
-                vn = getattr(excitations[m], spin)
+                vn = excitations[m][spin]
                 subscript = util.combine_subscripts(key, spin)
                 vectors.append(util.compress_axes(subscript, vn).ravel())
             m += 1
@@ -779,7 +695,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
                     spin[:n].count(s) for s in set(spin[:n])
                 )  # FIXME why? untested for n > 2
                 vn = util.decompress_axes(subscript, vn_tril, shape=shape) / factor
-                setattr(amp, spin, vn)
+                amp[spin] = vn
                 i0 += size
 
             excitations.append(amp)
@@ -812,7 +728,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
                     spin[:n].count(s) for s in set(spin[:n])
                 )  # FIXME why? untested for n > 2
                 vn = util.decompress_axes(subscript, vn_tril, shape=shape) / factor
-                setattr(amp, spin, vn)
+                amp[spin] = vn
                 i0 += size
 
             excitations.append(amp)
@@ -844,7 +760,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
                     spin[:n].count(s) for s in set(spin[:n])
                 )  # FIXME why? untested for n > 2
                 vn = util.decompress_axes(subscript, vn_tril, shape=shape) / factor
-                setattr(amp, spin, vn)
+                amp[spin] = vn
                 i0 += size
 
             excitations.append(amp)
@@ -880,38 +796,56 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
     def nvir(self):
         return tuple(self.nmo - nocc for nocc in self.nocc)
 
-    @property
-    @util.has_docstring
-    def eo(self):
-        eo = util.Namespace(
-            a=np.diag(self.fock.aa.oo),
-            b=np.diag(self.fock.bb.oo),
-        )
-        return eo
+    def energy_sum(self, subscript, spins, signs_dict=None):
+        """
+        Get a direct sum of energies.
 
-    @property
-    @util.has_docstring
-    def ev(self):
-        ev = util.Namespace(
-            a=np.diag(self.fock.aa.vv),
-            b=np.diag(self.fock.bb.vv),
-        )
-        return ev
+        Parameters
+        ----------
+        subscript : str
+            The direct sum subscript, where each character indicates the
+            sector for each energy. For the default slice characters, see
+            `Space`. Occupied degrees of freedom are assumed to be
+            positive, virtual and bosonic negative (the signs can be
+            changed via the `signs_dict` keyword argument).
+        spins : str
+            String of spins, length must be the same as `subscript` with
+            each character being one of `"a"` or `"b"`.
+        signs_dict : dict, optional
+            Dictionary defining custom signs for each sector. If `None`,
+            initialised such that `["o", "O", "i"]` are positive, and
+            `["v", "V", "a", "b"]` negative. Default value is `None`.
 
-    @property
-    @util.has_docstring
-    def eO(self):
-        eO = util.Namespace(
-            a=np.diag(self.fock.aa.OO),
-            b=np.diag(self.fock.bb.OO),
-        )
-        return eO
+        Returns
+        -------
+        energy_sum : numpy.ndarray
+            Array of energy sums.
+        """
 
-    @property
-    @util.has_docstring
-    def eV(self):
-        eV = util.Namespace(
-            a=np.diag(self.fock.aa.VV),
-            b=np.diag(self.fock.bb.VV),
-        )
-        return eV
+        n = 0
+        def next_char():
+            nonlocal n
+            if n < 26:
+                char = chr(ord("a") + n)
+            else:
+                char = chr(ord("A") + n)
+            n += 1
+            return char
+
+        if signs_dict is None:
+            signs_dict = {}
+        for k, s in zip("vVaoOib", "---+++-"):
+            if k not in signs_dict:
+                signs_dict[k] = s
+
+        energies = []
+        for key, spin in zip(subscript, spins):
+            if key == "b":
+                energies.append(self.omega)
+            else:
+                energies.append(np.diag(self.fock[spin + spin][key + key]))
+
+        subscript = "".join([signs_dict[k]+next_char() for k in subscript])
+        energy_sum = lib.direct_sum(subscript, *energies)
+
+        return energy_sum

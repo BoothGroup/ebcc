@@ -267,19 +267,9 @@ class GEBCC(REBCC, metaclass=util.InheritDocstrings):
         # Build T amplitudes:
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             if n == 1:
-                ei = getattr(self, "e" + key[0])
-                ea = getattr(self, "e" + key[1])
-                e_ia = lib.direct_sum("i-a->ia", ei, ea)
-                amplitudes[name] = getattr(self.fock, key) / e_ia
+                amplitudes[name] = getattr(self.fock, key) / self.energy_sum(key)
             elif n == 2:
-                ei = getattr(self, "e" + key[0])
-                ej = getattr(self, "e" + key[1])
-                ea = getattr(self, "e" + key[2])
-                eb = getattr(self, "e" + key[3])
-                e_ia = lib.direct_sum("i-a->ia", ei, ea)
-                e_jb = lib.direct_sum("i-a->ia", ej, eb)
-                e_ijab = lib.direct_sum("ia,jb->ijab", e_ia, e_jb)
-                amplitudes[name] = getattr(eris, key) / e_ijab
+                amplitudes[name] = getattr(eris, key) / self.energy_sum(key)
             else:
                 shape = tuple(self.space.size(k) for k in key)
                 amplitudes[name] = np.zeros(shape)
@@ -302,10 +292,7 @@ class GEBCC(REBCC, metaclass=util.InheritDocstrings):
             if nf != 1:
                 raise util.ModelNotImplemented
             if n == 1:
-                ei = getattr(self, "e" + key[1])
-                ea = getattr(self, "e" + key[2])
-                e_xia = lib.direct_sum("i-a-x->xia", ei, ea, self.omega)
-                amplitudes[name] = getattr(h, key) / e_xia
+                amplitudes[name] = h[key] / self.energy_sum(key)
             else:
                 shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
                 amplitudes[name] = np.zeros(shape)

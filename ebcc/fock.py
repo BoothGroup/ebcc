@@ -95,6 +95,8 @@ class RFock(Fock):
 
         return self.__dict__[key]
 
+    __getitem__ = __getattr__
+
 
 class UFock(Fock, metaclass=util.InheritDocstrings):
     """

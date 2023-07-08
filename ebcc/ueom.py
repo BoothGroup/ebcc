@@ -63,25 +63,12 @@ class IP_UEOM(UEOM, reom.IP_REOM, metaclass=util.InheritDocstrings):
     @util.has_docstring
     def diag(self, eris=None):
         parts = []
-        e_ia = util.Namespace(
-            aa=lib.direct_sum("i-a->ia", self.ebcc.eo.a, self.ebcc.ev.a),
-            bb=lib.direct_sum("i-a->ia", self.ebcc.eo.b, self.ebcc.ev.b),
-        )
-        e_i = self.ebcc.eo
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            key = key[:-1]
             spin_part = util.Namespace()
             for comb in util.generate_spin_combinations(n, excited=True):
-                tensors = []
-                for i, s in enumerate(comb[:n]):
-                    if i == (n - 1):
-                        tensors.append(getattr(e_i, s))
-                    else:
-                        tensors.append(getattr(e_ia, s + s))
-                perm = list(range(0, n * 2, 2)) + list(range(1, (n - 1) * 2, 2))
-                d = functools.reduce(np.add.outer, tensors)
-                d = d.transpose(perm)
-                setattr(spin_part, comb, d)
+                spin_part[comb] = self.ebcc.energy_sum(key, comb)
             parts.append(spin_part)
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
@@ -171,25 +158,12 @@ class EA_UEOM(UEOM, reom.EA_REOM, metaclass=util.InheritDocstrings):
     @util.has_docstring
     def diag(self, eris=None):
         parts = []
-        e_ai = util.Namespace(
-            aa=lib.direct_sum("a-i->ai", self.ebcc.ev.a, self.ebcc.eo.a),
-            bb=lib.direct_sum("a-i->ai", self.ebcc.ev.b, self.ebcc.eo.b),
-        )
-        e_a = self.ebcc.ev
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            key = key[n:] + key[:n-1]
             spin_part = util.Namespace()
             for comb in util.generate_spin_combinations(n, excited=True):
-                tensors = []
-                for i, s in enumerate(comb[:n]):
-                    if i == (n - 1):
-                        tensors.append(getattr(e_a, s))
-                    else:
-                        tensors.append(getattr(e_ai, s + s))
-                perm = list(range(0, n * 2, 2)) + list(range(1, (n - 1) * 2, 2))
-                d = functools.reduce(np.add.outer, tensors)
-                d = d.transpose(perm)
-                setattr(spin_part, comb, d)
+                spin_part[comb] = -self.ebcc.energy_sum(key, comb)
             parts.append(spin_part)
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
@@ -282,21 +256,11 @@ class EE_UEOM(UEOM, reom.EE_REOM, metaclass=util.InheritDocstrings):
     @util.has_docstring
     def diag(self, eris=None):
         parts = []
-        e_ia = util.Namespace(
-            aa=lib.direct_sum("i-a->ia", self.ebcc.eo.a, self.ebcc.ev.a),
-            bb=lib.direct_sum("i-a->ia", self.ebcc.eo.b, self.ebcc.ev.b),
-        )
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             spin_part = util.Namespace()
             for comb in util.generate_spin_combinations(n):
-                tensors = []
-                for i, s in enumerate(comb[:n]):
-                    tensors.append(getattr(e_ia, s + s))
-                perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
-                d = functools.reduce(np.add.outer, tensors)
-                d = d.transpose(perm)
-                setattr(spin_part, comb, d)
+                spin_part[comb] = self.ebcc.energy_sum(key, comb)
             parts.append(spin_part)
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
