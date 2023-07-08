@@ -1,7 +1,6 @@
 """Restricted electron-boson coupled cluster."""
 
 import dataclasses
-import functools
 
 import numpy as np
 from pyscf import lib
@@ -906,7 +905,7 @@ class REBCC(EBCC):
             if nf != 1:
                 raise util.ModelNotImplemented
             lname = "l" + name
-            res[lname] /= self.energy_sum(key[:nb] + key[nb+nf:] + key[nb:nb+nf])
+            res[lname] /= self.energy_sum(key[:nb] + key[nb + nf :] + key[nb : nb + nf])
             if not perturbative:
                 res[lname] += lambdas[lname]
 
@@ -2113,6 +2112,7 @@ class REBCC(EBCC):
         """
 
         n = 0
+
         def next_char():
             nonlocal n
             if n < 26:
@@ -2135,7 +2135,7 @@ class REBCC(EBCC):
             else:
                 energies.append(np.diag(self.fock[key + key]))
 
-        subscript = "".join([signs_dict[k]+next_char() for k in subscript])
+        subscript = "".join([signs_dict[k] + next_char() for k in subscript])
         energy_sum = lib.direct_sum(subscript, *energies)
 
         return energy_sum

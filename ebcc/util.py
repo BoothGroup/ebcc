@@ -4,7 +4,6 @@ import ctypes
 import functools
 import itertools
 import time
-from collections.abc import Mapping
 
 import numpy as np
 from pyscf.lib import direct_sum, dot  # noqa: F401
@@ -431,17 +430,9 @@ class InheritDocstrings(type):
 
 def has_docstring(obj):
     """
-    Decorate a function or class to check if it has a docstring.
-
-    Since the use case for this is in combination with `InheritDocstrings`
-    which already checks that a docstring is properly inherited, this
-    decorator is mostly just a marker for static analysis with additional
-    ratification at runtime.
+    Decorate a function or class to inform a static analyser that it has a
+    docstring even if one is not visible, for example via inheritance.
     """
-
-    #if not getattr(obj, "__doc__", None):
-    #    raise RuntimeError("Function {} is missing a docstring".format(obj.__name__))
-
     return obj
 
 

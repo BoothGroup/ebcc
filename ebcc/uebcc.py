@@ -1,7 +1,5 @@
 """Unrestricted electron-boson coupled cluster."""
 
-import functools
-
 import numpy as np
 from pyscf import lib
 
@@ -293,7 +291,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
             if nf != 1:
                 raise util.ModelNotImplemented
             lname = "l" + name
-            key = key[:nb] + key[nb+nf:] + key[nb:nb+nf]
+            key = key[:nb] + key[nb + nf :] + key[nb : nb + nf]
             tn = res[lname].aa
             tn /= self.energy_sum(key, "_" * nb + "aa")
             tn += lambdas[lname].aa
@@ -824,6 +822,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
         """
 
         n = 0
+
         def next_char():
             nonlocal n
             if n < 26:
@@ -846,7 +845,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
             else:
                 energies.append(np.diag(self.fock[spin + spin][key + key]))
 
-        subscript = "".join([signs_dict[k]+next_char() for k in subscript])
+        subscript = "".join([signs_dict[k] + next_char() for k in subscript])
         energy_sum = lib.direct_sum(subscript, *energies)
 
         return energy_sum

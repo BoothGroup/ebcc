@@ -1,10 +1,8 @@
 """Unrestricted equation-of-motion solver."""
 
-import functools
 import warnings
 
 import numpy as np
-from pyscf import lib
 
 from ebcc import reom, util
 
@@ -160,7 +158,7 @@ class EA_UEOM(UEOM, reom.EA_REOM, metaclass=util.InheritDocstrings):
         parts = []
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            key = key[n:] + key[:n-1]
+            key = key[n:] + key[: n - 1]
             spin_part = util.Namespace()
             for comb in util.generate_spin_combinations(n, excited=True):
                 spin_part[comb] = -self.ebcc.energy_sum(key, comb)

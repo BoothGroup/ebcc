@@ -1,7 +1,6 @@
 """Restricted equation-of-motion solver."""
 
 import dataclasses
-import functools
 import warnings
 
 import numpy as np
@@ -354,7 +353,7 @@ class EA_REOM(REOM, metaclass=util.InheritDocstrings):
         parts = []
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            key = key[n:] + key[:n - 1]
+            key = key[n:] + key[: n - 1]
             parts.append(-self.ebcc.energy_sum(key))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
