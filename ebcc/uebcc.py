@@ -215,7 +215,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
             lambdas["l" + name] = util.Namespace()
             for key in dict(amplitudes[name]).keys():
                 ln = amplitudes[name][key].transpose(perm)
-                lambdas[lname][key] = ln
+                lambdas["l" + name][key] = ln
 
         return lambdas
 
@@ -285,7 +285,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
         # Divide S amplitudes:
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             lname = "l" + name
-            res[lname] /= self.energy_sum(key, "_" * nb)
+            res[lname] /= self.energy_sum(key, "_" * n)
             res[lname] += lambdas[lname]
 
         # Divide U amplitudes:
@@ -293,6 +293,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
             if nf != 1:
                 raise util.ModelNotImplemented
             lname = "l" + name
+            key = key[:nb] + key[nb+nf:] + key[nb:nb+nf]
             tn = res[lname].aa
             tn /= self.energy_sum(key, "_" * nb + "aa")
             tn += lambdas[lname].aa
