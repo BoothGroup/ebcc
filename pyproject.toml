@@ -42,9 +42,13 @@ build-backend = "setuptools.build_meta"
 dev = [
     "black>=22.6.0",
     "isort>=5.10.1",
-    "coverage[toml]",
-    "pytest",
-    "pytest-cov",
+    "flake8>=3.8.4",
+    "flake8-pyproject>=1.2.3",
+    "flake8-bugbear>=23.0.0",
+    "flake8-docstrings>=1.6.0",
+    "coverage[toml]>=5.5.0",
+    "pytest>=6.2.4",
+    "pytest-cov>=4.0.0",
 ]
 
 [tool.black]
@@ -74,6 +78,34 @@ skip_glob = [
     "ebcc/codegen/*",
     "ebcc/__init__.py",
 ]
+
+[tool.flake8]
+max-line-length = 100
+max-doc-length = 75
+ignore = [
+    "E203",  # Whitespace before ':'
+    "E731",  # Do not assign a lambda expression, use a def
+    "E741",  # Ambiguous variable name
+    "W503",  # Line break before binary operator
+    "D202",  # No blank lines allowed after function docstring
+    "D205",  # 1 blank line required between summary line and description
+    "D400",  # First line should end with a period
+    "B007",  # Loop control variable not used within the loop body
+]
+per-file-ignores = [
+    "__init__.py:E402,W605,F401,F811,D103",
+]
+docstring-convention = "numpy"
+ignore-decorators = "has_docstring"
+count = true
+include = "ebcc"
+exclude = """
+/(
+    | ebcc/codegen
+    | ebcc/__pycache__
+    | .git
+)/
+"""
 
 [tool.coverage.run]
 branch = true

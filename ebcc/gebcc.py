@@ -1,38 +1,22 @@
-"""General electron-boson coupled cluster.
-"""
-
-import functools
-import itertools
-from typing import Sequence
+"""General electron-boson coupled cluster."""
 
 import numpy as np
-import scipy.linalg
-from pyscf import ao2mo, lib, scf
+from pyscf import lib, scf
 
-from ebcc import geom, rebcc, uebcc, util
+from ebcc import geom, uebcc, util
 from ebcc.brueckner import BruecknerGEBCC
 from ebcc.eris import GERIs
 from ebcc.fock import GFock
+from ebcc.rebcc import REBCC
 from ebcc.space import Space
 
 
-class Amplitudes(util.Namespace):
-    """Amplitude container class. Consists of a dictionary with keys
-    that are strings of the name of each amplitude. Values are
-    namespaces with keys indicating whether each fermionic dimension
-    is alpha (`"a"`) or beta (`"b"`) spin, and values are arrays whose
-    dimension depends on the particular amplitude. For purely bosonic
-    amplitudes the values of `Amplitudes` are simply arrays, with no
-    fermionic spins to index.
-    """
+@util.has_docstring
+class GEBCC(REBCC, metaclass=util.InheritDocstrings):
+    __doc__ = __doc__.replace("Restricted", "Generalised", 1)
 
-    pass
-
-
-@util.inherit_docstrings
-class GEBCC(rebcc.REBCC):
-    Amplitudes = Amplitudes
     ERIs = GERIs
+    Fock = GFock
     Brueckner = BruecknerGEBCC
 
     @staticmethod
@@ -45,7 +29,18 @@ class GEBCC(rebcc.REBCC):
 
     @classmethod
     def from_uebcc(cls, ucc):
-        """Initialise a GEBCC object from an UEBCC object."""
+        """Initialise a `GEBCC` object from an `UEBCC` object.
+
+        Parameters
+        ----------
+        ucc : UEBCC
+            The UEBCC object to initialise from.
+
+        Returns
+        -------
+        gcc : GEBCC
+            The GEBCC object.
+        """
 
         orbspin = scf.addons.get_ghf_orbspin(ucc.mf.mo_energy, ucc.mf.mo_occ, False)
         nocc = ucc.space[0].nocc + ucc.space[1].nocc
@@ -100,7 +95,7 @@ class GEBCC(rebcc.REBCC):
         has_lams = ucc.lambdas is not None
 
         if has_amps:
-            amplitudes = cls.Amplitudes()
+            amplitudes = util.Namespace()
 
             for name, key, n in ucc.ansatz.fermionic_cluster_ranks(spin_type=ucc.spin_type):
                 shape = tuple(space.size(k) for k in key)
@@ -245,33 +240,36 @@ class GEBCC(rebcc.REBCC):
 
     @classmethod
     def from_rebcc(cls, rcc):
-        """Initialise a GEBCC object from an REBCC object."""
+        """
+        Initialise a `GEBCC` object from an `REBCC` object.
+
+        Parameters
+        ----------
+        rcc : REBCC
+            The REBCC object to initialise from.
+
+        Returns
+        -------
+        gcc : GEBCC
+            The GEBCC object.
+        """
 
         ucc = uebcc.UEBCC.from_rebcc(rcc)
         gcc = cls.from_uebcc(ucc)
 
         return gcc
 
+    @util.has_docstring
     def init_amps(self, eris=None):
         eris = self.get_eris(eris)
-        amplitudes = self.Amplitudes()
+        amplitudes = util.Namespace()
 
         # Build T amplitudes:
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             if n == 1:
-                ei = getattr(self, "e" + key[0])
-                ea = getattr(self, "e" + key[1])
-                e_ia = lib.direct_sum("i-a->ia", ei, ea)
-                amplitudes[name] = getattr(self.fock, key) / e_ia
+                amplitudes[name] = getattr(self.fock, key) / self.energy_sum(key)
             elif n == 2:
-                ei = getattr(self, "e" + key[0])
-                ej = getattr(self, "e" + key[1])
-                ea = getattr(self, "e" + key[2])
-                eb = getattr(self, "e" + key[3])
-                e_ia = lib.direct_sum("i-a->ia", ei, ea)
-                e_jb = lib.direct_sum("i-a->ia", ej, eb)
-                e_ijab = lib.direct_sum("ia,jb->ijab", e_ia, e_jb)
-                amplitudes[name] = getattr(eris, key) / e_ijab
+                amplitudes[name] = getattr(eris, key) / self.energy_sum(key)
             else:
                 shape = tuple(self.space.size(k) for k in key)
                 amplitudes[name] = np.zeros(shape)
@@ -294,16 +292,14 @@ class GEBCC(rebcc.REBCC):
             if nf != 1:
                 raise util.ModelNotImplemented
             if n == 1:
-                ei = getattr(self, "e" + key[1])
-                ea = getattr(self, "e" + key[2])
-                e_xia = lib.direct_sum("i-a-x->xia", ei, ea, self.omega)
-                amplitudes[name] = getattr(h, key) / e_xia
+                amplitudes[name] = h[key] / self.energy_sum(key)
             else:
                 shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
                 amplitudes[name] = np.zeros(shape)
 
         return amplitudes
 
+    @util.has_docstring
     def make_rdm2_f(self, eris=None, amplitudes=None, lambdas=None, hermitise=True):
         func, kwargs = self._load_function(
             "make_rdm2_f",
@@ -320,6 +316,7 @@ class GEBCC(rebcc.REBCC):
 
         return dm
 
+    @util.has_docstring
     def excitations_to_vector_ip(self, *excitations):
         vectors = []
         m = 0
@@ -337,6 +334,7 @@ class GEBCC(rebcc.REBCC):
 
         return np.concatenate(vectors)
 
+    @util.has_docstring
     def excitations_to_vector_ee(self, *excitations):
         vectors = []
         m = 0
@@ -353,6 +351,7 @@ class GEBCC(rebcc.REBCC):
 
         return np.concatenate(vectors)
 
+    @util.has_docstring
     def vector_to_excitations_ip(self, vector):
         excitations = []
         i0 = 0
@@ -374,6 +373,7 @@ class GEBCC(rebcc.REBCC):
 
         return tuple(excitations)
 
+    @util.has_docstring
     def vector_to_excitations_ea(self, vector):
         excitations = []
         i0 = 0
@@ -395,6 +395,7 @@ class GEBCC(rebcc.REBCC):
 
         return tuple(excitations)
 
+    @util.has_docstring
     def vector_to_excitations_ee(self, vector):
         excitations = []
         i0 = 0
@@ -415,6 +416,7 @@ class GEBCC(rebcc.REBCC):
 
         return tuple(excitations)
 
+    @util.has_docstring
     def get_mean_field_G(self):
         val = lib.einsum("Ipp->I", self.g.boo)
         val -= self.xi * self.omega
@@ -425,7 +427,8 @@ class GEBCC(rebcc.REBCC):
         return val
 
     def get_eris(self, eris=None):
-        """Get blocks of the ERIs.
+        """
+        Get blocks of the ERIs.
 
         Parameters
         ----------
@@ -444,16 +447,20 @@ class GEBCC(rebcc.REBCC):
         else:
             return eris
 
+    @util.has_docstring
     def ip_eom(self, options=None, **kwargs):
         return geom.IP_GEOM(self, options=options, **kwargs)
 
+    @util.has_docstring
     def ea_eom(self, options=None, **kwargs):
         return geom.EA_GEOM(self, options=options, **kwargs)
 
+    @util.has_docstring
     def ee_eom(self, options=None, **kwargs):
         return geom.EE_GEOM(self, options=options, **kwargs)
 
     @property
+    @util.has_docstring
     def xi(self):
         if self.options.shift:
             xi = lib.einsum("Iii->I", self.g.boo)
@@ -465,5 +472,6 @@ class GEBCC(rebcc.REBCC):
         return xi
 
     @property
+    @util.has_docstring
     def spin_type(self):
         return "G"

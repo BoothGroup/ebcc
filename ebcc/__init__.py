@@ -7,7 +7,6 @@ The `ebcc`  package implements various coupled cluster (CC) models
 for application to electron-boson systems, with a focus on
 generality and model extensibility.
 
-
 Installation
 ------------
 
@@ -19,7 +18,6 @@ From source:
 
     git clone https://github.com/BoothGroup/ebcc
     pip install .
-
 
 Usage
 -----
@@ -34,7 +32,6 @@ The implemented models are built upon the mean-field objects of
 >>> mf.kernel()
 >>> ccsd = EBCC(mf)
 >>> ccsd.kernel()
-
 """
 
 __version__ = "1.3.0"
@@ -48,6 +45,7 @@ import sys
 
 
 def output(self, msg, *args, **kwargs):
+    """Output a message at the `"OUTPUT"` level."""
     if self.isEnabledFor(25):
         self._log(25, msg, args, **kwargs)
 
@@ -60,6 +58,8 @@ logging.Logger.output = output
 
 
 class NullLogger(logging.Logger):
+    """A logger that does nothing."""
+
     def __init__(self, *args, **kwargs):
         super().__init__("null")
 

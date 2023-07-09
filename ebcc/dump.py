@@ -1,10 +1,5 @@
-"""File dumping and reading functionality.
-"""
+"""File dumping and reading functionality."""
 
-import logging
-from typing import Type
-
-import h5py
 from pyscf import scf
 from pyscf.lib.chkfile import dump, dump_mol, load, load_mol
 
@@ -14,14 +9,26 @@ from ebcc.space import Space
 
 
 class Dump:
-    """File handler for reading and writing EBCC calculations."""
+    """
+    File handler for reading and writing EBCC calculations.
+
+    Attributes
+    ----------
+    name : str
+        The name of the file.
+    """
 
     def __init__(self, name):
         self.name = name
 
-    def write(self, ebcc: util.AbstractEBCC):
+    def write(self, ebcc):
         """
         Write the EBCC object to the file.
+
+        Parameters
+        ----------
+        ebcc : EBCC
+            The EBCC object to write.
         """
 
         # Write the options
@@ -86,10 +93,6 @@ class Dump:
 
         # Write the Fock matrix
         # TODO write the Fock matrix class instead
-        dic = {
-            "bare_fock": ebcc.bare_fock,
-        }
-        dump(self.name, "fock", dic)
 
         # Write miscellaneous data
         kwargs = {
@@ -129,9 +132,21 @@ class Dump:
             if ebcc.lambdas is not None:
                 dump(self.name, "lambdas", {**ebcc.lambdas})
 
-    def read(self, cls: Type[util.AbstractEBCC], log: logging.Logger = None):
+    def read(self, cls, log=None):
         """
         Load the file to an EBCC object.
+
+        Parameters
+        ----------
+        cls : type
+            EBCC class to load the file to.
+        log : Logger, optional
+            Logger to assign to the EBCC object.
+
+        Returns
+        -------
+        ebcc : EBCC
+            The EBCC object loaded from the file.
         """
 
         # Load the options
@@ -199,26 +214,24 @@ class Dump:
 
         # Load the Fock matrix
         # TODO load the Fock matrix class instead
-        dic = load(self.name, "fock")
-        bare_fock = dic.get("bare_fock", None)
 
         # Load the amplitudes
         amplitudes = load(self.name, "amplitudes")
         lambdas = load(self.name, "lambdas")
         if spin_type == "U":
             amplitudes = {
-                key: (cls.Amplitudes(**val) if isinstance(val, dict) else val)
+                key: (util.Namespace(**val) if isinstance(val, dict) else val)
                 for key, val in amplitudes.items()
             }
             lambdas = {
-                key: (cls.Amplitudes(**val) if isinstance(val, dict) else val)
+                key: (util.Namespace(**val) if isinstance(val, dict) else val)
                 for key, val in lambdas.items()
             }
-            amplitudes = cls.Amplitudes(**amplitudes)
-            lambdas = cls.Amplitudes(**lambdas)
+            amplitudes = util.Namespace(**amplitudes)
+            lambdas = util.Namespace(**lambdas)
         else:
-            amplitudes = cls.Amplitudes(**amplitudes)
-            lambdas = cls.Amplitudes(**lambdas)
+            amplitudes = util.Namespace(**amplitudes)
+            lambdas = util.Namespace(**lambdas)
 
         # Initialise the EBCC object
         cc = cls(

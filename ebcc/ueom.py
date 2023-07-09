@@ -1,18 +1,13 @@
-"""Unrestricted equation-of-motion solver.
-"""
+"""Unrestricted equation-of-motion solver."""
 
-import dataclasses
-import functools
 import warnings
 
 import numpy as np
-from pyscf import lib
 
 from ebcc import reom, util
 
 
-@util.inherit_docstrings
-class UEOM(reom.REOM):
+class UEOM(reom.REOM, metaclass=util.InheritDocstrings):
     """Unrestricted equation-of-motion base class."""
 
     def _argsort_guess(self, diag):
@@ -28,6 +23,7 @@ class UEOM(reom.REOM):
     def _quasiparticle_weight(self, r1):
         return np.linalg.norm(r1.a) ** 2 + np.linalg.norm(r1.b) ** 2
 
+    @util.has_docstring
     def moments(self, nmom, eris=None, amplitudes=None, hermitise=True):
         if eris is None:
             eris = self.ebcc.get_eris()
@@ -59,31 +55,18 @@ class UEOM(reom.REOM):
         return moments
 
 
-@util.inherit_docstrings
-class IP_UEOM(UEOM, reom.IP_REOM):
+class IP_UEOM(UEOM, reom.IP_REOM, metaclass=util.InheritDocstrings):
     """Unrestricted equation-of-motion class for ionisation potentials."""
 
+    @util.has_docstring
     def diag(self, eris=None):
         parts = []
-        e_ia = util.Namespace(
-            aa=lib.direct_sum("i-a->ia", self.ebcc.eo.a, self.ebcc.ev.a),
-            bb=lib.direct_sum("i-a->ia", self.ebcc.eo.b, self.ebcc.ev.b),
-        )
-        e_i = self.ebcc.eo
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            key = key[:-1]
             spin_part = util.Namespace()
             for comb in util.generate_spin_combinations(n, excited=True):
-                tensors = []
-                for i, s in enumerate(comb[:n]):
-                    if i == (n - 1):
-                        tensors.append(getattr(e_i, s))
-                    else:
-                        tensors.append(getattr(e_ia, s + s))
-                perm = list(range(0, n * 2, 2)) + list(range(1, (n - 1) * 2, 2))
-                d = functools.reduce(np.add.outer, tensors)
-                d = d.transpose(perm)
-                setattr(spin_part, comb, d)
+                spin_part[comb] = self.ebcc.energy_sum(key, comb)
             parts.append(spin_part)
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
@@ -91,6 +74,7 @@ class IP_UEOM(UEOM, reom.IP_REOM):
 
         return self.amplitudes_to_vector(*parts)
 
+    @util.has_docstring
     def bras(self, eris=None):
         bras_raw = list(self._bras(eris=eris))
         bras = util.Namespace(a=[], b=[])
@@ -127,6 +111,7 @@ class IP_UEOM(UEOM, reom.IP_REOM):
 
         return bras
 
+    @util.has_docstring
     def kets(self, eris=None):
         kets_raw = list(self._kets(eris=eris))
         kets = util.Namespace(a=[], b=[])
@@ -165,31 +150,18 @@ class IP_UEOM(UEOM, reom.IP_REOM):
         return kets
 
 
-@util.inherit_docstrings
-class EA_UEOM(UEOM, reom.EA_REOM):
+class EA_UEOM(UEOM, reom.EA_REOM, metaclass=util.InheritDocstrings):
     """Unrestricted equation-of-motion class for electron affinities."""
 
+    @util.has_docstring
     def diag(self, eris=None):
         parts = []
-        e_ai = util.Namespace(
-            aa=lib.direct_sum("a-i->ai", self.ebcc.ev.a, self.ebcc.eo.a),
-            bb=lib.direct_sum("a-i->ai", self.ebcc.ev.b, self.ebcc.eo.b),
-        )
-        e_a = self.ebcc.ev
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            key = key[n:] + key[: n - 1]
             spin_part = util.Namespace()
             for comb in util.generate_spin_combinations(n, excited=True):
-                tensors = []
-                for i, s in enumerate(comb[:n]):
-                    if i == (n - 1):
-                        tensors.append(getattr(e_a, s))
-                    else:
-                        tensors.append(getattr(e_ai, s + s))
-                perm = list(range(0, n * 2, 2)) + list(range(1, (n - 1) * 2, 2))
-                d = functools.reduce(np.add.outer, tensors)
-                d = d.transpose(perm)
-                setattr(spin_part, comb, d)
+                spin_part[comb] = -self.ebcc.energy_sum(key, comb)
             parts.append(spin_part)
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
@@ -197,6 +169,7 @@ class EA_UEOM(UEOM, reom.EA_REOM):
 
         return self.amplitudes_to_vector(*parts)
 
+    @util.has_docstring
     def bras(self, eris=None):
         bras_raw = list(self._bras(eris=eris))
         bras = util.Namespace(a=[], b=[])
@@ -233,6 +206,7 @@ class EA_UEOM(UEOM, reom.EA_REOM):
 
         return bras
 
+    @util.has_docstring
     def kets(self, eris=None):
         kets_raw = list(self._kets(eris=eris))
         kets = util.Namespace(a=[], b=[])
@@ -271,30 +245,20 @@ class EA_UEOM(UEOM, reom.EA_REOM):
         return kets
 
 
-@util.inherit_docstrings
-class EE_UEOM(UEOM, reom.EE_REOM):
+class EE_UEOM(UEOM, reom.EE_REOM, metaclass=util.InheritDocstrings):
     """Unrestricted equation-of-motion class for neutral excitations."""
 
     def _quasiparticle_weight(self, r1):
         return np.linalg.norm(r1.aa) ** 2 + np.linalg.norm(r1.bb) ** 2
 
+    @util.has_docstring
     def diag(self, eris=None):
         parts = []
-        e_ia = util.Namespace(
-            aa=lib.direct_sum("i-a->ia", self.ebcc.eo.a, self.ebcc.ev.a),
-            bb=lib.direct_sum("i-a->ia", self.ebcc.eo.b, self.ebcc.ev.b),
-        )
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             spin_part = util.Namespace()
             for comb in util.generate_spin_combinations(n):
-                tensors = []
-                for i, s in enumerate(comb[:n]):
-                    tensors.append(getattr(e_ia, s + s))
-                perm = list(range(0, n * 2, 2)) + list(range(1, n * 2, 2))
-                d = functools.reduce(np.add.outer, tensors)
-                d = d.transpose(perm)
-                setattr(spin_part, comb, d)
+                spin_part[comb] = self.ebcc.energy_sum(key, comb)
             parts.append(spin_part)
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
@@ -302,6 +266,7 @@ class EE_UEOM(UEOM, reom.EE_REOM):
 
         return self.amplitudes_to_vector(*parts)
 
+    @util.has_docstring
     def bras(self, eris=None):  # pragma: no cover
         raise util.ModelNotImplemented("EE moments for UEBCC not working.")
 
@@ -357,6 +322,7 @@ class EE_UEOM(UEOM, reom.EE_REOM):
 
         return bras
 
+    @util.has_docstring
     def kets(self, eris=None):  # pragma: no cover
         raise util.ModelNotImplemented("EE moments for UEBCC not working.")
 
@@ -413,13 +379,22 @@ class EE_UEOM(UEOM, reom.EE_REOM):
 
         return kets
 
+    @util.has_docstring
     def moments(
-        self, nmom, eris=None, amplitudes=None, hermitise=True, diagonal_only=True
+        self,
+        nmom,
+        eris=None,
+        amplitudes=None,
+        hermitise=True,
+        diagonal_only=True,
     ):  # pragma: no cover
         raise util.ModelNotImplemented("EE moments for UEBCC not working.")
 
         if not diagonal_only:
-            warnings.warn("Constructing EE moments with `diagonal_only=False` will be very slow.")
+            warnings.warn(
+                "Constructing EE moments with `diagonal_only=False` will be very slow.",
+                stacklevel=2,
+            )
 
         if eris is None:
             eris = self.ebcc.get_eris()
