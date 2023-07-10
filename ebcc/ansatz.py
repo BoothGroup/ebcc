@@ -94,13 +94,15 @@ class Ansatz:
     Parameters
     ----------
     fermion_ansatz : str, optional
-        Fermionic ansatz. Default value is "CCSD".
+        Fermionic ansatz. Default value is `"CCSD"`.
     boson_ansatz : str, optional
-        Rank of bosonic excitations. Default is "".
+        Rank of bosonic excitations. Default value is `""`.
     fermion_coupling_rank : int, optional
-        Rank of fermionic term in coupling. Default is 0.
+        Rank of fermionic term in coupling. Default value is `0`.
     boson_coupling_rank : int, optional
-        Rank of bosonic term in coupling. Default is 0.
+        Rank of bosonic term in coupling. Default value is `0`.
+    density_fitting : bool, optional
+        Use density fitting. Default value is `False`.
     module_name : str, optional
         Name of the module containing the generated equations. If `None`,
         the module name is generated from the ansatz name. Default value is
@@ -113,12 +115,14 @@ class Ansatz:
         boson_ansatz: str = "",
         fermion_coupling_rank: int = 0,
         boson_coupling_rank: int = 0,
+        density_fitting: bool = False,
         module_name: str = None,
     ):
         self.fermion_ansatz = fermion_ansatz
         self.boson_ansatz = boson_ansatz
         self.fermion_coupling_rank = fermion_coupling_rank
         self.boson_coupling_rank = boson_coupling_rank
+        self.density_fitting = density_fitting
         self.module_name = module_name
 
     def _get_eqns(self, prefix):
@@ -127,14 +131,14 @@ class Ansatz:
         if self.module_name is None:
             name = prefix + name_to_identifier(self.name)
         else:
-            name = prefix + self.module_name
+            name = self.module_name
 
         eqns = importlib.import_module("ebcc.codegen.%s" % name)
 
         return eqns
 
     @classmethod
-    def from_string(cls, string):
+    def from_string(cls, string, density_fitting=False):
         """
         Build an Ansatz from a string for the default ansatzes.
 
@@ -142,6 +146,8 @@ class Ansatz:
         ----------
         input : str
             Input string
+        density_fitting : bool, optional
+            Use density fitting. Default value is `False`.
 
         Returns
         -------
@@ -152,7 +158,7 @@ class Ansatz:
         if string not in named_ansatzes:
             raise util.ModelNotImplemented(string)
 
-        return cls(*named_ansatzes[string])
+        return cls(*named_ansatzes[string], density_fitting=density_fitting)
 
     def __repr__(self):
         """
@@ -163,7 +169,10 @@ class Ansatz:
         name : str
             Name of the method.
         """
-        name = self.fermion_ansatz
+        name = ""
+        if self.density_fitting:
+            name += "DF"
+        name += self.fermion_ansatz
         if self.boson_ansatz:
             name += "-%s" % self.boson_ansatz
         if self.fermion_coupling_rank or self.boson_coupling_rank:
