@@ -677,7 +677,6 @@ class REBCC(EBCC):
             else:
                 shape = tuple(self.space.size(k) for k in key)
                 amplitudes[name] = np.zeros(shape)
-            print(name, lib.fp(amplitudes[name]))
 
         if self.boson_ansatz:
             # Only true for real-valued couplings:
