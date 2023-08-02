@@ -130,9 +130,10 @@ with common.FilePrinter("%sCCSDTQ" % spin[0].upper()) as file_printer:
                 qccg.set_spin(spin)
 
                 if spin == "rhf":
+                    which = "a" if tuple(spins) == ("a", "b", "a", "b") else "b"
                     occ = index.index_factory(index.ExternalIndex, ["i", "j", "k", "l"][:n+1], ["o", "o", "o", "o"][:n+1], ["r", "r", "r", "r"][:n+1])
                     vir = index.index_factory(index.ExternalIndex, ["a", "b", "c", "d"][:n+1], ["v", "v", "v", "v"][:n+1], ["r", "r", "r", "r"][:n+1])
-                    output = tensor.FermionicAmplitude("t%dnew" % (n+1), occ, vir)
+                    output = tensor.FermionicAmplitude("t%d%snew" % (n+1, which), occ, vir)
                     shape = ", ".join(["nocc"] * (n+1) + ["nvir"] * (n+1))
                 elif spin == "uhf":
                     occ = index.index_factory(index.ExternalIndex, ["i", "j", "k", "l"][:n+1], ["o", "o", "o", "o"][:n+1], spins)
@@ -155,13 +156,13 @@ with common.FilePrinter("%sCCSDTQ" % spin[0].upper()) as file_printer:
 
         final_outputs = outputs
         # Dummies change, canonicalise_dummies messes up the indices FIXME
-        #expressions, outputs = qccg.optimisation.optimise_expression_gristmill(
-        #        expressions,
-        #        outputs,
-        #        # Very coarse optimisation:
-        #        strat="greedy",
-        #        drop_cutoff=2,
-        #)
+        expressions, outputs = qccg.optimisation.optimise_expression_gristmill(
+                expressions,
+                outputs,
+                # Very coarse optimisation:
+                strat="greedy",
+                drop_cutoff=2,
+        )
         einsums = write.write_opt_einsums(
                 expressions,
                 outputs,
