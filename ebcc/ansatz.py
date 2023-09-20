@@ -15,6 +15,7 @@ named_ansatzes = {
     "CC2": ("CC2", "", 0, 0),
     "CC3": ("CC3", "", 0, 0),
     "QCISD": ("QCISD", "", 0, 0),
+    "DCD": ("DCD", "", 0, 0),
     "CCSDt'": ("CCSDt'", "", 0, 0),
     "CCSD-S-1-1": ("CCSD", "S", 1, 1),
     "CCSD-SD-1-1": ("CCSD", "SD", 1, 1),
@@ -257,7 +258,7 @@ class Ansatz:
         # another method
         for method_type in sorted(METHOD_TYPES, key=len)[::-1]:
             if op.startswith(method_type):
-                op = op.lstrip(method_type)
+                op = op.replace(method_type, "", 1)
                 break
 
         # If it's MP we only ever need to initialise second-order
