@@ -1,5 +1,5 @@
 """
-Example of a CC2 calculation.
+Example of a Brueckner orbital calculation using a CCSD reference.
 """
 
 import numpy as np
@@ -17,6 +17,9 @@ mol.build()
 mf = scf.RHF(mol)
 mf.kernel()
 
-# Run a CC2 calculation
-cc2 = EBCC(mf, ansatz="CC2")
-cc2.kernel()
+# Run a CCSD calculation
+ccsd = EBCC(mf, ansatz="CCSD")
+ccsd.kernel()
+
+# Run a Brueckner orbital calculation using the CCSD reference
+ccsd.brueckner(e_tol=1e-6, t_tol=1e-5)

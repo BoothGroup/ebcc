@@ -219,19 +219,23 @@ class Dump:
         amplitudes = load(self.name, "amplitudes")
         lambdas = load(self.name, "lambdas")
         if spin_type == "U":
-            amplitudes = {
-                key: (util.Namespace(**val) if isinstance(val, dict) else val)
-                for key, val in amplitudes.items()
-            }
-            lambdas = {
-                key: (util.Namespace(**val) if isinstance(val, dict) else val)
-                for key, val in lambdas.items()
-            }
-            amplitudes = util.Namespace(**amplitudes)
-            lambdas = util.Namespace(**lambdas)
+            if amplitudes is not None:
+                amplitudes = {
+                    key: (util.Namespace(**val) if isinstance(val, dict) else val)
+                    for key, val in amplitudes.items()
+                }
+                amplitudes = util.Namespace(**amplitudes)
+            if lambdas is not None:
+                lambdas = {
+                    key: (util.Namespace(**val) if isinstance(val, dict) else val)
+                    for key, val in lambdas.items()
+                }
+                lambdas = util.Namespace(**lambdas)
         else:
-            amplitudes = util.Namespace(**amplitudes)
-            lambdas = util.Namespace(**lambdas)
+            if amplitudes is not None:
+                amplitudes = util.Namespace(**amplitudes)
+            if lambdas is not None:
+                lambdas = util.Namespace(**lambdas)
 
         # Initialise the EBCC object
         cc = cls(

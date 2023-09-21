@@ -1,3 +1,7 @@
+"""
+Example of some electron-boson CCSD calculations.
+"""
+
 import numpy as np
 from pyscf import gto, scf
 
@@ -5,11 +9,13 @@ from ebcc import EBCC
 
 np.random.seed(123)
 
+# Define the molecule using PySCF
 mol = gto.Mole()
 mol.atom = "H 0 0 0; F 0 0 1.1"
 mol.basis = "cc-pvdz"
 mol.build()
 
+# Run a Hartree-Fock calculation using PySCF
 mf = scf.RHF(mol)
 mf.kernel()
 
@@ -26,13 +32,13 @@ omega = np.random.random((nbos,)) * 5.0
 #    v v v v
 # ____ _ _ _
 # CCSD-S-1-1: One-boson amplitudes and one-boson-one-fermion coupling
-ccsd = EBCC(
+ccsd_s_1_1 = EBCC(
     mf,
     ansatz="CCSD-S-1-1",
     omega=omega,
     g=g,
 )
-ccsd.kernel()
+ccsd_s_1_1.kernel()
 
 #    ,--------- Fermionic ansatz
 #    |  ,------ Bosonic excitation amplitudes
@@ -41,13 +47,13 @@ ccsd.kernel()
 #    v  v v v
 # ____ __ _ _
 # CCSD-SD-1-1: Two-boson amplitudes and one-boson-one-fermion coupling
-ccsd = EBCC(
+ccsd_sd_1_1 = EBCC(
     mf,
     ansatz="CCSD-SD-1-1",
     omega=omega,
     g=g,
 )
-ccsd.kernel()
+ccsd_sd_1_1.kernel()
 
 #    ,--------- Fermionic ansatz
 #    |  ,------ Bosonic excitation amplitudes
@@ -56,10 +62,10 @@ ccsd.kernel()
 #    v  v v v
 # ____ __ _ _
 # CCSD-SD-1-2: Two-boson amplitudes and two-boson-one-fermion coupling
-ccsd = EBCC(
+ccsd_sd_1_2 = EBCC(
     mf,
     ansatz="CCSD-SD-1-2",
     omega=omega,
     g=g,
 )
-ccsd.kernel()
+ccsd_sd_1_2.kernel()
