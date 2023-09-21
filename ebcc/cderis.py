@@ -100,3 +100,81 @@ class RCDERIs(CDERIs):
             return block
 
     __getitem__ = __getattr__
+
+
+@util.has_docstring
+class UCDERIs(CDERIs):
+    """
+    Cholesky decomposed ERI container class for `UEBCC`. Consists of a
+    just-in-time namespace containing blocks of the integrals.
+
+    Attributes
+    ----------
+    ebcc : UEBCC
+        The EBCC object.
+    array : iterable of np.ndarray, optional
+        The array of integrals in the MO basis for each spin. If
+        provided, do not perform just-in-time transformations but
+        instead slice the array.  Default value is `None`.
+    slices : iterable of iterable of slice, optional
+        The slices to use for each spin and each dimension therein.
+        If provided, the default slices outlined above are used.
+    mo_coeff : iterable of np.ndarray, optional
+        The MO coefficients for each spin. If not provided, the MO
+        coefficients from `ebcc` are used.  Default value is `None`.
+    """
+
+    def __init__(self, ebcc, array=None, slices=None, mo_coeff=None):
+        util.Namespace.__init__(self)
+
+        self.mf = ebcc.mf
+        self.space = ebcc.space
+        self.slices = slices
+        self.mo_coeff = mo_coeff
+
+        if self.mo_coeff is None:
+            self.mo_coeff = ebcc.mo_coeff
+
+        if self.slices is None:
+            self.slices = [
+                {
+                    "x": self.space.correlated,
+                    "o": self.space.correlated_occupied,
+                    "v": self.space.correlated_virtual,
+                    "O": self.space.active_occupied,
+                    "V": self.space.active_virtual,
+                    "i": self.space.inactive_occupied,
+                    "a": self.space.inactive_virtual,
+                }
+                for space in self.space
+            ]
+
+        if array is not None:
+            arrays = array
+        else:
+            arrays = (None, None)
+
+        self.aa = RCDERIs(
+            ebcc,
+            arrays[0],
+            slices=[self.slices[0], self.slices[0]],
+            mo_coeff=[self.mo_coeff[0], self.mo_coeff[0]],
+        )
+        self.bb = RCDERIs(
+            ebcc,
+            arrays[1],
+            slices=[self.slices[1], self.slices[1]],
+            mo_coeff=[self.mo_coeff[1], self.mo_coeff[1]],
+        )
+
+    def __getattr__(self, key):
+        """Just-in-time attribute getter."""
+
+        if len(key) == 4:
+            raise NotImplementedError("UCDERIs cannot be sliced with 4 indices.")
+        elif len(key) == 3:
+            key = key[1:]
+
+        return getattr(self.aa, key)
+
+    __getitem__ = __getattr__
