@@ -138,13 +138,13 @@ class UCDERIs(CDERIs):
         if self.slices is None:
             self.slices = [
                 {
-                    "x": self.space.correlated,
-                    "o": self.space.correlated_occupied,
-                    "v": self.space.correlated_virtual,
-                    "O": self.space.active_occupied,
-                    "V": self.space.active_virtual,
-                    "i": self.space.inactive_occupied,
-                    "a": self.space.inactive_virtual,
+                    "x": space.correlated,
+                    "o": space.correlated_occupied,
+                    "v": space.correlated_virtual,
+                    "O": space.active_occupied,
+                    "V": space.active_virtual,
+                    "i": space.inactive_occupied,
+                    "a": space.inactive_virtual,
                 }
                 for space in self.space
             ]
@@ -171,10 +171,22 @@ class UCDERIs(CDERIs):
         """Just-in-time attribute getter."""
 
         if len(key) == 4:
-            raise NotImplementedError("UCDERIs cannot be sliced with 4 indices.")
+            # Hacks in support for i.e. `UCDERIs.aaaa.ovov`
+            v1 = getattr(self, key[:2])
+            v2 = getattr(self, key[2:])
+
+            class FakeCDERIs:
+                def __getattr__(self, key):
+                    e1 = getattr(v1, key[:2])
+                    e2 = getattr(v2, key[2:])
+                    return util.einsum("Qij,Qkl->ijkl", e1, e2)
+
+                __getitem__ = __getattr__
+
+            return FakeCDERIs()
+
         elif len(key) == 3:
             key = key[1:]
-
-        return getattr(self.aa, key)
+            return getattr(self, key)
 
     __getitem__ = __getattr__

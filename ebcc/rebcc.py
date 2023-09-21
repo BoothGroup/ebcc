@@ -621,7 +621,7 @@ class REBCC(EBCC):
             nvir=self.space.ncvir,  # FIXME rename?
             nbos=self.nbos,
         )
-        if getattr(self.mf, "with_df", None) is not None:
+        if isinstance(eris, self.CDERIs):
             kwargs["naux"] = self.mf.with_df.get_naoaux()
         for kw in extra_kwargs:
             if kw is not None:
