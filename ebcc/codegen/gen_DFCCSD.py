@@ -60,15 +60,8 @@ with common.FilePrinter("%sDFCCSD" % spin[0].upper()) as file_printer:
                 indent=4,
                 einsum_function="einsum",
         )
+        einsums = einsums.replace("naux[0]", "naux")
         function_printer.write_python(einsums+"\n", comment="energy")
-
-        c_loops = write.write_opt_c_loops(
-                expressions,
-                outputs,
-                (output,),
-                indent=4,
-        )
-        function_printer.write_c(c_loops+"\n", comment="energy")
 
     # Get amplitudes function:
     with FunctionPrinter(
@@ -151,15 +144,8 @@ with common.FilePrinter("%sDFCCSD" % spin[0].upper()) as file_printer:
                 indent=4,
                 einsum_function="einsum",
         )
+        einsums = einsums.replace("naux[0]", "naux")
         function_printer.write_python(einsums+"\n", comment="T amplitudes")
-
-        c_loops = write.write_opt_c_loops(
-                expressions,
-                outputs,
-                final_outputs,
-                indent=4,
-        )
-        function_printer.write_c(c_loops+"\n", comment="T amplitudes")
 
     # Get lambda amplitudes function:
     with FunctionPrinter(
@@ -251,15 +237,8 @@ with common.FilePrinter("%sDFCCSD" % spin[0].upper()) as file_printer:
                 indent=4,
                 einsum_function="einsum",
         )
+        einsums = einsums.replace("naux[0]", "naux")
         function_printer.write_python(einsums+"\n", comment="L amplitudes")
-
-        c_loops = write.write_opt_c_loops(
-                expressions,
-                outputs,
-                final_outputs,
-                indent=4,
-        )
-        function_printer.write_c(c_loops+"\n", comment="L amplitudes")
 
     # Get 1RDM expressions:
     with FunctionPrinter(
@@ -342,6 +321,7 @@ with common.FilePrinter("%sDFCCSD" % spin[0].upper()) as file_printer:
                 einsum_function="einsum",
                 add_occupancies={"f", "v", "rdm1_f", "rdm2_f", "delta"},
         )
+        einsums = einsums.replace("naux[0]", "naux")
         function_printer.write_python(einsums+"\n", comment="RDM1")
 
         if spin != "uhf":
@@ -435,6 +415,7 @@ with common.FilePrinter("%sDFCCSD" % spin[0].upper()) as file_printer:
                 einsum_function="einsum",
                 add_occupancies={"f", "v", "rdm1_f", "rdm2_f", "delta"},
         )
+        einsums = einsums.replace("naux[0]", "naux")
 
         function_printer.write_python(einsums+"\n", comment="RDM2")
 
