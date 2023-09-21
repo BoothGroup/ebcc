@@ -86,7 +86,7 @@ class Namespace:
         """Check if an attribute exists."""
         return key in self._keys
 
-    def __len__(self, other):
+    def __len__(self):
         """Return the number of attributes."""
         return len(self._keys)
 
