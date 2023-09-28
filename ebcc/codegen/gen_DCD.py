@@ -71,7 +71,11 @@ with common.FilePrinter("%sDCD" % spin[0].upper()) as file_printer:
             timer=timer,
     ) as function_printer:
         # T2 residuals:
+
+        # CCD:
         terms = [
+            ["-1.00", "P(i,j)", "f(k,j)", "t2(a,b,i,k)"],
+            ["+1.00", "P(a,b)", "f(a,c)", "t2(c,b,i,j)"],
             ["+1.00", "<i,j||a,b>"],
             ["+0.50", "<i,j||k,l>", "t2(a,b,k,l)"],
             ["+0.50", "<c,d||a,b>", "t2(c,d,i,j)"],
