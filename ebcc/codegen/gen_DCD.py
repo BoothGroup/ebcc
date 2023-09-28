@@ -71,6 +71,20 @@ with common.FilePrinter("%sDCD" % spin[0].upper()) as file_printer:
             timer=timer,
     ) as function_printer:
         # T2 residuals:
+        # CCD:
+        #terms = [
+        #    ["-1.00", "P(i,j)", "f(k,j)", "t2(a,b,i,k)"],
+        #    ["+1.00", "P(a,b)", "f(a,c)", "t2(c,b,i,j)"],
+        #    ["+1.00", "<i,j||a,b>"],
+        #    ["+0.50", "<i,j||k,l>", "t2(a,b,k,l)"],
+        #    ["+0.50", "<c,d||a,b>", "t2(c,d,i,j)"],
+        #    ["+1.00", "P(i,j)", "P(a,b)", "<c,j||k,b>", "t2(a,c,i,k)"],
+        #    ["-0.50", "P(i,j)", "<c,d||k,l>", "t2(d,c,i,k)", "t2(a,b,l,j)"],
+        #    ["+0.25", "<c,d||k,l>", "t2(c,d,i,j)", "t2(a,b,k,l)"],
+        #    ["-0.50", "P(a,b)", "<c,d||k,l>", "t2(a,c,l,k)", "t2(d,b,i,j)"],
+        #    ["+0.50", "P(i,j)", "P(a,b)", "<c,d||k,l>", "t2(a,c,i,k)", "t2(b,d,j,l)"],
+        #]
+        # DCD: 10.1063/1.4944087
         terms = [
             ["-1.00", "P(i,j)", "f(k,j)", "t2(a,b,i,k)"],
             ["+1.00", "P(a,b)", "f(a,c)", "t2(c,b,i,j)"],
@@ -78,10 +92,9 @@ with common.FilePrinter("%sDCD" % spin[0].upper()) as file_printer:
             ["+0.50", "<i,j||k,l>", "t2(a,b,k,l)"],
             ["+0.50", "<c,d||a,b>", "t2(c,d,i,j)"],
             ["+1.00", "P(i,j)", "P(a,b)", "<c,j||k,b>", "t2(a,c,i,k)"],
-            ["-0.50", "P(i,j)", "<c,d||k,l>", "t2(d,c,i,k)", "t2(a,b,l,j)"],
-            ["+0.25", "<c,d||k,l>", "t2(c,d,i,j)", "t2(a,b,k,l)"],
-            ["-0.50", "P(a,b)", "<c,d||k,l>", "t2(a,c,l,k)", "t2(d,b,i,j)"],
-            ["+0.50", "P(i,j)", "P(a,b)", "<c,d||k,l>", "t2(a,c,i,k)", "t2(b,d,j,l)"],
+            ["-0.25", "P(i,j)", "<c,d||k,l>", "t2(d,c,i,k)", "t2(a,b,l,j)"],
+            ["-0.25", "P(a,b)", "<c,d||k,l>", "t2(a,c,l,k)", "t2(d,b,i,j)"],
+            ["+0.50", "P(i,j)", "P(a,b)", "<c,d|k,l>", "t2(a,c,i,k)", "t2(b,d,j,l)"],
         ]
 
         if spin == "ghf":
