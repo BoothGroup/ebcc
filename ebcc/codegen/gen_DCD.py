@@ -71,8 +71,6 @@ with common.FilePrinter("%sDCD" % spin[0].upper()) as file_printer:
             timer=timer,
     ) as function_printer:
         # T2 residuals:
-
-        # CCD:
         terms = [
             ["-1.00", "P(i,j)", "f(k,j)", "t2(a,b,i,k)"],
             ["+1.00", "P(a,b)", "f(a,c)", "t2(c,b,i,j)"],
@@ -86,43 +84,42 @@ with common.FilePrinter("%sDCD" % spin[0].upper()) as file_printer:
             ["+0.50", "P(i,j)", "P(a,b)", "<c,d||k,l>", "t2(a,c,i,k)", "t2(b,d,j,l)"],
         ]
 
+        if spin == "ghf":
+            spins_list = [(None, None, None, None)]
+        elif spin == "rhf":
+            spins_list = [("a", "b", "a", "b")]
+        elif spin == "uhf":
+            spins_list = [list(y) for y in sorted(set("".join(sorted(x)) for x in itertools.product("ab", repeat=2)))]
+
         expressions = []
         outputs = []
-        for n, terms in [(1, terms)]:
-            if spin == "ghf":
-                spins_list = [(None,) * (n+1)]
-            elif spin == "rhf":
-                spins_list = [(["a", "b"] * (n+1))[:n+1]]
+        for spins in spins_list:
+            qccg.clear()
+            qccg.set_spin(spin)
+
+            if spin == "rhf":
+                occ = index.index_factory(index.ExternalIndex, "ij", "oo", "rr")
+                vir = index.index_factory(index.ExternalIndex, "ab", "vv", "rr")
+                output = tensor.FermionicAmplitude("t2new", occ, vir)
+                shape = "nocc, nocc, nvir, nvir"
             elif spin == "uhf":
-                spins_list = [list(y) for y in sorted(set("".join(sorted(x)) for x in itertools.product("ab", repeat=n+1)))]
+                occ = index.index_factory(index.ExternalIndex, "ij", "oo", spins)
+                vir = index.index_factory(index.ExternalIndex, "ab", "vv", spins)
+                output = tensor.FermionicAmplitude("t2new", occ, vir)
+                shape = "nocc[%d], nocc[%d], nvir[%d], nvir[%d]" % tuple("ab".index(s) for s in (spins+spins))
+            elif spin == "ghf":
+                occ = index.index_factory(index.ExternalIndex, "ij", "oo", [None, None])
+                vir = index.index_factory(index.ExternalIndex, "ab", "vv", [None, None])
+                output = tensor.FermionicAmplitude("t2new", occ, vir)
+                shape = "nocc, nocc, nvir, nvir"
 
-            for spins in spins_list:
-                qccg.clear()
-                qccg.set_spin(spin)
+            index_spins = {index.character: s for index, s in zip(occ+vir, spins+spins)}
+            expression = read.from_pdaggerq(terms, index_spins=index_spins)
 
-                if spin == "rhf":
-                    occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1], ["o", "o"][:n+1], ["r", "r"][:n+1])
-                    vir = index.index_factory(index.ExternalIndex, ["a", "b"][:n+1], ["v", "v"][:n+1], ["r", "r"][:n+1])
-                    output = tensor.FermionicAmplitude("t%dnew" % (n+1), occ, vir)
-                    shape = ", ".join(["nocc"] * (n+1) + ["nvir"] * (n+1))
-                elif spin == "uhf":
-                    occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1], ["o", "o"][:n+1], spins)
-                    vir = index.index_factory(index.ExternalIndex, ["a", "b"][:n+1], ["v", "v"][:n+1], spins)
-                    output = tensor.FermionicAmplitude("t%dnew" % (n+1), occ, vir)
-                    shape = ", ".join(["nocc[%d]" % "ab".index(s) for s in spins] + ["nvir[%d]" % "ab".index(s) for s in spins])
-                elif spin == "ghf":
-                    occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1], ["o", "o"][:n+1], [None, None][:n+1])
-                    vir = index.index_factory(index.ExternalIndex, ["a", "b"][:n+1], ["v", "v"][:n+1], [None, None][:n+1])
-                    output = tensor.FermionicAmplitude("t%dnew" % (n+1), occ, vir)
-                    shape = ", ".join(["nocc"] * (n+1) + ["nvir"] * (n+1))
+            expression = expression.expand_spin_orbitals()
 
-                index_spins = {index.character: s for index, s in zip(occ+vir, spins+spins)}
-                expression = read.from_pdaggerq(terms, index_spins=index_spins)
-
-                expression = expression.expand_spin_orbitals()
-
-                expressions.append(expression)
-                outputs.append(output)
+            expressions.append(expression)
+            outputs.append(output)
 
         final_outputs = outputs
         # Dummies change, canonicalise_dummies messes up the indices FIXME
@@ -138,5 +135,4 @@ with common.FilePrinter("%sDCD" % spin[0].upper()) as file_printer:
                 indent=4,
                 einsum_function="einsum",
         )
-
         function_printer.write_python(einsums+"\n", comment="T amplitudes")
