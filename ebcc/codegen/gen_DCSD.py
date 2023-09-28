@@ -151,6 +151,5 @@ with common.FilePrinter("%sDCSD" % spin[0].upper()) as file_printer:
                 final_outputs,
                 indent=4,
                 einsum_function="einsum",
-                inplace_mode=True,
         )
         function_printer.write_python(einsums+"\n", comment="T amplitudes")
