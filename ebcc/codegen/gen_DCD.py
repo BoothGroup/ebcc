@@ -84,7 +84,7 @@ with common.FilePrinter("%sDCD" % spin[0].upper()) as file_printer:
 
         expressions = []
         outputs = []
-        for n, terms in enumerate([terms]):
+        for n, terms in [(1, terms)]:
             if spin == "ghf":
                 spins_list = [(None,) * (n+1)]
             elif spin == "rhf":
