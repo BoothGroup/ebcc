@@ -71,83 +71,54 @@ with common.FilePrinter("%sDCD" % spin[0].upper()) as file_printer:
             timer=timer,
     ) as function_printer:
         # T2 residuals:
-        i, j = index.index_factory(index.ExternalIndex, "ij", "oo", [None, None])
-        a, b = index.index_factory(index.ExternalIndex, "ab", "vv", [None, None])
-        k, l = index.index_factory(index.DummyIndex, "kl", "oo", [None, None])
-        c, d = index.index_factory(index.DummyIndex, "cd", "vv", [None, None])
+        terms = [
+            ["+1.00", "<i,j||a,b>"],
+            ["+0.50", "<i,j||k,l>", "t2(a,b,k,l)"],
+            ["+0.50", "<c,d||a,b>", "t2(c,d,i,j)"],
+            ["+1.00", "P(i,j)", "P(a,b)", "<c,j||k,b>", "t2(a,c,i,k)"],
+            ["-0.50", "P(i,j)", "<c,d||k,l>", "t2(d,c,i,k)", "t2(a,b,l,j)"],
+            ["+0.25", "<c,d||k,l>", "t2(c,d,i,j)", "t2(a,b,k,l)"],
+            ["-0.50", "P(a,b)", "<c,d||k,l>", "t2(a,c,l,k)", "t2(d,b,i,j)"],
+            ["+0.50", "P(i,j)", "P(a,b)", "<c,d||k,l>", "t2(a,c,i,k)", "t2(b,d,j,l)"],
+        ]
 
-        f = lambda *inds: contraction.Contraction([tensor.Fock(inds)])
-        eri = lambda *inds: contraction.Contraction([tensor.ERI(inds)])
-        t2 = lambda *inds: contraction.Contraction([tensor.FermionicAmplitude("t2", inds[:2], inds[2:])])
+        expressions = []
+        outputs = []
+        for n, terms in enumerate([terms]):
+            if spin == "ghf":
+                spins_list = [(None,) * (n+1)]
+            elif spin == "rhf":
+                spins_list = [(["a", "b"] * (n+1))[:n+1]]
+            elif spin == "uhf":
+                spins_list = [list(y) for y in sorted(set("".join(sorted(x)) for x in itertools.product("ab", repeat=n+1)))]
 
-        contractions = []
+            for spins in spins_list:
+                qccg.clear()
+                qccg.set_spin(spin)
 
-        ## (ai|bj)
-        #contractions.append(eri(a, i, b, j))
+                if spin == "rhf":
+                    occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1], ["o", "o"][:n+1], ["r", "r"][:n+1])
+                    vir = index.index_factory(index.ExternalIndex, ["a", "b"][:n+1], ["v", "v"][:n+1], ["r", "r"][:n+1])
+                    output = tensor.FermionicAmplitude("t%dnew" % (n+1), occ, vir)
+                    shape = ", ".join(["nocc"] * (n+1) + ["nvir"] * (n+1))
+                elif spin == "uhf":
+                    occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1], ["o", "o"][:n+1], spins)
+                    vir = index.index_factory(index.ExternalIndex, ["a", "b"][:n+1], ["v", "v"][:n+1], spins)
+                    output = tensor.FermionicAmplitude("t%dnew" % (n+1), occ, vir)
+                    shape = ", ".join(["nocc[%d]" % "ab".index(s) for s in spins] + ["nvir[%d]" % "ab".index(s) for s in spins])
+                elif spin == "ghf":
+                    occ = index.index_factory(index.ExternalIndex, ["i", "j"][:n+1], ["o", "o"][:n+1], [None, None][:n+1])
+                    vir = index.index_factory(index.ExternalIndex, ["a", "b"][:n+1], ["v", "v"][:n+1], [None, None][:n+1])
+                    output = tensor.FermionicAmplitude("t%dnew" % (n+1), occ, vir)
+                    shape = ", ".join(["nocc"] * (n+1) + ["nvir"] * (n+1))
 
-        ## (ac|bd) t_{ij}^{cd}
-        #contractions.append(eri(a, c, b, d) * t2(i, j, c, d))
+                index_spins = {index.character: s for index, s in zip(occ+vir, spins+spins)}
+                expression = read.from_pdaggerq(terms, index_spins=index_spins)
 
-        ## (ki|lj) t_{kl}^{ab}
-        #contractions.append(eri(k, i, l, j) * t2(k, l, a, b))
+                expression = expression.expand_spin_orbitals()
 
-        ## (2 t_{ik}^{ac} - t_{ik}^{ca}) (kc|ld) (2 t_{lj}^{db} - t_{lj}^{bd})
-        #contractions.append( 4.0 * t2(i, k, a, c) * eri(k, c, l, d) * t2(l, j, d, b))
-        #contractions.append(-2.0 * t2(i, k, a, c) * eri(k, c, l, d) * t2(l, j, b, d))
-        #contractions.append(-2.0 * t2(i, k, c, a) * eri(k, c, l, d) * t2(l, j, d, b))
-        #contractions.append( 1.0 * t2(i, k, c, a) * eri(k, c, l, d) * t2(l, j, b, d))
-
-        #def perm(i, j, a, b):
-        #    # [f_{ac} - 1/2 (2 t_{kl}^{ad} - t_{kl}^{da}) (ld|kc)] t_{ij}^{cb}
-        #    contractions.append( 1.0 * f(a, c) * t2(i, j, c, b))
-        #    contractions.append(-1.0 * t2(k, l, a, d) * eri(l, d, k, c) * t2(i, j, c, b))
-        #    contractions.append( 0.5 * t2(k, l, d, a) * eri(l, d, k, c) * t2(i, j, c, b))
-
-        #    # - [f_{ki} + 1/2 (2 t_{il}^{cd} - t_{il}^{dc}) (ld|kc)] t_{kj}^{ab}
-        #    contractions.append(-1.0 * f(k, i) * t2(k, j, a, b))
-        #    contractions.append(-1.0 * t2(i, l, c, d) * eri(l, d, k, c) * t2(k, j, a, b))
-        #    contractions.append( 0.5 * t2(i, l, d, c) * eri(l, d, k, c) * t2(k, j, a, b))
-
-        #    # - (ki|ac) T_{kj}^{cb}
-        #    contractions.append(-1.0 * eri(k, i, a, c) * t2(k, j, c, b))
-
-        #    # - (ki|bc) T_{kj}^{ac}
-        #    contractions.append(-1.0 * eri(k, i, b, c) * t2(k, j, a, c))
-
-        #    # (2 t_{ik}^{ac} - t_{ik}^{ca}) (kc|bj)
-        #    contractions.append( 2.0 * t2(i, k, a, c) * eri(k, c, b, j))
-        #    contractions.append(-1.0 * t2(i, k, c, a) * eri(k, c, b, j))
-
-        #perm(i, j, a, b)
-        #perm(j, i, b, a)
-
-        # <ij||ab>
-        contractions.append(eri(i, j, a, b))
-
-        # 1/2 <ij||kl> t_{kl}^{ab}
-        contractions.append(0.5 * eri(i, j, k, l) * t2(k, l, a, b))
-
-        # 1/2 <cd||ab> t_{ij}^{cd}
-        contractions.append(0.5 * eri(c, d, a, b) * t2(i, j, c, d))
-
-        # P(ij|ab) <cj||kb> t_{ik}^{ac}
-        contractions.append(eri(c, j, k, b) * t2(i, k, a, c))
-        contractions.append(eri(c, i, k, a) * t2(j, k, b, c))
-
-        # -1/4 P(ij) <cd||kl> t_{ik}^{dc} t_{lj}^{ab}
-        contractions.append(-0.25 * eri(c, d, k, l) * t2(i, k, d, c) * t2(l, j, a, b))
-        contractions.append(-0.25 * eri(c, d, k, l) * t2(j, k, d, c) * t2(l, i, a, b))
-
-        # -1/4 P(ab) <cd||kl> t_{lk}^{ac} t_{ij}^{db}
-        contractions.append(-0.25 * eri(c, d, k, l) * t2(l, k, a, c) * t2(i, j, d, b))
-        contractions.append(-0.25 * eri(c, d, k, l) * t2(l, k, b, c) * t2(i, j, d, a))
-
-        # 1/2 P(ij|ab) <cd||kl> t_{ik}^{ac} t_{jl}^{bd}
-        contractions.append(0.5 * eri(c, d, k, l) * t2(i, k, a, c) * t2(j, l, b, d))
-        contractions.append(0.5 * eri(c, d, k, l) * t2(j, k, b, c) * t2(i, l, a, d))
-
-        outputs = [tensor.FermionicAmplitude("t2new", (i, j), (a, b))]
-        expressions = [contraction.Expression(contractions)]
+                expressions.append(expression)
+                outputs.append(output)
 
         final_outputs = outputs
         # Dummies change, canonicalise_dummies messes up the indices FIXME
