@@ -82,19 +82,14 @@ with common.FilePrinter("%sDCSD" % spin[0].upper()) as file_printer:
         # T2 residuals:
         pq.clear()
         pq.set_left_operators([["e2(i,j,b,a)"]])
-        pq.add_st_operator(1.0, ["f"], ["t1"])
-        pq.add_st_operator(1.0, ["v"], ["t1"])
+        pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
+        pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
         pq.simplify()
         terms_t2 = pq.fully_contracted_strings()
 
         # DCD: 10.1063/1.4944087
+        terms_t2 = [term for term in terms_t2 if sum(t.startswith("t2") for t in term) < 2]
         terms_t2 += [
-            ["-1.00", "P(i,j)", "f(k,j)", "t2(a,b,i,k)"],
-            ["+1.00", "P(a,b)", "f(a,c)", "t2(c,b,i,j)"],
-            ["+1.00", "<i,j||a,b>"],
-            ["+0.50", "<i,j||k,l>", "t2(a,b,k,l)"],
-            ["+0.50", "<c,d||a,b>", "t2(c,d,i,j)"],
-            ["+1.00", "P(i,j)", "P(a,b)", "<c,j||k,b>", "t2(a,c,i,k)"],
             ["-0.25", "P(i,j)", "<c,d||k,l>", "t2(d,c,i,k)", "t2(a,b,l,j)"],
             ["-0.25", "P(a,b)", "<c,d||k,l>", "t2(a,c,l,k)", "t2(d,b,i,j)"],
             ["+0.50", "P(i,j)", "P(a,b)", "<c,d|k,l>", "t2(a,c,i,k)", "t2(b,d,j,l)"],
