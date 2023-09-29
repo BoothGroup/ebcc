@@ -34,7 +34,7 @@ The implemented models are built upon the mean-field objects of
 >>> ccsd.kernel()
 """
 
-__version__ = "1.3.1"
+__version__ = "1.4.0"
 
 import logging
 import os
@@ -123,7 +123,7 @@ def init_logging(log):
 
 # --- Types of ansatz supporting by the EBCC solvers:
 
-METHOD_TYPES = ["MP", "CC", "LCC", "QCI", "QCC"]
+METHOD_TYPES = ["MP", "CC", "LCC", "QCI", "QCC", "DC"]
 
 
 # --- Import NumPy here to allow drop-in replacements
