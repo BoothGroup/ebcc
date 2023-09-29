@@ -8,10 +8,10 @@ from pyscf import lib
 from ebcc import default_log, init_logging, reom, util
 from ebcc.ansatz import Ansatz
 from ebcc.brueckner import BruecknerREBCC
+from ebcc.cderis import RCDERIs
 from ebcc.dump import Dump
 from ebcc.eris import RERIs
 from ebcc.fock import RFock
-from ebcc.cderis import RCDERIs
 from ebcc.space import Space
 
 
@@ -271,7 +271,9 @@ class REBCC(EBCC):
         if isinstance(ansatz, Ansatz):
             self.ansatz = ansatz
         else:
-            self.ansatz = Ansatz.from_string(ansatz, density_fitting=getattr(self.mf, "with_df", None) is not None)
+            self.ansatz = Ansatz.from_string(
+                ansatz, density_fitting=getattr(self.mf, "with_df", None) is not None
+            )
         self._eqns = self.ansatz._get_eqns(self.spin_type)
 
         # Space:
@@ -1944,7 +1946,9 @@ class REBCC(EBCC):
             using `self.ERIs()`.
         """
         if (eris is None) or isinstance(eris, np.ndarray):
-            if (isinstance(eris, np.ndarray) and eris.ndim == 3) or getattr(self.mf, "with_df", None):
+            if (isinstance(eris, np.ndarray) and eris.ndim == 3) or getattr(
+                self.mf, "with_df", None
+            ):
                 return self.CDERIs(self, array=eris)
             else:
                 return self.ERIs(self, array=eris)

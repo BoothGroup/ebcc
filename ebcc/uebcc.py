@@ -5,9 +5,9 @@ from pyscf import lib
 
 from ebcc import rebcc, ueom, util
 from ebcc.brueckner import BruecknerUEBCC
+from ebcc.cderis import UCDERIs
 from ebcc.eris import UERIs
 from ebcc.fock import UFock
-from ebcc.cderis import UCDERIs
 from ebcc.space import Space
 
 
@@ -475,7 +475,9 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
             using `self.ERIs()`.
         """
         if (eris is None) or isinstance(eris, tuple):
-            if (isinstance(eris, tuple) and isinstance(eris[0], np.ndarray) and eris[0].ndim == 3) or getattr(self.mf, "with_df", None):
+            if (
+                isinstance(eris, tuple) and isinstance(eris[0], np.ndarray) and eris[0].ndim == 3
+            ) or getattr(self.mf, "with_df", None):
                 return self.CDERIs(self, array=eris)
             else:
                 return self.ERIs(self, array=eris)
