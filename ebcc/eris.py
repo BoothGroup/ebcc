@@ -1,8 +1,11 @@
 """Electronic repulsion integral containers."""
 
+import numpy as np
+
 from pyscf import ao2mo
 
 from ebcc import util
+from ebcc.precision import types
 
 
 class ERIs(util.Namespace):
@@ -47,11 +50,11 @@ class RERIs(ERIs):
         self.mf = ebcc.mf
         self.space = ebcc.space
         self.slices = slices
-        self.mo_coeff = mo_coeff
-        self.array = array
+        self.mo_coeff = mo_coeff.astype(types[float]) if mo_coeff is not None else None
+        self.array = array.astype(types[float]) if array is not None else None
 
         if self.mo_coeff is None:
-            self.mo_coeff = ebcc.mo_coeff
+            self.mo_coeff = ebcc.mo_coeff.astype(types[float])
         if not (isinstance(self.mo_coeff, (tuple, list)) or self.mo_coeff.ndim == 3):
             self.mo_coeff = [self.mo_coeff] * 4
 
@@ -75,10 +78,14 @@ class RERIs(ERIs):
             if key not in self.__dict__.keys():
                 coeffs = []
                 for i, k in enumerate(key):
-                    coeffs.append(self.mo_coeff[i][:, self.slices[i][k]])
-                block = ao2mo.incore.general(self.mf._eri, coeffs, compact=False)
+                    coeffs.append(self.mo_coeff[i][:, self.slices[i][k]].astype(np.float64))
+                block = ao2mo.incore.general(
+                    self.mf._eri,
+                    coeffs,
+                    compact=False,
+                )
                 block = block.reshape([c.shape[-1] for c in coeffs])
-                self.__dict__[key] = block
+                self.__dict__[key] = block.astype(types[float])
             return self.__dict__[key]
         else:
             slices = []

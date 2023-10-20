@@ -6,6 +6,7 @@ import numpy as np
 from pyscf import lib
 
 from ebcc import default_log, init_logging, reom, util
+from ebcc.precision import types
 from ebcc.ansatz import Ansatz
 from ebcc.brueckner import BruecknerREBCC
 from ebcc.dump import Dump
@@ -262,8 +263,8 @@ class REBCC(EBCC):
         # Parameters:
         self.log = default_log if log is None else log
         self.mf = self._convert_mf(mf)
-        self._mo_coeff = mo_coeff
-        self._mo_occ = mo_occ
+        self._mo_coeff = mo_coeff.astype(types[float]) if mo_coeff is not None else None
+        self._mo_occ = mo_occ.astype(types[float]) if mo_occ is not None else None
 
         # Ansatz:
         if isinstance(ansatz, Ansatz):
@@ -283,9 +284,9 @@ class REBCC(EBCC):
             raise ValueError(
                 "Fermionic and bosonic coupling ranks must both be zero, or both non-zero."
             )
-        self.omega = omega
-        self.bare_g = g
-        self.bare_G = G
+        self.omega = omega.astype(types[float]) if omega is not None else None
+        self.bare_g = g.astype(types[float]) if g is not None else None
+        self.bare_G = G.astype(types[float]) if G is not None else None
         if self.boson_ansatz != "":
             self.g = self.get_g(g)
             self.G = self.get_mean_field_G()
@@ -672,7 +673,7 @@ class REBCC(EBCC):
                 amplitudes[name] = eris[key_t].swapaxes(1, 2) / self.energy_sum(key)
             else:
                 shape = tuple(self.space.size(k) for k in key)
-                amplitudes[name] = np.zeros(shape)
+                amplitudes[name] = np.zeros(shape, dtype=types[float])
 
         if self.boson_ansatz:
             # Only true for real-valued couplings:
@@ -685,7 +686,7 @@ class REBCC(EBCC):
                 amplitudes[name] = -H / self.omega
             else:
                 shape = (self.nbos,) * n
-                amplitudes[name] = np.zeros(shape)
+                amplitudes[name] = np.zeros(shape, dtype=types[float])
 
         # Build U amplitudes:
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
@@ -695,7 +696,7 @@ class REBCC(EBCC):
                 amplitudes[name] = h[key] / self.energy_sum(key)
             else:
                 shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
-                amplitudes[name] = np.zeros(shape)
+                amplitudes[name] = np.zeros(shape, dtype=types[float])
 
         return amplitudes
 
@@ -1982,7 +1983,7 @@ class REBCC(EBCC):
             if self.bare_G is not None:
                 xi += self.bare_G / self.omega
         else:
-            xi = np.zeros_like(self.omega)
+            xi = np.zeros_like(self.omega, dtype=types[float])
 
         return xi
 
