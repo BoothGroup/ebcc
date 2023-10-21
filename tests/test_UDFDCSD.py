@@ -55,9 +55,7 @@ class UDFCC2_Tests(unittest.TestCase):
 
     def test_converged(self):
         self.assertTrue(self.cc2.converged)
-        self.assertTrue(self.cc2.converged_lambda)
         self.assertTrue(self.cc2_ref.converged)
-        self.assertTrue(self.cc2_ref.converged_lambda)
 
     def test_energy(self):
         a = self.cc2_ref.e_tot

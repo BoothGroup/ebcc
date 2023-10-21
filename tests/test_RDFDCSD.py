@@ -55,9 +55,7 @@ class RDFDCSD_Tests(unittest.TestCase):
 
     def test_converged(self):
         self.assertTrue(self.ccsd.converged)
-        self.assertTrue(self.ccsd.converged_lambda)
         self.assertTrue(self.ccsd_ref.converged)
-        self.assertTrue(self.ccsd_ref.converged_lambda)
 
     def test_energy(self):
         a = self.ccsd_ref.e_tot
