@@ -2,7 +2,6 @@
 
 from ebcc import numpy as np
 from ebcc.util import pack_2e, einsum, Namespace
-from ebcc.precision import types
 
 def energy(f=None, v=None, nocc=None, nvir=None, naux=None, t2=None, **kwargs):
     # energy

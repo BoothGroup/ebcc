@@ -2,7 +2,6 @@
 
 from ebcc import numpy as np
 from ebcc.util import pack_2e, einsum, Namespace
-from ebcc.precision import types
 
 def energy(f=None, v=None, nocc=None, nvir=None, naux=None, t2=None, **kwargs):
     # energy
@@ -118,7 +117,7 @@ def update_amps(f=None, v=None, nocc=None, nvir=None, naux=None, t2=None, **kwar
     t2new += einsum(t2, (0, 1, 2, 3), x24, (4, 1, 5, 3), (0, 4, 2, 5)) * 2.0
     del x24
 
-    return {"t1new": t1new, "t2new": t2new}
+    return {"t2new": t2new}
 
 def update_lams(f=None, v=None, nocc=None, nvir=None, naux=None, t2=None, l2=None, **kwargs):
     # L amplitudes
@@ -262,5 +261,5 @@ def update_lams(f=None, v=None, nocc=None, nvir=None, naux=None, t2=None, l2=Non
     l2new += einsum(x37, (0, 1, 2, 3), (3, 2, 1, 0)) * -1.0
     del x37
 
-    return {"l1new": l1new, "l2new": l2new}
+    return {"l2new": l2new}
 
