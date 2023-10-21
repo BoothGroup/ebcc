@@ -5,12 +5,12 @@ from ebcc.util import pack_2e, einsum, Namespace
 
 def energy(f=None, v=None, nocc=None, nvir=None, naux=None, t2=None, **kwargs):
     # energy
-    x0 = np.zeros((nocc[1], nvir[1], naux[0]), dtype=np.float64)
+    x0 = np.zeros((nocc[1], nvir[1], naux), dtype=np.float64)
     x0 += einsum(v.abb.xov, (0, 1, 2), t2.bbbb, (3, 1, 4, 2), (3, 4, 0))
     e_cc = 0
     e_cc += einsum(v.abb.xov, (0, 1, 2), x0, (1, 2, 0), ())
     del x0
-    x1 = np.zeros((nocc[0], nvir[0], naux[0]), dtype=np.float64)
+    x1 = np.zeros((nocc[0], nvir[0], naux), dtype=np.float64)
     x1 += einsum(v.aaa.xov, (0, 1, 2), t2.aaaa, (3, 1, 4, 2), (3, 4, 0))
     x1 += einsum(v.abb.xov, (0, 1, 2), t2.abab, (3, 1, 4, 2), (3, 4, 0))
     e_cc += einsum(v.aaa.xov, (0, 1, 2), x1, (1, 2, 0), ())
@@ -31,15 +31,15 @@ def update_amps(f=None, v=None, nocc=None, nvir=None, naux=None, t2=None, **kwar
     x1 += einsum(v.aaa.xoo, (0, 1, 2), v.aaa.xoo, (0, 3, 4), (1, 3, 4, 2))
     t2new_aaaa += einsum(t2.aaaa, (0, 1, 2, 3), x1, (4, 1, 5, 0), (5, 4, 2, 3)) * -2.0
     del x1
-    x2 = np.zeros((nocc[0], nvir[0], naux[0]), dtype=np.float64)
+    x2 = np.zeros((nocc[0], nvir[0], naux), dtype=np.float64)
     x2 += einsum(v.aaa.xov, (0, 1, 2), t2.aaaa, (3, 1, 4, 2), (3, 4, 0))
     x3 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
     x3 += einsum(x2, (0, 1, 2), x2, (3, 4, 2), (0, 3, 1, 4))
-    x4 = np.zeros((nocc[0], nvir[0], naux[0]), dtype=np.float64)
+    x4 = np.zeros((nocc[0], nvir[0], naux), dtype=np.float64)
     x4 += einsum(v.abb.xov, (0, 1, 2), t2.abab, (3, 1, 4, 2), (3, 4, 0))
     x5 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
     x5 += einsum(x4, (0, 1, 2), x4, (3, 4, 2), (0, 3, 1, 4))
-    x6 = np.zeros((nocc[0], nvir[0], naux[0]), dtype=np.float64)
+    x6 = np.zeros((nocc[0], nvir[0], naux), dtype=np.float64)
     x6 += einsum(x2, (0, 1, 2), (0, 1, 2))
     x6 += einsum(x4, (0, 1, 2), (0, 1, 2)) * 0.5
     x7 = np.zeros((nvir[0], nvir[0]), dtype=np.float64)
@@ -77,7 +77,7 @@ def update_amps(f=None, v=None, nocc=None, nvir=None, naux=None, t2=None, **kwar
     x15 += einsum(v.aaa.xoo, (0, 1, 2), v.aaa.xvv, (0, 3, 4), (1, 2, 3, 4))
     t2new_abab = np.zeros((nocc[0], nocc[1], nvir[0], nvir[1]), dtype=np.float64)
     t2new_abab += einsum(t2.abab, (0, 1, 2, 3), x15, (4, 0, 5, 2), (4, 1, 5, 3)) * -1.0
-    x16 = np.zeros((nocc[0], nvir[0], naux[0]), dtype=np.float64)
+    x16 = np.zeros((nocc[0], nvir[0], naux), dtype=np.float64)
     x16 += einsum(v.aaa.xov, (0, 1, 2), (1, 2, 0))
     x16 += einsum(x4, (0, 1, 2), (0, 1, 2))
     x17 = np.zeros((nocc[0], nocc[0], nvir[0], nvir[0]), dtype=np.float64)
@@ -132,23 +132,23 @@ def update_amps(f=None, v=None, nocc=None, nvir=None, naux=None, t2=None, **kwar
     x28 += einsum(v.abb.xoo, (0, 1, 2), v.aaa.xvv, (0, 3, 4), (1, 2, 3, 4))
     t2new_abab += einsum(t2.abab, (0, 1, 2, 3), x28, (4, 1, 5, 2), (0, 4, 5, 3)) * -1.0
     del x28
-    x29 = np.zeros((nocc[0], nvir[0], naux[0]), dtype=np.float64)
+    x29 = np.zeros((nocc[0], nvir[0], naux), dtype=np.float64)
     x29 += einsum(v.aaa.xov, (0, 1, 2), (1, 2, 0))
     x29 += einsum(x2, (0, 1, 2), (0, 1, 2)) * 2.0
     del x2
     x29 += einsum(x4, (0, 1, 2), (0, 1, 2))
     del x4
-    x30 = np.zeros((nocc[1], nvir[1], naux[0]), dtype=np.float64)
+    x30 = np.zeros((nocc[1], nvir[1], naux), dtype=np.float64)
     x30 += einsum(v.aaa.xov, (0, 1, 2), t2.abab, (1, 3, 2, 4), (3, 4, 0))
-    x31 = np.zeros((nocc[1], nvir[1], naux[0]), dtype=np.float64)
+    x31 = np.zeros((nocc[1], nvir[1], naux), dtype=np.float64)
     x31 += einsum(v.abb.xov, (0, 1, 2), t2.bbbb, (3, 1, 4, 2), (3, 4, 0))
-    x32 = np.zeros((nocc[1], nvir[1], naux[0]), dtype=np.float64)
+    x32 = np.zeros((nocc[1], nvir[1], naux), dtype=np.float64)
     x32 += einsum(v.abb.xov, (0, 1, 2), (1, 2, 0))
     x32 += einsum(x30, (0, 1, 2), (0, 1, 2))
     x32 += einsum(x31, (0, 1, 2), (0, 1, 2)) * 2.0
     t2new_abab += einsum(x29, (0, 1, 2), x32, (3, 4, 2), (0, 3, 1, 4))
     del x29, x32
-    x33 = np.zeros((nocc[1], nvir[1], naux[0]), dtype=np.float64)
+    x33 = np.zeros((nocc[1], nvir[1], naux), dtype=np.float64)
     x33 += einsum(x30, (0, 1, 2), (0, 1, 2))
     x33 += einsum(x31, (0, 1, 2), (0, 1, 2)) * 2.0
     x34 = np.zeros((nvir[1], nvir[1]), dtype=np.float64)
@@ -197,7 +197,7 @@ def update_amps(f=None, v=None, nocc=None, nvir=None, naux=None, t2=None, **kwar
     t2new_bbbb += einsum(x43, (0, 1, 2, 3), (0, 1, 2, 3)) * -1.0
     t2new_bbbb += einsum(x43, (0, 1, 2, 3), (0, 1, 3, 2))
     del x43
-    x44 = np.zeros((nocc[1], nvir[1], naux[0]), dtype=np.float64)
+    x44 = np.zeros((nocc[1], nvir[1], naux), dtype=np.float64)
     x44 += einsum(v.abb.xov, (0, 1, 2), (1, 2, 0))
     x44 += einsum(x31, (0, 1, 2), (0, 1, 2)) * 2.0
     x45 = np.zeros((nocc[1], nocc[1], nvir[1], nvir[1]), dtype=np.float64)
