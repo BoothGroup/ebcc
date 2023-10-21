@@ -26,12 +26,15 @@ The following table summarises the available methods and routines for the ansatz
 | DFCCSD      |  RU   |  RU   |  RU   |       |       |       |  RU   |  RU   |   -   |
 | DFCC2       |  RU   |  RU   |  RU   |       |       |       |  RU   |  RU   |   -   |
 | DFQCISD     |  RU   |  RU   |       |       |       |       |       |       |   -   |
+| DF-DCD      |  RU   |  RU   |       |       |       |       |       |       |   -   |
+| DF-DCSD     |  RU   |  RU   |       |       |       |       |       |       |   -   |
 | CCSD-S-1-1  |  RUG  |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |  RUG  |
 | CCSD-SD-1-1 |  RUG  |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |  RUG  |
 | CCSD-SD-1-2 |  RUG  |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |  RUG  |
 
 - R, U, G indicate availability of restricted, unrestricted, and generalised codes.
 - Capital letters (R rather than r) indicates that the expressions are optimised for contraction order and subexpression elimination.
+- DF in the ansatz name indicates methods specialised for density-fitted integrals.
 - E is the correlation energy.
 - T, Λ are the excitation and de-excitation amplitude availabilities, respectively, the former allowing the coupled cluster solver and the latter allowing the lambda solver.
 - IP, EA, EE indicate availability of the corresponding equation of motion (EOM) functionalities.
