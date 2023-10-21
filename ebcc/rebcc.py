@@ -264,8 +264,8 @@ class REBCC(EBCC):
         # Parameters:
         self.log = default_log if log is None else log
         self.mf = self._convert_mf(mf)
-        self._mo_coeff = mo_coeff.astype(types[float]) if mo_coeff is not None else None
-        self._mo_occ = mo_occ.astype(types[float]) if mo_occ is not None else None
+        self._mo_coeff = np.asarray(mo_coeff).astype(types[float]) if mo_coeff is not None else None
+        self._mo_occ = np.asarray(mo_occ).astype(types[float]) if mo_occ is not None else None
 
         # Ansatz:
         if isinstance(ansatz, Ansatz):
@@ -2044,7 +2044,7 @@ class REBCC(EBCC):
             Molecular orbital coefficients.
         """
         if self._mo_coeff is None:
-            return self.mf.mo_coeff
+            return np.asarray(self.mf.mo_coeff).astype(types[float])
         return self._mo_coeff
 
     @property
@@ -2058,7 +2058,7 @@ class REBCC(EBCC):
             Molecular orbital occupancies.
         """
         if self._mo_occ is None:
-            return self.mf.mo_occ
+            return np.asarray(self.mf.mo_occ).astype(types[float])
         return self._mo_occ
 
     @property
@@ -2152,7 +2152,7 @@ class REBCC(EBCC):
         e_tot : float
             Total energy.
         """
-        return self.mf.e_tot + self.e_corr
+        return types[float](self.mf.e_tot) + self.e_corr
 
     @property
     def t1(self):
