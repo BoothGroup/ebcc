@@ -2,8 +2,9 @@
 
 import warnings
 
-import numpy as np
+from ebcc import numpy as np
 
+from ebcc.precision import types
 from ebcc import reom, util
 
 
@@ -34,8 +35,8 @@ class UEOM(reom.REOM, metaclass=util.InheritDocstrings):
         kets = self.kets(eris=eris)
 
         moments = util.Namespace(
-            aa=np.zeros((nmom, self.nmo, self.nmo)),
-            bb=np.zeros((nmom, self.nmo, self.nmo)),
+            aa=np.zeros((nmom, self.nmo, self.nmo), dtype=types[float]),
+            bb=np.zeros((nmom, self.nmo, self.nmo), dtype=types[float]),
         )
 
         for spin in util.generate_spin_combinations(1):
@@ -91,8 +92,8 @@ class IP_UEOM(UEOM, reom.IP_REOM, metaclass=util.InheritDocstrings):
                     shape = tuple(self.space["ab".index(s)].ncocc for s in spin[:n]) + tuple(
                         self.space["ab".index(s)].ncvir for s in spin[n:]
                     )
-                    setattr(amp_a, spin, getattr(bras_raw[m], "a" + spin, {i: np.zeros(shape)})[i])
-                    setattr(amp_b, spin, getattr(bras_raw[m], "b" + spin, {i: np.zeros(shape)})[i])
+                    setattr(amp_a, spin, getattr(bras_raw[m], "a" + spin, {i: np.zeros(shape, dtype=types[float])})[i])
+                    setattr(amp_b, spin, getattr(bras_raw[m], "b" + spin, {i: np.zeros(shape, dtype=types[float])})[i])
                 amps_a.append(amp_a)
                 amps_b.append(amp_b)
                 m += 1
@@ -129,8 +130,8 @@ class IP_UEOM(UEOM, reom.IP_REOM, metaclass=util.InheritDocstrings):
                     shape = tuple(self.space["ab".index(s)].ncocc for s in spin[:n]) + tuple(
                         self.space["ab".index(s)].ncvir for s in spin[n:]
                     )
-                    setattr(amp_a, spin, getattr(kets_raw[m], spin + "a", {j: np.zeros(shape)})[j])
-                    setattr(amp_b, spin, getattr(kets_raw[m], spin + "b", {j: np.zeros(shape)})[j])
+                    setattr(amp_a, spin, getattr(kets_raw[m], spin + "a", {j: np.zeros(shape, dtype=types[float])})[j])
+                    setattr(amp_b, spin, getattr(kets_raw[m], spin + "b", {j: np.zeros(shape, dtype=types[float])})[j])
                 amps_a.append(amp_a)
                 amps_b.append(amp_b)
                 m += 1
@@ -186,8 +187,8 @@ class EA_UEOM(UEOM, reom.EA_REOM, metaclass=util.InheritDocstrings):
                     shape = tuple(self.space["ab".index(s)].ncvir for s in spin[:n]) + tuple(
                         self.space["ab".index(s)].ncocc for s in spin[n:]
                     )
-                    setattr(amp_a, spin, getattr(bras_raw[m], "a" + spin, {i: np.zeros(shape)})[i])
-                    setattr(amp_b, spin, getattr(bras_raw[m], "b" + spin, {i: np.zeros(shape)})[i])
+                    setattr(amp_a, spin, getattr(bras_raw[m], "a" + spin, {i: np.zeros(shape, dtype=types[float])})[i])
+                    setattr(amp_b, spin, getattr(bras_raw[m], "b" + spin, {i: np.zeros(shape, dtype=types[float])})[i])
                 amps_a.append(amp_a)
                 amps_b.append(amp_b)
                 m += 1
@@ -224,8 +225,8 @@ class EA_UEOM(UEOM, reom.EA_REOM, metaclass=util.InheritDocstrings):
                     shape = tuple(self.space["ab".index(s)].ncvir for s in spin[:n]) + tuple(
                         self.space["ab".index(s)].ncocc for s in spin[n:]
                     )
-                    setattr(amp_a, spin, getattr(kets_raw[m], spin + "a", {j: np.zeros(shape)})[j])
-                    setattr(amp_b, spin, getattr(kets_raw[m], spin + "b", {j: np.zeros(shape)})[j])
+                    setattr(amp_a, spin, getattr(kets_raw[m], spin + "a", {j: np.zeros(shape, dtype=types[float])})[j])
+                    setattr(amp_b, spin, getattr(kets_raw[m], spin + "b", {j: np.zeros(shape, dtype=types[float])})[j])
                 amps_a.append(amp_a)
                 amps_b.append(amp_b)
                 m += 1
@@ -292,12 +293,12 @@ class EE_UEOM(UEOM, reom.EE_REOM, metaclass=util.InheritDocstrings):
                         setattr(
                             amp_aa,
                             spin,
-                            getattr(bras_raw[m], "aa" + spin, {(i, j): np.zeros(shape)})[i, j],
+                            getattr(bras_raw[m], "aa" + spin, {(i, j): np.zeros(shape, dtype=types[float])})[i, j],
                         )
                         setattr(
                             amp_bb,
                             spin,
-                            getattr(bras_raw[m], "bb" + spin, {(i, j): np.zeros(shape)})[i, j],
+                            getattr(bras_raw[m], "bb" + spin, {(i, j): np.zeros(shape, dtype=types[float])})[i, j],
                         )
                     amps_aa.append(amp_aa)
                     amps_bb.append(amp_bb)
@@ -349,12 +350,12 @@ class EE_UEOM(UEOM, reom.EE_REOM, metaclass=util.InheritDocstrings):
                         setattr(
                             amp_aa,
                             spin,
-                            getattr(kets_raw[m], spin + "aa", {k: np.zeros(shape)})[k],
+                            getattr(kets_raw[m], spin + "aa", {k: np.zeros(shape, dtype=types[float])})[k],
                         )
                         setattr(
                             amp_bb,
                             spin,
-                            getattr(kets_raw[m], spin + "bb", {k: np.zeros(shape)})[k],
+                            getattr(kets_raw[m], spin + "bb", {k: np.zeros(shape, dtype=types[float])})[k],
                         )
                     amps_aa.append(amp_aa)
                     amps_bb.append(amp_bb)
@@ -405,10 +406,10 @@ class EE_UEOM(UEOM, reom.EE_REOM, metaclass=util.InheritDocstrings):
         kets = self.kets(eris=eris)
 
         moments = util.Namespace(
-            aaaa=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo)),
-            aabb=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo)),
-            bbaa=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo)),
-            bbbb=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo)),
+            aaaa=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo), dtype=types[float]),
+            aabb=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo), dtype=types[float]),
+            bbaa=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo), dtype=types[float]),
+            bbbb=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo), dtype=types[float]),
         )
 
         for spin in util.generate_spin_combinations(2):

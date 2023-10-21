@@ -48,8 +48,8 @@ class RFock(Fock):
         self.mf = ebcc.mf
         self.space = ebcc.space
         self.slices = slices
-        self.mo_coeff = mo_coeff.astype(types[float]) if mo_coeff is not None else None
-        self.array = array.astype(types[float]) if array is not None else None
+        self.mo_coeff = mo_coeff
+        self.array = array
 
         self.shift = ebcc.options.shift
         self.xi = ebcc.xi
@@ -58,7 +58,7 @@ class RFock(Fock):
             self.g = ebcc.g
 
         if self.mo_coeff is None:
-            self.mo_coeff = ebcc.mo_coeff.astype(types[float])
+            self.mo_coeff = ebcc.mo_coeff
         if not (isinstance(self.mo_coeff, (tuple, list)) or self.mo_coeff.ndim == 3):
             self.mo_coeff = [self.mo_coeff] * 2
 
@@ -151,7 +151,7 @@ class UFock(Fock, metaclass=util.InheritDocstrings):
             ]
 
         if self.array is None:
-            fock_ao = self.mf.get_fock()
+            fock_ao = np.asarray(self.mf.get_fock()).astype(types[float])
             self.array = (
                 util.einsum("pq,pi,qj->ij", fock_ao[0], self.mo_coeff[0], self.mo_coeff[0]),
                 util.einsum("pq,pi,qj->ij", fock_ao[1], self.mo_coeff[1], self.mo_coeff[1]),

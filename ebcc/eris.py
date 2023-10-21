@@ -1,6 +1,6 @@
 """Electronic repulsion integral containers."""
 
-import numpy as np
+from ebcc import numpy as np
 
 from pyscf import ao2mo
 
@@ -50,11 +50,11 @@ class RERIs(ERIs):
         self.mf = ebcc.mf
         self.space = ebcc.space
         self.slices = slices
-        self.mo_coeff = mo_coeff.astype(types[float]) if mo_coeff is not None else None
-        self.array = array.astype(types[float]) if array is not None else None
+        self.mo_coeff = mo_coeff
+        self.array = array
 
         if self.mo_coeff is None:
-            self.mo_coeff = ebcc.mo_coeff.astype(types[float])
+            self.mo_coeff = ebcc.mo_coeff
         if not (isinstance(self.mo_coeff, (tuple, list)) or self.mo_coeff.ndim == 3):
             self.mo_coeff = [self.mo_coeff] * 4
 
@@ -151,18 +151,19 @@ class UERIs(ERIs):
             # Have spin-dependent coulomb interaction; precalculate
             # required arrays for simplicity.
             arrays_aabb = ao2mo.incore.general(
-                self.mf._eri[1], [self.mo_coeff[i] for i in (0, 0, 1, 1)], compact=False
+                self.mf._eri[1], [self.mo_coeff[i].astype(np.float64) for i in (0, 0, 1, 1)], compact=False
             )
             arrays = (
                 ao2mo.incore.general(
-                    self.mf._eri[0], [self.mo_coeff[i] for i in (0, 0, 0, 0)], compact=False
+                    self.mf._eri[0], [self.mo_coeff[i].astype(np.float64) for i in (0, 0, 0, 0)], compact=False
                 ),
                 arrays_aabb,
                 arrays_aabb.transpose(2, 3, 0, 1),
                 ao2mo.incore.general(
-                    self.mf._eri[2], [self.mo_coeff[i] for i in (1, 1, 1, 1)], compact=False
+                    self.mf._eri[2], [self.mo_coeff[i].astype(np.float64) for i in (1, 1, 1, 1)], compact=False
                 ),
             )
+            arrays = tuple(array.astype(types[float]) for array in arrays)
         else:
             arrays = (None, None, None, None)
 
@@ -205,8 +206,8 @@ class GERIs(RERIs):
             mo_coeff = [mo_coeff] * 4
 
         if array is None:
-            mo_a = [mo[: ebcc.mf.mol.nao] for mo in mo_coeff]
-            mo_b = [mo[ebcc.mf.mol.nao :] for mo in mo_coeff]
+            mo_a = [mo[: ebcc.mf.mol.nao].astype(np.float64) for mo in mo_coeff]
+            mo_b = [mo[ebcc.mf.mol.nao :].astype(np.float64) for mo in mo_coeff]
 
             array = ao2mo.kernel(ebcc.mf._eri, mo_a)
             array += ao2mo.kernel(ebcc.mf._eri, mo_b)
@@ -214,6 +215,7 @@ class GERIs(RERIs):
             array += ao2mo.kernel(ebcc.mf._eri, mo_b[:2] + mo_a[2:])
 
             array = ao2mo.addons.restore(1, array, ebcc.nmo)
+            array = array.astype(types[float])
             array = array.reshape((ebcc.nmo,) * 4)
             array = array.transpose(0, 2, 1, 3) - array.transpose(0, 2, 3, 1)
 

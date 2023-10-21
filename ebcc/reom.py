@@ -3,9 +3,10 @@
 import dataclasses
 import warnings
 
-import numpy as np
+from ebcc import numpy as np
 from pyscf import lib
 
+from ebcc.precision import types
 from ebcc import util
 
 
@@ -148,7 +149,7 @@ class REOM(EOM):
         arg = self._argsort_guess(diag)
 
         nroots = min(self.options.nroots, diag.size)
-        guesses = np.zeros((nroots, diag.size))
+        guesses = np.zeros((nroots, diag.size), dtype=diag.dtype)
         for root, guess in enumerate(arg[:nroots]):
             guesses[root, guess] = 1.0
 
@@ -226,7 +227,7 @@ class REOM(EOM):
         bras = self.bras(eris=eris)
         kets = self.kets(eris=eris)
 
-        moments = np.zeros((nmom, self.nmo, self.nmo))
+        moments = np.zeros((nmom, self.nmo, self.nmo), dtype=types[float])
 
         for j in range(self.nmo):
             ket = kets[j]
@@ -461,7 +462,7 @@ class EE_REOM(REOM, metaclass=util.InheritDocstrings):
         bras = self.bras(eris=eris)
         kets = self.kets(eris=eris)
 
-        moments = np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo))
+        moments = np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo), dtype=types[float])
 
         for k in range(self.nmo):
             for l in [k] if diagonal_only else range(self.nmo):

@@ -2,7 +2,7 @@
 
 import dataclasses
 
-import numpy as np
+from ebcc import numpy as np
 from pyscf import lib
 
 from ebcc import default_log, init_logging, reom, util
@@ -1957,7 +1957,7 @@ class REBCC(EBCC):
             The mean-field Fock matrix in the MO basis.
         """
 
-        fock_ao = self.mf.get_fock()
+        fock_ao = self.mf.get_fock().astype(types[float])
         mo_coeff = self.mo_coeff
 
         fock = util.einsum("pq,pi,qj->ij", fock_ao, mo_coeff, mo_coeff)

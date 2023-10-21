@@ -2,15 +2,16 @@
 
 from ebcc import numpy as np
 from ebcc.util import pack_2e, einsum, Namespace
+from ebcc.precision import types
 
 def energy(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, t3=None, **kwargs):
     # energy
-    x0 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
+    x0 = np.zeros((nocc, nocc, nvir, nvir), dtype=types[float])
     x0 += einsum(v.ovov, (0, 1, 2, 3), (0, 2, 3, 1))
     x0 += einsum(v.ovov, (0, 1, 2, 3), (0, 2, 1, 3)) * -0.5
     e_cc = 0
     e_cc += einsum(t2, (0, 1, 2, 3), x0, (0, 1, 3, 2), ()) * 2.0
-    x1 = np.zeros((nocc, nvir), dtype=np.float64)
+    x1 = np.zeros((nocc, nvir), dtype=types[float])
     x1 += einsum(f.ov, (0, 1), (0, 1))
     x1 += einsum(t1, (0, 1), x0, (0, 2, 3, 1), (2, 3))
     del x0
@@ -30,7 +31,7 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     sV = space.active[space.correlated][space.virtual[space.correlated]]
 
     # T amplitudes
-    t1new = np.zeros(((nocc, nvir)), dtype=np.float64)
+    t1new = np.zeros(((nocc, nvir)), dtype=types[float])
     t1new[np.ix_(so,sv)] += einsum(f.ov, (0, 1), (0, 1))
     t1new[np.ix_(so,sv)] += einsum(f.oo, (0, 1), t1[np.ix_(so,sv)], (1, 2), (0, 2)) * -1.0
     t1new[np.ix_(so,sv)] += einsum(f.vv, (0, 1), t1[np.ix_(so,sv)], (2, 1), (2, 0))
@@ -70,7 +71,7 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     t1new[np.ix_(so,sv)] += einsum(t1[np.ix_(so,sv)], (0, 1), t2[np.ix_(so,so,sv,sv)], (2, 3, 4, 5), v.ovov, (0, 4, 3, 1), (2, 5))
     t1new[np.ix_(so,sv)] += einsum(t1[np.ix_(so,sv)], (0, 1), t1[np.ix_(so,sv)], (2, 3), t1[np.ix_(so,sv)], (4, 5), v.ovov, (2, 1, 4, 3), (0, 5))
     t1new[np.ix_(so,sv)] += einsum(t1[np.ix_(so,sv)], (0, 1), t1[np.ix_(so,sv)], (2, 3), t1[np.ix_(so,sv)], (4, 5), v.ovov, (2, 3, 4, 1), (0, 5)) * -2.0
-    t2new = np.zeros(((nocc, nocc, nvir, nvir)), dtype=np.float64)
+    t2new = np.zeros(((nocc, nocc, nvir, nvir)), dtype=types[float])
     t2new[np.ix_(so,so,sv,sv)] += einsum(v.ovov, (0, 1, 2, 3), (0, 2, 1, 3))
     t2new[np.ix_(so,so,sv,sv)] += einsum(f.oo, (0, 1), t2[np.ix_(so,so,sv,sv)], (2, 1, 3, 4), (0, 2, 4, 3)) * -1.0
     t2new[np.ix_(so,so,sv,sv)] += einsum(f.oo, (0, 1), t2[np.ix_(so,so,sv,sv)], (2, 1, 3, 4), (2, 0, 3, 4)) * -1.0
@@ -203,7 +204,7 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     t2new[np.ix_(so,so,sv,sv)] += einsum(t1[np.ix_(so,sv)], (0, 1), t1[np.ix_(so,sv)], (2, 3), t2[np.ix_(so,so,sv,sv)], (4, 5, 6, 7), v.ovov, (0, 1, 2, 7), (4, 5, 6, 3)) * -2.0
     t2new[np.ix_(so,so,sv,sv)] += einsum(t1[np.ix_(so,sv)], (0, 1), t1[np.ix_(so,sv)], (2, 3), t2[np.ix_(so,so,sv,sv)], (4, 5, 6, 7), v.ovov, (0, 7, 2, 1), (4, 5, 6, 3))
     t2new[np.ix_(so,so,sv,sv)] += einsum(t1[np.ix_(so,sv)], (0, 1), t1[np.ix_(so,sv)], (2, 3), t1[np.ix_(so,sv)], (4, 5), t1[np.ix_(so,sv)], (6, 7), v.ovov, (4, 1, 6, 3), (0, 2, 5, 7))
-    t3new = np.zeros(((naocc, naocc, naocc, navir, navir, navir)), dtype=np.float64)
+    t3new = np.zeros(((naocc, naocc, naocc, navir, navir, navir)), dtype=types[float])
     t3new += einsum(f.OO, (0, 1), t3, (2, 3, 1, 4, 5, 6), (0, 3, 2, 4, 5, 6))
     t3new += einsum(f.OO, (0, 1), t3, (2, 1, 3, 4, 5, 6), (2, 0, 3, 4, 5, 6)) * -1.0
     t3new += einsum(f.OO, (0, 1), t3, (2, 3, 1, 4, 5, 6), (2, 3, 0, 4, 5, 6)) * -1.0

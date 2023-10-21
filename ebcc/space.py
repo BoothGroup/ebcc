@@ -1,6 +1,6 @@
 """Space definition."""
 
-import numpy as np
+from ebcc import numpy as np
 
 
 class Space:

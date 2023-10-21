@@ -1,8 +1,9 @@
 """Unrestricted electron-boson coupled cluster."""
 
-import numpy as np
+from ebcc import numpy as np
 from pyscf import lib
 
+from ebcc.precision import types
 from ebcc import rebcc, ueom, util
 from ebcc.brueckner import BruecknerUEBCC
 from ebcc.eris import UERIs
@@ -150,7 +151,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
                         tn[comb] = 0.5 * (tn[comb] - tn[comb].swapaxes(0, 1))
                 else:
                     shape = tuple(self.space["ab".index(s)].size(k) for s, k in zip(comb, key))
-                    tn[comb] = np.zeros(shape)
+                    tn[comb] = np.zeros(shape, dtype=types[float])
                 amplitudes[name] = tn
 
         if self.boson_ansatz:
@@ -164,7 +165,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
                 amplitudes[name] = -H / self.omega
             else:
                 shape = (self.nbos,) * n
-                amplitudes[name] = np.zeros(shape)
+                amplitudes[name] = np.zeros(shape, dtype=types[float])
 
         # Build U amplitudes:
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
@@ -178,8 +179,8 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
                 amplitudes[name] = tn
             else:
                 tn = util.Namespace(
-                    aa=np.zeros((self.nbos,) * nb + tuple(self.space[0].size(k) for k in key[nb:])),
-                    bb=np.zeros((self.nbos,) * nb + tuple(self.space[0].size(k) for k in key[nb:])),
+                    aa=np.zeros((self.nbos,) * nb + tuple(self.space[0].size(k) for k in key[nb:]), dtype=types[float]),
+                    bb=np.zeros((self.nbos,) * nb + tuple(self.space[0].size(k) for k in key[nb:]), dtype=types[float]),
                 )
                 amplitudes[name] = tn
 
@@ -432,7 +433,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
     @property
     @util.has_docstring
     def bare_fock(self):
-        fock = lib.einsum("npq,npi,nqj->nij", self.mf.get_fock(), self.mo_coeff, self.mo_coeff)
+        fock = lib.einsum("npq,npi,nqj->nij", self.mf.get_fock().astype(types[float]), self.mo_coeff, self.mo_coeff)
         fock = util.Namespace(aa=fock[0], bb=fock[1])
         return fock
 
@@ -527,7 +528,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * n
-            size = np.prod(shape)
+            size = np.prod(shape, dtype=types[float])
             amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
@@ -536,11 +537,11 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
                 raise util.ModelNotImplemented
             amplitudes[name] = util.Namespace()
             shape = (self.nbos,) * nb + tuple(self.space[0].size(k) for k in key[nb:])
-            size = np.prod(shape)
+            size = np.prod(shape, dtype=types[float])
             amplitudes[name].aa = vector[i0 : i0 + size].reshape(shape)
             i0 += size
             shape = (self.nbos,) * nb + tuple(self.space[1].size(k) for k in key[nb:])
-            size = np.prod(shape)
+            size = np.prod(shape, dtype=types[float])
             amplitudes[name].bb = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
@@ -592,7 +593,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * n
-            size = np.prod(shape)
+            size = np.prod(shape, dtype=types[float])
             lambdas["l" + name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
@@ -603,11 +604,11 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
             key = key[:nb] + key[nb + nf :] + key[nb : nb + nf]
             lambdas[lname] = util.Namespace()
             shape = (self.nbos,) * nb + tuple(self.space[0].size(k) for k in key[nb:])
-            size = np.prod(shape)
+            size = np.prod(shape, dtype=types[float])
             lambdas[lname].aa = vector[i0 : i0 + size].reshape(shape)
             i0 += size
             shape = (self.nbos,) * nb + tuple(self.space[1].size(k) for k in key[nb:])
-            size = np.prod(shape)
+            size = np.prod(shape, dtype=types[float])
             lambdas[lname].bb = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
