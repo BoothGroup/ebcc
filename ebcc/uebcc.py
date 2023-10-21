@@ -539,7 +539,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * n
-            size = np.prod(shape, dtype=types[float])
+            size = np.prod(shape)
             amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
@@ -548,11 +548,11 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
                 raise util.ModelNotImplemented
             amplitudes[name] = util.Namespace()
             shape = (self.nbos,) * nb + tuple(self.space[0].size(k) for k in key[nb:])
-            size = np.prod(shape, dtype=types[float])
+            size = np.prod(shape)
             amplitudes[name].aa = vector[i0 : i0 + size].reshape(shape)
             i0 += size
             shape = (self.nbos,) * nb + tuple(self.space[1].size(k) for k in key[nb:])
-            size = np.prod(shape, dtype=types[float])
+            size = np.prod(shape)
             amplitudes[name].bb = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
@@ -604,7 +604,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * n
-            size = np.prod(shape, dtype=types[float])
+            size = np.prod(shape)
             lambdas["l" + name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
@@ -615,11 +615,11 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
             key = key[:nb] + key[nb + nf :] + key[nb : nb + nf]
             lambdas[lname] = util.Namespace()
             shape = (self.nbos,) * nb + tuple(self.space[0].size(k) for k in key[nb:])
-            size = np.prod(shape, dtype=types[float])
+            size = np.prod(shape)
             lambdas[lname].aa = vector[i0 : i0 + size].reshape(shape)
             i0 += size
             shape = (self.nbos,) * nb + tuple(self.space[1].size(k) for k in key[nb:])
-            size = np.prod(shape, dtype=types[float])
+            size = np.prod(shape)
             lambdas[lname].bb = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 

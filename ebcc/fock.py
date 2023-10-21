@@ -54,7 +54,7 @@ class RFock(Fock):
 
         self.shift = ebcc.options.shift
         self.xi = ebcc.xi
-        self.g = g.astype(types[float]) if g is not None else None
+        self.g = g
         if self.g is None:
             self.g = ebcc.g
 
