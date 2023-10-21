@@ -297,7 +297,7 @@ def update_amps(f=None, v=None, nocc=None, nvir=None, naux=None, t2=None, **kwar
     t2new.abab = t2new_abab
     t2new.bbbb = t2new_bbbb
 
-    return {"t1new": t1new, "t2new": t2new}
+    return {"t2new": t2new}
 
 def update_lams(f=None, v=None, nocc=None, nvir=None, naux=None, t2=None, l2=None, **kwargs):
     l2new = Namespace()
@@ -656,5 +656,5 @@ def update_lams(f=None, v=None, nocc=None, nvir=None, naux=None, t2=None, l2=Non
     l2new.abab = l2new_abab
     l2new.bbbb = l2new_bbbb
 
-    return {"l1new": l1new, "l2new": l2new}
+    return {"l2new": l2new}
 
