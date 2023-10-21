@@ -22,10 +22,10 @@ The following table summarises the available methods and routines for the ansatz
 | QCISD       |  RUG  |  RUG  |       |       |       |       |       |       |   -   |
 | DCD         |  RU   |  RU   |       |       |       |       |       |       |   -   |
 | DCSD        |  RU   |  RU   |       |       |       |       |       |       |   -   |
-| DFCCD       |  RU   |  RU   |  RU   |       |       |       |       |       |   -   |
-| DFCCSD      |  RU   |  RU   |  RU   |       |       |       |  RU   |  RU   |   -   |
-| DFCC2       |  RU   |  RU   |  RU   |       |       |       |  RU   |  RU   |   -   |
-| DFQCISD     |  RU   |  RU   |       |       |       |       |       |       |   -   |
+| DF-CCD      |  RU   |  RU   |  RU   |       |       |       |       |       |   -   |
+| DF-CCSD     |  RU   |  RU   |  RU   |       |       |       |  RU   |  RU   |   -   |
+| DF-CC2      |  RU   |  RU   |  RU   |       |       |       |  RU   |  RU   |   -   |
+| DF-QCISD    |  RU   |  RU   |       |       |       |       |       |       |   -   |
 | DF-DCD      |  RU   |  RU   |       |       |       |       |       |       |   -   |
 | DF-DCSD     |  RU   |  RU   |       |       |       |       |       |       |   -   |
 | CCSD-S-1-1  |  RUG  |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |  RUG  |
