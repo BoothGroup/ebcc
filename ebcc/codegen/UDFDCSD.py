@@ -3,7 +3,7 @@
 from ebcc import numpy as np
 from ebcc.util import pack_2e, einsum, Namespace
 
-def energy(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, **kwargs):
+def energy(f=None, v=None, nocc=None, nvir=None, naux=None, t1=None, t2=None, **kwargs):
     # energy
     x0 = np.zeros((naux[0],), dtype=np.float64)
     x0 += einsum(t1.bb, (0, 1), v.abb.xov, (2, 0, 1), (2,))
@@ -43,7 +43,7 @@ def energy(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, **kwargs):
 
     return e_cc
 
-def update_amps(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, **kwargs):
+def update_amps(f=None, v=None, nocc=None, nvir=None, naux=None, t1=None, t2=None, **kwargs):
     t1new = Namespace()
     t2new = Namespace()
 
