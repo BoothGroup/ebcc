@@ -3,11 +3,11 @@
 import dataclasses
 import warnings
 
-from ebcc import numpy as np
 from pyscf import lib
 
-from ebcc.precision import types
+from ebcc import numpy as np
 from ebcc import util
+from ebcc.precision import types
 
 
 class EOM:

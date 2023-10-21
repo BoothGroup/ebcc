@@ -5,9 +5,10 @@ import functools
 import itertools
 import time
 
-from ebcc import numpy as np
 from pyscf.lib import direct_sum, dot  # noqa: F401
 from pyscf.lib import einsum as pyscf_einsum
+
+from ebcc import numpy as np
 
 try:
     try:
@@ -17,9 +18,6 @@ try:
     FOUND_TBLIS = True
 except ImportError:
     FOUND_TBLIS = False
-
-from ebcc.precision import types
-
 
 NUMPY_EINSUM_SIZE = 2000
 

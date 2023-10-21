@@ -1,5 +1,6 @@
 """Fock matrix containers."""
 
+from ebcc import numpy as np
 from ebcc import util
 from ebcc.precision import types
 

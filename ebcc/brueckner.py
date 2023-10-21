@@ -2,12 +2,13 @@
 
 import dataclasses
 
-from ebcc import numpy as np
 import scipy.linalg
 from pyscf import lib
 
+from ebcc import NullLogger
+from ebcc import numpy as np
+from ebcc import util
 from ebcc.precision import types
-from ebcc import NullLogger, util
 
 
 @dataclasses.dataclass
@@ -353,14 +354,34 @@ class BruecknerUEBCC(BruecknerREBCC, metaclass=util.InheritDocstrings):
             [
                 np.block(
                     [
-                        [np.zeros((self.cc.space[0].ncocc, self.cc.space[0].ncocc), dtype=types[float]), -t1.aa],
-                        [t1.aa.T, np.zeros((self.cc.space[0].ncvir, self.cc.space[0].ncvir), dtype=types[float])],
+                        [
+                            np.zeros(
+                                (self.cc.space[0].ncocc, self.cc.space[0].ncocc), dtype=types[float]
+                            ),
+                            -t1.aa,
+                        ],
+                        [
+                            t1.aa.T,
+                            np.zeros(
+                                (self.cc.space[0].ncvir, self.cc.space[0].ncvir), dtype=types[float]
+                            ),
+                        ],
                     ]
                 ),
                 np.block(
                     [
-                        [np.zeros((self.cc.space[1].ncocc, self.cc.space[1].ncocc), dtype=types[float]), -t1.bb],
-                        [t1.bb.T, np.zeros((self.cc.space[1].ncvir, self.cc.space[1].ncvir), dtype=types[float])],
+                        [
+                            np.zeros(
+                                (self.cc.space[1].ncocc, self.cc.space[1].ncocc), dtype=types[float]
+                            ),
+                            -t1.bb,
+                        ],
+                        [
+                            t1.bb.T,
+                            np.zeros(
+                                (self.cc.space[1].ncvir, self.cc.space[1].ncvir), dtype=types[float]
+                            ),
+                        ],
                     ]
                 ),
             ]

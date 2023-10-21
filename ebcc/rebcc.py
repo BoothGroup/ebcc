@@ -2,16 +2,17 @@
 
 import dataclasses
 
-from ebcc import numpy as np
 from pyscf import lib
 
-from ebcc import default_log, init_logging, reom, util
-from ebcc.precision import types
+from ebcc import default_log, init_logging
+from ebcc import numpy as np
+from ebcc import reom, util
 from ebcc.ansatz import Ansatz
 from ebcc.brueckner import BruecknerREBCC
 from ebcc.dump import Dump
 from ebcc.eris import RERIs
 from ebcc.fock import RFock
+from ebcc.precision import types
 from ebcc.space import Space
 
 

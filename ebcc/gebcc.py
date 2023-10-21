@@ -1,13 +1,14 @@
 """General electron-boson coupled cluster."""
 
-from ebcc import numpy as np
 from pyscf import lib, scf
 
-from ebcc import geom, uebcc, util
-from ebcc.precision import types
+from ebcc import geom
+from ebcc import numpy as np
+from ebcc import uebcc, util
 from ebcc.brueckner import BruecknerGEBCC
 from ebcc.eris import GERIs
 from ebcc.fock import GFock
+from ebcc.precision import types
 from ebcc.rebcc import REBCC
 from ebcc.space import Space
 

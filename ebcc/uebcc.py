@@ -1,13 +1,13 @@
 """Unrestricted electron-boson coupled cluster."""
 
-from ebcc import numpy as np
 from pyscf import lib
 
-from ebcc.precision import types
+from ebcc import numpy as np
 from ebcc import rebcc, ueom, util
 from ebcc.brueckner import BruecknerUEBCC
 from ebcc.eris import UERIs
 from ebcc.fock import UFock
+from ebcc.precision import types
 from ebcc.space import Space
 
 
@@ -179,8 +179,14 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
                 amplitudes[name] = tn
             else:
                 tn = util.Namespace(
-                    aa=np.zeros((self.nbos,) * nb + tuple(self.space[0].size(k) for k in key[nb:]), dtype=types[float]),
-                    bb=np.zeros((self.nbos,) * nb + tuple(self.space[0].size(k) for k in key[nb:]), dtype=types[float]),
+                    aa=np.zeros(
+                        (self.nbos,) * nb + tuple(self.space[0].size(k) for k in key[nb:]),
+                        dtype=types[float],
+                    ),
+                    bb=np.zeros(
+                        (self.nbos,) * nb + tuple(self.space[0].size(k) for k in key[nb:]),
+                        dtype=types[float],
+                    ),
                 )
                 amplitudes[name] = tn
 
@@ -433,7 +439,12 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
     @property
     @util.has_docstring
     def bare_fock(self):
-        fock = lib.einsum("npq,npi,nqj->nij", self.mf.get_fock().astype(types[float]), self.mo_coeff, self.mo_coeff)
+        fock = lib.einsum(
+            "npq,npi,nqj->nij",
+            self.mf.get_fock().astype(types[float]),
+            self.mo_coeff,
+            self.mo_coeff,
+        )
         fock = util.Namespace(aa=fock[0], bb=fock[1])
         return fock
 
