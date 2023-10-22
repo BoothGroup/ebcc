@@ -47,7 +47,8 @@ def precision(**kwargs):
 @contextmanager
 def single_precision():
     """
-    Context manager for setting the floating point precision to single.
+    Context manager for setting the floating point precision to single
+    precision.
     """
     with precision(float=np.float32, complex=np.complex64):
         yield
