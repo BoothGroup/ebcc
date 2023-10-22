@@ -8,6 +8,7 @@ from pyscf import lib
 from ebcc import default_log, init_logging, reom, util
 from ebcc.ansatz import Ansatz
 from ebcc.brueckner import BruecknerREBCC
+from ebcc.cderis import RCDERIs
 from ebcc.dump import Dump
 from ebcc.eris import RERIs
 from ebcc.fock import RFock
@@ -235,6 +236,7 @@ class REBCC(EBCC):
     Options = Options
     ERIs = RERIs
     Fock = RFock
+    CDERIs = RCDERIs
     Brueckner = BruecknerREBCC
 
     def __init__(
@@ -269,7 +271,9 @@ class REBCC(EBCC):
         if isinstance(ansatz, Ansatz):
             self.ansatz = ansatz
         else:
-            self.ansatz = Ansatz.from_string(ansatz)
+            self.ansatz = Ansatz.from_string(
+                ansatz, density_fitting=getattr(self.mf, "with_df", None) is not None
+            )
         self._eqns = self.ansatz._get_eqns(self.spin_type)
 
         # Space:
@@ -619,6 +623,8 @@ class REBCC(EBCC):
             nvir=self.space.ncvir,  # FIXME rename?
             nbos=self.nbos,
         )
+        if isinstance(eris, self.CDERIs):
+            kwargs["naux"] = self.mf.with_df.get_naoaux()
         for kw in extra_kwargs:
             if kw is not None:
                 kwargs.update(kw)
@@ -1940,7 +1946,12 @@ class REBCC(EBCC):
             using `self.ERIs()`.
         """
         if (eris is None) or isinstance(eris, np.ndarray):
-            return self.ERIs(self, array=eris)
+            if (isinstance(eris, np.ndarray) and eris.ndim == 3) or getattr(
+                self.mf, "with_df", None
+            ):
+                return self.CDERIs(self, array=eris)
+            else:
+                return self.ERIs(self, array=eris)
         else:
             return eris
 
