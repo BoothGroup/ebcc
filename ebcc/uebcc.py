@@ -5,6 +5,7 @@ from pyscf import lib
 from ebcc import numpy as np
 from ebcc import rebcc, ueom, util
 from ebcc.brueckner import BruecknerUEBCC
+from ebcc.cderis import UCDERIs
 from ebcc.eris import UERIs
 from ebcc.fock import UFock
 from ebcc.precision import types
@@ -15,6 +16,7 @@ from ebcc.space import Space
 class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
     ERIs = UERIs
     Fock = UFock
+    CDERIs = UCDERIs
     Brueckner = BruecknerUEBCC
 
     @staticmethod
@@ -108,6 +110,8 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
             nvir=(self.space[0].ncvir, self.space[1].ncvir),  # FIXME rename?
             nbos=self.nbos,
         )
+        if isinstance(eris, self.CDERIs):
+            kwargs["naux"] = self.mf.with_df.get_naoaux()
         for kw in extra_kwargs:
             if kw is not None:
                 kwargs.update(kw)
@@ -483,7 +487,12 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
             using `self.ERIs()`.
         """
         if (eris is None) or isinstance(eris, tuple):
-            return self.ERIs(self, array=eris)
+            if (
+                isinstance(eris, tuple) and isinstance(eris[0], np.ndarray) and eris[0].ndim == 3
+            ) or getattr(self.mf, "with_df", None):
+                return self.CDERIs(self, array=eris)
+            else:
+                return self.ERIs(self, array=eris)
         else:
             return eris
 
