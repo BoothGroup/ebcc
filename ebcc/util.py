@@ -5,9 +5,10 @@ import functools
 import itertools
 import time
 
-import numpy as np
 from pyscf.lib import direct_sum, dot  # noqa: F401
 from pyscf.lib import einsum as pyscf_einsum
+
+from ebcc import numpy as np
 
 try:
     try:
@@ -17,7 +18,6 @@ try:
     FOUND_TBLIS = True
 except ImportError:
     FOUND_TBLIS = False
-
 
 NUMPY_EINSUM_SIZE = 2000
 
@@ -656,7 +656,7 @@ def decompress_axes(
 
     # Initialise decompressed array
     if out is None:
-        array = np.zeros(shape)
+        array = np.zeros(shape, dtype=array_flat.dtype)
     else:
         array = out
         out[:] = 0.0
@@ -1005,7 +1005,7 @@ def contract(subscript, *args, **kwargs):
             if buf is not None:
                 return buf.reshape(shape_c) * beta if beta != 1.0 else buf.reshape(shape_c)
             else:
-                return np.zeros(shape_c)
+                return np.zeros(shape_c, dtype=np.result_type(a, b))
 
         # Apply transposes
         at = a.transpose(order_a)
@@ -1050,7 +1050,7 @@ def contract(subscript, *args, **kwargs):
             if buf is not None:
                 return buf.reshape(shape_c) * beta
             else:
-                return np.zeros(shape_c)
+                return np.zeros(shape_c, dtype=dtype)
 
         # Get the output buffer
         if buf is None:

@@ -4,6 +4,7 @@
 - Density matrices
 - Brueckner orbital calculations
 - Frozen and active space constraints
+- Single- and mixed-precision calculations
 
 The following table summarises the available methods and routines for the ansatz currently treated by code generation, in the three spin cases:
 

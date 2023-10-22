@@ -1,6 +1,8 @@
 """Fock matrix containers."""
 
+from ebcc import numpy as np
 from ebcc import util
+from ebcc.precision import types
 
 
 class Fock(util.Namespace):
@@ -62,7 +64,7 @@ class RFock(Fock):
             self.mo_coeff = [self.mo_coeff] * 2
 
         if self.array is None:
-            fock_ao = self.mf.get_fock()
+            fock_ao = self.mf.get_fock().astype(types[float])
             self.array = util.einsum("pq,pi,qj->ij", fock_ao, *self.mo_coeff)
 
         if self.slices is None:
@@ -150,7 +152,7 @@ class UFock(Fock, metaclass=util.InheritDocstrings):
             ]
 
         if self.array is None:
-            fock_ao = self.mf.get_fock()
+            fock_ao = np.asarray(self.mf.get_fock()).astype(types[float])
             self.array = (
                 util.einsum("pq,pi,qj->ij", fock_ao[0], self.mo_coeff[0], self.mo_coeff[0]),
                 util.einsum("pq,pi,qj->ij", fock_ao[1], self.mo_coeff[1], self.mo_coeff[1]),

@@ -1,13 +1,14 @@
 """Unrestricted electron-boson coupled cluster."""
 
-import numpy as np
 from pyscf import lib
 
+from ebcc import numpy as np
 from ebcc import rebcc, ueom, util
 from ebcc.brueckner import BruecknerUEBCC
 from ebcc.cderis import UCDERIs
 from ebcc.eris import UERIs
 from ebcc.fock import UFock
+from ebcc.precision import types
 from ebcc.space import Space
 
 
@@ -154,7 +155,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
                         tn[comb] = 0.5 * (tn[comb] - tn[comb].swapaxes(0, 1))
                 else:
                     shape = tuple(self.space["ab".index(s)].size(k) for s, k in zip(comb, key))
-                    tn[comb] = np.zeros(shape)
+                    tn[comb] = np.zeros(shape, dtype=types[float])
                 amplitudes[name] = tn
 
         if self.boson_ansatz:
@@ -168,7 +169,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
                 amplitudes[name] = -H / self.omega
             else:
                 shape = (self.nbos,) * n
-                amplitudes[name] = np.zeros(shape)
+                amplitudes[name] = np.zeros(shape, dtype=types[float])
 
         # Build U amplitudes:
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
@@ -182,8 +183,14 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
                 amplitudes[name] = tn
             else:
                 tn = util.Namespace(
-                    aa=np.zeros((self.nbos,) * nb + tuple(self.space[0].size(k) for k in key[nb:])),
-                    bb=np.zeros((self.nbos,) * nb + tuple(self.space[0].size(k) for k in key[nb:])),
+                    aa=np.zeros(
+                        (self.nbos,) * nb + tuple(self.space[0].size(k) for k in key[nb:]),
+                        dtype=types[float],
+                    ),
+                    bb=np.zeros(
+                        (self.nbos,) * nb + tuple(self.space[0].size(k) for k in key[nb:]),
+                        dtype=types[float],
+                    ),
                 )
                 amplitudes[name] = tn
 
@@ -436,7 +443,12 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
     @property
     @util.has_docstring
     def bare_fock(self):
-        fock = lib.einsum("npq,npi,nqj->nij", self.mf.get_fock(), self.mo_coeff, self.mo_coeff)
+        fock = lib.einsum(
+            "npq,npi,nqj->nij",
+            self.mf.get_fock().astype(types[float]),
+            self.mo_coeff,
+            self.mo_coeff,
+        )
         fock = util.Namespace(aa=fock[0], bb=fock[1])
         return fock
 

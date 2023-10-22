@@ -2,11 +2,13 @@
 
 import dataclasses
 
-import numpy as np
 import scipy.linalg
 from pyscf import lib
 
-from ebcc import NullLogger, util
+from ebcc import NullLogger
+from ebcc import numpy as np
+from ebcc import util
+from ebcc.precision import types
 
 
 @dataclasses.dataclass
@@ -111,8 +113,8 @@ class BruecknerREBCC:
 
         t1_block = np.block(
             [
-                [np.zeros((self.cc.space.ncocc, self.cc.space.ncocc)), -t1],
-                [t1.T, np.zeros((self.cc.space.ncvir, self.cc.space.ncvir))],
+                [np.zeros((self.cc.space.ncocc, self.cc.space.ncocc), dtype=types[float]), -t1],
+                [t1.T, np.zeros((self.cc.space.ncvir, self.cc.space.ncvir), dtype=types[float])],
             ]
         )
 
@@ -352,14 +354,34 @@ class BruecknerUEBCC(BruecknerREBCC, metaclass=util.InheritDocstrings):
             [
                 np.block(
                     [
-                        [np.zeros((self.cc.space[0].ncocc, self.cc.space[0].ncocc)), -t1.aa],
-                        [t1.aa.T, np.zeros((self.cc.space[0].ncvir, self.cc.space[0].ncvir))],
+                        [
+                            np.zeros(
+                                (self.cc.space[0].ncocc, self.cc.space[0].ncocc), dtype=types[float]
+                            ),
+                            -t1.aa,
+                        ],
+                        [
+                            t1.aa.T,
+                            np.zeros(
+                                (self.cc.space[0].ncvir, self.cc.space[0].ncvir), dtype=types[float]
+                            ),
+                        ],
                     ]
                 ),
                 np.block(
                     [
-                        [np.zeros((self.cc.space[1].ncocc, self.cc.space[1].ncocc)), -t1.bb],
-                        [t1.bb.T, np.zeros((self.cc.space[1].ncvir, self.cc.space[1].ncvir))],
+                        [
+                            np.zeros(
+                                (self.cc.space[1].ncocc, self.cc.space[1].ncocc), dtype=types[float]
+                            ),
+                            -t1.bb,
+                        ],
+                        [
+                            t1.bb.T,
+                            np.zeros(
+                                (self.cc.space[1].ncvir, self.cc.space[1].ncvir), dtype=types[float]
+                            ),
+                        ],
                     ]
                 ),
             ]

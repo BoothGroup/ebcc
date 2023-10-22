@@ -1,12 +1,14 @@
 """General electron-boson coupled cluster."""
 
-import numpy as np
 from pyscf import lib, scf
 
-from ebcc import geom, uebcc, util
+from ebcc import geom
+from ebcc import numpy as np
+from ebcc import uebcc, util
 from ebcc.brueckner import BruecknerGEBCC
 from ebcc.eris import GERIs
 from ebcc.fock import GFock
+from ebcc.precision import types
 from ebcc.rebcc import REBCC
 from ebcc.space import Space
 
@@ -99,7 +101,7 @@ class GEBCC(REBCC, metaclass=util.InheritDocstrings):
 
             for name, key, n in ucc.ansatz.fermionic_cluster_ranks(spin_type=ucc.spin_type):
                 shape = tuple(space.size(k) for k in key)
-                amplitudes[name] = np.zeros(shape)
+                amplitudes[name] = np.zeros(shape, dtype=types[float])
                 for comb in util.generate_spin_combinations(n, unique=True):
                     done = set()
                     for lperm, lsign in util.permutations_with_signs(tuple(range(n))):
@@ -126,7 +128,7 @@ class GEBCC(REBCC, metaclass=util.InheritDocstrings):
 
             for name, key, nf, nb in ucc.ansatz.coupling_cluster_ranks(spin_type=ucc.spin_type):
                 shape = (nbos,) * nb + tuple(space.size(k) for k in key[nb:])
-                amplitudes[name] = np.zeros(shape)
+                amplitudes[name] = np.zeros(shape, dtype=types[float])
                 for comb in util.generate_spin_combinations(nf):
                     done = set()
                     for lperm, lsign in util.permutations_with_signs(tuple(range(nf))):
@@ -167,7 +169,7 @@ class GEBCC(REBCC, metaclass=util.InheritDocstrings):
             for name, key, n in ucc.ansatz.fermionic_cluster_ranks(spin_type=ucc.spin_type):
                 lname = name.replace("t", "l")
                 shape = tuple(space.size(k) for k in key[n:] + key[:n])
-                lambdas[lname] = np.zeros(shape)
+                lambdas[lname] = np.zeros(shape, dtype=types[float])
                 for comb in util.generate_spin_combinations(n, unique=True):
                     done = set()
                     for lperm, lsign in util.permutations_with_signs(tuple(range(n))):
@@ -198,7 +200,7 @@ class GEBCC(REBCC, metaclass=util.InheritDocstrings):
                 shape = (nbos,) * nb + tuple(
                     space.size(k) for k in key[nb + nf :] + key[nb : nb + nf]
                 )
-                lambdas[lname] = np.zeros(shape)
+                lambdas[lname] = np.zeros(shape, dtype=types[float])
                 for comb in util.generate_spin_combinations(nf, unique=True):
                     done = set()
                     for lperm, lsign in util.permutations_with_signs(tuple(range(nf))):
@@ -272,7 +274,7 @@ class GEBCC(REBCC, metaclass=util.InheritDocstrings):
                 amplitudes[name] = getattr(eris, key) / self.energy_sum(key)
             else:
                 shape = tuple(self.space.size(k) for k in key)
-                amplitudes[name] = np.zeros(shape)
+                amplitudes[name] = np.zeros(shape, dtype=types[float])
 
         if self.boson_ansatz:
             # Only true for real-valued couplings:
@@ -285,7 +287,7 @@ class GEBCC(REBCC, metaclass=util.InheritDocstrings):
                 amplitudes[name] = -H / self.omega
             else:
                 shape = (self.nbos,) * n
-                amplitudes[name] = np.zeros(shape)
+                amplitudes[name] = np.zeros(shape, dtype=types[float])
 
         # Build U amplitudes:
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
@@ -295,7 +297,7 @@ class GEBCC(REBCC, metaclass=util.InheritDocstrings):
                 amplitudes[name] = h[key] / self.energy_sum(key)
             else:
                 shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
-                amplitudes[name] = np.zeros(shape)
+                amplitudes[name] = np.zeros(shape, dtype=types[float])
 
         return amplitudes
 
