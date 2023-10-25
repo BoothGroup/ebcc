@@ -17,6 +17,7 @@ named_ansatzes = {
     "QCISD": ("QCISD", "", 0, 0),
     "DCD": ("DCD", "", 0, 0),
     "DCSD": ("DCSD", "", 0, 0),
+    "CCSDt": ("CCSDt", "", 0, 0),
     "CCSDt'": ("CCSDt'", "", 0, 0),
     "CCSD-S-1-1": ("CCSD", "S", 1, 1),
     "CCSD-SD-1-1": ("CCSD", "SD", 1, 1),
@@ -244,6 +245,7 @@ class Ansatz:
             "S": [("t1", "ov", 1)],
             "D": [("t2", "oovv", 2)],
             "T": [("t3", "ooovvv", 3)],
+            "t": [("t3", "ooOvvV", 3)],
             "t'": [("t3", "OOOVVV", 3)],
         }
         if spin_type == "R":
