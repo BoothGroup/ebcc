@@ -25,6 +25,8 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     sv = np.ones((nvir,), dtype=bool)
     sO = space.active[space.correlated][space.occupied[space.correlated]]
     sV = space.active[space.correlated][space.virtual[space.correlated]]
+    sOf = np.ones((naocc,), dtype=bool)
+    sVf = np.ones((navir,), dtype=bool)
 
     # T amplitudes
     t1new = np.zeros((nocc, nvir), dtype=np.float64)
@@ -35,20 +37,20 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     t1new[np.ix_(so,sv)] += einsum(t1[np.ix_(so,sv)], (0, 1), v.ovov, (2, 1, 0, 3), (2, 3)) * -1.0
     t1new[np.ix_(so,sv)] += einsum(t2[np.ix_(so,so,sv,sv)], (0, 1, 2, 3), v.ooov, (0, 1, 4, 3), (4, 2)) * -0.5
     t1new[np.ix_(so,sv)] += einsum(t2[np.ix_(so,so,sv,sv)], (0, 1, 2, 3), v.ovvv, (1, 4, 2, 3), (0, 4)) * -0.5
-    t1new[np.ix_(so,sv)] += einsum(v.oOvV, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 0, 1, 5, 2, 3), (4, 5)) * 0.25
+    t1new[np.ix_(so,sv)] += einsum(v.oOvV, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 0, 1, 5, 2, 3), (4, 5)) * 0.25
     t2new = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
     t2new[np.ix_(so,so,sv,sv)] += einsum(v.oovv, (0, 1, 2, 3), (0, 1, 2, 3))
-    t2new[np.ix_(so,so,sv,sv)] += einsum(f.OV, (0, 1), t3[np.ix_(so,so,sO,sv,sv,sV)], (2, 3, 0, 4, 5, 1), (2, 3, 4, 5))
+    t2new[np.ix_(so,so,sv,sv)] += einsum(f.OV, (0, 1), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 3, 0, 4, 5, 1), (2, 3, 4, 5))
     t2new[np.ix_(so,so,sv,sv)] += einsum(t2[np.ix_(so,so,sv,sv)], (0, 1, 2, 3), v.oooo, (4, 5, 0, 1), (4, 5, 2, 3)) * 0.5
     t2new[np.ix_(so,so,sv,sv)] += einsum(t2[np.ix_(so,so,sv,sv)], (0, 1, 2, 3), v.vvvv, (4, 5, 2, 3), (0, 1, 4, 5)) * 0.5
     t3new = np.zeros((nocc, nocc, naocc, nvir, nvir, navir), dtype=np.float64)
-    t3new += einsum(f.OO, (0, 1), t3[np.ix_(so,so,sO,sv,sv,sV)], (2, 3, 1, 4, 5, 6), (2, 3, 0, 4, 5, 6)) * -1.0
-    t3new += einsum(f.VV, (0, 1), t3[np.ix_(so,so,sO,sv,sv,sV)], (2, 3, 4, 5, 6, 1), (2, 3, 4, 5, 6, 0))
+    t3new += einsum(f.OO, (0, 1), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 3, 1, 4, 5, 6), (2, 3, 0, 4, 5, 6)) * -1.0
+    t3new += einsum(f.VV, (0, 1), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 3, 4, 5, 6, 1), (2, 3, 4, 5, 6, 0))
     t3new += einsum(t2[np.ix_(so,sO,sv,sv)], (0, 1, 2, 3), v.oooV, (4, 5, 0, 6), (4, 5, 1, 2, 3, 6))
     t3new += einsum(t2[np.ix_(so,so,sv,sV)], (0, 1, 2, 3), v.vvvO, (4, 5, 2, 6), (0, 1, 6, 4, 5, 3)) * -1.0
-    t3new += einsum(v.oooo, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (2, 3, 4, 5, 6, 7), (0, 1, 4, 5, 6, 7)) * 0.5
-    t3new += einsum(v.OVOV, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 5, 2, 6, 7, 1), (4, 5, 0, 6, 7, 3)) * -1.0
-    t3new += einsum(v.vvvv, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 5, 6, 2, 3, 7), (4, 5, 6, 0, 1, 7)) * 0.5
+    t3new += einsum(v.oooo, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 3, 4, 5, 6, 7), (0, 1, 4, 5, 6, 7)) * 0.5
+    t3new += einsum(v.OVOV, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 5, 2, 6, 7, 1), (4, 5, 0, 6, 7, 3)) * -1.0
+    t3new += einsum(v.vvvv, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 5, 6, 2, 3, 7), (4, 5, 6, 0, 1, 7)) * 0.5
     x0 = np.zeros((nocc, nocc), dtype=np.float64)
     x0 += einsum(f.ov, (0, 1), t1[np.ix_(so,sv)], (2, 1), (0, 2))
     t1new[np.ix_(so,sv)] += einsum(t1[np.ix_(so,sv)], (0, 1), x0, (0, 2), (2, 1)) * -1.0
@@ -98,12 +100,12 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     t2new[np.ix_(so,so,sv,sv)] += einsum(x11, (0, 1, 2, 3), (1, 0, 3, 2)) * -1.0
     del x11
     x12 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
-    x12 += einsum(v.oOoV, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 0, 1, 5, 6, 3), (4, 2, 5, 6))
+    x12 += einsum(v.oOoV, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 0, 1, 5, 6, 3), (4, 2, 5, 6))
     t2new[np.ix_(so,so,sv,sv)] += einsum(x12, (0, 1, 2, 3), (1, 0, 3, 2)) * -0.5
     t2new[np.ix_(so,so,sv,sv)] += einsum(x12, (0, 1, 2, 3), (0, 1, 3, 2)) * 0.5
     del x12
     x13 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
-    x13 += einsum(v.vOvV, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 5, 1, 6, 2, 3), (4, 5, 6, 0))
+    x13 += einsum(v.vOvV, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 5, 1, 6, 2, 3), (4, 5, 6, 0))
     t2new[np.ix_(so,so,sv,sv)] += einsum(x13, (0, 1, 2, 3), (0, 1, 3, 2)) * -0.5
     t2new[np.ix_(so,so,sv,sv)] += einsum(x13, (0, 1, 2, 3), (0, 1, 2, 3)) * 0.5
     del x13
@@ -181,13 +183,13 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     x31 = np.zeros((naocc, navir, nocc, nocc), dtype=np.float64)
     x31 += einsum(t1[np.ix_(so,sv)], (0, 1), v.oOvV, (2, 3, 1, 4), (3, 4, 0, 2))
     x32 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
-    x32 += einsum(x31, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 3, 0, 5, 6, 1), (2, 4, 5, 6))
+    x32 += einsum(x31, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 3, 0, 5, 6, 1), (2, 4, 5, 6))
     del x31
     t2new[np.ix_(so,so,sv,sv)] += einsum(x32, (0, 1, 2, 3), (0, 1, 3, 2)) * -0.5
     t2new[np.ix_(so,so,sv,sv)] += einsum(x32, (0, 1, 2, 3), (1, 0, 3, 2)) * 0.5
     del x32
     x33 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
-    x33 += einsum(v.oOvV, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 5, 1, 6, 2, 3), (4, 5, 0, 6))
+    x33 += einsum(v.oOvV, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 5, 1, 6, 2, 3), (4, 5, 0, 6))
     x34 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
     x34 += einsum(t1[np.ix_(so,sv)], (0, 1), x33, (2, 3, 0, 4), (2, 3, 1, 4))
     t2new[np.ix_(so,so,sv,sv)] += einsum(x34, (0, 1, 2, 3), (0, 1, 2, 3)) * 0.5
@@ -195,12 +197,12 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     del x34
     x35 = np.zeros((naocc, navir), dtype=np.float64)
     x35 += einsum(t1[np.ix_(so,sv)], (0, 1), v.oOvV, (0, 2, 1, 3), (2, 3))
-    t2new[np.ix_(so,so,sv,sv)] += einsum(x35, (0, 1), t3[np.ix_(so,so,sO,sv,sv,sV)], (2, 3, 0, 4, 5, 1), (2, 3, 4, 5))
+    t2new[np.ix_(so,so,sv,sv)] += einsum(x35, (0, 1), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 3, 0, 4, 5, 1), (2, 3, 4, 5))
     del x35
     x36 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
     x36 += einsum(t2[np.ix_(so,so,sv,sv)], (0, 1, 2, 3), v.oovv, (4, 1, 5, 3), (0, 4, 2, 5))
     x37 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
-    x37 += einsum(t2[np.ix_(so,so,sv,sv)], (0, 1, 2, 3), x36, (4, 1, 5, 3), (0, 4, 2, 5))
+    x37 += einsum(t2[np.ix_(so,so,sv,sv)], (0, 1, 2, 3), x36, (4, 1, 5, 3), (4, 0, 5, 2))
     del x36
     t2new[np.ix_(so,so,sv,sv)] += einsum(x37, (0, 1, 2, 3), (0, 1, 2, 3))
     t2new[np.ix_(so,so,sv,sv)] += einsum(x37, (0, 1, 2, 3), (0, 1, 3, 2)) * -1.0
@@ -220,7 +222,7 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     x41 = np.zeros((nocc, nocc, nocc, nocc), dtype=np.float64)
     x41 += einsum(t2[np.ix_(so,so,sv,sv)], (0, 1, 2, 3), v.oovv, (4, 5, 2, 3), (0, 1, 4, 5))
     t2new[np.ix_(so,so,sv,sv)] += einsum(t2[np.ix_(so,so,sv,sv)], (0, 1, 2, 3), x41, (4, 5, 0, 1), (5, 4, 2, 3)) * -0.25
-    t3new += einsum(x41, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (2, 3, 4, 5, 6, 7), (1, 0, 4, 5, 6, 7)) * -0.25
+    t3new += einsum(x41, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 3, 4, 5, 6, 7), (1, 0, 4, 5, 6, 7)) * -0.25
     x42 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
     x42 += einsum(t1[np.ix_(so,sv)], (0, 1), x21, (2, 0, 3, 4), (2, 3, 4, 1)) * -1.0
     x43 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
@@ -238,8 +240,8 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     del x45
     x46 = np.zeros((nocc, nocc, nocc, nocc), dtype=np.float64)
     x46 += einsum(t1[np.ix_(so,sv)], (0, 1), x3, (2, 3, 4, 1), (2, 0, 4, 3))
-    t2new[np.ix_(so,so,sv,sv)] += einsum(t2[np.ix_(so,so,sv,sv)], (0, 1, 2, 3), x46, (4, 5, 1, 0), (5, 4, 2, 3)) * 0.5
-    t3new += einsum(x46, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (3, 2, 4, 5, 6, 7), (1, 0, 4, 5, 6, 7)) * 0.5
+    t2new[np.ix_(so,so,sv,sv)] += einsum(t2[np.ix_(so,so,sv,sv)], (0, 1, 2, 3), x46, (4, 5, 0, 1), (5, 4, 2, 3)) * -0.5
+    t3new += einsum(x46, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 3, 4, 5, 6, 7), (1, 0, 4, 5, 6, 7)) * -0.5
     x47 = np.zeros((nocc, nocc, nocc, nvir), dtype=np.float64)
     x47 += einsum(t2[np.ix_(so,so,sv,sv)], (0, 1, 2, 3), x3, (4, 1, 5, 3), (4, 0, 5, 2))
     x48 = np.zeros((nocc, nocc, nvir, nvir), dtype=np.float64)
@@ -270,12 +272,12 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     t2new[np.ix_(so,so,sv,sv)] += einsum(t1[np.ix_(so,sv)], (0, 1), x53, (2, 3, 0, 4), (3, 2, 1, 4)) * -1.0
     del x53
     x54 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x54 += einsum(f.oo, (0, 1), t3[np.ix_(so,so,sO,sv,sv,sV)], (2, 1, 3, 4, 5, 6), (3, 6, 0, 2, 4, 5))
+    x54 += einsum(f.oo, (0, 1), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 1, 3, 4, 5, 6), (3, 6, 0, 2, 4, 5))
     t3new += einsum(x54, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * -1.0
     t3new += einsum(x54, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1))
     del x54
     x55 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x55 += einsum(f.vv, (0, 1), t3[np.ix_(so,so,sO,sv,sv,sV)], (2, 3, 4, 5, 1, 6), (4, 6, 2, 3, 0, 5))
+    x55 += einsum(f.vv, (0, 1), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 3, 4, 5, 1, 6), (4, 6, 2, 3, 0, 5))
     t3new += einsum(x55, (0, 1, 2, 3, 4, 5), (2, 3, 0, 4, 5, 1)) * -1.0
     t3new += einsum(x55, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1))
     del x55
@@ -314,40 +316,40 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     t3new += einsum(x61, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * -1.0
     del x61
     x62 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x62 += einsum(v.oOoO, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 2, 3, 5, 6, 7), (1, 7, 4, 0, 5, 6))
+    x62 += einsum(v.oOoO, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 2, 3, 5, 6, 7), (1, 7, 4, 0, 5, 6))
     t3new += einsum(x62, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1)) * 0.5
     t3new += einsum(x62, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * -0.5
     del x62
     x63 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x63 += einsum(v.ovov, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 2, 5, 6, 1, 7), (5, 7, 4, 0, 6, 3))
+    x63 += einsum(v.ovov, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 2, 5, 6, 1, 7), (5, 7, 4, 0, 6, 3))
     t3new += einsum(x63, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1)) * -1.0
     t3new += einsum(x63, (0, 1, 2, 3, 4, 5), (3, 2, 0, 4, 5, 1))
     t3new += einsum(x63, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1))
     t3new += einsum(x63, (0, 1, 2, 3, 4, 5), (2, 3, 0, 4, 5, 1)) * -1.0
     del x63
     x64 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x64 += einsum(v.oVoV, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 2, 5, 6, 7, 1), (5, 3, 4, 0, 6, 7))
+    x64 += einsum(v.oVoV, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 2, 5, 6, 7, 1), (5, 3, 4, 0, 6, 7))
     t3new += einsum(x64, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1)) * -1.0
     t3new += einsum(x64, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1))
     del x64
     x65 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x65 += einsum(v.vOvO, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 5, 1, 6, 2, 7), (3, 7, 4, 5, 6, 0))
+    x65 += einsum(v.vOvO, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 5, 1, 6, 2, 7), (3, 7, 4, 5, 6, 0))
     t3new += einsum(x65, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1))
     t3new += einsum(x65, (0, 1, 2, 3, 4, 5), (2, 3, 0, 4, 5, 1)) * -1.0
     del x65
     x66 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x66 += einsum(v.vVvV, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 5, 6, 7, 2, 3), (6, 1, 4, 5, 7, 0))
+    x66 += einsum(v.vVvV, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 5, 6, 7, 2, 3), (6, 1, 4, 5, 7, 0))
     t3new += einsum(x66, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * -0.5
     t3new += einsum(x66, (0, 1, 2, 3, 4, 5), (2, 3, 0, 4, 5, 1)) * 0.5
     del x66
     x67 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x67 += einsum(x0, (0, 1), t3[np.ix_(so,so,sO,sv,sv,sV)], (2, 0, 3, 4, 5, 6), (3, 6, 1, 2, 4, 5))
+    x67 += einsum(x0, (0, 1), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 0, 3, 4, 5, 6), (3, 6, 1, 2, 4, 5))
     del x0
     t3new += einsum(x67, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * -1.0
     t3new += einsum(x67, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1))
     del x67
     x68 = np.zeros((naocc, navir, nocc, nocc, nocc, nvir), dtype=np.float64)
-    x68 += einsum(f.ov, (0, 1), t3[np.ix_(so,so,sO,sv,sv,sV)], (2, 3, 4, 5, 1, 6), (4, 6, 0, 2, 3, 5))
+    x68 += einsum(f.ov, (0, 1), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 3, 4, 5, 1, 6), (4, 6, 0, 2, 3, 5))
     x69 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
     x69 += einsum(t1[np.ix_(so,sv)], (0, 1), x68, (2, 3, 0, 4, 5, 6), (2, 3, 4, 5, 1, 6))
     del x68
@@ -356,11 +358,11 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     del x69
     x70 = np.zeros((navir, navir), dtype=np.float64)
     x70 += einsum(f.oV, (0, 1), t1[np.ix_(so,sV)], (0, 2), (1, 2))
-    t3new += einsum(x70, (0, 1), t3[np.ix_(so,so,sO,sv,sv,sV)], (2, 3, 4, 5, 6, 0), (2, 3, 4, 5, 6, 1)) * -1.0
+    t3new += einsum(x70, (0, 1), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 3, 4, 5, 6, 0), (2, 3, 4, 5, 6, 1)) * -1.0
     del x70
     x71 = np.zeros((naocc, naocc), dtype=np.float64)
     x71 += einsum(f.vO, (0, 1), t1[np.ix_(sO,sv)], (2, 0), (1, 2))
-    t3new += einsum(x71, (0, 1), t3[np.ix_(so,so,sO,sv,sv,sV)], (2, 3, 0, 4, 5, 6), (2, 3, 1, 4, 5, 6)) * -1.0
+    t3new += einsum(x71, (0, 1), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 3, 0, 4, 5, 6), (2, 3, 1, 4, 5, 6)) * -1.0
     del x71
     x72 = np.zeros((naocc, navir, nocc, nocc), dtype=np.float64)
     x72 += einsum(f.ov, (0, 1), t2[np.ix_(so,sO,sv,sV)], (2, 3, 1, 4), (3, 4, 0, 2))
@@ -557,20 +559,20 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     t3new += einsum(t2[np.ix_(so,so,sv,sV)], (0, 1, 2, 3), x114, (4, 5, 6, 2), (0, 1, 4, 6, 5, 3))
     del x114
     x115 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x115 += einsum(x21, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (1, 2, 4, 5, 6, 7), (4, 7, 0, 3, 5, 6))
+    x115 += einsum(x21, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (1, 2, 4, 5, 6, 7), (4, 7, 0, 3, 5, 6))
     t3new += einsum(x115, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * 0.5
     t3new += einsum(x115, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1)) * -0.5
     del x115
     x116 = np.zeros((naocc, naocc, nocc, nocc), dtype=np.float64)
     x116 += einsum(t1[np.ix_(so,sv)], (0, 1), v.oOvO, (2, 3, 1, 4), (3, 4, 0, 2))
     x117 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x117 += einsum(x116, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 3, 0, 5, 6, 7), (1, 7, 2, 4, 5, 6))
+    x117 += einsum(x116, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 3, 0, 5, 6, 7), (1, 7, 2, 4, 5, 6))
     del x116
     t3new += einsum(x117, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * 0.5
     t3new += einsum(x117, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1)) * -0.5
     del x117
     x118 = np.zeros((naocc, navir, nocc, nocc, nocc, nvir), dtype=np.float64)
-    x118 += einsum(v.ooov, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 1, 5, 6, 3, 7), (5, 7, 4, 0, 2, 6))
+    x118 += einsum(v.ooov, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 1, 5, 6, 3, 7), (5, 7, 4, 0, 2, 6))
     x119 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
     x119 += einsum(t1[np.ix_(so,sv)], (0, 1), x118, (2, 3, 4, 0, 5, 6), (2, 3, 4, 5, 1, 6))
     del x118
@@ -580,13 +582,13 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     t3new += einsum(x119, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * -1.0
     del x119
     x120 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x120 += einsum(x1, (0, 1), t3[np.ix_(so,so,sO,sv,sv,sV)], (2, 0, 3, 4, 5, 6), (3, 6, 2, 1, 4, 5)) * -1.0
+    x120 += einsum(x1, (0, 1), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 0, 3, 4, 5, 6), (3, 6, 2, 1, 4, 5)) * -1.0
     del x1
     t3new += einsum(x120, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1))
     t3new += einsum(x120, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * -1.0
     del x120
     x121 = np.zeros((naocc, navir, nocc, nocc, nocc, nvir), dtype=np.float64)
-    x121 += einsum(v.oOvO, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 5, 1, 6, 2, 7), (3, 7, 4, 5, 0, 6))
+    x121 += einsum(v.oOvO, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 5, 1, 6, 2, 7), (3, 7, 4, 5, 0, 6))
     x122 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
     x122 += einsum(t1[np.ix_(so,sv)], (0, 1), x121, (2, 3, 4, 5, 0, 6), (2, 3, 4, 5, 1, 6))
     del x121
@@ -595,10 +597,10 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     del x122
     x123 = np.zeros((naocc, naocc), dtype=np.float64)
     x123 += einsum(t1[np.ix_(so,sv)], (0, 1), v.oOvO, (0, 2, 1, 3), (2, 3))
-    t3new += einsum(x123, (0, 1), t3[np.ix_(so,so,sO,sv,sv,sV)], (2, 3, 0, 4, 5, 6), (2, 3, 1, 4, 5, 6)) * -1.0
+    t3new += einsum(x123, (0, 1), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 3, 0, 4, 5, 6), (2, 3, 1, 4, 5, 6)) * -1.0
     del x123
     x124 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x124 += einsum(x26, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 1, 5, 6, 3, 7), (5, 7, 0, 4, 6, 2)) * -1.0
+    x124 += einsum(x26, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 1, 5, 6, 3, 7), (5, 7, 0, 4, 6, 2)) * -1.0
     del x26
     t3new += einsum(x124, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * -1.0
     t3new += einsum(x124, (0, 1, 2, 3, 4, 5), (2, 3, 0, 4, 5, 1))
@@ -606,7 +608,7 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     t3new += einsum(x124, (0, 1, 2, 3, 4, 5), (3, 2, 0, 4, 5, 1)) * -1.0
     del x124
     x125 = np.zeros((naocc, navir, nocc, nocc, nocc, nvir), dtype=np.float64)
-    x125 += einsum(v.ovvv, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 5, 6, 2, 3, 7), (6, 7, 4, 5, 0, 1))
+    x125 += einsum(v.ovvv, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 5, 6, 2, 3, 7), (6, 7, 4, 5, 0, 1))
     x126 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
     x126 += einsum(t1[np.ix_(so,sv)], (0, 1), x125, (2, 3, 4, 5, 0, 6), (2, 3, 4, 5, 1, 6))
     del x125
@@ -614,7 +616,7 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     t3new += einsum(x126, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * 0.5
     del x126
     x127 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x127 += einsum(x2, (0, 1), t3[np.ix_(so,so,sO,sv,sv,sV)], (2, 3, 4, 5, 1, 6), (4, 6, 2, 3, 5, 0)) * -1.0
+    x127 += einsum(x2, (0, 1), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 3, 4, 5, 1, 6), (4, 6, 2, 3, 5, 0)) * -1.0
     del x2
     t3new += einsum(x127, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * -1.0
     t3new += einsum(x127, (0, 1, 2, 3, 4, 5), (2, 3, 0, 4, 5, 1))
@@ -622,13 +624,13 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     x128 = np.zeros((navir, navir, nocc, nocc), dtype=np.float64)
     x128 += einsum(t1[np.ix_(so,sv)], (0, 1), v.oVvV, (2, 3, 1, 4), (3, 4, 0, 2))
     x129 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x129 += einsum(x128, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 3, 5, 6, 7, 1), (5, 0, 2, 4, 6, 7))
+    x129 += einsum(x128, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 3, 5, 6, 7, 1), (5, 0, 2, 4, 6, 7))
     del x128
     t3new += einsum(x129, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * -1.0
     t3new += einsum(x129, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1))
     del x129
     x130 = np.zeros((naocc, navir, nocc, nocc, nocc, nvir), dtype=np.float64)
-    x130 += einsum(v.oVvV, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 5, 6, 7, 2, 3), (6, 1, 4, 5, 0, 7))
+    x130 += einsum(v.oVvV, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 5, 6, 7, 2, 3), (6, 1, 4, 5, 0, 7))
     x131 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
     x131 += einsum(t1[np.ix_(so,sv)], (0, 1), x130, (2, 3, 4, 5, 0, 6), (2, 3, 4, 5, 1, 6))
     del x130
@@ -637,24 +639,24 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     del x131
     x132 = np.zeros((navir, navir), dtype=np.float64)
     x132 += einsum(t1[np.ix_(so,sv)], (0, 1), v.oVvV, (0, 2, 1, 3), (2, 3))
-    t3new += einsum(x132, (0, 1), t3[np.ix_(so,so,sO,sv,sv,sV)], (2, 3, 4, 5, 6, 1), (2, 3, 4, 5, 6, 0))
+    t3new += einsum(x132, (0, 1), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 3, 4, 5, 6, 1), (2, 3, 4, 5, 6, 0))
     del x132
     x133 = np.zeros((navir, navir, nocc, nocc), dtype=np.float64)
     x133 += einsum(t1[np.ix_(so,sV)], (0, 1), v.oooV, (2, 0, 3, 4), (1, 4, 3, 2)) * -1.0
     x134 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x134 += einsum(x133, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 3, 5, 6, 7, 1), (5, 0, 4, 2, 6, 7)) * -1.0
+    x134 += einsum(x133, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 3, 5, 6, 7, 1), (5, 0, 4, 2, 6, 7)) * -1.0
     del x133
     t3new += einsum(x134, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1))
     t3new += einsum(x134, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * -1.0
     del x134
     x135 = np.zeros((naocc, naocc, navir, navir), dtype=np.float64)
     x135 += einsum(t1[np.ix_(so,sV)], (0, 1), v.oOOV, (0, 2, 3, 4), (3, 2, 1, 4)) * -1.0
-    t3new += einsum(x135, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 5, 1, 6, 7, 3), (4, 5, 0, 6, 7, 2))
+    t3new += einsum(x135, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 5, 1, 6, 7, 3), (4, 5, 0, 6, 7, 2))
     del x135
     x136 = np.zeros((navir, navir, nvir, nvir), dtype=np.float64)
     x136 += einsum(t1[np.ix_(so,sV)], (0, 1), v.ovvV, (0, 2, 3, 4), (1, 4, 3, 2)) * -1.0
     x137 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x137 += einsum(x136, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 5, 6, 7, 2, 1), (6, 0, 4, 5, 7, 3))
+    x137 += einsum(x136, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 5, 6, 7, 2, 1), (6, 0, 4, 5, 7, 3))
     del x136
     t3new += einsum(x137, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * 0.5
     t3new += einsum(x137, (0, 1, 2, 3, 4, 5), (2, 3, 0, 4, 5, 1)) * -0.5
@@ -662,7 +664,7 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     x138 = np.zeros((naocc, naocc, nocc, nocc), dtype=np.float64)
     x138 += einsum(t1[np.ix_(sO,sv)], (0, 1), v.ovoO, (2, 1, 3, 4), (0, 4, 3, 2)) * -1.0
     x139 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x139 += einsum(x138, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 2, 1, 5, 6, 7), (0, 7, 4, 3, 5, 6))
+    x139 += einsum(x138, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 2, 1, 5, 6, 7), (0, 7, 4, 3, 5, 6))
     del x138
     t3new += einsum(x139, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1)) * -0.5
     t3new += einsum(x139, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * 0.5
@@ -670,14 +672,14 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     x140 = np.zeros((naocc, naocc, nvir, nvir), dtype=np.float64)
     x140 += einsum(t1[np.ix_(sO,sv)], (0, 1), v.vvvO, (2, 1, 3, 4), (0, 4, 3, 2)) * -1.0
     x141 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x141 += einsum(x140, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 5, 1, 6, 3, 7), (0, 7, 4, 5, 6, 2)) * -1.0
+    x141 += einsum(x140, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 5, 1, 6, 3, 7), (0, 7, 4, 5, 6, 2)) * -1.0
     del x140
     t3new += einsum(x141, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1))
     t3new += einsum(x141, (0, 1, 2, 3, 4, 5), (2, 3, 0, 4, 5, 1)) * -1.0
     del x141
     x142 = np.zeros((naocc, naocc, navir, navir), dtype=np.float64)
     x142 += einsum(t1[np.ix_(sO,sv)], (0, 1), v.vVOV, (1, 2, 3, 4), (0, 3, 4, 2)) * -1.0
-    t3new += einsum(x142, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 5, 1, 6, 7, 3), (4, 5, 0, 6, 7, 2))
+    t3new += einsum(x142, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 5, 1, 6, 7, 3), (4, 5, 0, 6, 7, 2))
     del x142
     x143 = np.zeros((naocc, nocc, nocc, nvir), dtype=np.float64)
     x143 += einsum(t2[np.ix_(so,so,sv,sv)], (0, 1, 2, 3), v.oovO, (4, 1, 3, 5), (5, 0, 4, 2)) * -1.0
@@ -842,7 +844,7 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     t3new += einsum(t2[np.ix_(so,sO,sv,sv)], (0, 1, 2, 3), x178, (4, 5, 6, 0), (5, 6, 1, 2, 3, 4)) * -0.5
     del x178
     x179 = np.zeros((naocc, navir, nvir, nvir), dtype=np.float64)
-    x179 += einsum(v.oovv, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (0, 1, 4, 5, 3, 6), (4, 6, 5, 2))
+    x179 += einsum(v.oovv, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (0, 1, 4, 5, 3, 6), (4, 6, 5, 2))
     x180 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
     x180 += einsum(t2[np.ix_(so,so,sv,sv)], (0, 1, 2, 3), x179, (4, 5, 6, 3), (4, 5, 0, 1, 2, 6))
     del x179
@@ -850,7 +852,7 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     t3new += einsum(x180, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * 0.5
     del x180
     x181 = np.zeros((naocc, navir, nocc, nocc), dtype=np.float64)
-    x181 += einsum(v.oovv, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 1, 5, 2, 3, 6), (5, 6, 4, 0))
+    x181 += einsum(v.oovv, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 1, 5, 2, 3, 6), (5, 6, 4, 0))
     x182 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
     x182 += einsum(t2[np.ix_(so,so,sv,sv)], (0, 1, 2, 3), x181, (4, 5, 6, 1), (4, 5, 0, 6, 2, 3))
     del x181
@@ -858,7 +860,7 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     t3new += einsum(x182, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1)) * -0.5
     del x182
     x183 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x183 += einsum(v.oovv, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 1, 5, 6, 3, 7), (5, 7, 4, 0, 6, 2))
+    x183 += einsum(v.oovv, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 1, 5, 6, 3, 7), (5, 7, 4, 0, 6, 2))
     x184 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
     x184 += einsum(t2[np.ix_(so,so,sv,sv)], (0, 1, 2, 3), x183, (4, 5, 6, 1, 7, 3), (4, 5, 0, 6, 2, 7))
     del x183
@@ -868,26 +870,26 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     t3new += einsum(x184, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1))
     del x184
     x185 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x185 += einsum(x4, (0, 1), t3[np.ix_(so,so,sO,sv,sv,sV)], (2, 1, 3, 4, 5, 6), (3, 6, 0, 2, 4, 5)) * -1.0
+    x185 += einsum(x4, (0, 1), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 1, 3, 4, 5, 6), (3, 6, 0, 2, 4, 5)) * -1.0
     del x4
     t3new += einsum(x185, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * 0.5
     t3new += einsum(x185, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1)) * -0.5
     del x185
     x186 = np.zeros((naocc, navir, nocc, nocc, nocc, nocc), dtype=np.float64)
-    x186 += einsum(v.oovv, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 5, 6, 2, 3, 7), (6, 7, 4, 5, 0, 1))
-    t3new += einsum(t2[np.ix_(so,so,sv,sv)], (0, 1, 2, 3), x186, (4, 5, 6, 7, 1, 0), (6, 7, 4, 2, 3, 5)) * -0.25
+    x186 += einsum(v.oovv, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 5, 6, 2, 3, 7), (6, 7, 4, 5, 0, 1))
+    t3new += einsum(t2[np.ix_(so,so,sv,sv)], (0, 1, 2, 3), x186, (4, 5, 6, 7, 0, 1), (6, 7, 4, 2, 3, 5)) * 0.25
     x187 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x187 += einsum(x39, (0, 1), t3[np.ix_(so,so,sO,sv,sv,sV)], (2, 3, 4, 5, 1, 6), (4, 6, 2, 3, 0, 5)) * -1.0
+    x187 += einsum(x39, (0, 1), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 3, 4, 5, 1, 6), (4, 6, 2, 3, 0, 5)) * -1.0
     del x39
     t3new += einsum(x187, (0, 1, 2, 3, 4, 5), (2, 3, 0, 4, 5, 1)) * -0.5
     t3new += einsum(x187, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * 0.5
     del x187
     x188 = np.zeros((naocc, nvir, nvir, nvir), dtype=np.float64)
-    x188 += einsum(v.oovV, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (0, 1, 4, 5, 6, 3), (4, 5, 6, 2)) * -1.0
+    x188 += einsum(v.oovV, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (0, 1, 4, 5, 6, 3), (4, 5, 6, 2)) * -1.0
     t3new += einsum(t2[np.ix_(so,so,sv,sV)], (0, 1, 2, 3), x188, (4, 5, 6, 2), (0, 1, 4, 5, 6, 3)) * 0.5
     del x188
     x189 = np.zeros((naocc, nocc, nocc, nvir), dtype=np.float64)
-    x189 += einsum(v.oovV, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 1, 5, 6, 2, 3), (5, 4, 0, 6)) * -1.0
+    x189 += einsum(v.oovV, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 1, 5, 6, 2, 3), (5, 4, 0, 6)) * -1.0
     x190 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
     x190 += einsum(t2[np.ix_(so,so,sv,sV)], (0, 1, 2, 3), x189, (4, 5, 1, 6), (4, 3, 0, 5, 2, 6)) * -1.0
     del x189
@@ -899,7 +901,7 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     x191 = np.zeros((navir, navir, nocc, nocc), dtype=np.float64)
     x191 += einsum(t2[np.ix_(so,so,sv,sV)], (0, 1, 2, 3), v.oovV, (4, 1, 2, 5), (3, 5, 0, 4))
     x192 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x192 += einsum(x191, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 3, 5, 6, 7, 1), (5, 0, 2, 4, 6, 7)) * -1.0
+    x192 += einsum(x191, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 3, 5, 6, 7, 1), (5, 0, 2, 4, 6, 7)) * -1.0
     del x191
     t3new += einsum(x192, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * -1.0
     t3new += einsum(x192, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1))
@@ -907,17 +909,17 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     x193 = np.zeros((navir, navir, nvir, nvir), dtype=np.float64)
     x193 += einsum(t2[np.ix_(so,so,sv,sV)], (0, 1, 2, 3), v.oovV, (0, 1, 4, 5), (3, 5, 2, 4))
     x194 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x194 += einsum(x193, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 5, 6, 7, 3, 1), (6, 0, 4, 5, 2, 7))
+    x194 += einsum(x193, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 5, 6, 7, 3, 1), (6, 0, 4, 5, 2, 7))
     del x193
     t3new += einsum(x194, (0, 1, 2, 3, 4, 5), (2, 3, 0, 4, 5, 1)) * -0.25
     t3new += einsum(x194, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * 0.25
     del x194
     x195 = np.zeros((navir, navir), dtype=np.float64)
     x195 += einsum(t2[np.ix_(so,so,sv,sV)], (0, 1, 2, 3), v.oovV, (0, 1, 2, 4), (3, 4))
-    t3new += einsum(x195, (0, 1), t3[np.ix_(so,so,sO,sv,sv,sV)], (2, 3, 4, 5, 6, 1), (2, 3, 4, 5, 6, 0)) * -0.5
+    t3new += einsum(x195, (0, 1), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 3, 4, 5, 6, 1), (2, 3, 4, 5, 6, 0)) * -0.5
     del x195
     x196 = np.zeros((navir, nocc, nvir, nvir), dtype=np.float64)
-    x196 += einsum(v.oOvv, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 0, 1, 5, 3, 6), (6, 4, 5, 2)) * -1.0
+    x196 += einsum(v.oOvv, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 0, 1, 5, 3, 6), (6, 4, 5, 2)) * -1.0
     x197 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
     x197 += einsum(t2[np.ix_(so,sO,sv,sv)], (0, 1, 2, 3), x196, (4, 5, 6, 3), (1, 4, 0, 5, 2, 6)) * -1.0
     del x196
@@ -929,31 +931,31 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     x198 = np.zeros((naocc, naocc, nocc, nocc), dtype=np.float64)
     x198 += einsum(t2[np.ix_(so,sO,sv,sv)], (0, 1, 2, 3), v.oOvv, (4, 5, 2, 3), (1, 5, 0, 4))
     x199 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x199 += einsum(x198, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 3, 1, 5, 6, 7), (0, 7, 2, 4, 5, 6))
+    x199 += einsum(x198, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 3, 1, 5, 6, 7), (0, 7, 2, 4, 5, 6))
     del x198
     t3new += einsum(x199, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * 0.25
     t3new += einsum(x199, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1)) * -0.25
     del x199
     x200 = np.zeros((navir, nocc, nocc, nocc), dtype=np.float64)
-    x200 += einsum(v.oOvv, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 5, 1, 2, 3, 6), (6, 4, 5, 0)) * -1.0
+    x200 += einsum(v.oOvv, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 5, 1, 2, 3, 6), (6, 4, 5, 0)) * -1.0
     t3new += einsum(t2[np.ix_(so,sO,sv,sv)], (0, 1, 2, 3), x200, (4, 5, 6, 0), (5, 6, 1, 2, 3, 4)) * 0.5
     del x200
     x201 = np.zeros((naocc, naocc, nvir, nvir), dtype=np.float64)
     x201 += einsum(t2[np.ix_(so,sO,sv,sv)], (0, 1, 2, 3), v.oOvv, (0, 4, 5, 3), (1, 4, 2, 5))
     x202 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x202 += einsum(x201, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 5, 1, 6, 3, 7), (0, 7, 4, 5, 2, 6)) * -1.0
+    x202 += einsum(x201, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 5, 1, 6, 3, 7), (0, 7, 4, 5, 2, 6)) * -1.0
     del x201
     t3new += einsum(x202, (0, 1, 2, 3, 4, 5), (2, 3, 0, 4, 5, 1))
     t3new += einsum(x202, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * -1.0
     del x202
     x203 = np.zeros((naocc, naocc), dtype=np.float64)
     x203 += einsum(t2[np.ix_(so,sO,sv,sv)], (0, 1, 2, 3), v.oOvv, (0, 4, 2, 3), (1, 4))
-    t3new += einsum(x203, (0, 1), t3[np.ix_(so,so,sO,sv,sv,sV)], (2, 3, 1, 4, 5, 6), (2, 3, 0, 4, 5, 6)) * -0.5
+    t3new += einsum(x203, (0, 1), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 3, 1, 4, 5, 6), (2, 3, 0, 4, 5, 6)) * -0.5
     del x203
     x204 = np.zeros((naocc, naocc, navir, navir, nocc, nocc), dtype=np.float64)
     x204 += einsum(t2[np.ix_(so,sO,sv,sV)], (0, 1, 2, 3), v.oOvV, (4, 5, 2, 6), (1, 5, 3, 6, 0, 4))
     x205 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x205 += einsum(t3[np.ix_(so,so,sO,sv,sv,sV)], (0, 1, 2, 3, 4, 5), x204, (6, 2, 7, 5, 8, 1), (6, 7, 8, 0, 3, 4))
+    x205 += einsum(t3[np.ix_(so,so,sOf,sv,sv,sVf)], (0, 1, 2, 3, 4, 5), x204, (6, 2, 7, 5, 8, 1), (6, 7, 8, 0, 3, 4))
     del x204
     t3new += einsum(x205, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * -0.5
     t3new += einsum(x205, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1)) * 0.5
@@ -966,7 +968,7 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     del x206
     x207 = np.zeros((naocc, naocc, navir, navir), dtype=np.float64)
     x207 += einsum(t2[np.ix_(so,sO,sv,sV)], (0, 1, 2, 3), v.oOvV, (0, 4, 2, 5), (1, 4, 3, 5))
-    t3new += einsum(x207, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 5, 1, 6, 7, 3), (4, 5, 0, 6, 7, 2))
+    t3new += einsum(x207, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 5, 1, 6, 7, 3), (4, 5, 0, 6, 7, 2))
     del x207
     x208 = np.zeros((naocc, nocc, nocc, nocc), dtype=np.float64)
     x208 += einsum(t1[np.ix_(so,sv)], (0, 1), v.oovO, (2, 3, 1, 4), (4, 0, 2, 3)) * -1.0
@@ -1165,7 +1167,7 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     t3new += einsum(x253, (0, 1, 2, 3, 4, 5), (2, 3, 0, 4, 5, 1)) * -1.0
     del x253
     x254 = np.zeros((naocc, navir, nocc, nocc, nocc, nvir), dtype=np.float64)
-    x254 += einsum(x3, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 1, 5, 6, 3, 7), (5, 7, 0, 4, 2, 6))
+    x254 += einsum(x3, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 1, 5, 6, 3, 7), (5, 7, 0, 4, 2, 6))
     x255 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
     x255 += einsum(t1[np.ix_(so,sv)], (0, 1), x254, (2, 3, 4, 5, 0, 6), (2, 3, 4, 5, 1, 6))
     del x254
@@ -1175,7 +1177,7 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     t3new += einsum(x255, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1)) * -1.0
     del x255
     x256 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x256 += einsum(x6, (0, 1), t3[np.ix_(so,so,sO,sv,sv,sV)], (2, 1, 3, 4, 5, 6), (3, 6, 0, 2, 4, 5)) * -1.0
+    x256 += einsum(x6, (0, 1), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 1, 3, 4, 5, 6), (3, 6, 0, 2, 4, 5)) * -1.0
     del x6
     t3new += einsum(x256, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1))
     t3new += einsum(x256, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1)) * -1.0
@@ -1186,7 +1188,7 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     t3new += einsum(t1[np.ix_(so,sv)], (0, 1), x257, (2, 3, 4, 5, 0, 6), (4, 5, 2, 1, 6, 3)) * 0.5
     del x257
     x258 = np.zeros((naocc, navir, nocc, nocc, nocc, nvir), dtype=np.float64)
-    x258 += einsum(x5, (0, 1), t3[np.ix_(so,so,sO,sv,sv,sV)], (2, 3, 4, 5, 1, 6), (4, 6, 2, 3, 0, 5)) * -1.0
+    x258 += einsum(x5, (0, 1), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 3, 4, 5, 1, 6), (4, 6, 2, 3, 0, 5)) * -1.0
     x259 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
     x259 += einsum(t1[np.ix_(so,sv)], (0, 1), x258, (2, 3, 4, 5, 0, 6), (2, 3, 4, 5, 1, 6))
     del x258
@@ -1198,13 +1200,13 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     x261 = np.zeros((navir, navir, nocc, nocc), dtype=np.float64)
     x261 += einsum(t1[np.ix_(so,sv)], (0, 1), x260, (2, 3, 4, 1), (2, 3, 0, 4))
     x262 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x262 += einsum(x261, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 3, 5, 6, 7, 1), (5, 0, 2, 4, 6, 7)) * -1.0
+    x262 += einsum(x261, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 3, 5, 6, 7, 1), (5, 0, 2, 4, 6, 7)) * -1.0
     del x261
     t3new += einsum(x262, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1))
     t3new += einsum(x262, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1)) * -1.0
     del x262
     x263 = np.zeros((naocc, navir, nocc, nocc, nocc, nvir), dtype=np.float64)
-    x263 += einsum(x260, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 5, 6, 7, 3, 1), (6, 0, 4, 5, 2, 7))
+    x263 += einsum(x260, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 5, 6, 7, 3, 1), (6, 0, 4, 5, 2, 7))
     del x260
     x264 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
     x264 += einsum(t1[np.ix_(so,sv)], (0, 1), x263, (2, 3, 4, 5, 0, 6), (2, 3, 4, 5, 1, 6)) * -1.0
@@ -1217,20 +1219,20 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     x266 = np.zeros((navir, navir), dtype=np.float64)
     x266 += einsum(t1[np.ix_(so,sV)], (0, 1), x265, (2, 0), (1, 2))
     del x265
-    t3new += einsum(x266, (0, 1), t3[np.ix_(so,so,sO,sv,sv,sV)], (2, 3, 4, 5, 6, 1), (2, 3, 4, 5, 6, 0)) * -1.0
+    t3new += einsum(x266, (0, 1), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 3, 4, 5, 6, 1), (2, 3, 4, 5, 6, 0)) * -1.0
     del x266
     x267 = np.zeros((naocc, naocc, nocc, nvir), dtype=np.float64)
     x267 += einsum(t1[np.ix_(sO,sv)], (0, 1), v.oOvv, (2, 3, 4, 1), (0, 3, 2, 4)) * -1.0
     x268 = np.zeros((naocc, naocc, nocc, nocc), dtype=np.float64)
     x268 += einsum(t1[np.ix_(so,sv)], (0, 1), x267, (2, 3, 4, 1), (2, 3, 0, 4)) * -1.0
     x269 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x269 += einsum(x268, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 3, 1, 5, 6, 7), (0, 7, 2, 4, 5, 6))
+    x269 += einsum(x268, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 3, 1, 5, 6, 7), (0, 7, 2, 4, 5, 6))
     del x268
     t3new += einsum(x269, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * 0.5
     t3new += einsum(x269, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1)) * -0.5
     del x269
     x270 = np.zeros((naocc, navir, nocc, nocc, nocc, nvir), dtype=np.float64)
-    x270 += einsum(x267, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 5, 1, 6, 3, 7), (0, 7, 4, 5, 2, 6)) * -1.0
+    x270 += einsum(x267, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 5, 1, 6, 3, 7), (0, 7, 4, 5, 2, 6)) * -1.0
     del x267
     x271 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
     x271 += einsum(t1[np.ix_(so,sv)], (0, 1), x270, (2, 3, 4, 5, 0, 6), (2, 3, 4, 5, 1, 6))
@@ -1243,14 +1245,14 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     x273 = np.zeros((naocc, naocc), dtype=np.float64)
     x273 += einsum(t1[np.ix_(sO,sv)], (0, 1), x272, (2, 1), (0, 2))
     del x272
-    t3new += einsum(x273, (0, 1), t3[np.ix_(so,so,sO,sv,sv,sV)], (2, 3, 1, 4, 5, 6), (2, 3, 0, 4, 5, 6)) * -1.0
+    t3new += einsum(x273, (0, 1), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (2, 3, 1, 4, 5, 6), (2, 3, 0, 4, 5, 6)) * -1.0
     del x273
     x274 = np.zeros((naocc, naocc, navir, nocc), dtype=np.float64)
     x274 += einsum(t1[np.ix_(sO,sv)], (0, 1), v.oOvV, (2, 3, 1, 4), (0, 3, 4, 2))
     x275 = np.zeros((naocc, naocc, navir, navir), dtype=np.float64)
     x275 += einsum(t1[np.ix_(so,sV)], (0, 1), x274, (2, 3, 4, 0), (2, 3, 1, 4))
     del x274
-    t3new += einsum(x275, (0, 1, 2, 3), t3[np.ix_(so,so,sO,sv,sv,sV)], (4, 5, 1, 6, 7, 3), (4, 5, 0, 6, 7, 2)) * -1.0
+    t3new += einsum(x275, (0, 1, 2, 3), t3[np.ix_(so,so,sOf,sv,sv,sVf)], (4, 5, 1, 6, 7, 3), (4, 5, 0, 6, 7, 2)) * -1.0
     del x275
     x276 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
     x276 += einsum(t2[np.ix_(so,sO,sv,sV)], (0, 1, 2, 3), x47, (4, 5, 0, 6), (1, 3, 4, 5, 2, 6))
@@ -1275,7 +1277,7 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     x281 = np.zeros((naocc, navir, nocc, nocc, nocc, nocc), dtype=np.float64)
     x281 += einsum(t1[np.ix_(so,sv)], (0, 1), x280, (2, 3, 4, 5, 6, 1), (2, 3, 0, 4, 6, 5)) * -1.0
     x282 = np.zeros((naocc, navir, nocc, nocc, nvir, nvir), dtype=np.float64)
-    x282 += einsum(t2[np.ix_(so,so,sv,sv)], (0, 1, 2, 3), x281, (4, 5, 6, 7, 1, 0), (4, 5, 6, 7, 2, 3)) * -1.0
+    x282 += einsum(t2[np.ix_(so,so,sv,sv)], (0, 1, 2, 3), x281, (4, 5, 6, 7, 0, 1), (4, 5, 6, 7, 2, 3))
     t3new += einsum(x282, (0, 1, 2, 3, 4, 5), (2, 3, 0, 5, 4, 1)) * -0.5
     t3new += einsum(x282, (0, 1, 2, 3, 4, 5), (3, 2, 0, 5, 4, 1)) * 0.5
     del x282
