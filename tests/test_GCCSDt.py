@@ -12,7 +12,7 @@ from ebcc import GEBCC, REBCC, Space, NullLogger, util
 
 
 @pytest.mark.regression
-class GCCSDtp_Tests(unittest.TestCase):
+class GCCSDt_Tests(unittest.TestCase):
     """Test GCCSDt against regression.
     """
 

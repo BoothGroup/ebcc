@@ -14,7 +14,7 @@ from ebcc import GEBCC, REBCC, Space, NullLogger, util
 
 
 @pytest.mark.regression
-class RCCSDtp_Tests(unittest.TestCase):
+class RCCSDt_Tests(unittest.TestCase):
     """Test RCCSDt against GCCSDt.
     """
 
@@ -93,7 +93,7 @@ class RCCSDtp_Tests(unittest.TestCase):
 
 
 @pytest.mark.regression
-class RCCSDtp_Frozen_Tests(unittest.TestCase):
+class RCCSDt_Frozen_Tests(unittest.TestCase):
     """Test RCCSDt against GCCSDt with a frozen core approximation.
     """
 
