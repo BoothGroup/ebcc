@@ -97,7 +97,7 @@ class RBCCD_Frozen_PySCF_Tests(RBCCD_PySCF_Tests):
         # TODO when in pyscf release version
         #ccsd_ref = bccd_kernel_(ccsd_ref, verbose=0)
         cls._pyscf_bccd_results = {
-                "e_tot": -7.881227958827942, 
+                "e_tot": -7.881227958827942,
         }
 
         space = Space(
@@ -198,7 +198,7 @@ class UBCCD_Frozen_PySCF_Tests(unittest.TestCase):
         # TODO when in pyscf release version
         #ccsd_ref = bccd_kernel_(ccsd_ref, verbose=0)
         cls._pyscf_bccd_results = {
-                "e_tot": -7.998530643494347, 
+                "e_tot": -7.998530643494347,
         }
 
         space = (

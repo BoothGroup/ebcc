@@ -111,12 +111,9 @@ class BruecknerREBCC:
         if u_tot is None:
             u_tot = np.eye(self.cc.space.ncorr)
 
-        t1_block = np.block(
-            [
-                [np.zeros((self.cc.space.ncocc, self.cc.space.ncocc), dtype=types[float]), -t1],
-                [t1.T, np.zeros((self.cc.space.ncvir, self.cc.space.ncvir), dtype=types[float])],
-            ]
-        )
+        t1_block = np.zeros((self.cc.space.ncorr, self.cc.space.ncorr), dtype=types[float])
+        t1_block[: self.cc.space.ncocc, self.cc.space.ncocc :] = -t1
+        t1_block[self.cc.space.ncocc :, : self.cc.space.ncocc] = t1.T
 
         u = scipy.linalg.expm(t1_block)
 
@@ -236,6 +233,38 @@ class BruecknerREBCC:
 
         return mo_coeff
 
+    def update_coefficients(self, u_tot, mo_coeff, mo_coeff_ref):
+        """Get the updated coefficients and rotation matrix.
+
+        Parameters
+        ----------
+        u_tot : np.ndarray
+            Total rotation matrix.
+        mo_coeff : np.ndarray
+            New MO coefficients.
+        mo_coeff_ref : np.ndarray
+            Reference MO coefficients.
+
+        Returns
+        -------
+        mo_coeff_new : np.ndarray
+            Updated MO coefficients.
+        u : np.ndarray
+            Rotation matrix.
+        """
+
+        mo_coeff_new_corr = util.einsum("pi,ij->pj", mo_coeff_ref, u_tot)
+        mo_coeff_new = self.mo_update_correlated(mo_coeff, mo_coeff_new_corr)
+
+        u = util.einsum(
+            "pq,pi,pj->ij",
+            self.mf.get_ovlp(),
+            self.mo_to_correlated(self.mf.mo_coeff),
+            mo_coeff_new_corr,
+        )
+
+        return mo_coeff_new, u
+
     def kernel(self):
         """
         Run the Bruckner orbital coupled cluster calculation.
@@ -276,14 +305,7 @@ class BruecknerREBCC:
             u, u_tot = self.get_rotation_matrix(u_tot=u_tot, diis=diis)
 
             # Update MO coefficients:
-            mo_coeff_new_corr = util.einsum("...pi,...ij->...pj", mo_coeff_ref, u_tot)
-            mo_coeff_new = self.mo_update_correlated(mo_coeff_new, mo_coeff_new_corr)
-            u = util.einsum(
-                "...pq,...pi,...pj->...ij",
-                self.mf.get_ovlp(),
-                self.mo_to_correlated(self.mf.mo_coeff),
-                mo_coeff_new_corr,
-            )
+            mo_coeff_new, u = self.update_coefficients(u_tot, mo_coeff_new, mo_coeff_ref)
 
             # Transform mean-field and amplitudes:
             self.mf.mo_coeff = mo_coeff_new
@@ -343,78 +365,45 @@ class BruecknerUEBCC(BruecknerREBCC, metaclass=util.InheritDocstrings):
         if t1 is None:
             t1 = self.cc.t1
         if u_tot is None:
-            u_tot = np.array(
-                [
-                    np.eye(self.cc.space[0].ncorr),
-                    np.eye(self.cc.space[1].ncorr),
-                ]
+            u_tot = util.Namespace(
+                aa=np.eye(self.cc.space[0].ncorr),
+                bb=np.eye(self.cc.space[1].ncorr),
             )
 
-        t1_block = np.array(
-            [
-                np.block(
-                    [
-                        [
-                            np.zeros(
-                                (self.cc.space[0].ncocc, self.cc.space[0].ncocc), dtype=types[float]
-                            ),
-                            -t1.aa,
-                        ],
-                        [
-                            t1.aa.T,
-                            np.zeros(
-                                (self.cc.space[0].ncvir, self.cc.space[0].ncvir), dtype=types[float]
-                            ),
-                        ],
-                    ]
-                ),
-                np.block(
-                    [
-                        [
-                            np.zeros(
-                                (self.cc.space[1].ncocc, self.cc.space[1].ncocc), dtype=types[float]
-                            ),
-                            -t1.bb,
-                        ],
-                        [
-                            t1.bb.T,
-                            np.zeros(
-                                (self.cc.space[1].ncvir, self.cc.space[1].ncvir), dtype=types[float]
-                            ),
-                        ],
-                    ]
-                ),
-            ]
+        t1_block = util.Namespace(
+            aa=np.zeros((self.cc.space[0].ncorr, self.cc.space[0].ncorr), dtype=types[float]),
+            bb=np.zeros((self.cc.space[1].ncorr, self.cc.space[1].ncorr), dtype=types[float]),
+        )
+        t1_block.aa[: self.cc.space[0].ncocc, self.cc.space[0].ncocc :] = -t1.aa
+        t1_block.aa[self.cc.space[0].ncocc :, : self.cc.space[0].ncocc] = t1.aa.T
+        t1_block.bb[: self.cc.space[1].ncocc, self.cc.space[1].ncocc :] = -t1.bb
+        t1_block.bb[self.cc.space[1].ncocc :, : self.cc.space[1].ncocc] = t1.bb.T
+
+        u = util.Namespace(
+            aa=scipy.linalg.expm(t1_block.aa),
+            bb=scipy.linalg.expm(t1_block.bb),
         )
 
-        u = np.array(
-            [
-                scipy.linalg.expm(t1_block[0]),
-                scipy.linalg.expm(t1_block[1]),
-            ]
-        )
+        u_tot.aa = np.dot(u_tot.aa, u.aa)
+        u_tot.bb = np.dot(u_tot.bb, u.bb)
+        if scipy.linalg.det(u_tot.aa) < 0:
+            u_tot.aa[:, 0] *= -1
+        if scipy.linalg.det(u_tot.bb) < 0:
+            u_tot.bb[:, 0] *= -1
 
-        u_tot = util.einsum("npq,nqi->npi", u_tot, u)
-        if scipy.linalg.det(u_tot[0]) < 0:
-            u_tot[0][:, 0] *= -1
-        if scipy.linalg.det(u_tot[1]) < 0:
-            u_tot[1][:, 0] *= -1
-
-        a = np.array(
+        a = np.concatenate(
             [
-                scipy.linalg.logm(u_tot[0]),
-                scipy.linalg.logm(u_tot[1]),
-            ]
+                scipy.linalg.logm(u_tot.aa).ravel(),
+                scipy.linalg.logm(u_tot.bb).ravel(),
+            ],
+            axis=0,
         )
         if diis is not None:
-            a = diis.update(a, xerr=np.array([t1.aa, t1.bb]))
+            xerr = np.concatenate([t1.aa.ravel(), t1.bb.ravel()])
+            a = diis.update(a, xerr=xerr)
 
-        u_tot = np.array(
-            [
-                scipy.linalg.expm(a[0]),
-                scipy.linalg.expm(a[1]),
-            ]
-        )
+        u_tot.aa = scipy.linalg.expm(a[: u_tot.aa.size].reshape(u_tot.aa.shape))
+        u_tot.bb = scipy.linalg.expm(a[u_tot.aa.size :].reshape(u_tot.bb.shape))
 
         return u, u_tot
 
@@ -424,8 +413,8 @@ class BruecknerUEBCC(BruecknerREBCC, metaclass=util.InheritDocstrings):
             amplitudes = self.cc.amplitudes
 
         nocc = (self.cc.space[0].ncocc, self.cc.space[1].ncocc)
-        ci = {"a": u[0][: nocc[0], : nocc[0]], "b": u[1][: nocc[1], : nocc[1]]}
-        ca = {"a": u[0][nocc[0] :, nocc[0] :], "b": u[1][nocc[1] :, nocc[1] :]}
+        ci = {"a": u.aa[: nocc[0], : nocc[0]], "b": u.bb[: nocc[1], : nocc[1]]}
+        ca = {"a": u.aa[nocc[0] :, nocc[0] :], "b": u.bb[nocc[1] :, nocc[1] :]}
 
         # Transform T amplitudes:
         for name, key, n in self.cc.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -453,12 +442,10 @@ class BruecknerUEBCC(BruecknerREBCC, metaclass=util.InheritDocstrings):
         if amplitudes is None:
             amplitudes = self.cc.amplitudes
 
-        return np.linalg.norm(
-            [
-                amplitudes["t1"].aa.ravel(),
-                amplitudes["t1"].bb.ravel(),
-            ]
-        )
+        norm_a = np.linalg.norm(amplitudes["t1"].aa)
+        norm_b = np.linalg.norm(amplitudes["t1"].bb)
+
+        return np.linalg.norm([norm_a, norm_b])
 
     @util.has_docstring
     def mo_to_correlated(self, mo_coeff):
@@ -473,6 +460,23 @@ class BruecknerUEBCC(BruecknerREBCC, metaclass=util.InheritDocstrings):
         mo_coeff[1][:, self.cc.space[1].correlated] = mo_coeff_corr[1]
 
         return mo_coeff
+
+    @util.has_docstring
+    def update_coefficients(self, u_tot, mo_coeff, mo_coeff_ref):
+        mo_coeff_new_corr = (
+            util.einsum("pi,ij->pj", mo_coeff_ref[0], u_tot.aa),
+            util.einsum("pi,ij->pj", mo_coeff_ref[1], u_tot.bb),
+        )
+        mo_coeff_new = self.mo_update_correlated(mo_coeff, mo_coeff_new_corr)
+        mo_coeff_mf_corr = self.mo_to_correlated(self.mf.mo_coeff)
+        ovlp = self.mf.get_ovlp()
+
+        u = util.Namespace(
+            aa=util.einsum("pq,pi,pj->ij", ovlp, mo_coeff_mf_corr[0], mo_coeff_new_corr[0]),
+            bb=util.einsum("pq,pi,pj->ij", ovlp, mo_coeff_mf_corr[1], mo_coeff_new_corr[1]),
+        )
+
+        return mo_coeff_new, u
 
 
 @util.has_docstring
