@@ -14,7 +14,7 @@ try:
     try:
         import tblis_einsum
     except ImportError:
-        from pyscf import tblis_einsum
+        from pyscf.tblis_einsum import tblis_einsum
     FOUND_TBLIS = True
 except ImportError:
     FOUND_TBLIS = False
