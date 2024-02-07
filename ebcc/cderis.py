@@ -3,7 +3,7 @@
 import numpy as np
 from pyscf import ao2mo
 
-from ebcc import util, precision
+from ebcc import precision, util
 
 
 class CDERIs(util.Namespace):
