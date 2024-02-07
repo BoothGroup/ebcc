@@ -3,7 +3,7 @@
 import numpy as np
 from pyscf import ao2mo
 
-from ebcc import util
+from ebcc import precision, util
 
 
 class CDERIs(util.Namespace):
@@ -84,17 +84,32 @@ class RCDERIs(CDERIs):
                 coeffs = []
                 for i, k in enumerate(key):
                     coeffs.append(self.mo_coeff[i][:, self.slices[i][k]])
-                ijslice = (
-                    0,
-                    coeffs[0].shape[-1],
-                    coeffs[0].shape[-1],
-                    coeffs[0].shape[-1] + coeffs[1].shape[-1],
-                )
-                coeffs = np.concatenate(coeffs, axis=1)
-                block = ao2mo._ao2mo.nr_e2(
-                    self.mf.with_df._cderi, coeffs, ijslice, aosym="s2", mosym="s1"
-                )
-                block = block.reshape(-1, ijslice[1] - ijslice[0], ijslice[3] - ijslice[2])
+                if precision.types[float] == np.float64:
+                    ijslice = (
+                        0,
+                        coeffs[0].shape[-1],
+                        coeffs[0].shape[-1],
+                        coeffs[0].shape[-1] + coeffs[1].shape[-1],
+                    )
+                    coeffs = np.concatenate(coeffs, axis=1)
+                    block = ao2mo._ao2mo.nr_e2(
+                        self.mf.with_df._cderi, coeffs, ijslice, aosym="s2", mosym="s1"
+                    )
+                    block = block.reshape(-1, ijslice[1] - ijslice[0], ijslice[3] - ijslice[2])
+                else:
+                    shape = (
+                        self.mf.with_df.get_naoaux(),
+                        self.mf.with_df.mol.nao_nr(),
+                        self.mf.with_df.mol.nao_nr(),
+                    )
+                    block = util.decompress_axes(
+                        "Qpp",
+                        self.mf.with_df._cderi.astype(precision.types[float]),
+                        include_diagonal=True,
+                        symmetry="+++",
+                        shape=shape,
+                    )
+                    block = util.einsum("Qpq,pi,qj->Qij", block, coeffs[0].conj(), coeffs[1])
                 self.__dict__[key] = block
             return self.__dict__[key]
         else:

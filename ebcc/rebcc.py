@@ -773,7 +773,7 @@ class REBCC(EBCC):
             amplitudes=amplitudes,
         )
 
-        return func(**kwargs)
+        return types[float](func(**kwargs).real)
 
     def energy_perturbative(self, eris=None, amplitudes=None, lambdas=None):
         """
@@ -801,7 +801,7 @@ class REBCC(EBCC):
             lambdas=lambdas,
         )
 
-        return func(**kwargs)
+        return types[float](func(**kwargs).real)
 
     def update_amps(self, eris=None, amplitudes=None):
         """

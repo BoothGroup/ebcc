@@ -640,8 +640,8 @@ def decompress_axes(
     symmetry : str, optional
         Symmetry of the output array, with a `"+"` indicating symmetry and
         `"-"` indicating antisymmetry for each dimension in the
-        decompressed array. If `None`, defaults to fully symmetric (i.e.
-        all characters are `"+"`). Default value is `None`.
+        decompressed array. If `None`, defaults to fully antisymmetric
+        (i.e. all characters are `"-"`). Default value is `None`.
     out : numpy.ndarray, optional
         Output array. If `None`, a new array is created, and `shape` must
         be passed. Default value is `None`.
