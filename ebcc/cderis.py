@@ -104,7 +104,7 @@ class RCDERIs(CDERIs):
                     )
                     block = util.decompress_axes(
                         "Qpp",
-                        self.mf.with_df._cderi,
+                        self.mf.with_df._cderi.astype(precision.types[float]),
                         include_diagonal=True,
                         symmetry="+++",
                         shape=shape,
