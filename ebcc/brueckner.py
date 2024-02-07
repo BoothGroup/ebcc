@@ -109,7 +109,7 @@ class BruecknerREBCC:
         if t1 is None:
             t1 = self.cc.t1
         if u_tot is None:
-            u_tot = np.eye(self.cc.space.ncorr)
+            u_tot = np.eye(self.cc.space.ncorr, dtype=types[float])
 
         t1_block = np.zeros((self.cc.space.ncorr, self.cc.space.ncorr), dtype=types[float])
         t1_block[: self.cc.space.ncocc, self.cc.space.ncocc :] = -t1
@@ -122,6 +122,7 @@ class BruecknerREBCC:
             u_tot[:, 0] *= -1
 
         a = scipy.linalg.logm(u_tot)
+        a = a.real.astype(types[float])
         if diis is not None:
             a = diis.update(a, xerr=t1)
 
@@ -258,7 +259,7 @@ class BruecknerREBCC:
 
         u = util.einsum(
             "pq,pi,pj->ij",
-            self.mf.get_ovlp(),
+            self.mf.get_ovlp().astype(types[float]),
             self.mo_to_correlated(self.mf.mo_coeff),
             mo_coeff_new_corr,
         )
@@ -288,8 +289,8 @@ class BruecknerREBCC:
         diis.space = self.options.diis_space
 
         # Initialise coefficients:
-        mo_coeff_new = np.array(self.cc.mo_coeff, copy=True)
-        mo_coeff_ref = np.array(self.cc.mo_coeff, copy=True)
+        mo_coeff_new = np.array(self.cc.mo_coeff, copy=True, dtype=types[float])
+        mo_coeff_ref = np.array(self.cc.mo_coeff, copy=True, dtype=types[float])
         mo_coeff_ref = self.mo_to_correlated(mo_coeff_ref)
         u_tot = None
 
@@ -366,8 +367,8 @@ class BruecknerUEBCC(BruecknerREBCC, metaclass=util.InheritDocstrings):
             t1 = self.cc.t1
         if u_tot is None:
             u_tot = util.Namespace(
-                aa=np.eye(self.cc.space[0].ncorr),
-                bb=np.eye(self.cc.space[1].ncorr),
+                aa=np.eye(self.cc.space[0].ncorr, dtype=types[float]),
+                bb=np.eye(self.cc.space[1].ncorr, dtype=types[float]),
             )
 
         t1_block = util.Namespace(
@@ -398,6 +399,7 @@ class BruecknerUEBCC(BruecknerREBCC, metaclass=util.InheritDocstrings):
             ],
             axis=0,
         )
+        a = a.real.astype(types[float])
         if diis is not None:
             xerr = np.concatenate([t1.aa.ravel(), t1.bb.ravel()])
             a = diis.update(a, xerr=xerr)
@@ -469,7 +471,7 @@ class BruecknerUEBCC(BruecknerREBCC, metaclass=util.InheritDocstrings):
         )
         mo_coeff_new = self.mo_update_correlated(mo_coeff, mo_coeff_new_corr)
         mo_coeff_mf_corr = self.mo_to_correlated(self.mf.mo_coeff)
-        ovlp = self.mf.get_ovlp()
+        ovlp = self.mf.get_ovlp().astype(types[float])
 
         u = util.Namespace(
             aa=util.einsum("pq,pi,pj->ij", ovlp, mo_coeff_mf_corr[0], mo_coeff_new_corr[0]),
