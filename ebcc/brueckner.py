@@ -235,7 +235,7 @@ class BruecknerREBCC:
         return mo_coeff
 
     def update_coefficients(self, u_tot, mo_coeff, mo_coeff_ref):
-        """Get the updated coefficients and rotation matrix.
+        """Get the updated coefficients.
 
         Parameters
         ----------
@@ -253,18 +253,9 @@ class BruecknerREBCC:
         u : np.ndarray
             Rotation matrix.
         """
-
         mo_coeff_new_corr = util.einsum("pi,ij->pj", mo_coeff_ref, u_tot)
         mo_coeff_new = self.mo_update_correlated(mo_coeff, mo_coeff_new_corr)
-
-        u = util.einsum(
-            "pq,pi,pj->ij",
-            self.mf.get_ovlp().astype(types[float]),
-            self.mo_to_correlated(self.mf.mo_coeff),
-            mo_coeff_new_corr,
-        )
-
-        return mo_coeff_new, u
+        return mo_coeff_new
 
     def kernel(self):
         """
@@ -306,7 +297,7 @@ class BruecknerREBCC:
             u, u_tot = self.get_rotation_matrix(u_tot=u_tot, diis=diis)
 
             # Update MO coefficients:
-            mo_coeff_new, u = self.update_coefficients(u_tot, mo_coeff_new, mo_coeff_ref)
+            mo_coeff_new = self.update_coefficients(u_tot, mo_coeff_new, mo_coeff_ref)
 
             # Transform mean-field and amplitudes:
             self.mf.mo_coeff = mo_coeff_new
@@ -470,15 +461,7 @@ class BruecknerUEBCC(BruecknerREBCC, metaclass=util.InheritDocstrings):
             util.einsum("pi,ij->pj", mo_coeff_ref[1], u_tot.bb),
         )
         mo_coeff_new = self.mo_update_correlated(mo_coeff, mo_coeff_new_corr)
-        mo_coeff_mf_corr = self.mo_to_correlated(self.mf.mo_coeff)
-        ovlp = self.mf.get_ovlp().astype(types[float])
-
-        u = util.Namespace(
-            aa=util.einsum("pq,pi,pj->ij", ovlp, mo_coeff_mf_corr[0], mo_coeff_new_corr[0]),
-            bb=util.einsum("pq,pi,pj->ij", ovlp, mo_coeff_mf_corr[1], mo_coeff_new_corr[1]),
-        )
-
-        return mo_coeff_new, u
+        return mo_coeff_new
 
 
 @util.has_docstring
