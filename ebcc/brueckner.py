@@ -461,7 +461,6 @@ class BruecknerUEBCC(BruecknerREBCC, metaclass=util.InheritDocstrings):
             util.einsum("pi,ij->pj", mo_coeff_ref[1], u_tot.bb),
         )
         mo_coeff_new = self.mo_update_correlated(mo_coeff, mo_coeff_new_corr)
-        mo_coeff_mf_corr = self.mo_to_correlated(self.mf.mo_coeff)
         return mo_coeff_new
 
 
