@@ -8,6 +8,7 @@ from pyscf import lib
 from ebcc import NullLogger
 from ebcc import numpy as np
 from ebcc import util
+from ebcc.damping import DIIS
 from ebcc.precision import types
 
 
@@ -29,12 +30,15 @@ class Options:
     diis_space : int, optional
         Number of amplitudes to use in DIIS extrapolation. Default value is
         `12`.
+    damping : float, optional
+        Damping factor for DIIS extrapolation. Default value is `0.0`.
     """
 
     e_tol: float = 1e-8
     t_tol: float = 1e-8
     max_iter: int = 20
     diis_space: int = 12
+    damping: float = 0.0
 
 
 class BruecknerREBCC:
@@ -79,6 +83,7 @@ class BruecknerREBCC:
         cc.log.info(" > t_tol:  %s", options.t_tol)
         cc.log.info(" > max_iter:  %s", options.max_iter)
         cc.log.info(" > diis_space:  %s", options.diis_space)
+        cc.log.info(" > damping:  %s", options.damping)
         cc.log.debug("")
 
     def get_rotation_matrix(self, u_tot=None, diis=None, t1=None):
@@ -276,8 +281,9 @@ class BruecknerREBCC:
                 self.cc.kernel()
 
         # Set up DIIS:
-        diis = lib.diis.DIIS()
+        diis = DIIS()
         diis.space = self.options.diis_space
+        diis.damping = self.options.damping
 
         # Initialise coefficients:
         mo_coeff_new = np.array(self.cc.mo_coeff, copy=True, dtype=types[float])

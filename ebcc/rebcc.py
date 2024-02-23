@@ -10,6 +10,7 @@ from ebcc import reom, util
 from ebcc.ansatz import Ansatz
 from ebcc.brueckner import BruecknerREBCC
 from ebcc.cderis import RCDERIs
+from ebcc.damping import DIIS
 from ebcc.dump import Dump
 from ebcc.eris import RERIs
 from ebcc.fock import RFock
@@ -46,6 +47,8 @@ class Options:
     diis_space : int, optional
         Number of amplitudes to use in DIIS extrapolation. Default value is
         `12`.
+    damping : float, optional
+        Damping factor for DIIS extrapolation. Default value is `0.0`.
     """
 
     shift: bool = True
@@ -53,6 +56,7 @@ class Options:
     t_tol: float = 1e-8
     max_iter: int = 200
     diis_space: int = 12
+    damping: float = 0.0
 
 
 class REBCC(EBCC):
@@ -326,6 +330,7 @@ class REBCC(EBCC):
         self.log.info(" > t_tol:  %s", self.options.t_tol)
         self.log.info(" > max_iter:  %s", self.options.max_iter)
         self.log.info(" > diis_space:  %s", self.options.diis_space)
+        self.log.info(" > damping:  %s", self.options.damping)
         self.log.debug("")
         self.log.info("Ansatz: %s", self.ansatz)
         self.log.debug("")
@@ -369,8 +374,9 @@ class REBCC(EBCC):
 
         if not self.ansatz.is_one_shot:
             # Set up DIIS:
-            diis = lib.diis.DIIS()
+            diis = DIIS()
             diis.space = self.options.diis_space
+            diis.damping = self.options.damping
 
             converged = False
             for niter in range(1, self.options.max_iter + 1):
@@ -463,8 +469,9 @@ class REBCC(EBCC):
             lambdas = self.lambdas
 
         # Set up DIIS:
-        diis = lib.diis.DIIS()
+        diis = DIIS()
         diis.space = self.options.diis_space
+        diis.damping = self.options.damping
 
         self.log.output("Solving for de-excitation (lambda) amplitudes.")
         self.log.info("%4s %16s", "Iter", "Δ(Amplitudes)")

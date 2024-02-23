@@ -2,8 +2,6 @@
 
 import time
 
-import numpy as np
-
 
 class ModelNotImplemented(NotImplementedError):
     """Error for unsupported models."""

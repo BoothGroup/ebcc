@@ -1,5 +1,6 @@
 """Utilities."""
 
+from ebcc.util.einsumfunc import direct_sum, dot, einsum
 from ebcc.util.inheritance import InheritDocstrings, Inherited, InheritedType, _mro, has_docstring
 from ebcc.util.misc import ModelNotImplemented, Namespace, Timer
 from ebcc.util.permutations import (
@@ -20,4 +21,3 @@ from ebcc.util.permutations import (
     tril_indices_ndim,
     unique,
 )
-from ebcc.util.einsumfunc import einsum, direct_sum, dot
