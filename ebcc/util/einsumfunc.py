@@ -2,7 +2,8 @@
 
 import ctypes
 
-from pyscf.lib import direct_sum, dot, einsum as pyscf_einsum  # noqa: F401
+from pyscf.lib import direct_sum, dot  # noqa: F401
+from pyscf.lib import einsum as pyscf_einsum  # noqa: F401
 
 from ebcc import numpy as np
 
