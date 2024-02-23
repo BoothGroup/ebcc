@@ -261,6 +261,8 @@ class FNORCCSD_PySCF_Tests(RCCSD_PySCF_Tests):
         ccsd_ref.solve_lambda()
 
         no_coeff, no_occ, no_space = construct_fno_space(mf, occ_tol=1e-3)
+        # Use the PySCF coefficients in case the phases are different
+        no_coeff = ccsd_ref.mo_coeff
 
         ccsd = REBCC(
                 mf,
