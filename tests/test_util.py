@@ -159,8 +159,8 @@ class Util_Tests(unittest.TestCase):
 
     def test_einsum(self):
         # Tests the einsum implementation
-        _size = util.NUMPY_EINSUM_SIZE
-        util.NUMPY_EINSUM_SIZE = 0
+        _size = util.einsumfunc.NUMPY_EINSUM_SIZE
+        util.einsumfunc.NUMPY_EINSUM_SIZE = 0
 
         x = np.random.random((10, 11, 12, 13))
         y = np.random.random((13, 12, 5, 6))
@@ -220,7 +220,7 @@ class Util_Tests(unittest.TestCase):
         b = util.einsum("ikl,jkl->ij", x, x)
         np.testing.assert_almost_equal(a, b)
 
-        util.NUMPY_EINSUM_SIZE = _size
+        util.einsumfunc.NUMPY_EINSUM_SIZE = _size
 
 
 if __name__ == "__main__":

@@ -10,6 +10,7 @@ from ebcc import reom, util
 from ebcc.ansatz import Ansatz
 from ebcc.brueckner import BruecknerREBCC
 from ebcc.cderis import RCDERIs
+from ebcc.damping import DIIS
 from ebcc.dump import Dump
 from ebcc.eris import RERIs
 from ebcc.fock import RFock
@@ -46,6 +47,8 @@ class Options:
     diis_space : int, optional
         Number of amplitudes to use in DIIS extrapolation. Default value is
         `12`.
+    damping : float, optional
+        Damping factor for DIIS extrapolation. Default value is `0.0`.
     """
 
     shift: bool = True
@@ -53,6 +56,7 @@ class Options:
     t_tol: float = 1e-8
     max_iter: int = 200
     diis_space: int = 12
+    damping: float = 0.0
 
 
 class REBCC(EBCC):
@@ -326,6 +330,7 @@ class REBCC(EBCC):
         self.log.info(" > t_tol:  %s", self.options.t_tol)
         self.log.info(" > max_iter:  %s", self.options.max_iter)
         self.log.info(" > diis_space:  %s", self.options.diis_space)
+        self.log.info(" > damping:  %s", self.options.damping)
         self.log.debug("")
         self.log.info("Ansatz: %s", self.ansatz)
         self.log.debug("")
@@ -364,13 +369,21 @@ class REBCC(EBCC):
         e_cc = e_init = self.energy(amplitudes=amplitudes, eris=eris)
 
         self.log.output("Solving for excitation amplitudes.")
-        self.log.info("%4s %16s %16s %16s", "Iter", "Energy (corr.)", "Δ(Energy)", "Δ(Amplitudes)")
-        self.log.info("%4d %16.10f", 0, e_init)
+        self.log.info(
+            "%4s %16s %18s %13s %13s",
+            "Iter",
+            "Energy (corr.)",
+            "Energy (tot.)",
+            "Δ(Energy)",
+            "Δ(Ampl.)",
+        )
+        self.log.info("%4d %16.10f %18.10f", 0, e_init, e_init + self.mf.e_tot)
 
         if not self.ansatz.is_one_shot:
             # Set up DIIS:
-            diis = lib.diis.DIIS()
+            diis = DIIS()
             diis.space = self.options.diis_space
+            diis.damping = self.options.damping
 
             converged = False
             for niter in range(1, self.options.max_iter + 1):
@@ -388,7 +401,9 @@ class REBCC(EBCC):
                 e_cc = self.energy(amplitudes=amplitudes, eris=eris)
                 de = abs(e_prev - e_cc)
 
-                self.log.info("%4d %16.10f %16.5g %16.5g", niter, e_cc, de, dt)
+                self.log.info(
+                    "%4d %16.10f %18.10f %13.3e %13.3e", niter, e_cc, e_cc + self.mf.e_tot, de, dt
+                )
 
                 # Check for convergence:
                 converged = de < self.options.e_tol and dt < self.options.t_tol
@@ -463,11 +478,12 @@ class REBCC(EBCC):
             lambdas = self.lambdas
 
         # Set up DIIS:
-        diis = lib.diis.DIIS()
+        diis = DIIS()
         diis.space = self.options.diis_space
+        diis.damping = self.options.damping
 
         self.log.output("Solving for de-excitation (lambda) amplitudes.")
-        self.log.info("%4s %16s", "Iter", "Δ(Amplitudes)")
+        self.log.info("%4s %13s", "Iter", "Δ(Ampl.)")
 
         converged = False
         for niter in range(1, self.options.max_iter + 1):
@@ -485,7 +501,7 @@ class REBCC(EBCC):
             lambdas = self.vector_to_lambdas(vector)
             dl = np.linalg.norm(vector - self.lambdas_to_vector(lambdas_prev), ord=np.inf)
 
-            self.log.info("%4d %16.5g", niter, dl)
+            self.log.info("%4d %13.3e", niter, dl)
 
             # Check for convergence:
             converged = dl < self.options.t_tol
