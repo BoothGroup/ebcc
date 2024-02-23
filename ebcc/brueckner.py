@@ -293,9 +293,17 @@ class BruecknerREBCC:
 
         self.cc.log.output("Solving for Brueckner orbitals.")
         self.cc.log.info(
-            "%4s %16s %10s %16s %16s", "Iter", "Energy (corr.)", "Converged", "Δ(Energy)", "|T1|"
+            "%4s %16s %18s %8s %13s %13s",
+            "Iter",
+            "Energy (corr.)",
+            "Energy (tot.)",
+            "Conv.",
+            "Δ(Energy)",
+            "|T1|",
         )
-        self.cc.log.info("%4d %16.10f %10s", 0, self.cc.e_corr, self.cc.converged)
+        self.log.info(
+            "%4d %16.10f %18.10f %8s", 0, self.cc.e_corr, self.cc.e_tot, self.cc.converged
+        )
 
         converged = False
         for niter in range(1, self.options.max_iter + 1):
@@ -328,8 +336,14 @@ class BruecknerREBCC:
             de = abs(e_prev - self.cc.e_tot)
             dt = self.get_t1_norm()
 
-            self.cc.log.info(
-                "%4d %16.10f %10s %16.5g %16.5g", niter, self.cc.e_corr, self.cc.converged, de, dt
+            self.log.info(
+                "%4d %16.10f %18.10f %8s %13.3e %13.3e",
+                niter,
+                self.cc.e_corr,
+                self.cc.e_tot,
+                self.cc.converged,
+                de,
+                dt,
             )
 
             # Check for convergence:
