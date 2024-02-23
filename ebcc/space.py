@@ -332,7 +332,7 @@ def construct_default_space(mf):
         return space
 
     # Construct the default space
-    if isinstance(mf.mo_energy, tuple):
+    if np.ndim(mf.mo_occ) == 2:
         space_a = _construct(mf.mo_occ[0])
         space_b = _construct(mf.mo_occ[1])
         space = (space_a, space_b)
@@ -421,7 +421,7 @@ def construct_fno_space(mf, occ_tol=1e-5, occ_frac=None, amplitudes=None):
         return no_coeff, no_space
 
     # Construct the natural orbitals
-    if isinstance(mf.mo_energy, tuple):
+    if np.ndim(mf.mo_occ) == 2:
         no_coeff_a, no_space_a = _construct(dm1[0], mf.mo_energy[0], mf.mo_coeff[0], mf.mo_occ[0])
         no_coeff_b, no_space_b = _construct(dm1[1], mf.mo_energy[1], mf.mo_coeff[1], mf.mo_occ[1])
         no_coeff = (no_coeff_a, no_coeff_b)
