@@ -13,6 +13,7 @@ import scipy.linalg
 from pyscf import cc, gto, lib, scf
 
 from ebcc import REBCC, NullLogger, Space
+from ebcc.space import construct_fno_space
 
 
 @pytest.mark.reference
@@ -232,6 +233,59 @@ class RCCSD_PySCF_Tests(unittest.TestCase):
     #    e1 = eom.kernel()
     #    e2, v2 = self.ccsd_ref.eaccsd(nroots=5)
     #    self.assertAlmostEqual(e1[0], e2[0], 6)
+
+
+@pytest.mark.reference
+class FNORCCSD_PySCF_Tests(RCCSD_PySCF_Tests):
+    """Test FNO-RCCSD against the PySCF values.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        mol = gto.Mole()
+        mol.atom = "O 0.0 0.0 0.11779; H 0.0 0.755453 -0.471161; H 0.0 -0.755453 -0.471161"
+        #mol.atom = "Li 0 0 0; H 0 0 1.4"
+        mol.basis = "cc-pvdz"
+        mol.verbose = 0
+        mol.build()
+
+        mf = scf.RHF(mol)
+        mf.conv_tol = 1e-12
+        mf.kernel()
+
+        ccsd_ref = cc.FNOCCSD(mf, thresh=1e-3)
+        ccsd_ref.conv_tol = 1e-10
+        ccsd_ref.conv_tol_normt = 1e-14
+        ccsd_ref.max_cycle = 200
+        ccsd_ref.kernel()
+        ccsd_ref.solve_lambda()
+
+        no_coeff, no_occ, no_space = construct_fno_space(mf, occ_tol=1e-3)
+
+        ccsd = REBCC(
+                mf,
+                mo_coeff=no_coeff,
+                mo_occ=no_occ,
+                space=no_space,
+                ansatz="CCSD",
+                log=NullLogger(),
+        )
+        ccsd.options.e_tol = 1e-10
+        eris = ccsd.get_eris()
+        ccsd.kernel(eris=eris)
+        ccsd.solve_lambda(eris=eris)
+
+        cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris = mf, ccsd_ref, ccsd, eris
+
+    def test_rdm1(self):
+        a = self.ccsd_ref.make_rdm1(with_frozen=False)
+        b = self.ccsd.make_rdm1_f(eris=self.eris)
+        np.testing.assert_almost_equal(a, b, 6, verbose=True)
+
+    def test_rdm2(self):
+        a = self.ccsd_ref.make_rdm2(with_frozen=False)
+        b = self.ccsd.make_rdm2_f(eris=self.eris)
+        np.testing.assert_almost_equal(a, b, 6, verbose=True)
 
 
 @pytest.mark.reference

@@ -290,6 +290,63 @@ class UCCSD_PySCF_Tests(unittest.TestCase):
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
 
+# Disabled until PySCF fix bug  # TODO
+#@pytest.mark.reference
+#class FNOUCCSD_PySCF_Tests(UCCSD_PySCF_Tests):
+#    """Test FNO-UCCSD against the PySCF values.
+#    """
+#
+#    @classmethod
+#    def setUpClass(cls):
+#        mol = gto.Mole()
+#        mol.atom = "O 0 0 0; O 0 0 1"
+#        mol.basis = "6-31g"
+#        mol.spin = 2
+#        mol.verbose = 0
+#        mol.build()
+#
+#        mf = scf.RHF(mol)
+#        mf.conv_tol = 1e-12
+#        mf.kernel()
+#        mf = mf.to_uhf()
+#
+#        ccsd_ref = cc.FNOCCSD(mf)
+#        ccsd_ref.conv_tol = 1e-12
+#        ccsd_ref.conv_tol_normt = 1e-12
+#        ccsd_ref.kernel()
+#        ccsd_ref.solve_lambda()
+#
+#        no_coeff, no_occ, no_space = construct_fno_space(mf, occ_tol=1e-3)
+#
+#        ccsd = UEBCC(
+#                mf,
+#                mo_coeff=no_coeff,
+#                mo_occ=no_occ,
+#                space=no_space,
+#                ansatz="CCSD",
+#                log=NullLogger(),
+#        )
+#        ccsd.options.e_tol = 1e-10
+#        eris = ccsd.get_eris()
+#        ccsd.kernel(eris=eris)
+#        ccsd.solve_lambda(eris=eris)
+#
+#        cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris = mf, ccsd_ref, ccsd, eris
+#
+#    def test_rdm1(self):
+#        a = self.ccsd_ref.make_rdm1(with_frozen=False)
+#        b = self.ccsd.make_rdm1_f(eris=self.eris)
+#        np.testing.assert_almost_equal(a[0], b.aa, 6)
+#        np.testing.assert_almost_equal(a[1], b.bb, 6)
+#
+#    def test_rdm2(self):
+#        a = self.ccsd_ref.make_rdm2(with_frozen=False)
+#        b = self.ccsd.make_rdm2_f(eris=self.eris)
+#        np.testing.assert_almost_equal(a[0], b.aaaa, 6)
+#        np.testing.assert_almost_equal(a[1], b.aabb, 6)
+#        np.testing.assert_almost_equal(a[2], b.bbbb, 6)
+
+
 @pytest.mark.reference
 class UCCSD_PySCF_Frozen_Tests(unittest.TestCase):
     """Test UCCSD against the PySCF values with frozen orbitals.
