@@ -149,7 +149,7 @@ def set_backend(backend):
     BACKEND_NAME = backend
 
 
-set_backend("numpy")
+set_backend(os.environ.get("EBCC_TENSOR_BACKEND", "numpy"))
 
 
 # --- General constructor:
