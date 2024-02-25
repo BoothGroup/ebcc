@@ -2,8 +2,6 @@
 
 import dataclasses
 
-from pyscf import lib
-
 from ebcc import default_log, init_logging
 from ebcc import numpy as np
 from ebcc import reom, util
@@ -270,8 +268,8 @@ class REBCC(EBCC):
         # Parameters:
         self.log = default_log if log is None else log
         self.mf = self._convert_mf(mf)
-        self._mo_coeff = np.asarray(mo_coeff).astype(types[float]) if mo_coeff is not None else None
-        self._mo_occ = np.asarray(mo_occ).astype(types[float]) if mo_occ is not None else None
+        self._mo_coeff = np.asarray(mo_coeff, dtype=types[float]) if mo_coeff is not None else None
+        self._mo_occ = np.asarray(mo_occ, dtype=types[float]) if mo_occ is not None else None
 
         # Ansatz:
         if isinstance(ansatz, Ansatz):
@@ -293,9 +291,9 @@ class REBCC(EBCC):
             raise ValueError(
                 "Fermionic and bosonic coupling ranks must both be zero, or both non-zero."
             )
-        self.omega = omega.astype(types[float]) if omega is not None else None
-        self.bare_g = g.astype(types[float]) if g is not None else None
-        self.bare_G = G.astype(types[float]) if G is not None else None
+        self.omega = np.asarray(omega, dtype=types[float]) if omega is not None else None
+        self.bare_g = np.asarray(g, dtype=types[float]) if g is not None else None
+        self.bare_G = np.asarray(G, dtype=types[float]) if G is not None else None
         if self.boson_ansatz != "":
             self.g = self.get_g(g)
             self.G = self.get_mean_field_G()
@@ -1886,7 +1884,7 @@ class REBCC(EBCC):
         """
 
         # FIXME should this also sum in frozen orbitals?
-        val = lib.einsum("Ipp->I", self.g.boo) * 2.0
+        val = util.einsum("Ipp->I", self.g.boo) * 2.0
         val -= self.xi * self.omega
 
         if self.bare_G is not None:
@@ -1963,10 +1961,10 @@ class REBCC(EBCC):
             Electronic repulsion integrals. Default value is generated
             using `self.ERIs()`.
         """
-        if (eris is None) or isinstance(eris, np.ndarray):
-            if (isinstance(eris, np.ndarray) and eris.ndim == 3) or getattr(
-                self.mf, "with_df", None
-            ):
+        # FIXME clean
+        has_df = getattr(self.mf, "with_df", None)
+        if (eris is None) or isinstance(eris, np.ndarray(0).__class__):
+            if getattr(eris, "ndim", None) == 3 or has_df:
                 return self.CDERIs(self, array=eris)
             else:
                 return self.ERIs(self, array=eris)
@@ -1985,7 +1983,7 @@ class REBCC(EBCC):
             The mean-field Fock matrix in the MO basis.
         """
 
-        fock_ao = self.mf.get_fock().astype(types[float])
+        fock_ao = np.asarray(self.mf.get_fock(), dtype=types[float])
         mo_coeff = self.mo_coeff
 
         fock = util.einsum("pq,pi,qj->ij", fock_ao, mo_coeff, mo_coeff)
@@ -2006,7 +2004,7 @@ class REBCC(EBCC):
         """
 
         if self.options.shift:
-            xi = lib.einsum("Iii->I", self.g.boo) * 2.0
+            xi = util.einsum("Iii->I", self.g.boo) * 2.0
             xi /= self.omega
             if self.bare_G is not None:
                 xi += self.bare_G / self.omega
@@ -2026,7 +2024,7 @@ class REBCC(EBCC):
             Shift in the energy from moving to polaritonic basis.
         """
         if self.options.shift:
-            return lib.einsum("I,I->", self.omega, self.xi**2)
+            return util.einsum("I,I->", self.omega, self.xi**2)
         else:
             return 0.0
 
@@ -2071,7 +2069,7 @@ class REBCC(EBCC):
             Molecular orbital coefficients.
         """
         if self._mo_coeff is None:
-            return np.asarray(self.mf.mo_coeff).astype(types[float])
+            return np.asarray(self.mf.mo_coeff, dtype=types[float])
         return self._mo_coeff
 
     @property
@@ -2085,7 +2083,7 @@ class REBCC(EBCC):
             Molecular orbital occupancies.
         """
         if self._mo_occ is None:
-            return np.asarray(self.mf.mo_occ).astype(types[float])
+            return np.asarray(self.mf.mo_occ, dtype=types[float])
         return self._mo_occ
 
     @property
@@ -2165,7 +2163,7 @@ class REBCC(EBCC):
                 energies.append(np.diag(self.fock[key + key]))
 
         subscript = "".join([signs_dict[k] + next_char() for k in subscript])
-        energy_sum = lib.direct_sum(subscript, *energies)
+        energy_sum = util.direct_sum(subscript, *energies)
 
         return energy_sum
 

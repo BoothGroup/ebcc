@@ -1,6 +1,6 @@
 """General electron-boson coupled cluster."""
 
-from pyscf import lib, scf
+from pyscf import scf
 
 from ebcc import geom
 from ebcc import numpy as np
@@ -420,7 +420,7 @@ class GEBCC(REBCC, metaclass=util.InheritDocstrings):
 
     @util.has_docstring
     def get_mean_field_G(self):
-        val = lib.einsum("Ipp->I", self.g.boo)
+        val = util.einsum("Ipp->I", self.g.boo)
         val -= self.xi * self.omega
 
         if self.bare_G is not None:
@@ -465,7 +465,7 @@ class GEBCC(REBCC, metaclass=util.InheritDocstrings):
     @util.has_docstring
     def xi(self):
         if self.options.shift:
-            xi = lib.einsum("Iii->I", self.g.boo)
+            xi = util.einsum("Iii->I", self.g.boo)
             xi /= self.omega
             if self.bare_G is not None:
                 xi += self.bare_G / self.omega

@@ -126,9 +126,30 @@ def init_logging(log):
 METHOD_TYPES = ["MP", "CC", "LCC", "QCI", "QCC", "DC"]
 
 
-# --- Import NumPy here to allow drop-in replacements
+# --- Get the tensor backend
 
-import numpy
+BACKEND_NAME = None
+numpy = None
+
+
+def set_backend(backend):
+    """
+    Set the tensor backend. The desired backend will be imported and
+    and assigned to the global variable `numpy`.
+
+    Parameters
+    ----------
+    backend : str
+        The name of the tensor backend to use.
+    """
+
+    global numpy, BACKEND_NAME
+
+    numpy = __import__(backend)
+    BACKEND_NAME = backend
+
+
+set_backend("numpy")
 
 
 # --- General constructor:

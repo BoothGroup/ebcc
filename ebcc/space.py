@@ -155,7 +155,7 @@ class Space:
     @property
     def virtual(self):
         """Get a boolean mask of virtual orbitals."""
-        return ~self.occupied
+        return np.logical_not(self.occupied)
 
     @property
     def nmo(self):
@@ -177,7 +177,7 @@ class Space:
     @property
     def correlated(self):
         """Get a boolean mask of correlated orbitals."""
-        return ~self.frozen
+        return np.logical_not(self.frozen)
 
     @property
     def correlated_occupied(self):
@@ -209,7 +209,7 @@ class Space:
     @property
     def inactive(self):
         """Get a boolean mask of inactive orbitals."""
-        return ~self.active
+        return np.logical_not(self.active)
 
     @property
     def inactive_occupied(self):

@@ -1,8 +1,9 @@
 """Cholesky decomposed ERI containers."""
 
-import numpy as np
+import numpy  # Backend may not work with PySCF
 from pyscf import ao2mo
 
+from ebcc import numpy as np
 from ebcc import precision, util
 
 
@@ -84,14 +85,14 @@ class RCDERIs(CDERIs):
                 coeffs = []
                 for i, k in enumerate(key):
                     coeffs.append(self.mo_coeff[i][:, self.slices[i][k]])
-                if precision.types[float] == np.float64:
+                if precision.types[float] == numpy.float64:
                     ijslice = (
                         0,
                         coeffs[0].shape[-1],
                         coeffs[0].shape[-1],
                         coeffs[0].shape[-1] + coeffs[1].shape[-1],
                     )
-                    coeffs = np.concatenate(coeffs, axis=1)
+                    coeffs = numpy.concatenate(coeffs, axis=1)
                     block = ao2mo._ao2mo.nr_e2(
                         self.mf.with_df._cderi, coeffs, ijslice, aosym="s2", mosym="s1"
                     )
@@ -104,7 +105,7 @@ class RCDERIs(CDERIs):
                     )
                     block = util.decompress_axes(
                         "Qpp",
-                        self.mf.with_df._cderi.astype(precision.types[float]),
+                        np.asarray(self.mf.with_df._cderi, dtype=precision.types[float]),
                         include_diagonal=True,
                         symmetry="+++",
                         shape=shape,

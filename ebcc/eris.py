@@ -1,5 +1,6 @@
 """Electronic repulsion integral containers."""
 
+import numpy  # Backend may not work with PySCF
 from pyscf import ao2mo
 
 from ebcc import numpy as np
@@ -77,14 +78,16 @@ class RERIs(ERIs):
             if key not in self.__dict__.keys():
                 coeffs = []
                 for i, k in enumerate(key):
-                    coeffs.append(self.mo_coeff[i][:, self.slices[i][k]].astype(np.float64))
+                    coeffs.append(
+                        numpy.asarray(self.mo_coeff[i][:, self.slices[i][k]], dtype=numpy.float64)
+                    )
                 block = ao2mo.incore.general(
                     self.mf._eri,
                     coeffs,
                     compact=False,
                 )
                 block = block.reshape([c.shape[-1] for c in coeffs])
-                self.__dict__[key] = block.astype(types[float])
+                self.__dict__[key] = np.asarray(block, dtype=types[float])
             return self.__dict__[key]
         else:
             slices = []
@@ -151,24 +154,24 @@ class UERIs(ERIs):
             # required arrays for simplicity.
             arrays_aabb = ao2mo.incore.general(
                 self.mf._eri[1],
-                [self.mo_coeff[i].astype(np.float64) for i in (0, 0, 1, 1)],
+                [numpy.asarray(self.mo_coeff[i], dtype=numpy.float64) for i in (0, 0, 1, 1)],
                 compact=False,
             )
             arrays = (
                 ao2mo.incore.general(
                     self.mf._eri[0],
-                    [self.mo_coeff[i].astype(np.float64) for i in (0, 0, 0, 0)],
+                    [numpy.asarray(self.mo_coeff[i], dtype=numpy.float64) for i in (0, 0, 0, 0)],
                     compact=False,
                 ),
                 arrays_aabb,
                 arrays_aabb.transpose(2, 3, 0, 1),
                 ao2mo.incore.general(
                     self.mf._eri[2],
-                    [self.mo_coeff[i].astype(np.float64) for i in (1, 1, 1, 1)],
+                    [numpy.asarray(self.mo_coeff[i], dtype=numpy.float64) for i in (1, 1, 1, 1)],
                     compact=False,
                 ),
             )
-            arrays = tuple(array.astype(types[float]) for array in arrays)
+            arrays = tuple(np.asarray(array, dtype=types[float]) for array in arrays)
         else:
             arrays = (None, None, None, None)
 
@@ -211,8 +214,8 @@ class GERIs(RERIs):
             mo_coeff = [mo_coeff] * 4
 
         if array is None:
-            mo_a = [mo[: ebcc.mf.mol.nao].astype(np.float64) for mo in mo_coeff]
-            mo_b = [mo[ebcc.mf.mol.nao :].astype(np.float64) for mo in mo_coeff]
+            mo_a = [numpy.asarray(mo[: ebcc.mf.mol.nao], numpy.float64) for mo in mo_coeff]
+            mo_b = [numpy.asarray(mo[ebcc.mf.mol.nao :], numpy.float64) for mo in mo_coeff]
 
             array = ao2mo.kernel(ebcc.mf._eri, mo_a)
             array += ao2mo.kernel(ebcc.mf._eri, mo_b)
@@ -220,7 +223,7 @@ class GERIs(RERIs):
             array += ao2mo.kernel(ebcc.mf._eri, mo_b[:2] + mo_a[2:])
 
             array = ao2mo.addons.restore(1, array, ebcc.nmo)
-            array = array.astype(types[float])
+            array = np.asarray(array, dtype=types[float])
             array = array.reshape((ebcc.nmo,) * 4)
             array = array.transpose(0, 2, 1, 3) - array.transpose(0, 2, 3, 1)
 
