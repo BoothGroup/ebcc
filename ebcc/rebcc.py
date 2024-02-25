@@ -2003,6 +2003,9 @@ class REBCC(EBCC):
             Hamiltonian.
         """
 
+        if self.omega is None:
+            return None
+
         if self.options.shift:
             xi = util.einsum("Iii->I", self.g.boo) * 2.0
             xi /= self.omega

@@ -149,13 +149,20 @@ def set_backend(backend):
     BACKEND_NAME = backend
 
     if backend == "ctf":
-        # Monkey patch asarray -- FIXME
+        # CTF needs some hacks to complete the interface
+        import numpy as _numpy
+
+        # Monkey patch asarray
         numpy.asarray = numpy.astensor
 
         # Use int32 for bool
-        import numpy as _numpy
         from ebcc.precision import types
         types[bool] = _numpy.int32
+
+        # Fake some logical functions
+        numpy.logical_and = lambda a, b: a * b
+        numpy.logical_or = lambda a, b: (a + b) // 2
+        numpy.logical_not = lambda a: numpy.ones(a.shape, dtype=types[bool]) - a
 
 
 set_backend(os.environ.get("EBCC_TENSOR_BACKEND", "numpy"))

@@ -347,7 +347,7 @@ def _parse_einsum_input(operands):
 
     if isinstance(operands[0], str):
         subscripts = operands[0].replace(" ", "")
-        operands = [np.asanyarray(v) for v in operands[1:]]
+        operands = [np.asarray(v) for v in operands[1:]]
 
         # Ensure all characters are valid
         for s in subscripts:
@@ -365,7 +365,7 @@ def _parse_einsum_input(operands):
             subscript_list.append(tmp_operands.pop(0))
 
         output_list = tmp_operands[-1] if len(tmp_operands) else None
-        operands = [np.asanyarray(v) for v in operand_list]
+        operands = [np.asarray(v) for v in operand_list]
         subscripts = ""
         last = len(subscript_list) - 1
         for num, sub in enumerate(subscript_list):
@@ -538,6 +538,10 @@ def einsum(*operands, **kwargs):
     inp, out, args = _parse_einsum_input(operands)
     subscript = "%s->%s" % (inp, out)
     _contract = kwargs.get("contract", contract)
+
+    # If the backend is CTF, just call einsum
+    if BACKEND_NAME == "ctf":
+        return _fallback_einsum(subscript, *args, **kwargs)
 
     # Perform the contraction
     if len(args) < 2:
