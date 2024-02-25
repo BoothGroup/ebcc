@@ -12,6 +12,7 @@ import scipy.linalg
 from pyscf import mp, gto, lib, scf
 
 from ebcc import UEBCC, NullLogger, Space
+from ebcc.precision import types
 
 
 @pytest.mark.reference
@@ -75,12 +76,12 @@ class UMP2_PySCF_Frozen_Tests(unittest.TestCase):
         frozen_a = np.zeros_like(mf.mo_occ[0])
         frozen_a[:2] = 1
         frozen_a[-1] = 1
-        frozen_a = frozen_a.astype(bool)
+        frozen_a = frozen_a.astype(types[bool])
 
         frozen_b = np.zeros_like(mf.mo_occ[1])
         frozen_b[:1] = 1
         frozen_b[-1] = 1
-        frozen_b = frozen_b.astype(bool)
+        frozen_b = frozen_b.astype(types[bool])
 
         mp2_ref = mp.MP2(mf)
         mp2_ref.frozen = (np.where(frozen_a)[0], np.where(frozen_b)[0])

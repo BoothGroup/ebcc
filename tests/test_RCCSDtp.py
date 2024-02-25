@@ -11,6 +11,7 @@ import scipy
 from pyscf import gto, lib, scf, fci
 
 from ebcc import GEBCC, REBCC, Space, NullLogger, util
+from ebcc.precision import types
 
 
 @pytest.mark.regression
@@ -29,12 +30,12 @@ class RCCSDtp_Tests(unittest.TestCase):
         mf = scf.RHF(mol)
         mf.kernel()
 
-        active = np.zeros_like(mf.mo_occ, dtype=bool)
+        active = np.zeros_like(mf.mo_occ, dtype=types[bool])
         active[np.where(mf.mo_occ > 0)[0][-1]] = True
         active[np.where(mf.mo_occ == 0)[0][0]] = True
         space = Space(
             mf.mo_occ > 0,
-            np.zeros_like(mf.mo_occ, dtype=bool),
+            np.zeros_like(mf.mo_occ, dtype=types[bool]),
             active,
         )
 
@@ -50,12 +51,12 @@ class RCCSDtp_Tests(unittest.TestCase):
 
         gmf = mf.to_ghf()
 
-        active = np.zeros_like(gmf.mo_occ, dtype=bool)
+        active = np.zeros_like(gmf.mo_occ, dtype=types[bool])
         active[np.isclose(gmf.mo_energy, mf.mo_energy[np.where(mf.mo_occ > 0)[0][-1]])] = True
         active[np.isclose(gmf.mo_energy, mf.mo_energy[np.where(mf.mo_occ == 0)[0][0]])] = True
         space = Space(
             gmf.mo_occ > 0,
-            np.zeros_like(gmf.mo_occ, dtype=bool),
+            np.zeros_like(gmf.mo_occ, dtype=types[bool]),
             active,
         )
 
@@ -108,10 +109,10 @@ class RCCSDtp_Frozen_Tests(unittest.TestCase):
         mf = scf.RHF(mol)
         mf.kernel()
 
-        active = np.zeros_like(mf.mo_occ, dtype=bool)
+        active = np.zeros_like(mf.mo_occ, dtype=types[bool])
         active[np.where(mf.mo_occ > 0)[0][-1]] = True
         active[np.where(mf.mo_occ == 0)[0][0]] = True
-        frozen = np.zeros_like(mf.mo_occ, dtype=bool)
+        frozen = np.zeros_like(mf.mo_occ, dtype=types[bool])
         frozen[0] = True
         space = Space(
             mf.mo_occ > 0,
@@ -131,10 +132,10 @@ class RCCSDtp_Frozen_Tests(unittest.TestCase):
 
         gmf = mf.to_ghf()
 
-        active = np.zeros_like(gmf.mo_occ, dtype=bool)
+        active = np.zeros_like(gmf.mo_occ, dtype=types[bool])
         active[np.isclose(gmf.mo_energy, mf.mo_energy[np.where(mf.mo_occ > 0)[0][-1]])] = True
         active[np.isclose(gmf.mo_energy, mf.mo_energy[np.where(mf.mo_occ == 0)[0][0]])] = True
-        frozen = np.zeros_like(gmf.mo_occ, dtype=bool)
+        frozen = np.zeros_like(gmf.mo_occ, dtype=types[bool])
         frozen[np.isclose(gmf.mo_energy, mf.mo_energy[0])] = True
         space = Space(
             gmf.mo_occ > 0,

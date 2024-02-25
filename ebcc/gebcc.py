@@ -51,13 +51,13 @@ class GEBCC(REBCC, metaclass=util.InheritDocstrings):
         sa = np.where(orbspin == 0)[0]
         sb = np.where(orbspin == 1)[0]
 
-        occupied = np.zeros((nocc + nvir,), dtype=bool)
+        occupied = np.zeros((nocc + nvir,), dtype=types[bool])
         occupied[sa] = ucc.space[0]._occupied.copy()
         occupied[sb] = ucc.space[1]._occupied.copy()
-        frozen = np.zeros((nocc + nvir,), dtype=bool)
+        frozen = np.zeros((nocc + nvir,), dtype=types[bool])
         frozen[sa] = ucc.space[0]._frozen.copy()
         frozen[sb] = ucc.space[1]._frozen.copy()
-        active = np.zeros((nocc + nvir,), dtype=bool)
+        active = np.zeros((nocc + nvir,), dtype=types[bool])
         active[sa] = ucc.space[0]._active.copy()
         active[sb] = ucc.space[1]._active.copy()
         space = Space(occupied, frozen, active)

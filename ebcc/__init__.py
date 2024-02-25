@@ -152,6 +152,11 @@ def set_backend(backend):
         # Monkey patch asarray -- FIXME
         numpy.asarray = numpy.astensor
 
+        # Use int32 for bool
+        import numpy as _numpy
+        from ebcc.precision import types
+        types[bool] = _numpy.int32
+
 
 set_backend(os.environ.get("EBCC_TENSOR_BACKEND", "numpy"))
 

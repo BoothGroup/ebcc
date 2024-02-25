@@ -41,18 +41,18 @@ def update_amps(f=None, v=None, space=None, t1=None, t2=None, t3=None, **kwargs)
     nvir = (space[0].ncvir, space[1].ncvir)
     naocc = (space[0].naocc, space[1].naocc)
     navir = (space[0].navir, space[1].navir)
-    soa = np.ones((nocc[0],), dtype=bool)
-    sva = np.ones((nvir[0],), dtype=bool)
-    sob = np.ones((nocc[1],), dtype=bool)
-    svb = np.ones((nvir[1],), dtype=bool)
+    soa = np.ones((nocc[0],), dtype=types[bool])
+    sva = np.ones((nvir[0],), dtype=types[bool])
+    sob = np.ones((nocc[1],), dtype=types[bool])
+    svb = np.ones((nvir[1],), dtype=types[bool])
     sOa = space[0].active[space[0].correlated][space[0].occupied[space[0].correlated]]
     sVa = space[0].active[space[0].correlated][space[0].virtual[space[0].correlated]]
     sOb = space[1].active[space[1].correlated][space[1].occupied[space[1].correlated]]
     sVb = space[1].active[space[1].correlated][space[1].virtual[space[1].correlated]]
-    sOfa = np.ones((naocc[0],), dtype=bool)
-    sVfa = np.ones((navir[0],), dtype=bool)
-    sOfb = np.ones((naocc[1],), dtype=bool)
-    sVfb = np.ones((navir[1],), dtype=bool)
+    sOfa = np.ones((naocc[0],), dtype=types[bool])
+    sVfa = np.ones((navir[0],), dtype=types[bool])
+    sOfb = np.ones((naocc[1],), dtype=types[bool])
+    sVfb = np.ones((navir[1],), dtype=types[bool])
 
     # T amplitudes
     t1new_bb = np.zeros((nocc[1], nvir[1]), dtype=np.float64)

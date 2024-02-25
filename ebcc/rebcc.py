@@ -660,8 +660,8 @@ class REBCC(EBCC):
 
         space = Space(
             self.mo_occ > 0,
-            np.zeros_like(self.mo_occ, dtype=bool),
-            np.zeros_like(self.mo_occ, dtype=bool),
+            np.zeros_like(self.mo_occ, dtype=types[bool]),
+            np.zeros_like(self.mo_occ, dtype=types[bool]),
         )
 
         return space

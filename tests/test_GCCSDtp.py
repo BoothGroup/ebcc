@@ -9,6 +9,7 @@ import pytest
 from pyscf import gto, lib, scf, fci
 
 from ebcc import GEBCC, REBCC, Space, NullLogger, util
+from ebcc.precision import types
 
 
 @pytest.mark.regression
@@ -32,8 +33,8 @@ class GCCSDtp_Tests(unittest.TestCase):
 
         space = Space(
             gmf.mo_occ > 0,
-            np.zeros_like(gmf.mo_occ, dtype=bool),
-            np.ones_like(gmf.mo_occ, dtype=bool),
+            np.zeros_like(gmf.mo_occ, dtype=types[bool]),
+            np.ones_like(gmf.mo_occ, dtype=types[bool]),
         )
 
         ccsdt = GEBCC(
@@ -65,8 +66,8 @@ class GCCSDtp_Tests(unittest.TestCase):
 
         space = Space(
             gmf.mo_occ > 0,
-            np.zeros_like(gmf.mo_occ, dtype=bool),
-            np.ones_like(gmf.mo_occ, dtype=bool),
+            np.zeros_like(gmf.mo_occ, dtype=types[bool]),
+            np.ones_like(gmf.mo_occ, dtype=types[bool]),
         )
 
         ccsdt = GEBCC(
@@ -104,8 +105,8 @@ class GCCSDtp_Tests(unittest.TestCase):
 
         space = Space(
             gmf.mo_occ > 0,
-            np.zeros_like(gmf.mo_occ, dtype=bool),
-            np.zeros_like(gmf.mo_occ, dtype=bool),
+            np.zeros_like(gmf.mo_occ, dtype=types[bool]),
+            np.zeros_like(gmf.mo_occ, dtype=types[bool]),
         )
 
         ccsdt = GEBCC(
@@ -143,12 +144,12 @@ class GCCSDtp_Tests(unittest.TestCase):
         mf.kernel()
         gmf = mf.to_ghf()
 
-        active = np.zeros_like(gmf.mo_occ, dtype=bool)
+        active = np.zeros_like(gmf.mo_occ, dtype=types[bool])
         active[np.where(gmf.mo_occ > 0)[0][-1]] = True
         active[np.where(gmf.mo_occ == 0)[0][0]] = True
         space = Space(
             gmf.mo_occ > 0,
-            np.zeros_like(gmf.mo_occ, dtype=bool),
+            np.zeros_like(gmf.mo_occ, dtype=types[bool]),
             active,
         )
 
@@ -180,10 +181,10 @@ class GCCSDtp_Tests(unittest.TestCase):
         mf.kernel()
         gmf = mf.to_uhf().to_ghf()
 
-        active = np.zeros_like(mf.mo_occ, dtype=bool)
+        active = np.zeros_like(mf.mo_occ, dtype=types[bool])
         active[np.where(mf.mo_occ > 0)[0][-1]] = True
         active[np.where(mf.mo_occ == 0)[0][0]] = True
-        frozen = np.zeros_like(mf.mo_occ, dtype=bool)
+        frozen = np.zeros_like(mf.mo_occ, dtype=types[bool])
         frozen[-1] = True
         rspace = Space(
             mf.mo_occ > 0,
@@ -191,10 +192,10 @@ class GCCSDtp_Tests(unittest.TestCase):
             active,
         )
 
-        active = np.zeros_like(gmf.mo_occ, dtype=bool)
+        active = np.zeros_like(gmf.mo_occ, dtype=types[bool])
         active[np.isclose(gmf.mo_energy, mf.mo_energy[np.where(mf.mo_occ > 0)[0][-1]])] = True
         active[np.isclose(gmf.mo_energy, mf.mo_energy[np.where(mf.mo_occ == 0)[0][0]])] = True
-        frozen = np.zeros_like(gmf.mo_occ, dtype=bool)
+        frozen = np.zeros_like(gmf.mo_occ, dtype=types[bool])
         frozen[-1] = frozen[-2] = True
         gspace = Space(
             gmf.mo_occ > 0,

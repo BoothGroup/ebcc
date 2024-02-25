@@ -8,6 +8,7 @@ import pytest
 from pyscf import gto, scf, cc, lib
 
 from ebcc import REBCC, NullLogger, Space
+from ebcc.precision import types
 
 
 @pytest.mark.reference
@@ -114,7 +115,7 @@ class RDFCCSD_PySCF_Frozen_Tests(unittest.TestCase):
         frozen = np.zeros_like(mf.mo_occ)
         frozen[:2] = 1
         frozen[-1] = 1
-        frozen = frozen.astype(bool)
+        frozen = frozen.astype(types[bool])
 
         ccsd_ref = cc.CCSD(mf)
         ccsd_ref.conv_tol = 1e-10

@@ -13,6 +13,7 @@ from pyscf import cc, gto, lib, scf
 from pyscf.cc import qcisd as pyscf_qcisd
 
 from ebcc import REBCC, NullLogger, Space
+from ebcc.precision import types
 
 
 @pytest.mark.reference
@@ -94,7 +95,7 @@ class RQCISD_PySCF_Frozen_Tests(unittest.TestCase):
         frozen = np.zeros_like(mf.mo_occ)
         frozen[:2] = 1
         frozen[-1] = 1
-        frozen = frozen.astype(bool)
+        frozen = frozen.astype(types[bool])
 
         qcisd_ref = pyscf_qcisd.QCISD(mf)
         qcisd_ref.conv_tol = 1e-10

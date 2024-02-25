@@ -5,6 +5,7 @@ from contextlib import contextmanager
 import numpy  # Use standard NumPy dtypes for any backend
 
 types = {
+    bool: bool,
     float: numpy.float64,
     complex: numpy.complex128,
 }

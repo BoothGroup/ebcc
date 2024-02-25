@@ -14,6 +14,7 @@ from pyscf.cc import ccd as pyscf_ccd
 from pyscf.cc import ccsd_rdm
 
 from ebcc import REBCC, NullLogger, Space
+from ebcc.precision import types
 
 
 @pytest.mark.reference
@@ -109,7 +110,7 @@ class RCCD_PySCF_Frozen_Tests(unittest.TestCase):
         frozen = np.zeros_like(mf.mo_occ)
         frozen[:2] = 1
         frozen[-1] = 1
-        frozen = frozen.astype(bool)
+        frozen = frozen.astype(types[bool])
 
         ccd_ref = pyscf_ccd.CCD(mf)
         ccd_ref.conv_tol = 1e-10

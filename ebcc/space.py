@@ -44,9 +44,9 @@ class Space:
         frozen: np.ndarray,
         active: np.ndarray,
     ):
-        self._occupied = np.asarray(occupied, dtype=bool)
-        self._frozen = np.asarray(frozen, dtype=bool)
-        self._active = np.asarray(active, dtype=bool)
+        self._occupied = np.asarray(occupied, dtype=types[bool])
+        self._frozen = np.asarray(frozen, dtype=types[bool])
+        self._active = np.asarray(active, dtype=types[bool])
 
         assert self._occupied.size == self._frozen.size == self._active.size
         assert not np.any(np.logical_and(self._frozen, self._active))
@@ -322,8 +322,8 @@ def construct_default_space(mf):
 
     def _construct(mo_occ):
         # Build the default space
-        frozen = np.zeros_like(mo_occ, dtype=bool)
-        active = np.zeros_like(mo_occ, dtype=bool)
+        frozen = np.zeros_like(mo_occ, dtype=types[bool])
+        active = np.zeros_like(mo_occ, dtype=types[bool])
         space = Space(
             occupied=mo_occ > 0,
             frozen=frozen,
@@ -410,12 +410,12 @@ def construct_fno_space(mf, occ_tol=1e-5, occ_frac=None, amplitudes=None):
         no_coeff = np.hstack((no_coeff_occ, no_coeff_avir, no_coeff_fvir)).astype(types[float])
 
         # Build the natural orbital space
-        frozen = np.zeros_like(mo_occ, dtype=bool)
+        frozen = np.zeros_like(mo_occ, dtype=types[bool])
         frozen[nocc + num_active_vir :] = True
         no_space = Space(
             occupied=mo_occ > 0,
             frozen=frozen,
-            active=np.zeros_like(mo_occ, dtype=bool),
+            active=np.zeros_like(mo_occ, dtype=types[bool]),
         )
 
         return no_coeff, no_space

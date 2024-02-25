@@ -8,6 +8,7 @@ import pytest
 from pyscf import gto, scf
 
 from ebcc import REBCC, NullLogger, Space
+from ebcc.precision import types
 
 
 @pytest.mark.reference
@@ -30,7 +31,7 @@ class RDCD_Tests(unittest.TestCase):
         mf.conv_tol = 1e-12
         mf.kernel()
 
-        frozen = np.zeros_like(mf.mo_occ, dtype=bool)
+        frozen = np.zeros_like(mf.mo_occ, dtype=types[bool])
         frozen[:2] = True
         space = Space(mf.mo_occ > 0, frozen, np.zeros_like(frozen))
 
