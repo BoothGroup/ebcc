@@ -2,11 +2,11 @@
 
 from contextlib import contextmanager
 
-from ebcc import numpy as np
+import numpy  # Use standard NumPy dtypes for any backend
 
 types = {
-    float: np.float64,
-    complex: np.complex128,
+    float: numpy.float64,
+    complex: numpy.complex128,
 }
 
 
@@ -50,5 +50,5 @@ def single_precision():
     Context manager for setting the floating point precision to single
     precision.
     """
-    with precision(float=np.float32, complex=np.complex64):
+    with precision(float=numpy.float32, complex=numpy.complex64):
         yield
