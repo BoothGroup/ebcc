@@ -664,3 +664,28 @@ def unique(lst):
             done.add(el)
 
     return out
+
+
+def mask_to_slice(mask):
+    """
+    Convert a boolean mask to a slice. If not possible, then an
+    exception is raised.
+    """
+
+    if isinstance(mask, slice):
+        return mask
+
+    i0 = i1 = None
+    in_block = False
+    for i in range(mask.size):
+        if mask[i] and not in_block:
+            i0 = i
+        if in_block:
+            if i0 is not None:
+                raise ValueError
+            i1 = i
+
+    if i1 is None:
+        i1 = mask.size - 1
+            
+    return slice(i0, i1 + 1)

@@ -20,4 +20,5 @@ from ebcc.util.permutations import (
     symmetrise,
     tril_indices_ndim,
     unique,
+    mask_to_slice,
 )

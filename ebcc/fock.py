@@ -87,7 +87,7 @@ class RFock(Fock):
             ki, kj = key
             i = self.slices[0][ki]
             j = self.slices[1][kj]
-            self.__dict__[key] = self.array[i][:, j].copy()
+            self.__dict__[key] = self.array[util.mask_to_slice(i), util.mask_to_slice(j)].copy()
 
             if self.shift:
                 xi = self.xi
