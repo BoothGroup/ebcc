@@ -148,6 +148,10 @@ def set_backend(backend):
     numpy = __import__(backend)
     BACKEND_NAME = backend
 
+    if backend == "ctf":
+        # Monkey patch asarray -- FIXME
+        numpy.asarray = numpy.astensor
+
 
 set_backend(os.environ.get("EBCC_TENSOR_BACKEND", "numpy"))
 
