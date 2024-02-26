@@ -687,5 +687,5 @@ def mask_to_slice(mask):
 
     if i1 is None:
         i1 = mask.size - 1
-            
+
     return slice(i0, i1 + 1)

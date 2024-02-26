@@ -113,6 +113,30 @@ class Space:
             "a": self.inactive_virtual,
         }[char]
 
+    def slice(self, char):
+        """
+        Convert a character in the standard `ebcc` notation to the slice
+        corresponding to this space.  See `ebcc.eris` for details on the
+        default slices.
+
+        Parameters
+        ----------
+        char : str
+            The character to convert.
+
+        Returns
+        -------
+        slice : slice
+            The slice corresponding to the space.
+
+        Raises
+        ------
+        ValueError
+            If the space is not a single contiguous block, and therefore
+            cannot be represented as a slice.
+        """
+        return util.mask_to_slice(self.mask(char))
+
     def omask(self, char):
         """
         Like `mask`, but returns only a mask into only the occupied sector.
