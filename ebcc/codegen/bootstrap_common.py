@@ -2,17 +2,33 @@
 """
 
 import itertools
+import time
 
+from albert.codegen.einsum import EinsumCodeGen as _EinsumCodeGen
+from albert.optim._gristmill import optimise as _optimise
+from albert.qc.spin import generalised_to_restricted, generalised_to_unrestricted
+from albert.qc.uhf import SpinIndex
+from albert.tensor import Tensor
 from pdaggerq.config import OCC_INDICES, VIRT_INDICES
 
-from albert.tensor import Tensor
-from albert.codegen.einsum import EinsumCodeGen as _EinsumCodeGen
-from albert.qc.spin import generalised_to_unrestricted, generalised_to_restricted
-from albert.qc.uhf import SpinIndex
-from albert.optim._gristmill import optimise as _optimise
-
-
-ov_2e = ["oooo", "ooov", "oovo", "ovoo", "vooo", "oovv", "ovov", "ovvo", "voov", "vovo", "vvoo", "ovvv", "vovv", "vvov", "vvvo", "vvvv"]
+ov_2e = [
+    "oooo",
+    "ooov",
+    "oovo",
+    "ovoo",
+    "vooo",
+    "oovv",
+    "ovov",
+    "ovvo",
+    "voov",
+    "vovo",
+    "vvoo",
+    "ovvv",
+    "vovv",
+    "vvov",
+    "vvvo",
+    "vvvv",
+]
 ov_1e = ["oo", "ov", "vo", "vv"]
 
 
@@ -32,8 +48,7 @@ default_sizes = {
 
 
 class EinsumCodeGen(_EinsumCodeGen):
-    """Code generator for the bootstrap scripts for `ebcc`.
-    """
+    """Code generator for the bootstrap scripts for `ebcc`."""
 
     def preamble(self):
         preamble = "from ebcc import numpy as np\n"
@@ -48,9 +63,23 @@ class EinsumCodeGen(_EinsumCodeGen):
         return "tmp" in arg.name or arg.name == "δ"
 
 
+class Stopwatch:
+    def __init__(self, name=None):
+        self.name = name
+
+    def __enter__(self):
+        self.start = time.time()
+        return self
+
+    def __exit__(self, *args):
+        self.end = time.time()
+        self.elapsed = self.end - self.start
+        if self.name:
+            print(f"{self.name}: {self.elapsed:.2f}s")
+
+
 def name_generator_rhf(tensor, add_spaces=True):
-    """Generate names for the RHF case.
-    """
+    """Generate names for the RHF case."""
     if tensor.name in ("f", "v", "d", "Γ", "δ"):
         if tensor.name == "d":
             name = "rdm1"
@@ -70,8 +99,7 @@ def name_generator_rhf(tensor, add_spaces=True):
 
 
 def name_generator_uhf(tensor, add_spaces=True):
-    """Generate names for the UHF case.
-    """
+    """Generate names for the UHF case."""
     if tensor.name in ("f", "v", "d", "Γ", "δ"):
         if tensor.name == "d":
             name = "rdm1"
@@ -105,8 +133,7 @@ name_generators = {
 
 
 def spin_integrate(expr, spin):
-    """Perform the spin integration.
-    """
+    """Perform the spin integration."""
     if spin == "rhf":
         return (generalised_to_restricted(expr),)
     elif spin == "uhf":
@@ -116,16 +143,14 @@ def spin_integrate(expr, spin):
 
 
 def remove_hf_energy(terms):
-    """Remove the HF energy from the terms.
-    """
+    """Remove the HF energy from the terms."""
     terms = [term for term in terms if set(term) != {"+1.00000000000000", "f(i,i)"}]
     terms = [term for term in terms if set(term) != {"-0.50000000000000", "<j,i||j,i>"}]
     return terms
 
 
 def optimise(outputs, exprs, spin, strategy="greedy", sizes=None):
-    """Optimise the expressions.
-    """
+    """Optimise the expressions."""
 
     if sizes is None:
         sizes = default_sizes
@@ -140,11 +165,10 @@ def optimise(outputs, exprs, spin, strategy="greedy", sizes=None):
         for sector, indices in default_indices.items():
             for s in ("α", "β"):
                 index_sizes.update({SpinIndex(index, s): sizes[sector] for index in indices})
-        index_groups = list(default_indices.values())
-        index_groups = [
-            *[SpinIndex(index, "α") for index in indices],
-            *[SpinIndex(index, "β") for index in indices],
-        ]
+        index_groups = []
+        for indices in default_indices.values():
+            for s in ("α", "β"):
+                index_groups.append([SpinIndex(index, s) for index in indices])
 
     opt = _optimise(
         *zip(outputs, exprs),
@@ -157,8 +181,7 @@ def optimise(outputs, exprs, spin, strategy="greedy", sizes=None):
 
 
 def get_t_amplitude_outputs(exprs, name):
-    """Get the outputs for the T amplitude code.
-    """
+    """Get the outputs for the T amplitude code."""
 
     def index_sort(x):
         if not isinstance(x, SpinIndex):
@@ -170,8 +193,7 @@ def get_t_amplitude_outputs(exprs, name):
 
 
 def get_l_amplitude_outputs(exprs, name):
-    """Get the outputs for the L amplitude code.
-    """
+    """Get the outputs for the L amplitude code."""
 
     def index_sort(x):
         if not isinstance(x, SpinIndex):
@@ -183,8 +205,7 @@ def get_l_amplitude_outputs(exprs, name):
 
 
 def get_density_outputs(exprs, name, indices):
-    """Get the outputs for the density code.
-    """
+    """Get the outputs for the density code."""
     to_index = lambda i: i if not isinstance(i, SpinIndex) else i.index
     tensors = []
     for expr in exprs:
@@ -194,8 +215,7 @@ def get_density_outputs(exprs, name, indices):
 
 
 def get_amplitude_spins(n, spin):
-    """Get the spin cases for the amplitudes.
-    """
+    """Get the spin cases for the amplitudes."""
 
     if spin == "rhf":
         case = {}
@@ -205,7 +225,7 @@ def get_amplitude_spins(n, spin):
         cases = [case]
     elif spin == "uhf":
         cases = []
-        for spins in sorted(set([set(sorted(x)) for x in itertools.permutations(["α", "β"], n)])):
+        for spins in itertools.combinations_with_replacement(["α", "β"], n):
             case = {}
             for i, s in enumerate(spins):
                 case[default_indices["o"][i]] = s
@@ -217,9 +237,8 @@ def get_amplitude_spins(n, spin):
     return cases
 
 
-def get_density_spins(n, spin):
-    """Get the spin cases for the density.
-    """
+def get_density_spins(n, spin, indices):
+    """Get the spin cases for the density."""
 
     assert n in (1, 2)  # hardcoded, TODO
 
@@ -227,13 +246,68 @@ def get_density_spins(n, spin):
         if n == 1:
             cases = [("α", "α")]
         elif n == 2:
-            cases = [("α", "α", "α", "α"), ("α", "β", "α", "β"), ("β", "β", "β", "β")]
+            cases = [
+                ("α", "α", "α", "α"),
+                ("α", "β", "α", "β"),
+                ("β", "α", "β", "α"),
+                ("β", "β", "β", "β"),
+            ]
+        cases = [dict(zip(indices, case)) for case in cases]
     elif spin == "uhf":
         if n == 1:
             cases = [("α", "α"), ("β", "β")]
         elif n == 2:
-            cases = [("α", "α", "α", "α"), ("α", "β", "α", "β"), ("β", "α", "β", "α"), ("β", "β", "β", "β")]
+            cases = [("α", "α", "α", "α"), ("α", "β", "α", "β"), ("β", "β", "β", "β")]
+        cases = [dict(zip(indices, case)) for case in cases]
     elif spin == "ghf":
         cases = [None]
 
     return cases
+
+
+def get_density_einsum_preamble(n, spin):
+    """Get the einsum preamble for the density."""
+    preamble = "rdm1 = Namespace()"
+    if spin == "uhf":
+        for spins in itertools.combinations_with_replacement(["α", "β"], n):
+            preamble += f"\nrdm1.{''.join(spins)} = Namespace()"
+        preamble += "\ndelta = Namespace("
+        preamble += "\n    aa=Namespace(oo=np.eye(t1.aa.shape[0]), vv=np.eye(t1.aa.shape[1])),"
+        preamble += "\n    bb=Namespace(oo=np.eye(t1.bb.shape[0]), vv=np.eye(t1.bb.shape[1])),"
+        preamble += "\n)"
+    else:
+        preamble += "\ndelta = Namespace("
+        preamble += "\n    oo=np.eye(t1.shape[0]),"
+        preamble += "\n    vv=np.eye(t1.shape[1]),"
+        preamble += "\n)"
+    return preamble
+
+
+def get_density_einsum_postamble(n, spin):
+    """Get the einsum postamble for the density."""
+    # TODO hardcoded
+    if n == 1:
+        if spin == "uhf":
+            postamble = "rdm1.aa = np.block([[rdm1.aa.oo, rdm1.aa.ov], [rdm1.aa.vo, rdm1.aa.vv]])"
+            postamble += (
+                "\nrdm1.bb = np.block([[rdm1.bb.oo, rdm1.bb.ov], [rdm1.bb.vo, rdm1.bb.vv]])"
+            )
+        else:
+            postamble = "rdm1 = np.block([[rdm1.oo, rdm1.ov], [rdm1.vo, rdm1.vv]])"
+    elif n == 2:
+        if spin == "uhf":
+            postamble = "rdm2.aaaa = pack_2e(%s)" % ", ".join(f"rdm2.aaaa.{perm}" for perm in ov_2e)
+            postamble += "\nrdm2.abab = pack_2e(%s)" % ", ".join(
+                f"rdm2.abab.{perm}" for perm in ov_2e
+            )
+            postamble += "\nrdm2.bbbb = pack_2e(%s)" % ", ".join(
+                f"rdm2.bbbb.{perm}" for perm in ov_2e
+            )
+            postamble += "\nrdm2 = Namespace("
+            postamble += "\n    aaaa=rdm2.aaaa.swapaxes(1, 2),"
+            postamble += "\n    aabb=rdm2.abab.swapaxes(1, 2),"
+            postamble += "\n    bbbb=rdm2.bbbb.swapaxes(1, 2),"
+            postamble += "\n)"
+        else:
+            postamble = "rdm2 = pack_2e(%s)" % ", ".join(f"rdm2.{perm}" for perm in ov_2e)
+            postamble += "\nrdm2 = rdm2.swapaxes(1, 2)"
