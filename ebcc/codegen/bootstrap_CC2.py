@@ -17,9 +17,8 @@ spin = sys.argv[1]
 code_generators = {
     "einsum": EinsumCodeGen(
         stdout=open(f"{spin[0].upper()}CC2.py", "w"),
-        einsum_func="einsum",
-        einsum_kwargs={},
         name_generator=name_generators[spin],
+        spin=spin,
     ),
 }
 
@@ -189,8 +188,8 @@ with Stopwatch("1RDM"):
         for index_spins in get_density_spins(1, spin, indices):
             expr_n = import_from_pdaggerq(terms[sectors, indices], index_spins=index_spins)
             expr_n = spin_integrate(expr_n, spin)
-            if spin == "uhf":
-                expr_n = tuple(e * 0.5 for e in expr_n)
+            if spin == "rhf":
+                expr_n = tuple(e * 2 for e in expr_n)
             output_n = get_density_outputs(expr_n, f"d", indices)
             returns_n = (Tensor(*indices, name=f"d"),)
             expr.extend(expr_n)

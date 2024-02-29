@@ -35,6 +35,7 @@ ov_1e = ["oo", "ov", "vo", "vv"]
 default_indices = {
     "o": OCC_INDICES,
     "v": VIRT_INDICES,
+    "b": ["x", "y", "z", "b0", "b1", "b2", "b3"],
 }
 
 
@@ -42,13 +43,34 @@ default_sectors = {i: k for k, v in default_indices.items() for i in v}
 
 
 default_sizes = {
-    "o": 4,
-    "v": 20,
+    "o": 200,
+    "v": 1000,
+    "b": 10,
 }
 
 
 class EinsumCodeGen(_EinsumCodeGen):
     """Code generator for the bootstrap scripts for `ebcc`."""
+
+    def __init__(
+        self,
+        einsum_func="einsum",
+        einsum_kwargs=None,
+        transpose_func="{arg}.transpose({transpose})",
+        name_generator=None,
+        spin="ghf",
+        **kwargs,
+    ):
+        if einsum_kwargs is None:
+            einsum_kwargs = {"optimize": True}
+        super().__init__(
+            einsum_func=einsum_func,
+            einsum_kwargs=einsum_kwargs,
+            transpose_func=transpose_func,
+            name_generator=name_generator,
+            spin=spin,
+            **kwargs,
+        )
 
     def preamble(self):
         preamble = "from ebcc import numpy as np\n"
@@ -60,7 +82,62 @@ class EinsumCodeGen(_EinsumCodeGen):
         Return `True` if a potential function argument should be
         ignored.
         """
-        return "tmp" in arg.name or arg.name == "δ"
+        return "tmp" in arg.name or arg.name in ("δ", "gc")
+
+    def function_docstring(self, docstring):
+        """Write the function docstring."""
+        if self.spin in ("rhf", "ghf"):
+            array_type = "array"
+        else:
+            array_type = "Namespace of arrays"
+        amplitude_names = [
+            "t1", "t2", "t3", "l1", "l2", "l3", "s1", "s2", "ls1", "ls2", "u11", "u12", "lu11", "lu12",
+        ]
+        descriptions = {
+            "f": "Fock matrix.",
+            "v": "Electron repulsion integrals.",
+            "G": "One-boson Hamiltonian.",
+            "w": "Two-boson Hamiltonian.",
+            "g": "Electron-boson coupling.",
+            "e_cc": "Coupled cluster energy.",
+            "e_pert": "Perturbation energy.",
+            "rdm1": "One-particle reduced density matrix.",
+            "rdm2": "Two-particle reduced density matrix.",
+            "rdm1_b": "One-body reduced density matrix.",
+            "rdm_eb_cre": "Electron-boson coupling reduced density matrix, creation part.",
+            "rdm_eb_des": "Electron-boson coupling reduced density matrix, annihilation part.",
+            "dm_cre": "Single boson density matrix, creation part.",
+            "dm_des": "Single boson density matrix, annihilation part.",
+            **{f"{name}": f"{name.upper()} amplitudes." for name in amplitude_names},
+            **{f"{name}new": f"Updated {name.upper()} residuals." for name in amplitude_names},
+        }
+        types = {
+            "f": array_type,
+            "v": array_type,
+            "G": "array",
+            "w": "array",
+            "g": array_type,
+            "e_cc": "float",
+            "e_pert": "float",
+            "rdm1": array_type,
+            "rdm2": array_type,
+            "rdm1_b": "array",
+            "rdm_eb_cre": array_type,
+            "rdm_eb_des": array_type,
+            "dm_cre": "array",
+            "dm_des": "array",
+            **{f"{name}": array_type if not name.startswith("s") else "array" for name in amplitude_names},
+            **{f"{name}new": array_type if not name.startswith("s") else "array" for name in amplitude_names},
+        }
+        docstring = docstring.split("\n")
+        new_docstring = []
+        for line in docstring:
+            if len(line.split()) and line.split()[0] in descriptions:
+                name = line.split()[0]
+                line = f"{name} : {types[name]}\n    {descriptions[name]}"
+            new_docstring.append(line)
+        docstring = "\n".join(new_docstring)
+        super().function_docstring(docstring)
 
 
 class Stopwatch:
@@ -80,7 +157,7 @@ class Stopwatch:
 
 def name_generator_rhf(tensor, add_spaces=True):
     """Generate names for the RHF case."""
-    if tensor.name in ("f", "v", "d", "Γ", "δ"):
+    if tensor.name in ("f", "v", "d", "Γ", "δ", "g", "gc", "rdm_eb_cre", "rdm_eb_des"):
         if tensor.name == "d":
             name = "rdm1"
         elif tensor.name == "Γ":
@@ -100,7 +177,7 @@ def name_generator_rhf(tensor, add_spaces=True):
 
 def name_generator_uhf(tensor, add_spaces=True):
     """Generate names for the UHF case."""
-    if tensor.name in ("f", "v", "d", "Γ", "δ"):
+    if tensor.name in ("f", "v", "d", "Γ", "δ", "g", "gc", "rdm_eb_cre", "rdm_eb_des"):
         if tensor.name == "d":
             name = "rdm1"
         elif tensor.name == "Γ":
@@ -110,14 +187,14 @@ def name_generator_uhf(tensor, add_spaces=True):
         else:
             name = tensor.name
         if add_spaces:
-            spins = ["a" if i.spin == "α" else "b" for i in tensor.indices]
+            spins = ["a" if i.spin == "α" else "b" for i in tensor.indices if isinstance(i, SpinIndex)]
             spaces = [default_sectors[i.index] for i in tensor.indices]
             return f"{name}.{''.join(spins)}.{''.join(spaces)}"
         else:
             return name
-    elif tensor.name in ("t1", "t2", "t1new", "t2new", "l1", "l2", "l1new", "l2new"):
+    elif tensor.name in ("t1", "t2", "t1new", "t2new", "l1", "l2", "l1new", "l2new", "u11", "u11new", "u12", "u12new"):
         if add_spaces:
-            spins = ["a" if i.spin == "α" else "b" for i in tensor.indices]
+            spins = ["a" if i.spin == "α" else "b" for i in tensor.indices if isinstance(i, SpinIndex)]
             return f"{tensor.name}.{''.join(spins)}"
         else:
             return tensor.name
@@ -184,10 +261,11 @@ def get_t_amplitude_outputs(exprs, name):
     """Get the outputs for the T amplitude code."""
 
     def index_sort(x):
-        if not isinstance(x, SpinIndex):
-            return (default_indices["o"] + default_indices["v"]).index(x)
+        if isinstance(x, SpinIndex):
+            index, spin = x.index, x.spin
         else:
-            return (x.index in default_indices["v"], x.spin, x.index)
+            index, spin = x, ""
+        return ("bov".index(default_sectors[index]), spin, index)
 
     return [Tensor(*sorted(e.external_indices, key=index_sort), name=name) for e in exprs]
 
@@ -196,10 +274,11 @@ def get_l_amplitude_outputs(exprs, name):
     """Get the outputs for the L amplitude code."""
 
     def index_sort(x):
-        if not isinstance(x, SpinIndex):
-            return (default_indices["v"] + default_indices["o"]).index(x)
+        if isinstance(x, SpinIndex):
+            index, spin = x.index, x.spin
         else:
-            return (x.index in default_indices["o"], x.spin, x.index)
+            index, spin = x, ""
+        return ("bvo".index(default_sectors[index]), spin, index)
 
     return [Tensor(*sorted(e.external_indices, key=index_sort), name=name) for e in exprs]
 
@@ -265,12 +344,13 @@ def get_density_spins(n, spin, indices):
     return cases
 
 
-def get_density_einsum_preamble(n, spin):
+def get_density_einsum_preamble(n, spin, name="rdm{n}"):
     """Get the einsum preamble for the density."""
-    preamble = "rdm1 = Namespace()"
+    name = name.format(n=n)
+    preamble = f"{name} = Namespace()"
     if spin == "uhf":
-        for spins in itertools.combinations_with_replacement(["α", "β"], n):
-            preamble += f"\nrdm1.{''.join(spins)} = Namespace()"
+        for spins in itertools.combinations_with_replacement(["a", "b"], n):
+            preamble += f"\n{name}.{''.join(spins+spins)} = Namespace()"
         preamble += "\ndelta = Namespace("
         preamble += "\n    aa=Namespace(oo=np.eye(t1.aa.shape[0]), vv=np.eye(t1.aa.shape[1])),"
         preamble += "\n    bb=Namespace(oo=np.eye(t1.bb.shape[0]), vv=np.eye(t1.bb.shape[1])),"
@@ -283,31 +363,63 @@ def get_density_einsum_preamble(n, spin):
     return preamble
 
 
-def get_density_einsum_postamble(n, spin):
+def get_density_einsum_postamble(n, spin, name="rdm{n}", spaces=None):
     """Get the einsum postamble for the density."""
     # TODO hardcoded
+    name = name.format(n=n)
+    if spaces is None:
+        if n == 1:
+            spaces = ["oo", "ov", "vo", "vv"]
+        elif n == 2:
+            spaces = ov_2e
     if n == 1:
         if spin == "uhf":
-            postamble = "rdm1.aa = np.block([[rdm1.aa.oo, rdm1.aa.ov], [rdm1.aa.vo, rdm1.aa.vv]])"
-            postamble += (
-                "\nrdm1.bb = np.block([[rdm1.bb.oo, rdm1.bb.ov], [rdm1.bb.vo, rdm1.bb.vv]])"
-            )
+            postamble = f"{name}.aa = np.block([[{name}.aa.{spaces[0]}, {name}.aa.{spaces[1]}], [{name}.aa.{spaces[2]}, {name}.aa.{spaces[3]}]])"
+            postamble += f"\n{name}.bb = np.block([[{name}.bb.{spaces[0]}, {name}.bb.{spaces[1]}], [{name}.bb.{spaces[2]}, {name}.bb.{spaces[3]}]])"
         else:
-            postamble = "rdm1 = np.block([[rdm1.oo, rdm1.ov], [rdm1.vo, rdm1.vv]])"
+            postamble = f"{name} = np.block([[{name}.{spaces[0]}, {name}.{spaces[1]}], [{name}.{spaces[2]}, {name}.{spaces[3]}]])"
     elif n == 2:
         if spin == "uhf":
-            postamble = "rdm2.aaaa = pack_2e(%s)" % ", ".join(f"rdm2.aaaa.{perm}" for perm in ov_2e)
-            postamble += "\nrdm2.abab = pack_2e(%s)" % ", ".join(
-                f"rdm2.abab.{perm}" for perm in ov_2e
+            postamble = f"{name}.aaaa = pack_2e(%s)" % ", ".join(f"{name}.aaaa.{perm}" for perm in spaces)
+            postamble += f"\n{name}.abab = pack_2e(%s)" % ", ".join(
+                f"{name}.abab.{perm}" for perm in spaces
             )
-            postamble += "\nrdm2.bbbb = pack_2e(%s)" % ", ".join(
-                f"rdm2.bbbb.{perm}" for perm in ov_2e
+            postamble += f"\n{name}.bbbb = pack_2e(%s)" % ", ".join(
+                f"{name}.bbbb.{perm}" for perm in spaces
             )
-            postamble += "\nrdm2 = Namespace("
-            postamble += "\n    aaaa=rdm2.aaaa.swapaxes(1, 2),"
-            postamble += "\n    aabb=rdm2.abab.swapaxes(1, 2),"
-            postamble += "\n    bbbb=rdm2.bbbb.swapaxes(1, 2),"
-            postamble += "\n)"
+            postamble += f"\n{name} = Namespace("
+            postamble += f"\n    aaaa={name}.aaaa.swapaxes(1, 2),"
+            postamble += f"\n    aabb={name}.abab.swapaxes(1, 2),"
+            postamble += f"\n    bbbb={name}.bbbb.swapaxes(1, 2),"
+            postamble += f"\n)"
         else:
-            postamble = "rdm2 = pack_2e(%s)" % ", ".join(f"rdm2.{perm}" for perm in ov_2e)
-            postamble += "\nrdm2 = rdm2.swapaxes(1, 2)"
+            postamble = f"{name} = pack_2e(%s)" % ", ".join(f"{name}.{perm}" for perm in spaces)
+            postamble += f"\n{name} = {name}.swapaxes(1, 2)"
+    return postamble
+
+
+def get_boson_einsum_preamble(spin):
+    """Get the einsum preamble for the density."""
+    if spin == "uhf":
+        preamble = "gc = Namespace("
+        preamble += "\n    aa=Namespace("
+        preamble += "\n        boo=g.aa.boo.transpose(0, 2, 1),"
+        preamble += "\n        bov=g.aa.bvo.transpose(0, 2, 1),"
+        preamble += "\n        bvo=g.aa.bov.transpose(0, 2, 1),"
+        preamble += "\n        bvv=g.aa.bvv.transpose(0, 2, 1),"
+        preamble += "\n    ),"
+        preamble += "\n    bb=Namespace("
+        preamble += "\n        boo=g.bb.boo.transpose(0, 2, 1),"
+        preamble += "\n        bov=g.bb.bvo.transpose(0, 2, 1),"
+        preamble += "\n        bvo=g.bb.bov.transpose(0, 2, 1),"
+        preamble += "\n        bvv=g.bb.bvv.transpose(0, 2, 1),"
+        preamble += "\n    ),"
+        preamble += "\n)"
+    else:
+        preamble = "gc = Namespace("
+        preamble += "\n    boo=g.boo.transpose(0, 2, 1),"
+        preamble += "\n    bov=g.bvo.transpose(0, 2, 1),"
+        preamble += "\n    bvo=g.bov.transpose(0, 2, 1),"
+        preamble += "\n    bvv=g.bvv.transpose(0, 2, 1),"
+        preamble += "\n)"
+    return preamble
