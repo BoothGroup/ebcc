@@ -162,7 +162,7 @@ def set_tensor_backend(backend):
         raise ValueError("Unsupported tensor backend: %s" % backend)
 
 
-set_backend(os.environ.get("EBCC_TENSOR_BACKEND", "numpy"))
+set_tensor_backend(os.environ.get("EBCC_TENSOR_BACKEND", "numpy"))
 
 
 # --- General constructor:
