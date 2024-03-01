@@ -132,7 +132,7 @@ class Space:
             If the space is not a single contiguous block, and therefore
             cannot be represented as a slice.
         """
-        return util.mask_to_slice(self.mask(char))
+        return mask_to_slice(self.mask(char))
 
     def indexer(self, char):
         """
