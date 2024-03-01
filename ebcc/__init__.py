@@ -151,11 +151,12 @@ def set_tensor_backend(backend):
     TENSOR_BACKEND = backend
 
     if backend == "numpy":
-        # Monkey patch identity operation to return numpy.ndarray
+        # Monkey patch conversion operations (identity)
         tensor_backend.asnumpy = lambda array: array
+        tensor_backend.astensor = lambda array: array
 
     elif backend == "ctf":
-        # Rename function to return numpy.ndarray
+        # Monkey patch conversion operations
         tensor_backend.asnumpy = lambda array: array.to_nparray()
 
     else:
