@@ -80,6 +80,7 @@ class Space:
             The size of the space.
         """
         return {
+            "x": self.ncorr,
             "o": self.ncocc,
             "O": self.naocc,
             "i": self.niocc,
@@ -105,6 +106,7 @@ class Space:
             The mask corresponding to the space.
         """
         return {
+            "x": self.correlated,
             "o": self.correlated_occupied,
             "O": self.active_occupied,
             "i": self.inactive_occupied,
