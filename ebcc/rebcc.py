@@ -1886,7 +1886,7 @@ class REBCC(EBCC):
         """
 
         # FIXME should this also sum in frozen orbitals?
-        val = lib.einsum("Ipp->I", self.g.boo) * 2.0
+        val = util.einsum("Ipp->I", self.g.boo) * 2.0
         val -= self.xi * self.omega
 
         if self.bare_G is not None:
@@ -2006,7 +2006,7 @@ class REBCC(EBCC):
         """
 
         if self.options.shift:
-            xi = lib.einsum("Iii->I", self.g.boo) * 2.0
+            xi = util.einsum("Iii->I", self.g.boo) * 2.0
             xi /= self.omega
             if self.bare_G is not None:
                 xi += self.bare_G / self.omega
@@ -2026,7 +2026,7 @@ class REBCC(EBCC):
             Shift in the energy from moving to polaritonic basis.
         """
         if self.options.shift:
-            return lib.einsum("I,I->", self.omega, self.xi**2)
+            return util.einsum("I,I->", self.omega, self.xi**2)
         else:
             return 0.0
 

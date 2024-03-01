@@ -384,17 +384,17 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         if unshifted and self.options.shift:
             rdm1_f = self.make_rdm1_f(hermitise=hermitise)
-            shift = lib.einsum("x,ij->xij", self.xi, rdm1_f.aa)
+            shift = util.einsum("x,ij->xij", self.xi, rdm1_f.aa)
             dm_eb.aa -= shift[None]
-            shift = lib.einsum("x,ij->xij", self.xi, rdm1_f.bb)
+            shift = util.einsum("x,ij->xij", self.xi, rdm1_f.bb)
             dm_eb.bb -= shift[None]
 
         return dm_eb
 
     @util.has_docstring
     def get_mean_field_G(self):
-        val = lib.einsum("Ipp->I", self.g.aa.boo)
-        val += lib.einsum("Ipp->I", self.g.bb.boo)
+        val = util.einsum("Ipp->I", self.g.aa.boo)
+        val += util.einsum("Ipp->I", self.g.bb.boo)
         val -= self.xi * self.omega
 
         if self.bare_G is not None:
@@ -443,7 +443,7 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
     @property
     @util.has_docstring
     def bare_fock(self):
-        fock = lib.einsum(
+        fock = util.einsum(
             "npq,npi,nqj->nij",
             self.mf.get_fock().astype(types[float]),
             self.mo_coeff,
@@ -456,8 +456,8 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
     @util.has_docstring
     def xi(self):
         if self.options.shift:
-            xi = lib.einsum("Iii->I", self.g.aa.boo)
-            xi += lib.einsum("Iii->I", self.g.bb.boo)
+            xi = util.einsum("Iii->I", self.g.aa.boo)
+            xi += util.einsum("Iii->I", self.g.bb.boo)
             xi /= self.omega
             if self.bare_G is not None:
                 xi += self.bare_G / self.omega
