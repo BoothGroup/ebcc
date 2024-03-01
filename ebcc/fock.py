@@ -69,13 +69,13 @@ class RFock(Fock):
 
         if self.slices is None:
             self.slices = {
-                "x": self.space.correlated,
-                "o": self.space.correlated_occupied,
-                "v": self.space.correlated_virtual,
-                "O": self.space.active_occupied,
-                "V": self.space.active_virtual,
-                "i": self.space.inactive_occupied,
-                "a": self.space.inactive_virtual,
+                "x": self.space.indexer("x"),
+                "o": self.space.indexer("o"),
+                "v": self.space.indexer("v"),
+                "O": self.space.indexer("O"),
+                "V": self.space.indexer("V"),
+                "i": self.space.indexer("i"),
+                "a": self.space.indexer("a"),
             }
         if not isinstance(self.slices, (tuple, list)):
             self.slices = [self.slices] * 2
