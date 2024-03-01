@@ -239,7 +239,7 @@ class REOM(EOM):
                     ket = self.matvec(ket, eris=eris)
 
         if hermitise:
-            moments = 0.5 * (moments + moments.swapaxes(1, 2))
+            moments = 0.5 * (moments + moments.transpose(0, 2, 1))
 
         return moments
 

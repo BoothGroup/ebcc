@@ -4,7 +4,7 @@ import ctypes
 import operator
 
 import numpy
-from pyscf.lib import direct_sum, dot  # noqa: F401
+from pyscf.lib import dot  # noqa: F401
 from pyscf.lib import einsum as pyscf_einsum  # noqa: F401
 
 from ebcc import BACKEND_NAME
@@ -560,5 +560,51 @@ def einsum(*operands, **kwargs):
             operands = [args.pop(x) for x in inds]
             out = _contract(einsum_str, *operands)
             args.append(out)
+
+    return out
+
+
+def direct_sum(subscripts, *operands):
+    """Apply the summation over many operands with the einsum fashion.
+
+    Taken from PySCF.
+    """
+
+    def _sign_and_symbs(subscript):
+        subscript = subscript.replace(" ", "").replace(",", "+")
+        if subscript[0] not in "+-":
+            subscript = "+" + subscript
+        sign = [x for x in subscript if x in "+-"]
+        symbs = subscript[1:].replace("-", "+").split("+")
+        return sign, symbs
+
+    if "->" in subscripts:
+        src, dest = subscripts.split("->")
+        sign, src = _sign_and_symbs(src)
+        dest = dest.replace(" ", "")
+    else:
+        sign, src = _sign_and_symbs(subscripts)
+        dest = "".join(src)
+    assert (len(src) == len(operands))
+
+    for i, symb in enumerate(src):
+        op = np.asarray(operands[i])
+        assert (len(symb) == op.ndim)
+        unisymb = set(symb)
+        if len(unisymb) != len(symb):
+            unisymb = "".join(unisymb)
+            op = _fallback_einsum("->".join((symb, unisymb)), op)
+            src[i] = unisymb
+        if i == 0:
+            if sign[i] == "+":
+                out = op
+            else:
+                out = -op
+        elif sign[i] == "+":
+            out = out.reshape(out.shape+(1,)*op.ndim) + op
+        else:
+            out = out.reshape(out.shape+(1,)*op.ndim) - op
+
+    out = _fallback_einsum("->".join(("".join(src), dest)), out)
 
     return out

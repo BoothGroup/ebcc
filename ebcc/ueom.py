@@ -50,7 +50,7 @@ class UEOM(reom.REOM, metaclass=util.InheritDocstrings):
 
             if hermitise:
                 t = getattr(moments, spin)
-                setattr(moments, spin, 0.5 * (t + t.swapaxes(1, 2)))
+                setattr(moments, spin, 0.5 * (t + t.transpose(0, 2, 1)))
 
         return moments
 

@@ -36,10 +36,12 @@ The implemented models are built upon the mean-field objects of
 
 __version__ = "1.4.3"
 
+import itertools
 import logging
 import os
 import subprocess
 import sys
+import types
 
 # --- Logging:
 
@@ -145,24 +147,26 @@ def set_backend(backend):
 
     global numpy, BACKEND_NAME
 
+    import numpy as _numpy
+
     numpy = __import__(backend)
     BACKEND_NAME = backend
 
+    if backend == "numpy":
+        # Reset bool
+        types[bool] = bool
+
+        # Monkey patch identity operation
+        numpy.asnumpy = lambda array: array
+
     if backend == "ctf":
-        # CTF needs some hacks to complete the interface
-        import numpy as _numpy
-
-        # Monkey patch asarray
-        numpy.asarray = numpy.astensor
-
         # Use int32 for bool
         from ebcc.precision import types
         types[bool] = _numpy.int32
 
-        # Fake some logical functions
-        numpy.logical_and = lambda a, b: a * b
-        numpy.logical_or = lambda a, b: (a + b) // 2
-        numpy.logical_not = lambda a: numpy.ones(a.shape, dtype=types[bool]) - a
+        # Monkey patch functions
+        numpy.asarray = numpy.astensor
+        numpy.asnumpy = lambda array: array.to_nparray()
 
 
 set_backend(os.environ.get("EBCC_TENSOR_BACKEND", "numpy"))

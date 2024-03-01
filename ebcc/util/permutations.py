@@ -675,17 +675,9 @@ def mask_to_slice(mask):
     if isinstance(mask, slice):
         return mask
 
-    i0 = i1 = None
-    in_block = False
-    for i in range(mask.size):
-        if mask[i] and not in_block:
-            i0 = i
-        if in_block:
-            if i0 is not None:
-                raise ValueError
-            i1 = i
+    differences = np.diff(np.where(mask > 0)[0])
 
-    if i1 is None:
-        i1 = mask.size - 1
+    if np.any(differences != 1):
+        raise ValueError
 
-    return slice(i0, i1 + 1)
+    return slice(min(differences), max(differences) + 1)

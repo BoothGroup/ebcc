@@ -80,6 +80,7 @@ class Space:
             The size of the space.
         """
         return {
+            "x": self.ncorr,
             "o": self.ncocc,
             "O": self.naocc,
             "i": self.niocc,
@@ -105,6 +106,7 @@ class Space:
             The mask corresponding to the space.
         """
         return {
+            "x": self.correlated,
             "o": self.correlated_occupied,
             "O": self.active_occupied,
             "i": self.inactive_occupied,
@@ -136,6 +138,29 @@ class Space:
             cannot be represented as a slice.
         """
         return util.mask_to_slice(self.mask(char))
+
+    def indexer(self, char):
+        """
+        Convert a character in the standard `ebcc` notation to an
+        indexing object corresponding to this space.  If the space can
+        be represented as a slice, then a slice is returned, otherwise
+        the array mask.  See `ebcc.eris` for details on the default
+        slices.
+
+        Parameters
+        ----------
+        char : str
+            The character to convert.
+
+        Returns
+        -------
+        indexer : slice or np.ndarray
+            The slice or mask corresponding to the space.
+        """
+        try:
+            return self.slice(char)
+        except ValueError:
+            return self.mask(char)
 
     def omask(self, char):
         """

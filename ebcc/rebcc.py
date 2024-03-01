@@ -691,7 +691,7 @@ class REBCC(EBCC):
                 amplitudes[name] = self.fock[key] / self.energy_sum(key)
             elif n == 2:
                 key_t = key[0] + key[2] + key[1] + key[3]
-                amplitudes[name] = eris[key_t].swapaxes(1, 2) / self.energy_sum(key)
+                amplitudes[name] = eris[key_t].transpose(0, 2, 1, 3) / self.energy_sum(key)
             else:
                 shape = tuple(self.space.size(k) for k in key)
                 amplitudes[name] = np.zeros(shape, dtype=types[float])

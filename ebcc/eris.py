@@ -60,13 +60,13 @@ class RERIs(ERIs):
 
         if self.slices is None:
             self.slices = {
-                "x": self.space.correlated,
-                "o": self.space.correlated_occupied,
-                "v": self.space.correlated_virtual,
-                "O": self.space.active_occupied,
-                "V": self.space.active_virtual,
-                "i": self.space.inactive_occupied,
-                "a": self.space.inactive_virtual,
+                "x": self.space.indexer("x"),
+                "o": self.space.indexer("o"),
+                "v": self.space.indexer("v"),
+                "O": self.space.indexer("O"),
+                "V": self.space.indexer("V"),
+                "i": self.space.indexer("i"),
+                "a": self.space.indexer("a"),
             }
         if not isinstance(self.slices, (tuple, list)):
             self.slices = [self.slices] * 4
@@ -78,9 +78,11 @@ class RERIs(ERIs):
             if key not in self.__dict__.keys():
                 coeffs = []
                 for i, k in enumerate(key):
-                    coeffs.append(
-                        numpy.asarray(self.mo_coeff[i][:, self.slices[i][k]], dtype=numpy.float64)
-                    )
+                    coeff = self.mo_coeff[i][:, self.slices[i][k]]
+                    if hasattr(np, "asnumpy"):
+                        # FIXME should we just do ao2mo with einsum...?
+                        coeff = np.asnumpy(coeff)
+                    coeffs.append(numpy.asarray(coeff, dtype=numpy.float64))
                 block = ao2mo.incore.general(
                     self.mf._eri,
                     coeffs,
