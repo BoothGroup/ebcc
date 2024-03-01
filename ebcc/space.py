@@ -354,12 +354,13 @@ def mask_to_slice(mask):
     if isinstance(mask, slice):
         return mask
 
-    differences = np.diff(np.where(mask > 0)[0])
+    indices = np.where(mask > 0)[0]
+    differences = np.diff(indices)
 
     if np.any(differences != 1):
         raise ValueError
 
-    return slice(min(differences), max(differences) + 1)
+    return slice(min(indices), max(indices) + 1)
 
 
 def construct_default_space(mf):
