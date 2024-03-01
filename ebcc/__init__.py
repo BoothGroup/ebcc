@@ -126,9 +126,43 @@ def init_logging(log):
 METHOD_TYPES = ["MP", "CC", "LCC", "QCI", "QCC", "DC"]
 
 
-# --- Import NumPy here to allow drop-in replacements
+# --- Get the tensor backend
 
 import numpy
+
+TENSOR_BACKEND = None
+tensor_backend = None
+
+
+def set_tensor_backend(backend):
+    """
+    Set the tensor backend. The desired backend will be imported and
+    assigned to the global variable `tensor_backend`.
+
+    Parameters
+    ----------
+    backend : str
+        The name of the tensor backend to use.
+    """
+
+    global tensor_backend, TENSOR_BACKEND
+
+    tensor_backend = __import__(backend)
+    TENSOR_BACKEND = backend
+
+    if backend == "numpy":
+        # Monkey patch identity operation to return numpy.ndarray
+        tensor_backend.asnumpy = lambda array: array
+
+    elif backend == "ctf":
+        # Rename function to return numpy.ndarray
+        tensor_backend.asnumpy = lambda array: array.to_nparray()
+
+    else:
+        raise ValueError("Unsupported tensor backend: %s" % backend)
+
+
+set_backend(os.environ.get("EBCC_TENSOR_BACKEND", "numpy"))
 
 
 # --- General constructor:
