@@ -77,6 +77,7 @@ def set_tensor_backend(backend):
     if backend == "numpy":
         tensor_backend.asnumpy = lambda array: array
         tensor_backend.astensor = lambda array: array
+        tensor_backend.norm = lambda *args, **kwargs: tensor_backend.linalg.norm(*args, **kwargs)
     elif backend == "ctf":
         tensor_backend.asnumpy = lambda array: array.to_nparray()
     elif backend == "jax.numpy":
@@ -164,7 +165,7 @@ def init_logging(log):
     if TENSOR_BACKEND != "numpy":
         parent = sys.modules[tensor_backend.__name__.split(".")[0]]
         log.info("%s:" % parent.__name__)
-        log.info(" > Version:  %s" % parent.__version__)
+        log.info(" > Version:  %s" % getattr(parent, "__version__", "N/A"))
         log.info(
             " > Git hash: %s" % get_git_hash(os.path.join(os.path.dirname(parent.__file__), ".."))
         )

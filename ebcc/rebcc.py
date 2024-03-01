@@ -5,7 +5,7 @@ import dataclasses
 from pyscf import lib
 
 from ebcc import default_log, init_logging
-from ebcc import numpy as np
+from ebcc import numpy as np, tensor_backend as tb
 from ebcc import reom, util
 from ebcc.ansatz import Ansatz
 from ebcc.brueckner import BruecknerREBCC
@@ -394,7 +394,7 @@ class REBCC(EBCC):
                 vector = self.amplitudes_to_vector(amplitudes)
                 vector = diis.update(vector)
                 amplitudes = self.vector_to_amplitudes(vector)
-                dt = np.linalg.norm(vector - self.amplitudes_to_vector(amplitudes_prev), ord=np.inf)
+                dt = tb.norm(vector - self.amplitudes_to_vector(amplitudes_prev), ord=np.inf)
 
                 # Update the energy and calculate change:
                 e_prev = e_cc
@@ -499,7 +499,7 @@ class REBCC(EBCC):
             vector = self.lambdas_to_vector(lambdas)
             vector = diis.update(vector)
             lambdas = self.vector_to_lambdas(vector)
-            dl = np.linalg.norm(vector - self.lambdas_to_vector(lambdas_prev), ord=np.inf)
+            dl = tb.norm(vector - self.lambdas_to_vector(lambdas_prev), ord=np.inf)
 
             self.log.info("%4d %13.3e", niter, dl)
 
@@ -693,15 +693,17 @@ class REBCC(EBCC):
                 amplitudes[name] = self.fock[key] / self.energy_sum(key)
             elif n == 2:
                 key_t = key[0] + key[2] + key[1] + key[3]
-                amplitudes[name] = eris[key_t].swapaxes(1, 2) / self.energy_sum(key)
+                amplitudes[name] = eris[key_t].transpose(0, 2, 1, 3) / self.energy_sum(key)
             else:
                 shape = tuple(self.space.size(k) for k in key)
-                amplitudes[name] = np.zeros(shape, dtype=types[float])
+                amplitudes[name] = tb.zeros(shape, dtype=types[float])
 
         if self.boson_ansatz:
             # Only true for real-valued couplings:
             h = self.g
             H = self.G
+
+        # TODO rest tensor_backend
 
         # Build S amplitudes:
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
@@ -1575,7 +1577,7 @@ class REBCC(EBCC):
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             vectors.append(amplitudes[name].ravel())
 
-        return np.concatenate(vectors)
+        return tb.hstack(tuple(vectors))
 
     def vector_to_amplitudes(self, vector):
         """
@@ -1646,7 +1648,7 @@ class REBCC(EBCC):
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             vectors.append(lambdas["l" + name].ravel())
 
-        return np.concatenate(vectors)
+        return tb.hstack(tuple(vectors))
 
     def vector_to_lambdas(self, vector):
         """
@@ -1723,7 +1725,7 @@ class REBCC(EBCC):
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
-        return np.concatenate(vectors)
+        return tb.hstack(tuple(vectors))
 
     def excitations_to_vector_ea(self, *excitations):
         """
@@ -2162,10 +2164,11 @@ class REBCC(EBCC):
             if key == "b":
                 energies.append(self.omega)
             else:
-                energies.append(np.diag(self.fock[key + key]))
+                energies.append(np.diag(tb.asnumpy(self.fock[key + key])))
 
         subscript = "".join([signs_dict[k] + next_char() for k in subscript])
         energy_sum = lib.direct_sum(subscript, *energies)
+        energy_sum = tb.astensor(energy_sum)  # FIXME build as tensor
 
         return energy_sum
 
