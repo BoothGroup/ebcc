@@ -2,6 +2,8 @@
 
 from pyscf.lib import diis
 
+from ebcc import numpy as np, tensor_backend as tb
+
 
 class DIIS(diis.DIIS):
     """Direct inversion in the iterative subspace."""
@@ -16,6 +18,13 @@ class DIIS(diis.DIIS):
     def update(self, x, xerr=None):
         """Extrapolate a vector."""
 
+        # FIXME
+        try:
+            x = tb.asnumpy(x)
+            is_tensor = True
+        except:
+            is_tensor = False
+
         # Extrapolate the vector
         x = super().update(x, xerr=xerr)
 
@@ -25,5 +34,9 @@ class DIIS(diis.DIIS):
             if nd > 1:
                 xprev = self.get_vec(self.get_num_vec() - 1)
                 x = (1.0 - self.damping) * x + self.damping * xprev
+
+        # FIXME
+        if is_tensor:
+            x = tb.astensor(x)
 
         return x

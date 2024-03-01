@@ -2,8 +2,6 @@
 
 import dataclasses
 
-from pyscf import lib
-
 from ebcc import default_log, init_logging
 from ebcc import numpy as np, tensor_backend as tb
 from ebcc import reom, util
@@ -2167,7 +2165,7 @@ class REBCC(EBCC):
                 energies.append(np.diag(tb.asnumpy(self.fock[key + key])))
 
         subscript = "".join([signs_dict[k] + next_char() for k in subscript])
-        energy_sum = lib.direct_sum(subscript, *energies)
+        energy_sum = util.direct_sum(subscript, *energies)
         energy_sum = tb.astensor(energy_sum)  # FIXME build as tensor
 
         return energy_sum
