@@ -1,6 +1,7 @@
 """Fock matrix containers."""
 
 from ebcc import numpy as np
+from ebcc import tensor_backend as tb
 from ebcc import util
 from ebcc.precision import types
 
@@ -87,13 +88,13 @@ class RFock(Fock):
             ki, kj = key
             i = self.slices[0][ki]
             j = self.slices[1][kj]
-            self.__dict__[key] = self.array[i][:, j].copy()
+            self.__dict__[key] = tb.astensor(self.array[i][:, j].copy())
 
             if self.shift:
                 xi = self.xi
                 g = self.g.__getattr__(f"b{ki}{kj}")
                 g += self.g.__getattr__(f"b{kj}{ki}").transpose(0, 2, 1)
-                self.__dict__[key] -= util.einsum("I,Ipq->pq", xi, g)
+                self.__dict__[key] -= tb.astensor(util.einsum("I,Ipq->pq", xi, g))
 
         return self.__dict__[key]
 

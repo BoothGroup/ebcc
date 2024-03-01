@@ -36,10 +36,58 @@ The implemented models are built upon the mean-field objects of
 
 __version__ = "1.4.3"
 
+import importlib
 import logging
 import os
 import subprocess
 import sys
+
+
+# --- Get the tensor backend
+
+import numpy
+
+TENSOR_BACKEND = None
+tensor_backend = None
+
+
+def set_tensor_backend(backend):
+    """
+    Set the tensor backend. The desired backend will be imported and
+    assigned to the global variable `tensor_backend`.
+
+    Parameters
+    ----------
+    backend : str
+        The name of the tensor backend to use.
+    """
+
+    global tensor_backend, TENSOR_BACKEND
+
+    # Check name
+    if backend == "":
+        backend = "numpy"
+    elif backend == "jax":
+        backend = set_tensor_backend("jax.numpy")
+
+    tensor_backend = importlib.import_module(backend)
+    TENSOR_BACKEND = backend
+
+    # Monkey patch conversion operations
+    if backend == "numpy":
+        tensor_backend.asnumpy = lambda array: array
+        tensor_backend.astensor = lambda array: array
+    elif backend == "ctf":
+        tensor_backend.asnumpy = lambda array: array.to_nparray()
+    elif backend == "jax.numpy":
+        # TODO precision control
+        tensor_backend.asnumpy = lambda array: numpy.asarray(array)
+        tensor_backend.astensor = lambda array: tensor_backend.asarray(array)
+    else:
+        raise ValueError("Unsupported tensor backend: %s" % backend)
+
+
+set_tensor_backend(os.environ.get("EBCC_TENSOR_BACKEND", "numpy"))
 
 # --- Logging:
 
@@ -113,7 +161,16 @@ def init_logging(log):
     log.info(" > Version:  %s" % __version__)
     log.info(" > Git hash: %s" % get_git_hash(os.path.join(os.path.dirname(__file__), "..")))
 
+    if TENSOR_BACKEND != "numpy":
+        parent = sys.modules[tensor_backend.__name__.split(".")[0]]
+        log.info("%s:" % parent.__name__)
+        log.info(" > Version:  %s" % parent.__version__)
+        log.info(
+            " > Git hash: %s" % get_git_hash(os.path.join(os.path.dirname(parent.__file__), ".."))
+        )
+
     # Environment variables
+    log.info("EBCC_TENSOR_BACKEND = %s" % os.environ.get("EBCC_TENSOR_BACKEND", ""))
     log.info("OMP_NUM_THREADS = %s" % os.environ.get("OMP_NUM_THREADS", ""))
 
     log.info("")
@@ -124,46 +181,6 @@ def init_logging(log):
 # --- Types of ansatz supporting by the EBCC solvers:
 
 METHOD_TYPES = ["MP", "CC", "LCC", "QCI", "QCC", "DC"]
-
-
-# --- Get the tensor backend
-
-import numpy
-
-TENSOR_BACKEND = None
-tensor_backend = None
-
-
-def set_tensor_backend(backend):
-    """
-    Set the tensor backend. The desired backend will be imported and
-    assigned to the global variable `tensor_backend`.
-
-    Parameters
-    ----------
-    backend : str
-        The name of the tensor backend to use.
-    """
-
-    global tensor_backend, TENSOR_BACKEND
-
-    tensor_backend = __import__(backend)
-    TENSOR_BACKEND = backend
-
-    if backend == "numpy":
-        # Monkey patch conversion operations (identity)
-        tensor_backend.asnumpy = lambda array: array
-        tensor_backend.astensor = lambda array: array
-
-    elif backend == "ctf":
-        # Monkey patch conversion operations
-        tensor_backend.asnumpy = lambda array: array.to_nparray()
-
-    else:
-        raise ValueError("Unsupported tensor backend: %s" % backend)
-
-
-set_tensor_backend(os.environ.get("EBCC_TENSOR_BACKEND", "numpy"))
 
 
 # --- General constructor:

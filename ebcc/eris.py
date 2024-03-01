@@ -3,6 +3,7 @@
 from pyscf import ao2mo
 
 from ebcc import numpy as np
+from ebcc import tensor_backend as tb
 from ebcc import util
 from ebcc.precision import types
 
@@ -84,7 +85,7 @@ class RERIs(ERIs):
                     compact=False,
                 )
                 block = block.reshape([c.shape[-1] for c in coeffs])
-                self.__dict__[key] = block.astype(types[float])
+                self.__dict__[key] = tb.astensor(block.astype(types[float]))
             return self.__dict__[key]
         else:
             slices = []
