@@ -113,6 +113,48 @@ class Space:
             "a": self.inactive_virtual,
         }[char]
 
+    def slice(self, char):
+        """
+        Convert a character in the standard `ebcc` notation to the slice
+        corresponding to this space.  See `ebcc.eris` for details on the
+        default slices.
+        Parameters
+        ----------
+        char : str
+            The character to convert.
+        Returns
+        -------
+        slice : slice
+            The slice corresponding to the space.
+        Raises
+        ------
+        ValueError
+            If the space is not a single contiguous block, and therefore
+            cannot be represented as a slice.
+        """
+        return util.mask_to_slice(self.mask(char))
+
+    def indexer(self, char):
+        """
+        Convert a character in the standard `ebcc` notation to an
+        indexing object corresponding to this space.  If the space can
+        be represented as a slice, then a slice is returned, otherwise
+        the array mask.  See `ebcc.eris` for details on the default
+        slices.
+        Parameters
+        ----------
+        char : str
+            The character to convert.
+        Returns
+        -------
+        indexer : slice or np.ndarray
+            The slice or mask corresponding to the space.
+        """
+        try:
+            return self.slice(char)
+        except ValueError:
+            return self.mask(char)
+
     def omask(self, char):
         """
         Like `mask`, but returns only a mask into only the occupied sector.
@@ -299,6 +341,23 @@ class Space:
     def navir(self):
         """Get the number of virtual active orbitals."""
         return np.sum(self.active_virtual)
+
+
+def mask_to_slice(mask):
+    """
+    Convert a boolean mask to a slice. If not possible, then an
+    exception is raised.
+    """
+
+    if isinstance(mask, slice):
+        return mask
+
+    differences = np.diff(np.where(mask > 0)[0])
+
+    if np.any(differences != 1):
+        raise ValueError
+
+    return slice(min(differences), max(differences) + 1)
 
 
 def construct_default_space(mf):
