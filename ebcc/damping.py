@@ -139,9 +139,13 @@ class DIIS:
         c = np.dot(h_inv, g)
 
         # Perform the DIIS extrapolation
-        xnew = 0
+        xnew = None
         for i, ci in enumerate(c[1:]):
-            xnew += self.get_vec(i) * ci
+            xpart = self.get_vec(i) * ci
+            if xnew is None:
+                xnew = xpart
+            else:
+                xnew += xpart
 
         # Apply damping
         if self.damping > 0:
