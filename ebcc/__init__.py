@@ -73,22 +73,22 @@ def set_tensor_backend(backend):
         tensor_backend = importlib.import_module("jax.numpy")
     elif backend == "tblis":
         tensor_backend = importlib.import_module("numpy")
-    else:
+    elif backend in ("numpy", "ctf"):
         tensor_backend = importlib.import_module(backend)
+    else:
+        raise ValueError("Unsupported tensor backend: %s" % backend)
 
     # Monkey patch conversion operations
-    if backend == "numpy":
+    if backend in ("numpy", "tblis"):
         tensor_backend.asnumpy = lambda array: array
         tensor_backend.astensor = lambda array: array
         tensor_backend.norm = lambda *args, **kwargs: tensor_backend.linalg.norm(*args, **kwargs)
-    elif backend == "ctf":
-        tensor_backend.asnumpy = lambda array: array.to_nparray()
-    elif backend == "jax.numpy":
+    elif backend == "jax":
         # TODO precision control
         tensor_backend.asnumpy = lambda array: numpy.asarray(array)
         tensor_backend.astensor = lambda array: tensor_backend.asarray(array)
-    else:
-        raise ValueError("Unsupported tensor backend: %s" % backend)
+    elif backend == "ctf":
+        tensor_backend.asnumpy = lambda array: array.to_nparray()
 
 
 set_tensor_backend(os.environ.get("EBCC_TENSOR_BACKEND", "numpy"))

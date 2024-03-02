@@ -3,8 +3,10 @@
 import dataclasses
 
 from ebcc import default_log, init_logging
-from ebcc import numpy as np, tensor_backend as tb
-from ebcc import reom, util
+from ebcc import numpy as np
+from ebcc import reom
+from ebcc import tensor_backend as tb
+from ebcc import util
 from ebcc.ansatz import Ansatz
 from ebcc.brueckner import BruecknerREBCC
 from ebcc.cderis import RCDERIs

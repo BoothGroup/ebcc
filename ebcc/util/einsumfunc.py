@@ -6,18 +6,21 @@ import operator
 from pyscf.lib import direct_sum, dot  # noqa: F401
 from pyscf.lib import einsum as pyscf_einsum  # noqa: F401
 
-from ebcc import numpy as np, tensor_backend as tb
 from ebcc import TENSOR_BACKEND
+from ebcc import numpy as np
+from ebcc import tensor_backend as tb
 
-# Try to import TBLIS
-try:
+# Try to import TBLIS if needed
+if TENSOR_BACKEND == "tblis":
     try:
-        import tblis_einsum
-    except ImportError:
-        from pyscf.tblis_einsum import tblis_einsum
-    FOUND_TBLIS = True
-except ImportError:
-    FOUND_TBLIS = False
+        try:
+            import tblis_einsum
+        except ImportError:
+            from pyscf.tblis_einsum import tblis_einsum
+    except ImportError as e:
+        raise ImportError(
+            "Can't find `tblis_einsum` module which is required for the `tblis` backend."
+        ) from e
 
 # Define the size of problem to fall back on NumPy
 NUMPY_EINSUM_SIZE = 2000
@@ -307,7 +310,7 @@ def contract(subscript, *args, **kwargs):
     array : numpy.ndarray
         Result of the contraction.
     """
-    if FOUND_TBLIS and TENSOR_BACKEND == "numpy":
+    if TENSOR_BACKEND == "tblis":
         return _contract_tblis(subscript, *args, **kwargs)
     else:
         return _contract(subscript, *args, **kwargs)
@@ -345,7 +348,7 @@ def _parse_einsum_input(operands):
 
     if isinstance(operands[0], str):
         subscripts = operands[0].replace(" ", "")
-        #operands = [np.asarray(v) for v in operands[1:]]
+        # operands = [np.asarray(v) for v in operands[1:]]
         operands = [v for v in operands[1:]]
 
         # Ensure all characters are valid
@@ -364,7 +367,7 @@ def _parse_einsum_input(operands):
             subscript_list.append(tmp_operands.pop(0))
 
         output_list = tmp_operands[-1] if len(tmp_operands) else None
-        #operands = [np.asarray(v) for v in operand_list]
+        # operands = [np.asarray(v) for v in operand_list]
         operands = [v for v in operand_list]
         subscripts = ""
         last = len(subscript_list) - 1
@@ -489,6 +492,51 @@ def _parse_einsum_input(operands):
     return (input_subscripts, output_subscript, operands)
 
 
+def _einsum_numpy(subscript, *args, **kwargs):
+    """
+    Evaluate an Einstein summation convention on the operands for the
+    `"numpy"` or `"tblis"` backend.
+    """
+
+    # Perform the contraction
+    if len(args) < 2:
+        # If it's just a transpose, use the fallback
+        out = _fallback_einsum(subscript, *args, **kwargs)
+    elif len(args) < 3:
+        # If it's a single contraction, call the backend directly
+        out = contract(subscript, *args, **kwargs)
+    else:
+        # If it's a chain of contractions, use the path optimizer
+        optimize = kwargs.pop("optimize", True)
+        args = list(args)
+        contractions = np.einsum_path(subscript, *args, optimize=optimize, einsum_call=True)[1]
+        for contraction in contractions:
+            inds, idx_rm, einsum_str, remain = contraction[:4]
+            operands = [args.pop(x) for x in inds]
+            out = contract(einsum_str, *operands)
+            args.append(out)
+
+    return out
+
+
+def _einsum_jax(subscript, *args, **kwargs):
+    """
+    Evaluate an Einstein summation convention on the operands for the
+    `"jax"` backend.
+    """
+    optimize = kwargs.pop("optimize", True)
+    return tb.einsum(subscript, *args, optimize=optimize, **kwargs)
+
+
+def _einsum_ctf(subscript, *args, **kwargs):
+    """
+    Evaluate an Einstein summation convention on the operands for the
+    `"ctf"` backend.
+    """
+    optimize = kwargs.pop("optimize", True)  # CTF does not support this
+    return tb.einsum(subscript, *args, **kwargs)
+
+
 def einsum(*operands, **kwargs):
     """
     Evaluate an Einstein summation convention on the operands.
@@ -537,35 +585,13 @@ def einsum(*operands, **kwargs):
     # Parse the kwargs
     inp, out, args = _parse_einsum_input(operands)
     subscript = "%s->%s" % (inp, out)
-    _contract = kwargs.get("contract", contract)
 
-    # Check for non-NumPy backend
-    if TENSOR_BACKEND == "ctf":
-        tb_kwargs = kwargs.copy()
-        tb_kwargs.pop("optimize", None)
-        return tb.einsum(subscript, *args, **tb_kwargs)
-    elif TENSOR_BACKEND == "jax.numpy":
-        tb_kwargs = kwargs.copy()
-        if "optimize" not in tb_kwargs:
-            tb_kwargs["optimize"] = True
-        return tb.einsum(subscript, *args, **tb_kwargs)
-
-    # Perform the contraction
-    if len(args) < 2:
-        # If it's just a transpose, use the fallback
-        out = _fallback_einsum(subscript, *args, **kwargs)
-    elif len(args) < 3:
-        # If it's a single contraction, call the backend directly
-        out = _contract(subscript, *args, **kwargs)
+    # Call the appropriate backend
+    if TENSOR_BACKEND in ("numpy", "tblis"):
+        return _einsum_numpy(subscript, *args, **kwargs)
+    elif TENSOR_BACKEND == "jax":
+        return _einsum_jax(subscript, *args, **kwargs)
+    elif TENSOR_BACKEND == "ctf":
+        return _einsum_ctf(subscript, *args, **kwargs)
     else:
-        # If it's a chain of contractions, use the path optimizer
-        optimize = kwargs.pop("optimize", True)
-        args = list(args)
-        contractions = np.einsum_path(subscript, *args, optimize=optimize, einsum_call=True)[1]
-        for contraction in contractions:
-            inds, idx_rm, einsum_str, remain = contraction[:4]
-            operands = [args.pop(x) for x in inds]
-            out = _contract(einsum_str, *operands)
-            args.append(out)
-
-    return out
+        raise ValueError("Unknown tensor backend: %s" % TENSOR_BACKEND)

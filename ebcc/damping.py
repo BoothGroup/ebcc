@@ -2,7 +2,8 @@
 
 from pyscf.lib import diis
 
-from ebcc import numpy as np, tensor_backend as tb
+from ebcc import numpy as np
+from ebcc import tensor_backend as tb
 
 
 class DIIS(diis.DIIS):
