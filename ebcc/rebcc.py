@@ -703,25 +703,23 @@ class REBCC(EBCC):
             h = self.g
             H = self.G
 
-        # TODO rest tensor_backend
-
         # Build S amplitudes:
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             if n == 1:
-                amplitudes[name] = -H / self.omega
+                amplitudes[name] = tb.astensor(-H / self.omega)
             else:
                 shape = (self.nbos,) * n
-                amplitudes[name] = np.zeros(shape, dtype=types[float])
+                amplitudes[name] = tb.zeros(shape, dtype=types[float])
 
         # Build U amplitudes:
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             if nf != 1:
                 raise util.ModelNotImplemented
             if nb == 1:
-                amplitudes[name] = h[key] / self.energy_sum(key)
+                amplitudes[name] = tb.astensor(h[key]) / self.energy_sum(key)
             else:
                 shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
-                amplitudes[name] = np.zeros(shape, dtype=types[float])
+                amplitudes[name] = tb.zeros(shape, dtype=types[float])
 
         return amplitudes
 
@@ -2162,13 +2160,12 @@ class REBCC(EBCC):
         energies = []
         for key in subscript:
             if key == "b":
-                energies.append(self.omega)
+                energies.append(tb.astensor(self.omega))
             else:
-                energies.append(np.diag(tb.asnumpy(self.fock[key + key])))
+                energies.append(tb.astensor(self.fock[key + key].diagonal()))
 
         subscript = "".join([signs_dict[k] + next_char() for k in subscript])
         energy_sum = util.direct_sum(subscript, *energies)
-        energy_sum = tb.astensor(energy_sum)  # FIXME build as tensor
 
         return energy_sum
 
