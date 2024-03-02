@@ -120,14 +120,17 @@ class Space:
         Convert a character in the standard `ebcc` notation to the slice
         corresponding to this space.  See `ebcc.eris` for details on the
         default slices.
+
         Parameters
         ----------
         char : str
             The character to convert.
+
         Returns
         -------
         slice : slice
             The slice corresponding to the space.
+
         Raises
         ------
         ValueError
@@ -143,10 +146,12 @@ class Space:
         be represented as a slice, then a slice is returned, otherwise
         the array mask.  See `ebcc.eris` for details on the default
         slices.
+
         Parameters
         ----------
         char : str
             The character to convert.
+
         Returns
         -------
         indexer : slice or np.ndarray

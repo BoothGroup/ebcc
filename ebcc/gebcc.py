@@ -1,6 +1,6 @@
 """General electron-boson coupled cluster."""
 
-from pyscf import lib, scf
+from pyscf import scf
 
 from ebcc import geom
 from ebcc import numpy as np

@@ -533,7 +533,7 @@ def _einsum_ctf(subscript, *args, **kwargs):
     Evaluate an Einstein summation convention on the operands for the
     `"ctf"` backend.
     """
-    optimize = kwargs.pop("optimize", True)  # CTF does not support this
+    kwargs.pop("optimize", True)  # CTF does not support this
     return tb.einsum(subscript, *args, **kwargs)
 
 
