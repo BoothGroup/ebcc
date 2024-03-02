@@ -3,8 +3,7 @@
 import ctypes
 import operator
 
-from pyscf.lib import direct_sum, dot  # noqa: F401
-from pyscf.lib import einsum as pyscf_einsum  # noqa: F401
+from pyscf.lib import dot
 
 from ebcc import TENSOR_BACKEND
 from ebcc import numpy as np
@@ -595,3 +594,48 @@ def einsum(*operands, **kwargs):
         return _einsum_ctf(subscript, *args, **kwargs)
     else:
         raise ValueError("Unknown tensor backend: %s" % TENSOR_BACKEND)
+
+
+def direct_sum(subscripts, *operands):
+    """Apply the summation over many operands with the einsum fashion.
+
+    Taken from PySCF.
+    """
+
+    def _sign_and_symbs(subscript):
+        subscript = subscript.replace(" ", "").replace(",", "+")
+        if subscript[0] not in "+-":
+            subscript = "+" + subscript
+        sign = [x for x in subscript if x in "+-"]
+        symbs = subscript[1:].replace("-", "+").split("+")
+        return sign, symbs
+
+    if "->" in subscripts:
+        src, dest = subscripts.split("->")
+        sign, src = _sign_and_symbs(src)
+        dest = dest.replace(" ", "")
+    else:
+        sign, src = _sign_and_symbs(subscripts)
+        dest = "".join(src)
+    assert len(src) == len(operands)
+
+    for i, (symb, op) in enumerate(zip(src, operands)):
+        assert len(symb) == op.ndim
+        unisymb = set(symb)
+        if len(unisymb) != len(symb):
+            unisymb = "".join(unisymb)
+            op = einsum("->".join((symb, unisymb)), op)
+            src[i] = unisymb
+        if i == 0:
+            if sign[i] == "+":
+                out = op
+            else:
+                out = -op
+        elif sign[i] == "+":
+            out = out.reshape(out.shape + (1,) * op.ndim) + op
+        else:
+            out = out.reshape(out.shape + (1,) * op.ndim) - op
+
+    out = einsum("->".join(("".join(src), dest)), out)
+
+    return out
