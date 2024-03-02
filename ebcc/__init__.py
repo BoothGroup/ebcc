@@ -64,14 +64,17 @@ def set_tensor_backend(backend):
 
     global tensor_backend, TENSOR_BACKEND
 
-    # Check name
+    TENSOR_BACKEND = backend
+
+    # Load the backend
     if backend == "":
         backend = "numpy"
-    elif backend == "jax":
-        backend = set_tensor_backend("jax.numpy")
-
-    tensor_backend = importlib.import_module(backend)
-    TENSOR_BACKEND = backend
+    if backend == "jax":
+        tensor_backend = importlib.import_module("jax.numpy")
+    elif backend == "tblis":
+        tensor_backend = importlib.import_module("numpy")
+    else:
+        tensor_backend = importlib.import_module(backend)
 
     # Monkey patch conversion operations
     if backend == "numpy":
