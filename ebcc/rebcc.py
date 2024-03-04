@@ -14,7 +14,7 @@ from ebcc.damping import DIIS
 from ebcc.dump import Dump
 from ebcc.eris import RERIs
 from ebcc.fock import RFock
-from ebcc.logging import COLOURS
+from ebcc.logging import ANSI
 from ebcc.precision import types
 from ebcc.space import Space
 
@@ -323,19 +323,19 @@ class REBCC(EBCC):
 
         # Logging:
         init_logging(self.log)
-        self.log.info(f"\n{COLOURS.B}{COLOURS.U}{self.name}{COLOURS.R}")
-        self.log.debug(f"{COLOURS.B}{'*' * len(self.name)}{COLOURS.R}")
+        self.log.info(f"\n{ANSI.B}{ANSI.U}{self.name}{ANSI.R}")
+        self.log.debug(f"{ANSI.B}{'*' * len(self.name)}{ANSI.R}")
         self.log.debug("")
-        self.log.info(f"{COLOURS.B}Options{COLOURS.R}:")
-        self.log.info(f" > e_tol:  {COLOURS.y}{self.options.e_tol}{COLOURS.R}")
-        self.log.info(f" > t_tol:  {COLOURS.y}{self.options.t_tol}{COLOURS.R}")
-        self.log.info(f" > max_iter:  {COLOURS.y}{self.options.max_iter}{COLOURS.R}")
-        self.log.info(f" > diis_space:  {COLOURS.y}{self.options.diis_space}{COLOURS.R}")
-        self.log.info(f" > damping:  {COLOURS.y}{self.options.damping}{COLOURS.R}")
+        self.log.info(f"{ANSI.B}Options{ANSI.R}:")
+        self.log.info(f" > e_tol:  {ANSI.y}{self.options.e_tol}{ANSI.R}")
+        self.log.info(f" > t_tol:  {ANSI.y}{self.options.t_tol}{ANSI.R}")
+        self.log.info(f" > max_iter:  {ANSI.y}{self.options.max_iter}{ANSI.R}")
+        self.log.info(f" > diis_space:  {ANSI.y}{self.options.diis_space}{ANSI.R}")
+        self.log.info(f" > damping:  {ANSI.y}{self.options.damping}{ANSI.R}")
         self.log.debug("")
-        self.log.info(f"{COLOURS.B}Ansatz{COLOURS.R}: {COLOURS.m}{self.ansatz}{COLOURS.R}")
+        self.log.info(f"{ANSI.B}Ansatz{ANSI.R}: {ANSI.m}{self.ansatz}{ANSI.R}")
         self.log.debug("")
-        self.log.info(f"{COLOURS.B}Space{COLOURS.R}: {COLOURS.m}{self.space}{COLOURS.R}")
+        self.log.info(f"{ANSI.B}Space{ANSI.R}: {ANSI.m}{self.space}{ANSI.R}")
         self.log.debug("")
 
     def kernel(self, eris=None):
@@ -372,8 +372,8 @@ class REBCC(EBCC):
         self.log.output("Solving for excitation amplitudes.")
         self.log.debug("")
         self.log.info(
-            f"{COLOURS.B}{'Iter':>4s} {'Energy (corr.)':>16s} {'Energy (tot.)':>18s} "
-            f"{'Δ(Energy)':>13s} {'Δ(Ampl.)':>13s}{COLOURS.R}"
+            f"{ANSI.B}{'Iter':>4s} {'Energy (corr.)':>16s} {'Energy (tot.)':>18s} "
+            f"{'Δ(Energy)':>13s} {'Δ(Ampl.)':>13s}{ANSI.R}"
         )
         self.log.info(f"{0:4d} {e_cc:16.10f} {e_cc + self.mf.e_tot:18.10f}")
 
@@ -404,19 +404,19 @@ class REBCC(EBCC):
                 converged_t = dt < self.options.t_tol
                 self.log.info(
                     f"{niter:4d} {e_cc:16.10f} {e_cc + self.mf.e_tot:18.10f}"
-                    f" {[COLOURS.r, COLOURS.g][converged_e]}{de:13.3e}{COLOURS.R}"
-                    f" {[COLOURS.r, COLOURS.g][converged_t]}{dt:13.3e}{COLOURS.R}"
+                    f" {[ANSI.r, ANSI.g][converged_e]}{de:13.3e}{ANSI.R}"
+                    f" {[ANSI.r, ANSI.g][converged_t]}{dt:13.3e}{ANSI.R}"
                 )
 
                 # Check for convergence:
                 converged = converged_e and converged_t
                 if converged:
                     self.log.debug("")
-                    self.log.output(f"{COLOURS.g}Converged.{COLOURS.R}")
+                    self.log.output(f"{ANSI.g}Converged.{ANSI.R}")
                     break
             else:
                 self.log.debug("")
-                self.log.warning(f"{COLOURS.r}Failed to converge.{COLOURS.R}")
+                self.log.warning(f"{ANSI.r}Failed to converge.{ANSI.R}")
 
             # Include perturbative correction if required:
             if self.ansatz.has_perturbative_correction:
@@ -489,7 +489,7 @@ class REBCC(EBCC):
 
         self.log.output("Solving for de-excitation (lambda) amplitudes.")
         self.log.debug("")
-        self.log.info(f"{COLOURS.B}{'Iter':>4s} {'Δ(Ampl.)':>13s}{COLOURS.R}")
+        self.log.info(f"{ANSI.B}{'Iter':>4s} {'Δ(Ampl.)':>13s}{ANSI.R}")
 
         converged = False
         for niter in range(1, self.options.max_iter + 1):
@@ -509,16 +509,16 @@ class REBCC(EBCC):
 
             # Log the iteration:
             converged = dl < self.options.t_tol
-            self.log.info(f"{niter:4d} {[COLOURS.r, COLOURS.g][converged]}{dl:13.3e}{COLOURS.R}")
+            self.log.info(f"{niter:4d} {[ANSI.r, ANSI.g][converged]}{dl:13.3e}{ANSI.R}")
 
             # Check for convergence:
             if converged:
                 self.log.debug("")
-                self.log.output(f"{COLOURS.g}Converged.{COLOURS.R}")
+                self.log.output(f"{ANSI.g}Converged.{ANSI.R}")
                 break
         else:
             self.log.debug("")
-            self.log.warning(f"{COLOURS.r}Failed to converge.{COLOURS.R}")
+            self.log.warning(f"{ANSI.r}Failed to converge.{ANSI.R}")
 
         self.log.debug("")
         self.log.debug("Time elapsed: %s", timer.format_time(timer()))

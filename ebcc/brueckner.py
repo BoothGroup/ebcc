@@ -9,7 +9,7 @@ from ebcc import NullLogger, init_logging
 from ebcc import numpy as np
 from ebcc import util
 from ebcc.damping import DIIS
-from ebcc.logging import COLOURS
+from ebcc.logging import ANSI
 from ebcc.precision import types
 
 
@@ -80,13 +80,13 @@ class BruecknerREBCC:
 
         # Logging:
         init_logging(cc.log)
-        cc.log.info(f"\n{COLOURS.B}{COLOURS.U}{self.name}{COLOURS.R}")
-        cc.log.info(f"{COLOURS.B}Options{COLOURS.R}:")
-        cc.log.info(f" > e_tol:  {COLOURS.y}{self.options.e_tol}{COLOURS.R}")
-        cc.log.info(f" > t_tol:  {COLOURS.y}{self.options.t_tol}{COLOURS.R}")
-        cc.log.info(f" > max_iter:  {COLOURS.y}{self.options.max_iter}{COLOURS.R}")
-        cc.log.info(f" > diis_space:  {COLOURS.y}{self.options.diis_space}{COLOURS.R}")
-        cc.log.info(f" > damping:  {COLOURS.y}{self.options.damping}{COLOURS.R}")
+        cc.log.info(f"\n{ANSI.B}{ANSI.U}{self.name}{ANSI.R}")
+        cc.log.info(f"{ANSI.B}Options{ANSI.R}:")
+        cc.log.info(f" > e_tol:  {ANSI.y}{self.options.e_tol}{ANSI.R}")
+        cc.log.info(f" > t_tol:  {ANSI.y}{self.options.t_tol}{ANSI.R}")
+        cc.log.info(f" > max_iter:  {ANSI.y}{self.options.max_iter}{ANSI.R}")
+        cc.log.info(f" > diis_space:  {ANSI.y}{self.options.diis_space}{ANSI.R}")
+        cc.log.info(f" > damping:  {ANSI.y}{self.options.damping}{ANSI.R}")
         cc.log.debug("")
 
     def get_rotation_matrix(self, u_tot=None, diis=None, t1=None):
@@ -297,12 +297,12 @@ class BruecknerREBCC:
         self.cc.log.output("Solving for Brueckner orbitals.")
         self.cc.log.debug("")
         self.log.info(
-            f"{COLOURS.B}{'Iter':>4s} {'Energy (corr.)':>16s} {'Energy (tot.)':>18s} "
-            f"{'Conv.':>8s} {'Δ(Energy)':>13s} {'|T1|':>13s}{COLOURS.R}"
+            f"{ANSI.B}{'Iter':>4s} {'Energy (corr.)':>16s} {'Energy (tot.)':>18s} "
+            f"{'Conv.':>8s} {'Δ(Energy)':>13s} {'|T1|':>13s}{ANSI.R}"
         )
         self.log.info(
             f"{0:4d} {self.cc.e_corr:16.10f} {self.cc.e_tot:18.10f} "
-            f"{[COLOURS.r, COLOURS.g][self.cc.converged]}{self.cc.converged!r:>8}{COLOURS.R}"
+            f"{[ANSI.r, ANSI.g][self.cc.converged]}{self.cc.converged!r:>8}{ANSI.R}"
         )
 
         converged = False
@@ -341,20 +341,20 @@ class BruecknerREBCC:
             converged_t = dt < self.options.t_tol
             self.log.info(
                 f"{niter:4d} {self.cc.e_corr:16.10f} {self.cc.e_tot:18.10f}"
-                f" {[COLOURS.r, COLOURS.g][self.cc.converged]}{self.cc.converged!r:>8}{COLOURS.R}"
-                f" {[COLOURS.r, COLOURS.g][converged_e]}{de:13.3e}{COLOURS.R}"
-                f" {[COLOURS.r, COLOURS.g][converged_t]}{dt:13.3e}{COLOURS.R}"
+                f" {[ANSI.r, ANSI.g][self.cc.converged]}{self.cc.converged!r:>8}{ANSI.R}"
+                f" {[ANSI.r, ANSI.g][converged_e]}{de:13.3e}{ANSI.R}"
+                f" {[ANSI.r, ANSI.g][converged_t]}{dt:13.3e}{ANSI.R}"
             )
 
             # Check for convergence:
             converged = converged_e and converged_t
             if converged:
                 self.log.debug("")
-                self.log.output(f"{COLOURS.g}Converged.{COLOURS.R}")
+                self.log.output(f"{ANSI.g}Converged.{ANSI.R}")
                 break
         else:
             self.log.debug("")
-            self.log.warning(f"{COLOURS.r}Failed to converge.{COLOURS.R}")
+            self.log.warning(f"{ANSI.r}Failed to converge.{ANSI.R}")
 
         self.cc.log.debug("")
         self.cc.log.output("E(corr) = %.10f", self.cc.e_corr)

@@ -7,7 +7,7 @@ from pyscf import lib
 
 from ebcc import numpy as np
 from ebcc import util
-from ebcc.logging import COLOURS
+from ebcc.logging import ANSI
 from ebcc.precision import types
 
 
@@ -71,14 +71,14 @@ class REOM(EOM):
         self.v = None
 
         # Logging:
-        self.log.info(f"\n{COLOURS.B}{COLOURS.U}{self.name}{COLOURS.R}")
-        self.log.debug(f"{COLOURS.B}{'*' * len(self.name)}{COLOURS.R}")
+        self.log.info(f"\n{ANSI.B}{ANSI.U}{self.name}{ANSI.R}")
+        self.log.debug(f"{ANSI.B}{'*' * len(self.name)}{ANSI.R}")
         self.log.debug("")
-        self.log.info(f"{COLOURS.B}Options{COLOURS.R}:")
-        self.log.info(f" > nroots:  {COLOURS.y}{self.options.nroots}{COLOURS.R}")
-        self.log.info(f" > e_tol:  {COLOURS.y}{self.options.e_tol}{COLOURS.R}")
-        self.log.info(f" > max_iter:  {COLOURS.y}{self.options.max_iter}{COLOURS.R}")
-        self.log.info(f" > max_space:  {COLOURS.y}{self.options.max_space}{COLOURS.R}")
+        self.log.info(f"{ANSI.B}Options{ANSI.R}:")
+        self.log.info(f" > nroots:  {ANSI.y}{self.options.nroots}{ANSI.R}")
+        self.log.info(f" > e_tol:  {ANSI.y}{self.options.e_tol}{ANSI.R}")
+        self.log.info(f" > max_iter:  {ANSI.y}{self.options.max_iter}{ANSI.R}")
+        self.log.info(f" > max_space:  {ANSI.y}{self.options.max_space}{ANSI.R}")
         self.log.debug("")
 
     def amplitudes_to_vector(self, *amplitudes):
@@ -223,11 +223,11 @@ class REOM(EOM):
         # Check for convergence:
         if all(converged):
             self.log.debug("")
-            self.log.output(f"{COLOURS.g}Converged.{COLOURS.R}")
+            self.log.output(f"{ANSI.g}Converged.{ANSI.R}")
         else:
             self.log.debug("")
             self.log.warning(
-                f"{COLOURS.r}Failed to converge {sum(not c for c in converged)} roots.{COLOURS.R}"
+                f"{ANSI.r}Failed to converge {sum(not c for c in converged)} roots.{ANSI.R}"
             )
 
         # Update attributes:
@@ -237,14 +237,13 @@ class REOM(EOM):
 
         self.log.debug("")
         self.log.output(
-            f"{COLOURS.B}{'Root':>4s} {'Energy':>16s} {'Weight':>13s} {'Conv.':>8s}{COLOURS.R}"
+            f"{ANSI.B}{'Root':>4s} {'Energy':>16s} {'Weight':>13s} {'Conv.':>8s}{ANSI.R}"
         )
         for n, (en, vn, cn) in enumerate(zip(e, v, converged)):
             r1n = self.vector_to_amplitudes(vn)[0]
             qpwt = self._quasiparticle_weight(r1n)
             self.log.output(
-                f"{n:>4d} {en:>16.10f} {qpwt:>13.5g} "
-                f"{[COLOURS.r, COLOURS.g][cn]}{cn!r:>8s}{COLOURS.R}"
+                f"{n:>4d} {en:>16.10f} {qpwt:>13.5g} " f"{[ANSI.r, ANSI.g][cn]}{cn!r:>8s}{ANSI.R}"
             )
 
         self.log.debug("")
