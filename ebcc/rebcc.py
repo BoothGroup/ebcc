@@ -14,6 +14,7 @@ from ebcc.damping import DIIS
 from ebcc.dump import Dump
 from ebcc.eris import RERIs
 from ebcc.fock import RFock
+from ebcc.logging import COLOURS
 from ebcc.precision import types
 from ebcc.space import Space
 
@@ -322,19 +323,19 @@ class REBCC(EBCC):
 
         # Logging:
         init_logging(self.log)
-        self.log.info("%s", self.name)
-        self.log.info("%s", "*" * len(self.name))
+        self.log.info(f"\n{COLOURS.B}{COLOURS.U}{self.name}{COLOURS.R}")
+        self.log.debug(f"{COLOURS.B}{'*' * len(self.name)}{COLOURS.R}")
         self.log.debug("")
-        self.log.info("Options:")
-        self.log.info(" > e_tol:  %s", self.options.e_tol)
-        self.log.info(" > t_tol:  %s", self.options.t_tol)
-        self.log.info(" > max_iter:  %s", self.options.max_iter)
-        self.log.info(" > diis_space:  %s", self.options.diis_space)
-        self.log.info(" > damping:  %s", self.options.damping)
+        self.log.info(f"{COLOURS.B}Options{COLOURS.R}:")
+        self.log.info(f" > e_tol:  {COLOURS.y}{self.options.e_tol}{COLOURS.R}")
+        self.log.info(f" > t_tol:  {COLOURS.y}{self.options.t_tol}{COLOURS.R}")
+        self.log.info(f" > max_iter:  {COLOURS.y}{self.options.max_iter}{COLOURS.R}")
+        self.log.info(f" > diis_space:  {COLOURS.y}{self.options.diis_space}{COLOURS.R}")
+        self.log.info(f" > damping:  {COLOURS.y}{self.options.damping}{COLOURS.R}")
         self.log.debug("")
-        self.log.info("Ansatz: %s", self.ansatz)
+        self.log.info(f"{COLOURS.B}Ansatz{COLOURS.R}: {COLOURS.m}{self.ansatz}{COLOURS.R}")
         self.log.debug("")
-        self.log.info("Space: %s", self.space)
+        self.log.info(f"{COLOURS.B}Space{COLOURS.R}: {COLOURS.m}{self.space}{COLOURS.R}")
         self.log.debug("")
 
     def kernel(self, eris=None):
@@ -366,18 +367,15 @@ class REBCC(EBCC):
             amplitudes = self.amplitudes
 
         # Get the initial energy:
-        e_cc = e_init = self.energy(amplitudes=amplitudes, eris=eris)
+        e_cc = self.energy(amplitudes=amplitudes, eris=eris)
 
         self.log.output("Solving for excitation amplitudes.")
+        self.log.debug("")
         self.log.info(
-            "%4s %16s %18s %13s %13s",
-            "Iter",
-            "Energy (corr.)",
-            "Energy (tot.)",
-            "Δ(Energy)",
-            "Δ(Ampl.)",
+            f"{COLOURS.B}{'Iter':>4s} {'Energy (corr.)':>16s} {'Energy (tot.)':>18s} "
+            f"{'Δ(Energy)':>13s} {'Δ(Ampl.)':>13s}{COLOURS.R}"
         )
-        self.log.info("%4d %16.10f %18.10f", 0, e_init, e_init + self.mf.e_tot)
+        self.log.info(f"{0:4d} {e_cc:16.10f} {e_cc + self.mf.e_tot:18.10f}")
 
         if not self.ansatz.is_one_shot:
             # Set up DIIS:
@@ -401,24 +399,32 @@ class REBCC(EBCC):
                 e_cc = self.energy(amplitudes=amplitudes, eris=eris)
                 de = abs(e_prev - e_cc)
 
+                # Log the iteration:
+                converged_e = de < self.options.e_tol
+                converged_t = dt < self.options.t_tol
                 self.log.info(
-                    "%4d %16.10f %18.10f %13.3e %13.3e", niter, e_cc, e_cc + self.mf.e_tot, de, dt
+                    f"{niter:4d} {e_cc:16.10f} {e_cc + self.mf.e_tot:18.10f}"
+                    f" {[COLOURS.r, COLOURS.g][converged_e]}{de:13.3e}{COLOURS.R}"
+                    f" {[COLOURS.r, COLOURS.g][converged_t]}{dt:13.3e}{COLOURS.R}"
                 )
 
                 # Check for convergence:
-                converged = de < self.options.e_tol and dt < self.options.t_tol
+                converged = converged_e and converged_t
                 if converged:
-                    self.log.output("Converged.")
+                    self.log.debug("")
+                    self.log.output(f"{COLOURS.g}Converged.{COLOURS.R}")
                     break
             else:
-                self.log.warning("Failed to converge.")
+                self.log.debug("")
+                self.log.warning(f"{COLOURS.r}Failed to converge.{COLOURS.R}")
 
             # Include perturbative correction if required:
             if self.ansatz.has_perturbative_correction:
+                self.log.debug("")
                 self.log.info("Computing perturbative energy correction.")
                 e_pert = self.energy_perturbative(amplitudes=amplitudes, eris=eris)
                 e_cc += e_pert
-                self.log.info("E(pert) = %.10f", e_pert)
+                self.log.info(f"E(pert) = {e_pert:.10f}")
 
         else:
             converged = True
@@ -429,11 +435,10 @@ class REBCC(EBCC):
         self.converged = converged
 
         self.log.debug("")
-        self.log.output("E(corr) = %.10f", self.e_corr)
-        self.log.output("E(tot)  = %.10f", self.e_tot)
+        self.log.output(f"E(corr) = {self.e_corr:.10f}")
+        self.log.output(f"E(tot)  = {self.e_tot:.10f}")
         self.log.debug("")
         self.log.debug("Time elapsed: %s", timer.format_time(timer()))
-        self.log.debug("")
         self.log.debug("")
 
         return e_cc
@@ -483,7 +488,8 @@ class REBCC(EBCC):
         diis.damping = self.options.damping
 
         self.log.output("Solving for de-excitation (lambda) amplitudes.")
-        self.log.info("%4s %13s", "Iter", "Δ(Ampl.)")
+        self.log.debug("")
+        self.log.info(f"{COLOURS.B}{'Iter':>4s} {'Δ(Ampl.)':>13s}{COLOURS.R}")
 
         converged = False
         for niter in range(1, self.options.max_iter + 1):
@@ -501,15 +507,18 @@ class REBCC(EBCC):
             lambdas = self.vector_to_lambdas(vector)
             dl = np.linalg.norm(vector - self.lambdas_to_vector(lambdas_prev), ord=np.inf)
 
-            self.log.info("%4d %13.3e", niter, dl)
+            # Log the iteration:
+            converged = dl < self.options.t_tol
+            self.log.info(f"{niter:4d} {[COLOURS.r, COLOURS.g][converged]}{dl:13.3e}{COLOURS.R}")
 
             # Check for convergence:
-            converged = dl < self.options.t_tol
             if converged:
-                self.log.output("Converged.")
+                self.log.debug("")
+                self.log.output(f"{COLOURS.g}Converged.{COLOURS.R}")
                 break
         else:
-            self.log.warning("Failed to converge.")
+            self.log.debug("")
+            self.log.warning(f"{COLOURS.r}Failed to converge.{COLOURS.R}")
 
         self.log.debug("")
         self.log.debug("Time elapsed: %s", timer.format_time(timer()))
@@ -2051,14 +2060,14 @@ class REBCC(EBCC):
         return self.ansatz.boson_coupling_rank
 
     @property
-    def spin_type(self):
-        """Get a string represent of the spin channel."""
-        return "R"
-
-    @property
     def name(self):
         """Get a string representation of the method name."""
         return self.spin_type + self.ansatz.name
+
+    @property
+    def spin_type(self):
+        """Get a string represent of the spin channel."""
+        return "R"
 
     @property
     def mo_coeff(self):
