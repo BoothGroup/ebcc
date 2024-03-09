@@ -3,11 +3,13 @@
 
 import itertools
 import time
+from collections import defaultdict
 
 from albert.codegen.einsum import EinsumCodeGen as _EinsumCodeGen
+from albert.codegen.base import sort_exprs
 from albert.optim._gristmill import optimise as _optimise
 from albert.qc.spin import generalised_to_restricted, generalised_to_unrestricted
-from albert.qc.uhf import SpinIndex
+from albert.qc.index import Index
 from albert.tensor import Tensor
 from pdaggerq.config import OCC_INDICES, VIRT_INDICES
 
@@ -74,7 +76,7 @@ class EinsumCodeGen(_EinsumCodeGen):
 
     def preamble(self):
         preamble = "from ebcc import numpy as np\n"
-        preamble += "from ebcc.util import pack_2e, einsum, Namespace"
+        preamble += "from ebcc.util import pack_2e, einsum, direct_sum, Namespace"
         super().preamble(preamble)
 
     def ignore_argument(self, arg):
@@ -167,7 +169,7 @@ def name_generator_rhf(tensor, add_spaces=True):
         else:
             name = tensor.name
         if add_spaces:
-            spaces = [default_sectors[i] for i in tensor.indices]
+            spaces = [i.space for i in tensor.indices]
             return f"{name}.{''.join(spaces)}"
         else:
             return name
@@ -187,14 +189,14 @@ def name_generator_uhf(tensor, add_spaces=True):
         else:
             name = tensor.name
         if add_spaces:
-            spins = ["a" if i.spin == "α" else "b" for i in tensor.indices if isinstance(i, SpinIndex)]
-            spaces = [default_sectors[i.index] for i in tensor.indices]
+            spins = ["a" if i.spin == "α" else "b" for i in tensor.indices if i.spin is not None]
+            spaces = [i.space for i in tensor.indices]
             return f"{name}.{''.join(spins)}.{''.join(spaces)}"
         else:
             return name
-    elif tensor.name in ("t1", "t2", "t1new", "t2new", "l1", "l2", "l1new", "l2new", "u11", "u11new", "u12", "u12new"):
+    elif tensor.name in ("t1", "t2", "t3", "t1new", "t2new", "t3new", "l1", "l2", "l3", "l1new", "l2new", "l3new", "u11", "u11new", "u12", "u12new"):
         if add_spaces:
-            spins = ["a" if i.spin == "α" else "b" for i in tensor.indices if isinstance(i, SpinIndex)]
+            spins = ["a" if i.spin == "α" else "b" for i in tensor.indices if i.spin is not None]
             return f"{tensor.name}.{''.join(spins)}"
         else:
             return tensor.name
@@ -232,20 +234,12 @@ def optimise(outputs, exprs, spin, strategy="greedy", sizes=None):
     if sizes is None:
         sizes = default_sizes
 
-    if spin in ("rhf", "ghf"):
-        index_sizes = {}
-        for sector, indices in default_indices.items():
-            index_sizes.update({index: sizes[sector] for index in indices})
-        index_groups = list(default_indices.values())
-    else:
-        index_sizes = {}
-        for sector, indices in default_indices.items():
-            for s in ("α", "β"):
-                index_sizes.update({SpinIndex(index, s): sizes[sector] for index in indices})
-        index_groups = []
-        for indices in default_indices.values():
-            for s in ("α", "β"):
-                index_groups.append([SpinIndex(index, s) for index in indices])
+    index_sizes = {}
+    index_groups = []
+    for sector, indices in default_indices.items():
+        for s in (("α", "β") if spin == "uhf" else (None,)):
+            index_sizes.update({Index(index, space=sector, spin=s): sizes[sector] for index in indices})
+            index_groups.append([Index(index, space=sector, spin=s) for index in indices])
 
     opt = _optimise(
         *zip(outputs, exprs),
@@ -259,36 +253,21 @@ def optimise(outputs, exprs, spin, strategy="greedy", sizes=None):
 
 def get_t_amplitude_outputs(exprs, name):
     """Get the outputs for the T amplitude code."""
-
-    def index_sort(x):
-        if isinstance(x, SpinIndex):
-            index, spin = x.index, x.spin
-        else:
-            index, spin = x, ""
-        return ("bov".index(default_sectors[index]), spin, index)
-
-    return [Tensor(*sorted(e.external_indices, key=index_sort), name=name) for e in exprs]
+    return [Tensor(*sorted(e.external_indices), name=name) for e in exprs]
 
 
 def get_l_amplitude_outputs(exprs, name):
     """Get the outputs for the L amplitude code."""
-
-    def index_sort(x):
-        if isinstance(x, SpinIndex):
-            index, spin = x.index, x.spin
-        else:
-            index, spin = x, ""
-        return ("bvo".index(default_sectors[index]), spin, index)
-
-    return [Tensor(*sorted(e.external_indices, key=index_sort), name=name) for e in exprs]
+    def key(i):
+        return (" bvo".index(i.space), i.spin, i.name)
+    return [Tensor(*sorted(e.external_indices, key=key), name=name) for e in exprs]
 
 
 def get_density_outputs(exprs, name, indices):
     """Get the outputs for the density code."""
-    to_index = lambda i: i if not isinstance(i, SpinIndex) else i.index
     tensors = []
     for expr in exprs:
-        external_indices = sorted(expr.external_indices, key=lambda i: indices.index(to_index(i)))
+        external_indices = sorted(expr.external_indices)
         tensors.append(Tensor(*external_indices, name=name))
     return tensors
 
