@@ -9,7 +9,7 @@ from qwick.operator import Tensor as WTensor
 from qwick.expression import AExpression
 from qwick.convenience import PE1
 from albert.qc._wick import *
-from albert.qc.uhf import SpinIndex
+from albert.qc.index import Index
 from albert.tensor import Tensor
 from albert.canon import canonicalise_indices
 
@@ -348,12 +348,16 @@ with Stopwatch("1RDM"):
             expr_n = [import_from_wick(t) for t in str(terms[sectors, indices]).split("\n")]
             expr_n = [canonicalise_indices(e, "ijklmn", "abcdef", ["x", "y", "z", "b0", "b1", "b2"]) for e in expr_n]
             if index_spins:
-                expr_n = [e.map_indices({index: SpinIndex(index, s) for key, spin in index_spins.items()}) for e in expr_n]
+                expr_n = [e.map_indices({Index(i, space=o): Index(i, space=o, spin=index_spins[i]) for i, o in zip(indices, sectors)}) for e in expr_n]
             expr_n = sum([spin_integrate(e, spin) for e in expr_n], tuple())
             if spin == "uhf":
                 expr_n = tuple(e * 0.5 for e in expr_n)
+            expr_n = tuple(e for e in expr_n if not (isinstance(e, (int, float)) and e == 0))
             output_n = get_density_outputs(expr_n, f"d", indices)
-            returns_n = (Tensor(*indices, name=f"d"),)
+            if index_spins:
+                returns_n = (Tensor(*[Index(i, space=o, spin=index_spins[i]) for i, o in zip(indices, sectors)], name=f"d"),)
+            else:
+                returns_n = (Tensor(*[Index(i, space=o) for i, o in zip(indices, sectors)], name=f"d"),)
             expr.extend(expr_n)
             output.extend(output_n)
             returns.extend(returns_n)
@@ -437,10 +441,14 @@ with Stopwatch("2RDM"):
             expr_n = [import_from_wick(t) for t in str(terms[sectors, indices]).split("\n")]
             expr_n = [canonicalise_indices(e, "ijklmn", "abcdef", ["x", "y", "z", "b0", "b1", "b2"]) for e in expr_n]
             if index_spins:
-                expr_n = [e.map_indices({key: SpinIndex(key, spin) for key, spin in index_spins.items()}) for e in expr_n]
+                expr_n = [e.map_indices({Index(i, space=o): Index(i, space=o, spin=index_spins[i]) for i, o in zip(indices, sectors)}) for e in expr_n]
             expr_n = sum([spin_integrate(e, spin) for e in expr_n], tuple())
+            expr_n = tuple(e for e in expr_n if not (isinstance(e, (int, float)) and e == 0))
             output_n = get_density_outputs(expr_n, f"Γ", indices)
-            returns_n = (Tensor(*indices, name=f"Γ"),)
+            if index_spins:
+                returns_n = (Tensor(*[Index(i, space=o, spin=index_spins[i]) for i, o in zip(indices, sectors)], name=f"d"),)
+            else:
+                returns_n = (Tensor(*[Index(i, space=o) for i, o in zip(indices, sectors)], name=f"d"),)
             expr.extend(expr_n)
             output.extend(output_n)
             returns.extend(returns_n)
@@ -485,7 +493,7 @@ with Stopwatch("BDM"):
         expr_n = import_from_wick(terms[cre, index])
         expr_n = spin_integrate(expr_n, spin)
         output_n = get_density_outputs(expr_n, f"dm_{'cre' if cre else 'des'}", (index,))
-        returns_n = (Tensor(index, name=f"dm_{'cre' if cre else 'des'}"),)
+        returns_n = (Tensor(Index(index, space="b"), name=f"dm_{'cre' if cre else 'des'}"),)
         expr.extend(expr_n)
         output.extend(output_n)
         returns.extend(returns_n)
@@ -521,7 +529,7 @@ with Stopwatch("B1RDM"):
     expr_n = import_from_wick(term)
     expr_n = spin_integrate(expr_n, spin)
     output_n = get_density_outputs(expr_n, f"rdm1_b", ("x", "y"))
-    returns_n = (Tensor(*indices, name=f"rdm1_b"),)
+    returns_n = (Tensor(Index("x", space="b"), Index("y", space="b"), name=f"rdm1_b"),)
     expr.extend(expr_n)
     output.extend(output_n)
     returns.extend(returns_n)
@@ -566,12 +574,16 @@ with Stopwatch("EBRDM"):
                 expr_n = [import_from_wick(t) for t in str(terms[sectors, indices, cre]).split("\n")]
                 expr_n = [canonicalise_indices(e, "ijklmn", "abcdef", "xyz") for e in expr_n]
                 if index_spins:
-                    expr_n = [e.map_indices({key: SpinIndex(key, spin) for key, spin in index_spins.items()}) for e in expr_n]
+                    expr_n = [e.map_indices({Index(i, space=o): Index(i, space=o, spin=index_spins.get(i)) for i, o in zip(indices, sectors)}) for e in expr_n]
                 expr_n = sum([spin_integrate(e, spin) for e in expr_n], tuple())
                 if spin == "uhf":
                     expr_n = tuple(e * 0.5 for e in expr_n)
+                expr_n = tuple(e for e in expr_n if not (isinstance(e, (int, float)) and e == 0))
                 output_n = get_density_outputs(expr_n, f"rdm_eb_{'cre' if cre else 'des'}", indices)
-                returns_n = (Tensor(*indices, name=f"rdm_eb_{'cre' if cre else 'des'}"),)
+                if index_spins:
+                    returns_n = (Tensor(*[Index(i, space=o, spin=index_spins.get(i)) for i, o in zip(indices, sectors)], name=f"d"),)
+                else:
+                    returns_n = (Tensor(*[Index(i, space=o) for i, o in zip(indices, sectors)], name=f"d"),)
                 expr.extend(expr_n)
                 output.extend(output_n)
                 returns.extend(returns_n)
