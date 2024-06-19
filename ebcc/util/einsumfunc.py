@@ -37,7 +37,7 @@ def _fallback_einsum(*operands, **kwargs):
     out = kwargs.pop("out", None)
 
     # Perform the contraction
-    res = np.einsum(*operands, **kwargs)
+    res = np.einsum(*operands, **kwargs, optimize=True)
     res *= alpha
 
     # Scale the output
