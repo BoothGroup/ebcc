@@ -2,6 +2,7 @@
 for i in rhf uhf ghf; do
     for n in 2 3; do
         python bootstrap_MPn.py $i $n
+    done
     python bootstrap_CCD.py $i
     python bootstrap_CCSD.py $i
     python bootstrap_QCISD.py $i
