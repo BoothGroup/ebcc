@@ -1,0 +1,58 @@
+name: Bootstrap
+
+on:
+  push:
+    branches: [bootstrap]
+  pull_request:
+    branches: [bootstrap]
+
+jobs:
+  build:
+    name: python ${{ matrix.python-version }} on ${{matrix.os}}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {python-version: "3.10", os: ubuntu-latest}
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Upgrade pip
+        run: |
+          python -m pip install --upgrade pip
+      - name: Install ebcc
+        run: |
+          python -m pip install wheel
+          python -m pip install .[dev]
+      - name: Install dependencies
+          python -m pip install git+https://github.com/obackhouse/albert@master
+          python -m pip install git+https://github.com/edeprince3/pdaggerq@master
+          python -m pip install git+https://github.com/tschijnmo/drudge@master
+          python -m pip install git+https://github.com/tschijnmo/gristmill@master
+          python -m pip install git+https://github.com/tschijnmo/DummyRDD@master
+      - name: Bootstrap
+        run: |
+          git checkout bootstrap
+          cd ebcc/codegen
+          for i in rhf uhf ghf; do
+            for n in 2 3; do
+              python bootstrap_MPn.py $i $n
+            python bootstrap_CCD.py $i
+            python bootstrap_CCSD.py $i
+            python bootstrap_QCISD.py $i
+            python bootstrap_CC2.py $i
+            python bootstrap_DCD.py $i
+            python bootstrap_DCSD.py $i
+            python bootstrap_DFCCD.py $i
+            python bootstrap_DFCCSD.py $i
+          done
+      - name: Run unit tests
+        run: |
+          python -m pip install pytest
+          pytest ebcc/
