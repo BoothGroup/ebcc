@@ -40,6 +40,7 @@ jobs:
       - name: Bootstrap
         run: |
           git checkout bootstrap
+          chmod +x .github/workflows/bootstrap_all.sh
           cd ebcc/codegen && ./../../.github/workflows/bootstrap_all.sh
       - name: Run unit tests
         run: |
