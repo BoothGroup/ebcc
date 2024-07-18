@@ -1,16 +1,16 @@
 #!/bin/bash
 for i in rhf uhf ghf; do
     for n in 2 3; do
-        python bootstrap_MPn.py $i $n
+        python -W ignore bootstrap_MPn.py $i $n
     done
-    python bootstrap_CCD.py $i
-    python bootstrap_CCSD.py $i
-    python bootstrap_QCISD.py $i
-    python bootstrap_CC2.py $i
-    python bootstrap_DCD.py $i
-    python bootstrap_DCSD.py $i
+    python -W ignore bootstrap_CCD.py $i
+    python -W ignore bootstrap_CCSD.py $i
+    python -W ignore bootstrap_QCISD.py $i
+    python -W ignore bootstrap_CC2.py $i
+    python -W ignore bootstrap_DCD.py $i
+    python -W ignore bootstrap_DCSD.py $i
 done
 for i in rhf uhf; do
-    python bootstrap_DFCCD.py $i
-    python bootstrap_DFCCSD.py $i
+    python -W ignore bootstrap_DFCCD.py $i
+    python -W ignore bootstrap_DFCCSD.py $i
 done
