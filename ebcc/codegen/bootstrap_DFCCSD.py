@@ -1,5 +1,5 @@
 """
-Generate the CCSD code.
+Generate the DF-CCSD code.
 """
 
 import sys
@@ -7,17 +7,18 @@ import sys
 import pdaggerq
 from albert.qc._pdaggerq import import_from_pdaggerq
 from albert.tensor import Tensor
-from albert.qc.index import Index
 
 from ebcc.codegen.bootstrap_common import *
 
 # Get the spin case
 spin = sys.argv[1]
+if spin == "ghf":
+    raise NotImplementedError
 
 # Set up the code generators
 code_generators = {
     "einsum": EinsumCodeGen(
-        stdout=open(f"{spin[0].upper()}CCSD.py", "w"),
+        stdout=open(f"{spin[0].upper()}DFCCSD.py", "w"),
         name_generator=name_generators[spin],
         spin=spin,
     ),
@@ -44,6 +45,7 @@ with Stopwatch("Energy"):
     # Get the energy in albert format
     expr = import_from_pdaggerq(terms)
     expr = spin_integrate(expr, spin)
+    expr = tuple(e.apply(get_density_fit()) for e in expr)
     output = tuple(Tensor(name="e_cc") for _ in range(len(expr)))
     output, expr = optimise(output, expr, spin, strategy="exhaust")
     returns = (Tensor(name="e_cc"),)
@@ -82,10 +84,12 @@ with Stopwatch("T amplitudes"):
     for n in range(2):
         for index_spins in get_amplitude_spins(n + 1, spin):
             indices = default_indices["o"][: n + 1] + default_indices["v"][: n + 1]
+            indices = tuple(Index(i, index_spins[i]) for i in indices)
             expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins)
             expr_n = spin_integrate(expr_n, spin)
+            expr_n = tuple(e.apply(get_density_fit()) for e in expr_n)
             output_n = get_t_amplitude_outputs(expr_n, f"t{n+1}new")
-            returns_n = (Tensor(*tuple(Index(i, index_spins[i]) for i in indices), name=f"t{n+1}new"),)
+            returns_n = (Tensor(*indices, name=f"t{n+1}new"),)
             expr.extend(expr_n)
             output.extend(output_n)
             returns.extend(returns_n)
@@ -145,10 +149,12 @@ with Stopwatch("L amplitudes"):
     for n in range(2):
         for index_spins in get_amplitude_spins(n + 1, spin):
             indices = default_indices["v"][: n + 1] + default_indices["o"][: n + 1]
+            indices = tuple(Index(i, index_spins[i]) for i in indices)
             expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins)
             expr_n = spin_integrate(expr_n, spin)
+            expr_n = tuple(e.apply(get_density_fit()) for e in expr_n)
             output_n = get_l_amplitude_outputs(expr_n, f"l{n+1}new")
-            returns_n = (Tensor(*tuple(Index(i, index_spins[i]) for i in indices), name=f"l{n+1}new"),)
+            returns_n = (Tensor(*indices, name=f"l{n+1}new"),)
             expr.extend(expr_n)
             output.extend(output_n)
             returns.extend(returns_n)
@@ -191,6 +197,7 @@ with Stopwatch("1RDM"):
             expr_n = spin_integrate(expr_n, spin)
             if spin == "rhf":
                 expr_n = tuple(e * 2 for e in expr_n)
+            expr_n = tuple(e.apply(get_density_fit()) for e in expr_n)
             output_n = get_density_outputs(expr_n, f"d", indices)
             returns_n = (Tensor(*tuple(Index(i, index_spins[i], space=s) for i, s in zip(indices, sectors)), name=f"d"),)
             expr.extend(expr_n)
@@ -269,6 +276,7 @@ with Stopwatch("2RDM"):
         for index_spins in get_density_spins(2, spin, indices):
             expr_n = import_from_pdaggerq(terms[sectors, indices], index_spins=index_spins)
             expr_n = spin_integrate(expr_n, spin)
+            expr_n = tuple(e.apply(get_density_fit()) for e in expr_n)
             output_n = get_density_outputs(expr_n, f"Γ", indices)
             returns_n = (Tensor(*tuple(Index(i, index_spins[i], space=s) for i, s in zip(indices, sectors)), name=f"Γ"),)
             expr.extend(expr_n)

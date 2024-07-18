@@ -7,6 +7,7 @@ import sys
 import pdaggerq
 from albert.qc._pdaggerq import import_from_pdaggerq
 from albert.tensor import Tensor
+from albert.algebra import Mul
 
 from ebcc.codegen.bootstrap_common import *
 
@@ -74,7 +75,7 @@ with Stopwatch("T amplitudes"):
         expr_n = import_from_pdaggerq(terms, index_spins=index_spins)
         expr_n = spin_integrate(expr_n, spin)
         output_n = get_t_amplitude_outputs(expr_n, f"t2new")
-        returns_n = (Tensor(*indices, name=f"t2new"),)
+        returns_n = (Tensor(*tuple(Index(i, index_spins[i]) for i in indices), name=f"t2new"),)
         expr.extend(expr_n)
         output.extend(output_n)
         returns.extend(returns_n)
@@ -121,7 +122,7 @@ with Stopwatch("L amplitudes"):
         expr_n = import_from_pdaggerq(terms, index_spins=index_spins)
         expr_n = spin_integrate(expr_n, spin)
         output_n = get_l_amplitude_outputs(expr_n, f"l2new")
-        returns_n = (Tensor(*indices, name=f"l2new"),)
+        returns_n = (Tensor(*tuple(Index(i, index_spins[i]) for i in indices), name=f"l2new"),)
         expr.extend(expr_n)
         output.extend(output_n)
         returns.extend(returns_n)
@@ -161,22 +162,36 @@ with Stopwatch("1RDM"):
     for sectors, indices in [("oo", "ij"), ("ov", "ia"), ("vo", "ai"), ("vv", "ab")]:
         for index_spins in get_density_spins(1, spin, indices):
             expr_n = import_from_pdaggerq(terms[sectors, indices], index_spins=index_spins)
-            expr_n = spin_integrate(expr_n, spin)
-            if spin == "rhf":
-                expr_n = tuple(e * 2 for e in expr_n)
-            output_n = get_density_outputs(expr_n, f"d", indices)
-            returns_n = (Tensor(*indices, name=f"d"),)
-            expr.extend(expr_n)
-            output.extend(output_n)
-            returns.extend(returns_n)
+            if not (isinstance(expr_n, int) and expr_n == 0):
+                expr_n = spin_integrate(expr_n, spin)
+                if spin == "rhf":
+                    expr_n = tuple(e * 2 for e in expr_n)
+                output_n = get_density_outputs(expr_n, f"d", indices)
+                returns_n = (Tensor(*tuple(Index(i, index_spins[i], space=s) for i, s in zip(indices, sectors)), name=f"d"),)
+                expr.extend(expr_n)
+                output.extend(output_n)
+                returns.extend(returns_n)
     output, expr = optimise(output, expr, spin, strategy="exhaust")
 
     # Generate the 1RDM code
     for name, codegen in code_generators.items():
         if name == "einsum":
+            def get_postamble(n, spin, name="rdm{n}"):
+                nm = name.format(n=n)
+                postamble = ""
+                if spin != "uhf":
+                    for occ in ("ov", "vo"):
+                        shape = ", ".join(f"t2.shape[{'0' if o == 'o' else '-1'}]" for o in occ)
+                        postamble += f"{nm}.{occ} = np.zeros(({shape}))\n"
+                else:
+                    for s in "ab":
+                        for occ in ("oo", "vv"):
+                            shape = ", ".join(f"t2.{ss}{ss}.shape[{'0' if o == 'o' else '-1'}]" for ss, o in zip(s+s, occ))
+                            postamble += f"{nm}.{s}{s}.{occ} = np.zeros(({shape}))\n"
+                return postamble + get_density_einsum_postamble(n, spin)
             kwargs = {
                 "preamble": get_density_einsum_preamble(1, spin),
-                "postamble": get_density_einsum_postamble(1, spin),
+                "postamble": get_postamble(1, spin),
             }
         else:
             kwargs = {}
@@ -241,20 +256,35 @@ with Stopwatch("2RDM"):
     ]:
         for index_spins in get_density_spins(2, spin, indices):
             expr_n = import_from_pdaggerq(terms[sectors, indices], index_spins=index_spins)
-            expr_n = spin_integrate(expr_n, spin)
-            output_n = get_density_outputs(expr_n, f"Γ", indices)
-            returns_n = (Tensor(*indices, name=f"Γ"),)
-            expr.extend(expr_n)
-            output.extend(output_n)
-            returns.extend(returns_n)
+            if not (isinstance(expr_n, int) and expr_n == 0):
+                expr_n = spin_integrate(expr_n, spin)
+                output_n = get_density_outputs(expr_n, f"Γ", indices)
+                returns_n = (Tensor(*tuple(Index(i, index_spins[i], space=s) for i, s in zip(indices, sectors)), name=f"Γ"),)
+                expr.extend(expr_n)
+                output.extend(output_n)
+                returns.extend(returns_n)
     output, expr = optimise(output, expr, spin, strategy="trav")
 
     # Generate the 2RDM code
     for name, codegen in code_generators.items():
         if name == "einsum":
+            def get_postamble(n, spin, name="rdm{n}"):
+                nm = name.format(n=n)
+                postamble = ""
+                if spin != "uhf":
+                    for occ in ("ooov", "oovo", "ovoo", "vooo", "ovvv", "vovv", "vvov", "vvvo"):
+                        shape = ", ".join(f"t2.shape[{'0' if o == 'o' else '-1'}]" for o in occ)
+                        postamble += f"{nm}.{occ} = np.zeros(({shape}))\n"
+                else:
+                    for s1 in "ab":
+                        for s2 in "ab":
+                            for occ in ("ooov", "oovo", "ovoo", "vooo", "ovvv", "vovv", "vvov", "vvvo"):
+                                shape = ", ".join(f"t2.{s}{s}{s}{s}.shape[{'0' if o == 'o' else '-1'}]" for o, s in zip(occ, s1+s1+s2+s2))
+                                postamble += f"{nm}.{s1}{s1}{s2}{s2}.{occ} = np.zeros(({shape}))\n"
+                return postamble + get_density_einsum_postamble(n, spin)
             kwargs = {
                 "preamble": get_density_einsum_preamble(2, spin),
-                "postamble": get_density_einsum_postamble(2, spin),
+                "postamble": get_postamble(2, spin),
             }
         codegen(
             "make_rdm2_f",

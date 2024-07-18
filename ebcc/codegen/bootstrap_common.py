@@ -10,6 +10,8 @@ from albert.codegen.base import sort_exprs
 from albert.optim._gristmill import optimise as _optimise
 from albert.qc.spin import generalised_to_restricted, generalised_to_unrestricted
 from albert.qc.index import Index
+from albert.qc.rhf import ERI as RERI, CDERI as RCDERI
+from albert.qc.uhf import ERI as UERI, CDERI as UCDERI
 from albert.tensor import Tensor
 from pdaggerq.config import OCC_INDICES, VIRT_INDICES
 
@@ -38,6 +40,7 @@ default_indices = {
     "o": OCC_INDICES,
     "v": VIRT_INDICES,
     "b": ["x", "y", "z", "b0", "b1", "b2", "b3"],
+    "x": ["P", "Q", "R", "S", "x0", "x1", "x2", "x3", "x4", "x5", "x7"],
 }
 
 
@@ -48,6 +51,7 @@ default_sizes = {
     "o": 200,
     "v": 1000,
     "b": 10,
+    "x": 3000,
 }
 
 
@@ -237,7 +241,8 @@ def optimise(outputs, exprs, spin, strategy="greedy", sizes=None):
     index_sizes = {}
     index_groups = []
     for sector, indices in default_indices.items():
-        for s in (("α", "β") if spin == "uhf" else (None,)):
+        spins = ("α", "β") if spin == "uhf" and sector not in ("b", "x") else (None,)
+        for s in spins:
             index_sizes.update({Index(index, space=sector, spin=s): sizes[sector] for index in indices})
             index_groups.append([Index(index, space=sector, spin=s) for index in indices])
 
@@ -267,7 +272,7 @@ def get_density_outputs(exprs, name, indices):
     """Get the outputs for the density code."""
     tensors = []
     for expr in exprs:
-        external_indices = sorted(expr.external_indices)
+        external_indices = sorted(expr.external_indices, key=lambda i: indices.index(i.name))
         tensors.append(Tensor(*external_indices, name=name))
     return tensors
 
@@ -290,7 +295,11 @@ def get_amplitude_spins(n, spin):
                 case[default_indices["v"][i]] = s
             cases.append(case)
     elif spin == "ghf":
-        cases = [None]
+        case = {}
+        for i in range(n):
+            case[default_indices["o"][i]] = None
+            case[default_indices["v"][i]] = None
+        cases = [case]
 
     return cases
 
@@ -318,7 +327,11 @@ def get_density_spins(n, spin, indices):
             cases = [("α", "α", "α", "α"), ("α", "β", "α", "β"), ("β", "β", "β", "β")]
         cases = [dict(zip(indices, case)) for case in cases]
     elif spin == "ghf":
-        cases = [None]
+        if n == 1:
+            cases = [(None, None)]
+        elif n == 2:
+            cases = [(None, None, None, None)]
+        cases = [dict(zip(indices, case)) for case in cases]
 
     return cases
 
@@ -331,13 +344,13 @@ def get_density_einsum_preamble(n, spin, name="rdm{n}"):
         for spins in itertools.combinations_with_replacement(["a", "b"], n):
             preamble += f"\n{name}.{''.join(spins+spins)} = Namespace()"
         preamble += "\ndelta = Namespace("
-        preamble += "\n    aa=Namespace(oo=np.eye(t1.aa.shape[0]), vv=np.eye(t1.aa.shape[1])),"
-        preamble += "\n    bb=Namespace(oo=np.eye(t1.bb.shape[0]), vv=np.eye(t1.bb.shape[1])),"
+        preamble += "\n    aa=Namespace(oo=np.eye(t2.aaaa.shape[0]), vv=np.eye(t2.aaaa.shape[-1])),"
+        preamble += "\n    bb=Namespace(oo=np.eye(t2.bbbb.shape[0]), vv=np.eye(t2.bbbb.shape[-1])),"
         preamble += "\n)"
     else:
         preamble += "\ndelta = Namespace("
-        preamble += "\n    oo=np.eye(t1.shape[0]),"
-        preamble += "\n    vv=np.eye(t1.shape[1]),"
+        preamble += "\n    oo=np.eye(t2.shape[0]),"
+        preamble += "\n    vv=np.eye(t2.shape[-1]),"
         preamble += "\n)"
     return preamble
 
@@ -402,3 +415,24 @@ def get_boson_einsum_preamble(spin):
         preamble += "\n    bvv=g.bvv.transpose(0, 2, 1),"
         preamble += "\n)"
     return preamble
+
+
+def get_density_fit():
+    indices = {"": 0}
+
+    def density_fit(obj):
+        """Get the function to apply over an expression to density fit the ERIs."""
+        i = indices[""] % len(default_indices["x"])  # TODO this will break for huge ansatzes
+        aux_index = Index(f"{default_indices['x'][i]}", space="x")
+        indices[""] += 1
+        if hasattr(obj, "_symbol") and obj._symbol == RERI:
+            left = RCDERI[(aux_index,) + obj.indices[:2]]
+            right = RCDERI[(aux_index,) + obj.indices[2:]]
+        elif hasattr(obj, "_symbol") and obj._symbol == UERI:
+            left = UCDERI[(aux_index,) + obj.indices[:2]]
+            right = UCDERI[(aux_index,) + obj.indices[2:]]
+        else:
+            return obj
+        return left * right
+
+    return density_fit
