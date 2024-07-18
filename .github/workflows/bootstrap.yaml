@@ -40,20 +40,8 @@ jobs:
       - name: Bootstrap
         run: |
           git checkout bootstrap
-          cd ebcc/codegen
-          for i in rhf uhf ghf; do
-            for n in 2 3; do
-              python bootstrap_MPn.py $i $n
-            python bootstrap_CCD.py $i
-            python bootstrap_CCSD.py $i
-            python bootstrap_QCISD.py $i
-            python bootstrap_CC2.py $i
-            python bootstrap_DCD.py $i
-            python bootstrap_DCSD.py $i
-            python bootstrap_DFCCD.py $i
-            python bootstrap_DFCCSD.py $i
-          done
+          cd ebcc/codegen && ./../../.github/workflows/bootstrap_all.sh
       - name: Run unit tests
         run: |
           python -m pip install pytest
-          pytest ebcc/
+          pytest
