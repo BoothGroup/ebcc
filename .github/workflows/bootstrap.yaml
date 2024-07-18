@@ -40,6 +40,8 @@ jobs:
       - name: Bootstrap
         run: |
           git checkout bootstrap
+          # add ", k" onto the end of line 2411 in /opt/hostedtoolcache/Python/3.10.14/x64/lib/python3.10/site-packages/gristmill/optimize.py
+          sed -i '2411s/$/, k/' /opt/hostedtoolcache/Python/3.10.14/x64/lib/python3.10/site-packages/gristmill/optimize.py
           chmod +x .github/workflows/bootstrap_all.sh
           cd ebcc/codegen && ./../../.github/workflows/bootstrap_all.sh
       - name: Run unit tests

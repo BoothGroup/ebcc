@@ -246,8 +246,6 @@ def optimise(outputs, exprs, spin, strategy="greedy", sizes=None):
             index_sizes.update({Index(index, space=sector, spin=s): sizes[sector] for index in indices})
             index_groups.append([Index(index, space=sector, spin=s) for index in indices])
 
-    for o, e in zip(outputs, exprs):
-        print(o, "=", e)
     opt = _optimise(
         *zip(outputs, exprs),
         index_groups=index_groups,
