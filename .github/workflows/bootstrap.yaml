@@ -38,6 +38,8 @@ jobs:
           python -m pip install git+https://github.com/obackhouse/gristmill@master
           python -m pip install git+https://github.com/tschijnmo/DummyRDD@master
       - name: Bootstrap
+        env:
+          PYTHONWARNINGS: "ignore"
         run: |
           git checkout bootstrap
           chmod +x .github/workflows/bootstrap_all.sh
