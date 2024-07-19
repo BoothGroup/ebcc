@@ -41,6 +41,7 @@ jobs:
         env:
           PYTHONWARNINGS: "ignore"
         run: |
+          git fetch --all
           git checkout bootstrap_ci
           git merge bootstrap
           chmod +x .github/workflows/bootstrap_all.sh
