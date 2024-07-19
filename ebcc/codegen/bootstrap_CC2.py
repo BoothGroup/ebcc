@@ -6,6 +6,7 @@ import sys
 
 import pdaggerq
 from albert.qc._pdaggerq import import_from_pdaggerq
+from albert.qc.index import Index
 from albert.tensor import Tensor
 
 from ebcc.codegen.bootstrap_common import *
@@ -84,7 +85,7 @@ with Stopwatch("T amplitudes"):
             expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins)
             expr_n = spin_integrate(expr_n, spin)
             output_n = get_t_amplitude_outputs(expr_n, f"t{n+1}new")
-            returns_n = (Tensor(*indices, name=f"t{n+1}new"),)
+            returns_n = (Tensor(*tuple(Index(i, index_spins[i]) for i in indices), name=f"t{n+1}new"),)
             expr.extend(expr_n)
             output.extend(output_n)
             returns.extend(returns_n)
@@ -147,7 +148,7 @@ with Stopwatch("L amplitudes"):
             expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins)
             expr_n = spin_integrate(expr_n, spin)
             output_n = get_l_amplitude_outputs(expr_n, f"l{n+1}new")
-            returns_n = (Tensor(*indices, name=f"l{n+1}new"),)
+            returns_n = (Tensor(*tuple(Index(i, index_spins[i]) for i in indices), name=f"l{n+1}new"),)
             expr.extend(expr_n)
             output.extend(output_n)
             returns.extend(returns_n)
@@ -191,7 +192,7 @@ with Stopwatch("1RDM"):
             if spin == "rhf":
                 expr_n = tuple(e * 2 for e in expr_n)
             output_n = get_density_outputs(expr_n, f"d", indices)
-            returns_n = (Tensor(*indices, name=f"d"),)
+            returns_n = (Tensor(*tuple(Index(i, index_spins[i], space=s) for i, s in zip(indices, sectors)), name=f"d"),)
             expr.extend(expr_n)
             output.extend(output_n)
             returns.extend(returns_n)
@@ -269,7 +270,7 @@ with Stopwatch("2RDM"):
             expr_n = import_from_pdaggerq(terms[sectors, indices], index_spins=index_spins)
             expr_n = spin_integrate(expr_n, spin)
             output_n = get_density_outputs(expr_n, f"Γ", indices)
-            returns_n = (Tensor(*indices, name=f"Γ"),)
+            returns_n = (Tensor(*tuple(Index(i, index_spins[i], space=s) for i, s in zip(indices, sectors)), name=f"Γ"),)
             expr.extend(expr_n)
             output.extend(output_n)
             returns.extend(returns_n)
