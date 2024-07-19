@@ -1,11 +1,12 @@
 """
-Generate the DF-CCSD code.
+Generate the DF-CC2 code.
 """
 
 import sys
 
 import pdaggerq
 from albert.qc._pdaggerq import import_from_pdaggerq
+from albert.qc.index import Index
 from albert.tensor import Tensor
 
 from ebcc.codegen.bootstrap_common import *
@@ -18,7 +19,7 @@ if spin == "ghf":
 # Set up the code generators
 code_generators = {
     "einsum": EinsumCodeGen(
-        stdout=open(f"{spin[0].upper()}DFCCSD.py", "w"),
+        stdout=open(f"{spin[0].upper()}DFCC2.py", "w"),
         name_generator=name_generators[spin],
         spin=spin,
     ),
@@ -72,7 +73,7 @@ with Stopwatch("T amplitudes"):
     pq.clear()
     pq.set_left_operators([["e2(i,j,b,a)"]])
     pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
-    pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
+    pq.add_st_operator(1.0, ["v"], ["t1"])
     pq.simplify()
     terms_t2 = pq.fully_contracted_strings()
 
@@ -131,12 +132,12 @@ with Stopwatch("L amplitudes"):
     pq.set_left_operators([["1"]])
     pq.set_right_operators([["1"]])
     pq.add_st_operator(1.0, ["f", "e2(a,b,j,i)"], ["t1", "t2"])
-    pq.add_st_operator(1.0, ["v", "e2(a,b,j,i)"], ["t1", "t2"])
+    pq.add_st_operator(1.0, ["v", "e2(a,b,j,i)"], ["t1"])
     pq.set_left_operators([["l1"], ["l2"]])
     pq.add_st_operator(1.0, ["f", "e2(a,b,j,i)"], ["t1", "t2"])
-    pq.add_st_operator(1.0, ["v", "e2(a,b,j,i)"], ["t1", "t2"])
+    pq.add_st_operator(1.0, ["v", "e2(a,b,j,i)"], ["t1"])
     pq.add_st_operator(-1.0, ["e2(a,b,j,i)", "f"], ["t1", "t2"])
-    pq.add_st_operator(-1.0, ["e2(a,b,j,i)", "v"], ["t1", "t2"])
+    pq.add_st_operator(-1.0, ["e2(a,b,j,i)", "v"], ["t1"])
     pq.simplify()
     terms_l2 = pq.fully_contracted_strings()
 
