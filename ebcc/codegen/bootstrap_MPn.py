@@ -8,7 +8,7 @@ import pdaggerq
 from albert.qc._pdaggerq import import_from_pdaggerq
 from albert.tensor import Tensor
 
-from ebcc.codegen import hugenholtz
+from ebcc.codegen import bootstrap_hugenholtz as hugenholtz
 from ebcc.codegen.bootstrap_common import *
 
 # Get the spin case
