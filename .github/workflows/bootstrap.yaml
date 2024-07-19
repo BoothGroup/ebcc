@@ -41,12 +41,12 @@ jobs:
         env:
           PYTHONWARNINGS: "ignore"
         run: |
-          git checkout bootstrap
+          git checkout bootstrap_ci
+          git merge bootstrap
           chmod +x .github/workflows/bootstrap_all.sh
           cd ebcc/codegen && ./../../.github/workflows/bootstrap_all.sh
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -b bootstrap_ci
           git add *.py
           git commit -m "Bootstrap via ${{ github.sha }}"
           git push origin bootstrap_ci
