@@ -122,7 +122,7 @@ with Stopwatch("L amplitudes"):
     pq.set_right_operators([["1"]])
     pq.add_st_operator(1.0, ["f", "e1(a,i)"], ["t1", "t2", "t3"])
     pq.add_st_operator(1.0, ["v", "e1(a,i)"], ["t1", "t2", "t3"])
-    pq.set_left_operators([["l1"], ["l2"], ["l3"])
+    pq.set_left_operators([["l1"], ["l2"], ["l3"]])
     pq.add_st_operator(1.0, ["f", "e1(a,i)"], ["t1", "t2", "t3"])
     pq.add_st_operator(1.0, ["v", "e1(a,i)"], ["t1", "t2", "t3"])
     pq.add_st_operator(-1.0, ["e1(a,i)", "f"], ["t1", "t2", "t3"])

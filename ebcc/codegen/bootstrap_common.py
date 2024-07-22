@@ -97,7 +97,7 @@ class EinsumCodeGen(_EinsumCodeGen):
         else:
             array_type = "Namespace of arrays"
         amplitude_names = [
-            "t1", "t2", "t3", "l1", "l2", "l3", "s1", "s2", "ls1", "ls2", "u11", "u12", "lu11", "lu12",
+            "t1", "t2", "t3", "l1", "l2", "l3", "s1", "s2", "ls1", "ls2", "u11", "u12", "lu11", "lu12", "r1", "r2", "r3"
         ]
         descriptions = {
             "f": "Fock matrix.",
@@ -198,7 +198,7 @@ def name_generator_uhf(tensor, add_spaces=True):
             return f"{name}.{''.join(spins)}.{''.join(spaces)}"
         else:
             return name
-    elif tensor.name in ("t1", "t2", "t3", "t1new", "t2new", "t3new", "l1", "l2", "l3", "l1new", "l2new", "l3new", "u11", "u11new", "u12", "u12new"):
+    elif tensor.name in ("t1", "t2", "t3", "t1new", "t2new", "t3new", "l1", "l2", "l3", "l1new", "l2new", "l3new", "u11", "u11new", "u12", "u12new", "r1", "r2", "r3", "r1new", "r2new", "r3new"):
         if add_spaces:
             spins = ["a" if i.spin == "α" else "b" for i in tensor.indices if i.spin is not None]
             return f"{tensor.name}.{''.join(spins)}"
@@ -232,6 +232,28 @@ def remove_hf_energy(terms):
     return terms
 
 
+def remove_disconnected_eom(terms):
+    """Remove the EOM terms that are not connected to the R amplitudes."""
+    new_terms = []
+    for term in terms:
+        r = None
+        rest = []
+        for t in term[1:]:
+            if "r" in t:
+                r = t
+            elif not t.startswith("P("):
+                rest.append(t)
+        r_inds = set(r.split("(")[1].split(")")[0].split(","))
+        rest_inds = set()
+        for r in rest:
+            if "<" in r:
+                r = r.replace("<", "(").replace(">", ")").replace("||", ",")
+            rest_inds.update(r.split("(")[1].split(")")[0].split(","))
+        if r_inds & rest_inds:
+            new_terms.append(term)
+    return new_terms
+
+
 def optimise(outputs, exprs, spin, strategy="greedy", sizes=None):
     """Optimise the expressions."""
 
@@ -256,14 +278,20 @@ def optimise(outputs, exprs, spin, strategy="greedy", sizes=None):
     return zip(*opt)
 
 
-def get_t_amplitude_outputs(exprs, name):
+def get_t_amplitude_outputs(exprs, name, indices=None):
     """Get the outputs for the T amplitude code."""
-    return [Tensor(*sorted(e.external_indices), name=name) for e in exprs]
+    if indices is not None:
+        key = lambda i: indices.index(i.name)
+    else:
+        key = lambda i: i
+    return [Tensor(*sorted(e.external_indices, key=key), name=name) for e in exprs]
 
 
-def get_l_amplitude_outputs(exprs, name):
+def get_l_amplitude_outputs(exprs, name, indices=None):
     """Get the outputs for the L amplitude code."""
     def key(i):
+        if indices is not None:
+            return indices.index(i.name)
         return (" bvo".index(i.space), i.spin, i.name)
     return [Tensor(*sorted(e.external_indices, key=key), name=name) for e in exprs]
 
@@ -277,27 +305,44 @@ def get_density_outputs(exprs, name, indices):
     return tensors
 
 
-def get_amplitude_spins(n, spin):
+def get_amplitude_spins(n, spin, which="t"):
     """Get the spin cases for the amplitudes."""
+
+    if which in ("t", "l", "ee"):
+        no = nv = n
+    elif which == "ip":
+        no = n
+        nv = n - 1
+    elif which == "ea":
+        no = n - 1
+        nv = n
 
     if spin == "rhf":
         case = {}
-        for i in range(n):
+        for i in range(no):
             case[default_indices["o"][i]] = ["α", "β"][i % 2]
+        for i in range(nv):
             case[default_indices["v"][i]] = ["α", "β"][i % 2]
         cases = [case]
     elif spin == "uhf":
         cases = []
-        for spins in itertools.combinations_with_replacement(["α", "β"], n):
+        if which in ("ip", "ea"):
+            it = itertools.product("αβ", repeat=max(no, nv))
+        else:
+            it = itertools.combinations_with_replacement("αβ", max(no, nv))
+        for spins in it:
             case = {}
             for i, s in enumerate(spins):
-                case[default_indices["o"][i]] = s
-                case[default_indices["v"][i]] = s
+                if i < no:
+                    case[default_indices["o"][i]] = s
+                if i < nv:
+                    case[default_indices["v"][i]] = s
             cases.append(case)
     elif spin == "ghf":
         case = {}
-        for i in range(n):
+        for i in range(no):
             case[default_indices["o"][i]] = None
+        for i in range(nv):
             case[default_indices["v"][i]] = None
         cases = [case]
 
