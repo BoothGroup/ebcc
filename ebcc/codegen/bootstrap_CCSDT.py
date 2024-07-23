@@ -136,7 +136,7 @@ with Stopwatch("L amplitudes"):
     pq.set_right_operators([["1"]])
     pq.add_st_operator(1.0, ["f", "e2(a,b,j,i)"], ["t1", "t2", "t3"])
     pq.add_st_operator(1.0, ["v", "e2(a,b,j,i)"], ["t1", "t2", "t3"])
-    pq.set_left_operators([["l1"], ["l2"], ["l3"])
+    pq.set_left_operators([["l1"], ["l2"], ["l3"]])
     pq.add_st_operator(1.0, ["f", "e2(a,b,j,i)"], ["t1", "t2", "t3"])
     pq.add_st_operator(1.0, ["v", "e2(a,b,j,i)"], ["t1", "t2", "t3"])
     pq.add_st_operator(-1.0, ["e2(a,b,j,i)", "f"], ["t1", "t2", "t3"])
@@ -150,7 +150,7 @@ with Stopwatch("L amplitudes"):
     pq.set_right_operators([["1"]])
     pq.add_st_operator(1.0, ["f", "e3(a,b,c,k,j,i)"], ["t1", "t2", "t3"])
     pq.add_st_operator(1.0, ["v", "e3(a,b,c,k,j,i)"], ["t1", "t2", "t3"])
-    pq.set_left_operators([["l1"], ["l2"], ["l3"])
+    pq.set_left_operators([["l1"], ["l2"], ["l3"]])
     pq.add_st_operator(1.0, ["f", "e3(a,b,c,k,j,i)"], ["t1", "t2", "t3"])
     pq.add_st_operator(1.0, ["v", "e3(a,b,c,k,j,i)"], ["t1", "t2", "t3"])
     pq.add_st_operator(-1.0, ["e3(a,b,c,k,j,i)", "f"], ["t1", "t2", "t3"])
@@ -197,7 +197,7 @@ with Stopwatch("1RDM"):
     terms = {}
     for sectors, indices in [("oo", "ij"), ("ov", "ia"), ("vo", "ai"), ("vv", "ab")]:
         pq.clear()
-        pq.set_left_operators([["1"], ["l1"], ["l2"], ["l3"])
+        pq.set_left_operators([["1"], ["l1"], ["l2"], ["l3"]])
         pq.add_st_operator(1.0, [f"e1({','.join(indices)})"], ["t1", "t2", "t3"])
         pq.simplify()
         terms[sectors, indices] = pq.fully_contracted_strings()
@@ -258,7 +258,7 @@ with Stopwatch("2RDM"):
         ("vvvv", "abcd"),
     ]:
         pq.clear()
-        pq.set_left_operators([["1"], ["l1"], ["l2"], ["l3"])
+        pq.set_left_operators([["1"], ["l1"], ["l2"], ["l3"]])
         pq.add_st_operator(
             1.0, [f"e2({indices[0]},{indices[1]},{indices[3]},{indices[2]})"], ["t1", "t2", "t3"]
         )
