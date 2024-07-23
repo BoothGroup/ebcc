@@ -7,6 +7,7 @@ from pyscf import lib
 
 from ebcc import numpy as np
 from ebcc import util
+from ebcc.logging import ANSI
 from ebcc.precision import types
 
 
@@ -48,11 +49,7 @@ class REOM(EOM):
     Options = Options
 
     def __init__(self, ebcc, options=None, **kwargs):
-        self.ebcc = ebcc
-        self.space = ebcc.space
-        self.ansatz = ebcc.ansatz
-        self.log = ebcc.log
-
+        # Options:
         if options is None:
             options = self.Options()
         self.options = options
@@ -60,21 +57,29 @@ class REOM(EOM):
             setattr(self.options, key, val)
         for key, val in self.options.__dict__.items():
             if val is util.Inherited:
-                setattr(self.options, key, getattr(self.ebcc.options, key))
+                setattr(self.options, key, getattr(ebcc.options, key))
 
-        self.log.info("%s", self.name)
-        self.log.info("%s", "*" * len(self.name))
-        self.log.debug("")
-        self.log.debug("Options:")
-        self.log.info(" > nroots:     %s", self.options.nroots)
-        self.log.info(" > e_tol:      %s", self.options.e_tol)
-        self.log.info(" > max_iter:   %s", self.options.max_iter)
-        self.log.info(" > max_space:  %s", self.options.max_space)
-        self.log.debug("")
+        # Parameters:
+        self.ebcc = ebcc
+        self.space = ebcc.space
+        self.ansatz = ebcc.ansatz
+        self.log = ebcc.log
 
+        # Attributes:
         self.converged = False
         self.e = None
         self.v = None
+
+        # Logging:
+        self.log.info(f"\n{ANSI.B}{ANSI.U}{self.name}{ANSI.R}")
+        self.log.debug(f"{ANSI.B}{'*' * len(self.name)}{ANSI.R}")
+        self.log.debug("")
+        self.log.info(f"{ANSI.B}Options{ANSI.R}:")
+        self.log.info(f" > nroots:  {ANSI.y}{self.options.nroots}{ANSI.R}")
+        self.log.info(f" > e_tol:  {ANSI.y}{self.options.e_tol}{ANSI.R}")
+        self.log.info(f" > max_iter:  {ANSI.y}{self.options.max_iter}{ANSI.R}")
+        self.log.info(f" > max_space:  {ANSI.y}{self.options.max_space}{ANSI.R}")
+        self.log.debug("")
 
     def amplitudes_to_vector(self, *amplitudes):
         """Convert the amplitudes to a vector."""
@@ -163,23 +168,45 @@ class REOM(EOM):
     def _quasiparticle_weight(self, r1):
         return np.linalg.norm(r1) ** 2
 
-    def davidson(self, guesses=None):
-        """Solve the EOM Hamiltonian using the Davidson solver."""
+    def davidson(self, eris=None, guesses=None):
+        """Solve the EOM Hamiltonian using the Davidson solver.
+
+        Parameters
+        ----------
+        eris : ERIs, optional
+            Electronic repulsion integrals. Default value is generated
+            using `self.ebcc.get_eris()`.
+        guesses : list of np.ndarray, optional
+            Initial guesses for the roots. Default value is generated
+            using `self.get_guesses()`.
+
+        Returns
+        -------
+        e : np.ndarray
+            The energies of the roots.
+        """
+
+        # Start a timer:
+        timer = util.Timer()
+
+        # Get the ERIs:
+        eris = self.ebcc.get_eris(eris)
 
         self.log.output(
             "Solving for %s excitations using the Davidson solver.", self.excitation_type.upper()
         )
 
-        eris = self.ebcc.get_eris()
+        # Get the matrix-vector products and the diagonal:
         matvecs = lambda vs: [self.matvec(v, eris=eris) for v in vs]
         diag = self.diag(eris=eris)
 
+        # Get the guesses:
         if guesses is None:
             guesses = self.get_guesses(diag=diag)
 
+        # Solve the EOM Hamiltonian:
         nroots = min(len(guesses), self.options.nroots)
         pick = self.get_pick(guesses=guesses)
-
         converged, e, v = lib.davidson_nosym1(
             matvecs,
             guesses,
@@ -193,24 +220,35 @@ class REOM(EOM):
             verbose=0,
         )
 
+        # Check for convergence:
         if all(converged):
-            self.log.output("Converged.")
+            self.log.debug("")
+            self.log.output(f"{ANSI.g}Converged.{ANSI.R}")
         else:
-            self.log.warning("Failed to converge %d roots." % sum(not c for c in converged))
+            self.log.debug("")
+            self.log.warning(
+                f"{ANSI.r}Failed to converge {sum(not c for c in converged)} roots.{ANSI.R}"
+            )
 
-        self.log.debug("")
-
-        self.log.output("%4s %16s %16s", "Root", "Energy", "QP Weight")
-        for n, (en, vn) in enumerate(zip(e, v)):
-            r1n = self.vector_to_amplitudes(vn)[0]
-            qpwt = self._quasiparticle_weight(r1n)
-            self.log.output("%4d %16.10f %16.5g" % (n, en, qpwt))
-
-        self.log.debug("")
-
+        # Update attributes:
         self.converged = converged
         self.e = e
         self.v = v
+
+        self.log.debug("")
+        self.log.output(
+            f"{ANSI.B}{'Root':>4s} {'Energy':>16s} {'Weight':>13s} {'Conv.':>8s}{ANSI.R}"
+        )
+        for n, (en, vn, cn) in enumerate(zip(e, v, converged)):
+            r1n = self.vector_to_amplitudes(vn)[0]
+            qpwt = self._quasiparticle_weight(r1n)
+            self.log.output(
+                f"{n:>4d} {en:>16.10f} {qpwt:>13.5g} " f"{[ANSI.r, ANSI.g][cn]}{cn!r:>8s}{ANSI.R}"
+            )
+
+        self.log.debug("")
+        self.log.debug("Time elapsed: %s", timer.format_time(timer()))
+        self.log.debug("")
 
         return e
 
