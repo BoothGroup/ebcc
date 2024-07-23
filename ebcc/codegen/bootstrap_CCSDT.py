@@ -73,9 +73,9 @@ with Stopwatch("T amplitudes"):
     pq.simplify()
     terms_t2 = pq.fully_contracted_strings()
 
-    # Get the T2 contractions in pdaggerq format
+    # Get the T3 contractions in pdaggerq format
     pq.clear()
-    pq.set_left_operators([["e2(i,j,k,c,b,a)"]])
+    pq.set_left_operators([["e3(i,j,k,c,b,a)"]])
     pq.add_st_operator(1.0, ["f"], ["t1", "t2", "t3"])
     pq.add_st_operator(1.0, ["v"], ["t1", "t2", "t3"])
     pq.simplify()
