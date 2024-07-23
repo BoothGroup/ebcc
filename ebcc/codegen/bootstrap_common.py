@@ -68,7 +68,7 @@ class EinsumCodeGen(_EinsumCodeGen):
         **kwargs,
     ):
         if einsum_kwargs is None:
-            einsum_kwargs = {"optimize": True}
+            einsum_kwargs = {}
         super().__init__(
             einsum_func=einsum_func,
             einsum_kwargs=einsum_kwargs,
