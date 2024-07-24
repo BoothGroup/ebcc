@@ -91,7 +91,7 @@ with Stopwatch("T amplitudes"):
             indices = default_indices["o"][: n + 1] + default_indices["v"][: n + 1]
             expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins)
             expr_n = spin_integrate(expr_n, spin)
-            output_n = get_t_amplitude_outputs(expr_n, f"t{n+1}new")
+            output_n = get_t_amplitude_outputs(expr_n, f"t{n+1}new", indices=indices)
             returns_n = (Tensor(*tuple(Index(i, index_spins[i]) for i in indices), name=f"t{n+1}new"),)
             expr.extend(expr_n)
             output.extend(output_n)
