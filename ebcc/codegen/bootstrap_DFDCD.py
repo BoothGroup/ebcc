@@ -17,7 +17,7 @@ spin = sys.argv[1]
 # Set up the code generators
 code_generators = {
     "einsum": EinsumCodeGen(
-        stdout=open(f"{spin[0].upper()}DF-DCD.py", "w"),
+        stdout=open(f"{spin[0].upper()}DFDCD.py", "w"),
         name_generator=name_generators[spin],
         spin=spin,
     ),

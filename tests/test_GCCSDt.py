@@ -41,7 +41,7 @@ class GCCSDt_Tests(unittest.TestCase):
                 ansatz="CCSDt",
                 space=space,
                 conv_tol=1e-10,
-                log=NullLogger(),
+                #log=NullLogger(),
         )
         ccsdt.kernel()
         e1 = ccsdt.e_tot
