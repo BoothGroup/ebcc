@@ -17,12 +17,7 @@ from ebcc.fock import RFock
 from ebcc.logging import ANSI
 from ebcc.precision import types
 from ebcc.space import Space
-
-
-class EBCC:
-    """Base class for EBCC."""
-
-    pass
+from ebcc.base import EBCC
 
 
 @dataclasses.dataclass

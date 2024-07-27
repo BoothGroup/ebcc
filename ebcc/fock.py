@@ -3,12 +3,7 @@
 from ebcc import numpy as np
 from ebcc import util
 from ebcc.precision import types
-
-
-class Fock(util.Namespace):
-    """Base class for Fock matrices."""
-
-    pass
+from ebcc.base import Fock
 
 
 class RFock(Fock):
@@ -100,7 +95,7 @@ class RFock(Fock):
     __getitem__ = __getattr__
 
 
-class UFock(Fock, metaclass=util.InheritDocstrings):
+class UFock(Fock):
     """
     Fock matrix container class for `UEBCC`. Consists of a namespace of
     `RFock` objects, on for each spin signature.
@@ -174,6 +169,5 @@ class UFock(Fock, metaclass=util.InheritDocstrings):
         )
 
 
-@util.has_docstring
 class GFock(RFock):
     __doc__ = RFock.__doc__.replace("REBCC", "GEBCC")

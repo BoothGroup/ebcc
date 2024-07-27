@@ -12,8 +12,7 @@ from ebcc.precision import types
 from ebcc.space import Space
 
 
-@util.has_docstring
-class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
+class UEBCC(rebcc.REBCC):
     ERIs = UERIs
     Fock = UFock
     CDERIs = UCDERIs
@@ -118,7 +117,6 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         return kwargs
 
-    @util.has_docstring
     def init_space(self):
         space = (
             Space(
@@ -135,7 +133,6 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         return space
 
-    @util.has_docstring
     def init_amps(self, eris=None):
         eris = self.get_eris(eris)
         amplitudes = util.Namespace()
@@ -196,7 +193,6 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         return amplitudes
 
-    @util.has_docstring
     def init_lams(self, amplitudes=None):
         if amplitudes is None:
             amplitudes = self.amplitudes
@@ -228,7 +224,6 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         return lambdas
 
-    @util.has_docstring
     def update_amps(self, eris=None, amplitudes=None):
         func, kwargs = self._load_function(
             "update_amps",
@@ -268,7 +263,6 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         return res
 
-    @util.has_docstring
     def update_lams(self, eris=None, amplitudes=None, lambdas=None, lambdas_pert=None):
         func, kwargs = self._load_function(
             "update_lams",
@@ -314,7 +308,6 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         return res
 
-    @util.has_docstring
     def make_rdm1_f(self, eris=None, amplitudes=None, lambdas=None, hermitise=True):
         func, kwargs = self._load_function(
             "make_rdm1_f",
@@ -331,7 +324,6 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         return dm
 
-    @util.has_docstring
     def make_rdm2_f(self, eris=None, amplitudes=None, lambdas=None, hermitise=True):
         func, kwargs = self._load_function(
             "make_rdm2_f",
@@ -358,7 +350,6 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         return dm
 
-    @util.has_docstring
     def make_eb_coup_rdm(
         self,
         eris=None,
@@ -391,7 +382,6 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         return dm_eb
 
-    @util.has_docstring
     def get_mean_field_G(self):
         val = lib.einsum("Ipp->I", self.g.aa.boo)
         val += lib.einsum("Ipp->I", self.g.bb.boo)
@@ -404,7 +394,6 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         return val
 
-    @util.has_docstring
     def get_g(self, g):
         if np.array(g).ndim != 4:
             g = np.array([g, g])
@@ -441,7 +430,6 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
         return gs
 
     @property
-    @util.has_docstring
     def bare_fock(self):
         fock = lib.einsum(
             "npq,npi,nqj->nij",
@@ -453,7 +441,6 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
         return fock
 
     @property
-    @util.has_docstring
     def xi(self):
         if self.options.shift:
             xi = lib.einsum("Iii->I", self.g.aa.boo)
@@ -466,7 +453,6 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         return xi
 
-    @util.has_docstring
     def get_fock(self):
         return self.Fock(self, array=(self.bare_fock.aa, self.bare_fock.bb))
 
@@ -496,19 +482,15 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
         else:
             return eris
 
-    @util.has_docstring
     def ip_eom(self, options=None, **kwargs):
         return ueom.IP_UEOM(self, options=options, **kwargs)
 
-    @util.has_docstring
     def ea_eom(self, options=None, **kwargs):
         return ueom.EA_UEOM(self, options=options, **kwargs)
 
-    @util.has_docstring
     def ee_eom(self, options=None, **kwargs):
         return ueom.EE_UEOM(self, options=options, **kwargs)
 
-    @util.has_docstring
     def amplitudes_to_vector(self, amplitudes):
         vectors = []
 
@@ -529,7 +511,6 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         return np.concatenate(vectors)
 
-    @util.has_docstring
     def vector_to_amplitudes(self, vector):
         amplitudes = util.Namespace()
         i0 = 0
@@ -569,7 +550,6 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         return amplitudes
 
-    @util.has_docstring
     def lambdas_to_vector(self, lambdas):
         vectors = []
 
@@ -592,7 +572,6 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         return np.concatenate(vectors)
 
-    @util.has_docstring
     def vector_to_lambdas(self, vector):
         lambdas = util.Namespace()
         i0 = 0
@@ -636,7 +615,6 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         return lambdas
 
-    @util.has_docstring
     def excitations_to_vector_ip(self, *excitations):
         vectors = []
         m = 0
@@ -656,7 +634,6 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         return np.concatenate(vectors)
 
-    @util.has_docstring
     def excitations_to_vector_ea(self, *excitations):
         vectors = []
         m = 0
@@ -677,7 +654,6 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         return np.concatenate(vectors)
 
-    @util.has_docstring
     def excitations_to_vector_ee(self, *excitations):
         vectors = []
         m = 0
@@ -697,7 +673,6 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         return np.concatenate(vectors)
 
-    @util.has_docstring
     def vector_to_excitations_ip(self, vector):
         excitations = []
         i0 = 0
@@ -730,7 +705,6 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         return tuple(excitations)
 
-    @util.has_docstring
     def vector_to_excitations_ea(self, vector):
         excitations = []
         i0 = 0
@@ -763,7 +737,6 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
         return tuple(excitations)
 
-    @util.has_docstring
     def vector_to_excitations_ee(self, vector):
         excitations = []
         i0 = 0
@@ -796,23 +769,19 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
         return tuple(excitations)
 
     @property
-    @util.has_docstring
     def spin_type(self):
         return "U"
 
     @property
-    @util.has_docstring
     def nmo(self):
         assert self.mo_occ[0].size == self.mo_occ[1].size
         return self.mo_occ[0].size
 
     @property
-    @util.has_docstring
     def nocc(self):
         return tuple(np.sum(mo_occ > 0) for mo_occ in self.mo_occ)
 
     @property
-    @util.has_docstring
     def nvir(self):
         return tuple(self.nmo - nocc for nocc in self.nocc)
 

@@ -5,12 +5,7 @@ from pyscf import ao2mo
 from ebcc import numpy as np
 from ebcc import util
 from ebcc.precision import types
-
-
-class ERIs(util.Namespace):
-    """Base class for electronic repulsion integrals."""
-
-    pass
+from ebcc.base import ERIs
 
 
 class RERIs(ERIs):
@@ -97,7 +92,6 @@ class RERIs(ERIs):
     __getitem__ = __getattr__
 
 
-@util.has_docstring
 class UERIs(ERIs):
     """
     Electronic repulsion integral container class for `UEBCC`. Consists
@@ -198,7 +192,6 @@ class UERIs(ERIs):
         )
 
 
-@util.has_docstring
 class GERIs(RERIs):
     __doc__ = __doc__.replace("REBCC", "GEBCC")
 

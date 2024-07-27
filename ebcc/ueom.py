@@ -7,7 +7,7 @@ from ebcc import reom, util
 from ebcc.precision import types
 
 
-class UEOM(reom.REOM, metaclass=util.InheritDocstrings):
+class UEOM(reom.REOM):
     """Unrestricted equation-of-motion base class."""
 
     def _argsort_guess(self, diag):
@@ -23,7 +23,6 @@ class UEOM(reom.REOM, metaclass=util.InheritDocstrings):
     def _quasiparticle_weight(self, r1):
         return np.linalg.norm(r1.a) ** 2 + np.linalg.norm(r1.b) ** 2
 
-    @util.has_docstring
     def moments(self, nmom, eris=None, amplitudes=None, hermitise=True):
         if eris is None:
             eris = self.ebcc.get_eris()
@@ -55,10 +54,9 @@ class UEOM(reom.REOM, metaclass=util.InheritDocstrings):
         return moments
 
 
-class IP_UEOM(UEOM, reom.IP_REOM, metaclass=util.InheritDocstrings):
+class IP_UEOM(UEOM, reom.IP_REOM):
     """Unrestricted equation-of-motion class for ionisation potentials."""
 
-    @util.has_docstring
     def diag(self, eris=None):
         parts = []
 
@@ -74,7 +72,6 @@ class IP_UEOM(UEOM, reom.IP_REOM, metaclass=util.InheritDocstrings):
 
         return self.amplitudes_to_vector(*parts)
 
-    @util.has_docstring
     def bras(self, eris=None):
         bras_raw = list(self._bras(eris=eris))
         bras = util.Namespace(a=[], b=[])
@@ -123,7 +120,6 @@ class IP_UEOM(UEOM, reom.IP_REOM, metaclass=util.InheritDocstrings):
 
         return bras
 
-    @util.has_docstring
     def kets(self, eris=None):
         kets_raw = list(self._kets(eris=eris))
         kets = util.Namespace(a=[], b=[])
@@ -174,10 +170,9 @@ class IP_UEOM(UEOM, reom.IP_REOM, metaclass=util.InheritDocstrings):
         return kets
 
 
-class EA_UEOM(UEOM, reom.EA_REOM, metaclass=util.InheritDocstrings):
+class EA_UEOM(UEOM, reom.EA_REOM):
     """Unrestricted equation-of-motion class for electron affinities."""
 
-    @util.has_docstring
     def diag(self, eris=None):
         parts = []
 
@@ -193,7 +188,6 @@ class EA_UEOM(UEOM, reom.EA_REOM, metaclass=util.InheritDocstrings):
 
         return self.amplitudes_to_vector(*parts)
 
-    @util.has_docstring
     def bras(self, eris=None):
         bras_raw = list(self._bras(eris=eris))
         bras = util.Namespace(a=[], b=[])
@@ -242,7 +236,6 @@ class EA_UEOM(UEOM, reom.EA_REOM, metaclass=util.InheritDocstrings):
 
         return bras
 
-    @util.has_docstring
     def kets(self, eris=None):
         kets_raw = list(self._kets(eris=eris))
         kets = util.Namespace(a=[], b=[])
@@ -293,13 +286,12 @@ class EA_UEOM(UEOM, reom.EA_REOM, metaclass=util.InheritDocstrings):
         return kets
 
 
-class EE_UEOM(UEOM, reom.EE_REOM, metaclass=util.InheritDocstrings):
+class EE_UEOM(UEOM, reom.EE_REOM):
     """Unrestricted equation-of-motion class for neutral excitations."""
 
     def _quasiparticle_weight(self, r1):
         return np.linalg.norm(r1.aa) ** 2 + np.linalg.norm(r1.bb) ** 2
 
-    @util.has_docstring
     def diag(self, eris=None):
         parts = []
 
@@ -314,7 +306,6 @@ class EE_UEOM(UEOM, reom.EE_REOM, metaclass=util.InheritDocstrings):
 
         return self.amplitudes_to_vector(*parts)
 
-    @util.has_docstring
     def bras(self, eris=None):  # pragma: no cover
         raise util.ModelNotImplemented("EE moments for UEBCC not working.")
 
@@ -378,7 +369,6 @@ class EE_UEOM(UEOM, reom.EE_REOM, metaclass=util.InheritDocstrings):
 
         return bras
 
-    @util.has_docstring
     def kets(self, eris=None):  # pragma: no cover
         raise util.ModelNotImplemented("EE moments for UEBCC not working.")
 
@@ -439,7 +429,6 @@ class EE_UEOM(UEOM, reom.EE_REOM, metaclass=util.InheritDocstrings):
 
         return kets
 
-    @util.has_docstring
     def moments(
         self,
         nmom,

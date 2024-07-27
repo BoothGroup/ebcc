@@ -9,12 +9,7 @@ from ebcc import numpy as np
 from ebcc import util
 from ebcc.logging import ANSI
 from ebcc.precision import types
-
-
-class EOM:
-    """Base class for equation-of-motion methods."""
-
-    pass
+from ebcc.base import EOM
 
 
 @dataclasses.dataclass
@@ -312,24 +307,20 @@ class REOM(EOM):
         return self.ebcc.nvir
 
 
-class IP_REOM(REOM, metaclass=util.InheritDocstrings):
+class IP_REOM(REOM):
     """Restricted equation-of-motion class for ionisation potentials."""
 
-    @util.has_docstring
     def amplitudes_to_vector(self, *amplitudes):
         return self.ebcc.excitations_to_vector_ip(*amplitudes)
 
-    @util.has_docstring
     def vector_to_amplitudes(self, vector):
         return self.ebcc.vector_to_excitations_ip(vector)
 
-    @util.has_docstring
     def matvec(self, vector, eris=None):
         amplitudes = self.vector_to_amplitudes(vector)
         amplitudes = self.ebcc.hbar_matvec_ip(*amplitudes, eris=eris)
         return self.amplitudes_to_vector(*amplitudes)
 
-    @util.has_docstring
     def diag(self, eris=None):
         parts = []
 
@@ -348,7 +339,6 @@ class IP_REOM(REOM, metaclass=util.InheritDocstrings):
     def _kets(self, eris=None):
         return self.ebcc.make_ip_mom_kets(eris=eris)
 
-    @util.has_docstring
     def bras(self, eris=None):
         bras_raw = list(self._bras(eris=eris))
         bras = np.array(
@@ -356,7 +346,6 @@ class IP_REOM(REOM, metaclass=util.InheritDocstrings):
         )
         return bras
 
-    @util.has_docstring
     def kets(self, eris=None):
         kets_raw = list(self._kets(eris=eris))
         kets = np.array(
@@ -365,29 +354,24 @@ class IP_REOM(REOM, metaclass=util.InheritDocstrings):
         return kets
 
     @property
-    @util.has_docstring
     def excitation_type(self):
         return "ip"
 
 
-class EA_REOM(REOM, metaclass=util.InheritDocstrings):
+class EA_REOM(REOM):
     """Equation-of-motion class for electron affinities."""
 
-    @util.has_docstring
     def amplitudes_to_vector(self, *amplitudes):
         return self.ebcc.excitations_to_vector_ea(*amplitudes)
 
-    @util.has_docstring
     def vector_to_amplitudes(self, vector):
         return self.ebcc.vector_to_excitations_ea(vector)
 
-    @util.has_docstring
     def matvec(self, vector, eris=None):
         amplitudes = self.vector_to_amplitudes(vector)
         amplitudes = self.ebcc.hbar_matvec_ea(*amplitudes, eris=eris)
         return self.amplitudes_to_vector(*amplitudes)
 
-    @util.has_docstring
     def diag(self, eris=None):
         parts = []
 
@@ -406,7 +390,6 @@ class EA_REOM(REOM, metaclass=util.InheritDocstrings):
     def _kets(self, eris=None):
         return self.ebcc.make_ea_mom_kets(eris=eris)
 
-    @util.has_docstring
     def bras(self, eris=None):
         bras_raw = list(self._bras(eris=eris))
         bras = np.array(
@@ -414,7 +397,6 @@ class EA_REOM(REOM, metaclass=util.InheritDocstrings):
         )
         return bras
 
-    @util.has_docstring
     def kets(self, eris=None):
         kets_raw = list(self._kets(eris=eris))
         kets = np.array(
@@ -423,29 +405,24 @@ class EA_REOM(REOM, metaclass=util.InheritDocstrings):
         return kets
 
     @property
-    @util.has_docstring
     def excitation_type(self):
         return "ea"
 
 
-class EE_REOM(REOM, metaclass=util.InheritDocstrings):
+class EE_REOM(REOM):
     """Equation-of-motion class for neutral excitations."""
 
-    @util.has_docstring
     def amplitudes_to_vector(self, *amplitudes):
         return self.ebcc.excitations_to_vector_ee(*amplitudes)
 
-    @util.has_docstring
     def vector_to_amplitudes(self, vector):
         return self.ebcc.vector_to_excitations_ee(vector)
 
-    @util.has_docstring
     def matvec(self, vector, eris=None):
         amplitudes = self.vector_to_amplitudes(vector)
         amplitudes = self.ebcc.hbar_matvec_ee(*amplitudes, eris=eris)
         return self.amplitudes_to_vector(*amplitudes)
 
-    @util.has_docstring
     def diag(self, eris=None):
         parts = []
 
@@ -457,7 +434,6 @@ class EE_REOM(REOM, metaclass=util.InheritDocstrings):
 
         return self.amplitudes_to_vector(*parts)
 
-    @util.has_docstring
     def bras(self, eris=None):
         bras_raw = list(self.ebcc.make_ee_mom_bras(eris=eris))
         bras = np.array(
@@ -468,7 +444,6 @@ class EE_REOM(REOM, metaclass=util.InheritDocstrings):
         )
         return bras
 
-    @util.has_docstring
     def kets(self, eris=None):
         kets_raw = list(self.ebcc.make_ee_mom_kets(eris=eris))
         kets = np.array(
@@ -482,7 +457,6 @@ class EE_REOM(REOM, metaclass=util.InheritDocstrings):
         )
         return kets
 
-    @util.has_docstring
     def moments(self, nmom, eris=None, amplitudes=None, hermitise=True, diagonal_only=True):
         """Construct the moments of the EOM Hamiltonian."""
 
@@ -519,6 +493,5 @@ class EE_REOM(REOM, metaclass=util.InheritDocstrings):
         return moments
 
     @property
-    @util.has_docstring
     def excitation_type(self):
         return "ee"

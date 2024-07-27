@@ -13,8 +13,7 @@ from ebcc.rebcc import REBCC
 from ebcc.space import Space
 
 
-@util.has_docstring
-class GEBCC(REBCC, metaclass=util.InheritDocstrings):
+class GEBCC(REBCC):
     __doc__ = __doc__.replace("Restricted", "Generalised", 1)
 
     ERIs = GERIs
@@ -261,7 +260,6 @@ class GEBCC(REBCC, metaclass=util.InheritDocstrings):
 
         return gcc
 
-    @util.has_docstring
     def init_amps(self, eris=None):
         eris = self.get_eris(eris)
         amplitudes = util.Namespace()
@@ -301,7 +299,6 @@ class GEBCC(REBCC, metaclass=util.InheritDocstrings):
 
         return amplitudes
 
-    @util.has_docstring
     def make_rdm2_f(self, eris=None, amplitudes=None, lambdas=None, hermitise=True):
         func, kwargs = self._load_function(
             "make_rdm2_f",
@@ -318,7 +315,6 @@ class GEBCC(REBCC, metaclass=util.InheritDocstrings):
 
         return dm
 
-    @util.has_docstring
     def excitations_to_vector_ip(self, *excitations):
         vectors = []
         m = 0
@@ -336,7 +332,6 @@ class GEBCC(REBCC, metaclass=util.InheritDocstrings):
 
         return np.concatenate(vectors)
 
-    @util.has_docstring
     def excitations_to_vector_ee(self, *excitations):
         vectors = []
         m = 0
@@ -353,7 +348,6 @@ class GEBCC(REBCC, metaclass=util.InheritDocstrings):
 
         return np.concatenate(vectors)
 
-    @util.has_docstring
     def vector_to_excitations_ip(self, vector):
         excitations = []
         i0 = 0
@@ -375,7 +369,6 @@ class GEBCC(REBCC, metaclass=util.InheritDocstrings):
 
         return tuple(excitations)
 
-    @util.has_docstring
     def vector_to_excitations_ea(self, vector):
         excitations = []
         i0 = 0
@@ -397,7 +390,6 @@ class GEBCC(REBCC, metaclass=util.InheritDocstrings):
 
         return tuple(excitations)
 
-    @util.has_docstring
     def vector_to_excitations_ee(self, vector):
         excitations = []
         i0 = 0
@@ -418,7 +410,6 @@ class GEBCC(REBCC, metaclass=util.InheritDocstrings):
 
         return tuple(excitations)
 
-    @util.has_docstring
     def get_mean_field_G(self):
         val = lib.einsum("Ipp->I", self.g.boo)
         val -= self.xi * self.omega
@@ -449,20 +440,16 @@ class GEBCC(REBCC, metaclass=util.InheritDocstrings):
         else:
             return eris
 
-    @util.has_docstring
     def ip_eom(self, options=None, **kwargs):
         return geom.IP_GEOM(self, options=options, **kwargs)
 
-    @util.has_docstring
     def ea_eom(self, options=None, **kwargs):
         return geom.EA_GEOM(self, options=options, **kwargs)
 
-    @util.has_docstring
     def ee_eom(self, options=None, **kwargs):
         return geom.EE_GEOM(self, options=options, **kwargs)
 
     @property
-    @util.has_docstring
     def xi(self):
         if self.options.shift:
             xi = lib.einsum("Iii->I", self.g.boo)
@@ -474,6 +461,5 @@ class GEBCC(REBCC, metaclass=util.InheritDocstrings):
         return xi
 
     @property
-    @util.has_docstring
     def spin_type(self):
         return "G"

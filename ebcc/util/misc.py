@@ -3,6 +3,15 @@
 import time
 
 
+class InheritedType:
+    """Type for an inherited variable."""
+
+    pass
+
+
+Inherited = InheritedType()
+
+
 class ModelNotImplemented(NotImplementedError):
     """Error for unsupported models."""
 

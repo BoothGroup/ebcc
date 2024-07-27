@@ -11,6 +11,7 @@ from ebcc import util
 from ebcc.damping import DIIS
 from ebcc.logging import ANSI
 from ebcc.precision import types
+from ebcc.base import BruecknerEBCC
 
 
 @dataclasses.dataclass
@@ -42,7 +43,7 @@ class Options:
     damping: float = 0.0
 
 
-class BruecknerREBCC:
+class BruecknerREBCC(BruecknerEBCC):
     """
     Brueckner orbital self-consistency for coupled cluster calculations.
     Iteratively solve for a new mean-field that presents a vanishing T1
@@ -376,9 +377,7 @@ class BruecknerREBCC:
         return self.cc.spin_type
 
 
-@util.has_docstring
-class BruecknerUEBCC(BruecknerREBCC, metaclass=util.InheritDocstrings):
-    @util.has_docstring
+class BruecknerUEBCC(BruecknerREBCC):
     def get_rotation_matrix(self, u_tot=None, diis=None, t1=None):
         if t1 is None:
             t1 = self.cc.t1
@@ -426,7 +425,6 @@ class BruecknerUEBCC(BruecknerREBCC, metaclass=util.InheritDocstrings):
 
         return u, u_tot
 
-    @util.has_docstring
     def transform_amplitudes(self, u, amplitudes=None):
         if amplitudes is None:
             amplitudes = self.cc.amplitudes
@@ -456,7 +454,6 @@ class BruecknerUEBCC(BruecknerREBCC, metaclass=util.InheritDocstrings):
 
         return self.cc.amplitudes
 
-    @util.has_docstring
     def get_t1_norm(self, amplitudes=None):
         if amplitudes is None:
             amplitudes = self.cc.amplitudes
@@ -466,21 +463,18 @@ class BruecknerUEBCC(BruecknerREBCC, metaclass=util.InheritDocstrings):
 
         return np.linalg.norm([norm_a, norm_b])
 
-    @util.has_docstring
     def mo_to_correlated(self, mo_coeff):
         return (
             mo_coeff[0][:, self.cc.space[0].correlated],
             mo_coeff[1][:, self.cc.space[1].correlated],
         )
 
-    @util.has_docstring
     def mo_update_correlated(self, mo_coeff, mo_coeff_corr):
         mo_coeff[0][:, self.cc.space[0].correlated] = mo_coeff_corr[0]
         mo_coeff[1][:, self.cc.space[1].correlated] = mo_coeff_corr[1]
 
         return mo_coeff
 
-    @util.has_docstring
     def update_coefficients(self, u_tot, mo_coeff, mo_coeff_ref):
         mo_coeff_new_corr = (
             util.einsum("pi,ij->pj", mo_coeff_ref[0], u_tot.aa),
@@ -490,6 +484,5 @@ class BruecknerUEBCC(BruecknerREBCC, metaclass=util.InheritDocstrings):
         return mo_coeff_new
 
 
-@util.has_docstring
 class BruecknerGEBCC(BruecknerREBCC):
     pass

@@ -4,15 +4,10 @@ import numpy as np
 from pyscf import ao2mo
 
 from ebcc import precision, util
+from ebcc.base import ERIs
 
 
-class CDERIs(util.Namespace):
-    """Base class for Cholesky decomposed ERIs."""
-
-    pass
-
-
-class RCDERIs(CDERIs):
+class RCDERIs(ERIs):
     """
     Cholesky decomposed ERI container class for `REBCC`. Consists of a
     just-in-time namespace containing blocks of the integrals.
@@ -123,8 +118,7 @@ class RCDERIs(CDERIs):
     __getitem__ = __getattr__
 
 
-@util.has_docstring
-class UCDERIs(CDERIs):
+class UCDERIs(ERIs):
     """
     Cholesky decomposed ERI container class for `UEBCC`. Consists of a
     just-in-time namespace containing blocks of the integrals.
