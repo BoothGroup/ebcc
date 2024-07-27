@@ -3,7 +3,7 @@ Generate the CCSDT code.
 """
 
 import sys
-sys.setrecursionlimit(100000)
+sys.setrecursionlimit(1000000)
 
 import pdaggerq
 from albert.qc._pdaggerq import import_from_pdaggerq

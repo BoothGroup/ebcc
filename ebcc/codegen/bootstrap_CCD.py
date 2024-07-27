@@ -186,7 +186,7 @@ with Stopwatch("1RDM"):
                 else:
                     for s in "ab":
                         for occ in ("oo", "vv"):
-                            shape = ", ".join(f"t2.{ss}{ss}.shape[{'0' if o == 'o' else '-1'}]" for ss, o in zip(s+s, occ))
+                            shape = ", ".join(f"t2.{s}{s}{s}{s}.shape[{'0' if o == 'o' else '-1'}]" for o in occ)
                             postamble += f"{nm}.{s}{s}.{occ} = np.zeros(({shape}))\n"
                 return postamble + get_density_einsum_postamble(n, spin)
             kwargs = {
