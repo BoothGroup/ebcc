@@ -2191,8 +2191,10 @@ class REBCC(EBCC):
         """
         mf = self.mf
         if hasattr(mf, "xc"):
-            mf = mf.to_hf()
-        return types[float](mf.energy_tot())
+            e_hf = mf.to_hf().energy_tot()
+        else:
+            e_hf = mf.e_tot
+        return types[float](e_hf)
 
     @property
     def e_tot(self):
