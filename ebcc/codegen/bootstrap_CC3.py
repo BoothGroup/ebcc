@@ -3,6 +3,7 @@ Generate the CC3 code.
 """
 
 import sys
+sys.setrecursionlimit(100000)
 
 import pdaggerq
 from albert.qc._pdaggerq import import_from_pdaggerq
@@ -107,7 +108,7 @@ with Stopwatch("T amplitudes"):
     for name, codegen in code_generators.items():
         if name == "einsum":
             kwargs = {
-                "preamble": "t1new = Namespace()\nt2new = Namespace()" if spin == "uhf" else None,
+                "preamble": "t1new = Namespace()\nt2new = Namespace()\nt3new = Namespace()" if spin == "uhf" else None,
                 "as_dict": True,
             }
         else:

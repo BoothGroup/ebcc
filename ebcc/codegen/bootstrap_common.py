@@ -39,6 +39,8 @@ ov_1e = ["oo", "ov", "vo", "vv"]
 default_indices = {
     "o": OCC_INDICES,
     "v": VIRT_INDICES,
+    "O": [i.upper() for i in OCC_INDICES],
+    "V": [i.upper() for i in VIRT_INDICES],
     "b": ["x", "y", "z", "b0", "b1", "b2", "b3"],
     "x": ["P", "Q", "R", "S", "x0", "x1", "x2", "x3", "x4", "x5", "x7"],
 }
@@ -50,6 +52,8 @@ default_sectors = {i: k for k, v in default_indices.items() for i in v}
 default_sizes = {
     "o": 200,
     "v": 1000,
+    "O": 8,
+    "V": 16,
     "b": 10,
     "x": 3000,
 }
