@@ -585,7 +585,10 @@ class REBCC(EBCC):
         Convert the input PySCF mean-field object to the one required for
         the current class.
         """
-        return mf.to_rhf()
+        hf = mf.to_rhf()
+        if hasattr(mf, "xc"):
+            hf.e_tot = hf.energy_tot()
+        return hf
 
     def _load_function(self, name, eris=False, amplitudes=False, lambdas=False, **kwargs):
         """
@@ -2188,12 +2191,7 @@ class REBCC(EBCC):
         e_hf : float
             Mean-field energy.
         """
-        mf = self.mf
-        if hasattr(mf, "xc"):
-            e_hf = mf.to_hf().energy_tot()
-        else:
-            e_hf = mf.e_tot
-        return types[float](e_hf)
+        return types[float](self.mf.e_tot)
 
     @property
     def e_tot(self):
