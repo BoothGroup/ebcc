@@ -2179,7 +2179,7 @@ class REBCC(EBCC):
 
         return energy_sum
 
-    @functools.cached_property
+    @property
     def e_hf(self):
         """
         Return the mean-field energy.
