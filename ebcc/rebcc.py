@@ -1,7 +1,6 @@
 """Restricted electron-boson coupled cluster."""
 
 import dataclasses
-import functools
 
 from pyscf import lib
 
