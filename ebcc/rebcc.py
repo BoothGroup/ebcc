@@ -1,8 +1,9 @@
 """Restricted electron-boson coupled cluster."""
 
 import dataclasses
+import functools
 
-from pyscf import lib
+from pyscf import scf, lib
 
 from ebcc import default_log, init_logging
 from ebcc import numpy as np
@@ -375,7 +376,7 @@ class REBCC(EBCC):
             f"{ANSI.B}{'Iter':>4s} {'Energy (corr.)':>16s} {'Energy (tot.)':>18s} "
             f"{'Δ(Energy)':>13s} {'Δ(Ampl.)':>13s}{ANSI.R}"
         )
-        self.log.info(f"{0:4d} {e_cc:16.10f} {e_cc + self.mf.e_tot:18.10f}")
+        self.log.info(f"{0:4d} {e_cc:16.10f} {e_cc + self.e_hf:18.10f}")
 
         if not self.ansatz.is_one_shot:
             # Set up DIIS:
@@ -403,7 +404,7 @@ class REBCC(EBCC):
                 converged_e = de < self.options.e_tol
                 converged_t = dt < self.options.t_tol
                 self.log.info(
-                    f"{niter:4d} {e_cc:16.10f} {e_cc + self.mf.e_tot:18.10f}"
+                    f"{niter:4d} {e_cc:16.10f} {e_cc + self.e_hf:18.10f}"
                     f" {[ANSI.r, ANSI.g][converged_e]}{de:13.3e}{ANSI.R}"
                     f" {[ANSI.r, ANSI.g][converged_t]}{dt:13.3e}{ANSI.R}"
                 )
@@ -2178,6 +2179,21 @@ class REBCC(EBCC):
 
         return energy_sum
 
+    @functools.cached_property
+    def e_hf(self):
+        """
+        Return the mean-field energy.
+
+        Returns
+        -------
+        e_hf : float
+            Mean-field energy.
+        """
+        mf = self.mf
+        if hasattr(mf, "xc"):
+            mf = mf.to_hf()
+        return types[float](mf.energy_tot())
+
     @property
     def e_tot(self):
         """
@@ -2188,7 +2204,7 @@ class REBCC(EBCC):
         e_tot : float
             Total energy.
         """
-        return types[float](self.mf.e_tot) + self.e_corr
+        return types[float](self.e_hf) + self.e_corr
 
     @property
     def t1(self):
