@@ -3,7 +3,7 @@
 import dataclasses
 import functools
 
-from pyscf import scf, lib
+from pyscf import lib, scf
 
 from ebcc import default_log, init_logging
 from ebcc import numpy as np
