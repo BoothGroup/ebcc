@@ -17,7 +17,7 @@ from ebcc.fock import RFock
 from ebcc.logging import ANSI
 from ebcc.precision import types
 from ebcc.space import Space
-from ebcc.base import EBCC
+from ebcc.cc.base import EBCC
 
 
 @dataclasses.dataclass
@@ -56,282 +56,26 @@ class Options:
 
 
 class REBCC(EBCC):
-    r"""
-    Restricted electron-boson coupled cluster class.
+    """Restricted electron-boson coupled cluster.
 
-    Parameters
-    ----------
-    mf : pyscf.scf.hf.SCF
-        PySCF mean-field object.
-    log : logging.Logger, optional
-        Log to print output to. Default value is the global logger which
-        outputs to `sys.stderr`.
-    ansatz : str or Ansatz, optional
-        Overall ansatz, as a string representation or an `Ansatz` object.
-        If `None`, construct from the individual ansatz parameters,
-        otherwise override them. Default value is `None`.
-    space : Space, optional
-        Space object defining the size of frozen, correlated and active
-        fermionic spaces. If `None`, all fermionic degrees of freedom are
-        assumed correlated. Default value is `None`.
-    omega : numpy.ndarray (nbos,), optional
-        Bosonic frequencies. Default value is `None`.
-    g : numpy.ndarray (nbos, nmo, nmo), optional
-        Electron-boson coupling matrix corresponding to the bosonic
-        annihilation operator i.e.
-
-        .. math:: g_{xpq} p^\dagger q b
-
-        The creation part is assume to be the fermionic transpose of this
-        tensor to retain hermiticity in the overall Hamiltonian. Default
-        value is `None`.
-    G : numpy.ndarray (nbos,), optional
-        Boson non-conserving term of the Hamiltonian i.e.
-
-        .. math:: G_x (b^\dagger + b)
-
-        Default value is `None`.
-    mo_coeff : numpy.ndarray, optional
-        Molecular orbital coefficients. Default value is `mf.mo_coeff`.
-    mo_occ : numpy.ndarray, optional
-        Molecular orbital occupancies. Default value is `mf.mo_occ`.
-    fock : util.Namespace, optional
-        Fock input. Default value is calculated using `get_fock()`.
-    options : dataclasses.dataclass, optional
-        Object containing the options. Default value is `Options()`.
-    **kwargs : dict
-        Additional keyword arguments used to update `options`.
-
-    Attributes
-    ----------
-    mf : pyscf.scf.hf.SCF
-        PySCF mean-field object.
-    log : logging.Logger
-        Log to print output to.
-    options : dataclasses.dataclass
-        Object containing the options.
-    e_corr : float
-        Correlation energy.
-    amplitudes : Namespace
-        Cluster amplitudes.
-    lambdas : Namespace
-        Cluster lambda amplitudes.
-    converged : bool
-        Whether the coupled cluster equations converged.
-    converged_lambda : bool
-        Whether the lambda coupled cluster equations converged.
-    omega : numpy.ndarray (nbos,)
-        Bosonic frequencies.
-    g : util.Namespace
-        Namespace containing blocks of the electron-boson coupling matrix.
-        Each attribute should be a length-3 string of `b`, `o` or `v`
-        signifying whether the corresponding axis is bosonic, occupied, or
-        virtual.
-    G : numpy.ndarray (nbos,)
-        Mean-field boson non-conserving term of the Hamiltonian.
-    bare_G : numpy.ndarray (nbos,)
-        Boson non-conserving term of the Hamiltonian.
-    fock : util.Namespace
-        Namespace containing blocks of the Fock matrix. Each attribute
-        should be a length-2 string of `o` or `v` signifying whether the
-        corresponding axis is occupied or virtual.
-    bare_fock : numpy.ndarray (nmo, nmo)
-        The mean-field Fock matrix in the MO basis.
-    xi : numpy.ndarray (nbos,)
-        Shift in bosonic operators to diagonalise the phononic Hamiltonian.
-    const : float
-        Shift in the energy from moving to polaritonic basis.
-    name : str
-        Name of the method.
-
-    Methods
-    -------
-    init_amps(eris=None)
-        Initialise the amplitudes.
-    init_lams(amplitudes=None)
-        Initialise the lambda amplitudes.
-    kernel(eris=None)
-        Run the coupled cluster calculation.
-    solve_lambda(amplitudes=None, eris=None)
-        Solve the lambda coupled cluster equations.
-    energy(eris=None, amplitudes=None)
-        Compute the correlation energy.
-    update_amps(eris=None, amplitudes=None)
-        Update the amplitudes.
-    update_lams(eris=None, amplitudes=None, lambdas=None)
-        Update the lambda amplitudes.
-    make_sing_b_dm(eris=None, amplitudes=None, lambdas=None)
-        Build the single boson density matrix.
-    make_rdm1_b(eris=None, amplitudes=None, lambdas=None, unshifted=None,
-                hermitise=None)
-        Build the bosonic one-particle reduced density matrix.
-    make_rdm1_f(eris=None, amplitudes=None, lambdas=None, hermitise=None)
-        Build the fermionic one-particle reduced density matrix.
-    make_rdm2_f(eris=None, amplitudes=None, lambdas=None, hermitise=None)
-        Build the fermionic two-particle reduced density matrix.
-    make_eb_coup_rdm(eris=None, amplitudes=None, lambdas=None,
-                     unshifted=True, hermitise=True)
-        Build the electron-boson coupling reduced density matrices.
-    hbar_matvec_ip(r1, r2, eris=None, amplitudes=None)
-        Compute the product between a state vector and the EOM Hamiltonian
-        for the IP.
-    hbar_matvec_ea(r1, r2, eris=None, amplitudes=None)
-        Compute the product between a state vector and the EOM Hamiltonian
-        for the EA.
-    hbar_matvec_ee(r1, r2, eris=None, amplitudes=None)
-        Compute the product between a state vector and the EOM Hamiltonian
-        for the EE.
-    make_ip_mom_bras(eris=None, amplitudes=None, lambdas=None)
-        Get the bra IP vectors to construct EOM moments.
-    make_ea_mom_bras(eris=None, amplitudes=None, lambdas=None)
-        Get the bra EA vectors to construct EOM moments.
-    make_ee_mom_bras(eris=None, amplitudes=None, lambdas=None)
-        Get the bra EE vectors to construct EOM moments.
-    make_ip_mom_kets(eris=None, amplitudes=None, lambdas=None)
-        Get the ket IP vectors to construct EOM moments.
-    make_ea_mom_kets(eris=None, amplitudes=None, lambdas=None)
-        Get the ket EA vectors to construct EOM moments.
-    make_ee_mom_kets(eris=None, amplitudes=None, lambdas=None)
-        Get the ket EE vectors to construct EOM moments.
-    amplitudes_to_vector(amplitudes)
-        Construct a vector containing all of the amplitudes used in the
-        given ansatz.
-    vector_to_amplitudes(vector)
-        Construct all of the amplitudes used in the given ansatz from a
-        vector.
-    lambdas_to_vector(lambdas)
-        Construct a vector containing all of the lambda amplitudes used in
-        the given ansatz.
-    vector_to_lambdas(vector)
-        Construct all of the lambdas used in the given ansatz from a
-        vector.
-    excitations_to_vector_ip(*excitations)
-        Construct a vector containing all of the excitation amplitudes
-        used in the given ansatz for the IP.
-    excitations_to_vector_ea(*excitations)
-        Construct a vector containing all of the excitation amplitudes
-        used in the given ansatz for the EA.
-    excitations_to_vector_ee(*excitations)
-        Construct a vector containing all of the excitation amplitudes
-        used in the given ansatz for the EE.
-    vector_to_excitations_ip(vector)
-        Construct all of the excitation amplitudes used in the given
-        ansatz from a vector for the IP.
-    vector_to_excitations_ea(vector)
-        Construct a vector containing all of the excitation amplitudes
-        used in the given ansatz for the EA.
-    vector_to_excitations_ee(vector)
-        Construct a vector containing all of the excitation amplitudes
-        used in the given ansatz for the EE.
-    get_mean_field_G()
-        Get the mean-field boson non-conserving term of the Hamiltonian.
-    get_g(g)
-        Get the blocks of the electron-boson coupling matrix corresponding
-        to the bosonic annihilation operator.
-    get_fock()
-        Get the blocks of the Fock matrix, shifted due to bosons where the
-        ansatz requires.
-    get_eris()
-        Get blocks of the ERIs.
+    Attributes:
+        mf: PySCF mean-field object.
+        log: Log to write output to.
+        options: Options for the EBCC calculation.
+        e_corr: Correlation energy.
+        amplitudes: Cluster amplitudes.
+        converged: Convergence flag.
+        lambdas: Cluster lambda amplitudes.
+        converged_lambda: Lambda convergence flag.
+        name: Name of the method.
     """
 
+    # Types
     Options = Options
     ERIs = RERIs
     Fock = RFock
     CDERIs = RCDERIs
     Brueckner = BruecknerREBCC
-
-    def __init__(
-        self,
-        mf,
-        log=None,
-        ansatz="CCSD",
-        space=None,
-        omega=None,
-        g=None,
-        G=None,
-        mo_coeff=None,
-        mo_occ=None,
-        fock=None,
-        options=None,
-        **kwargs,
-    ):
-        # Options:
-        if options is None:
-            options = self.Options()
-        self.options = options
-        for key, val in kwargs.items():
-            setattr(self.options, key, val)
-
-        # Parameters:
-        self.log = default_log if log is None else log
-        self.mf = self._convert_mf(mf)
-        self._mo_coeff = np.asarray(mo_coeff).astype(types[float]) if mo_coeff is not None else None
-        self._mo_occ = np.asarray(mo_occ).astype(types[float]) if mo_occ is not None else None
-
-        # Ansatz:
-        if isinstance(ansatz, Ansatz):
-            self.ansatz = ansatz
-        else:
-            self.ansatz = Ansatz.from_string(
-                ansatz, density_fitting=getattr(self.mf, "with_df", None) is not None
-            )
-        self._eqns = self.ansatz._get_eqns(self.spin_type)
-
-        # Space:
-        if space is not None:
-            self.space = space
-        else:
-            self.space = self.init_space()
-
-        # Boson parameters:
-        if bool(self.fermion_coupling_rank) != bool(self.boson_coupling_rank):
-            raise ValueError(
-                "Fermionic and bosonic coupling ranks must both be zero, or both non-zero."
-            )
-        self.omega = omega.astype(types[float]) if omega is not None else None
-        self.bare_g = g.astype(types[float]) if g is not None else None
-        self.bare_G = G.astype(types[float]) if G is not None else None
-        if self.boson_ansatz != "":
-            self.g = self.get_g(g)
-            self.G = self.get_mean_field_G()
-            if self.options.shift:
-                self.log.info(" > Energy shift due to polaritonic basis:  %.10f", self.const)
-        else:
-            assert self.nbos == 0
-            self.options.shift = False
-            self.g = None
-            self.G = None
-
-        # Fock matrix:
-        if fock is None:
-            self.fock = self.get_fock()
-        else:
-            self.fock = fock
-
-        # Attributes:
-        self.e_corr = None
-        self.amplitudes = None
-        self.converged = False
-        self.lambdas = None
-        self.converged_lambda = False
-
-        # Logging:
-        init_logging(self.log)
-        self.log.info(f"\n{ANSI.B}{ANSI.U}{self.name}{ANSI.R}")
-        self.log.debug(f"{ANSI.B}{'*' * len(self.name)}{ANSI.R}")
-        self.log.debug("")
-        self.log.info(f"{ANSI.B}Options{ANSI.R}:")
-        self.log.info(f" > e_tol:  {ANSI.y}{self.options.e_tol}{ANSI.R}")
-        self.log.info(f" > t_tol:  {ANSI.y}{self.options.t_tol}{ANSI.R}")
-        self.log.info(f" > max_iter:  {ANSI.y}{self.options.max_iter}{ANSI.R}")
-        self.log.info(f" > diis_space:  {ANSI.y}{self.options.diis_space}{ANSI.R}")
-        self.log.info(f" > damping:  {ANSI.y}{self.options.damping}{ANSI.R}")
-        self.log.debug("")
-        self.log.info(f"{ANSI.B}Ansatz{ANSI.R}: {ANSI.m}{self.ansatz}{ANSI.R}")
-        self.log.debug("")
-        self.log.info(f"{ANSI.B}Space{ANSI.R}: {ANSI.m}{self.space}{ANSI.R}")
-        self.log.debug("")
 
     def kernel(self, eris=None):
         """
