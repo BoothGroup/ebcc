@@ -21,7 +21,10 @@ class UEBCC(rebcc.REBCC, metaclass=util.InheritDocstrings):
 
     @staticmethod
     def _convert_mf(mf):
-        return mf.to_uhf()
+        hf = mf.to_uhf()
+        if hasattr(mf, "xc"):
+            hf.e_tot = hf.energy_tot()
+        return hf
 
     @classmethod
     def from_rebcc(cls, rcc):
