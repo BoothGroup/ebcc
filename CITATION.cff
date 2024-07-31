@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite is as below."
+authors:
+- family-names: Backhouse
+  given-names: Oliver J.
+- family-names: Scott
+  given-names: Charles C. J.
+- family-names: Booth
+  given-names: George H.
+title: "ebcc: Coupled cluster calculations on electron-boson systems"
+version: 1.4.4
+date-released: 2024-07-31
