@@ -10,3 +10,4 @@ authors:
 title: "ebcc: Coupled cluster calculations on electron-boson systems"
 version: 1.4.4
 date-released: 2024-07-31
+url: "https://github.com/BoothGroup/ebcc"
