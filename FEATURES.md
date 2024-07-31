@@ -2,8 +2,9 @@
 - Lambda equation solver
 - Equation-of-motion solver
 - Density matrices
-- Brueckner orbital calculations
 - Frozen and active space constraints
+- Brueckner orbital calculations
+- Frozen natural orbital calculations
 - Single- and mixed-precision calculations
 
 The following table summarises the available methods and routines for the ansatz currently treated by code generation, in the three spin cases:

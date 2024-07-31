@@ -10,9 +10,11 @@ from ebcc import reom, util
 from ebcc.ansatz import Ansatz
 from ebcc.brueckner import BruecknerREBCC
 from ebcc.cderis import RCDERIs
+from ebcc.damping import DIIS
 from ebcc.dump import Dump
 from ebcc.eris import RERIs
 from ebcc.fock import RFock
+from ebcc.logging import ANSI
 from ebcc.precision import types
 from ebcc.space import Space
 
@@ -46,6 +48,8 @@ class Options:
     diis_space : int, optional
         Number of amplitudes to use in DIIS extrapolation. Default value is
         `12`.
+    damping : float, optional
+        Damping factor for DIIS extrapolation. Default value is `0.0`.
     """
 
     shift: bool = True
@@ -53,6 +57,7 @@ class Options:
     t_tol: float = 1e-8
     max_iter: int = 200
     diis_space: int = 12
+    damping: float = 0.0
 
 
 class REBCC(EBCC):
@@ -318,18 +323,19 @@ class REBCC(EBCC):
 
         # Logging:
         init_logging(self.log)
-        self.log.info("%s", self.name)
-        self.log.info("%s", "*" * len(self.name))
+        self.log.info(f"\n{ANSI.B}{ANSI.U}{self.name}{ANSI.R}")
+        self.log.debug(f"{ANSI.B}{'*' * len(self.name)}{ANSI.R}")
         self.log.debug("")
-        self.log.info("Options:")
-        self.log.info(" > e_tol:  %s", self.options.e_tol)
-        self.log.info(" > t_tol:  %s", self.options.t_tol)
-        self.log.info(" > max_iter:  %s", self.options.max_iter)
-        self.log.info(" > diis_space:  %s", self.options.diis_space)
+        self.log.info(f"{ANSI.B}Options{ANSI.R}:")
+        self.log.info(f" > e_tol:  {ANSI.y}{self.options.e_tol}{ANSI.R}")
+        self.log.info(f" > t_tol:  {ANSI.y}{self.options.t_tol}{ANSI.R}")
+        self.log.info(f" > max_iter:  {ANSI.y}{self.options.max_iter}{ANSI.R}")
+        self.log.info(f" > diis_space:  {ANSI.y}{self.options.diis_space}{ANSI.R}")
+        self.log.info(f" > damping:  {ANSI.y}{self.options.damping}{ANSI.R}")
         self.log.debug("")
-        self.log.info("Ansatz: %s", self.ansatz)
+        self.log.info(f"{ANSI.B}Ansatz{ANSI.R}: {ANSI.m}{self.ansatz}{ANSI.R}")
         self.log.debug("")
-        self.log.info("Space: %s", self.space)
+        self.log.info(f"{ANSI.B}Space{ANSI.R}: {ANSI.m}{self.space}{ANSI.R}")
         self.log.debug("")
 
     def kernel(self, eris=None):
@@ -361,16 +367,21 @@ class REBCC(EBCC):
             amplitudes = self.amplitudes
 
         # Get the initial energy:
-        e_cc = e_init = self.energy(amplitudes=amplitudes, eris=eris)
+        e_cc = self.energy(amplitudes=amplitudes, eris=eris)
 
         self.log.output("Solving for excitation amplitudes.")
-        self.log.info("%4s %16s %16s %16s", "Iter", "Energy (corr.)", "Δ(Energy)", "Δ(Amplitudes)")
-        self.log.info("%4d %16.10f", 0, e_init)
+        self.log.debug("")
+        self.log.info(
+            f"{ANSI.B}{'Iter':>4s} {'Energy (corr.)':>16s} {'Energy (tot.)':>18s} "
+            f"{'Δ(Energy)':>13s} {'Δ(Ampl.)':>13s}{ANSI.R}"
+        )
+        self.log.info(f"{0:4d} {e_cc:16.10f} {e_cc + self.mf.e_tot:18.10f}")
 
         if not self.ansatz.is_one_shot:
             # Set up DIIS:
-            diis = lib.diis.DIIS()
+            diis = DIIS()
             diis.space = self.options.diis_space
+            diis.damping = self.options.damping
 
             converged = False
             for niter in range(1, self.options.max_iter + 1):
@@ -388,22 +399,32 @@ class REBCC(EBCC):
                 e_cc = self.energy(amplitudes=amplitudes, eris=eris)
                 de = abs(e_prev - e_cc)
 
-                self.log.info("%4d %16.10f %16.5g %16.5g", niter, e_cc, de, dt)
+                # Log the iteration:
+                converged_e = de < self.options.e_tol
+                converged_t = dt < self.options.t_tol
+                self.log.info(
+                    f"{niter:4d} {e_cc:16.10f} {e_cc + self.mf.e_tot:18.10f}"
+                    f" {[ANSI.r, ANSI.g][converged_e]}{de:13.3e}{ANSI.R}"
+                    f" {[ANSI.r, ANSI.g][converged_t]}{dt:13.3e}{ANSI.R}"
+                )
 
                 # Check for convergence:
-                converged = de < self.options.e_tol and dt < self.options.t_tol
+                converged = converged_e and converged_t
                 if converged:
-                    self.log.output("Converged.")
+                    self.log.debug("")
+                    self.log.output(f"{ANSI.g}Converged.{ANSI.R}")
                     break
             else:
-                self.log.warning("Failed to converge.")
+                self.log.debug("")
+                self.log.warning(f"{ANSI.r}Failed to converge.{ANSI.R}")
 
             # Include perturbative correction if required:
             if self.ansatz.has_perturbative_correction:
+                self.log.debug("")
                 self.log.info("Computing perturbative energy correction.")
                 e_pert = self.energy_perturbative(amplitudes=amplitudes, eris=eris)
                 e_cc += e_pert
-                self.log.info("E(pert) = %.10f", e_pert)
+                self.log.info(f"E(pert) = {e_pert:.10f}")
 
         else:
             converged = True
@@ -414,11 +435,10 @@ class REBCC(EBCC):
         self.converged = converged
 
         self.log.debug("")
-        self.log.output("E(corr) = %.10f", self.e_corr)
-        self.log.output("E(tot)  = %.10f", self.e_tot)
+        self.log.output(f"E(corr) = {self.e_corr:.10f}")
+        self.log.output(f"E(tot)  = {self.e_tot:.10f}")
         self.log.debug("")
         self.log.debug("Time elapsed: %s", timer.format_time(timer()))
-        self.log.debug("")
         self.log.debug("")
 
         return e_cc
@@ -463,11 +483,13 @@ class REBCC(EBCC):
             lambdas = self.lambdas
 
         # Set up DIIS:
-        diis = lib.diis.DIIS()
+        diis = DIIS()
         diis.space = self.options.diis_space
+        diis.damping = self.options.damping
 
         self.log.output("Solving for de-excitation (lambda) amplitudes.")
-        self.log.info("%4s %16s", "Iter", "Δ(Amplitudes)")
+        self.log.debug("")
+        self.log.info(f"{ANSI.B}{'Iter':>4s} {'Δ(Ampl.)':>13s}{ANSI.R}")
 
         converged = False
         for niter in range(1, self.options.max_iter + 1):
@@ -485,15 +507,18 @@ class REBCC(EBCC):
             lambdas = self.vector_to_lambdas(vector)
             dl = np.linalg.norm(vector - self.lambdas_to_vector(lambdas_prev), ord=np.inf)
 
-            self.log.info("%4d %16.5g", niter, dl)
+            # Log the iteration:
+            converged = dl < self.options.t_tol
+            self.log.info(f"{niter:4d} {[ANSI.r, ANSI.g][converged]}{dl:13.3e}{ANSI.R}")
 
             # Check for convergence:
-            converged = dl < self.options.t_tol
             if converged:
-                self.log.output("Converged.")
+                self.log.debug("")
+                self.log.output(f"{ANSI.g}Converged.{ANSI.R}")
                 break
         else:
-            self.log.warning("Failed to converge.")
+            self.log.debug("")
+            self.log.warning(f"{ANSI.r}Failed to converge.{ANSI.R}")
 
         self.log.debug("")
         self.log.debug("Time elapsed: %s", timer.format_time(timer()))
@@ -2035,14 +2060,14 @@ class REBCC(EBCC):
         return self.ansatz.boson_coupling_rank
 
     @property
-    def spin_type(self):
-        """Get a string represent of the spin channel."""
-        return "R"
-
-    @property
     def name(self):
         """Get a string representation of the method name."""
         return self.spin_type + self.ansatz.name
+
+    @property
+    def spin_type(self):
+        """Get a string represent of the spin channel."""
+        return "R"
 
     @property
     def mo_coeff(self):

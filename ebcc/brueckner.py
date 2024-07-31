@@ -5,9 +5,11 @@ import dataclasses
 import scipy.linalg
 from pyscf import lib
 
-from ebcc import NullLogger
+from ebcc import NullLogger, init_logging
 from ebcc import numpy as np
 from ebcc import util
+from ebcc.damping import DIIS
+from ebcc.logging import ANSI
 from ebcc.precision import types
 
 
@@ -29,12 +31,15 @@ class Options:
     diis_space : int, optional
         Number of amplitudes to use in DIIS extrapolation. Default value is
         `12`.
+    damping : float, optional
+        Damping factor for DIIS extrapolation. Default value is `0.0`.
     """
 
     e_tol: float = 1e-8
     t_tol: float = 1e-8
     max_iter: int = 20
     diis_space: int = 12
+    damping: float = 0.0
 
 
 class BruecknerREBCC:
@@ -74,11 +79,14 @@ class BruecknerREBCC:
         self.converged = False
 
         # Logging:
-        cc.log.info("Brueckner options:")
-        cc.log.info(" > e_tol:  %s", options.e_tol)
-        cc.log.info(" > t_tol:  %s", options.t_tol)
-        cc.log.info(" > max_iter:  %s", options.max_iter)
-        cc.log.info(" > diis_space:  %s", options.diis_space)
+        init_logging(cc.log)
+        cc.log.info(f"\n{ANSI.B}{ANSI.U}{self.name}{ANSI.R}")
+        cc.log.info(f"{ANSI.B}Options{ANSI.R}:")
+        cc.log.info(f" > e_tol:  {ANSI.y}{self.options.e_tol}{ANSI.R}")
+        cc.log.info(f" > t_tol:  {ANSI.y}{self.options.t_tol}{ANSI.R}")
+        cc.log.info(f" > max_iter:  {ANSI.y}{self.options.max_iter}{ANSI.R}")
+        cc.log.info(f" > diis_space:  {ANSI.y}{self.options.diis_space}{ANSI.R}")
+        cc.log.info(f" > damping:  {ANSI.y}{self.options.damping}{ANSI.R}")
         cc.log.debug("")
 
     def get_rotation_matrix(self, u_tot=None, diis=None, t1=None):
@@ -276,8 +284,9 @@ class BruecknerREBCC:
                 self.cc.kernel()
 
         # Set up DIIS:
-        diis = lib.diis.DIIS()
+        diis = DIIS()
         diis.space = self.options.diis_space
+        diis.damping = self.options.damping
 
         # Initialise coefficients:
         mo_coeff_new = np.array(self.cc.mo_coeff, copy=True, dtype=types[float])
@@ -286,10 +295,15 @@ class BruecknerREBCC:
         u_tot = None
 
         self.cc.log.output("Solving for Brueckner orbitals.")
-        self.cc.log.info(
-            "%4s %16s %10s %16s %16s", "Iter", "Energy (corr.)", "Converged", "Δ(Energy)", "|T1|"
+        self.cc.log.debug("")
+        self.log.info(
+            f"{ANSI.B}{'Iter':>4s} {'Energy (corr.)':>16s} {'Energy (tot.)':>18s} "
+            f"{'Conv.':>8s} {'Δ(Energy)':>13s} {'|T1|':>13s}{ANSI.R}"
         )
-        self.cc.log.info("%4d %16.10f %10s", 0, self.cc.e_corr, self.cc.converged)
+        self.log.info(
+            f"{0:4d} {self.cc.e_corr:16.10f} {self.cc.e_tot:18.10f} "
+            f"{[ANSI.r, ANSI.g][self.cc.converged]}{self.cc.converged!r:>8}{ANSI.R}"
+        )
 
         converged = False
         for niter in range(1, self.options.max_iter + 1):
@@ -322,17 +336,25 @@ class BruecknerREBCC:
             de = abs(e_prev - self.cc.e_tot)
             dt = self.get_t1_norm()
 
-            self.cc.log.info(
-                "%4d %16.10f %10s %16.5g %16.5g", niter, self.cc.e_corr, self.cc.converged, de, dt
+            # Log the iteration:
+            converged_e = de < self.options.e_tol
+            converged_t = dt < self.options.t_tol
+            self.log.info(
+                f"{niter:4d} {self.cc.e_corr:16.10f} {self.cc.e_tot:18.10f}"
+                f" {[ANSI.r, ANSI.g][self.cc.converged]}{self.cc.converged!r:>8}{ANSI.R}"
+                f" {[ANSI.r, ANSI.g][converged_e]}{de:13.3e}{ANSI.R}"
+                f" {[ANSI.r, ANSI.g][converged_t]}{dt:13.3e}{ANSI.R}"
             )
 
             # Check for convergence:
-            converged = de < self.options.e_tol and dt < self.options.t_tol
+            converged = converged_e and converged_t
             if converged:
-                self.cc.log.output("Converged.")
+                self.log.debug("")
+                self.log.output(f"{ANSI.g}Converged.{ANSI.R}")
                 break
         else:
-            self.cc.log.warning("Failed to converge.")
+            self.log.debug("")
+            self.log.warning(f"{ANSI.r}Failed to converge.{ANSI.R}")
 
         self.cc.log.debug("")
         self.cc.log.output("E(corr) = %.10f", self.cc.e_corr)
@@ -340,9 +362,13 @@ class BruecknerREBCC:
         self.cc.log.debug("")
         self.cc.log.debug("Time elapsed: %s", timer.format_time(timer()))
         self.cc.log.debug("")
-        self.cc.log.debug("")
 
         return self.cc.e_corr
+
+    @property
+    def name(self):
+        """Get a string representation of the method name."""
+        return self.spin_type + "B" + self.cc.ansatz.name
 
     @property
     def spin_type(self):
