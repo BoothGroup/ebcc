@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
+from dataclasses import dataclass
 
 from ebcc import default_log, init_logging
 from ebcc import numpy as np
@@ -16,12 +17,38 @@ from ebcc.precision import types
 if TYPE_CHECKING:
     from logging import Logger
     from typing import Optional, Union, Any
-    from dataclasses import dataclass
 
-    from pyscf.scf import SCF
+    from pyscf.scf import SCF  # type: ignore
+
+    from ebcc.numpy.typing import NDArray  # type: ignore
+    from ebcc.base import ERIs as BaseERIs
+    from ebcc.base import Fock as BaseFock
+    from ebcc.base import BruecknerEBCC as BaseBrueckner
 
 
-class EBCC(ABC):
+@dataclass
+class BaseOptions:
+    """Options for EBCC calculations.
+
+    Args:
+        shift: Shift the boson operators such that the Hamiltonian is normal-ordered with respect
+            to a coherent state. This removes the bosonic coupling to the static mean-field
+            density, introducing a constant energy shift.
+        e_tol: Threshold for convergence in the correlation energy.
+        t_tol: Threshold for convergence in the amplitude norm.
+        max_iter: Maximum number of iterations.
+        diis_space: Number of amplitudes to use in DIIS extrapolation.
+        damping: Damping factor for DIIS extrapolation.
+    """
+    shift: bool = True
+    e_tol: float = 1e-8
+    t_tol: float = 1e-8
+    max_iter: int = 200
+    diis_space: int = 12
+    damping: float = 0.0
+
+
+class BaseEBCC(ABC):
     """Base class for electron-boson coupled cluster.
 
     Attributes:
@@ -37,18 +64,18 @@ class EBCC(ABC):
     """
 
     # Types
-    Options: dataclass
-    ERIs: ERIs
-    Fock: Fock
-    CDERIs: ERIs
-    Brueckner: BruecknerEBCC
+    Options: type[BaseOptions] = BaseOptions
+    ERIs: type[BaseERIs]
+    Fock: type[BaseFock]
+    CDERIs: type[BaseERIs]
+    Brueckner: type[BaseBrueckner]
 
     def __init__(
         self,
         mf: SCF,
         log: Optional[Logger] = None,
         ansatz: Optional[Union[Ansatz, str]] = "CCSD",
-        options: Optional[dataclass] = None,
+        options: Optional[BaseOptions] = None,
         space: Optional[Any] = None,
         omega: Optional[Any] = None,
         g: Optional[Any] = None,
@@ -152,3 +179,216 @@ class EBCC(ABC):
         self.log.debug("")
         self.log.info(f"{ANSI.B}Space{ANSI.R}: {ANSI.m}{self.space}{ANSI.R}")
         self.log.debug("")
+
+    @abstractmethod
+    @staticmethod
+    def _convert_mf(mf: SCF) -> SCF:
+        """Convert the mean-field object to the appropriate type."""
+        pass
+
+    @abstractmethod
+    @property
+    def spin_type(self) -> str:
+        """Get a string representation of the spin type."""
+        pass
+
+    @abstractmethod
+    @property
+    def name(self) -> str:
+        """Get the name of the method."""
+        pass
+
+    @property
+    def fermion_ansatz(self) -> str:
+        """Get a string representation of the fermion ansatz."""
+        return self.ansatz.fermion_ansatz
+
+    @property
+    def boson_ansatz(self) -> str:
+        """Get a string representation of the boson ansatz."""
+        return self.ansatz.boson_ansatz
+
+    @property
+    def fermion_coupling_rank(self) -> int:
+        """Get an integer representation of the fermion coupling rank."""
+        return self.ansatz.fermion_coupling_rank
+
+    @property
+    def boson_coupling_rank(self) -> int:
+        """Get an integer representation of the boson coupling rank."""
+        return self.ansatz.boson_coupling_rank
+
+    @abstractmethod
+    def init_space(self) -> Any:
+        """Initialise the fermionic space.
+
+        Returns:
+            Fermionic space.
+        """
+        pass
+
+    @abstractmethod
+    def get_fock(self) -> Any:
+        """Get the Fock matrix.
+
+        Returns:
+            Fock matrix.
+        """
+        pass
+
+    @abstractmethod
+    def get_eris(self, eris: Optional[Union[type[ERIs], NDArray[float]]]) -> Any:
+        """Get the electron repulsion integrals.
+
+        Args:
+            eris: Input electron repulsion integrals.
+
+        Returns:
+            Electron repulsion integrals.
+        """
+        pass
+
+    @abstractmethod
+    def get_g(self, g: NDArray[float]) -> Any:
+        """Get the blocks of the electron-boson coupling matrix.
+
+        This matrix corresponds to the bosonic annihilation operator.
+
+        Args:
+            g: Electron-boson coupling matrix.
+
+        Returns:
+            Blocks of the electron-boson coupling matrix.
+        """
+        pass
+
+    @abstractmethod
+    def get_mean_field_G(self) -> Any:
+        """Get the mean-field boson non-conserving term.
+
+        Returns:
+            Mean-field boson non-conserving term.
+        """
+        pass
+
+    def const(self) -> float:
+        """Get the shift in energy from moving to the polaritonic basis.
+
+        Returns:
+            Constant energy shift due to the polaritonic basis.
+        """
+        if self.options.shift:
+            return util.einsum("I,I->", self.omega, self.xi ** 2)
+        return 0.0
+
+    @abstractmethod
+    @property
+    def xi(self) -> NDArray[float]:
+        """Get the shift in the bosonic operators to diagonalise the photon Hamiltonian.
+
+        Returns:
+            Shift in the bosonic operators.
+        """
+        pass
+
+    @property
+    def mo_coeff(self) -> NDArray[float]:
+        """Get the molecular orbital coefficients.
+
+        Returns:
+            Molecular orbital coefficients.
+        """
+        if self._mo_coeff is None:
+            return np.asarray(self.mf.mo_coeff).astype(types[float])
+        return self._mo_coeff
+
+    @property
+    def mo_occ(self) -> NDArray[float]:
+        """Get the molecular orbital occupation numbers.
+
+        Returns:
+            Molecular orbital occupation numbers.
+        """
+        if self._mo_occ is None:
+            return np.asarray(self.mf.mo_occ).astype(types[float])
+        return self._mo_occ
+
+    @abstractmethod
+    @property
+    def nmo(self) -> Any:
+        """Get the number of molecular orbitals.
+
+        Returns:
+            Number of molecular orbitals.
+        """
+        pass
+
+    @abstractmethod
+    @property
+    def nocc(self) -> Any:
+        """Get the number of occupied molecular orbitals.
+
+        Returns:
+            Number of occupied molecular orbitals.
+        """
+        pass
+
+    @abstractmethod
+    @property
+    def nvir(self) -> Any:
+        """Get the number of virtual molecular orbitals.
+
+        Returns:
+            Number of virtual molecular orbitals.
+        """
+        pass
+
+    @property
+    def nbos(self) -> int:
+        """Get the number of bosonic modes.
+
+        Returns:
+            Number of bosonic modes.
+        """
+        if self.omega is None:
+            return 0
+        return self.omega.shape[0]
+
+    @property
+    def e_tot(self) -> float:
+        """Get the total energy (mean-field plus correlation).
+
+        Returns:
+            Total energy.
+        """
+        return types[float](self.mf.e_tot) + self.e_corr
+
+    @property
+    def t1(self) -> Any:
+        """Get the T1 amplitudes."""
+        return self.amplitudes["t1"]
+
+    @property
+    def t2(self) -> Any:
+        """Get the T2 amplitudes."""
+        return self.amplitudes["t2"]
+
+    @property
+    def t3(self) -> Any:
+        """Get the T3 amplitudes."""
+        return self.amplitudes["t3"]
+
+    @property
+    def l1(self) -> Any:
+        """Get the L1 amplitudes."""
+        return self.lambdas["l1"]
+
+    @property
+    def l2(self) -> Any:
+        """Get the L2 amplitudes."""
+        return self.lambdas["l2"]
+
+    @property
+    def l3(self) -> Any:
+        """Get the L3 amplitudes."""
+        return self.lambdas["l3"]

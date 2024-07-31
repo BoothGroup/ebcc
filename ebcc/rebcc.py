@@ -20,41 +20,6 @@ from ebcc.space import Space
 from ebcc.cc.base import EBCC
 
 
-@dataclasses.dataclass
-class Options:
-    """
-    Options for EBCC calculations.
-
-    Attributes
-    ----------
-    shift : bool, optional
-        If `True`, shift the boson operators such that the Hamiltonian is
-        normal-ordered with respect to a coherent state. This removes the
-        bosonic coupling to the static mean-field density, introducing a
-        constant energy shift. Default value is `True`.
-    e_tol : float, optional
-        Threshold for convergence in the correlation energy. Default value
-        is `1e-8`.
-    t_tol : float, optional
-        Threshold for convergence in the amplitude norm. Default value is
-        `1e-8`.
-    max_iter : int, optional
-        Maximum number of iterations. Default value is `200`.
-    diis_space : int, optional
-        Number of amplitudes to use in DIIS extrapolation. Default value is
-        `12`.
-    damping : float, optional
-        Damping factor for DIIS extrapolation. Default value is `0.0`.
-    """
-
-    shift: bool = True
-    e_tol: float = 1e-8
-    t_tol: float = 1e-8
-    max_iter: int = 200
-    diis_space: int = 12
-    damping: float = 0.0
-
-
 class REBCC(EBCC):
     """Restricted electron-boson coupled cluster.
 
@@ -71,7 +36,6 @@ class REBCC(EBCC):
     """
 
     # Types
-    Options = Options
     ERIs = RERIs
     Fock = RFock
     CDERIs = RCDERIs
@@ -1779,62 +1743,14 @@ class REBCC(EBCC):
             return 0.0
 
     @property
-    def fermion_ansatz(self):
-        """Get a string representation of the fermion ansatz."""
-        return self.ansatz.fermion_ansatz
-
-    @property
-    def boson_ansatz(self):
-        """Get a string representation of the boson ansatz."""
-        return self.ansatz.boson_ansatz
-
-    @property
-    def fermion_coupling_rank(self):
-        """Get an integer representation of the fermion coupling rank."""
-        return self.ansatz.fermion_coupling_rank
-
-    @property
-    def boson_coupling_rank(self):
-        """Get an integer representation of the boson coupling rank."""
-        return self.ansatz.boson_coupling_rank
-
-    @property
     def name(self):
-        """Get a string representation of the method name."""
+        """Get the name of the method."""
         return self.spin_type + self.ansatz.name
 
     @property
     def spin_type(self):
-        """Get a string represent of the spin channel."""
+        """Get a string representation of the spin type."""
         return "R"
-
-    @property
-    def mo_coeff(self):
-        """
-        Get the molecular orbital coefficients.
-
-        Returns
-        -------
-        mo_coeff : numpy.ndarray
-            Molecular orbital coefficients.
-        """
-        if self._mo_coeff is None:
-            return np.asarray(self.mf.mo_coeff).astype(types[float])
-        return self._mo_coeff
-
-    @property
-    def mo_occ(self):
-        """
-        Get the molecular orbital occupancies.
-
-        Returns
-        -------
-        mo_occ : numpy.ndarray
-            Molecular orbital occupancies.
-        """
-        if self._mo_occ is None:
-            return np.asarray(self.mf.mo_occ).astype(types[float])
-        return self._mo_occ
 
     @property
     def nmo(self):
@@ -1916,45 +1832,3 @@ class REBCC(EBCC):
         energy_sum = lib.direct_sum(subscript, *energies)
 
         return energy_sum
-
-    @property
-    def e_tot(self):
-        """
-        Return the total energy (mean-field plus correlation).
-
-        Returns
-        -------
-        e_tot : float
-            Total energy.
-        """
-        return types[float](self.mf.e_tot) + self.e_corr
-
-    @property
-    def t1(self):
-        """Get the T1 amplitudes."""
-        return self.amplitudes["t1"]
-
-    @property
-    def t2(self):
-        """Get the T2 amplitudes."""
-        return self.amplitudes["t2"]
-
-    @property
-    def t3(self):
-        """Get the T3 amplitudes."""
-        return self.amplitudes["t3"]
-
-    @property
-    def l1(self):
-        """Get the L1 amplitudes."""
-        return self.lambdas["l1"]
-
-    @property
-    def l2(self):
-        """Get the L2 amplitudes."""
-        return self.lambdas["l2"]
-
-    @property
-    def l3(self):
-        """Get the L3 amplitudes."""
-        return self.lambdas["l3"]

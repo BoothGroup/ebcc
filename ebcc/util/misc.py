@@ -1,6 +1,15 @@
 """Miscellaneous utilities."""
 
+from __future__ import annotations
+
+from collections.abc import MutableMapping
+from typing import TYPE_CHECKING, Generic, TypeVar
 import time
+
+if TYPE_CHECKING:
+    from typing import Any, Callable, Iterable, Iterator
+
+T = TypeVar("T")
 
 
 class InheritedType:
@@ -18,7 +27,7 @@ class ModelNotImplemented(NotImplementedError):
     pass
 
 
-class Namespace:
+class Namespace(MutableMapping[str, T], Generic[T]):
     """
     Replacement for SimpleNamespace, which does not trivially allow
     conversion to a dict for heterogenously nested objects.
@@ -27,65 +36,72 @@ class Namespace:
     accessing the attribute directly.
     """
 
-    def __init__(self, **kwargs):
-        self.__dict__["_keys"] = set()
+    _members: dict[str, T]
+
+    def __init__(self, **kwargs: T):
+        """Initialise the namespace."""
+        self.__dict__["_members"] = {}
         for key, val in kwargs.items():
-            self[key] = val
+            self.__dict__["_members"][key] = val
 
-    def __setitem__(self, key, val):
+    def __setitem__(self, key: str, val: T) -> None:
+        """Set an item."""
+        self.__dict__["_members"][key] = value
+
+    def __setattr__(self, key: str, val: T) -> None:
         """Set an attribute."""
-        self._keys.add(key)
-        self.__dict__[key] = val
+        return self.__setitem__(key, value)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> T:
+        """Get an item."""
+        value: T = self.__dict__["_members"][key]
+        return value
+
+    def __getattr__(self, key: str) -> T:
         """Get an attribute."""
-        if key not in self._keys:
-            raise IndexError(key)
-        return self.__dict__[key]
+        return self.__getitem__(key)
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: str) -> None:
+        """Delete an item."""
+        self._members.pop(key)
+
+    def __delattr__(self, key: str) -> None:
         """Delete an attribute."""
-        if key not in self._keys:
-            raise IndexError(key)
-        del self.__dict__[key]
+        return self.__delitem__(key)
 
-    __setattr__ = __setitem__
-
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         """Iterate over the namespace as a dictionary."""
-        yield from {key: self[key] for key in self._keys}
+        yield from self._members
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         """Check equality."""
+        if not isinstance(other, Namespace):
+            return False
         return dict(self) == dict(other)
 
-    def __ne__(self, other):
+    def __ne__(self, other: Any) -> bool:
         """Check inequality."""
-        return dict(self) != dict(other)
+        return not self == other
 
-    def __contains__(self, key):
+    def __contains__(self, key: str) -> bool:
         """Check if an attribute exists."""
-        return key in self._keys
+        return key in self._members
 
-    def __len__(self):
-        """Return the number of attributes."""
-        return len(self._keys)
+    def __len__(self) -> int:
+        """Get the number of attributes."""
+        return len(self._members)
 
-    def keys(self):
-        """Return keys of the namespace as a dictionary."""
-        return {k: None for k in self._keys}.keys()
+    def keys(self) -> Iterable[str]:
+        """Get keys of the namespace as a dictionary."""
+        return dict(self).keys()
 
-    def values(self):
-        """Return values of the namespace as a dictionary."""
+    def values(self) -> Iterable:
+        """Get values of the namespace as a dictionary."""
         return dict(self).values()
 
-    def items(self):
-        """Return items of the namespace as a dictionary."""
+    def items(self) -> Iterable[Tuple[str, T]]:
+        """Get items of the namespace as a dictionary."""
         return dict(self).items()
-
-    def get(self, *args, **kwargs):
-        """Get an item of the namespace as a dictionary."""
-        return dict(self).get(*args, **kwargs)
 
 
 class Timer:
