@@ -34,7 +34,7 @@ The implemented models are built upon the mean-field objects of
 >>> ccsd.kernel()
 """
 
-__version__ = "1.4.3"
+__version__ = "1.4.4"
 
 import logging
 import os
