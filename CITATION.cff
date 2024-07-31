@@ -8,5 +8,6 @@ authors:
 - family-names: Booth
   given-names: George H.
 title: "ebcc: Coupled cluster calculations on electron-boson systems"
-version: 1.4.4
+version: 1.4.5
 date-released: 2024-07-31
+url: "https://github.com/BoothGroup/ebcc"
