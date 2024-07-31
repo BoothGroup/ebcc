@@ -375,7 +375,7 @@ class REBCC(EBCC):
             f"{ANSI.B}{'Iter':>4s} {'Energy (corr.)':>16s} {'Energy (tot.)':>18s} "
             f"{'Δ(Energy)':>13s} {'Δ(Ampl.)':>13s}{ANSI.R}"
         )
-        self.log.info(f"{0:4d} {e_cc:16.10f} {e_cc + self.mf.e_tot:18.10f}")
+        self.log.info(f"{0:4d} {e_cc:16.10f} {e_cc + self.e_hf:18.10f}")
 
         if not self.ansatz.is_one_shot:
             # Set up DIIS:
@@ -403,7 +403,7 @@ class REBCC(EBCC):
                 converged_e = de < self.options.e_tol
                 converged_t = dt < self.options.t_tol
                 self.log.info(
-                    f"{niter:4d} {e_cc:16.10f} {e_cc + self.mf.e_tot:18.10f}"
+                    f"{niter:4d} {e_cc:16.10f} {e_cc + self.e_hf:18.10f}"
                     f" {[ANSI.r, ANSI.g][converged_e]}{de:13.3e}{ANSI.R}"
                     f" {[ANSI.r, ANSI.g][converged_t]}{dt:13.3e}{ANSI.R}"
                 )
@@ -585,7 +585,10 @@ class REBCC(EBCC):
         Convert the input PySCF mean-field object to the one required for
         the current class.
         """
-        return mf.to_rhf()
+        hf = mf.to_rhf()
+        if hasattr(mf, "xc"):
+            hf.e_tot = hf.energy_tot()
+        return hf
 
     def _load_function(self, name, eris=False, amplitudes=False, lambdas=False, **kwargs):
         """
@@ -2179,6 +2182,18 @@ class REBCC(EBCC):
         return energy_sum
 
     @property
+    def e_hf(self):
+        """
+        Return the mean-field energy.
+
+        Returns
+        -------
+        e_hf : float
+            Mean-field energy.
+        """
+        return types[float](self.mf.e_tot)
+
+    @property
     def e_tot(self):
         """
         Return the total energy (mean-field plus correlation).
@@ -2188,7 +2203,7 @@ class REBCC(EBCC):
         e_tot : float
             Total energy.
         """
-        return types[float](self.mf.e_tot) + self.e_corr
+        return types[float](self.e_hf) + self.e_corr
 
     @property
     def t1(self):

@@ -27,7 +27,10 @@ class GEBCC(REBCC, metaclass=util.InheritDocstrings):
             return mf
         # NOTE: First convert to UHF - otherwise conversions from
         # RHF->GHF and UHF->GHF may have inconsistent ordering
-        return mf.to_uhf().to_ghf()
+        hf = mf.to_uhf().to_ghf()
+        if hasattr(mf, "xc"):
+            hf.e_tot = hf.energy_tot()
+        return hf
 
     @classmethod
     def from_uebcc(cls, ucc):
