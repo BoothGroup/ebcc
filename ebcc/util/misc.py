@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
+import time
 from collections.abc import MutableMapping
 from typing import TYPE_CHECKING, Generic, TypeVar
-import time
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Iterable, Iterator
+    from typing import Any, ItemsView, Iterator, KeysView, ValuesView
 
 T = TypeVar("T")
 
@@ -28,7 +28,8 @@ class ModelNotImplemented(NotImplementedError):
 
 
 class Namespace(MutableMapping[str, T], Generic[T]):
-    """
+    """Namespace class.
+
     Replacement for SimpleNamespace, which does not trivially allow
     conversion to a dict for heterogenously nested objects.
 
@@ -46,11 +47,11 @@ class Namespace(MutableMapping[str, T], Generic[T]):
 
     def __setitem__(self, key: str, val: T) -> None:
         """Set an item."""
-        self.__dict__["_members"][key] = value
+        self.__dict__["_members"][key] = val
 
     def __setattr__(self, key: str, val: T) -> None:
         """Set an attribute."""
-        return self.__setitem__(key, value)
+        return self.__setitem__(key, val)
 
     def __getitem__(self, key: str) -> T:
         """Get an item."""
@@ -83,7 +84,7 @@ class Namespace(MutableMapping[str, T], Generic[T]):
         """Check inequality."""
         return not self == other
 
-    def __contains__(self, key: str) -> bool:
+    def __contains__(self, key: Any) -> bool:
         """Check if an attribute exists."""
         return key in self._members
 
@@ -91,15 +92,15 @@ class Namespace(MutableMapping[str, T], Generic[T]):
         """Get the number of attributes."""
         return len(self._members)
 
-    def keys(self) -> Iterable[str]:
+    def keys(self) -> KeysView[str]:
         """Get keys of the namespace as a dictionary."""
         return dict(self).keys()
 
-    def values(self) -> Iterable:
+    def values(self) -> ValuesView[T]:
         """Get values of the namespace as a dictionary."""
         return dict(self).values()
 
-    def items(self) -> Iterable[Tuple[str, T]]:
+    def items(self) -> ItemsView[str, T]:
         """Get items of the namespace as a dictionary."""
         return dict(self).items()
 
@@ -107,24 +108,25 @@ class Namespace(MutableMapping[str, T], Generic[T]):
 class Timer:
     """Timer class."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialise the timer."""
         self.t_init = time.perf_counter()
         self.t_prev = time.perf_counter()
         self.t_curr = time.perf_counter()
 
-    def lap(self):
+    def lap(self) -> float:
         """Return the time since the last call to `lap`."""
         self.t_prev, self.t_curr = self.t_curr, time.perf_counter()
         return self.t_curr - self.t_prev
 
     __call__ = lap
 
-    def total(self):
+    def total(self) -> float:
         """Return the total time since initialization."""
         return time.perf_counter() - self.t_init
 
     @staticmethod
-    def format_time(seconds, precision=2):
+    def format_time(seconds: float, precision: int = 2) -> str:
         """Return a formatted time."""
 
         seconds, milliseconds = divmod(seconds, 1)
