@@ -1,18 +1,28 @@
 """Einstein summation convention."""
 
-import ctypes
+from __future__ import annotations
 
-from pyscf.lib import direct_sum, dot  # noqa: F401
-from pyscf.lib import einsum as pyscf_einsum  # noqa: F401
+import ctypes
+from typing import TYPE_CHECKING
+
+from pyscf.lib import direct_sum, dot  # type: ignore  # noqa: F401
+from pyscf.lib import einsum as pyscf_einsum  # type: ignore  # noqa: F401
 
 from ebcc import numpy as np
+
+if TYPE_CHECKING:
+    from typing import Any, TypeVar
+
+    from ebcc.numpy.typing import NDArray  # type: ignore
+
+    T = TypeVar("T")
 
 # Try to import TBLIS
 try:
     try:
-        import tblis_einsum
+        import tblis_einsum  # type: ignore
     except ImportError:
-        from pyscf.tblis_einsum import tblis_einsum
+        from pyscf.tblis_einsum import tblis_einsum  # type: ignore
     FOUND_TBLIS = True
 except ImportError:
     FOUND_TBLIS = False
@@ -27,9 +37,8 @@ class EinsumOperandError(ValueError):
     pass
 
 
-def _fallback_einsum(*operands, **kwargs):
+def _fallback_einsum(*operands: Any, **kwargs: Any) -> NDArray[T]:
     """Handle the fallback to `numpy.einsum`."""
-
     # Parse the kwargs
     kwargs = kwargs.copy()
     alpha = kwargs.pop("alpha", 1.0)
@@ -47,35 +56,24 @@ def _fallback_einsum(*operands, **kwargs):
     return res
 
 
-def contract(subscript, *args, **kwargs):
-    """
-    Contract a pair of terms in an einsum. Supports additional keyword
-    arguments `alpha` and `beta` which operate as `pyscf.lib.dot`. In some
-    cases this will still require copying, but it minimises the memory
-    overhead in simple cases.
+def contract(subscript: str, *args: Any, **kwargs: Any) -> NDArray[T]:
+    """Contraction a pair of terms in an Einstein summation.
 
-    Parameters
-    ----------
-    subscript : str
-        Subscript representation of the contraction.
-    args : tuple of numpy.ndarray
-        Arrays to contract.
-    alpha : float, optional
-        Scaling factor for contraction. Default value is `1.0`.
-    beta : float, optional
-        Scaling factor for the output. Default value is `0.0`.
-    out : numpy.ndarray, optional
-        Output array. If `None`, a new array is created. Default value is
-        `None`.
-    **kwargs : dict
-        Additional keyword arguments to `numpy.einsum`.
+    Supports additional keyword arguments `alpha` and `beta` which operate as `pyscf.lib.dot`.
+    In some cases this will still require copying, but it minimises the memory overhead in simple
+    cases.
 
-    Returns
-    -------
-    array : numpy.ndarray
+    Args:
+        subscript: Subscript representation of the contraction.
+        args: Arrays to contract.
+        alpha: Scaling factor for contraction.
+        beta: Scaling factor for the output.
+        out: Output array. If `None`, a new array is created.
+        kwargs: Additional keyword arguments to `numpy.einsum`.
+
+    Returns:
         Result of the contraction.
     """
-
     alpha = kwargs.get("alpha", 1.0)
     beta = kwargs.get("beta", 0.0)
     buf = kwargs.get("out", None)
@@ -99,7 +97,7 @@ def contract(subscript, *args, **kwargs):
         return _fallback_einsum(subscript, *args, **kwargs)
 
     # Get the characters for each input and output
-    inp, out, args = np.core.einsumfunc._parse_einsum_input((subscript, a, b))
+    inp, out, args = np.core.einsumfunc._parse_einsum_input((subscript, a, b))  # type: ignore
     inp_a, inp_b = inps = inp.split(",")
     assert len(inps) == len(args) == 2
     assert all(len(inp) == arg.ndim for inp, arg in zip(inps, args))
@@ -115,7 +113,7 @@ def contract(subscript, *args, **kwargs):
         return _fallback_einsum(subscript, *args, **kwargs)
 
     # Find the sizes of the indices
-    ranges = {}
+    ranges: dict[int, int] = {}
     for inp, arg in zip(inps, args):
         for i, s in zip(inp, arg.shape):
             if i in ranges:
@@ -201,7 +199,7 @@ def contract(subscript, *args, **kwargs):
         # Get the shapes
         shape_a = a.shape
         shape_b = b.shape
-        shape_c = tuple(ranges[x] for x in out)
+        shape_c = [ranges[x] for x in out]
 
         # If any dimension has size zero, return here
         if a.size == 0 or b.size == 0:
@@ -252,9 +250,8 @@ def contract(subscript, *args, **kwargs):
     return c
 
 
-def einsum(*operands, **kwargs):
-    """
-    Evaluate an Einstein summation convention on the operands.
+def einsum(*operands: Any, **kwargs: Any) -> NDArray[T]:
+    """Evaluate an Einstein summation convention on the operands.
 
     Using the Einstein summation convention, many common
     multi-dimensional, linear algebraic array operations can be
@@ -268,37 +265,23 @@ def einsum(*operands, **kwargs):
 
     See the `numpy.einsum` documentation for clarification.
 
-    Parameters
-    ----------
-    operands : list
-        Any valid input to `numpy.einsum`.
-    alpha : float, optional
-        Scaling factor for the contraction. Default value is `1.0`.
-    beta : float, optional
-        Scaling factor for the output. Default value is `0.0`.
-    out : ndarray, optional
-        If provided, the calculation is done into this array.
-    contract : callable, optional
-        The function to use for contraction. Default value is
-        `contract`.
-    optimize : bool, optional
-        If `True`, use the `numpy.einsum_path` to optimize the
-        contraction. Default value is `True`.
+    Args:
+        operands: Any valid input to `numpy.einsum`.
+        alpha: Scaling factor for the contraction.
+        beta: Scaling factor for the output.
+        out: If provided, the calculation is done into this array.
+        contract: The function to use for contraction.
+        optimize: If `True`, use the `numpy.einsum_path` to optimize the contraction.
 
-    Returns
-    -------
-    output : ndarray
+    Returns:
         The calculation based on the Einstein summation convention.
 
-    Notes
-    -----
-    This function may use `numpy.einsum`, `pyscf.lib.einsum`, or
-    `tblis_einsum` as a backend, depending on the problem size and the
-    modules available.
+    Notes:
+        This function may use `numpy.einsum`, `pyscf.lib.einsum`, or `tblis_einsum` as a backend,
+        depending on the problem size and the modules available.
     """
-
     # Parse the kwargs
-    inp, out, args = np.core.einsumfunc._parse_einsum_input(operands)
+    inp, out, args = np.core.einsumfunc._parse_einsum_input(operands)  # type: ignore
     subscript = "%s->%s" % (inp, out)
     _contract = kwargs.get("contract", contract)
 
@@ -313,11 +296,12 @@ def einsum(*operands, **kwargs):
         # If it's a chain of contractions, use the path optimizer
         optimize = kwargs.pop("optimize", True)
         args = list(args)
-        contractions = np.einsum_path(subscript, *args, optimize=optimize, einsum_call=True)[1]
+        kwargs = dict(optimize=optimize, einsum_call=True)
+        _, contractions = np.einsum_path(subscript, *args, **kwargs)  # type: ignore
         for contraction in contractions:
-            inds, idx_rm, einsum_str, remain = contraction[:4]
-            operands = [args.pop(x) for x in inds]
-            out = _contract(einsum_str, *operands)
+            inds, idx_rm, einsum_str, remain = list(contraction[:4])
+            contraction_args = [args.pop(x) for x in inds]
+            out = _contract(einsum_str, *contraction_args, **kwargs)
             args.append(out)
 
     return out
