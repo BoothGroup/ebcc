@@ -185,7 +185,7 @@ with Stopwatch("1RDM"):
                         postamble += f"{nm}.{occ} = np.zeros(({shape}))\n"
                 else:
                     for s in "ab":
-                        for occ in ("oo", "vv"):
+                        for occ in ("ov", "vo"):
                             shape = ", ".join(f"t2.{s}{s}{s}{s}.shape[{'0' if o == 'o' else '-1'}]" for o in occ)
                             postamble += f"{nm}.{s}{s}.{occ} = np.zeros(({shape}))\n"
                 return postamble + get_density_einsum_postamble(n, spin)
