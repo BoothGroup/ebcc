@@ -1,6 +1,5 @@
 """
-Example of a CCSDt' and CCSDt calculations with T3 amplitudes in an
-active space.
+Example of a CCSDt' calculations with T3 amplitudes in an active space.
 """
 
 import numpy as np
@@ -32,8 +31,4 @@ space = Space(
 
 # Run a CCSDt' calculation
 ccsdt = REBCC(mf, ansatz="CCSDt'", space=space)
-ccsdt.kernel()
-
-# Run a CCSDt calculation
-ccsdt = REBCC(mf, ansatz="CCSDt", space=space)
 ccsdt.kernel()
