@@ -3,27 +3,27 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from ebcc import default_log, init_logging
 from ebcc import numpy as np
 from ebcc import util
 from ebcc.ansatz import Ansatz
-from ebcc.space import Space
 from ebcc.logging import ANSI
 from ebcc.precision import types
 
 if TYPE_CHECKING:
     from logging import Logger
-    from typing import Optional, Union, Any
+    from typing import Any, Optional, Union
 
     from pyscf.scf import SCF  # type: ignore
 
-    from ebcc.numpy.typing import NDArray  # type: ignore
+    from ebcc.base import BruecknerEBCC as BaseBrueckner
     from ebcc.base import ERIs as BaseERIs
     from ebcc.base import Fock as BaseFock
-    from ebcc.base import BruecknerEBCC as BaseBrueckner
+    from ebcc.numpy.typing import NDArray  # type: ignore
+    from ebcc.util import Namespace
 
 
 @dataclass
@@ -40,6 +40,7 @@ class BaseOptions:
         diis_space: Number of amplitudes to use in DIIS extrapolation.
         damping: Damping factor for DIIS extrapolation.
     """
+
     shift: bool = True
     e_tol: float = 1e-8
     t_tol: float = 1e-8
@@ -70,6 +71,11 @@ class BaseEBCC(ABC):
     CDERIs: type[BaseERIs]
     Brueckner: type[BaseBrueckner]
 
+    # Attributes
+    space: Any
+    amplitudes: Namespace[Any]
+    lambdas: Namespace[Any]
+
     def __init__(
         self,
         mf: SCF,
@@ -85,12 +91,13 @@ class BaseEBCC(ABC):
         fock: Optional[Any] = None,
         **kwargs,
     ):
-        """Initialize the EBCC object.
+        r"""Initialize the EBCC object.
 
         Args:
             mf: PySCF mean-field object.
             log: Log to write output to. Default is the global logger, outputting to `stderr`.
             ansatz: Overall ansatz.
+            options: Options for the EBCC calculation.
             space: Space containing the frozen, correlated, and active fermionic spaces. Default
                 assumes all electrons are correlated.
             omega: Bosonic frequencies.
@@ -157,10 +164,10 @@ class BaseEBCC(ABC):
             self.fock = fock
 
         # Attributes:
-        self.e_corr = None
-        self.amplitudes = None
+        self.e_corr = types[float](0.0)
+        self.amplitudes = util.Namespace()
         self.converged = False
-        self.lambdas = None
+        self.lambdas = util.Namespace()
         self.converged_lambda = False
 
         # Logging:
@@ -237,7 +244,7 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def get_eris(self, eris: Optional[Union[type[ERIs], NDArray[float]]]) -> Any:
+    def get_eris(self, eris: Optional[Union[type[BaseERIs], NDArray[float]]]) -> Any:
         """Get the electron repulsion integrals.
 
         Args:
@@ -278,7 +285,7 @@ class BaseEBCC(ABC):
             Constant energy shift due to the polaritonic basis.
         """
         if self.options.shift:
-            return util.einsum("I,I->", self.omega, self.xi ** 2)
+            return util.einsum("I,I->", self.omega, self.xi**2)
         return 0.0
 
     @abstractmethod

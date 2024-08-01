@@ -81,7 +81,7 @@ skip_glob = [
 
 [tool.flake8]
 max-line-length = 100
-max-doc-length = 75
+max-doc-length = 100
 ignore = [
     "E203",  # Whitespace before ':'
     "E731",  # Do not assign a lambda expression, use a def
@@ -95,8 +95,7 @@ ignore = [
 per-file-ignores = [
     "__init__.py:E402,W605,F401,F811,D103",
 ]
-docstring-convention = "numpy"
-ignore-decorators = "has_docstring"
+docstring-convention = "google"
 count = true
 include = "ebcc"
 exclude = """
