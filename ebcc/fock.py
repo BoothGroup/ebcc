@@ -2,8 +2,8 @@
 
 from ebcc import numpy as np
 from ebcc import util
-from ebcc.precision import types
 from ebcc.base import Fock
+from ebcc.precision import types
 
 
 class RFock(Fock):
@@ -78,7 +78,7 @@ class RFock(Fock):
     def __getattr__(self, key):
         """Just-in-time attribute getter."""
 
-        if key not in self.__dict__.keys():
+        if key not in self.__dict__:
             ki, kj = key
             i = self.slices[0][ki]
             j = self.slices[1][kj]

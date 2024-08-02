@@ -11,7 +11,7 @@ from pyscf.lib import einsum as pyscf_einsum  # type: ignore  # noqa: F401
 from ebcc import numpy as np
 
 if TYPE_CHECKING:
-    from typing import Any, TypeVar
+    from typing import Any, TypeVar, Union
 
     from ebcc.numpy.typing import NDArray  # type: ignore
 
@@ -44,9 +44,10 @@ def _fallback_einsum(*operands: Any, **kwargs: Any) -> NDArray[T]:
     alpha = kwargs.pop("alpha", 1.0)
     beta = kwargs.pop("beta", 0.0)
     out = kwargs.pop("out", None)
+    kwargs["optimize"] = True
 
     # Perform the contraction
-    res = np.einsum(*operands, **kwargs, optimize=True)
+    res = np.einsum(*operands, **kwargs)
     res *= alpha
 
     # Scale the output
@@ -250,7 +251,7 @@ def contract(subscript: str, *args: Any, **kwargs: Any) -> NDArray[T]:
     return c
 
 
-def einsum(*operands: Any, **kwargs: Any) -> NDArray[T]:
+def einsum(*operands: Any, **kwargs: Any) -> Union[T, NDArray[T]]:
     """Evaluate an Einstein summation convention on the operands.
 
     Using the Einstein summation convention, many common
@@ -296,8 +297,8 @@ def einsum(*operands: Any, **kwargs: Any) -> NDArray[T]:
         # If it's a chain of contractions, use the path optimizer
         optimize = kwargs.pop("optimize", True)
         args = list(args)
-        kwargs = dict(optimize=optimize, einsum_call=True)
-        _, contractions = np.einsum_path(subscript, *args, **kwargs)  # type: ignore
+        path_kwargs = dict(optimize=optimize, einsum_call=True)
+        contractions = np.einsum_path(subscript, *args, **path_kwargs)[1]  # type: ignore
         for contraction in contractions:
             inds, idx_rm, einsum_str, remain = list(contraction[:4])
             contraction_args = [args.pop(x) for x in inds]

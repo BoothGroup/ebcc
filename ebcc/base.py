@@ -8,9 +8,9 @@ from typing import TYPE_CHECKING
 from ebcc import util
 
 if TYPE_CHECKING:
-    from logging import Logger
-    from typing import Optional, Union, Any
     from dataclasses import dataclass
+    from logging import Logger
+    from typing import Any, Optional, Union
 
     from pyscf.scf import SCF
 
@@ -30,13 +30,17 @@ class BruecknerEBCC(ABC):
     pass
 
 
-class ERIs(ABC, util.Namespace):
+class ERIs(ABC):
     """Base class for electronic repulsion integrals."""
 
-    pass
+    def __getitem__(self, key: str) -> Any:
+        """Get an item."""
+        return self.__dict__[key]
 
 
-class Fock(ABC, util.Namespace):
+class Fock(ABC):
     """Base class for Fock matrices."""
 
-    pass
+    def __getitem__(self, key: str) -> Any:
+        """Get an item."""
+        return self.__dict__[key]

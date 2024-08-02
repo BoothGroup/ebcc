@@ -39,15 +39,16 @@ __version__ = "1.4.3"
 import os
 import sys
 
+import numpy
+
+from ebcc.logging import NullLogger, default_log, init_logging
 
 # --- Import NumPy here to allow drop-in replacements
 
-import numpy
 
 
 # --- Logging:
 
-from ebcc.logging import default_log, init_logging, NullLogger
 
 
 # --- Types of ansatz supporting by the EBCC solvers:
@@ -57,9 +58,9 @@ METHOD_TYPES = ["MP", "CC", "LCC", "QCI", "QCC", "DC"]
 
 # --- General constructor:
 
-from ebcc.gebcc import GEBCC
-from ebcc.rebcc import REBCC
-from ebcc.uebcc import UEBCC
+from ebcc.cc.gebcc import GEBCC
+from ebcc.cc.rebcc import REBCC
+from ebcc.cc.uebcc import UEBCC
 
 
 def EBCC(mf, *args, **kwargs):
@@ -112,7 +113,6 @@ del _factory
 from ebcc.ansatz import Ansatz
 from ebcc.brueckner import BruecknerGEBCC, BruecknerREBCC, BruecknerUEBCC
 from ebcc.space import Space
-
 
 # --- List available methods:
 

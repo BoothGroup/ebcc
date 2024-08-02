@@ -1,31 +1,103 @@
 """Unrestricted electron-boson coupled cluster."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from pyscf import lib
 
 from ebcc import numpy as np
 from ebcc import rebcc, ueom, util
 from ebcc.brueckner import BruecknerUEBCC
+from ebcc.cc.base import BaseEBCC
 from ebcc.cderis import UCDERIs
 from ebcc.eris import UERIs
 from ebcc.fock import UFock
 from ebcc.precision import types
 from ebcc.space import Space
 
+if TYPE_CHECKING:
+    from ebcc.cc.rebcc import REBCC
+    from ebcc.numpy.typing import NDArray
 
-class UEBCC(rebcc.REBCC):
+
+class UEBCC(BaseEBCC):
+    """Unrestricted electron-boson coupled cluster.
+
+    Attributes:
+        mf: PySCF mean-field object.
+        log: Log to write output to.
+        options: Options for the EBCC calculation.
+        e_corr: Correlation energy.
+        amplitudes: Cluster amplitudes.
+        converged: Convergence flag.
+        lambdas: Cluster lambda amplitudes.
+        converged_lambda: Lambda convergence flag.
+        name: Name of the method.
+    """
+
+    # Types
     ERIs = UERIs
     Fock = UFock
     CDERIs = UCDERIs
     Brueckner = BruecknerUEBCC
 
+    @property
+    def spin_type(self):
+        """Get a string representation of the spin type."""
+        return "U"
+
+    def ip_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> ueom.IP_REOM:
+        """Get the IP-EOM object.
+
+        Args:
+            options: Options for the IP-EOM calculation.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            IP-EOM object.
+        """
+        return ueom.IP_UEOM(self, options=options, **kwargs)
+
+    def ea_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> ueom.EA_REOM:
+        """Get the EA-EOM object.
+
+        Args:
+            options: Options for the EA-EOM calculation.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            EA-EOM object.
+        """
+        return ueom.EA_UEOM(self, options=options, **kwargs)
+
+    def ee_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> ueom.EE_REOM:
+        """Get the EE-EOM object.
+
+        Args:
+            options: Options for the EE-EOM calculation.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            EE-EOM object.
+        """
+        return ueom.EE_UEOM(self, options=options, **kwargs)
+
     @staticmethod
-    def _convert_mf(mf):
+    def _convert_mf(mf: SCF) -> UHF:
+        """Convert the mean-field object to the appropriate type."""
         return mf.to_uhf()
 
     @classmethod
-    def from_rebcc(cls, rcc):
-        """Initialise an UEBCC object from an REBCC object."""
+    def from_rebcc(cls, rcc: REBCC) -> UEBCC:
+        """Initialise an `UEBCC` object from an `REBCC` object.
 
+        Args:
+            rcc: Restricted electron-boson coupled cluster object.
+
+        Returns:
+            UEBCC object.
+        """
         ucc = cls(
             rcc.mf,
             log=rcc.log,
@@ -93,31 +165,12 @@ class UEBCC(rebcc.REBCC):
 
         return ucc
 
-    def _pack_codegen_kwargs(self, *extra_kwargs, eris=None):
-        eris = self.get_eris(eris)
+    def init_space(self) -> Namespace[Space]:
+        """Initialise the fermionic space.
 
-        omega = np.diag(self.omega) if self.omega is not None else None
-
-        kwargs = dict(
-            f=self.fock,
-            v=eris,
-            g=self.g,
-            G=self.G,
-            w=omega,
-            space=self.space,
-            nocc=(self.space[0].ncocc, self.space[1].ncocc),  # FIXME rename?
-            nvir=(self.space[0].ncvir, self.space[1].ncvir),  # FIXME rename?
-            nbos=self.nbos,
-        )
-        if isinstance(eris, self.CDERIs):
-            kwargs["naux"] = self.mf.with_df.get_naoaux()
-        for kw in extra_kwargs:
-            if kw is not None:
-                kwargs.update(kw)
-
-        return kwargs
-
-    def init_space(self):
+        Returns:
+            Fermionic space. All fermionic degrees of freedom are assumed to be correlated.
+        """
         space = (
             Space(
                 self.mo_occ[0] > 0,
@@ -130,10 +183,40 @@ class UEBCC(rebcc.REBCC):
                 np.zeros_like(self.mo_occ[1], dtype=bool),
             ),
         )
-
         return space
 
-    def init_amps(self, eris=None):
+    def _pack_codegen_kwargs(self, *extra_kwargs: dict[str, Any], eris: Optional[ERIsInputType] = None) -> dict[str, Any]:
+        """Pack all the keyword arguments for the generated code."""
+        kwargs = dict(
+            f=self.fock,
+            v=self.get_eris(eris),
+            g=self.g,
+            G=self.G,
+            w=np.diag(self.omega) if self.omega is not None else None,
+            space=self.space,
+            nocc=(self.space[0].ncocc, self.space[1].ncocc),  # FIXME rename?
+            nvir=(self.space[0].ncvir, self.space[1].ncvir),  # FIXME rename?
+            nbos=self.nbos,
+        )
+
+        if isinstance(eris, self.CDERIs):
+            kwargs["naux"] = self.mf.with_df.get_naoaux()
+
+        for kw in extra_kwargs:
+            if kw is not None:
+                kwargs.update(kw)
+
+        return kwargs
+
+    def init_amps(self, eris: Optional[ERIsInputType] = None) -> Namespace[AmplitudeType]:
+        """Initialise the cluster amplitudes.
+
+        Args:
+            eris: Electron repulsion integrals.
+
+        Returns:
+            Initial cluster amplitudes.
+        """
         eris = self.get_eris(eris)
         amplitudes = util.Namespace()
 
@@ -193,10 +276,17 @@ class UEBCC(rebcc.REBCC):
 
         return amplitudes
 
-    def init_lams(self, amplitudes=None):
+    def init_lams(self, amplitudes: Optional[Namespace[AmplitudeType]] = None) -> Namespace[AmplitudeType]:
+        """Initialise the cluster lambda amplitudes.
+
+        Args:
+            amplitudes: Cluster amplitudes.
+
+        Returns:
+            Initial cluster lambda amplitudes.
+        """
         if amplitudes is None:
             amplitudes = self.amplitudes
-
         lambdas = util.Namespace()
 
         # Build L amplitudes:
@@ -224,7 +314,20 @@ class UEBCC(rebcc.REBCC):
 
         return lambdas
 
-    def update_amps(self, eris=None, amplitudes=None):
+    def update_amps(
+        self,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+    ) -> Namespace[AmplitudeType]:
+        """Update the cluster amplitudes.
+
+        Args:
+            eris: Electron repulsion integrals.
+            amplitudes: Cluster amplitudes.
+
+        Returns:
+            Updated cluster amplitudes.
+        """
         func, kwargs = self._load_function(
             "update_amps",
             eris=eris,
@@ -263,7 +366,27 @@ class UEBCC(rebcc.REBCC):
 
         return res
 
-    def update_lams(self, eris=None, amplitudes=None, lambdas=None, lambdas_pert=None):
+    def update_lams(
+        self,
+        eris: ERIsInputType = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        lambdas: Optional[Namespace[AmplitudeType]] = None,
+        lambdas_pert: Optional[Namespace[AmplitudeType]] = None,
+        perturbative: bool = False,
+    ) -> Namespace[AmplitudeType]:
+        """Update the cluster lambda amplitudes.
+
+        Args:
+            eris: Electron repulsion integrals.
+            amplitudes: Cluster amplitudes.
+            lambdas: Cluster lambda amplitudes.
+            lambdas_pert: Perturbative cluster lambda amplitudes.
+            perturbative: Flag to include perturbative correction.
+
+        Returns:
+            Updated cluster lambda amplitudes.
+        """
+        # TODO active
         func, kwargs = self._load_function(
             "update_lams",
             eris=eris,
@@ -308,7 +431,18 @@ class UEBCC(rebcc.REBCC):
 
         return res
 
-    def make_rdm1_f(self, eris=None, amplitudes=None, lambdas=None, hermitise=True):
+    def make_rdm1_f(self, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None, lambdas: Optional[Namespace[AmplitudeType]] = None, hermitise: bool = True) -> Any:
+        r"""Make the one-particle fermionic reduced density matrix :math:`\langle i^+ j \rangle`.
+
+        Args:
+            eris: Electron repulsion integrals.
+            amplitudes: Cluster amplitudes.
+            lambdas: Cluster lambda amplitudes.
+            hermitise: Hermitise the density matrix.
+
+        Returns:
+            One-particle fermion reduced density matrix.
+        """
         func, kwargs = self._load_function(
             "make_rdm1_f",
             eris=eris,
@@ -324,7 +458,18 @@ class UEBCC(rebcc.REBCC):
 
         return dm
 
-    def make_rdm2_f(self, eris=None, amplitudes=None, lambdas=None, hermitise=True):
+    def make_rdm2_f(self, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None, lambdas: Optional[Namespace[AmplitudeType]] = None, hermitise: bool = True) -> Any:
+        r"""Make the two-particle fermionic reduced density matrix :math:`\langle i^+j^+lk \rangle`.
+
+        Args:
+            eris: Electron repulsion integrals.
+            amplitudes: Cluster amplitudes.
+            lambdas: Cluster lambda amplitudes.
+            hermitise: Hermitise the density matrix.
+
+        Returns:
+            Two-particle fermion reduced density matrix.
+        """
         func, kwargs = self._load_function(
             "make_rdm2_f",
             eris=eris,
@@ -350,14 +495,20 @@ class UEBCC(rebcc.REBCC):
 
         return dm
 
-    def make_eb_coup_rdm(
-        self,
-        eris=None,
-        amplitudes=None,
-        lambdas=None,
-        unshifted=True,
-        hermitise=True,
-    ):
+    def make_eb_coup_rdm(self, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None, lambdas: Optional[Namespace[AmplitudeType]] = None, unshifted: bool = True, hermitise: bool = True) -> Any:
+        r"""Make the electron-boson coupling reduced density matrix :math:`\langle b^+ c^+ c b \rangle`.
+
+        Args:
+            eris: Electron repulsion integrals.
+            amplitudes: Cluster amplitudes.
+            lambdas: Cluster lambda amplitudes.
+            unshifted: If `self.options.shift` is `True`, return the unshifted density matrix. Has
+                no effect if `self.options.shift` is `False`.
+            hermitise: Hermitise the density matrix.
+
+        Returns:
+            Electron-boson coupling reduced density matrix.
+        """
         func, kwargs = self._load_function(
             "make_eb_coup_rdm",
             eris=eris,
@@ -382,116 +533,56 @@ class UEBCC(rebcc.REBCC):
 
         return dm_eb
 
-    def get_mean_field_G(self):
-        val = lib.einsum("Ipp->I", self.g.aa.boo)
-        val += lib.einsum("Ipp->I", self.g.bb.boo)
-        val -= self.xi * self.omega
+    def energy_sum(self, subscript: str, spins: str, signs_dict: dict[str, int] = None) -> NDArray[float]:
+        """Get a direct sum of energies.
 
-        if self.bare_G is not None:
-            # Require bare_G to have a spin index for now:
-            assert np.shape(self.bare_G) == val.shape
-            val += self.bare_G
+        Args:
+            subscript: Subscript for the direct sum.
+            spins: Spins for energies.
+            signs_dict: Signs of the energies in the sum. Default sets `("o", "O", "i")` to be
+                positive, and `("v", "V", "a", "b")` to be negative.
 
-        return val
-
-    def get_g(self, g):
-        if np.array(g).ndim != 4:
-            g = np.array([g, g])
-
-        slices = [
-            {
-                "x": space.correlated,
-                "o": space.correlated_occupied,
-                "v": space.correlated_virtual,
-                "O": space.active_occupied,
-                "V": space.active_virtual,
-                "i": space.inactive_occupied,
-                "a": space.inactive_virtual,
-            }
-            for space in self.space
-        ]
-
-        def constructor(s):
-            class Blocks(util.Namespace):
-                def __getitem__(selffer, key):
-                    assert key[0] == "b"
-                    i = slices[s][key[1]]
-                    j = slices[s][key[2]]
-                    return g[s][:, i][:, :, j].copy()
-
-                __getattr__ = __getitem__
-
-            return Blocks()
-
-        gs = util.Namespace()
-        gs.aa = constructor(0)
-        gs.bb = constructor(1)
-
-        return gs
-
-    @property
-    def bare_fock(self):
-        fock = lib.einsum(
-            "npq,npi,nqj->nij",
-            self.mf.get_fock().astype(types[float]),
-            self.mo_coeff,
-            self.mo_coeff,
-        )
-        fock = util.Namespace(aa=fock[0], bb=fock[1])
-        return fock
-
-    @property
-    def xi(self):
-        if self.options.shift:
-            xi = lib.einsum("Iii->I", self.g.aa.boo)
-            xi += lib.einsum("Iii->I", self.g.bb.boo)
-            xi /= self.omega
-            if self.bare_G is not None:
-                xi += self.bare_G / self.omega
-        else:
-            xi = np.zeros_like(self.omega)
-
-        return xi
-
-    def get_fock(self):
-        return self.Fock(self, array=(self.bare_fock.aa, self.bare_fock.bb))
-
-    def get_eris(self, eris=None):
-        """Get blocks of the ERIs.
-
-        Parameters
-        ----------
-        eris : tuple of np.ndarray or ERIs, optional.
-            Electronic repulsion integrals, either in the form of a
-            dense array for each spin channel or an ERIs object.
-            Default value is `None`.
-
-        Returns
-        -------
-        eris : ERIs, optional
-            Electronic repulsion integrals. Default value is generated
-            using `self.ERIs()`.
+        Returns:
+            Sum of energies.
         """
-        if (eris is None) or isinstance(eris, tuple):
-            if (
-                isinstance(eris, tuple) and isinstance(eris[0], np.ndarray) and eris[0].ndim == 3
-            ) or getattr(self.mf, "with_df", None):
-                return self.CDERIs(self, array=eris)
+        n = 0
+
+        def next_char() -> str:
+            nonlocal n
+            if n < 26:
+                char = chr(ord("a") + n)
             else:
-                return self.ERIs(self, array=eris)
-        else:
-            return eris
+                char = chr(ord("A") + n)
+            n += 1
+            return char
 
-    def ip_eom(self, options=None, **kwargs):
-        return ueom.IP_UEOM(self, options=options, **kwargs)
+        if signs_dict is None:
+            signs_dict = {}
+        for k, s in zip("vVaoOib", "---+++-"):
+            if k not in signs_dict:
+                signs_dict[k] = s
 
-    def ea_eom(self, options=None, **kwargs):
-        return ueom.EA_UEOM(self, options=options, **kwargs)
+        energies = []
+        for key, spin in zip(subscript, spins):
+            if key == "b":
+                energies.append(self.omega)
+            else:
+                energies.append(np.diag(self.fock[spin + spin][key + key]))
 
-    def ee_eom(self, options=None, **kwargs):
-        return ueom.EE_UEOM(self, options=options, **kwargs)
+        subscript = "".join([signs_dict[k] + next_char() for k in subscript])
+        energy_sum = lib.direct_sum(subscript, *energies)
 
-    def amplitudes_to_vector(self, amplitudes):
+        return energy_sum
+
+    def amplitudes_to_vector(self, amplitudes: Namespace[AmplitudeType]) -> NDArray[float]:
+        """Construct a vector containing all of the amplitudes used in the given ansatz.
+
+        Args:
+            amplitudes: Cluster amplitudes.
+
+        Returns:
+            Cluster amplitudes as a vector.
+        """
         vectors = []
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -511,7 +602,15 @@ class UEBCC(rebcc.REBCC):
 
         return np.concatenate(vectors)
 
-    def vector_to_amplitudes(self, vector):
+    def vector_to_amplitudes(self, vector: NDArray[float]) -> Namespace[AmplitudeType]:
+        """Construct a namespace of amplitudes from a vector.
+
+        Args:
+            vector: Cluster amplitudes as a vector.
+
+        Returns:
+            Cluster amplitudes.
+        """
         amplitudes = util.Namespace()
         i0 = 0
         sizes = {(o, s): self.space[i].size(o) for o in "ovOVia" for i, s in enumerate("ab")}
@@ -550,7 +649,15 @@ class UEBCC(rebcc.REBCC):
 
         return amplitudes
 
-    def lambdas_to_vector(self, lambdas):
+    def lambdas_to_vector(self, lambdas: Namespace[AmplitudeType]) -> NDArray[float]:
+        """Construct a vector containing all of the lambda amplitudes used in the given ansatz.
+
+        Args:
+            lambdas: Cluster lambda amplitudes.
+
+        Returns:
+            Cluster lambda amplitudes as a vector.
+        """
         vectors = []
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -572,7 +679,15 @@ class UEBCC(rebcc.REBCC):
 
         return np.concatenate(vectors)
 
-    def vector_to_lambdas(self, vector):
+    def vector_to_lambdas(self, vector: NDArray[float]) -> Namespace[AmplitudeType]:
+        """Construct a namespace of lambda amplitudes from a vector.
+
+        Args:
+            vector: Cluster lambda amplitudes as a vector.
+
+        Returns:
+            Cluster lambda amplitudes.
+        """
         lambdas = util.Namespace()
         i0 = 0
         sizes = {(o, s): self.space[i].size(o) for o in "ovOVia" for i, s in enumerate("ab")}
@@ -615,7 +730,15 @@ class UEBCC(rebcc.REBCC):
 
         return lambdas
 
-    def excitations_to_vector_ip(self, *excitations):
+    def excitations_to_vector_ip(self, *excitations: Namespace[AmplitudeType]) -> NDArray[float]:
+        """Construct a vector containing all of the IP-EOM excitations.
+
+        Args:
+            excitations: IP-EOM excitations.
+
+        Returns:
+            IP-EOM excitations as a vector.
+        """
         vectors = []
         m = 0
 
@@ -634,7 +757,15 @@ class UEBCC(rebcc.REBCC):
 
         return np.concatenate(vectors)
 
-    def excitations_to_vector_ea(self, *excitations):
+    def excitations_to_vector_ea(self, *excitations: Namespace[AmplitudeType]) -> NDArray[float]:
+        """Construct a vector containing all of the EA-EOM excitations.
+
+        Args:
+            excitations: EA-EOM excitations.
+
+        Returns:
+            EA-EOM excitations as a vector.
+        """
         vectors = []
         m = 0
 
@@ -654,7 +785,15 @@ class UEBCC(rebcc.REBCC):
 
         return np.concatenate(vectors)
 
-    def excitations_to_vector_ee(self, *excitations):
+    def excitations_to_vector_ee(self, *excitations: Namespace[AmplitudeType]) -> NDArray[float]:
+        """Construct a vector containing all of the EE-EOM excitations.
+
+        Args:
+            excitations: EE-EOM excitations.
+
+        Returns:
+            EE-EOM excitations as a vector.
+        """
         vectors = []
         m = 0
 
@@ -673,7 +812,15 @@ class UEBCC(rebcc.REBCC):
 
         return np.concatenate(vectors)
 
-    def vector_to_excitations_ip(self, vector):
+    def vector_to_excitations_ip(self, vector: NDArray[float]) -> tuple[Namespace[AmplitudeType], ...]:
+        """Construct a namespace of IP-EOM excitations from a vector.
+
+        Args:
+            vector: IP-EOM excitations as a vector.
+
+        Returns:
+            IP-EOM excitations.
+        """
         excitations = []
         i0 = 0
         sizes = {(o, s): self.space[i].size(o) for o in "ovOVia" for i, s in enumerate("ab")}
@@ -705,7 +852,15 @@ class UEBCC(rebcc.REBCC):
 
         return tuple(excitations)
 
-    def vector_to_excitations_ea(self, vector):
+    def vector_to_excitations_ea(self, vector: NDArray[float]) -> tuple[Namespace[AmplitudeType], ...]:
+        """Construct a namespace of EA-EOM excitations from a vector.
+
+        Args:
+            vector: EA-EOM excitations as a vector.
+
+        Returns:
+            EA-EOM excitations.
+        """
         excitations = []
         i0 = 0
         sizes = {(o, s): self.space[i].size(o) for o in "ovOVia" for i, s in enumerate("ab")}
@@ -737,7 +892,15 @@ class UEBCC(rebcc.REBCC):
 
         return tuple(excitations)
 
-    def vector_to_excitations_ee(self, vector):
+    def vector_to_excitations_ee(self, vector: NDArray[float]) -> tuple[Namespace[AmplitudeType], ...]:
+        """Construct a namespace of EE-EOM excitations from a vector.
+
+        Args:
+            vector: EE-EOM excitations as a vector.
+
+        Returns:
+            EE-EOM excitations.
+        """
         excitations = []
         i0 = 0
         sizes = {(o, s): self.space[i].size(o) for o in "ovOVia" for i, s in enumerate("ab")}
@@ -768,74 +931,153 @@ class UEBCC(rebcc.REBCC):
 
         return tuple(excitations)
 
-    @property
-    def spin_type(self):
-        return "U"
+    def get_mean_field_G(self) -> NDArray[float]:
+        """Get the mean-field boson non-conserving term.
+
+        Returns:
+            Mean-field boson non-conserving term.
+        """
+        # FIXME should this also sum in frozen orbitals?
+        val = lib.einsum("Ipp->I", self.g.aa.boo)
+        val += lib.einsum("Ipp->I", self.g.bb.boo)
+        val -= self.xi * self.omega
+        if self.bare_G is not None:
+            # Require bare_G to have a spin index for now:
+            assert np.shape(self.bare_G) == val.shape
+            val += self.bare_G
+        return val
+
+    def get_g(self, g: NDArray[float]) -> Namespace[Namespace[NDArray[float]]]:
+        """Get the blocks of the electron-boson coupling matrix.
+
+        This matrix corresponds to the bosonic annihilation operator.
+
+        Args:
+            g: Electron-boson coupling matrix.
+
+        Returns:
+            Blocks of the electron-boson coupling matrix.
+        """
+        # TODO make a proper class for this
+        if np.array(g).ndim != 4:
+            g = np.array([g, g])
+        slices = [
+            {
+                "x": space.correlated,
+                "o": space.correlated_occupied,
+                "v": space.correlated_virtual,
+                "O": space.active_occupied,
+                "V": space.active_virtual,
+                "i": space.inactive_occupied,
+                "a": space.inactive_virtual,
+            }
+            for space in self.space
+        ]
+
+        def constructor(s):
+            class Blocks(util.Namespace):
+                def __getitem__(selffer, key):
+                    assert key[0] == "b"
+                    i = slices[s][key[1]]
+                    j = slices[s][key[2]]
+                    return g[s][:, i][:, :, j].copy()
+
+                __getattr__ = __getitem__
+
+            return Blocks()
+
+        gs = util.Namespace()
+        gs.aa = constructor(0)
+        gs.bb = constructor(1)
+
+        return gs
 
     @property
-    def nmo(self):
+    def bare_fock(self) -> Namespace[NDArray[float]]:
+        """Get the mean-field Fock matrix in the MO basis, including frozen parts.
+
+        Returns an array and not a `BaseFock` object.
+
+        Returns:
+            Mean-field Fock matrix.
+        """
+        fock = lib.einsum(
+            "npq,npi,nqj->nij",
+            self.mf.get_fock().astype(types[float]),
+            self.mo_coeff,
+            self.mo_coeff,
+        )
+        fock = util.Namespace(aa=fock[0], bb=fock[1])
+        return fock
+
+    @property
+    def xi(self) -> NDArray[float]:
+        """Get the shift in the bosonic operators to diagonalise the photon Hamiltonian.
+
+        Returns:
+            Shift in the bosonic operators.
+        """
+        if self.options.shift:
+            xi = lib.einsum("Iii->I", self.g.aa.boo)
+            xi += lib.einsum("Iii->I", self.g.bb.boo)
+            xi /= self.omega
+            if self.bare_G is not None:
+                xi += self.bare_G / self.omega
+        else:
+            xi = np.zeros_like(self.omega)
+        return xi
+
+    def get_fock(self) -> UFock:
+        """Get the Fock matrix.
+
+        Returns:
+            Fock matrix.
+        """
+        return self.Fock(self, array=(self.bare_fock.aa, self.bare_fock.bb))
+
+    def get_eris(self, eris: Optional[ERIsInputType] = None) -> Union[UERIs, UCDERIs]:
+        """Get the electron repulsion integrals.
+
+        Args:
+            eris: Input electron repulsion integrals.
+
+        Returns:
+            Electron repulsion integrals.
+        """
+        if (eris is None) or isinstance(eris, tuple):
+            if (
+                isinstance(eris, tuple) and isinstance(eris[0], np.ndarray) and eris[0].ndim == 3
+            ) or getattr(self.mf, "with_df", None):
+                return self.CDERIs(self, array=eris)
+            else:
+                return self.ERIs(self, array=eris)
+        else:
+            return eris
+
+    @property
+    def nmo(self) -> int:
+        """Get the number of molecular orbitals.
+
+        Returns:
+            Number of molecular orbitals.
+        """
         assert self.mo_occ[0].size == self.mo_occ[1].size
         return self.mo_occ[0].size
 
     @property
-    def nocc(self):
+    def nocc(self) -> tuple[int, int]:
+        """Get the number of occupied molecular orbitals.
+
+        Returns:
+            Number of occupied molecular orbitals for each spin.
+        """
         return tuple(np.sum(mo_occ > 0) for mo_occ in self.mo_occ)
 
     @property
-    def nvir(self):
+    def nvir(self) -> tuple[int, int]:
+        """Get the number of virtual molecular orbitals.
+
+        Returns:
+            Number of virtual molecular orbitals for each spin.
+        """
         return tuple(self.nmo - nocc for nocc in self.nocc)
-
-    def energy_sum(self, subscript, spins, signs_dict=None):
-        """
-        Get a direct sum of energies.
-
-        Parameters
-        ----------
-        subscript : str
-            The direct sum subscript, where each character indicates the
-            sector for each energy. For the default slice characters, see
-            `Space`. Occupied degrees of freedom are assumed to be
-            positive, virtual and bosonic negative (the signs can be
-            changed via the `signs_dict` keyword argument).
-        spins : str
-            String of spins, length must be the same as `subscript` with
-            each character being one of `"a"` or `"b"`.
-        signs_dict : dict, optional
-            Dictionary defining custom signs for each sector. If `None`,
-            initialised such that `["o", "O", "i"]` are positive, and
-            `["v", "V", "a", "b"]` negative. Default value is `None`.
-
-        Returns
-        -------
-        energy_sum : numpy.ndarray
-            Array of energy sums.
-        """
-
-        n = 0
-
-        def next_char():
-            nonlocal n
-            if n < 26:
-                char = chr(ord("a") + n)
-            else:
-                char = chr(ord("A") + n)
-            n += 1
-            return char
-
-        if signs_dict is None:
-            signs_dict = {}
-        for k, s in zip("vVaoOib", "---+++-"):
-            if k not in signs_dict:
-                signs_dict[k] = s
-
-        energies = []
-        for key, spin in zip(subscript, spins):
-            if key == "b":
-                energies.append(self.omega)
-            else:
-                energies.append(np.diag(self.fock[spin + spin][key + key]))
-
-        subscript = "".join([signs_dict[k] + next_char() for k in subscript])
-        energy_sum = lib.direct_sum(subscript, *energies)
-
-        return energy_sum

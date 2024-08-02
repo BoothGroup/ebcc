@@ -60,7 +60,12 @@ class Namespace(MutableMapping[str, T], Generic[T]):
 
     def __getattr__(self, key: str) -> T:
         """Get an attribute."""
-        return self.__getitem__(key)
+        if key in self.__dict__:
+            return self.__dict__[key]
+        try:
+            return self.__getitem__(key)
+        except KeyError:
+            raise AttributeError(f"Namespace object has no attribute {key}")
 
     def __delitem__(self, key: str) -> None:
         """Delete an item."""
@@ -94,15 +99,19 @@ class Namespace(MutableMapping[str, T], Generic[T]):
 
     def keys(self) -> KeysView[str]:
         """Get keys of the namespace as a dictionary."""
-        return dict(self).keys()
+        return self._members.keys()
 
     def values(self) -> ValuesView[T]:
         """Get values of the namespace as a dictionary."""
-        return dict(self).values()
+        return self._members.values
 
     def items(self) -> ItemsView[str, T]:
         """Get items of the namespace as a dictionary."""
-        return dict(self).items()
+        return self._members.items()
+
+    def __repr__(self) -> str:
+        """Return a string representation."""
+        return f"Namespace({self._members})"
 
 
 class Timer:

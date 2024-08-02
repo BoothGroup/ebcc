@@ -17,20 +17,28 @@ HEADER = """        _
 %s"""  # noqa: W605
 
 
-def output(self, msg, *args, **kwargs):
-    """Output a message at the `"OUTPUT"` level."""
-    if self.isEnabledFor(25):
-        self._log(25, msg, args, **kwargs)
+class Logger(logging.Logger):
+    """Logger with a custom output level."""
+
+    def __init__(self, name, level=logging.INFO):
+        super().__init__(name, level)
+
+    def output(self, msg, *args, **kwargs):
+        """Output a message at the `"OUTPUT"` level."""
+        if self.isEnabledFor(25):
+            self._log(25, msg, args, **kwargs)
+
+
+logging.setLoggerClass(Logger)
+logging.addLevelName(25, "OUTPUT")
 
 
 default_log = logging.getLogger(__name__)
 default_log.setLevel(logging.INFO)
 default_log.addHandler(logging.StreamHandler(sys.stderr))
-logging.addLevelName(25, "OUTPUT")
-logging.Logger.output = output
 
 
-class NullLogger(logging.Logger):
+class NullLogger(Logger):
     """A logger that does nothing."""
 
     def __init__(self, *args, **kwargs):
