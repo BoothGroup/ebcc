@@ -97,8 +97,8 @@ class BaseEBCC(ABC):
         mo_occ: Optional[NDArray[float]] = None,
         fock: Optional[BaseFock] = None,
         **kwargs: Any,
-    ):
-        r"""Initialize the EBCC object.
+    ) -> None:
+        r"""Initialise the EBCC object.
 
         Args:
             mf: PySCF mean-field object.
