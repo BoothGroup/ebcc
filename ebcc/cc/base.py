@@ -300,7 +300,11 @@ class BaseEBCC(ABC):
 
         return e_cc
 
-    def solve_lambda(self, amplitudes: Optional[Namespace[AmplitudeType]] = None, eris: Optional[ERIsInputType] = None) -> None:
+    def solve_lambda(
+        self,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        eris: Optional[ERIsInputType] = None,
+    ) -> None:
         """Solve for the lambda amplitudes.
 
         Args:
@@ -521,7 +525,9 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def init_lams(self, amplitude: Optional[Namespace[AmplitudeType]] = None) -> Namespace[AmplitudeType]:
+    def init_lams(
+        self, amplitude: Optional[Namespace[AmplitudeType]] = None
+    ) -> Namespace[AmplitudeType]:
         """Initialise the cluster lambda amplitudes.
 
         Args:
@@ -617,7 +623,12 @@ class BaseEBCC(ABC):
         """
         pass
 
-    def make_sing_b_dm(self, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None, lambdas: Optional[Namespace[AmplitudeType]] = None) -> Any:
+    def make_sing_b_dm(
+        self,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        lambdas: Optional[Namespace[AmplitudeType]] = None,
+    ) -> Any:
         r"""Make the single boson density matrix :math:`\langle b \rangle`.
 
         Args:
@@ -636,7 +647,14 @@ class BaseEBCC(ABC):
         )
         return func(**kwargs)
 
-    def make_rdm1_b(self, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None, lambdas: Optional[Namespace[AmplitudeType]] = None, unshifted: bool = True, hermitise: bool = True) -> Any:
+    def make_rdm1_b(
+        self,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        lambdas: Optional[Namespace[AmplitudeType]] = None,
+        unshifted: bool = True,
+        hermitise: bool = True,
+    ) -> Any:
         r"""Make the one-particle boson reduced density matrix :math:`\langle b^+ c \rangle`.
 
         Args:
@@ -669,7 +687,13 @@ class BaseEBCC(ABC):
         return dm
 
     @abstractmethod
-    def make_rdm1_f(self, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None, lambdas: Optional[Namespace[AmplitudeType]] = None, hermitise: bool = True) -> Any:
+    def make_rdm1_f(
+        self,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        lambdas: Optional[Namespace[AmplitudeType]] = None,
+        hermitise: bool = True,
+    ) -> Any:
         r"""Make the one-particle fermionic reduced density matrix :math:`\langle i^+ j \rangle`.
 
         Args:
@@ -684,7 +708,13 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def make_rdm2_f(self, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None, lambdas: Optional[Namespace[AmplitudeType]] = None, hermitise: bool = True) -> Any:
+    def make_rdm2_f(
+        self,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        lambdas: Optional[Namespace[AmplitudeType]] = None,
+        hermitise: bool = True,
+    ) -> Any:
         r"""Make the two-particle fermionic reduced density matrix :math:`\langle i^+j^+lk \rangle`.
 
         Args:
@@ -699,7 +729,14 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def make_eb_coup_rdm(self, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None, lambdas: Optional[Namespace[AmplitudeType]] = None, unshifted: bool = True, hermitise: bool = True) -> Any:
+    def make_eb_coup_rdm(
+        self,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        lambdas: Optional[Namespace[AmplitudeType]] = None,
+        unshifted: bool = True,
+        hermitise: bool = True,
+    ) -> Any:
         r"""Make the electron-boson coupling reduced density matrix :math:`\langle b^+ c^+ c b \rangle`.
 
         Args:
@@ -715,7 +752,13 @@ class BaseEBCC(ABC):
         """
         pass
 
-    def hbar_matvec_ip(self, r1: AmplitudeType, r2: AmplitudeType, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None) -> tuple[AmplitudeType]:
+    def hbar_matvec_ip(
+        self,
+        r1: AmplitudeType,
+        r2: AmplitudeType,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+    ) -> tuple[AmplitudeType]:
         """Compute the product between a state vector and the IP-EOM Hamiltonian.
 
         Args:
@@ -737,7 +780,13 @@ class BaseEBCC(ABC):
         )
         return func(**kwargs)
 
-    def hbar_matvec_ea(self, r1: AmplitudeType, r2: AmplitudeType, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None) -> tuple[AmplitudeType, AmplitudeType]:
+    def hbar_matvec_ea(
+        self,
+        r1: AmplitudeType,
+        r2: AmplitudeType,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+    ) -> tuple[AmplitudeType, AmplitudeType]:
         """Compute the product between a state vector and the EA-EOM Hamiltonian.
 
         Args:
@@ -759,7 +808,13 @@ class BaseEBCC(ABC):
         )
         return func(**kwargs)
 
-    def hbar_matvec_ee(self, r1: AmplitudeType, r2: AmplitudeType, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None) -> tuple[AmplitudeType, AmplitudeType]:
+    def hbar_matvec_ee(
+        self,
+        r1: AmplitudeType,
+        r2: AmplitudeType,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+    ) -> tuple[AmplitudeType, AmplitudeType]:
         """Compute the product between a state vector and the EE-EOM Hamiltonian.
 
         Args:
@@ -781,7 +836,12 @@ class BaseEBCC(ABC):
         )
         return func(**kwargs)
 
-    def make_ip_mom_bras(self, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None, lambdas: Optional[Namespace[AmplitudeType]] = None) -> tuple[AmplitudeType, ...]:
+    def make_ip_mom_bras(
+        self,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        lambdas: Optional[Namespace[AmplitudeType]] = None,
+    ) -> tuple[AmplitudeType, ...]:
         """Get the bra vectors to construct IP-EOM moments.
 
         Args:
@@ -800,7 +860,12 @@ class BaseEBCC(ABC):
         )
         return func(**kwargs)
 
-    def make_ea_mom_bras(self, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None, lambdas: Optional[Namespace[AmplitudeType]] = None) -> tuple[AmplitudeType, ...]:
+    def make_ea_mom_bras(
+        self,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        lambdas: Optional[Namespace[AmplitudeType]] = None,
+    ) -> tuple[AmplitudeType, ...]:
         """Get the bra vectors to construct EA-EOM moments.
 
         Args:
@@ -819,7 +884,12 @@ class BaseEBCC(ABC):
         )
         return func(**kwargs)
 
-    def make_ee_mom_bras(self, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None, lambdas: Optional[Namespace[AmplitudeType]] = None) -> tuple[AmplitudeType, ...]:
+    def make_ee_mom_bras(
+        self,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        lambdas: Optional[Namespace[AmplitudeType]] = None,
+    ) -> tuple[AmplitudeType, ...]:
         """Get the bra vectors to construct EE-EOM moments.
 
         Args:
@@ -838,7 +908,12 @@ class BaseEBCC(ABC):
         )
         return func(**kwargs)
 
-    def make_ip_mom_kets(self, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None, lambdas: Optional[Namespace[AmplitudeType]] = None) -> tuple[AmplitudeType, ...]:
+    def make_ip_mom_kets(
+        self,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        lambdas: Optional[Namespace[AmplitudeType]] = None,
+    ) -> tuple[AmplitudeType, ...]:
         """Get the ket vectors to construct IP-EOM moments.
 
         Args:
@@ -857,7 +932,12 @@ class BaseEBCC(ABC):
         )
         return func(**kwargs)
 
-    def make_ea_mom_kets(self, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None, lambdas: Optional[Namespace[AmplitudeType]] = None) -> tuple[AmplitudeType, ...]:
+    def make_ea_mom_kets(
+        self,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        lambdas: Optional[Namespace[AmplitudeType]] = None,
+    ) -> tuple[AmplitudeType, ...]:
         """Get the ket vectors to construct EA-EOM moments.
 
         Args:
@@ -876,7 +956,12 @@ class BaseEBCC(ABC):
         )
         return func(**kwargs)
 
-    def make_ee_mom_kets(self, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None, lambdas: Optional[Namespace[AmplitudeType]] = None) -> tuple[AmplitudeType, ...]:
+    def make_ee_mom_kets(
+        self,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        lambdas: Optional[Namespace[AmplitudeType]] = None,
+    ) -> tuple[AmplitudeType, ...]:
         """Get the ket vectors to construct EE-EOM moments.
 
         Args:
@@ -994,7 +1079,9 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def vector_to_excitations_ip(self, vector: NDArray[float]) -> tuple[Namespace[AmplitudeType], ...]:
+    def vector_to_excitations_ip(
+        self, vector: NDArray[float]
+    ) -> tuple[Namespace[AmplitudeType], ...]:
         """Construct a namespace of IP-EOM excitations from a vector.
 
         Args:
@@ -1006,7 +1093,9 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def vector_to_excitations_ea(self, vector: NDArray[float]) -> tuple[Namespace[AmplitudeType], ...]:
+    def vector_to_excitations_ea(
+        self, vector: NDArray[float]
+    ) -> tuple[Namespace[AmplitudeType], ...]:
         """Construct a namespace of EA-EOM excitations from a vector.
 
         Args:
@@ -1018,7 +1107,9 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def vector_to_excitations_ee(self, vector: NDArray[float]) -> tuple[Namespace[AmplitudeType], ...]:
+    def vector_to_excitations_ee(
+        self, vector: NDArray[float]
+    ) -> tuple[Namespace[AmplitudeType], ...]:
         """Construct a namespace of EE-EOM excitations from a vector.
 
         Args:

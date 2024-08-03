@@ -41,7 +41,9 @@ def permute_string(string: str, permutation: tuple[int, ...]) -> str:
     return "".join([string[i] for i in permutation])
 
 
-def tril_indices_ndim(n: int, dims: int, include_diagonal: Optional[bool] = False) -> tuple[NDArray[int]]:
+def tril_indices_ndim(
+    n: int, dims: int, include_diagonal: Optional[bool] = False
+) -> tuple[NDArray[int]]:
     """Return lower triangular indices for a multidimensional array.
 
     Args:
@@ -55,7 +57,7 @@ def tril_indices_ndim(n: int, dims: int, include_diagonal: Optional[bool] = Fals
     ranges = [np.arange(n)] * dims
     if dims == 1:
         return (ranges[0],)
-    #func: Callable[[Any, ...], Any] = np.greater_equal if include_diagonal else np.greater
+    # func: Callable[[Any, ...], Any] = np.greater_equal if include_diagonal else np.greater
 
     slices = [
         tuple(slice(None) if i == j else np.newaxis for i in range(dims)) for j in range(dims)
@@ -95,7 +97,9 @@ def ntril_ndim(n: int, dims: int, include_diagonal: Optional[bool] = False) -> i
     return out
 
 
-def generate_spin_combinations(n: int, excited: Optional[bool] = False, unique: Optional[bool] = False) -> Generator[str, None, None]:
+def generate_spin_combinations(
+    n: int, excited: Optional[bool] = False, unique: Optional[bool] = False
+) -> Generator[str, None, None]:
     """Generate combinations of spin components for a given number of occupied and virtual axes.
 
     Args:
@@ -274,7 +278,9 @@ def combine_subscripts(
         return new_subscript, new_sizes
 
 
-def compress_axes(subscript: str, array: NDArray[T], include_diagonal: Optional[bool] = False) -> NDArray[T]:
+def compress_axes(
+    subscript: str, array: NDArray[T], include_diagonal: Optional[bool] = False
+) -> NDArray[T]:
     """Compress an array into lower-triangular representations using an einsum-like input.
 
     Args:
@@ -467,7 +473,12 @@ def get_compressed_size(subscript: str, **sizes: int) -> int:
     return n
 
 
-def symmetrise(subscript: str, array: NDArray[T], symmetry: Optional[str] = None, apply_factor: Optional[bool] = True) -> NDArray[T]:
+def symmetrise(
+    subscript: str,
+    array: NDArray[T],
+    symmetry: Optional[str] = None,
+    apply_factor: Optional[bool] = True,
+) -> NDArray[T]:
     """Enforce a symmetry in an array.
 
     Args:

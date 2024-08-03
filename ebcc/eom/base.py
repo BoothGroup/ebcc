@@ -14,14 +14,12 @@ from ebcc.logging import ANSI
 from ebcc.precision import types
 
 if TYPE_CHECKING:
-    from typing import Any, Optional, TypeVar, Union, Callable
+    from typing import Any, Callable, Optional, TypeVar, Union
 
-    from ebcc.util import Namespace
+    from ebcc.cc.base import AmplitudeType, BaseEBCC, ERIsInputType
     from ebcc.numpy.typing import NDArray
-    from ebcc.cc.base import BaseEBCC
+    from ebcc.util import Namespace
 
-    ERIsInputType = Union[type[BaseERIs], NDArray[float]]
-    AmplitudeType = TypeVar("AmplitudeType")
     PickFunctionType = Callable[
         [NDArray[float], NDArray[float], int, dict[str, Any]],
         tuple[NDArray[float], NDArray[float], int],
@@ -41,9 +39,10 @@ class Options:
     """
 
     nroots: int = 5
-    e_tol: float = util.Inherited * 1e2
-    max_iter: int = util.Inherited
+    e_tol: float = 1e-6
+    max_iter: int = 100
     max_space: int = 12
+    koopmans: bool = False
 
 
 class BaseEOM(ABC):
@@ -80,13 +79,13 @@ class BaseEOM(ABC):
         # Parameters:
         self.ebcc = ebcc
         self.space = ebcc.space
-        self.ansatz = ebcc.anzatz
+        self.ansatz = ebcc.ansatz
         self.log = ebcc.log
 
         # Attributes:
         self.converged = False
-        self.e = None
-        self.v = None
+        self.e: NDArray[float] = np.empty((0), dtype=types[float])
+        self.v: NDArray[float] = np.empty((0, 0), dtype=types[float])
 
         # Logging:
         self.log.info(f"\n{ANSI.B}{ANSI.U}{self.name}{ANSI.R}")
@@ -104,6 +103,11 @@ class BaseEOM(ABC):
     def excitation_type(self) -> str:
         """Get the type of excitation."""
         pass
+
+    @property
+    def spin_type(self) -> str:
+        """Get the spin type."""
+        return self.ebcc.spin_type
 
     @property
     def name(self) -> str:
@@ -135,7 +139,9 @@ class BaseEOM(ABC):
         pass
 
     @abstractmethod
-    def matvec(self, vector: NDArray[float], eris: Optional[ERIsInputType] = None) -> NDArray[float]:
+    def matvec(
+        self, vector: NDArray[float], eris: Optional[ERIsInputType] = None
+    ) -> NDArray[float]:
         """Apply the Hamiltonian to a vector.
 
         Args:
@@ -160,7 +166,7 @@ class BaseEOM(ABC):
         pass
 
     @abstractmethod
-    def bras(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
+    def bras(self, eris: Optional[ERIsInputType] = None) -> Namespace[AmplitudeType]:
         """Get the bra vectors.
 
         Args:
@@ -172,7 +178,7 @@ class BaseEOM(ABC):
         pass
 
     @abstractmethod
-    def kets(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
+    def kets(self, eris: Optional[ERIsInputType] = None) -> Namespace[AmplitudeType]:
         """Get the ket vectors.
 
         Args:
@@ -187,7 +193,9 @@ class BaseEOM(ABC):
         """Compute the dot product of a bra and ket."""
         return np.dot(bra, ket)
 
-    def get_pick(self, guesses: Optional[NDArray[float]] = None, real_system: bool = True) -> PickFunctionType:
+    def get_pick(
+        self, guesses: Optional[NDArray[float]] = None, real_system: bool = True
+    ) -> PickFunctionType:
         """Get the function to pick the eigenvalues matching the criteria.
 
         Args:
@@ -196,12 +204,14 @@ class BaseEOM(ABC):
 
         Returns:
             Function to pick the eigenvalues.
-       """
+        """
         if self.options.koopmans:
             assert guesses is None
             guesses_array = np.asarray(guesses)
 
-            def pick(w: NDArray[float], v: NDArray[float], nroots: int, env: dict[str, Any]) -> tuple[NDArray[float], NDArray[float], int]:
+            def pick(
+                w: NDArray[float], v: NDArray[float], nroots: int, env: dict[str, Any]
+            ) -> tuple[NDArray[float], NDArray[float], int]:
                 """Pick the eigenvalues."""
                 x0 = lib.linalg_helper._gen_x0(envs["v"], envs["xs"])
                 x0 = np.asarray(x0)
@@ -212,7 +222,9 @@ class BaseEOM(ABC):
 
         else:
 
-            def pick(w: NDArray[float], v: NDArray[float], nroots: int, env: dict[str, Any]) -> tuple[NDArray[float], NDArray[float], int]:
+            def pick(
+                w: NDArray[float], v: NDArray[float], nroots: int, env: dict[str, Any]
+            ) -> tuple[NDArray[float], NDArray[float], int]:
                 """Pick the eigenvalues."""
                 real_idx = np.where(abs(w.imag) < 1e-3)[0]
                 w, v, idx = lib.linalg_helper._eigs_cmplx2real(w, v, real_idx, real_system)
@@ -222,18 +234,15 @@ class BaseEOM(ABC):
 
         return pick
 
+    @abstractmethod
     def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
         """Sort the diagonal to inform the initial guesses."""
-        if self.options.koopmans:
-            r1 = self.vector_to_amplitudes(diag)[0]
-            arg = np.argsort(diag[:r1.size])
-        else:
-            arg = np.argsort(diag)
-        return arg
+        pass
 
-    def _quasiparticle_weights(self, r1: NDArray[float]) -> float:
+    @abstractmethod
+    def _quasiparticle_weight(self, r1: AmplitudeType) -> float:
         """Get the quasiparticle weight."""
-        return np.linalg.norm(r1) ** 2
+        pass
 
     def get_guesses(self, diag: NDArray[float]) -> list[NDArray[float]]:
         """Get the initial guesses vectors.
@@ -259,7 +268,9 @@ class BaseEOM(ABC):
         """Callback function for the eigensolver."""  # noqa: D401
         pass
 
-    def davidson(self, eris: Optional[ERIsInputType] = None, guesses: Optional[list[NDArray[float]]] = None) -> NDArray[float]:
+    def davidson(
+        self, eris: Optional[ERIsInputType] = None, guesses: Optional[list[NDArray[float]]] = None
+    ) -> NDArray[float]:
         """Solve the EOM Hamiltonian using the Davidson solver.
 
         Args:
@@ -336,31 +347,16 @@ class BaseEOM(ABC):
 
     kernel = davidson
 
-    def moments(self, nmom: int, eris: Optional[ERIsInputType] = None, amplitudes: Namespace[AmplitudeType] = None, hermitise: bool = True) -> NDArray[float]:
+    @abstractmethod
+    def moments(
+        self,
+        nmom: int,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Namespace[AmplitudeType] = None,
+        hermitise: bool = True,
+    ) -> NDArray[float]:
         """Construct the moments of the EOM Hamiltonian."""
-        if eris is None:
-            eris = self.ebcc.get_eris()
-        if not amplitudes:
-            amplitudes = self.ebcc.amplitudes
-
-        bras = self.bras(eris=eris)
-        kets = self.kets(eris=eris)
-
-        moments = np.zeros((nmom, self.nmo, self.nmo), dtype=types[float])
-
-        for j in range(self.nmo):
-            ket = kets[j]
-            for n in range(nmom):
-                for i in range(self.nmo):
-                    bra = bras[i]
-                    moments[n, i, j] = self.dot_braket(bra, ket)
-                if n != (nmom - 1):
-                    ket = self.matvec(ket, eris=eris)
-
-        if hermitise:
-            moments = 0.5 * (moments + moments.swapaxes(1, 2))
-
-        return moments
+        pass
 
     @property
     def nmo(self) -> Any:
@@ -378,8 +374,8 @@ class BaseEOM(ABC):
         return self.ebcc.nvir
 
 
-class BaseIPEOM(BaseEOM):
-    """Base class for ionization-potential EOM-CC."""
+class BaseIP_EOM(BaseEOM):
+    """Base class for ionisation-potential EOM-CC."""
 
     @property
     def excitation_type(self) -> str:
@@ -408,7 +404,9 @@ class BaseIPEOM(BaseEOM):
         """
         return self.ebcc.vector_to_excitations_ip(vector)
 
-    def matvec(self, vector: NDArray[float], eris: Optional[ERIsInputType] = None) -> NDArray[float]:
+    def matvec(
+        self, vector: NDArray[float], eris: Optional[ERIsInputType] = None
+    ) -> NDArray[float]:
         """Apply the Hamiltonian to a vector.
 
         Args:
@@ -422,38 +420,8 @@ class BaseIPEOM(BaseEOM):
         result = self.ebcc.hbar_matvec_ip(*amplitudes, eris=eris)
         return self.amplitudes_to_vector(*result)
 
-    def bras(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
-        """Get the bra vectors.
 
-        Args:
-            eris: Electronic repulsion integrals.
-
-        Returns:
-            Bra vectors.
-        """
-        bras_raw = list(self.ebcc.make_ip_mom_bras(eris=eris))
-        bras = np.array(
-            [self.amplitudes_to_vector(*[b[i] for b in bras_raw]) for i in range(self.nmo)]
-        )
-        return bras
-
-    def kets(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
-        """Get the ket vectors.
-
-        Args:
-            eris: Electronic repulsion integrals.
-
-        Returns:
-            Ket vectors.
-        """
-        kets_raw = list(self.ebcc.make_ip_mom_kets(eris=eris))
-        kets = np.array(
-            [self.amplitudes_to_vector(*[k[..., i] for k in kets_raw]) for i in range(self.nmo)]
-        )
-        return kets
-
-
-class BaseEAEOM(BaseEOM):
+class BaseEA_EOM(BaseEOM):
     """Base class for electron-affinity EOM-CC."""
 
     @property
@@ -483,7 +451,9 @@ class BaseEAEOM(BaseEOM):
         """
         return self.ebcc.vector_to_excitations_ea(vector)
 
-    def matvec(self, vector: NDArray[float], eris: Optional[ERIsInputType] = None) -> NDArray[float]:
+    def matvec(
+        self, vector: NDArray[float], eris: Optional[ERIsInputType] = None
+    ) -> NDArray[float]:
         """Apply the Hamiltonian to a vector.
 
         Args:
@@ -528,7 +498,7 @@ class BaseEAEOM(BaseEOM):
         return kets
 
 
-class BaseEEEOM(BaseEOM):
+class BaseEE_EOM(BaseEOM):
     """Base class for electron-electron EOM-CC."""
 
     @property
@@ -558,7 +528,9 @@ class BaseEEEOM(BaseEOM):
         """
         return self.ebcc.vector_to_excitations_ee(vector)
 
-    def matvec(self, vector: NDArray[float], eris: Optional[ERIsInputType] = None) -> NDArray[float]:
+    def matvec(
+        self, vector: NDArray[float], eris: Optional[ERIsInputType] = None
+    ) -> NDArray[float]:
         """Apply the Hamiltonian to a vector.
 
         Args:

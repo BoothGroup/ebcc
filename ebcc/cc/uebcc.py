@@ -7,10 +7,11 @@ from typing import TYPE_CHECKING
 from pyscf import lib
 
 from ebcc import numpy as np
-from ebcc import rebcc, ueom, util
+from ebcc import util
 from ebcc.brueckner import BruecknerUEBCC
 from ebcc.cc.base import BaseEBCC
 from ebcc.cderis import UCDERIs
+from ebcc.eom import EA_UEOM, EE_UEOM, IP_UEOM
 from ebcc.eris import UERIs
 from ebcc.fock import UFock
 from ebcc.precision import types
@@ -47,7 +48,7 @@ class UEBCC(BaseEBCC):
         """Get a string representation of the spin type."""
         return "U"
 
-    def ip_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> ueom.IP_REOM:
+    def ip_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> IP_UEOM:
         """Get the IP-EOM object.
 
         Args:
@@ -57,9 +58,9 @@ class UEBCC(BaseEBCC):
         Returns:
             IP-EOM object.
         """
-        return ueom.IP_UEOM(self, options=options, **kwargs)
+        return IP_UEOM(self, options=options, **kwargs)
 
-    def ea_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> ueom.EA_REOM:
+    def ea_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> EA_UEOM:
         """Get the EA-EOM object.
 
         Args:
@@ -69,9 +70,9 @@ class UEBCC(BaseEBCC):
         Returns:
             EA-EOM object.
         """
-        return ueom.EA_UEOM(self, options=options, **kwargs)
+        return EA_UEOM(self, options=options, **kwargs)
 
-    def ee_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> ueom.EE_REOM:
+    def ee_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> EE_UEOM:
         """Get the EE-EOM object.
 
         Args:
@@ -81,7 +82,7 @@ class UEBCC(BaseEBCC):
         Returns:
             EE-EOM object.
         """
-        return ueom.EE_UEOM(self, options=options, **kwargs)
+        return EE_UEOM(self, options=options, **kwargs)
 
     @staticmethod
     def _convert_mf(mf: SCF) -> UHF:
@@ -185,7 +186,9 @@ class UEBCC(BaseEBCC):
         )
         return space
 
-    def _pack_codegen_kwargs(self, *extra_kwargs: dict[str, Any], eris: Optional[ERIsInputType] = None) -> dict[str, Any]:
+    def _pack_codegen_kwargs(
+        self, *extra_kwargs: dict[str, Any], eris: Optional[ERIsInputType] = None
+    ) -> dict[str, Any]:
         """Pack all the keyword arguments for the generated code."""
         kwargs = dict(
             f=self.fock,
@@ -276,7 +279,9 @@ class UEBCC(BaseEBCC):
 
         return amplitudes
 
-    def init_lams(self, amplitudes: Optional[Namespace[AmplitudeType]] = None) -> Namespace[AmplitudeType]:
+    def init_lams(
+        self, amplitudes: Optional[Namespace[AmplitudeType]] = None
+    ) -> Namespace[AmplitudeType]:
         """Initialise the cluster lambda amplitudes.
 
         Args:
@@ -431,7 +436,13 @@ class UEBCC(BaseEBCC):
 
         return res
 
-    def make_rdm1_f(self, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None, lambdas: Optional[Namespace[AmplitudeType]] = None, hermitise: bool = True) -> Any:
+    def make_rdm1_f(
+        self,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        lambdas: Optional[Namespace[AmplitudeType]] = None,
+        hermitise: bool = True,
+    ) -> Any:
         r"""Make the one-particle fermionic reduced density matrix :math:`\langle i^+ j \rangle`.
 
         Args:
@@ -458,7 +469,13 @@ class UEBCC(BaseEBCC):
 
         return dm
 
-    def make_rdm2_f(self, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None, lambdas: Optional[Namespace[AmplitudeType]] = None, hermitise: bool = True) -> Any:
+    def make_rdm2_f(
+        self,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        lambdas: Optional[Namespace[AmplitudeType]] = None,
+        hermitise: bool = True,
+    ) -> Any:
         r"""Make the two-particle fermionic reduced density matrix :math:`\langle i^+j^+lk \rangle`.
 
         Args:
@@ -495,7 +512,14 @@ class UEBCC(BaseEBCC):
 
         return dm
 
-    def make_eb_coup_rdm(self, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None, lambdas: Optional[Namespace[AmplitudeType]] = None, unshifted: bool = True, hermitise: bool = True) -> Any:
+    def make_eb_coup_rdm(
+        self,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        lambdas: Optional[Namespace[AmplitudeType]] = None,
+        unshifted: bool = True,
+        hermitise: bool = True,
+    ) -> Any:
         r"""Make the electron-boson coupling reduced density matrix :math:`\langle b^+ c^+ c b \rangle`.
 
         Args:
@@ -533,7 +557,9 @@ class UEBCC(BaseEBCC):
 
         return dm_eb
 
-    def energy_sum(self, subscript: str, spins: str, signs_dict: dict[str, int] = None) -> NDArray[float]:
+    def energy_sum(
+        self, subscript: str, spins: str, signs_dict: dict[str, int] = None
+    ) -> NDArray[float]:
         """Get a direct sum of energies.
 
         Args:
@@ -812,7 +838,9 @@ class UEBCC(BaseEBCC):
 
         return np.concatenate(vectors)
 
-    def vector_to_excitations_ip(self, vector: NDArray[float]) -> tuple[Namespace[AmplitudeType], ...]:
+    def vector_to_excitations_ip(
+        self, vector: NDArray[float]
+    ) -> tuple[Namespace[AmplitudeType], ...]:
         """Construct a namespace of IP-EOM excitations from a vector.
 
         Args:
@@ -852,7 +880,9 @@ class UEBCC(BaseEBCC):
 
         return tuple(excitations)
 
-    def vector_to_excitations_ea(self, vector: NDArray[float]) -> tuple[Namespace[AmplitudeType], ...]:
+    def vector_to_excitations_ea(
+        self, vector: NDArray[float]
+    ) -> tuple[Namespace[AmplitudeType], ...]:
         """Construct a namespace of EA-EOM excitations from a vector.
 
         Args:
@@ -892,7 +922,9 @@ class UEBCC(BaseEBCC):
 
         return tuple(excitations)
 
-    def vector_to_excitations_ee(self, vector: NDArray[float]) -> tuple[Namespace[AmplitudeType], ...]:
+    def vector_to_excitations_ee(
+        self, vector: NDArray[float]
+    ) -> tuple[Namespace[AmplitudeType], ...]:
         """Construct a namespace of EE-EOM excitations from a vector.
 
         Args:

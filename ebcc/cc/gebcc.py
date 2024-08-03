@@ -1,4 +1,4 @@
-"""General electron-boson coupled cluster."""
+"""Generalised electron-boson coupled cluster."""
 
 from __future__ import annotations
 
@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING
 
 from pyscf import lib, scf
 
-from ebcc import geom
 from ebcc import numpy as np
-from ebcc import uebcc, util
+from ebcc import util
 from ebcc.brueckner import BruecknerGEBCC
 from ebcc.cc.base import BaseEBCC
+from ebcc.eom import EA_GEOM, EE_GEOM, IP_GEOM
 from ebcc.eris import GERIs
 from ebcc.fock import GFock
 from ebcc.precision import types
@@ -56,7 +56,7 @@ class GEBCC(BaseEBCC):
     def spin_type(self):
         return "G"
 
-    def ip_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> geom.IP_GEOM:
+    def ip_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> IP_GEOM:
         """Get the IP-EOM object.
 
         Args:
@@ -66,9 +66,9 @@ class GEBCC(BaseEBCC):
         Returns:
             IP-EOM object.
         """
-        return geom.IP_GEOM(self, options=options, **kwargs)
+        return IP_GEOM(self, options=options, **kwargs)
 
-    def ea_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> geom.EA_GEOM:
+    def ea_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> EA_GEOM:
         """Get the EA-EOM object.
 
         Args:
@@ -78,9 +78,9 @@ class GEBCC(BaseEBCC):
         Returns:
             EA-EOM object.
         """
-        return geom.EA_GEOM(self, options=options, **kwargs)
+        return EA_GEOM(self, options=options, **kwargs)
 
-    def ee_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> geom.EE_GEOM:
+    def ee_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> EE_GEOM:
         """Get the EE-EOM object.
 
         Args:
@@ -90,7 +90,7 @@ class GEBCC(BaseEBCC):
         Returns:
             EE-EOM object.
         """
-        return geom.EE_GEOM(self, options=options, **kwargs)
+        return EE_GEOM(self, options=options, **kwargs)
 
     @staticmethod
     def _convert_mf(mf: SCF) -> GHF:
@@ -319,7 +319,9 @@ class GEBCC(BaseEBCC):
         Returns:
             GEBCC object.
         """
-        ucc = uebcc.UEBCC.from_rebcc(rcc)
+        from ebcc.cc.uebcc import UEBCC
+
+        ucc = UEBCC.from_rebcc(rcc)
         gcc = cls.from_uebcc(ucc)
         return gcc
 
@@ -336,7 +338,9 @@ class GEBCC(BaseEBCC):
         )
         return space
 
-    def _pack_codegen_kwargs(self, *extra_kwargs: dict[str, Any], eris: Optional[ERIsInputType] = None) -> dict[str, Any]:
+    def _pack_codegen_kwargs(
+        self, *extra_kwargs: dict[str, Any], eris: Optional[ERIsInputType] = None
+    ) -> dict[str, Any]:
         """Pack all the keyword arguments for the generated code."""
         kwargs = dict(
             f=self.fock,
@@ -403,7 +407,9 @@ class GEBCC(BaseEBCC):
 
         return amplitudes
 
-    def init_lams(self, amplitudes: Optional[Namespace[AmplitudeType]] = None) -> Namespace[AmplitudeType]:
+    def init_lams(
+        self, amplitudes: Optional[Namespace[AmplitudeType]] = None
+    ) -> Namespace[AmplitudeType]:
         """Initialise the cluster lambda amplitudes.
 
         Args:
@@ -539,7 +545,13 @@ class GEBCC(BaseEBCC):
 
         return res
 
-    def make_rdm1_f(self, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None, lambdas: Optional[Namespace[AmplitudeType]] = None, hermitise: bool = True) -> Any:
+    def make_rdm1_f(
+        self,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        lambdas: Optional[Namespace[AmplitudeType]] = None,
+        hermitise: bool = True,
+    ) -> Any:
         r"""Make the one-particle fermionic reduced density matrix :math:`\langle i^+ j \rangle`.
 
         Args:
@@ -580,7 +592,14 @@ class GEBCC(BaseEBCC):
 
         return dm
 
-    def make_eb_coup_rdm(self, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None, lambdas: Optional[Namespace[AmplitudeType]] = None, unshifted: bool = True, hermitise: bool = True) -> Any:
+    def make_eb_coup_rdm(
+        self,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        lambdas: Optional[Namespace[AmplitudeType]] = None,
+        unshifted: bool = True,
+        hermitise: bool = True,
+    ) -> Any:
         r"""Make the electron-boson coupling reduced density matrix :math:`\langle b^+ c^+ c b \rangle`.
 
         Args:
@@ -824,7 +843,9 @@ class GEBCC(BaseEBCC):
 
         return np.concatenate(vectors)
 
-    def vector_to_excitations_ip(self, vector: NDArray[float]) -> tuple[Namespace[AmplitudeType], ...]:
+    def vector_to_excitations_ip(
+        self, vector: NDArray[float]
+    ) -> tuple[Namespace[AmplitudeType], ...]:
         """Construct a namespace of IP-EOM excitations from a vector.
 
         Args:
@@ -853,7 +874,9 @@ class GEBCC(BaseEBCC):
 
         return tuple(excitations)
 
-    def vector_to_excitations_ea(self, vector: NDArray[float]) -> tuple[Namespace[AmplitudeType], ...]:
+    def vector_to_excitations_ea(
+        self, vector: NDArray[float]
+    ) -> tuple[Namespace[AmplitudeType], ...]:
         """Construct a namespace of EA-EOM excitations from a vector.
 
         Args:
@@ -882,7 +905,9 @@ class GEBCC(BaseEBCC):
 
         return tuple(excitations)
 
-    def vector_to_excitations_ee(self, vector: NDArray[float]) -> tuple[Namespace[AmplitudeType], ...]:
+    def vector_to_excitations_ee(
+        self, vector: NDArray[float]
+    ) -> tuple[Namespace[AmplitudeType], ...]:
         """Construct a namespace of EE-EOM excitations from a vector.
 
         Args:

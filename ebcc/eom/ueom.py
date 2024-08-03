@@ -1,32 +1,49 @@
-"""Unrestricted equation-of-motion solver."""
+"""Unrestricted equation-of-motion coupled cluster."""
 
-import warnings
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from ebcc import numpy as np
-from ebcc import reom, util
+from ebcc import util
+from ebcc.eom.base import BaseEA_EOM, BaseEE_EOM, BaseEOM, BaseIP_EOM, Options
 from ebcc.precision import types
 
+if TYPE_CHECKING:
+    from typing import Optional, Tuple, Union
 
-class UEOM(reom.REOM):
-    """Unrestricted equation-of-motion base class."""
+    from ebcc.cc.base import AmplitudeType, ERIsInputType
+    from ebcc.numpy.typing import NDArray
+    from ebcc.util import Namespace
 
-    def _argsort_guess(self, diag):
+
+class UEOM(BaseEOM):
+    """Unrestricted equation-of-motion coupled cluster."""
+
+    def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
+        """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
-            r_mf = self.vector_to_amplitudes(diag)[0]
-            size = r_mf.a.size + r_mf.b.size
-            arg = np.argsort(np.diag(diag[:size]))
+            r1 = self.vector_to_amplitudes(diag)[0]
+            arg = np.argsort(diag[: r1.a.size + r1.b.size])
         else:
             arg = np.argsort(diag)
-
         return arg
 
-    def _quasiparticle_weight(self, r1):
+    def _quasiparticle_weight(self, r1: AmplitudeType) -> float:
+        """Get the quasiparticle weight."""
         return np.linalg.norm(r1.a) ** 2 + np.linalg.norm(r1.b) ** 2
 
-    def moments(self, nmom, eris=None, amplitudes=None, hermitise=True):
+    def moments(
+        self,
+        nmom: int,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Namespace[AmplitudeType] = None,
+        hermitise: bool = True,
+    ) -> NDArray[float]:
+        """Construct the moments of the EOM Hamiltonian."""
         if eris is None:
             eris = self.ebcc.get_eris()
-        if amplitudes is None:
+        if not amplitudes:
             amplitudes = self.ebcc.amplitudes
 
         bras = self.bras(eris=eris)
@@ -54,10 +71,18 @@ class UEOM(reom.REOM):
         return moments
 
 
-class IP_UEOM(UEOM, reom.IP_REOM):
-    """Unrestricted equation-of-motion class for ionisation potentials."""
+class IP_UEOM(UEOM, BaseIP_EOM):
+    """Unrestricted ionisation potential equation-of-motion coupled cluster."""
 
-    def diag(self, eris=None):
+    def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
+        """Get the diagonal of the Hamiltonian.
+
+        Args:
+            eris: Electronic repulsion integrals.
+
+        Returns:
+            Diagonal of the Hamiltonian.
+        """
         parts = []
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -72,8 +97,16 @@ class IP_UEOM(UEOM, reom.IP_REOM):
 
         return self.amplitudes_to_vector(*parts)
 
-    def bras(self, eris=None):
-        bras_raw = list(self._bras(eris=eris))
+    def bras(self, eris: Optional[ERIsInputType] = None) -> AmplitudeType:
+        """Get the bra vectors.
+
+        Args:
+            eris: Electronic repulsion integrals.
+
+        Returns:
+            Bra vectors.
+        """
+        bras_raw = list(self.ebcc.make_ip_mom_bras(eris=eris))
         bras = util.Namespace(a=[], b=[])
 
         for i in range(self.nmo):
@@ -120,8 +153,16 @@ class IP_UEOM(UEOM, reom.IP_REOM):
 
         return bras
 
-    def kets(self, eris=None):
-        kets_raw = list(self._kets(eris=eris))
+    def kets(self, eris: Optional[ERIsInputType] = None) -> AmplitudeType:
+        """Get the ket vectors.
+
+        Args:
+            eris: Electronic repulsion integrals.
+
+        Returns:
+            Ket vectors.
+        """
+        kets_raw = list(self.ebcc.make_ip_mom_kets(eris=eris))
         kets = util.Namespace(a=[], b=[])
 
         for i in range(self.nmo):
@@ -170,10 +211,18 @@ class IP_UEOM(UEOM, reom.IP_REOM):
         return kets
 
 
-class EA_UEOM(UEOM, reom.EA_REOM):
-    """Unrestricted equation-of-motion class for electron affinities."""
+class EA_UEOM(UEOM, BaseEA_EOM):
+    """Unrestricted electron affinity equation-of-motion coupled cluster."""
 
-    def diag(self, eris=None):
+    def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
+        """Get the diagonal of the Hamiltonian.
+
+        Args:
+            eris: Electronic repulsion integrals.
+
+        Returns:
+            Diagonal of the Hamiltonian.
+        """
         parts = []
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -188,8 +237,16 @@ class EA_UEOM(UEOM, reom.EA_REOM):
 
         return self.amplitudes_to_vector(*parts)
 
-    def bras(self, eris=None):
-        bras_raw = list(self._bras(eris=eris))
+    def bras(self, eris: Optional[ERIsInputType] = None) -> AmplitudeType:
+        """Get the bra vectors.
+
+        Args:
+            eris: Electronic repulsion integrals.
+
+        Returns:
+            Bra vectors.
+        """
+        bras_raw = list(self.ebcc.make_ea_mom_bras(eris=eris))
         bras = util.Namespace(a=[], b=[])
 
         for i in range(self.nmo):
@@ -236,8 +293,16 @@ class EA_UEOM(UEOM, reom.EA_REOM):
 
         return bras
 
-    def kets(self, eris=None):
-        kets_raw = list(self._kets(eris=eris))
+    def kets(self, eris: Optional[ERIsInputType] = None) -> AmplitudeType:
+        """Get the ket vectors.
+
+        Args:
+            eris: Electronic repulsion integrals.
+
+        Returns:
+            Ket vectors.
+        """
+        kets_raw = list(self.ebcc.make_ea_mom_kets(eris=eris))
         kets = util.Namespace(a=[], b=[])
 
         for i in range(self.nmo):
@@ -286,13 +351,22 @@ class EA_UEOM(UEOM, reom.EA_REOM):
         return kets
 
 
-class EE_UEOM(UEOM, reom.EE_REOM):
-    """Unrestricted equation-of-motion class for neutral excitations."""
+class EE_UEOM(UEOM, BaseEE_EOM):
+    """Unrestricted electron-electron equation-of-motion coupled cluster."""
 
-    def _quasiparticle_weight(self, r1):
+    def _quasiparticle_weight(self, r1: AmplitudeType) -> float:
+        """Get the quasiparticle weight."""
         return np.linalg.norm(r1.aa) ** 2 + np.linalg.norm(r1.bb) ** 2
 
-    def diag(self, eris=None):
+    def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
+        """Get the diagonal of the Hamiltonian.
+
+        Args:
+            eris: Electronic repulsion integrals.
+
+        Returns:
+            Diagonal of the Hamiltonian.
+        """
         parts = []
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -306,175 +380,24 @@ class EE_UEOM(UEOM, reom.EE_REOM):
 
         return self.amplitudes_to_vector(*parts)
 
-    def bras(self, eris=None):  # pragma: no cover
+    def bras(self, eris: Optional[ERIsInputType] = None) -> AmplitudeType:
+        """Get the bra vectors.
+
+        Args:
+            eris: Electronic repulsion integrals.
+
+        Returns:
+            Bra vectors.
+        """
         raise util.ModelNotImplemented("EE moments for UEBCC not working.")
 
-        bras_raw = list(self.ebcc.make_ee_mom_bras(eris=eris))
-        bras = util.Namespace(aa=[], bb=[])
+    def kets(self, eris: Optional[ERIsInputType] = None) -> AmplitudeType:
+        """Get the ket vectors.
 
-        for i in range(self.nmo):
-            for j in range(self.nmo):
-                amps_aa = []
-                amps_bb = []
+        Args:
+            eris: Electronic repulsion integrals.
 
-                m = 0
-                for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-                    amp_aa = util.Namespace()
-                    amp_bb = util.Namespace()
-                    for spin in util.generate_spin_combinations(n):
-                        shape = tuple(
-                            [
-                                *[self.space["ab".index(s)].ncocc for s in spin[:n]],
-                                *[self.space["ab".index(s)].ncvir for s in spin[n:]],
-                            ]
-                        )
-                        setattr(
-                            amp_aa,
-                            spin,
-                            getattr(
-                                bras_raw[m],
-                                "aa" + spin,
-                                {(i, j): np.zeros(shape, dtype=types[float])},
-                            )[i, j],
-                        )
-                        setattr(
-                            amp_bb,
-                            spin,
-                            getattr(
-                                bras_raw[m],
-                                "bb" + spin,
-                                {(i, j): np.zeros(shape, dtype=types[float])},
-                            )[i, j],
-                        )
-                    amps_aa.append(amp_aa)
-                    amps_bb.append(amp_bb)
-                    m += 1
-
-                for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
-                    raise util.ModelNotImplemented
-
-                for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
-                    spin_type=self.spin_type
-                ):
-                    raise util.ModelNotImplemented
-
-                bras.aa.append(self.amplitudes_to_vector(*amps_aa))
-                bras.bb.append(self.amplitudes_to_vector(*amps_bb))
-
-        bras.aa = np.array(bras.aa)
-        bras.bb = np.array(bras.bb)
-
-        bras.aa = bras.aa.reshape(self.nmo, self.nmo, *bras.aa.shape[1:])
-        bras.bb = bras.bb.reshape(self.nmo, self.nmo, *bras.bb.shape[1:])
-
-        return bras
-
-    def kets(self, eris=None):  # pragma: no cover
+        Returns:
+            Ket vectors.
+        """
         raise util.ModelNotImplemented("EE moments for UEBCC not working.")
-
-        kets_raw = list(self.ebcc.make_ee_mom_kets(eris=eris))
-        kets = util.Namespace(aa=[], bb=[])
-
-        for i in range(self.nmo):
-            for j in range(self.nmo):
-                k = (Ellipsis, i, j)
-                amps_aa = []
-                amps_bb = []
-
-                m = 0
-                for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-                    amp_aa = util.Namespace()
-                    amp_bb = util.Namespace()
-                    for spin in util.generate_spin_combinations(n):
-                        shape = tuple(
-                            [
-                                *[self.space["ab".index(s)].ncocc for s in spin[:n]],
-                                *[self.space["ab".index(s)].ncvir for s in spin[n:]],
-                            ]
-                        )
-                        setattr(
-                            amp_aa,
-                            spin,
-                            getattr(
-                                kets_raw[m], spin + "aa", {k: np.zeros(shape, dtype=types[float])}
-                            )[k],
-                        )
-                        setattr(
-                            amp_bb,
-                            spin,
-                            getattr(
-                                kets_raw[m], spin + "bb", {k: np.zeros(shape, dtype=types[float])}
-                            )[k],
-                        )
-                    amps_aa.append(amp_aa)
-                    amps_bb.append(amp_bb)
-                    m += 1
-
-                for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
-                    raise util.ModelNotImplemented
-
-                for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
-                    spin_type=self.spin_type
-                ):
-                    raise util.ModelNotImplemented
-
-                kets.aa.append(self.amplitudes_to_vector(*amps_aa))
-                kets.bb.append(self.amplitudes_to_vector(*amps_bb))
-
-        kets.aa = np.array(kets.aa)
-        kets.bb = np.array(kets.bb)
-
-        kets.aa = kets.aa.reshape(self.nmo, self.nmo, *kets.aa.shape[1:])
-        kets.bb = kets.bb.reshape(self.nmo, self.nmo, *kets.bb.shape[1:])
-
-        return kets
-
-    def moments(
-        self,
-        nmom,
-        eris=None,
-        amplitudes=None,
-        hermitise=True,
-        diagonal_only=True,
-    ):  # pragma: no cover
-        raise util.ModelNotImplemented("EE moments for UEBCC not working.")
-
-        if not diagonal_only:
-            warnings.warn(
-                "Constructing EE moments with `diagonal_only=False` will be very slow.",
-                stacklevel=2,
-            )
-
-        if eris is None:
-            eris = self.ebcc.get_eris()
-        if amplitudes is None:
-            amplitudes = self.ebcc.amplitudes
-
-        bras = self.bras(eris=eris)
-        kets = self.kets(eris=eris)
-
-        moments = util.Namespace(
-            aaaa=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo), dtype=types[float]),
-            aabb=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo), dtype=types[float]),
-            bbaa=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo), dtype=types[float]),
-            bbbb=np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo), dtype=types[float]),
-        )
-
-        for spin in util.generate_spin_combinations(2):
-            spin = util.permute_string(spin, (0, 2, 1, 3))
-            for k in range(self.nmo):
-                for l in [k] if diagonal_only else range(self.nmo):
-                    ket = getattr(kets, spin[2:])[k, l]
-                    for n in range(nmom):
-                        for i in range(self.nmo):
-                            for j in [i] if diagonal_only else range(self.nmo):
-                                bra = getattr(bras, spin[:2])[i, j]
-                                getattr(moments, spin)[n, i, j, k, l] = self.dot_braket(bra, ket)
-                        if n != (nmom - 1):
-                            ket = self.matvec(ket, eris=eris)
-
-            if hermitise:
-                m = getattr(moments, spin)
-                setattr(moments, spin, 0.5 * (m + m.transpose(0, 3, 4, 1, 2)))
-
-        return moments

@@ -9,13 +9,14 @@ from pyscf import lib
 
 from ebcc import default_log, init_logging
 from ebcc import numpy as np
-from ebcc import reom, util
+from ebcc import util
 from ebcc.ansatz import Ansatz
 from ebcc.brueckner import BruecknerREBCC
 from ebcc.cc.base import BaseEBCC
 from ebcc.cderis import RCDERIs
 from ebcc.damping import DIIS
 from ebcc.dump import Dump
+from ebcc.eom import EA_REOM, EE_REOM, IP_REOM
 from ebcc.eris import RERIs
 from ebcc.fock import RFock
 from ebcc.logging import ANSI
@@ -60,7 +61,7 @@ class REBCC(BaseEBCC):
         """Get a string representation of the spin type."""
         return "R"
 
-    def ip_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> reom.IP_REOM:
+    def ip_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> IP_REOM:
         """Get the IP-EOM object.
 
         Args:
@@ -70,9 +71,9 @@ class REBCC(BaseEBCC):
         Returns:
             IP-EOM object.
         """
-        return reom.IP_REOM(self, options=options, **kwargs)
+        return IP_REOM(self, options=options, **kwargs)
 
-    def ea_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> reom.EA_REOM:
+    def ea_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> EA_REOM:
         """Get the EA-EOM object.
 
         Args:
@@ -82,9 +83,9 @@ class REBCC(BaseEBCC):
         Returns:
             EA-EOM object.
         """
-        return reom.EA_REOM(self, options=options, **kwargs)
+        return EA_REOM(self, options=options, **kwargs)
 
-    def ee_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> reom.EE_REOM:
+    def ee_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> EE_REOM:
         """Get the EE-EOM object.
 
         Args:
@@ -94,7 +95,7 @@ class REBCC(BaseEBCC):
         Returns:
             EE-EOM object.
         """
-        return reom.EE_REOM(self, options=options, **kwargs)
+        return EE_REOM(self, options=options, **kwargs)
 
     @staticmethod
     def _convert_mf(mf: SCF) -> RHF:
@@ -114,7 +115,9 @@ class REBCC(BaseEBCC):
         )
         return space
 
-    def _pack_codegen_kwargs(self, *extra_kwargs: dict[str, Any], eris: Optional[ERIsInputType] = None) -> dict[str, Any]:
+    def _pack_codegen_kwargs(
+        self, *extra_kwargs: dict[str, Any], eris: Optional[ERIsInputType] = None
+    ) -> dict[str, Any]:
         """Pack all the keyword arguments for the generated code."""
         kwargs = dict(
             f=self.fock,
@@ -185,7 +188,9 @@ class REBCC(BaseEBCC):
 
         return amplitudes
 
-    def init_lams(self, amplitudes: Optional[Namespace[AmplitudeType]] = None) -> Namespace[AmplitudeType]:
+    def init_lams(
+        self, amplitudes: Optional[Namespace[AmplitudeType]] = None
+    ) -> Namespace[AmplitudeType]:
         """Initialise the cluster lambda amplitudes.
 
         Args:
@@ -321,7 +326,13 @@ class REBCC(BaseEBCC):
 
         return res
 
-    def make_rdm1_f(self, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None, lambdas: Optional[Namespace[AmplitudeType]] = None, hermitise: bool = True) -> Any:
+    def make_rdm1_f(
+        self,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        lambdas: Optional[Namespace[AmplitudeType]] = None,
+        hermitise: bool = True,
+    ) -> Any:
         r"""Make the one-particle fermionic reduced density matrix :math:`\langle i^+ j \rangle`.
 
         Args:
@@ -346,7 +357,13 @@ class REBCC(BaseEBCC):
 
         return dm
 
-    def make_rdm2_f(self, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None, lambdas: Optional[Namespace[AmplitudeType]] = None, hermitise: bool = True) -> Any:
+    def make_rdm2_f(
+        self,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        lambdas: Optional[Namespace[AmplitudeType]] = None,
+        hermitise: bool = True,
+    ) -> Any:
         r"""Make the two-particle fermionic reduced density matrix :math:`\langle i^+j^+lk \rangle`.
 
         Args:
@@ -372,7 +389,14 @@ class REBCC(BaseEBCC):
 
         return dm
 
-    def make_eb_coup_rdm(self, eris: Optional[ERIsInputType] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None, lambdas: Optional[Namespace[AmplitudeType]] = None, unshifted: bool = True, hermitise: bool = True) -> Any:
+    def make_eb_coup_rdm(
+        self,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        lambdas: Optional[Namespace[AmplitudeType]] = None,
+        unshifted: bool = True,
+        hermitise: bool = True,
+    ) -> Any:
         r"""Make the electron-boson coupling reduced density matrix :math:`\langle b^+ c^+ c b \rangle`.
 
         Args:
@@ -602,7 +626,9 @@ class REBCC(BaseEBCC):
         """
         return self.excitations_to_vector_ip(*excitations)
 
-    def vector_to_excitations_ip(self, vector: NDArray[float]) -> tuple[Namespace[AmplitudeType], ...]:
+    def vector_to_excitations_ip(
+        self, vector: NDArray[float]
+    ) -> tuple[Namespace[AmplitudeType], ...]:
         """Construct a namespace of IP-EOM excitations from a vector.
 
         Args:
@@ -629,7 +655,9 @@ class REBCC(BaseEBCC):
 
         return tuple(excitations)
 
-    def vector_to_excitations_ea(self, vector: NDArray[float]) -> tuple[Namespace[AmplitudeType], ...]:
+    def vector_to_excitations_ea(
+        self, vector: NDArray[float]
+    ) -> tuple[Namespace[AmplitudeType], ...]:
         """Construct a namespace of EA-EOM excitations from a vector.
 
         Args:
@@ -656,7 +684,9 @@ class REBCC(BaseEBCC):
 
         return tuple(excitations)
 
-    def vector_to_excitations_ee(self, vector: NDArray[float]) -> tuple[Namespace[AmplitudeType], ...]:
+    def vector_to_excitations_ee(
+        self, vector: NDArray[float]
+    ) -> tuple[Namespace[AmplitudeType], ...]:
         """Construct a namespace of EE-EOM excitations from a vector.
 
         Args:

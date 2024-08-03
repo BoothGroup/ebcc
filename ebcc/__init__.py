@@ -46,9 +46,7 @@ from ebcc.logging import NullLogger, default_log, init_logging
 # --- Import NumPy here to allow drop-in replacements
 
 
-
 # --- Logging:
-
 
 
 # --- Types of ansatz supporting by the EBCC solvers:
