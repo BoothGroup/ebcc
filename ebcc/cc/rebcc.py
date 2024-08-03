@@ -12,10 +12,10 @@ from ebcc.cc.base import BaseEBCC
 from ebcc.cderis import RCDERIs
 from ebcc.eom import EA_REOM, EE_REOM, IP_REOM
 from ebcc.eris import RERIs
-from ebcc.fock import RFock
+from ebcc.ham import Space
+from ebcc.ham.fock import RFock
 from ebcc.opt.rbrueckner import BruecknerREBCC
 from ebcc.precision import types
-from ebcc.space import Space
 
 if TYPE_CHECKING:
     from typing import Optional

@@ -12,7 +12,7 @@ from ebcc.precision import types
 if TYPE_CHECKING:
     from typing import Optional
 
-    from ebcc.cc.base import AmplitudeType, ERIsInputType
+    from ebcc.cc.uebcc import AmplitudeType, ERIsInputType
     from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
 

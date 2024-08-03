@@ -11,10 +11,10 @@ from ebcc import util
 from ebcc.cc.base import BaseEBCC
 from ebcc.eom import EA_GEOM, EE_GEOM, IP_GEOM
 from ebcc.eris import GERIs
-from ebcc.fock import GFock
+from ebcc.ham import Space
+from ebcc.ham.fock import GFock
 from ebcc.opt.gbrueckner import BruecknerGEBCC
 from ebcc.precision import types
-from ebcc.space import Space
 
 if TYPE_CHECKING:
     from typing import Optional

@@ -4,22 +4,21 @@
 import itertools
 import os
 import pickle
-import unittest
 import tempfile
+import unittest
 
 import numpy as np
 import pytest
 import scipy.linalg
-from pyscf import cc, gto, lib, scf
+from pyscf import cc, gto, scf
 
 from ebcc import REBCC, NullLogger, Space
-from ebcc.space import construct_fno_space
+from ebcc.ham.space import construct_fno_space
 
 
 @pytest.mark.reference
 class RCCSD_Tests(unittest.TestCase):
-    """Test RCCSD against the legacy GCCSD values.
-    """
+    """Test RCCSD against the legacy GCCSD values."""
 
     @classmethod
     def setUpClass(cls):
@@ -41,18 +40,18 @@ class RCCSD_Tests(unittest.TestCase):
         mf.mo_coeff = mo_coeff
 
         ccsd = REBCC(
-                mf,
-                ansatz="CCSD",
-                log=NullLogger(),
+            mf,
+            ansatz="CCSD",
+            log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-10
         eris = ccsd.get_eris()
         ccsd.kernel(eris=eris)
         ccsd.solve_lambda(eris=eris)
 
-        osort = list(itertools.chain(*zip(range(ccsd.nocc), range(ccsd.nocc, 2*ccsd.nocc))))
-        vsort = list(itertools.chain(*zip(range(ccsd.nvir), range(ccsd.nvir, 2*ccsd.nvir))))
-        fsort = list(itertools.chain(*zip(range(ccsd.nmo), range(ccsd.nmo, 2*ccsd.nmo))))
+        osort = list(itertools.chain(*zip(range(ccsd.nocc), range(ccsd.nocc, 2 * ccsd.nocc))))
+        vsort = list(itertools.chain(*zip(range(ccsd.nvir), range(ccsd.nvir, 2 * ccsd.nvir))))
+        fsort = list(itertools.chain(*zip(range(ccsd.nmo), range(ccsd.nmo, 2 * ccsd.nmo))))
 
         cls.mf, cls.ccsd, cls.eris, cls.data = mf, ccsd, eris, data
         cls.osort, cls.vsort, cls.fsort = osort, vsort, fsort
@@ -84,7 +83,7 @@ class RCCSD_Tests(unittest.TestCase):
         b = scipy.linalg.block_diag(self.ccsd.l1, self.ccsd.l1)[self.vsort][:, self.osort]
         np.testing.assert_almost_equal(a, b, 6)
 
-    #def test_ip_moments(self):
+    # def test_ip_moments(self):
     #    eom = self.ccsd.ip_eom()
     #    ip_moms = eom.moments(4)
     #    a = self.data[True]["ip_moms"].transpose(2, 0, 1)
@@ -110,7 +109,7 @@ class RCCSD_Tests(unittest.TestCase):
     #        y /= np.max(np.abs(y))
     #        np.testing.assert_almost_equal(x, y, 6)
 
-    #def test_ea_moments(self):
+    # def test_ea_moments(self):
     #    eom = self.ccsd.ea_eom()
     #    ea_moms = eom.moments(4)
     #    a = self.data[True]["ea_moms"].transpose(2, 0, 1)
@@ -127,13 +126,13 @@ class RCCSD_Tests(unittest.TestCase):
     #        y /= np.max(np.abs(y))
     #        np.testing.assert_almost_equal(x, y, 6)
 
-    #def test_ip_1mom(self):
+    # def test_ip_1mom(self):
     #    ip_1mom = self.ccsd.make_ip_1mom()
     #    a = self.data[True]["ip_1mom"]
     #    b = scipy.linalg.block_diag(ip_1mom, ip_1mom)
     #    np.testing.assert_almost_equal(a, b, 6)
 
-    #def test_ea_1mom(self):
+    # def test_ea_1mom(self):
     #    ea_1mom = self.ccsd.make_ea_1mom()
     #    a = self.data[True]["ea_1mom"]
     #    b = sceay.linalg.block_diag(ea_1mom, ea_1mom)
@@ -142,14 +141,13 @@ class RCCSD_Tests(unittest.TestCase):
 
 @pytest.mark.reference
 class RCCSD_PySCF_Tests(unittest.TestCase):
-    """Test RCCSD against the PySCF values.
-    """
+    """Test RCCSD against the PySCF values."""
 
     @classmethod
     def setUpClass(cls):
         mol = gto.Mole()
         mol.atom = "O 0.0 0.0 0.11779; H 0.0 0.755453 -0.471161; H 0.0 -0.755453 -0.471161"
-        #mol.atom = "Li 0 0 0; H 0 0 1.4"
+        # mol.atom = "Li 0 0 0; H 0 0 1.4"
         mol.basis = "cc-pvdz"
         mol.verbose = 0
         mol.build()
@@ -166,9 +164,9 @@ class RCCSD_PySCF_Tests(unittest.TestCase):
         ccsd_ref.solve_lambda()
 
         ccsd = REBCC(
-                mf,
-                ansatz="CCSD",
-                log=NullLogger(),
+            mf,
+            ansatz="CCSD",
+            log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-10
         eris = ccsd.get_eris()
@@ -222,13 +220,13 @@ class RCCSD_PySCF_Tests(unittest.TestCase):
         b = self.ccsd.make_rdm2_f(eris=self.eris)
         np.testing.assert_almost_equal(a, b, 6, verbose=True)
 
-    #def test_eom_ip(self):
+    # def test_eom_ip(self):
     #    eom = self.ccsd.ip_eom(nroots=5)
     #    e1 = eom.kernel()
     #    e2, v2 = self.ccsd_ref.ipccsd(nroots=5)
     #    self.assertAlmostEqual(e1[0], e2[0], 6)
 
-    #def test_eom_ea(self):
+    # def test_eom_ea(self):
     #    eom = self.ccsd.ea_eom(nroots=5)
     #    e1 = eom.kernel()
     #    e2, v2 = self.ccsd_ref.eaccsd(nroots=5)
@@ -237,14 +235,13 @@ class RCCSD_PySCF_Tests(unittest.TestCase):
 
 @pytest.mark.reference
 class FNORCCSD_PySCF_Tests(RCCSD_PySCF_Tests):
-    """Test FNO-RCCSD against the PySCF values.
-    """
+    """Test FNO-RCCSD against the PySCF values."""
 
     @classmethod
     def setUpClass(cls):
         mol = gto.Mole()
         mol.atom = "O 0.0 0.0 0.11779; H 0.0 0.755453 -0.471161; H 0.0 -0.755453 -0.471161"
-        #mol.atom = "Li 0 0 0; H 0 0 1.4"
+        # mol.atom = "Li 0 0 0; H 0 0 1.4"
         mol.basis = "cc-pvdz"
         mol.verbose = 0
         mol.build()
@@ -265,12 +262,12 @@ class FNORCCSD_PySCF_Tests(RCCSD_PySCF_Tests):
         no_coeff = ccsd_ref.mo_coeff
 
         ccsd = REBCC(
-                mf,
-                mo_coeff=no_coeff,
-                mo_occ=no_occ,
-                space=no_space,
-                ansatz="CCSD",
-                log=NullLogger(),
+            mf,
+            mo_coeff=no_coeff,
+            mo_occ=no_occ,
+            space=no_space,
+            ansatz="CCSD",
+            log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-10
         eris = ccsd.get_eris()
@@ -292,8 +289,7 @@ class FNORCCSD_PySCF_Tests(RCCSD_PySCF_Tests):
 
 @pytest.mark.reference
 class RCCSD_PySCF_Frozen_Tests(unittest.TestCase):
-    """Test RCCSD against the PySCF values with frozen orbitals.
-    """
+    """Test RCCSD against the PySCF values with frozen orbitals."""
 
     @classmethod
     def setUpClass(cls):
@@ -321,16 +317,16 @@ class RCCSD_PySCF_Frozen_Tests(unittest.TestCase):
         ccsd_ref.solve_lambda()
 
         space = Space(
-                mf.mo_occ > 0,
-                frozen,
-                np.zeros_like(mf.mo_occ),
+            mf.mo_occ > 0,
+            frozen,
+            np.zeros_like(mf.mo_occ),
         )
 
         ccsd = REBCC(
-                mf,
-                ansatz="CCSD",
-                space=space,
-                log=NullLogger(),
+            mf,
+            ansatz="CCSD",
+            space=space,
+            log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-13
         eris = ccsd.get_eris()
@@ -387,14 +383,13 @@ class RCCSD_PySCF_Frozen_Tests(unittest.TestCase):
 
 @pytest.mark.reference
 class RCCSD_Dump_Tests(RCCSD_PySCF_Tests):
-    """Test RCCSD against PySCF after dumping and loading.
-    """
+    """Test RCCSD against PySCF after dumping and loading."""
 
     @classmethod
     def setUpClass(cls):
         mol = gto.Mole()
         mol.atom = "O 0.0 0.0 0.11779; H 0.0 0.755453 -0.471161; H 0.0 -0.755453 -0.471161"
-        #mol.atom = "Li 0 0 0; H 0 0 1.4"
+        # mol.atom = "Li 0 0 0; H 0 0 1.4"
         mol.basis = "cc-pvdz"
         mol.verbose = 0
         mol.build()
@@ -411,9 +406,9 @@ class RCCSD_Dump_Tests(RCCSD_PySCF_Tests):
         ccsd_ref.solve_lambda()
 
         ccsd = REBCC(
-                mf,
-                ansatz="CCSD",
-                log=NullLogger(),
+            mf,
+            ansatz="CCSD",
+            log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-10
         eris = ccsd.get_eris()

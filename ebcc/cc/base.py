@@ -20,11 +20,10 @@ if TYPE_CHECKING:
 
     from pyscf.scf.hf import SCF  # type: ignore
 
-    from ebcc.base import BruecknerEBCC as BaseBrueckner
-    from ebcc.base import ERIs as BaseERIs
-    from ebcc.base import Fock as BaseFock
+    from ebcc.ham.base import BaseERIs, BaseFock
     from ebcc.logging import Logger
     from ebcc.numpy.typing import NDArray  # type: ignore
+    from ebcc.opt.base import BaseBruecknerEBCC
     from ebcc.util import Namespace
 
     ERIsInputType = Union[type[BaseERIs], NDArray[float]]
@@ -75,7 +74,7 @@ class BaseEBCC(ABC):
     ERIs: type[BaseERIs]
     Fock: type[BaseFock]
     CDERIs: type[BaseERIs]
-    Brueckner: type[BaseBrueckner]
+    Brueckner: type[BaseBruecknerEBCC]
 
     # Attributes
     space: SpaceType

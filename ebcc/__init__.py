@@ -109,8 +109,8 @@ del _factory
 # --- Other imports:
 
 from ebcc.ansatz import Ansatz
-from ebcc.brueckner import BruecknerGEBCC, BruecknerREBCC, BruecknerUEBCC
-from ebcc.space import Space
+from ebcc.ham import Space
+from ebcc.opt import BruecknerGEBCC, BruecknerREBCC, BruecknerUEBCC
 
 # --- List available methods:
 

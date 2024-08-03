@@ -5,7 +5,7 @@ from pyscf.lib.chkfile import dump, dump_mol, load, load_mol
 
 from ebcc import util
 from ebcc.ansatz import Ansatz
-from ebcc.space import Space
+from ebcc.ham import Space
 
 
 class Dump:
