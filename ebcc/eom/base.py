@@ -14,7 +14,7 @@ from ebcc.logging import ANSI
 from ebcc.precision import types
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Optional, TypeVar, Union
+    from typing import Any, Callable, Optional
 
     from ebcc.cc.base import AmplitudeType, BaseEBCC, ERIsInputType
     from ebcc.numpy.typing import NDArray
@@ -206,16 +206,16 @@ class BaseEOM(ABC):
             Function to pick the eigenvalues.
         """
         if self.options.koopmans:
-            assert guesses is None
+            assert guesses is not None
             guesses_array = np.asarray(guesses)
 
             def pick(
                 w: NDArray[float], v: NDArray[float], nroots: int, env: dict[str, Any]
             ) -> tuple[NDArray[float], NDArray[float], int]:
                 """Pick the eigenvalues."""
-                x0 = lib.linalg_helper._gen_x0(envs["v"], envs["xs"])
+                x0 = lib.linalg_helper._gen_x0(env["v"], env["xs"])
                 x0 = np.asarray(x0)
-                s = np.dot(g.conj(), x0.T)
+                s = np.dot(guesses_array.conj(), x0.T)
                 s = util.einsum("pi,qi->i", s.conj(), s)
                 idx = np.argsort(-s)[:nroots]
                 return lib.linalg_helper._eigs_cmplx2real(w, v, idx, real_system)
@@ -354,8 +354,18 @@ class BaseEOM(ABC):
         eris: Optional[ERIsInputType] = None,
         amplitudes: Namespace[AmplitudeType] = None,
         hermitise: bool = True,
-    ) -> NDArray[float]:
-        """Construct the moments of the EOM Hamiltonian."""
+    ) -> AmplitudeType:
+        """Construct the moments of the EOM Hamiltonian.
+
+        Args:
+            nmom: Number of moments.
+            eris: Electronic repulsion integrals.
+            amplitudes: Cluster amplitudes.
+            hermitise: Hermitise the moments.
+
+        Returns:
+            Moments of the EOM Hamiltonian.
+        """
         pass
 
     @property

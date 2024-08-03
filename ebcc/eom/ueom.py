@@ -6,11 +6,11 @@ from typing import TYPE_CHECKING
 
 from ebcc import numpy as np
 from ebcc import util
-from ebcc.eom.base import BaseEA_EOM, BaseEE_EOM, BaseEOM, BaseIP_EOM, Options
+from ebcc.eom.base import BaseEA_EOM, BaseEE_EOM, BaseEOM, BaseIP_EOM
 from ebcc.precision import types
 
 if TYPE_CHECKING:
-    from typing import Optional, Tuple, Union
+    from typing import Optional
 
     from ebcc.cc.base import AmplitudeType, ERIsInputType
     from ebcc.numpy.typing import NDArray
@@ -32,43 +32,6 @@ class UEOM(BaseEOM):
     def _quasiparticle_weight(self, r1: AmplitudeType) -> float:
         """Get the quasiparticle weight."""
         return np.linalg.norm(r1.a) ** 2 + np.linalg.norm(r1.b) ** 2
-
-    def moments(
-        self,
-        nmom: int,
-        eris: Optional[ERIsInputType] = None,
-        amplitudes: Namespace[AmplitudeType] = None,
-        hermitise: bool = True,
-    ) -> NDArray[float]:
-        """Construct the moments of the EOM Hamiltonian."""
-        if eris is None:
-            eris = self.ebcc.get_eris()
-        if not amplitudes:
-            amplitudes = self.ebcc.amplitudes
-
-        bras = self.bras(eris=eris)
-        kets = self.kets(eris=eris)
-
-        moments = util.Namespace(
-            aa=np.zeros((nmom, self.nmo, self.nmo), dtype=types[float]),
-            bb=np.zeros((nmom, self.nmo, self.nmo), dtype=types[float]),
-        )
-
-        for spin in util.generate_spin_combinations(1):
-            for j in range(self.nmo):
-                ket = getattr(kets, spin[1])[j]
-                for n in range(nmom):
-                    for i in range(self.nmo):
-                        bra = getattr(bras, spin[0])[i]
-                        getattr(moments, spin)[n, i, j] = self.dot_braket(bra, ket)
-                    if n != (nmom - 1):
-                        ket = self.matvec(ket, eris=eris)
-
-            if hermitise:
-                t = getattr(moments, spin)
-                setattr(moments, spin, 0.5 * (t + t.swapaxes(1, 2)))
-
-        return moments
 
 
 class IP_UEOM(UEOM, BaseIP_EOM):
@@ -210,6 +173,53 @@ class IP_UEOM(UEOM, BaseIP_EOM):
 
         return kets
 
+    def moments(
+        self,
+        nmom: int,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Namespace[AmplitudeType] = None,
+        hermitise: bool = True,
+    ) -> NDArray[float]:
+        """Construct the moments of the EOM Hamiltonian.
+
+        Args:
+            nmom: Number of moments.
+            eris: Electronic repulsion integrals.
+            amplitudes: Cluster amplitudes.
+            hermitise: Hermitise the moments.
+
+        Returns:
+            Moments of the EOM Hamiltonian.
+        """
+        if eris is None:
+            eris = self.ebcc.get_eris()
+        if not amplitudes:
+            amplitudes = self.ebcc.amplitudes
+
+        bras = self.bras(eris=eris)
+        kets = self.kets(eris=eris)
+
+        moments = util.Namespace(
+            aa=np.zeros((nmom, self.nmo, self.nmo), dtype=types[float]),
+            bb=np.zeros((nmom, self.nmo, self.nmo), dtype=types[float]),
+        )
+
+        for spin in util.generate_spin_combinations(1):
+            for j in range(self.nmo):
+                ket = getattr(kets, spin[1])[j]
+                for n in range(nmom):
+                    for i in range(self.nmo):
+                        bra = getattr(bras, spin[0])[i]
+                        getattr(moments, spin)[n, i, j] = self.dot_braket(bra, ket)
+                    if n != (nmom - 1):
+                        ket = self.matvec(ket, eris=eris)
+
+            if hermitise:
+                t = getattr(moments, spin)
+                setattr(moments, spin, 0.5 * (t + t.swapaxes(1, 2)))
+
+        return moments
+
 
 class EA_UEOM(UEOM, BaseEA_EOM):
     """Unrestricted electron affinity equation-of-motion coupled cluster."""
@@ -350,6 +360,53 @@ class EA_UEOM(UEOM, BaseEA_EOM):
 
         return kets
 
+    def moments(
+        self,
+        nmom: int,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Namespace[AmplitudeType] = None,
+        hermitise: bool = True,
+    ) -> NDArray[float]:
+        """Construct the moments of the EOM Hamiltonian.
+
+        Args:
+            nmom: Number of moments.
+            eris: Electronic repulsion integrals.
+            amplitudes: Cluster amplitudes.
+            hermitise: Hermitise the moments.
+
+        Returns:
+            Moments of the EOM Hamiltonian.
+        """
+        if eris is None:
+            eris = self.ebcc.get_eris()
+        if not amplitudes:
+            amplitudes = self.ebcc.amplitudes
+
+        bras = self.bras(eris=eris)
+        kets = self.kets(eris=eris)
+
+        moments = util.Namespace(
+            aa=np.zeros((nmom, self.nmo, self.nmo), dtype=types[float]),
+            bb=np.zeros((nmom, self.nmo, self.nmo), dtype=types[float]),
+        )
+
+        for spin in util.generate_spin_combinations(1):
+            for j in range(self.nmo):
+                ket = getattr(kets, spin[1])[j]
+                for n in range(nmom):
+                    for i in range(self.nmo):
+                        bra = getattr(bras, spin[0])[i]
+                        getattr(moments, spin)[n, i, j] = self.dot_braket(bra, ket)
+                    if n != (nmom - 1):
+                        ket = self.matvec(ket, eris=eris)
+
+            if hermitise:
+                t = getattr(moments, spin)
+                setattr(moments, spin, 0.5 * (t + t.swapaxes(1, 2)))
+
+        return moments
+
 
 class EE_UEOM(UEOM, BaseEE_EOM):
     """Unrestricted electron-electron equation-of-motion coupled cluster."""
@@ -399,5 +456,27 @@ class EE_UEOM(UEOM, BaseEE_EOM):
 
         Returns:
             Ket vectors.
+        """
+        raise util.ModelNotImplemented("EE moments for UEBCC not working.")
+
+    def moments(
+        self,
+        nmom: int,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Namespace[AmplitudeType] = None,
+        hermitise: bool = True,
+        diagonal_only: bool = True,
+    ) -> NDArray[float]:
+        """Construct the moments of the EOM Hamiltonian.
+
+        Args:
+            nmom: Number of moments.
+            eris: Electronic repulsion integrals.
+            amplitudes: Cluster amplitudes.
+            hermitise: Hermitise the moments.
+            diagonal_only: Only compute the diagonal elements.
+
+        Returns:
+            Moments of the EOM Hamiltonian.
         """
         raise util.ModelNotImplemented("EE moments for UEBCC not working.")
