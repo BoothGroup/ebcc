@@ -20,22 +20,24 @@ if TYPE_CHECKING:
 class GEOM(BaseEOM):
     """Generalised equation-of-motion coupled cluster."""
 
+    pass
+
+
+class IP_GEOM(GEOM, BaseIP_EOM):
+    """Generalised ionisation potential equation-of-motion coupled cluster."""
+
     def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)[0]
-            arg = np.argsort(diag[: r1.size])
+            arg = np.argsort(np.abs(diag[: r1.size]))
         else:
-            arg = np.argsort(diag)
+            arg = np.argsort(np.abs(diag))
         return arg
 
     def _quasiparticle_weight(self, r1: AmplitudeType) -> float:
         """Get the quasiparticle weight."""
         return np.linalg.norm(r1) ** 2
-
-
-class IP_GEOM(GEOM, BaseIP_EOM):
-    """Generalised ionisation potential equation-of-motion coupled cluster."""
 
     def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
         """Get the diagonal of the Hamiltonian.
@@ -133,6 +135,19 @@ class IP_GEOM(GEOM, BaseIP_EOM):
 class EA_GEOM(GEOM, BaseEA_EOM):
     """Generalised electron affinity equation-of-motion coupled cluster."""
 
+    def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
+        """Sort the diagonal to inform the initial guesses."""
+        if self.options.koopmans:
+            r1 = self.vector_to_amplitudes(diag)[0]
+            arg = np.argsort(np.abs(diag[: r1.size]))
+        else:
+            arg = np.argsort(np.abs(diag))
+        return arg
+
+    def _quasiparticle_weight(self, r1: AmplitudeType) -> float:
+        """Get the quasiparticle weight."""
+        return np.linalg.norm(r1) ** 2
+
     def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
         """Get the diagonal of the Hamiltonian.
 
@@ -229,6 +244,19 @@ class EA_GEOM(GEOM, BaseEA_EOM):
 class EE_GEOM(GEOM, BaseEE_EOM):
     """Generalised electron-electron equation-of-motion coupled cluster."""
 
+    def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
+        """Sort the diagonal to inform the initial guesses."""
+        if self.options.koopmans:
+            r1 = self.vector_to_amplitudes(diag)[0]
+            arg = np.argsort(diag[: r1.size])
+        else:
+            arg = np.argsort(diag)
+        return arg
+
+    def _quasiparticle_weight(self, r1: AmplitudeType) -> float:
+        """Get the quasiparticle weight."""
+        return np.linalg.norm(r1) ** 2
+
     def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
         """Get the diagonal of the Hamiltonian.
 
@@ -315,7 +343,7 @@ class EE_GEOM(GEOM, BaseEE_EOM):
 
         if eris is None:
             eris = self.ebcc.get_eris()
-        if amplitudes is None:
+        if not amplitudes:
             amplitudes = self.ebcc.amplitudes
 
         bras = self.bras(eris=eris)

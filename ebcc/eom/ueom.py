@@ -20,22 +20,24 @@ if TYPE_CHECKING:
 class UEOM(BaseEOM):
     """Unrestricted equation-of-motion coupled cluster."""
 
+    pass
+
+
+class IP_UEOM(UEOM, BaseIP_EOM):
+    """Unrestricted ionisation potential equation-of-motion coupled cluster."""
+
     def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)[0]
-            arg = np.argsort(diag[: r1.a.size + r1.b.size])
+            arg = np.argsort(np.abs(diag[: r1.a.size + r1.b.size]))
         else:
-            arg = np.argsort(diag)
+            arg = np.argsort(np.abs(diag))
         return arg
 
     def _quasiparticle_weight(self, r1: AmplitudeType) -> float:
         """Get the quasiparticle weight."""
         return np.linalg.norm(r1.a) ** 2 + np.linalg.norm(r1.b) ** 2
-
-
-class IP_UEOM(UEOM, BaseIP_EOM):
-    """Unrestricted ionisation potential equation-of-motion coupled cluster."""
 
     def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
         """Get the diagonal of the Hamiltonian.
@@ -224,6 +226,19 @@ class IP_UEOM(UEOM, BaseIP_EOM):
 class EA_UEOM(UEOM, BaseEA_EOM):
     """Unrestricted electron affinity equation-of-motion coupled cluster."""
 
+    def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
+        """Sort the diagonal to inform the initial guesses."""
+        if self.options.koopmans:
+            r1 = self.vector_to_amplitudes(diag)[0]
+            arg = np.argsort(np.abs(diag[: r1.a.size + r1.b.size]))
+        else:
+            arg = np.argsort(np.abs(diag))
+        return arg
+
+    def _quasiparticle_weight(self, r1: AmplitudeType) -> float:
+        """Get the quasiparticle weight."""
+        return np.linalg.norm(r1.a) ** 2 + np.linalg.norm(r1.b) ** 2
+
     def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
         """Get the diagonal of the Hamiltonian.
 
@@ -410,6 +425,15 @@ class EA_UEOM(UEOM, BaseEA_EOM):
 
 class EE_UEOM(UEOM, BaseEE_EOM):
     """Unrestricted electron-electron equation-of-motion coupled cluster."""
+
+    def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
+        """Sort the diagonal to inform the initial guesses."""
+        if self.options.koopmans:
+            r1 = self.vector_to_amplitudes(diag)[0]
+            arg = np.argsort(diag[: r1.aa.size + r1.bb.size])
+        else:
+            arg = np.argsort(diag)
+        return arg
 
     def _quasiparticle_weight(self, r1: AmplitudeType) -> float:
         """Get the quasiparticle weight."""

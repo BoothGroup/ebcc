@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class Options:
+class BaseOptions:
     """Options for EOM calculations.
 
     Args:
@@ -54,7 +54,7 @@ class BaseEOM(ABC):
     """
 
     # Types
-    Options = Options
+    Options = BaseOptions
 
     def __init__(
         self,
@@ -244,7 +244,7 @@ class BaseEOM(ABC):
         """Get the quasiparticle weight."""
         pass
 
-    def get_guesses(self, diag: NDArray[float]) -> list[NDArray[float]]:
+    def get_guesses(self, diag: Optional[NDArray[float]] = None) -> list[NDArray[float]]:
         """Get the initial guesses vectors.
 
         Args:

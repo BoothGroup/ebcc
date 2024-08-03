@@ -4,15 +4,15 @@
 import itertools
 import os
 import pickle
-import unittest
 import tempfile
+import unittest
 
 import numpy as np
 import pytest
 import scipy.linalg
-from pyscf import cc, gto, lib, scf
+from pyscf import cc, gto, scf
 
-from ebcc import REBCC, UEBCC, GEBCC, NullLogger, Space
+from ebcc import REBCC, UEBCC, NullLogger, Space
 
 
 @pytest.mark.reference
@@ -42,18 +42,26 @@ class UCCSD_Tests(unittest.TestCase):
         mf = mf.to_uhf()
 
         ccsd = UEBCC(
-                mf,
-                ansatz="CCSD",
-                log=NullLogger(),
+            mf,
+            ansatz="CCSD",
+            log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-12
         eris = ccsd.get_eris()
         ccsd.kernel(eris=eris)
         ccsd.solve_lambda(eris=eris)
 
-        osort = list(itertools.chain(*zip(range(ccsd.nocc[0]), range(ccsd.nocc[0], ccsd.nocc[0]+ccsd.nocc[1]))))
-        vsort = list(itertools.chain(*zip(range(ccsd.nvir[1]), range(ccsd.nvir[0], ccsd.nvir[0]+ccsd.nvir[1]))))
-        fsort = list(itertools.chain(*zip(range(ccsd.nmo), range(ccsd.nmo, 2*ccsd.nmo))))
+        osort = list(
+            itertools.chain(
+                *zip(range(ccsd.nocc[0]), range(ccsd.nocc[0], ccsd.nocc[0] + ccsd.nocc[1]))
+            )
+        )
+        vsort = list(
+            itertools.chain(
+                *zip(range(ccsd.nvir[1]), range(ccsd.nvir[0], ccsd.nvir[0] + ccsd.nvir[1]))
+            )
+        )
+        fsort = list(itertools.chain(*zip(range(ccsd.nmo), range(ccsd.nmo, 2 * ccsd.nmo))))
 
         cls.mf, cls.ccsd, cls.eris, cls.data = mf, ccsd, eris, data
         cls.osort, cls.vsort, cls.fsort = osort, vsort, fsort
@@ -87,9 +95,9 @@ class UCCSD_Tests(unittest.TestCase):
 
     def test_from_rebcc(self):
         rebcc = REBCC(
-                self.mf,
-                ansatz="CCSD",
-                log=NullLogger(),
+            self.mf,
+            ansatz="CCSD",
+            log=NullLogger(),
         )
         rebcc.options.e_tol = 1e-12
         rebcc.kernel()
@@ -116,10 +124,10 @@ class UCCSD_Tests(unittest.TestCase):
         space = Space(occupied, frozen, active)
 
         rebcc = REBCC(
-                mf,
-                ansatz="CCSD",
-                space=space,
-                log=NullLogger(),
+            mf,
+            ansatz="CCSD",
+            space=space,
+            log=NullLogger(),
         )
         rebcc.options.e_tol = 1e-12
         rebcc.kernel()
@@ -140,10 +148,10 @@ class UCCSD_Tests(unittest.TestCase):
         space_b = Space(occupied, frozen, active)
 
         uebcc_2 = UEBCC(
-                mf,
-                ansatz="CCSD",
-                space=(space_a, space_b),
-                log=NullLogger(),
+            mf,
+            ansatz="CCSD",
+            space=(space_a, space_b),
+            log=NullLogger(),
         )
         uebcc_2.options.e_tol = 1e-12
         uebcc_2.kernel()
@@ -188,7 +196,7 @@ class UCCSD_Tests(unittest.TestCase):
         eom = self.ccsd.ee_eom()
         nmo = self.ccsd.nmo
         a = self.data[True]["dd_moms"].transpose(4, 0, 1, 2, 3)
-        a = np.einsum("npqrs,pq,rs->npqrs", a, np.eye(nmo*2), np.eye(nmo*2))
+        a = np.einsum("npqrs,pq,rs->npqrs", a, np.eye(nmo * 2), np.eye(nmo * 2))
         t = eom.moments(4, diagonal_only=True)
         b = np.zeros_like(a)
         for i in range(a.shape[0]):
@@ -205,8 +213,7 @@ class UCCSD_Tests(unittest.TestCase):
 
 @pytest.mark.reference
 class UCCSD_PySCF_Tests(unittest.TestCase):
-    """Test UCCSD against the PySCF values.
-    """
+    """Test UCCSD against the PySCF values."""
 
     @classmethod
     def setUpClass(cls):
@@ -229,9 +236,9 @@ class UCCSD_PySCF_Tests(unittest.TestCase):
         ccsd_ref.solve_lambda()
 
         ccsd = UEBCC(
-                mf,
-                ansatz="CCSD",
-                log=NullLogger(),
+            mf,
+            ansatz="CCSD",
+            log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-12
         eris = ccsd.get_eris()
@@ -277,6 +284,8 @@ class UCCSD_PySCF_Tests(unittest.TestCase):
     def test_eom_ip(self):
         e1 = self.ccsd.ip_eom(nroot=5).kernel()
         e2, v2 = self.ccsd_ref.ipccsd(nroots=5)
+        print(e1)
+        print(e2)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
     def test_eom_ea(self):
@@ -291,8 +300,8 @@ class UCCSD_PySCF_Tests(unittest.TestCase):
 
 
 # Disabled until PySCF fix bug  # TODO
-#@pytest.mark.reference
-#class FNOUCCSD_PySCF_Tests(UCCSD_PySCF_Tests):
+# @pytest.mark.reference
+# class FNOUCCSD_PySCF_Tests(UCCSD_PySCF_Tests):
 #    """Test FNO-UCCSD against the PySCF values.
 #    """
 #
@@ -349,8 +358,7 @@ class UCCSD_PySCF_Tests(unittest.TestCase):
 
 @pytest.mark.reference
 class UCCSD_PySCF_Frozen_Tests(unittest.TestCase):
-    """Test UCCSD against the PySCF values with frozen orbitals.
-    """
+    """Test UCCSD against the PySCF values with frozen orbitals."""
 
     @classmethod
     def setUpClass(cls):
@@ -384,22 +392,22 @@ class UCCSD_PySCF_Frozen_Tests(unittest.TestCase):
         ccsd_ref.solve_lambda()
 
         space_a = Space(
-                mf.mo_occ[0] > 0,
-                frozen_a,
-                np.zeros_like(mf.mo_occ[0]),
+            mf.mo_occ[0] > 0,
+            frozen_a,
+            np.zeros_like(mf.mo_occ[0]),
         )
 
         space_b = Space(
-                mf.mo_occ[1] > 0,
-                frozen_b,
-                np.zeros_like(mf.mo_occ[1]),
+            mf.mo_occ[1] > 0,
+            frozen_b,
+            np.zeros_like(mf.mo_occ[1]),
         )
 
         ccsd = UEBCC(
-                mf,
-                ansatz="CCSD",
-                space=(space_a, space_b),
-                log=NullLogger(),
+            mf,
+            ansatz="CCSD",
+            space=(space_a, space_b),
+            log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-12
         eris = ccsd.get_eris()
@@ -460,8 +468,7 @@ class UCCSD_PySCF_Frozen_Tests(unittest.TestCase):
 
 @pytest.mark.reference
 class UCCSD_Dump_Tests(UCCSD_PySCF_Tests):
-    """Test UCCSD against the PySCF after dumping and loading.
-    """
+    """Test UCCSD against the PySCF after dumping and loading."""
 
     @classmethod
     def setUpClass(cls):
@@ -484,9 +491,9 @@ class UCCSD_Dump_Tests(UCCSD_PySCF_Tests):
         ccsd_ref.solve_lambda()
 
         ccsd = UEBCC(
-                mf,
-                ansatz="CCSD",
-                log=NullLogger(),
+            mf,
+            ansatz="CCSD",
+            log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-12
         eris = ccsd.get_eris()

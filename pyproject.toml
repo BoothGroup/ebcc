@@ -77,8 +77,18 @@ src_paths = [
 skip_glob = [
     "*/__pycache__/*",
     "ebcc/codegen/*",
-    "ebcc/__init__.py",
+    "*/__init__.py",
 ]
+
+[tool.unimport]
+include_star_import = true
+ignore_init = true
+include = '\.pyi?$'
+exclude = """
+/(
+    | __init__.py
+)/
+"""
 
 [tool.flake8]
 max-line-length = 100

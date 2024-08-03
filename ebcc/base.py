@@ -2,32 +2,11 @@
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import TYPE_CHECKING
 
-from ebcc import util
-
 if TYPE_CHECKING:
-    from dataclasses import dataclass
-    from logging import Logger
-    from typing import Any, Optional, Union
-
-    from pyscf.scf import SCF
-
-    from ebcc.ansatz import Ansatz
-    from ebcc.space import Space
-
-
-class EOM(ABC):
-    """Base class for equation-of-motion methods."""
-
-    pass
-
-
-class BruecknerEBCC(ABC):
-    """Base class for Brueckner orbital methods."""
-
-    pass
+    from typing import Any
 
 
 class ERIs(ABC):

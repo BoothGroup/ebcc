@@ -302,6 +302,8 @@ def einsum(*operands: Any, **kwargs: Any) -> Union[T, NDArray[T]]:
         for contraction in contractions:
             inds, idx_rm, einsum_str, remain = list(contraction[:4])
             contraction_args = [args.pop(x) for x in inds]
+            if kwargs.get("alpha", 1.0) != 1.0 or kwargs.get("beta", 0.0) != 0.0:
+                raise NotImplementedError("Scaling factors not supported for >2 arguments")
             out = _contract(einsum_str, *contraction_args, **kwargs)
             args.append(out)
 

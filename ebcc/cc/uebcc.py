@@ -8,12 +8,12 @@ from pyscf import lib
 
 from ebcc import numpy as np
 from ebcc import util
-from ebcc.brueckner import BruecknerUEBCC
 from ebcc.cc.base import BaseEBCC
 from ebcc.cderis import UCDERIs
 from ebcc.eom import EA_UEOM, EE_UEOM, IP_UEOM
 from ebcc.eris import UERIs
 from ebcc.fock import UFock
+from ebcc.opt.ubrueckner import BruecknerUEBCC
 from ebcc.precision import types
 from ebcc.space import Space
 
@@ -114,8 +114,8 @@ class UEBCC(BaseEBCC):
         ucc.converged = rcc.converged
         ucc.converged_lambda = rcc.converged_lambda
 
-        has_amps = rcc.amplitudes is not None
-        has_lams = rcc.lambdas is not None
+        has_amps = bool(rcc.amplitudes)
+        has_lams = bool(rcc.lambdas)
 
         if has_amps:
             amplitudes = util.Namespace()

@@ -8,11 +8,11 @@ from pyscf import lib, scf
 
 from ebcc import numpy as np
 from ebcc import util
-from ebcc.brueckner import BruecknerGEBCC
 from ebcc.cc.base import BaseEBCC
 from ebcc.eom import EA_GEOM, EE_GEOM, IP_GEOM
 from ebcc.eris import GERIs
 from ebcc.fock import GFock
+from ebcc.opt.gbrueckner import BruecknerGEBCC
 from ebcc.precision import types
 from ebcc.space import Space
 
@@ -162,8 +162,8 @@ class GEBCC(BaseEBCC):
         gcc.converged = ucc.converged
         gcc.converged_lambda = ucc.converged_lambda
 
-        has_amps = ucc.amplitudes is not None
-        has_lams = ucc.lambdas is not None
+        has_amps = bool(ucc.amplitudes)
+        has_lams = bool(ucc.lambdas)
 
         if has_amps:
             amplitudes = util.Namespace()

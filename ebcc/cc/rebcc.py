@@ -2,24 +2,18 @@
 
 from __future__ import annotations
 
-import dataclasses
 from typing import TYPE_CHECKING
 
 from pyscf import lib
 
-from ebcc import default_log, init_logging
 from ebcc import numpy as np
 from ebcc import util
-from ebcc.ansatz import Ansatz
-from ebcc.brueckner import BruecknerREBCC
 from ebcc.cc.base import BaseEBCC
 from ebcc.cderis import RCDERIs
-from ebcc.damping import DIIS
-from ebcc.dump import Dump
 from ebcc.eom import EA_REOM, EE_REOM, IP_REOM
 from ebcc.eris import RERIs
 from ebcc.fock import RFock
-from ebcc.logging import ANSI
+from ebcc.opt.rbrueckner import BruecknerREBCC
 from ebcc.precision import types
 from ebcc.space import Space
 

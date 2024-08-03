@@ -16,7 +16,7 @@ from ebcc.logging import ANSI
 from ebcc.precision import cast, types
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Literal, Mapping, Optional, Type, TypeVar, Union
+    from typing import Any, Callable, Literal, Optional, TypeVar, Union
 
     from pyscf.scf.hf import SCF  # type: ignore
 
@@ -25,7 +25,6 @@ if TYPE_CHECKING:
     from ebcc.base import Fock as BaseFock
     from ebcc.logging import Logger
     from ebcc.numpy.typing import NDArray  # type: ignore
-    from ebcc.space import Space
     from ebcc.util import Namespace
 
     ERIsInputType = Union[type[BaseERIs], NDArray[float]]
@@ -479,17 +478,17 @@ class BaseEBCC(ABC):
 
         # Get the amplitudes:
         if not (amplitudes is False):
-            if amplitudes is None:
+            if not amplitudes:
                 amplitudes = self.amplitudes
-            if amplitudes is None:
+            if not amplitudes:
                 amplitudes = self.init_amps(eris=eris)
             dicts.append(dict(amplitudes))
 
         # Get the lambda amplitudes:
         if not (lambdas is False):
-            if lambdas is None:
+            if not lambdas:
                 lambdas = self.lambdas
-            if lambdas is None:
+            if not lambdas:
                 lambdas = self.init_lams(amplitudes=amplitudes if amplitudes else None)
             dicts.append(dict(lambdas))
 
