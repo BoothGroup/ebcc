@@ -18,8 +18,8 @@ class RFock(BaseFock):
 
     Attributes:
         cc: Coupled cluster object.
-        space: Space object.
-        mo_coeff: Molecular orbital coefficients.
+        space: Space object for each index.
+        mo_coeff: Molecular orbital coefficients for each index.
         array: Fock matrix in the MO basis.
         g: Namespace containing blocks of the electron-boson coupling matrix.
         shift: Shift parameter.
@@ -27,11 +27,52 @@ class RFock(BaseFock):
     """
 
     def _get_fock(self) -> NDArray[float]:
-        fock_ao = self.mf.get_fock().astype(types[float])
-        return util.einsum("pq,pi,qj->ij", fock_ao, self.mo_coeff, self.mo_coeff)
+        fock_ao = self.cc.mf.get_fock().astype(types[float])
+        return util.einsum("pq,pi,qj->ij", fock_ao, self.mo_coeff[0], self.mo_coeff[1])
 
-    def __getattr__(self, key: str) -> NDArray[float]:
-        """Just-in-time attribute getter.
+    def __getitem__(self, key: str) -> NDArray[float]:
+        """Just-in-time getter.
+
+        Args:
+            key: Key to get.
+
+        Returns:
+            Fock matrix for the given spaces.
+        """
+        if key not in self._members:
+            i = self.space[0].mask(key[0])
+            j = self.space[1].mask(key[1])
+            self._members[key] = self.array[i][:, j].copy()
+
+            if self.shift:
+                xi = self.xi
+                g = self.g.__getattr__(f"b{key}")
+                g += self.g.__getattr__(f"b{key[::-1]}").transpose(0, 2, 1)
+                self._members[key] -= np.einsum("I,Ipq->pq", xi, g)
+
+        return self._members[key]
+
+
+class UFock(BaseFock):
+    """Unrestricted Fock matrix container class.
+
+    Attributes:
+        cc: Coupled cluster object.
+        space: Space object for each index.
+        mo_coeff: Molecular orbital coefficients for each index.
+        array: Fock matrix in the MO basis.
+        g: Namespace containing blocks of the electron-boson coupling matrix
+    """
+
+    def _get_fock(self) -> tuple[NDArray[float]]:
+        fock_ao = self.cc.mf.get_fock().astype(types[float])
+        return (
+            util.einsum("pq,pi,qj->ij", fock_ao[0], self.mo_coeff[0][0], self.mo_coeff[1][0]),
+            util.einsum("pq,pi,qj->ij", fock_ao[1], self.mo_coeff[0][1], self.mo_coeff[1][1]),
+        )
+
+    def __getitem__(self, key: str) -> RFock:
+        """Just-in-time getter.
 
         Args:
             key: Key to get.
@@ -39,51 +80,18 @@ class RFock(BaseFock):
         Returns:
             Fock matrix for the given spin.
         """
-        if key not in self.__dict__:
-            i = self.space.mask(key[0])
-            j = self.space.mask(key[1])
-            self.__dict__[key] = self.array[i][:, j].copy()
-
-            if self.shift:
-                xi = self.xi
-                g = self.g.__getattr__(f"b{key}")
-                g += self.g.__getattr__(f"b{key[::-1]}").transpose(0, 2, 1)
-                self.__dict__[key] -= np.einsum("I,Ipq->pq", xi, g)
-
-        return self.__dict__[key]
-
-
-class UFock(BaseFock):
-    """Unrestricted Fock matrix container class."""
-
-    def _get_fock(self) -> tuple[NDArray[float]]:
-        fock_ao = self.mf.get_fock().astype(types[float])
-        return (
-            util.einsum("pq,pi,qj->ij", fock_ao[0], self.mo_coeff[0], self.mo_coeff[0]),
-            util.einsum("pq,pi,qj->ij", fock_ao[1], self.mo_coeff[1], self.mo_coeff[1]),
-        )
-
-    def __getattr__(self, key: str) -> RFock:
-        """Just-in-time attribute getter.
-
-        Args:
-            key: Key to get.
-
-        Returns:
-            Slice of the Fock matrix.
-        """
         if key not in ("aa", "bb"):
             raise KeyError(f"Invalid key: {key}")
-        if key not in self.__dict__:
+        if key not in self._members:
             i = "ab".index(key[0])
-            self.__dict__[key] = RFock(
+            self._members[key] = RFock(
                 self.cc,
                 array=self.array[i],
-                space=self.space[i],
-                mo_coeff=self.mo_coeff[i],
+                space=(self.space[0][i], self.space[1][i]),
+                mo_coeff=(self.mo_coeff[0][i], self.mo_coeff[1][i]),
                 g=self.g[key] if self.g is not None else None,
             )
-        return self.__dict__[key]
+        return self._members[key]
 
 
 class GFock(BaseFock):
@@ -91,8 +99,8 @@ class GFock(BaseFock):
 
     Attributes:
         cc: Coupled cluster object.
-        space: Space object.
-        mo_coeff: Molecular orbital coefficients.
+        space: Space object for each index.
+        mo_coeff: Molecular orbital coefficients for each index.
         array: Fock matrix in the MO basis.
         g: Namespace containing blocks of the electron-boson coupling matrix.
         shift: Shift parameter.
@@ -100,11 +108,11 @@ class GFock(BaseFock):
     """
 
     def _get_fock(self) -> NDArray[float]:
-        fock_ao = self.mf.get_fock().astype(types[float])
-        return util.einsum("pq,pi,qj->ij", fock_ao, self.mo_coeff, self.mo_coeff)
+        fock_ao = self.cc.mf.get_fock().astype(types[float])
+        return util.einsum("pq,pi,qj->ij", fock_ao, self.mo_coeff[0], self.mo_coeff[1])
 
-    def __getattr__(self, key: str) -> NDArray[float]:
-        """Just-in-time attribute getter.
+    def __getitem__(self, key: str) -> NDArray[float]:
+        """Just-in-time getter.
 
         Args:
             key: Key to get.
@@ -112,15 +120,15 @@ class GFock(BaseFock):
         Returns:
             Fock matrix for the given spin.
         """
-        if key not in self.__dict__:
-            i = self.space.mask(key[0])
-            j = self.space.mask(key[1])
-            self.__dict__[key] = self.array[i][:, j].copy()
+        if key not in self._members:
+            i = self.space[0].mask(key[0])
+            j = self.space[1].mask(key[1])
+            self._members[key] = self.array[i][:, j].copy()
 
             if self.shift:
                 xi = self.xi
                 g = self.g.__getattr__(f"b{key}")
                 g += self.g.__getattr__(f"b{key[::-1]}").transpose(0, 2, 1)
-                self.__dict__[key] -= np.einsum("I,Ipq->pq", xi, g)
+                self._members[key] -= np.einsum("I,Ipq->pq", xi, g)
 
-        return self.__dict__[key]
+        return self._members[key]

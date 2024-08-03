@@ -10,8 +10,8 @@ from ebcc import numpy as np
 from ebcc import util
 from ebcc.cc.base import BaseEBCC
 from ebcc.eom import EA_GEOM, EE_GEOM, IP_GEOM
-from ebcc.eris import GERIs
 from ebcc.ham import Space
+from ebcc.ham.eris import GERIs
 from ebcc.ham.fock import GFock
 from ebcc.opt.gbrueckner import BruecknerGEBCC
 from ebcc.precision import types
