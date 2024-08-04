@@ -115,7 +115,7 @@ class BaseEOM(ABC):
         return f"{self.excitation_type.upper()}-EOM-{self.spin_type}{self.ansatz.name}"
 
     @abstractmethod
-    def amplitudes_to_vector(self, *amplitudes: AmplitudesType) -> NDArray[float]:
+    def amplitudes_to_vector(self, *amplitudes: AmplitudeType) -> NDArray[float]:
         """Construct a vector containing all of the amplitudes used in the given ansatz.
 
         Args:
@@ -127,7 +127,7 @@ class BaseEOM(ABC):
         pass
 
     @abstractmethod
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> tuple[AmplitudesType, ...]:
+    def vector_to_amplitudes(self, vector: NDArray[float]) -> tuple[AmplitudeType, ...]:
         """Construct amplitudes from a vector.
 
         Args:
@@ -264,7 +264,7 @@ class BaseEOM(ABC):
 
         return list(guesses)
 
-    def callback(self, envs: dict[str, Any]) -> None:
+    def callback(self, envs: dict[str, Any]) -> None:  # noqa: B027
         """Callback function for the eigensolver."""  # noqa: D401
         pass
 
@@ -392,7 +392,7 @@ class BaseIP_EOM(BaseEOM):
         """Get the type of excitation."""
         return "ip"
 
-    def amplitudes_to_vector(self, *amplitudes: AmplitudesType) -> NDArray[float]:
+    def amplitudes_to_vector(self, *amplitudes: AmplitudeType) -> NDArray[float]:
         """Construct a vector containing all of the amplitudes used in the given ansatz.
 
         Args:
@@ -403,7 +403,7 @@ class BaseIP_EOM(BaseEOM):
         """
         return self.ebcc.excitations_to_vector_ip(*amplitudes)
 
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> tuple[AmplitudesType, ...]:
+    def vector_to_amplitudes(self, vector: NDArray[float]) -> tuple[AmplitudeType, ...]:
         """Construct amplitudes from a vector.
 
         Args:
@@ -439,7 +439,7 @@ class BaseEA_EOM(BaseEOM):
         """Get the type of excitation."""
         return "ea"
 
-    def amplitudes_to_vector(self, *amplitudes: AmplitudesType) -> NDArray[float]:
+    def amplitudes_to_vector(self, *amplitudes: AmplitudeType) -> NDArray[float]:
         """Construct a vector containing all of the amplitudes used in the given ansatz.
 
         Args:
@@ -450,7 +450,7 @@ class BaseEA_EOM(BaseEOM):
         """
         return self.ebcc.excitations_to_vector_ea(*amplitudes)
 
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> tuple[AmplitudesType, ...]:
+    def vector_to_amplitudes(self, vector: NDArray[float]) -> tuple[AmplitudeType, ...]:
         """Construct amplitudes from a vector.
 
         Args:
@@ -477,36 +477,6 @@ class BaseEA_EOM(BaseEOM):
         result = self.ebcc.hbar_matvec_ea(*amplitudes, eris=eris)
         return self.amplitudes_to_vector(*result)
 
-    def bras(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
-        """Get the bra vectors.
-
-        Args:
-            eris: Electronic repulsion integrals.
-
-        Returns:
-            Bra vectors.
-        """
-        bras_raw = list(self.ebcc.make_ea_mom_bras(eris=eris))
-        bras = np.array(
-            [self.amplitudes_to_vector(*[b[i] for b in bras_raw]) for i in range(self.nmo)]
-        )
-        return bras
-
-    def kets(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
-        """Get the ket vectors.
-
-        Args:
-            eris: Electronic repulsion integrals.
-
-        Returns:
-            Ket vectors.
-        """
-        kets_raw = list(self.ebcc.make_ea_mom_kets(eris=eris))
-        kets = np.array(
-            [self.amplitudes_to_vector(*[k[..., i] for k in kets_raw]) for i in range(self.nmo)]
-        )
-        return kets
-
 
 class BaseEE_EOM(BaseEOM):
     """Base class for electron-electron EOM-CC."""
@@ -516,7 +486,7 @@ class BaseEE_EOM(BaseEOM):
         """Get the type of excitation."""
         return "ee"
 
-    def amplitudes_to_vector(self, *amplitudes: AmplitudesType) -> NDArray[float]:
+    def amplitudes_to_vector(self, *amplitudes: AmplitudeType) -> NDArray[float]:
         """Construct a vector containing all of the amplitudes used in the given ansatz.
 
         Args:
@@ -527,7 +497,7 @@ class BaseEE_EOM(BaseEOM):
         """
         return self.ebcc.excitations_to_vector_ee(*amplitudes)
 
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> tuple[AmplitudesType, ...]:
+    def vector_to_amplitudes(self, vector: NDArray[float]) -> tuple[AmplitudeType, ...]:
         """Construct amplitudes from a vector.
 
         Args:
@@ -553,29 +523,3 @@ class BaseEE_EOM(BaseEOM):
         amplitudes = self.vector_to_amplitudes(vector)
         result = self.ebcc.hbar_matvec_ee(*amplitudes, eris=eris)
         return self.amplitudes_to_vector(*result)
-
-    def bras(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
-        """Get the bra vectors.
-
-        Args:
-            eris: Electronic repulsion integrals.
-
-        Returns:
-            Bra vectors.
-        """
-        bras_raw = list(self.ebcc.make_ee_mom_bras(eris=eris))
-        bras = np.array(
-            [self.amplitudes_to_vector(*[b[i] for b in bras_raw]) for i in range(self.nmo)]
-        )
-        return bras
-
-    def kets(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
-        """Get the ket vectors.
-
-        Args:
-            eris: Electronic repulsion integrals.
-
-        Returns:
-            Ket vectors.
-        """
-        kets_raw = list(self.ebcc.make_ee_mom_kets(eris=eris))

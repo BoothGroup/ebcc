@@ -74,7 +74,7 @@ class RCDERIs(BaseERIs):
                 )
                 block = util.decompress_axes(
                     "Qpp",
-                    self.cc.mf.with_df._cderi.astype(precesion.types[float]),
+                    self.cc.mf.with_df._cderi.astype(types[float]),
                     include_diagonal=True,
                     symmetry="+++",
                     shape=shape,
@@ -94,6 +94,8 @@ class UCDERIs(BaseERIs):
         mo_coeff: Molecular orbital coefficients for each index.
         array: ERIs in the MO basis.
     """
+
+    _members: dict[str, RCDERIs]
 
     def __getitem__(self, key: str) -> RCDERIs:
         """Just-in-time getter.

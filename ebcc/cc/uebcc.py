@@ -18,8 +18,17 @@ from ebcc.ham.space import Space
 from ebcc.opt.ubrueckner import BruecknerUEBCC
 
 if TYPE_CHECKING:
-    from ebcc.cc.rebcc import REBCC
+    from typing import Any, Optional, Union, cast
+
+    from pyscf.scf.hf import SCF
+    from pyscf.scf.uhf import UHF
+
+    from ebcc.cc.base import ERIsInputType
+    from ebcc.cc.rebcc import REBCC, BaseOptions
     from ebcc.numpy.typing import NDArray
+    from ebcc.util import Namespace
+
+    AmplitudeType = Namespace[NDArray[float]]
 
 
 class UEBCC(BaseEBCC):
@@ -338,7 +347,7 @@ class UEBCC(BaseEBCC):
             eris=eris,
             amplitudes=amplitudes,
         )
-        res = func(**kwargs)
+        res = cast(Namespace[AmplitudeType], func(**kwargs))
         res = {key.rstrip("new"): val for key, val in res.items()}
 
         # Divide T amplitudes:
@@ -399,7 +408,7 @@ class UEBCC(BaseEBCC):
             lambdas=lambdas,
             lambdas_pert=lambdas_pert,
         )
-        res = func(**kwargs)
+        res = cast(Namespace[AmplitudeType], func(**kwargs))
         res = {key.rstrip("new"): val for key, val in res.items()}
 
         # Divide T amplitudes:
@@ -442,7 +451,7 @@ class UEBCC(BaseEBCC):
         amplitudes: Optional[Namespace[AmplitudeType]] = None,
         lambdas: Optional[Namespace[AmplitudeType]] = None,
         hermitise: bool = True,
-    ) -> Any:
+    ) -> Namespace[NDArray[float]]:
         r"""Make the one-particle fermionic reduced density matrix :math:`\langle i^+ j \rangle`.
 
         Args:
@@ -460,8 +469,7 @@ class UEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-
-        dm = func(**kwargs)
+        dm = cast(Namespace[NDArray[float]], func(**kwargs))
 
         if hermitise:
             dm.aa = 0.5 * (dm.aa + dm.aa.T)
@@ -475,7 +483,7 @@ class UEBCC(BaseEBCC):
         amplitudes: Optional[Namespace[AmplitudeType]] = None,
         lambdas: Optional[Namespace[AmplitudeType]] = None,
         hermitise: bool = True,
-    ) -> Any:
+    ) -> Namespace[NDArray[float]]:
         r"""Make the two-particle fermionic reduced density matrix :math:`\langle i^+j^+lk \rangle`.
 
         Args:
@@ -493,8 +501,7 @@ class UEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-
-        dm = func(**kwargs)
+        dm = cast(Namespace[NDArray[float]], func(**kwargs))
 
         if hermitise:
 
@@ -519,8 +526,16 @@ class UEBCC(BaseEBCC):
         lambdas: Optional[Namespace[AmplitudeType]] = None,
         unshifted: bool = True,
         hermitise: bool = True,
-    ) -> Any:
-        r"""Make the electron-boson coupling reduced density matrix :math:`\langle b^+ c^+ c b \rangle`.
+    ) -> Namespace[NDArray[float]]:
+        r"""Make the electron-boson coupling reduced density matrix.
+
+        .. math::
+            \langle b^+ i^+ j \rangle
+
+        and
+
+        .. math::
+            \langle b i^+ j \rangle
 
         Args:
             eris: Electron repulsion integrals.
@@ -539,8 +554,7 @@ class UEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-
-        dm_eb = func(**kwargs)
+        dm_eb = cast(Namespace[NDArray[float]], func(**kwargs))
 
         if hermitise:
             dm_eb.aa[0] = 0.5 * (dm_eb.aa[0] + dm_eb.aa[1].transpose(0, 2, 1))

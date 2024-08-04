@@ -11,6 +11,8 @@ from ebcc.core.precision import types
 from ebcc.ham.base import BaseERIs
 
 if TYPE_CHECKING:
+    from typing import Any, Optional
+
     from ebcc.numpy.typing import NDArray
 
 

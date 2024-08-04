@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from ebcc import default_log, init_logging
 from ebcc import numpy as np
@@ -13,7 +13,7 @@ from ebcc.core.ansatz import Ansatz
 from ebcc.core.damping import DIIS
 from ebcc.core.dump import Dump
 from ebcc.core.logging import ANSI
-from ebcc.core.precision import cast, types
+from ebcc.core.precision import astype, types
 
 if TYPE_CHECKING:
     from typing import Any, Callable, Literal, Optional, TypeVar, Union
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
     from ebcc.core.logging import Logger
     from ebcc.ham.base import BaseERIs, BaseFock
-    from ebcc.numpy.typing import NDArray  # type: ignore
+    from ebcc.numpy.typing import NDArray
     from ebcc.opt.base import BaseBruecknerEBCC
     from ebcc.util import Namespace
 
@@ -555,7 +555,7 @@ class BaseEBCC(ABC):
             eris=eris,
             amplitudes=amplitudes,
         )
-        return cast(func(**kwargs).real, float)
+        return astype(func(**kwargs).real, float)
 
     def energy_perturbative(
         self,
@@ -579,7 +579,7 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        return cast(func(**kwargs).real, float)
+        return astype(func(**kwargs).real, float)
 
     @abstractmethod
     def update_amps(
@@ -626,7 +626,7 @@ class BaseEBCC(ABC):
         eris: Optional[ERIsInputType] = None,
         amplitudes: Optional[Namespace[AmplitudeType]] = None,
         lambdas: Optional[Namespace[AmplitudeType]] = None,
-    ) -> Any:
+    ) -> NDArray[float]:
         r"""Make the single boson density matrix :math:`\langle b \rangle`.
 
         Args:
@@ -643,7 +643,7 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        return func(**kwargs)
+        return cast(NDArray[float], func(**kwargs))
 
     def make_rdm1_b(
         self,
@@ -652,7 +652,7 @@ class BaseEBCC(ABC):
         lambdas: Optional[Namespace[AmplitudeType]] = None,
         unshifted: bool = True,
         hermitise: bool = True,
-    ) -> Any:
+    ) -> NDArray[float]:
         r"""Make the one-particle boson reduced density matrix :math:`\langle b^+ c \rangle`.
 
         Args:
@@ -672,7 +672,7 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm = func(**kwargs)
+        dm = cast(NDArray[float], func(**kwargs))
 
         if hermitise:
             dm = 0.5 * (dm + dm.T)
@@ -735,7 +735,15 @@ class BaseEBCC(ABC):
         unshifted: bool = True,
         hermitise: bool = True,
     ) -> Any:
-        r"""Make the electron-boson coupling reduced density matrix :math:`\langle b^+ c^+ c b \rangle`.
+        r"""Make the electron-boson coupling reduced density matrix.
+
+        .. math::
+            \langle b^+ i^+ j \rangle
+
+        and
+
+        .. math::
+            \langle b i^+ j \rangle
 
         Args:
             eris: Electron repulsion integrals.
@@ -756,7 +764,7 @@ class BaseEBCC(ABC):
         r2: AmplitudeType,
         eris: Optional[ERIsInputType] = None,
         amplitudes: Optional[Namespace[AmplitudeType]] = None,
-    ) -> tuple[AmplitudeType]:
+    ) -> tuple[AmplitudeType, AmplitudeType]:
         """Compute the product between a state vector and the IP-EOM Hamiltonian.
 
         Args:
@@ -776,7 +784,7 @@ class BaseEBCC(ABC):
             r1=r1,
             r2=r2,
         )
-        return func(**kwargs)
+        return cast(tuple[AmplitudeType, AmplitudeType], func(**kwargs))
 
     def hbar_matvec_ea(
         self,
@@ -804,7 +812,7 @@ class BaseEBCC(ABC):
             r1=r1,
             r2=r2,
         )
-        return func(**kwargs)
+        return cast(tuple[AmplitudeType, AmplitudeType], func(**kwargs))
 
     def hbar_matvec_ee(
         self,
@@ -832,7 +840,7 @@ class BaseEBCC(ABC):
             r1=r1,
             r2=r2,
         )
-        return func(**kwargs)
+        return cast(tuple[AmplitudeType, AmplitudeType], func(**kwargs))
 
     def make_ip_mom_bras(
         self,
@@ -856,7 +864,7 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        return func(**kwargs)
+        return cast(tuple[AmplitudeType, ...], func(**kwargs))
 
     def make_ea_mom_bras(
         self,
@@ -880,7 +888,7 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        return func(**kwargs)
+        return cast(tuple[AmplitudeType, ...], func(**kwargs))
 
     def make_ee_mom_bras(
         self,
@@ -904,7 +912,7 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        return func(**kwargs)
+        return cast(tuple[AmplitudeType, ...], func(**kwargs))
 
     def make_ip_mom_kets(
         self,
@@ -928,7 +936,7 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        return func(**kwargs)
+        return cast(tuple[AmplitudeType, ...], func(**kwargs))
 
     def make_ea_mom_kets(
         self,
@@ -952,7 +960,7 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        return func(**kwargs)
+        return cast(tuple[AmplitudeType, ...], func(**kwargs))
 
     def make_ee_mom_kets(
         self,
@@ -976,7 +984,7 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        return func(**kwargs)
+        return cast(tuple[AmplitudeType, ...], func(**kwargs))
 
     @abstractmethod
     def energy_sum(self, *args: str, signs_dict: Optional[dict[str, int]] = None) -> NDArray[float]:
@@ -1192,6 +1200,7 @@ class BaseEBCC(ABC):
         pass
 
     @property
+    @abstractmethod
     def bare_fock(self) -> Any:
         """Get the mean-field Fock matrix in the MO basis, including frozen parts.
 
@@ -1293,7 +1302,7 @@ class BaseEBCC(ABC):
         Returns:
             Total energy.
         """
-        return cast(self.mf.e_tot + self.e_corr, float)
+        return astype(self.mf.e_tot + self.e_corr, float)
 
     @property
     def t1(self) -> Any:

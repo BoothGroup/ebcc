@@ -104,7 +104,7 @@ ignore = [
     "B007",  # Loop control variable not used within the loop body
 ]
 per-file-ignores = [
-    "__init__.py:E402,W605,F401,F811,D103",
+    "__init__.py:E402,W605,F401,F811,D103,D212,D415",
 ]
 docstring-convention = "google"
 count = true
@@ -135,6 +135,10 @@ ignore_missing_imports = true
 disallow_subclassing_any = false
 implicit_reexport = true
 warn_unused_ignores = false
+
+[[tool.mypy.overrides]]
+module = "ebcc.codegen.*"
+ignore_errors = true
 
 [[tool.mypy.overrides]]
 module = "scipy.*"

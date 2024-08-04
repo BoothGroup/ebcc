@@ -17,12 +17,12 @@ from ebcc.ham.space import Space
 from ebcc.opt.gbrueckner import BruecknerGEBCC
 
 if TYPE_CHECKING:
-    from typing import Optional
+    from typing import Any, Optional, cast
 
     from pyscf.scf.ghf import GHF
     from pyscf.scf.hf import SCF
 
-    from ebcc.cc.base import ERIsInputType
+    from ebcc.cc.base import BaseOptions, ERIsInputType
     from ebcc.cc.rebcc import REBCC
     from ebcc.cc.uebcc import UEBCC
     from ebcc.numpy.typing import NDArray
@@ -54,6 +54,7 @@ class GEBCC(BaseEBCC):
 
     @property
     def spin_type(self):
+        """Get a string representation of the spin type."""
         return "G"
 
     def ip_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> IP_GEOM:
@@ -462,7 +463,7 @@ class GEBCC(BaseEBCC):
             eris=eris,
             amplitudes=amplitudes,
         )
-        res = func(**kwargs)
+        res = cast(Namespace[AmplitudeType], func(**kwargs))
         res = {key.rstrip("new"): val for key, val in res.items()}
 
         # Divide T amplitudes:
@@ -514,7 +515,7 @@ class GEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        res = func(**kwargs)
+        res = cast(Namespace[AmplitudeType], func(**kwargs))
         res = {key.rstrip("new"): val for key, val in res.items()}
 
         # Divide T amplitudes:
@@ -551,7 +552,7 @@ class GEBCC(BaseEBCC):
         amplitudes: Optional[Namespace[AmplitudeType]] = None,
         lambdas: Optional[Namespace[AmplitudeType]] = None,
         hermitise: bool = True,
-    ) -> Any:
+    ) -> NDArray[float]:
         r"""Make the one-particle fermionic reduced density matrix :math:`\langle i^+ j \rangle`.
 
         Args:
@@ -569,22 +570,38 @@ class GEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm = func(**kwargs)
+        dm = cast(NDArray[float], func(**kwargs))
 
         if hermitise:
             dm = 0.5 * (dm + dm.T)
 
         return dm
 
-    def make_rdm2_f(self, eris=None, amplitudes=None, lambdas=None, hermitise=True):
+    def make_rdm2_f(
+        self,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        lambdas: Optional[Namespace[AmplitudeType]] = None,
+        hermitise: bool = True,
+    ) -> NDArray[float]:
+        r"""Make the two-particle fermionic reduced density matrix :math:`\langle i^+j^+lk \rangle`.
+
+        Args:
+            eris: Electron repulsion integrals.
+            amplitudes: Cluster amplitudes.
+            lambdas: Cluster lambda amplitudes.
+            hermitise: Hermitise the density matrix.
+
+        Returns:
+            Two-particle fermion reduced density matrix.
+        """
         func, kwargs = self._load_function(
             "make_rdm2_f",
             eris=eris,
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-
-        dm = func(**kwargs)
+        dm = cast(NDArray[float], func(**kwargs))
 
         if hermitise:
             dm = 0.5 * (dm.transpose(0, 1, 2, 3) + dm.transpose(2, 3, 0, 1))
@@ -599,8 +616,16 @@ class GEBCC(BaseEBCC):
         lambdas: Optional[Namespace[AmplitudeType]] = None,
         unshifted: bool = True,
         hermitise: bool = True,
-    ) -> Any:
-        r"""Make the electron-boson coupling reduced density matrix :math:`\langle b^+ c^+ c b \rangle`.
+    ) -> NDArray[float]:
+        r"""Make the electron-boson coupling reduced density matrix.
+
+        .. math::
+            \langle b^+ i^+ j \rangle
+
+        and
+
+        .. math::
+            \langle b i^+ j \rangle
 
         Args:
             eris: Electron repulsion integrals.
@@ -619,7 +644,7 @@ class GEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm_eb = func(**kwargs)
+        dm_eb = cast(NDArray[float], func(**kwargs))
 
         if hermitise:
             dm_eb[0] = 0.5 * (dm_eb[0] + dm_eb[1].transpose(0, 2, 1))

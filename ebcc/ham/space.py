@@ -17,20 +17,11 @@ if TYPE_CHECKING:
 
     from ebcc.cc.base import AmplitudeType
     from ebcc.numpy.typing import NDArray
-
-    ConstructSpaceReturnType = Union[
-        tuple[NDArray[float], NDArray[float], Space],
-        tuple[
-            tuple[NDArray[float], NDArray[float]],
-            tuple[NDArray[float], NDArray[float]],
-            tuple[Space, Space],
-        ],
-    ]
+    from ebcc.util import Namespace
 
 
 class Space:
-    """
-    Space class.
+    """Space class.
 
             ─┬─ ┌──────────┐
              │  │  frozen  │
@@ -302,6 +293,18 @@ class Space:
     def navir(self) -> int:
         """Get the number of virtual active orbitals."""
         return np.sum(self.active_virtual)
+
+
+if TYPE_CHECKING:
+    # Needs to be defined after Space
+    ConstructSpaceReturnType = Union[
+        tuple[NDArray[float], NDArray[float], Space],
+        tuple[
+            tuple[NDArray[float], NDArray[float]],
+            tuple[NDArray[float], NDArray[float]],
+            tuple[Space, Space],
+        ],
+    ]
 
 
 def construct_default_space(mf: SCF) -> ConstructSpaceReturnType:

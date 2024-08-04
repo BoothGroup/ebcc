@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
     from ebcc.cc.rebcc import AmplitudeType
     from ebcc.core.damping import DIIS
+    from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
 
 

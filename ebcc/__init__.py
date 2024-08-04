@@ -34,33 +34,41 @@ The implemented models are built upon the mean-field objects of
 >>> ccsd.kernel()
 """
 
+from __future__ import annotations
+
+"""Version of the package."""
 __version__ = "1.4.3"
+
+"""List of supported ansatz types."""
+METHOD_TYPES = ["MP", "CC", "LCC", "QCI", "QCC", "DC"]
 
 import os
 import sys
+from typing import TYPE_CHECKING
 
 import numpy
 
+from ebcc.cc import GEBCC, REBCC, UEBCC
 from ebcc.core import precision
+from ebcc.core.ansatz import Ansatz
 from ebcc.core.logging import NullLogger, default_log, init_logging
+from ebcc.ham.space import Space
+from ebcc.opt import BruecknerGEBCC, BruecknerREBCC, BruecknerUEBCC
 
-sys.modules["ebcc.precision"] = precision  # Compatibility
+if TYPE_CHECKING:
+    from typing import Any, Callable
 
+    from pyscf.scf.hf import SCF  # type: ignore
 
-# --- Types of ansatz supporting by the EBCC solvers:
-
-METHOD_TYPES = ["MP", "CC", "LCC", "QCI", "QCC", "DC"]
-
-
-# --- General constructor:
-
-from ebcc.cc.gebcc import GEBCC
-from ebcc.cc.rebcc import REBCC
-from ebcc.cc.uebcc import UEBCC
+    from ebcc.cc.base import BaseEBCC
 
 
-def EBCC(mf, *args, **kwargs):  # type: ignore
-    from pyscf import scf
+sys.modules["ebcc.precision"] = precision  # Compatibility with older codegen versions
+
+
+def EBCC(mf: SCF, *args: Any, **kwargs: Any) -> BaseEBCC:
+    """Construct an EBCC object for the given mean-field object."""
+    from pyscf import scf  # type: ignore
 
     if isinstance(mf, scf.uhf.UHF):
         return UEBCC(mf, *args, **kwargs)
@@ -73,25 +81,20 @@ def EBCC(mf, *args, **kwargs):  # type: ignore
 EBCC.__doc__ = REBCC.__doc__
 
 
-# --- Constructors for boson-free calculations:
+def _factory(ansatz: str) -> Callable[[SCF, Any, Any], BaseEBCC]:
+    """Constructor for some specific ansatz."""
+    from pyscf import scf  # type: ignore
 
-
-def _factory(ansatz):  # type: ignore
-    def constructor(mf, *args, **kwargs):  # type: ignore
-        from pyscf import scf
-
+    def constructor(mf: SCF, *args: Any, **kwargs: Any) -> BaseEBCC:
+        """Construct an EBCC object for the given mean-field object."""
         kwargs["ansatz"] = ansatz
 
         if isinstance(mf, scf.uhf.UHF):
-            cc = UEBCC(mf, *args, **kwargs)
+            return UEBCC(mf, *args, **kwargs)
         elif isinstance(mf, scf.ghf.GHF):
-            cc = GEBCC(mf, *args, **kwargs)
+            return GEBCC(mf, *args, **kwargs)
         else:
-            cc = REBCC(mf, *args, **kwargs)
-
-        cc.__doc__ = REBCC.__doc__
-
-        return cc
+            return REBCC(mf, *args, **kwargs)
 
     return constructor
 
@@ -104,16 +107,9 @@ CC3 = _factory("CC3")
 del _factory
 
 
-# --- Other imports:
-
-from ebcc.core.ansatz import Ansatz
-from ebcc.ham.space import Space
-from ebcc.opt import BruecknerGEBCC, BruecknerREBCC, BruecknerUEBCC
-
-# --- List available methods:
-
-
-def available_models(verbose=True):  # type: ignore  # pragma: no cover
+def available_models(
+    verbose: bool = True,
+) -> tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...]]:  # pragma: no cover
     """List available coupled-cluster models for each spin type."""
     cd = os.path.dirname(os.path.realpath(__file__))
     path = os.path.join(cd, "codegen")

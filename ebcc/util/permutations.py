@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Generator, Hashable, Iterable, Optional, TypeVar, Union
+    from typing import Any, Generator, Hashable, Iterable, Optional, TypeVar, Union
 
     from ebcc.numpy.typing import NDArray
 
@@ -286,7 +286,8 @@ def compress_axes(
     Args:
         subscript: Subscript for the input array.
         array: Array to compress.
-        include_diagonal: Whether to include the diagonal elements of the input array in the output array.
+        include_diagonal: Whether to include the diagonal elements of the input array in the output
+            array.
 
     Returns:
         Compressed array.
