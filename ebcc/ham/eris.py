@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING
 from pyscf import ao2mo
 
 from ebcc import numpy as np
+from ebcc.core.precision import types
 from ebcc.ham.base import BaseERIs
-from ebcc.precision import types
 
 if TYPE_CHECKING:
     from ebcc.numpy.typing import NDArray

@@ -41,12 +41,10 @@ import sys
 
 import numpy
 
-from ebcc.logging import NullLogger, default_log, init_logging
+from ebcc.core import precision
+from ebcc.core.logging import NullLogger, default_log, init_logging
 
-# --- Import NumPy here to allow drop-in replacements
-
-
-# --- Logging:
+sys.modules["ebcc.precision"] = precision  # Compatibility
 
 
 # --- Types of ansatz supporting by the EBCC solvers:
@@ -108,8 +106,8 @@ del _factory
 
 # --- Other imports:
 
-from ebcc.ansatz import Ansatz
-from ebcc.ham import Space
+from ebcc.core.ansatz import Ansatz
+from ebcc.ham.space import Space
 from ebcc.opt import BruecknerGEBCC, BruecknerREBCC, BruecknerUEBCC
 
 # --- List available methods:

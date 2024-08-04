@@ -9,19 +9,19 @@ from typing import TYPE_CHECKING
 from ebcc import default_log, init_logging
 from ebcc import numpy as np
 from ebcc import util
-from ebcc.ansatz import Ansatz
-from ebcc.damping import DIIS
-from ebcc.dump import Dump
-from ebcc.logging import ANSI
-from ebcc.precision import cast, types
+from ebcc.core.ansatz import Ansatz
+from ebcc.core.damping import DIIS
+from ebcc.core.dump import Dump
+from ebcc.core.logging import ANSI
+from ebcc.core.precision import cast, types
 
 if TYPE_CHECKING:
     from typing import Any, Callable, Literal, Optional, TypeVar, Union
 
     from pyscf.scf.hf import SCF  # type: ignore
 
+    from ebcc.core.logging import Logger
     from ebcc.ham.base import BaseERIs, BaseFock
-    from ebcc.logging import Logger
     from ebcc.numpy.typing import NDArray  # type: ignore
     from ebcc.opt.base import BaseBruecknerEBCC
     from ebcc.util import Namespace

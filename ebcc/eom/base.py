@@ -10,8 +10,8 @@ from pyscf import lib
 
 from ebcc import numpy as np
 from ebcc import util
-from ebcc.logging import ANSI
-from ebcc.precision import types
+from ebcc.core.logging import ANSI
+from ebcc.core.precision import types
 
 if TYPE_CHECKING:
     from typing import Any, Callable, Optional

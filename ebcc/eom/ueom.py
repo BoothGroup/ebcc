@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 
 from ebcc import numpy as np
 from ebcc import util
+from ebcc.core.precision import types
 from ebcc.eom.base import BaseEA_EOM, BaseEE_EOM, BaseEOM, BaseIP_EOM
-from ebcc.precision import types
 
 if TYPE_CHECKING:
     from typing import Optional

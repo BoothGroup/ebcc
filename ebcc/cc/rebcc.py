@@ -9,13 +9,13 @@ from pyscf import lib
 from ebcc import numpy as np
 from ebcc import util
 from ebcc.cc.base import BaseEBCC
+from ebcc.core.precision import types
 from ebcc.eom import EA_REOM, EE_REOM, IP_REOM
-from ebcc.ham import Space
 from ebcc.ham.cderis import RCDERIs
 from ebcc.ham.eris import RERIs
 from ebcc.ham.fock import RFock
+from ebcc.ham.space import Space
 from ebcc.opt.rbrueckner import BruecknerREBCC
-from ebcc.precision import types
 
 if TYPE_CHECKING:
     from typing import Optional

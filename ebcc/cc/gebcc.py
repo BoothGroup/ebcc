@@ -9,12 +9,12 @@ from pyscf import lib, scf
 from ebcc import numpy as np
 from ebcc import util
 from ebcc.cc.base import BaseEBCC
+from ebcc.core.precision import types
 from ebcc.eom import EA_GEOM, EE_GEOM, IP_GEOM
-from ebcc.ham import Space
 from ebcc.ham.eris import GERIs
 from ebcc.ham.fock import GFock
+from ebcc.ham.space import Space
 from ebcc.opt.gbrueckner import BruecknerGEBCC
-from ebcc.precision import types
 
 if TYPE_CHECKING:
     from typing import Optional

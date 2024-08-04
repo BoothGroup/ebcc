@@ -10,9 +10,9 @@ from pyscf import lib
 
 from ebcc import numpy as np
 from ebcc import util
-from ebcc.damping import DIIS
-from ebcc.logging import ANSI, NullLogger, init_logging
-from ebcc.precision import types
+from ebcc.core.damping import DIIS
+from ebcc.core.logging import ANSI, NullLogger, init_logging
+from ebcc.core.precision import types
 
 if TYPE_CHECKING:
     from typing import Any, Optional, TypeVar
@@ -170,13 +170,13 @@ class BaseBruecknerEBCC(ABC):
             dt = self.get_t1_norm()
 
             # Log the iteration:
-            converged_e = de < self.options.e_tol
-            converged_t = dt < self.options.t_tol
+            converged_e = bool(de < self.options.e_tol)
+            converged_t = bool(dt < self.options.t_tol)
             self.log.info(
                 f"{niter:4d} {self.cc.e_corr:16.10f} {self.cc.e_tot:18.10f}"
-                f" {[ANSI.r, ANSI.g][self.cc.converged]}{self.cc.converged!r:>8}{ANSI.R}"
-                f" {[ANSI.r, ANSI.g][converged_e]}{de:13.3e}{ANSI.R}"
-                f" {[ANSI.r, ANSI.g][converged_t]}{dt:13.3e}{ANSI.R}"
+                f" {[ANSI.r, ANSI.g][int(self.cc.converged)]}{self.cc.converged!r:>8}{ANSI.R}"
+                f" {[ANSI.r, ANSI.g][int(converged_e)]}{de:13.3e}{ANSI.R}"
+                f" {[ANSI.r, ANSI.g][int(converged_t)]}{dt:13.3e}{ANSI.R}"
             )
 
             # Check for convergence:

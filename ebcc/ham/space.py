@@ -8,7 +8,7 @@ from pyscf.mp import MP2
 
 from ebcc import numpy as np
 from ebcc import util
-from ebcc.precision import types
+from ebcc.core.precision import types
 
 if TYPE_CHECKING:
     from typing import Optional, Union

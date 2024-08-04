@@ -8,14 +8,14 @@ import scipy.linalg
 
 from ebcc import numpy as np
 from ebcc import util
+from ebcc.core.precision import types
 from ebcc.opt.base import BaseBruecknerEBCC
-from ebcc.precision import types
 
 if TYPE_CHECKING:
     from typing import Optional
 
     from ebcc.cc.gebcc import AmplitudeType
-    from ebcc.damping import DIIS
+    from ebcc.core.damping import DIIS
     from ebcc.util import Namespace
 
 
