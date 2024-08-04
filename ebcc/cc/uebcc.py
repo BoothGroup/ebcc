@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
-from pyscf import lib
-
 from ebcc import numpy as np
 from ebcc import util
 from ebcc.cc.base import BaseEBCC
@@ -15,6 +13,7 @@ from ebcc.ham.cderis import UCDERIs
 from ebcc.ham.eris import UERIs
 from ebcc.ham.fock import UFock
 from ebcc.ham.space import Space
+from ebcc.ham.elbos import UElectronBoson
 from ebcc.opt.ubrueckner import BruecknerUEBCC
 
 if TYPE_CHECKING:
@@ -50,6 +49,7 @@ class UEBCC(BaseEBCC):
     ERIs = UERIs
     Fock = UFock
     CDERIs = UCDERIs
+    ElectronBoson = UElectronBoson
     Brueckner = BruecknerUEBCC
 
     @property
@@ -347,8 +347,8 @@ class UEBCC(BaseEBCC):
             eris=eris,
             amplitudes=amplitudes,
         )
-        res = cast(Namespace[AmplitudeType], func(**kwargs))
-        res = {key.rstrip("new"): val for key, val in res.items()}
+        res: Namespace[AmplitudeType] = func(**kwargs)
+        res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
 
         # Divide T amplitudes:
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -408,8 +408,8 @@ class UEBCC(BaseEBCC):
             lambdas=lambdas,
             lambdas_pert=lambdas_pert,
         )
-        res = cast(Namespace[AmplitudeType], func(**kwargs))
-        res = {key.rstrip("new"): val for key, val in res.items()}
+        res: Namespace[AmplitudeType] = func(**kwargs)
+        res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
 
         # Divide T amplitudes:
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -451,7 +451,7 @@ class UEBCC(BaseEBCC):
         amplitudes: Optional[Namespace[AmplitudeType]] = None,
         lambdas: Optional[Namespace[AmplitudeType]] = None,
         hermitise: bool = True,
-    ) -> Namespace[NDArray[float]]:
+    ) -> AmplitudeType:
         r"""Make the one-particle fermionic reduced density matrix :math:`\langle i^+ j \rangle`.
 
         Args:
@@ -469,7 +469,7 @@ class UEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm = cast(Namespace[NDArray[float]], func(**kwargs))
+        dm: AmplitudeType = func(**kwargs)
 
         if hermitise:
             dm.aa = 0.5 * (dm.aa + dm.aa.T)
@@ -483,7 +483,7 @@ class UEBCC(BaseEBCC):
         amplitudes: Optional[Namespace[AmplitudeType]] = None,
         lambdas: Optional[Namespace[AmplitudeType]] = None,
         hermitise: bool = True,
-    ) -> Namespace[NDArray[float]]:
+    ) -> AmplitudeType:
         r"""Make the two-particle fermionic reduced density matrix :math:`\langle i^+j^+lk \rangle`.
 
         Args:
@@ -501,7 +501,7 @@ class UEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm = cast(Namespace[NDArray[float]], func(**kwargs))
+        dm: AmplitudeType = func(**kwargs)
 
         if hermitise:
 
@@ -526,7 +526,7 @@ class UEBCC(BaseEBCC):
         lambdas: Optional[Namespace[AmplitudeType]] = None,
         unshifted: bool = True,
         hermitise: bool = True,
-    ) -> Namespace[NDArray[float]]:
+    ) -> AmplitudeType:
         r"""Make the electron-boson coupling reduced density matrix.
 
         .. math::
@@ -554,7 +554,7 @@ class UEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm_eb = cast(Namespace[NDArray[float]], func(**kwargs))
+        dm_eb: AmplitudeType = func(**kwargs)
 
         if hermitise:
             dm_eb.aa[0] = 0.5 * (dm_eb.aa[0] + dm_eb.aa[1].transpose(0, 2, 1))
@@ -564,9 +564,9 @@ class UEBCC(BaseEBCC):
 
         if unshifted and self.options.shift:
             rdm1_f = self.make_rdm1_f(hermitise=hermitise)
-            shift = lib.einsum("x,ij->xij", self.xi, rdm1_f.aa)
+            shift = util.einsum("x,ij->xij", self.xi, rdm1_f.aa)
             dm_eb.aa -= shift[None]
-            shift = lib.einsum("x,ij->xij", self.xi, rdm1_f.bb)
+            shift = util.einsum("x,ij->xij", self.xi, rdm1_f.bb)
             dm_eb.bb -= shift[None]
 
         return dm_eb
@@ -610,7 +610,7 @@ class UEBCC(BaseEBCC):
                 energies.append(np.diag(self.fock[spin + spin][key + key]))
 
         subscript = "".join([signs_dict[k] + next_char() for k in subscript])
-        energy_sum = lib.direct_sum(subscript, *energies)
+        energy_sum = util.direct_sum(subscript, *energies)
 
         return energy_sum
 
@@ -984,59 +984,14 @@ class UEBCC(BaseEBCC):
             Mean-field boson non-conserving term.
         """
         # FIXME should this also sum in frozen orbitals?
-        val = lib.einsum("Ipp->I", self.g.aa.boo)
-        val += lib.einsum("Ipp->I", self.g.bb.boo)
+        val = util.einsum("Ipp->I", self.g.aa.boo)
+        val += util.einsum("Ipp->I", self.g.bb.boo)
         val -= self.xi * self.omega
         if self.bare_G is not None:
             # Require bare_G to have a spin index for now:
             assert np.shape(self.bare_G) == val.shape
             val += self.bare_G
         return val
-
-    def get_g(self, g: NDArray[float]) -> Namespace[Namespace[NDArray[float]]]:
-        """Get the blocks of the electron-boson coupling matrix.
-
-        This matrix corresponds to the bosonic annihilation operator.
-
-        Args:
-            g: Electron-boson coupling matrix.
-
-        Returns:
-            Blocks of the electron-boson coupling matrix.
-        """
-        # TODO make a proper class for this
-        if np.array(g).ndim != 4:
-            g = np.array([g, g])
-        slices = [
-            {
-                "x": space.correlated,
-                "o": space.correlated_occupied,
-                "v": space.correlated_virtual,
-                "O": space.active_occupied,
-                "V": space.active_virtual,
-                "i": space.inactive_occupied,
-                "a": space.inactive_virtual,
-            }
-            for space in self.space
-        ]
-
-        def constructor(s):
-            class Blocks(util.Namespace):
-                def __getitem__(selffer, key):
-                    assert key[0] == "b"
-                    i = slices[s][key[1]]
-                    j = slices[s][key[2]]
-                    return g[s][:, i][:, :, j].copy()
-
-                __getattr__ = __getitem__
-
-            return Blocks()
-
-        gs = util.Namespace()
-        gs.aa = constructor(0)
-        gs.bb = constructor(1)
-
-        return gs
 
     @property
     def bare_fock(self) -> Namespace[NDArray[float]]:
@@ -1047,7 +1002,7 @@ class UEBCC(BaseEBCC):
         Returns:
             Mean-field Fock matrix.
         """
-        fock = lib.einsum(
+        fock = util.einsum(
             "npq,npi,nqj->nij",
             self.mf.get_fock().astype(types[float]),
             self.mo_coeff,
@@ -1064,8 +1019,8 @@ class UEBCC(BaseEBCC):
             Shift in the bosonic operators.
         """
         if self.options.shift:
-            xi = lib.einsum("Iii->I", self.g.aa.boo)
-            xi += lib.einsum("Iii->I", self.g.bb.boo)
+            xi = util.einsum("Iii->I", self.g.aa.boo)
+            xi += util.einsum("Iii->I", self.g.bb.boo)
             xi /= self.omega
             if self.bare_G is not None:
                 xi += self.bare_G / self.omega

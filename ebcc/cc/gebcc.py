@@ -14,6 +14,7 @@ from ebcc.eom import EA_GEOM, EE_GEOM, IP_GEOM
 from ebcc.ham.eris import GERIs
 from ebcc.ham.fock import GFock
 from ebcc.ham.space import Space
+from ebcc.ham.elbos import GElectronBoson
 from ebcc.opt.gbrueckner import BruecknerGEBCC
 
 if TYPE_CHECKING:
@@ -51,6 +52,7 @@ class GEBCC(BaseEBCC):
     ERIs = GERIs
     Fock = GFock
     CDERIs = None
+    ElectronBoson = GElectronBoson
     Brueckner = BruecknerGEBCC
 
     @property
@@ -464,8 +466,8 @@ class GEBCC(BaseEBCC):
             eris=eris,
             amplitudes=amplitudes,
         )
-        res = cast(Namespace[AmplitudeType], func(**kwargs))
-        res = {key.rstrip("new"): val for key, val in res.items()}
+        res: Namespace[AmplitudeType] = func(**kwargs)
+        res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
 
         # Divide T amplitudes:
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -516,8 +518,8 @@ class GEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        res = cast(Namespace[AmplitudeType], func(**kwargs))
-        res = {key.rstrip("new"): val for key, val in res.items()}
+        res: Namespace[AmplitudeType] = func(**kwargs)
+        res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
 
         # Divide T amplitudes:
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -553,7 +555,7 @@ class GEBCC(BaseEBCC):
         amplitudes: Optional[Namespace[AmplitudeType]] = None,
         lambdas: Optional[Namespace[AmplitudeType]] = None,
         hermitise: bool = True,
-    ) -> NDArray[float]:
+    ) -> AmplitudeType:
         r"""Make the one-particle fermionic reduced density matrix :math:`\langle i^+ j \rangle`.
 
         Args:
@@ -571,7 +573,7 @@ class GEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm = cast(NDArray[float], func(**kwargs))
+        dm: AmpliduteType = func(**kwargs)
 
         if hermitise:
             dm = 0.5 * (dm + dm.T)
@@ -584,7 +586,7 @@ class GEBCC(BaseEBCC):
         amplitudes: Optional[Namespace[AmplitudeType]] = None,
         lambdas: Optional[Namespace[AmplitudeType]] = None,
         hermitise: bool = True,
-    ) -> NDArray[float]:
+    ) -> AmplitudeType:
         r"""Make the two-particle fermionic reduced density matrix :math:`\langle i^+j^+lk \rangle`.
 
         Args:
@@ -602,7 +604,7 @@ class GEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm = cast(NDArray[float], func(**kwargs))
+        dm: AmpliduteType = func(**kwargs)
 
         if hermitise:
             dm = 0.5 * (dm.transpose(0, 1, 2, 3) + dm.transpose(2, 3, 0, 1))
@@ -617,7 +619,7 @@ class GEBCC(BaseEBCC):
         lambdas: Optional[Namespace[AmplitudeType]] = None,
         unshifted: bool = True,
         hermitise: bool = True,
-    ) -> NDArray[float]:
+    ) -> AmplitudeType:
         r"""Make the electron-boson coupling reduced density matrix.
 
         .. math::
@@ -645,7 +647,7 @@ class GEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm_eb = cast(NDArray[float], func(**kwargs))
+        dm_eb: AmpliduteType = func(**kwargs)
 
         if hermitise:
             dm_eb[0] = 0.5 * (dm_eb[0] + dm_eb[1].transpose(0, 2, 1))
@@ -973,39 +975,6 @@ class GEBCC(BaseEBCC):
         if self.bare_G is not None:
             val += self.bare_G
         return val
-
-    def get_g(self, g: NDArray[float]) -> Namespace[NDArray[float]]:
-        """Get the blocks of the electron-boson coupling matrix.
-
-        This matrix corresponds to the bosonic annihilation operator.
-
-        Args:
-            g: Electron-boson coupling matrix.
-
-        Returns:
-            Blocks of the electron-boson coupling matrix.
-        """
-        # TODO make a proper class for this
-        slices = {
-            "x": self.space.correlated,
-            "o": self.space.correlated_occupied,
-            "v": self.space.correlated_virtual,
-            "O": self.space.active_occupied,
-            "V": self.space.active_virtual,
-            "i": self.space.inactive_occupied,
-            "a": self.space.inactive_virtual,
-        }
-
-        class Blocks(util.Namespace):
-            def __getitem__(selffer, key):
-                assert key[0] == "b"
-                i = slices[key[1]]
-                j = slices[key[2]]
-                return g[:, i][:, :, j].copy()
-
-            __getattr__ = __getitem__
-
-        return Blocks()
 
     @property
     def bare_fock(self) -> NDArray[float]:

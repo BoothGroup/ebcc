@@ -113,3 +113,49 @@ class BaseERIs(Namespace, ABC):
             Slice of the ERIs.
         """
         pass
+
+
+class BaseElectronBoson(Namespace, ABC):
+    """Base class for electron-boson coupling matrices.
+
+    Attributes:
+        cc: Coupled cluster object.
+        space: Space object.
+        array: Electron-boson coupling matrix in the MO basis.
+    """
+
+    def __init__(
+        self,
+        cc: BaseEBCC,
+        array: Any = None,
+        space: tuple[Any] = None,
+    ) -> None:
+        """Initialise the electron-boson coupling matrix.
+
+        Args:
+            cc: Coupled cluster object.
+            array: Electron-boson coupling matrix in the MO basis.
+            space: Space object for each index.
+        """
+        Namespace.__init__(self)
+
+        # Parameters:
+        self.__dict__["cc"] = cc
+        self.__dict__["space"] = space if space is not None else (cc.space,) * 2
+        self.__dict__["array"] = array if array is not None else self._get_g()
+
+    def _get_g(self) -> NDArray[float]:
+        """Get the electron-boson coupling matrix."""
+        return self.cc.bare_g
+
+    @abstractmethod
+    def __getitem__(self, key: str) -> Any:
+        """Just-in-time getter.
+
+        Args:
+            key: Key to get.
+
+        Returns:
+            Slice of the electron-boson coupling matrix.
+        """
+        pass

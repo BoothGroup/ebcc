@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
-from pyscf import lib
-
 from ebcc import numpy as np
 from ebcc import util
 from ebcc.cc.base import BaseEBCC
@@ -15,6 +13,7 @@ from ebcc.ham.cderis import RCDERIs
 from ebcc.ham.eris import RERIs
 from ebcc.ham.fock import RFock
 from ebcc.ham.space import Space
+from ebcc.ham.elbos import RElectronBoson
 from ebcc.opt.rbrueckner import BruecknerREBCC
 
 if TYPE_CHECKING:
@@ -48,6 +47,7 @@ class REBCC(BaseEBCC):
     ERIs = RERIs
     Fock = RFock
     CDERIs = RCDERIs
+    ElectronBoson = RElectronBoson
     Brueckner = BruecknerREBCC
 
     @property
@@ -237,8 +237,8 @@ class REBCC(BaseEBCC):
             eris=eris,
             amplitudes=amplitudes,
         )
-        res = cast(Namespace[AmplitudeType], func(**kwargs))
-        res = {key.rstrip("new"): val for key, val in res.items()}
+        res: Namespace[AmplitudeType] = func(**kwargs)
+        res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
 
         # Divide T amplitudes:
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -289,8 +289,8 @@ class REBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        res = cast(Namespace[AmplitudeType], func(**kwargs))
-        res = {key.rstrip("new"): val for key, val in res.items()}
+        res: Namespace[AmplitudeType] = func(**kwargs)
+        res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
 
         # Divide T amplitudes:
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -344,7 +344,7 @@ class REBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm = cast(NDArray[float], func(**kwargs))
+        dm: NDArray[float] = func(**kwargs)
 
         if hermitise:
             dm = 0.5 * (dm + dm.T)
@@ -375,7 +375,7 @@ class REBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm = cast(NDArray[float], func(**kwargs))
+        dm: NDArray[float] = func(**kwargs)
 
         if hermitise:
             dm = 0.5 * (dm.transpose(0, 1, 2, 3) + dm.transpose(2, 3, 0, 1))
@@ -418,7 +418,7 @@ class REBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm_eb = cast(NDArray[float], func(**kwargs))
+        dm_eb: NDArray[float] = func(**kwargs)
 
         if hermitise:
             dm_eb[0] = 0.5 * (dm_eb[0] + dm_eb[1].transpose(0, 2, 1))
@@ -467,7 +467,7 @@ class REBCC(BaseEBCC):
                 energies.append(np.diag(self.fock[key + key]))
 
         subscript = "".join([signs_dict[k] + next_char() for k in subscript])
-        energy_sum = lib.direct_sum(subscript, *energies)
+        energy_sum = util.direct_sum(subscript, *energies)
 
         return energy_sum
 
@@ -721,44 +721,11 @@ class REBCC(BaseEBCC):
             Mean-field boson non-conserving term.
         """
         # FIXME should this also sum in frozen orbitals?
-        val = lib.einsum("Ipp->I", self.g.boo) * 2.0
+        val = util.einsum("Ipp->I", self.g.boo) * 2.0
         val -= self.xi * self.omega
         if self.bare_G is not None:
             val += self.bare_G
         return val
-
-    def get_g(self, g: NDArray[float]) -> Namespace[NDArray[float]]:
-        """Get the blocks of the electron-boson coupling matrix.
-
-        This matrix corresponds to the bosonic annihilation operator.
-
-        Args:
-            g: Electron-boson coupling matrix.
-
-        Returns:
-            Blocks of the electron-boson coupling matrix.
-        """
-        # TODO make a proper class for this
-        slices = {
-            "x": self.space.correlated,
-            "o": self.space.correlated_occupied,
-            "v": self.space.correlated_virtual,
-            "O": self.space.active_occupied,
-            "V": self.space.active_virtual,
-            "i": self.space.inactive_occupied,
-            "a": self.space.inactive_virtual,
-        }
-
-        class Blocks(util.Namespace):
-            def __getitem__(selffer, key):
-                assert key[0] == "b"
-                i = slices[key[1]]
-                j = slices[key[2]]
-                return g[:, i][:, :, j].copy()
-
-            __getattr__ = __getitem__
-
-        return Blocks()
 
     @property
     def bare_fock(self) -> NDArray[float]:
@@ -781,7 +748,7 @@ class REBCC(BaseEBCC):
             Shift in the bosonic operators.
         """
         if self.options.shift:
-            xi = lib.einsum("Iii->I", self.g.boo) * 2.0
+            xi = util.einsum("Iii->I", self.g.boo) * 2.0
             xi /= self.omega
             if self.bare_G is not None:
                 xi += self.bare_G / self.omega

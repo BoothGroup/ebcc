@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from ebcc import default_log, init_logging
 from ebcc import numpy as np
@@ -16,12 +16,12 @@ from ebcc.core.logging import ANSI
 from ebcc.core.precision import astype, types
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Literal, Optional, TypeVar, Union, Generic, cast
+    from typing import Any, Callable, Literal, Optional, TypeVar, Union, Generic
 
     from pyscf.scf.hf import SCF  # type: ignore
 
     from ebcc.core.logging import Logger
-    from ebcc.ham.base import BaseERIs, BaseFock
+    from ebcc.ham.base import BaseERIs, BaseFock, BaseElectronBoson
     from ebcc.numpy.typing import NDArray
     from ebcc.opt.base import BaseBruecknerEBCC
     from ebcc.util import Namespace
@@ -36,22 +36,22 @@ class BaseOptions:
     """Options for EBCC calculations.
 
     Args:
-        shift: Shift the boson operators such that the Hamiltonian is normal-ordered with respect
-            to a coherent state. This removes the bosonic coupling to the static mean-field
-            density, introducing a constant energy shift.
         e_tol: Threshold for convergence in the correlation energy.
         t_tol: Threshold for convergence in the amplitude norm.
         max_iter: Maximum number of iterations.
         diis_space: Number of amplitudes to use in DIIS extrapolation.
         damping: Damping factor for DIIS extrapolation.
+        shift: Shift the boson operators such that the Hamiltonian is normal-ordered with respect
+            to a coherent state. This removes the bosonic coupling to the static mean-field
+            density, introducing a constant energy shift.
     """
 
-    shift: bool = True
     e_tol: float = 1e-8
     t_tol: float = 1e-8
     max_iter: int = 200
     diis_space: int = 12
     damping: float = 0.0
+    shift: bool = True
 
 
 class BaseEBCC(ABC):
@@ -74,6 +74,7 @@ class BaseEBCC(ABC):
     ERIs: type[BaseERIs]
     Fock: type[BaseFock]
     CDERIs: type[BaseERIs]
+    ElectronBoson: type[BaseElectronBoson]
     Brueckner: type[BaseBruecknerEBCC]
 
     # Attributes
@@ -156,7 +157,7 @@ class BaseEBCC(ABC):
         self.bare_g = g.astype(types[float]) if g is not None else None
         self.bare_G = G.astype(types[float]) if G is not None else None
         if self.boson_ansatz != "":
-            self.g = self.get_g(g)
+            self.g = self.get_g()
             self.G = self.get_mean_field_G()
             if self.options.shift:
                 self.log.info(" > Energy shift due to polaritonic basis:  %.10f", self.const)
@@ -647,7 +648,8 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        return cast(NDArray[float], func(**kwargs))
+        res: NDArray[float] = func(**kwargs)
+        return res
 
     def make_rdm1_b(
         self,
@@ -676,7 +678,7 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm = cast(NDArray[float], func(**kwargs))
+        dm: NDArray[float] = func(**kwargs)
 
         if hermitise:
             dm = 0.5 * (dm + dm.T)
@@ -788,7 +790,8 @@ class BaseEBCC(ABC):
             r1=r1,
             r2=r2,
         )
-        return cast(tuple[AmplitudeType, AmplitudeType], func(**kwargs))
+        res: tuple[AmplitudeType, AmplitudeType] = func(**kwargs)
+        return res
 
     def hbar_matvec_ea(
         self,
@@ -816,7 +819,8 @@ class BaseEBCC(ABC):
             r1=r1,
             r2=r2,
         )
-        return cast(tuple[AmplitudeType, AmplitudeType], func(**kwargs))
+        res: tuple[AmplitudeType, AmplitudeType] = func(**kwargs)
+        return res
 
     def hbar_matvec_ee(
         self,
@@ -844,7 +848,8 @@ class BaseEBCC(ABC):
             r1=r1,
             r2=r2,
         )
-        return cast(tuple[AmplitudeType, AmplitudeType], func(**kwargs))
+        res: tuple[AmplitudeType, AmplitudeType] = func(**kwargs)
+        return res
 
     def make_ip_mom_bras(
         self,
@@ -868,7 +873,8 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        return cast(tuple[AmplitudeType, ...], func(**kwargs))
+        res: tuple[AmplitudeType, ...] = func(**kwargs)
+        return res
 
     def make_ea_mom_bras(
         self,
@@ -892,7 +898,8 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        return cast(tuple[AmplitudeType, ...], func(**kwargs))
+        res: tuple[AmplitudeType, ...] = func(**kwargs)
+        return res
 
     def make_ee_mom_bras(
         self,
@@ -916,7 +923,8 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        return cast(tuple[AmplitudeType, ...], func(**kwargs))
+        res: tuple[AmplitudeType, ...] = func(**kwargs)
+        return res
 
     def make_ip_mom_kets(
         self,
@@ -940,7 +948,8 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        return cast(tuple[AmplitudeType, ...], func(**kwargs))
+        res: tuple[AmplitudeType, ...] = func(**kwargs)
+        return res
 
     def make_ea_mom_kets(
         self,
@@ -964,7 +973,8 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        return cast(tuple[AmplitudeType, ...], func(**kwargs))
+        res: tuple[AmplitudeType, ...] = func(**kwargs)
+        return res
 
     def make_ee_mom_kets(
         self,
@@ -988,7 +998,8 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        return cast(tuple[AmplitudeType, ...], func(**kwargs))
+        res: tuple[AmplitudeType, ...] = func(**kwargs)
+        return res
 
     @abstractmethod
     def energy_sum(self, *args: str, signs_dict: Optional[dict[str, int]] = None) -> NDArray[float]:
@@ -1180,19 +1191,15 @@ class BaseEBCC(ABC):
         """
         pass
 
-    @abstractmethod
-    def get_g(self, g: NDArray[float]) -> Namespace[Any]:
+    def get_g(self) -> BaseElectronBoson:
         """Get the blocks of the electron-boson coupling matrix.
 
         This matrix corresponds to the bosonic annihilation operator.
 
-        Args:
-            g: Electron-boson coupling matrix.
-
         Returns:
-            Blocks of the electron-boson coupling matrix.
+            Electron-boson coupling matrix.
         """
-        pass
+        return self.ElectronBoson(self, array=self.bare_g)
 
     @abstractmethod
     def get_mean_field_G(self) -> Any:
