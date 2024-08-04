@@ -61,7 +61,7 @@ from ebcc.cc.rebcc import REBCC
 from ebcc.cc.uebcc import UEBCC
 
 
-def EBCC(mf, *args, **kwargs):
+def EBCC(mf, *args, **kwargs):  # type: ignore
     from pyscf import scf
 
     if isinstance(mf, scf.uhf.UHF):
@@ -78,8 +78,8 @@ EBCC.__doc__ = REBCC.__doc__
 # --- Constructors for boson-free calculations:
 
 
-def _factory(ansatz):
-    def constructor(mf, *args, **kwargs):
+def _factory(ansatz):  # type: ignore
+    def constructor(mf, *args, **kwargs):  # type: ignore
         from pyscf import scf
 
         kwargs["ansatz"] = ansatz
@@ -115,11 +115,8 @@ from ebcc.opt import BruecknerGEBCC, BruecknerREBCC, BruecknerUEBCC
 # --- List available methods:
 
 
-def available_models(verbose=True):  # pragma: no cover
-    """List available coupled-cluster models for each of general (G),
-    restricted (R) and unrestricted (U) Hartree--Fock references.
-    """
-
+def available_models(verbose=True):  # type: ignore  # pragma: no cover
+    """List available coupled-cluster models for each spin type."""
     cd = os.path.dirname(os.path.realpath(__file__))
     path = os.path.join(cd, "codegen")
     _, _, files = list(os.walk(path))[0]
