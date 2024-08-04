@@ -16,7 +16,7 @@ from ebcc.core.logging import ANSI
 from ebcc.core.precision import astype, types
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Literal, Optional, TypeVar, Union
+    from typing import Any, Callable, Literal, Optional, TypeVar, Union, Generic, cast
 
     from pyscf.scf.hf import SCF  # type: ignore
 
@@ -26,9 +26,9 @@ if TYPE_CHECKING:
     from ebcc.opt.base import BaseBruecknerEBCC
     from ebcc.util import Namespace
 
-    ERIsInputType = Union[type[BaseERIs], NDArray[float]]
-    AmplitudeType = TypeVar("AmplitudeType")
-    SpaceType = TypeVar("SpaceType")
+    ERIsInputType = Union[BaseERIs, NDArray[float]]
+    AmplitudeType = Any
+    SpaceType = Any
 
 
 @dataclass
@@ -80,6 +80,8 @@ class BaseEBCC(ABC):
     space: SpaceType
     amplitudes: Namespace[AmplitudeType]
     lambdas: Namespace[AmplitudeType]
+    g: Optional[NDArray[float]]
+    G: Optional[NDArray[float]]
 
     def __init__(
         self,
@@ -125,16 +127,18 @@ class BaseEBCC(ABC):
         # Parameters:
         self.log = default_log if log is None else log
         self.mf = self._convert_mf(mf)
-        self._mo_coeff = np.asarray(mo_coeff).astype(types[float]) if mo_coeff is not None else None
-        self._mo_occ = np.asarray(mo_occ).astype(types[float]) if mo_occ is not None else None
+        self._mo_coeff: Optional[NDArray[float]] = np.asarray(mo_coeff).astype(types[float]) if mo_coeff is not None else None
+        self._mo_occ: Optional[NDArray[float]] = np.asarray(mo_occ).astype(types[float]) if mo_occ is not None else None
 
         # Ansatz:
         if isinstance(ansatz, Ansatz):
             self.ansatz = ansatz
-        else:
+        elif isinstance(ansatz, str):
             self.ansatz = Ansatz.from_string(
                 ansatz, density_fitting=getattr(self.mf, "with_df", None) is not None
             )
+        else:
+            raise TypeError("ansatz must be an Ansatz object or a string.")
         self._eqns = self.ansatz._get_eqns(self.spin_type)
 
         # Space:
@@ -524,12 +528,12 @@ class BaseEBCC(ABC):
 
     @abstractmethod
     def init_lams(
-        self, amplitude: Optional[Namespace[AmplitudeType]] = None
+        self, amplitudes: Optional[Namespace[AmplitudeType]] = None
     ) -> Namespace[AmplitudeType]:
         """Initialise the cluster lambda amplitudes.
 
         Args:
-            amplitude: Cluster amplitudes.
+            amplitudes: Cluster amplitudes.
 
         Returns:
             Initial cluster lambda amplitudes.
@@ -602,7 +606,7 @@ class BaseEBCC(ABC):
     def update_lams(
         self,
         eris: ERIsInputType = None,
-        amplitude: Optional[Namespace[AmplitudeType]] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
         lambdas: Optional[Namespace[AmplitudeType]] = None,
         lambdas_pert: Optional[Namespace[AmplitudeType]] = None,
         perturbative: bool = False,
@@ -611,7 +615,7 @@ class BaseEBCC(ABC):
 
         Args:
             eris: Electron repulsion integrals.
-            amplitude: Cluster amplitudes.
+            amplitudes: Cluster amplitudes.
             lambdas: Cluster lambda amplitudes.
             lambdas_pert: Perturbative cluster lambda amplitudes.
             perturbative: Flag to include perturbative correction.

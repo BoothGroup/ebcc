@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
-from pyscf import lib, scf
+from pyscf import scf
 
 from ebcc import numpy as np
 from ebcc import util
@@ -17,18 +17,19 @@ from ebcc.ham.space import Space
 from ebcc.opt.gbrueckner import BruecknerGEBCC
 
 if TYPE_CHECKING:
-    from typing import Any, Optional, cast
+    from typing import Any, Optional, TypeAlias, Union
 
     from pyscf.scf.ghf import GHF
     from pyscf.scf.hf import SCF
 
-    from ebcc.cc.base import BaseOptions, ERIsInputType
+    from ebcc.cc.base import BaseOptions
     from ebcc.cc.rebcc import REBCC
     from ebcc.cc.uebcc import UEBCC
     from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
 
-    AmplitudeType = NDArray[float]
+    ERIsInputType: TypeAlias = Union[GERIs, NDArray[float]]
+    AmplitudeType: TypeAlias = NDArray[float]
 
 
 class GEBCC(BaseEBCC):
@@ -693,7 +694,7 @@ class GEBCC(BaseEBCC):
                 energies.append(np.diag(self.fock[key + key]))
 
         subscript = "".join([signs_dict[k] + next_char() for k in subscript])
-        energy_sum = lib.direct_sum(subscript, *energies)
+        energy_sum = util.direct_sum(subscript, *energies)
 
         return energy_sum
 
@@ -967,7 +968,7 @@ class GEBCC(BaseEBCC):
             Mean-field boson non-conserving term.
         """
         # FIXME should this also sum in frozen orbitals?
-        val = lib.einsum("Ipp->I", self.g.boo)
+        val = util.einsum("Ipp->I", self.g.boo)
         val -= self.xi * self.omega
         if self.bare_G is not None:
             val += self.bare_G
@@ -1027,7 +1028,7 @@ class GEBCC(BaseEBCC):
             Shift in the bosonic operators.
         """
         if self.options.shift:
-            xi = lib.einsum("Iii->I", self.g.boo)
+            xi = util.einsum("Iii->I", self.g.boo)
             xi /= self.omega
             if self.bare_G is not None:
                 xi += self.bare_G / self.omega
@@ -1064,7 +1065,7 @@ class GEBCC(BaseEBCC):
         Returns:
             Number of molecular orbitals.
         """
-        return self.space.nmo
+        return cast(int, self.space.nmo)
 
     @property
     def nocc(self) -> int:
@@ -1073,7 +1074,7 @@ class GEBCC(BaseEBCC):
         Returns:
             Number of occupied molecular orbitals.
         """
-        return self.space.nocc
+        return cast(int, self.space.nocc)
 
     @property
     def nvir(self) -> int:
@@ -1082,4 +1083,4 @@ class GEBCC(BaseEBCC):
         Returns:
             Number of virtual molecular orbitals.
         """
-        return self.space.nvir
+        return cast(int, self.space.nvir)

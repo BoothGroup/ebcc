@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from pyscf import lib
 
@@ -18,7 +18,7 @@ from ebcc.ham.space import Space
 from ebcc.opt.ubrueckner import BruecknerUEBCC
 
 if TYPE_CHECKING:
-    from typing import Any, Optional, Union, cast
+    from typing import Any, Optional, Union
 
     from pyscf.scf.hf import SCF
     from pyscf.scf.uhf import UHF
@@ -1108,7 +1108,7 @@ class UEBCC(BaseEBCC):
             Number of molecular orbitals.
         """
         assert self.mo_occ[0].size == self.mo_occ[1].size
-        return self.mo_occ[0].size
+        return cast(int, self.mo_occ[0].size)
 
     @property
     def nocc(self) -> tuple[int, int]:
@@ -1117,7 +1117,7 @@ class UEBCC(BaseEBCC):
         Returns:
             Number of occupied molecular orbitals for each spin.
         """
-        return tuple(np.sum(mo_occ > 0) for mo_occ in self.mo_occ)
+        return cast(tuple[int], tuple(np.sum(mo_occ > 0) for mo_occ in self.mo_occ))
 
     @property
     def nvir(self) -> tuple[int, int]:
@@ -1126,4 +1126,4 @@ class UEBCC(BaseEBCC):
         Returns:
             Number of virtual molecular orbitals for each spin.
         """
-        return tuple(self.nmo - nocc for nocc in self.nocc)
+        return cast(tuple[int], tuple(self.nmo - nocc for nocc in self.nocc))

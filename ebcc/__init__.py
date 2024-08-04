@@ -48,10 +48,10 @@ from typing import TYPE_CHECKING
 
 import numpy
 
+from ebcc.core.logging import NullLogger, default_log, init_logging
 from ebcc.cc import GEBCC, REBCC, UEBCC
 from ebcc.core import precision
 from ebcc.core.ansatz import Ansatz
-from ebcc.core.logging import NullLogger, default_log, init_logging
 from ebcc.ham.space import Space
 from ebcc.opt import BruecknerGEBCC, BruecknerREBCC, BruecknerUEBCC
 

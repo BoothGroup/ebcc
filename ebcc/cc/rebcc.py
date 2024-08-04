@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from pyscf import lib
 
@@ -18,7 +18,7 @@ from ebcc.ham.space import Space
 from ebcc.opt.rbrueckner import BruecknerREBCC
 
 if TYPE_CHECKING:
-    from typing import Any, Optional, Union, cast
+    from typing import Any, Optional, Union
 
     from pyscf.scf.hf import RHF, SCF
 
@@ -823,7 +823,7 @@ class REBCC(BaseEBCC):
         Returns:
             Number of molecular orbitals.
         """
-        return self.space.nmo
+        return cast(int, self.space.nmo)
 
     @property
     def nocc(self) -> int:
@@ -832,7 +832,7 @@ class REBCC(BaseEBCC):
         Returns:
             Number of occupied molecular orbitals.
         """
-        return self.space.nocc
+        return cast(int, self.space.nocc)
 
     @property
     def nvir(self) -> int:
@@ -841,4 +841,4 @@ class REBCC(BaseEBCC):
         Returns:
             Number of virtual molecular orbitals.
         """
-        return self.space.nvir
+        return cast(int, self.space.nvir)
