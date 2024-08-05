@@ -14,9 +14,10 @@ from ebcc.core.logging import ANSI
 from ebcc.core.precision import types
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Optional
+    from typing import Any, Callable, Optional, Union
 
-    from ebcc.cc.base import AmplitudeType, BaseEBCC, ERIsInputType
+    from ebcc.cc.base import AmplitudeType, BaseEBCC, ERIsInputType, SpaceType
+    from ebcc.core.ansatz import Ansatz
     from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
 
@@ -56,10 +57,15 @@ class BaseEOM(ABC):
     # Types
     Options = BaseOptions
 
+    # Attrbutes
+    ebcc: BaseEBCC
+    space: SpaceType
+    ansatz: Ansatz
+
     def __init__(
         self,
         ebcc: BaseEBCC,
-        options: Optional[Options] = None,
+        options: Optional[BaseOptions] = None,
         **kwargs: Any,
     ) -> None:
         """Initialise the EOM object.
@@ -189,7 +195,7 @@ class BaseEOM(ABC):
         """
         pass
 
-    def dot_braket(self, bra: NDArray[float], ket: NDArray[float]) -> float:
+    def dot_braket(self, bra: NDArray[float], ket: NDArray[float]) -> Union[float, NDArray[float]]:
         """Compute the dot product of a bra and ket."""
         return np.dot(bra, ket)
 
@@ -217,8 +223,8 @@ class BaseEOM(ABC):
                 x0 = np.asarray(x0)
                 s = np.dot(guesses_array.conj(), x0.T)
                 s = util.einsum("pi,qi->i", s.conj(), s)
-                idx = np.argsort(-s)[:nroots]
-                return lib.linalg_helper._eigs_cmplx2real(w, v, idx, real_system)
+                arg = np.argsort(-s)[:nroots]
+                return lib.linalg_helper._eigs_cmplx2real(w, v, arg, real_system)  # type: ignore
 
         else:
 
@@ -352,7 +358,7 @@ class BaseEOM(ABC):
         self,
         nmom: int,
         eris: Optional[ERIsInputType] = None,
-        amplitudes: Namespace[AmplitudeType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
         hermitise: bool = True,
     ) -> AmplitudeType:
         """Construct the moments of the EOM Hamiltonian.

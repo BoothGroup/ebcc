@@ -8,14 +8,31 @@ from typing import TYPE_CHECKING
 from ebcc.util import Namespace
 
 if TYPE_CHECKING:
-    from typing import Any, TypeVar
+    from typing import Any, TypeVar, Optional
 
     from ebcc.cc.base import BaseEBCC
+    from ebcc.numpy.typing import NDArray
 
     T = TypeVar("T")
 
 
-class BaseFock(Namespace, ABC):
+class BaseHamiltonian(Namespace[Any], ABC):
+    """Base class for Hamiltonians."""
+
+    @abstractmethod
+    def __getitem__(self, key: str) -> Any:
+        """Just-in-time getter.
+
+        Args:
+            key: Key to get.
+
+        Returns:
+            Slice of the Hamiltonian.
+        """
+        pass
+
+
+class BaseFock(BaseHamiltonian):
     """Base class for Fock matrices.
 
     Attributes:
@@ -31,10 +48,10 @@ class BaseFock(Namespace, ABC):
     def __init__(
         self,
         cc: BaseEBCC,
-        array: Any = None,
-        space: tuple[Any] = None,
-        mo_coeff: tuple[Any] = None,
-        g: Namespace[Any] = None,
+        array: Optional[Any] = None,
+        space: Optional[tuple[Any]] = None,
+        mo_coeff: Optional[tuple[Any]] = None,
+        g: Optional[Namespace[Any]] = None,
     ) -> None:
         """Initialise the Fock matrix.
 
@@ -59,32 +76,20 @@ class BaseFock(Namespace, ABC):
         self.__dict__["xi"] = cc.xi
 
     @abstractmethod
-    def _get_fock(self) -> T:
+    def _get_fock(self) -> Any:
         """Get the Fock matrix."""
         pass
 
-    @abstractmethod
-    def __getitem__(self, key: str) -> Any:
-        """Just-in-time getter.
 
-        Args:
-            key: Key to get.
-
-        Returns:
-            Slice of the Fock matrix.
-        """
-        pass
-
-
-class BaseERIs(Namespace, ABC):
+class BaseERIs(BaseHamiltonian):
     """Base class for electronic repulsion integrals."""
 
     def __init__(
         self,
         cc: BaseEBCC,
-        array: Any = None,
-        space: tuple[Any] = None,
-        mo_coeff: tuple[Any] = None,
+        array: Optional[Any] = None,
+        space: Optional[tuple[Any]] = None,
+        mo_coeff: Optional[tuple[Any]] = None,
     ) -> None:
         """Initialise the ERIs.
 
@@ -102,20 +107,8 @@ class BaseERIs(Namespace, ABC):
         self.__dict__["mo_coeff"] = mo_coeff if mo_coeff is not None else (cc.mo_coeff,) * 4
         self.__dict__["array"] = array if array is not None else None
 
-    @abstractmethod
-    def __getitem__(self, key: str) -> Any:
-        """Just-in-time getter.
 
-        Args:
-            key: Key to get.
-
-        Returns:
-            Slice of the ERIs.
-        """
-        pass
-
-
-class BaseElectronBoson(Namespace, ABC):
+class BaseElectronBoson(BaseHamiltonian):
     """Base class for electron-boson coupling matrices.
 
     Attributes:
@@ -127,8 +120,8 @@ class BaseElectronBoson(Namespace, ABC):
     def __init__(
         self,
         cc: BaseEBCC,
-        array: Any = None,
-        space: tuple[Any] = None,
+        array: Optional[Any] = None,
+        space: Optional[tuple[Any]] = None,
     ) -> None:
         """Initialise the electron-boson coupling matrix.
 
@@ -147,15 +140,3 @@ class BaseElectronBoson(Namespace, ABC):
     def _get_g(self) -> NDArray[float]:
         """Get the electron-boson coupling matrix."""
         return self.cc.bare_g
-
-    @abstractmethod
-    def __getitem__(self, key: str) -> Any:
-        """Just-in-time getter.
-
-        Args:
-            key: Key to get.
-
-        Returns:
-            Slice of the electron-boson coupling matrix.
-        """
-        pass

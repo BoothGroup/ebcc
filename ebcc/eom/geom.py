@@ -7,13 +7,14 @@ from typing import TYPE_CHECKING
 
 from ebcc import numpy as np
 from ebcc import util
-from ebcc.core.precision import types
+from ebcc.core.precision import types, astype
 from ebcc.eom.base import BaseEA_EOM, BaseEE_EOM, BaseEOM, BaseIP_EOM
 
 if TYPE_CHECKING:
     from typing import Optional
 
-    from ebcc.cc.gebcc import AmplitudeType, ERIsInputType
+    from ebcc.ham.space import Space
+    from ebcc.cc.gebcc import GEBCC, AmplitudeType, ERIsInputType
     from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
 
@@ -21,7 +22,9 @@ if TYPE_CHECKING:
 class GEOM(BaseEOM):
     """Generalised equation-of-motion coupled cluster."""
 
-    pass
+    # Attributes
+    ebcc: GEBCC
+    space: Space
 
 
 class IP_GEOM(GEOM, BaseIP_EOM):
@@ -38,7 +41,8 @@ class IP_GEOM(GEOM, BaseIP_EOM):
 
     def _quasiparticle_weight(self, r1: AmplitudeType) -> float:
         """Get the quasiparticle weight."""
-        return np.linalg.norm(r1) ** 2
+        weight: float = np.dot(r1.ravel(), r1.ravel())
+        return astype(weight, float)
 
     def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
         """Get the diagonal of the Hamiltonian.
@@ -94,7 +98,7 @@ class IP_GEOM(GEOM, BaseIP_EOM):
         self,
         nmom: int,
         eris: Optional[ERIsInputType] = None,
-        amplitudes: Namespace[AmplitudeType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
         hermitise: bool = True,
     ) -> NDArray[float]:
         """Construct the moments of the EOM Hamiltonian.
@@ -116,6 +120,7 @@ class IP_GEOM(GEOM, BaseIP_EOM):
         bras = self.bras(eris=eris)
         kets = self.kets(eris=eris)
 
+        moments: NDArray[float]
         moments = np.zeros((nmom, self.nmo, self.nmo), dtype=types[float])
 
         for j in range(self.nmo):
@@ -147,7 +152,8 @@ class EA_GEOM(GEOM, BaseEA_EOM):
 
     def _quasiparticle_weight(self, r1: AmplitudeType) -> float:
         """Get the quasiparticle weight."""
-        return np.linalg.norm(r1) ** 2
+        weight: float = np.dot(r1.ravel(), r1.ravel())
+        return astype(weight, float)
 
     def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
         """Get the diagonal of the Hamiltonian.
@@ -203,7 +209,7 @@ class EA_GEOM(GEOM, BaseEA_EOM):
         self,
         nmom: int,
         eris: Optional[ERIsInputType] = None,
-        amplitudes: Namespace[AmplitudeType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
         hermitise: bool = True,
     ) -> NDArray[float]:
         """Construct the moments of the EOM Hamiltonian.
@@ -225,6 +231,7 @@ class EA_GEOM(GEOM, BaseEA_EOM):
         bras = self.bras(eris=eris)
         kets = self.kets(eris=eris)
 
+        moments: NDArray[float]
         moments = np.zeros((nmom, self.nmo, self.nmo), dtype=types[float])
 
         for j in range(self.nmo):
@@ -256,7 +263,8 @@ class EE_GEOM(GEOM, BaseEE_EOM):
 
     def _quasiparticle_weight(self, r1: AmplitudeType) -> float:
         """Get the quasiparticle weight."""
-        return np.linalg.norm(r1) ** 2
+        weight: float = np.dot(r1.ravel(), r1.ravel())
+        return astype(weight, float)
 
     def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
         """Get the diagonal of the Hamiltonian.
@@ -320,7 +328,7 @@ class EE_GEOM(GEOM, BaseEE_EOM):
         self,
         nmom: int,
         eris: Optional[ERIsInputType] = None,
-        amplitudes: Namespace[AmplitudeType] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
         hermitise: bool = True,
         diagonal_only: bool = True,
     ) -> NDArray[float]:
@@ -350,6 +358,7 @@ class EE_GEOM(GEOM, BaseEE_EOM):
         bras = self.bras(eris=eris)
         kets = self.kets(eris=eris)
 
+        moments: NDArray[float]
         moments = np.zeros((nmom, self.nmo, self.nmo, self.nmo, self.nmo), dtype=types[float])
 
         for k in range(self.nmo):

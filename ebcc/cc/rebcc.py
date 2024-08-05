@@ -56,7 +56,7 @@ class REBCC(BaseEBCC):
         """Get a string representation of the spin type."""
         return "R"
 
-    def ip_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> IP_REOM:
+    def ip_eom(self, **kwargs: Any) -> IP_REOM:
         """Get the IP-EOM object.
 
         Args:
@@ -66,9 +66,9 @@ class REBCC(BaseEBCC):
         Returns:
             IP-EOM object.
         """
-        return IP_REOM(self, options=options, **kwargs)
+        return IP_REOM(self, **kwargs)
 
-    def ea_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> EA_REOM:
+    def ea_eom(self, **kwargs: Any) -> EA_REOM:
         """Get the EA-EOM object.
 
         Args:
@@ -78,9 +78,9 @@ class REBCC(BaseEBCC):
         Returns:
             EA-EOM object.
         """
-        return EA_REOM(self, options=options, **kwargs)
+        return EA_REOM(self, **kwargs)
 
-    def ee_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> EE_REOM:
+    def ee_eom(self, **kwargs: Any) -> EE_REOM:
         """Get the EE-EOM object.
 
         Args:
@@ -90,7 +90,7 @@ class REBCC(BaseEBCC):
         Returns:
             EE-EOM object.
         """
-        return EE_REOM(self, options=options, **kwargs)
+        return EE_REOM(self, **kwargs)
 
     @staticmethod
     def _convert_mf(mf: SCF) -> RHF:

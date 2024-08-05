@@ -59,41 +59,38 @@ class GEBCC(BaseEBCC):
         """Get a string representation of the spin type."""
         return "G"
 
-    def ip_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> IP_GEOM:
+    def ip_eom(self, **kwargs: Any) -> IP_GEOM:
         """Get the IP-EOM object.
 
         Args:
-            options: Options for the IP-EOM calculation.
             **kwargs: Additional keyword arguments.
 
         Returns:
             IP-EOM object.
         """
-        return IP_GEOM(self, options=options, **kwargs)
+        return IP_GEOM(self, **kwargs)
 
-    def ea_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> EA_GEOM:
+    def ea_eom(self, **kwargs: Any) -> EA_GEOM:
         """Get the EA-EOM object.
 
         Args:
-            options: Options for the EA-EOM calculation.
             **kwargs: Additional keyword arguments.
 
         Returns:
             EA-EOM object.
         """
-        return EA_GEOM(self, options=options, **kwargs)
+        return EA_GEOM(self, **kwargs)
 
-    def ee_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> EE_GEOM:
+    def ee_eom(self, **kwargs: Any) -> EE_GEOM:
         """Get the EE-EOM object.
 
         Args:
-            options: Options for the EE-EOM calculation.
             **kwargs: Additional keyword arguments.
 
         Returns:
             EE-EOM object.
         """
-        return EE_GEOM(self, options=options, **kwargs)
+        return EE_GEOM(self, **kwargs)
 
     @staticmethod
     def _convert_mf(mf: SCF) -> GHF:

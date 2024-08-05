@@ -22,7 +22,8 @@ if TYPE_CHECKING:
     from pyscf.scf.hf import SCF
     from pyscf.scf.uhf import UHF
 
-    from ebcc.cc.rebcc import REBCC, BaseOptions
+    from ebcc.cc.base import BaseOptions
+    from ebcc.cc.rebcc import REBCC
     from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
 
@@ -57,7 +58,7 @@ class UEBCC(BaseEBCC):
         """Get a string representation of the spin type."""
         return "U"
 
-    def ip_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> IP_UEOM:
+    def ip_eom(self, **kwargs: Any) -> IP_UEOM:
         """Get the IP-EOM object.
 
         Args:
@@ -67,9 +68,9 @@ class UEBCC(BaseEBCC):
         Returns:
             IP-EOM object.
         """
-        return IP_UEOM(self, options=options, **kwargs)
+        return IP_UEOM(self, **kwargs)
 
-    def ea_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> EA_UEOM:
+    def ea_eom(self, **kwargs: Any) -> EA_UEOM:
         """Get the EA-EOM object.
 
         Args:
@@ -79,9 +80,9 @@ class UEBCC(BaseEBCC):
         Returns:
             EA-EOM object.
         """
-        return EA_UEOM(self, options=options, **kwargs)
+        return EA_UEOM(self, **kwargs)
 
-    def ee_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> EE_UEOM:
+    def ee_eom(self, **kwargs: Any) -> EE_UEOM:
         """Get the EE-EOM object.
 
         Args:
@@ -91,7 +92,7 @@ class UEBCC(BaseEBCC):
         Returns:
             EE-EOM object.
         """
-        return EE_UEOM(self, options=options, **kwargs)
+        return EE_UEOM(self, **kwargs)
 
     @staticmethod
     def _convert_mf(mf: SCF) -> UHF:

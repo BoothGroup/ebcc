@@ -381,11 +381,10 @@ class BaseEBCC(ABC):
         self.converged_lambda = converged
 
     @abstractmethod
-    def ip_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> Any:
+    def ip_eom(self, **kwargs: Any) -> Any:
         """Get the IP-EOM object.
 
         Args:
-            options: Options for the IP-EOM calculation.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -394,11 +393,10 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def ea_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> Any:
+    def ea_eom(self, **kwargs: Any) -> Any:
         """Get the EA-EOM object.
 
         Args:
-            options: Options for the EA-EOM calculation.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -407,11 +405,10 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def ee_eom(self, options: Optional[BaseOptions] = None, **kwargs: Any) -> Any:
+    def ee_eom(self, **kwargs: Any) -> Any:
         """Get the EE-EOM object.
 
         Args:
-            options: Options for the EE-EOM calculation.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -571,7 +568,8 @@ class BaseEBCC(ABC):
             eris=eris,
             amplitudes=amplitudes,
         )
-        return astype(func(**kwargs).real, float)
+        res: float = func(**kwargs).real
+        return astype(res, float)
 
     def energy_perturbative(
         self,
@@ -595,7 +593,8 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        return astype(func(**kwargs).real, float)
+        res: float = func(**kwargs).real
+        return astype(res, float)
 
     @abstractmethod
     def update_amps(
@@ -777,8 +776,7 @@ class BaseEBCC(ABC):
 
     def hbar_matvec_ip(
         self,
-        r1: AmplitudeType,
-        r2: AmplitudeType,
+        *excitations: AmplitudeType,
         eris: Optional[ERIsInputType] = None,
         amplitudes: Optional[Namespace[AmplitudeType]] = None,
     ) -> tuple[AmplitudeType, AmplitudeType]:
@@ -794,6 +792,7 @@ class BaseEBCC(ABC):
             Products between the state vectors and the IP-EOM Hamiltonian for the singles and
             doubles.
         """
+        r1, r2 = excitations  # FIXME
         func, kwargs = self._load_function(
             "hbar_matvec_ip",
             eris=eris,
@@ -806,8 +805,7 @@ class BaseEBCC(ABC):
 
     def hbar_matvec_ea(
         self,
-        r1: AmplitudeType,
-        r2: AmplitudeType,
+        *excitations: AmplitudeType,
         eris: Optional[ERIsInputType] = None,
         amplitudes: Optional[Namespace[AmplitudeType]] = None,
     ) -> tuple[AmplitudeType, AmplitudeType]:
@@ -823,6 +821,7 @@ class BaseEBCC(ABC):
             Products between the state vectors and the EA-EOM Hamiltonian for the singles and
             doubles.
         """
+        r1, r2 = excitations  # FIXME
         func, kwargs = self._load_function(
             "hbar_matvec_ea",
             eris=eris,
@@ -835,8 +834,7 @@ class BaseEBCC(ABC):
 
     def hbar_matvec_ee(
         self,
-        r1: AmplitudeType,
-        r2: AmplitudeType,
+        *excitations: AmplitudeType,
         eris: Optional[ERIsInputType] = None,
         amplitudes: Optional[Namespace[AmplitudeType]] = None,
     ) -> tuple[AmplitudeType, AmplitudeType]:
@@ -852,6 +850,7 @@ class BaseEBCC(ABC):
             Products between the state vectors and the EE-EOM Hamiltonian for the singles and
             doubles.
         """
+        r1, r2 = excitations  # FIXME
         func, kwargs = self._load_function(
             "hbar_matvec_ee",
             eris=eris,
@@ -1324,7 +1323,8 @@ class BaseEBCC(ABC):
         Returns:
             Total energy.
         """
-        return astype(self.mf.e_tot + self.e_corr, float)
+        e_tot: float = self.mf.e_tot + self.e_corr
+        return astype(e_tot, float)
 
     @property
     def t1(self) -> Any:
