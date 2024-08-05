@@ -38,6 +38,7 @@ jobs:
           python -m black ebcc/ --diff --check --verbose
           python -m isort ebcc/ --diff --check-only --verbose
           python -m flake8 ebcc/ --verbose
+          python -m mypy ebcc/ --verbose
       - name: Run unit tests
         run: |
           python -m pip install pytest pytest-cov
