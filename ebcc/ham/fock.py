@@ -48,7 +48,7 @@ class RFock(BaseFock):
 
             if self.shift:
                 xi = self.xi
-                g = self.g.__getattr__(f"b{key}")
+                g = self.g.__getattr__(f"b{key}").copy()
                 g += self.g.__getattr__(f"b{key[::-1]}").transpose(0, 2, 1)
                 self._members[key] -= np.einsum("I,Ipq->pq", xi, g)
 
@@ -133,7 +133,7 @@ class GFock(BaseFock):
 
             if self.shift:
                 xi = self.xi
-                g = self.g.__getattr__(f"b{key}")
+                g = self.g.__getattr__(f"b{key}").copy()
                 g += self.g.__getattr__(f"b{key[::-1]}").transpose(0, 2, 1)
                 self._members[key] -= np.einsum("I,Ipq->pq", xi, g)
 

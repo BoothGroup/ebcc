@@ -1051,7 +1051,7 @@ class UEBCC(BaseEBCC):
         Returns:
             Fock matrix.
         """
-        return self.Fock(self, array=(self.bare_fock.aa, self.bare_fock.bb))
+        return self.Fock(self, array=(self.bare_fock.aa, self.bare_fock.bb), g=self.g)
 
     def get_eris(self, eris: Optional[ERIsInputType] = None) -> Union[UERIs, UCDERIs]:
         """Get the electron repulsion integrals.
