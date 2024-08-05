@@ -97,6 +97,10 @@ class UEBCC(BaseEBCC):
     def _convert_mf(mf: SCF) -> UHF:
         """Convert the mean-field object to the appropriate type."""
         return mf.to_uhf()
+        hf = mf.to_uhf()
+        if hasattr(mf, "xc"):
+            hf.e_tot = hf.energy_tot()
+        return hf
 
     @classmethod
     def from_rebcc(cls, rcc: REBCC) -> UEBCC:

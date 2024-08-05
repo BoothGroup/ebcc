@@ -94,7 +94,10 @@ class REBCC(BaseEBCC):
     @staticmethod
     def _convert_mf(mf: SCF) -> RHF:
         """Convert the mean-field object to the appropriate type."""
-        return mf.to_rhf()
+        hf = mf.to_rhf()
+        if hasattr(mf, "xc"):
+            hf.e_tot = hf.energy_tot()
+        return hf
 
     def init_space(self) -> Space:
         """Initialise the fermionic space.

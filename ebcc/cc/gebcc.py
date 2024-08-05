@@ -100,7 +100,10 @@ class GEBCC(BaseEBCC):
         """
         if isinstance(mf, scf.ghf.GHF):
             return mf
-        return mf.to_uhf().to_ghf()
+        hf = mf.to_uhf().to_ghf()
+        if hasattr(mf, "xc"):
+            hf.e_tot = hf.energy_tot()
+        return hf
 
     @classmethod
     def from_uebcc(cls, ucc: UEBCC) -> GEBCC:
