@@ -7,14 +7,14 @@ from typing import TYPE_CHECKING
 
 from ebcc import numpy as np
 from ebcc import util
-from ebcc.core.precision import types, astype
+from ebcc.core.precision import astype, types
 from ebcc.eom.base import BaseEA_EOM, BaseEE_EOM, BaseEOM, BaseIP_EOM
 
 if TYPE_CHECKING:
     from typing import Optional
 
-    from ebcc.ham.space import Space
     from ebcc.cc.rebcc import REBCC, AmplitudeType, ERIsInputType
+    from ebcc.ham.space import Space
     from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
 

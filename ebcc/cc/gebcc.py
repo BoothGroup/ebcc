@@ -11,10 +11,10 @@ from ebcc import util
 from ebcc.cc.base import BaseEBCC
 from ebcc.core.precision import types
 from ebcc.eom import EA_GEOM, EE_GEOM, IP_GEOM
+from ebcc.ham.elbos import GElectronBoson
 from ebcc.ham.eris import GERIs
 from ebcc.ham.fock import GFock
 from ebcc.ham.space import Space
-from ebcc.ham.elbos import GElectronBoson
 from ebcc.opt.gbrueckner import BruecknerGEBCC
 
 if TYPE_CHECKING:
@@ -23,7 +23,6 @@ if TYPE_CHECKING:
     from pyscf.scf.ghf import GHF
     from pyscf.scf.hf import SCF
 
-    from ebcc.cc.base import BaseOptions
     from ebcc.cc.rebcc import REBCC
     from ebcc.cc.uebcc import UEBCC
     from ebcc.numpy.typing import NDArray
@@ -672,7 +671,7 @@ class GEBCC(BaseEBCC):
         Returns:
             Sum of energies.
         """
-        subscript, = args
+        (subscript,) = args
         n = 0
 
         def next_char() -> str:

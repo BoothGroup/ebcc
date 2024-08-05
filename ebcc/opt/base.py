@@ -17,8 +17,8 @@ from ebcc.core.precision import types
 if TYPE_CHECKING:
     from typing import Any, Optional, TypeVar
 
-    from ebcc.numpy.typing import NDArray
     from ebcc.cc.base import AmplitudeType, BaseEBCC
+    from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
 
     T = TypeVar("T")
@@ -277,7 +277,9 @@ class BaseBruecknerEBCC(ABC):
         pass
 
     @abstractmethod
-    def update_coefficients(self, u_tot: AmplitudeType, mo_coeff_new: Any, mo_coeff_ref: Any) -> Any:
+    def update_coefficients(
+        self, u_tot: AmplitudeType, mo_coeff_new: Any, mo_coeff_ref: Any
+    ) -> Any:
         """Update the MO coefficients.
 
         Args:

@@ -14,7 +14,7 @@ from ebcc.opt.base import BaseBruecknerEBCC
 if TYPE_CHECKING:
     from typing import Optional
 
-    from ebcc.cc.uebcc import AmplitudeType, UEBCC
+    from ebcc.cc.uebcc import UEBCC, AmplitudeType
     from ebcc.core.damping import DIIS
     from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
@@ -151,7 +151,9 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
         weight: float = types[float](np.linalg.norm([weight_a, weight_b]))
         return weight
 
-    def mo_to_correlated(self, mo_coeff: tuple[NDArray[float], NDArray[float]]) -> tuple[NDArray[float], NDArray[float]]:
+    def mo_to_correlated(
+        self, mo_coeff: tuple[NDArray[float], NDArray[float]]
+    ) -> tuple[NDArray[float], NDArray[float]]:
         """Transform the MO coefficients into the correlated basis.
 
         Args:
@@ -166,7 +168,9 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
         )
 
     def mo_update_correlated(
-        self, mo_coeff: tuple[NDArray[float], NDArray[float]], mo_coeff_corr: tuple[NDArray[float], NDArray[float]]
+        self,
+        mo_coeff: tuple[NDArray[float], NDArray[float]],
+        mo_coeff_corr: tuple[NDArray[float], NDArray[float]],
     ) -> tuple[NDArray[float], NDArray[float]]:
         """Update the correlated slice of a set of MO coefficients.
 

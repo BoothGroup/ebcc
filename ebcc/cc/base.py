@@ -16,12 +16,12 @@ from ebcc.core.logging import ANSI
 from ebcc.core.precision import astype, types
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Literal, Optional, TypeVar, Union, Generic
+    from typing import Any, Callable, Literal, Optional, Union
 
     from pyscf.scf.hf import SCF
 
     from ebcc.core.logging import Logger
-    from ebcc.ham.base import BaseERIs, BaseFock, BaseElectronBoson
+    from ebcc.ham.base import BaseElectronBoson, BaseERIs, BaseFock
     from ebcc.numpy.typing import NDArray
     from ebcc.opt.base import BaseBruecknerEBCC
     from ebcc.util import Namespace
@@ -128,8 +128,12 @@ class BaseEBCC(ABC):
         # Parameters:
         self.log = default_log if log is None else log
         self.mf = self._convert_mf(mf)
-        self._mo_coeff: Optional[NDArray[float]] = np.asarray(mo_coeff).astype(types[float]) if mo_coeff is not None else None
-        self._mo_occ: Optional[NDArray[float]] = np.asarray(mo_occ).astype(types[float]) if mo_occ is not None else None
+        self._mo_coeff: Optional[NDArray[float]] = (
+            np.asarray(mo_coeff).astype(types[float]) if mo_coeff is not None else None
+        )
+        self._mo_occ: Optional[NDArray[float]] = (
+            np.asarray(mo_occ).astype(types[float]) if mo_occ is not None else None
+        )
 
         # Ansatz:
         if isinstance(ansatz, Ansatz):
@@ -533,7 +537,9 @@ class BaseEBCC(ABC):
         """
         pass
 
-    def _get_amps(self, amplitudes: Optional[Namespace[AmplitudeType]] = None) -> Namespace[AmplitudeType]:
+    def _get_amps(
+        self, amplitudes: Optional[Namespace[AmplitudeType]] = None
+    ) -> Namespace[AmplitudeType]:
         """Get the cluster amplitudes, initialising if required."""
         if not amplitudes:
             amplitudes = self.amplitudes
@@ -541,7 +547,11 @@ class BaseEBCC(ABC):
             amplitudes = self.init_amps()
         return amplitudes
 
-    def _get_lams(self, lambdas: Optional[Namespace[AmplitudeType]] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None) -> Namespace[AmplitudeType]:
+    def _get_lams(
+        self,
+        lambdas: Optional[Namespace[AmplitudeType]] = None,
+        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+    ) -> Namespace[AmplitudeType]:
         """Get the cluster lambda amplitudes, initialising if required."""
         if not lambdas:
             lambdas = self.lambdas

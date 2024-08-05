@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 from ebcc.util import Namespace
 
 if TYPE_CHECKING:
-    from typing import TypeVar, Optional
+    from typing import Optional, TypeVar
 
     from ebcc.cc.base import BaseEBCC
     from ebcc.numpy.typing import NDArray

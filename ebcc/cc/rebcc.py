@@ -10,18 +10,17 @@ from ebcc.cc.base import BaseEBCC
 from ebcc.core.precision import types
 from ebcc.eom import EA_REOM, EE_REOM, IP_REOM
 from ebcc.ham.cderis import RCDERIs
+from ebcc.ham.elbos import RElectronBoson
 from ebcc.ham.eris import RERIs
 from ebcc.ham.fock import RFock
 from ebcc.ham.space import Space
-from ebcc.ham.elbos import RElectronBoson
 from ebcc.opt.rbrueckner import BruecknerREBCC
 
 if TYPE_CHECKING:
-    from typing import Any, Optional, Union, TypeAlias
+    from typing import Any, Optional, TypeAlias, Union
 
     from pyscf.scf.hf import RHF, SCF
 
-    from ebcc.cc.base import BaseOptions
     from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
 
@@ -448,7 +447,7 @@ class REBCC(BaseEBCC):
         Returns:
             Sum of energies.
         """
-        subscript, = args
+        (subscript,) = args
         n = 0
 
         def next_char() -> str:

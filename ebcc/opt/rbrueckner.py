@@ -8,13 +8,13 @@ import scipy.linalg
 
 from ebcc import numpy as np
 from ebcc import util
-from ebcc.core.precision import types, astype
+from ebcc.core.precision import types
 from ebcc.opt.base import BaseBruecknerEBCC
 
 if TYPE_CHECKING:
     from typing import Optional
 
-    from ebcc.cc.rebcc import AmplitudeType, REBCC
+    from ebcc.cc.rebcc import REBCC, AmplitudeType
     from ebcc.core.damping import DIIS
     from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
@@ -54,7 +54,9 @@ class BruecknerREBCC(BaseBruecknerEBCC):
         if u_tot is None:
             u_tot = np.eye(self.cc.space.ncorr, dtype=types[float])
 
-        t1_block: NDArray[float] = np.zeros((self.cc.space.ncorr, self.cc.space.ncorr), dtype=types[float])
+        t1_block: NDArray[float] = np.zeros(
+            (self.cc.space.ncorr, self.cc.space.ncorr), dtype=types[float]
+        )
         t1_block[: self.cc.space.ncocc, self.cc.space.ncocc :] = -t1
         t1_block[self.cc.space.ncocc :, : self.cc.space.ncocc] = t1.T
 

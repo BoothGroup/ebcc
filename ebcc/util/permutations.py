@@ -9,7 +9,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 if TYPE_CHECKING:
-    from typing import Any, Generator, Hashable, Iterable, Optional, TypeVar, Union
+    from typing import Any, Generator, Hashable, Iterable, Optional, TypeVar
 
     from ebcc.numpy.typing import NDArray
 
@@ -228,7 +228,7 @@ def is_mixed_spin(spin: Iterable[Hashable]) -> bool:
 
 def combine_subscripts(
     *subscripts: str,
-    sizes: dict[tuple[str, ...], int] = {},
+    sizes: Optional[dict[tuple[str, ...], int]] = None,
 ) -> tuple[str, dict[str, int]]:
     """Combine subscripts into new unique subscripts for functions such as `compress_axes`.
 

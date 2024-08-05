@@ -6,14 +6,14 @@ from typing import TYPE_CHECKING
 
 from ebcc import numpy as np
 from ebcc import util
-from ebcc.core.precision import types, astype
+from ebcc.core.precision import astype, types
 from ebcc.eom.base import BaseEA_EOM, BaseEE_EOM, BaseEOM, BaseIP_EOM
 
 if TYPE_CHECKING:
     from typing import Optional
 
-    from ebcc.ham.space import Space
     from ebcc.cc.uebcc import UEBCC, AmplitudeType, ERIsInputType
+    from ebcc.ham.space import Space
     from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
 
@@ -117,7 +117,9 @@ class IP_UEOM(UEOM, BaseIP_EOM):
             bras_tmp.a.append(self.amplitudes_to_vector(*amps_a))
             bras_tmp.b.append(self.amplitudes_to_vector(*amps_b))
 
-        bras: Namespace[NDArray[float]] = util.Namespace(a=np.array(bras_tmp.a), b=np.array(bras_tmp.b))
+        bras: Namespace[NDArray[float]] = util.Namespace(
+            a=np.array(bras_tmp.a), b=np.array(bras_tmp.b)
+        )
 
         return bras
 
@@ -173,7 +175,9 @@ class IP_UEOM(UEOM, BaseIP_EOM):
             kets_tmp.a.append(self.amplitudes_to_vector(*amps_a))
             kets_tmp.b.append(self.amplitudes_to_vector(*amps_b))
 
-        kets: Namespace[NDArray[float]] = util.Namespace(a=np.array(kets_tmp.a), b=np.array(kets_tmp.b))
+        kets: Namespace[NDArray[float]] = util.Namespace(
+            a=np.array(kets_tmp.a), b=np.array(kets_tmp.b)
+        )
 
         return kets
 
@@ -316,7 +320,9 @@ class EA_UEOM(UEOM, BaseEA_EOM):
             bras_tmp.a.append(self.amplitudes_to_vector(*amps_a))
             bras_tmp.b.append(self.amplitudes_to_vector(*amps_b))
 
-        bras: Namespace[NDArray[float]] = util.Namespace(a=np.array(bras_tmp.a), b=np.array(bras_tmp.b))
+        bras: Namespace[NDArray[float]] = util.Namespace(
+            a=np.array(bras_tmp.a), b=np.array(bras_tmp.b)
+        )
 
         return bras
 
@@ -372,7 +378,9 @@ class EA_UEOM(UEOM, BaseEA_EOM):
             kets_tmp.a.append(self.amplitudes_to_vector(*amps_a))
             kets_tmp.b.append(self.amplitudes_to_vector(*amps_b))
 
-        kets: Namespace[NDArray[float]] = util.Namespace(a=np.array(kets_tmp.a), b=np.array(kets_tmp.b))
+        kets: Namespace[NDArray[float]] = util.Namespace(
+            a=np.array(kets_tmp.a), b=np.array(kets_tmp.b)
+        )
 
         return kets
 

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import time
 from collections.abc import MutableMapping
-from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 if TYPE_CHECKING:

@@ -10,19 +10,18 @@ from ebcc.cc.base import BaseEBCC
 from ebcc.core.precision import types
 from ebcc.eom import EA_UEOM, EE_UEOM, IP_UEOM
 from ebcc.ham.cderis import UCDERIs
+from ebcc.ham.elbos import UElectronBoson
 from ebcc.ham.eris import UERIs
 from ebcc.ham.fock import UFock
 from ebcc.ham.space import Space
-from ebcc.ham.elbos import UElectronBoson
 from ebcc.opt.ubrueckner import BruecknerUEBCC
 
 if TYPE_CHECKING:
-    from typing import Any, Optional, Union, TypeAlias
+    from typing import Any, Optional, TypeAlias, Union
 
     from pyscf.scf.hf import SCF
     from pyscf.scf.uhf import UHF
 
-    from ebcc.cc.base import BaseOptions
     from ebcc.cc.rebcc import REBCC
     from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
@@ -577,9 +576,7 @@ class UEBCC(BaseEBCC):
 
         return dm_eb
 
-    def energy_sum(
-        self, *args: str, signs_dict: Optional[dict[str, str]] = None
-    ) -> NDArray[float]:
+    def energy_sum(self, *args: str, signs_dict: Optional[dict[str, str]] = None) -> NDArray[float]:
         """Get a direct sum of energies.
 
         Args:
@@ -676,7 +673,7 @@ class UEBCC(BaseEBCC):
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * n
-            size = self.nbos ** n
+            size = self.nbos**n
             amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
@@ -757,7 +754,7 @@ class UEBCC(BaseEBCC):
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * n
-            size = self.nbos ** n
+            size = self.nbos**n
             lambdas["l" + name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
