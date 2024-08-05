@@ -54,12 +54,12 @@ class Namespace(MutableMapping[str, T], Generic[T]):
         """Set an attribute."""
         return self.__setitem__(key, val)
 
-    def __getitem__(self, key: str) -> T:
+    def __getitem__(self, key: str) -> Any:
         """Get an item."""
-        value: T = self.__dict__["_members"][key]
+        value: Any = self.__dict__["_members"][key]
         return value
 
-    def __getattr__(self, key: str) -> T:
+    def __getattr__(self, key: str) -> Any:
         """Get an attribute."""
         if key in self.__dict__:
             return self.__dict__[key]
@@ -104,7 +104,7 @@ class Namespace(MutableMapping[str, T], Generic[T]):
 
     def values(self) -> ValuesView[T]:
         """Get values of the namespace as a dictionary."""
-        return self._members.values
+        return self._members.values()
 
     def items(self) -> ItemsView[str, T]:
         """Get items of the namespace as a dictionary."""

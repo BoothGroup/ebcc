@@ -14,7 +14,7 @@ from ebcc.opt.base import BaseBruecknerEBCC
 if TYPE_CHECKING:
     from typing import Optional
 
-    from ebcc.cc.uebcc import AmplitudeType
+    from ebcc.cc.uebcc import AmplitudeType, UEBCC
     from ebcc.core.damping import DIIS
     from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
@@ -27,6 +27,9 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
         cc: Parent `BaseEBCC` object.
         options: Options for the EOM calculation.
     """
+
+    # Attributes
+    cc: UEBCC
 
     def get_rotation_matrix(
         self,
@@ -54,7 +57,7 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
                 bb=np.eye(self.cc.space[1].ncorr, dtype=types[float]),
             )
 
-        t1_block = util.Namespace(
+        t1_block: Namespace[NDArray[float]] = util.Namespace(
             aa=np.zeros((self.cc.space[0].ncorr, self.cc.space[0].ncorr), dtype=types[float]),
             bb=np.zeros((self.cc.space[1].ncorr, self.cc.space[1].ncorr), dtype=types[float]),
         )
@@ -143,11 +146,12 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
         """
         if not amplitudes:
             amplitudes = self.cc.amplitudes
-        norm_a = np.linalg.norm(amplitudes["t1"].aa)
-        norm_b = np.linalg.norm(amplitudes["t1"].bb)
-        return np.linalg.norm([norm_a, norm_b])
+        weight_a: float = types[float](np.linalg.norm(amplitudes["t1"].aa))
+        weight_b: float = types[float](np.linalg.norm(amplitudes["t1"].bb))
+        weight: float = types[float](np.linalg.norm([weight_a, weight_b]))
+        return weight
 
-    def mo_to_correlated(self, mo_coeff: tuple[NDArray[float]]) -> tuple[NDArray[float]]:
+    def mo_to_correlated(self, mo_coeff: tuple[NDArray[float], NDArray[float]]) -> tuple[NDArray[float], NDArray[float]]:
         """Transform the MO coefficients into the correlated basis.
 
         Args:
@@ -162,8 +166,8 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
         )
 
     def mo_update_correlated(
-        self, mo_coeff: tuple[NDArray[float]], mo_coeff_corr: tuple[NDArray[float]]
-    ) -> tuple[NDArray[float]]:
+        self, mo_coeff: tuple[NDArray[float], NDArray[float]], mo_coeff_corr: tuple[NDArray[float], NDArray[float]]
+    ) -> tuple[NDArray[float], NDArray[float]]:
         """Update the correlated slice of a set of MO coefficients.
 
         Args:
@@ -180,9 +184,9 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
     def update_coefficients(
         self,
         u_tot: AmplitudeType,
-        mo_coeff: tuple[NDArray[float]],
-        mo_coeff_ref: tuple[NDArray[float]],
-    ) -> tuple[NDArray[float]]:
+        mo_coeff: tuple[NDArray[float], NDArray[float]],
+        mo_coeff_ref: tuple[NDArray[float], NDArray[float]],
+    ) -> tuple[NDArray[float], NDArray[float]]:
         """Update the MO coefficients.
 
         Args:

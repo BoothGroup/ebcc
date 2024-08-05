@@ -12,6 +12,8 @@ from ebcc.core.precision import types
 from ebcc.ham.base import BaseERIs
 
 if TYPE_CHECKING:
+    from typing import Optional
+
     from ebcc.numpy.typing import NDArray
 
 
@@ -25,7 +27,7 @@ class RCDERIs(BaseERIs):
         array: ERIs in the MO basis.
     """
 
-    def __getitem__(self, key: str, e2: bool = False) -> NDArray[float]:
+    def __getitem__(self, key: str, e2: Optional[bool] = False) -> NDArray[float]:
         """Just-in-time getter.
 
         Args:
@@ -40,7 +42,7 @@ class RCDERIs(BaseERIs):
 
         if len(key) == 4:
             e1 = self.__getitem__("Q" + key[:2])
-            e2 = self.__getitem__("Q" + key[2:], e2=True)
+            e2 = self.__getitem__("Q" + key[2:], e2=True)  # type: ignore
             return util.einsum("Qij,Qkl->ijkl", e1, e2)
         elif len(key) == 3:
             key = key[1:]

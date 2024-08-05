@@ -17,6 +17,7 @@ from ebcc.core.precision import types
 if TYPE_CHECKING:
     from typing import Any, Optional, TypeVar
 
+    from ebcc.numpy.typing import NDArray
     from ebcc.cc.base import AmplitudeType, BaseEBCC
     from ebcc.util import Namespace
 
@@ -52,6 +53,9 @@ class BaseBruecknerEBCC(ABC):
 
     # Types
     Options: type[BaseOptions] = BaseOptions
+
+    # Attributes
+    cc: BaseEBCC
 
     def __init__(
         self,
@@ -122,8 +126,8 @@ class BaseBruecknerEBCC(ABC):
         diis.damping = self.options.damping
 
         # Initialise coefficients:
-        mo_coeff_new = np.array(self.cc.mo_coeff, copy=True, dtype=types[float])
-        mo_coeff_ref = np.array(self.cc.mo_coeff, copy=True, dtype=types[float])
+        mo_coeff_new: NDArray[float] = np.array(self.cc.mo_coeff, copy=True, dtype=types[float])
+        mo_coeff_ref: NDArray[float] = np.array(self.cc.mo_coeff, copy=True, dtype=types[float])
         mo_coeff_ref = self.mo_to_correlated(mo_coeff_ref)
         u_tot = None
 
@@ -154,7 +158,8 @@ class BaseBruecknerEBCC(ABC):
             # Run CC calculation:
             e_prev = self.cc.e_tot
             with lib.temporary_env(self.cc, log=NullLogger()):
-                self.cc.__init__(
+                self.cc.__class__.__init__(
+                    self.cc,
                     self.mf,
                     log=self.cc.log,
                     ansatz=self.cc.ansatz,
@@ -247,7 +252,7 @@ class BaseBruecknerEBCC(ABC):
         pass
 
     @abstractmethod
-    def mo_to_correlated(self, mo_coeff: T) -> T:
+    def mo_to_correlated(self, mo_coeff: Any) -> Any:
         """Transform the MO coefficients into the correlated basis.
 
         Args:
@@ -259,7 +264,7 @@ class BaseBruecknerEBCC(ABC):
         pass
 
     @abstractmethod
-    def mo_update_correlated(self, mo_coeff: T, mo_coeff_corr: T) -> T:
+    def mo_update_correlated(self, mo_coeff: Any, mo_coeff_corr: Any) -> Any:
         """Update the correlated slice of a set of MO coefficients.
 
         Args:
@@ -272,7 +277,7 @@ class BaseBruecknerEBCC(ABC):
         pass
 
     @abstractmethod
-    def update_coefficients(self, u_tot: AmplitudeType, mo_coeff_new: T, mo_coeff_ref: T) -> T:
+    def update_coefficients(self, u_tot: AmplitudeType, mo_coeff_new: Any, mo_coeff_ref: Any) -> Any:
         """Update the MO coefficients.
 
         Args:

@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from ebcc.util import Namespace
 
 if TYPE_CHECKING:
-    from typing import Any, TypeVar, Optional
+    from typing import TypeVar, Optional
 
     from ebcc.cc.base import BaseEBCC
     from ebcc.numpy.typing import NDArray
@@ -49,8 +49,8 @@ class BaseFock(BaseHamiltonian):
         self,
         cc: BaseEBCC,
         array: Optional[Any] = None,
-        space: Optional[tuple[Any]] = None,
-        mo_coeff: Optional[tuple[Any]] = None,
+        space: Optional[tuple[Any, ...]] = None,
+        mo_coeff: Optional[tuple[Any, ...]] = None,
         g: Optional[Namespace[Any]] = None,
     ) -> None:
         """Initialise the Fock matrix.
@@ -72,8 +72,8 @@ class BaseFock(BaseHamiltonian):
         self.__dict__["g"] = g if g is not None else cc.g
 
         # Boson parameters:
-        self.__dict__["shift"] = cc.options.shift
-        self.__dict__["xi"] = cc.xi
+        self.__dict__["shift"] = cc.options.shift if g is not None else None
+        self.__dict__["xi"] = cc.xi if g is not None else None
 
     @abstractmethod
     def _get_fock(self) -> Any:
@@ -88,8 +88,8 @@ class BaseERIs(BaseHamiltonian):
         self,
         cc: BaseEBCC,
         array: Optional[Any] = None,
-        space: Optional[tuple[Any]] = None,
-        mo_coeff: Optional[tuple[Any]] = None,
+        space: Optional[tuple[Any, ...]] = None,
+        mo_coeff: Optional[tuple[Any, ...]] = None,
     ) -> None:
         """Initialise the ERIs.
 
@@ -121,7 +121,7 @@ class BaseElectronBoson(BaseHamiltonian):
         self,
         cc: BaseEBCC,
         array: Optional[Any] = None,
-        space: Optional[tuple[Any]] = None,
+        space: Optional[tuple[Any, ...]] = None,
     ) -> None:
         """Initialise the electron-boson coupling matrix.
 

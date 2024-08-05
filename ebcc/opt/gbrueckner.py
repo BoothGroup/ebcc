@@ -8,13 +8,13 @@ import scipy.linalg
 
 from ebcc import numpy as np
 from ebcc import util
-from ebcc.core.precision import types
+from ebcc.core.precision import types, astype
 from ebcc.opt.base import BaseBruecknerEBCC
 
 if TYPE_CHECKING:
     from typing import Optional
 
-    from ebcc.cc.gebcc import AmplitudeType
+    from ebcc.cc.gebcc import AmplitudeType, GEBCC
     from ebcc.core.damping import DIIS
     from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
@@ -27,6 +27,9 @@ class BruecknerGEBCC(BaseBruecknerEBCC):
         cc: Parent `BaseEBCC` object.
         options: Options for the EOM calculation.
     """
+
+    # Attributes
+    cc: GEBCC
 
     def get_rotation_matrix(
         self,
@@ -51,7 +54,7 @@ class BruecknerGEBCC(BaseBruecknerEBCC):
         if u_tot is None:
             u_tot = np.eye(self.cc.space.ncorr, dtype=types[float])
 
-        t1_block = np.zeros((self.cc.space.ncorr, self.cc.space.ncorr), dtype=types[float])
+        t1_block: NDArray[float] = np.zeros((self.cc.space.ncorr, self.cc.space.ncorr), dtype=types[float])
         t1_block[: self.cc.space.ncocc, self.cc.space.ncocc :] = -t1
         t1_block[self.cc.space.ncocc :, : self.cc.space.ncocc] = t1.T
 
@@ -120,7 +123,8 @@ class BruecknerGEBCC(BaseBruecknerEBCC):
         """
         if not amplitudes:
             amplitudes = self.cc.amplitudes
-        return np.linalg.norm(amplitudes["t1"])
+        weight: float = types[float](np.linalg.norm(amplitudes["t1"]))
+        return weight
 
     def mo_to_correlated(self, mo_coeff: NDArray[float]) -> NDArray[float]:
         """Transform the MO coefficients into the correlated basis.

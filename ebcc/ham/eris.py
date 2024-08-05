@@ -26,6 +26,8 @@ class RERIs(BaseERIs):
         array: ERIs in the MO basis.
     """
 
+    _members: dict[str, NDArray[float]]
+
     def __getitem__(self, key: str) -> NDArray[float]:
         """Just-in-time getter.
 
@@ -64,6 +66,8 @@ class UERIs(BaseERIs):
         mo_coeff: Molecular orbital coefficients for each index.
         array: ERIs in the MO basis.
     """
+
+    _members: dict[str, RERIs]
 
     def __getitem__(self, key: str) -> RERIs:
         """Just-in-time getter.
@@ -123,6 +127,8 @@ class GERIs(BaseERIs):
         mo_coeff: Molecular orbital coefficients for each index.
         array: ERIs in the MO basis.
     """
+
+    _members: dict[str, UERIs]
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialise the class."""

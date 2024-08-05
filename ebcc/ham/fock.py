@@ -26,6 +26,8 @@ class RFock(BaseFock):
         xi: Boson parameters.
     """
 
+    _members: dict[str, NDArray[float]]
+
     def _get_fock(self) -> NDArray[float]:
         fock_ao = self.cc.mf.get_fock().astype(types[float])
         return util.einsum("pq,pi,qj->ij", fock_ao, self.mo_coeff[0], self.mo_coeff[1])
@@ -64,7 +66,9 @@ class UFock(BaseFock):
         g: Namespace containing blocks of the electron-boson coupling matrix
     """
 
-    def _get_fock(self) -> tuple[NDArray[float]]:
+    _members: dict[str, RFock]
+
+    def _get_fock(self) -> tuple[NDArray[float], NDArray[float]]:
         fock_ao = self.cc.mf.get_fock().astype(types[float])
         return (
             util.einsum("pq,pi,qj->ij", fock_ao[0], self.mo_coeff[0][0], self.mo_coeff[1][0]),
@@ -106,6 +110,8 @@ class GFock(BaseFock):
         shift: Shift parameter.
         xi: Boson parameters.
     """
+
+    _members: dict[str, NDArray[float]]
 
     def _get_fock(self) -> NDArray[float]:
         fock_ao = self.cc.mf.get_fock().astype(types[float])

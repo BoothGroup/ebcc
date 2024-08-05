@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from pyscf.mp import MP2
 
@@ -154,17 +154,17 @@ class Space:
     @property
     def nmo(self) -> int:
         """Get the number of orbitals."""
-        return self.occupied.size
+        return cast(int, self.occupied.size)
 
     @property
     def nocc(self) -> int:
         """Get the number of occupied orbitals."""
-        return np.sum(self.occupied)
+        return cast(int, np.sum(self.occupied))
 
     @property
     def nvir(self) -> int:
         """Get the number of virtual orbitals."""
-        return np.sum(self.virtual)
+        return cast(int, np.sum(self.virtual))
 
     # Correlated space:
 
@@ -186,17 +186,17 @@ class Space:
     @property
     def ncorr(self) -> int:
         """Get the number of correlated orbitals."""
-        return np.sum(self.correlated)
+        return cast(int, np.sum(self.correlated))
 
     @property
     def ncocc(self) -> int:
         """Get the number of occupied correlated orbitals."""
-        return np.sum(self.correlated_occupied)
+        return cast(int, np.sum(self.correlated_occupied))
 
     @property
     def ncvir(self) -> int:
         """Get the number of virtual correlated orbitals."""
-        return np.sum(self.correlated_virtual)
+        return cast(int, np.sum(self.correlated_virtual))
 
     # Inactive space:
 
@@ -218,17 +218,17 @@ class Space:
     @property
     def ninact(self) -> int:
         """Get the number of inactive orbitals."""
-        return np.sum(self.inactive)
+        return cast(int, np.sum(self.inactive))
 
     @property
     def niocc(self) -> int:
         """Get the number of occupied inactive orbitals."""
-        return np.sum(self.inactive_occupied)
+        return cast(int, np.sum(self.inactive_occupied))
 
     @property
     def nivir(self) -> int:
         """Get the number of virtual inactive orbitals."""
-        return np.sum(self.inactive_virtual)
+        return cast(int, np.sum(self.inactive_virtual))
 
     # Frozen space:
 
@@ -250,17 +250,17 @@ class Space:
     @property
     def nfroz(self) -> int:
         """Get the number of frozen orbitals."""
-        return np.sum(self.frozen)
+        return cast(int, np.sum(self.frozen))
 
     @property
     def nfocc(self) -> int:
         """Get the number of occupied frozen orbitals."""
-        return np.sum(self.frozen_occupied)
+        return cast(int, np.sum(self.frozen_occupied))
 
     @property
     def nfvir(self) -> int:
         """Get the number of virtual frozen orbitals."""
-        return np.sum(self.frozen_virtual)
+        return cast(int, np.sum(self.frozen_virtual))
 
     # Active space:
 
@@ -282,32 +282,30 @@ class Space:
     @property
     def nact(self) -> int:
         """Get the number of active orbitals."""
-        return np.sum(self.active)
+        return cast(int, np.sum(self.active))
 
     @property
     def naocc(self) -> int:
         """Get the number of occupied active orbitals."""
-        return np.sum(self.active_occupied)
+        return cast(int, np.sum(self.active_occupied))
 
     @property
     def navir(self) -> int:
         """Get the number of virtual active orbitals."""
-        return np.sum(self.active_virtual)
+        return cast(int, np.sum(self.active_virtual))
 
 
 if TYPE_CHECKING:
     # Needs to be defined after Space
-    ConstructSpaceReturnType = Union[
-        tuple[NDArray[float], NDArray[float], Space],
-        tuple[
-            tuple[NDArray[float], NDArray[float]],
-            tuple[NDArray[float], NDArray[float]],
-            tuple[Space, Space],
-        ],
+    RConstructSpaceReturnType = tuple[NDArray[float], NDArray[float], Space]
+    UConstructSpaceReturnType = tuple[
+        tuple[NDArray[float], NDArray[float]],
+        tuple[NDArray[float], NDArray[float]],
+        tuple[Space, Space],
     ]
 
 
-def construct_default_space(mf: SCF) -> ConstructSpaceReturnType:
+def construct_default_space(mf: SCF) -> Union[RConstructSpaceReturnType, UConstructSpaceReturnType]:
     """Construct a default space.
 
     Args:
@@ -343,7 +341,7 @@ def construct_fno_space(
     occ_tol: Optional[float] = 1e-5,
     occ_frac: Optional[float] = None,
     amplitudes: Optional[Namespace[AmplitudeType]] = None,
-) -> ConstructSpaceReturnType:
+) -> Union[RConstructSpaceReturnType, UConstructSpaceReturnType]:
     """Construct a frozen natural orbital space.
 
     Args:
@@ -376,9 +374,9 @@ def construct_fno_space(
         mo_energy: NDArray[float],
         mo_coeff: NDArray[float],
         mo_occ: NDArray[float],
-    ) -> ConstructSpaceReturnType:
+    ) -> RConstructSpaceReturnType:
         # Get the number of occupied orbitals
-        nocc = np.sum(mo_occ > 0)
+        nocc = int(np.sum(mo_occ > 0))
 
         # Calculate the natural orbitals
         n, c = np.linalg.eigh(dm1[nocc:, nocc:])
@@ -389,10 +387,10 @@ def construct_fno_space(
             active_vir = n > occ_tol
         else:
             active_vir = np.cumsum(n / np.sum(n)) <= occ_frac
-        num_active_vir = np.sum(active_vir)
+        num_active_vir = int(np.sum(active_vir))
 
         # Canonicalise the natural orbitals
-        fock_vv = np.diag(mo_energy[nocc:]).astype(types[float])
+        fock_vv = np.diag(mo_energy[nocc:])
         fock_vv = util.einsum("ab,au,bv->uv", fock_vv, c, c)
         _, c_can = np.linalg.eigh(fock_vv[active_vir][:, active_vir])
 
@@ -400,7 +398,7 @@ def construct_fno_space(
         no_coeff_avir = np.linalg.multi_dot((mo_coeff[:, nocc:], c[:, :num_active_vir], c_can))
         no_coeff_fvir = np.dot(mo_coeff[:, nocc:], c[:, num_active_vir:])
         no_coeff_occ = mo_coeff[:, :nocc]
-        no_coeff = np.hstack((no_coeff_occ, no_coeff_avir, no_coeff_fvir)).astype(types[float])
+        no_coeff: NDArray[float] = np.hstack((no_coeff_occ, no_coeff_avir, no_coeff_fvir))
 
         # Build the natural orbital space
         frozen = np.zeros_like(mo_occ, dtype=bool)
@@ -415,8 +413,23 @@ def construct_fno_space(
 
     # Construct the natural orbitals
     if np.ndim(mf.mo_occ) == 2:
-        coeff_a, occ_a, space_a = _construct(dm1[0], mf.mo_energy[0], mf.mo_coeff[0], mf.mo_occ[0])
-        coeff_b, occ_b, space_b = _construct(dm1[1], mf.mo_energy[1], mf.mo_coeff[1], mf.mo_occ[1])
+        coeff_a, occ_a, space_a = _construct(
+            dm1[0].astype(types[float]),
+            mf.mo_energy[0].astype(types[float]),
+            mf.mo_coeff[0].astype(types[float]),
+            mf.mo_occ[0].astype(types[float]),
+        )
+        coeff_b, occ_b, space_b = _construct(
+            dm1[1].astype(types[float]),
+            mf.mo_energy[1].astype(types[float]),
+            mf.mo_coeff[1].astype(types[float]),
+            mf.mo_occ[1].astype(types[float]),
+        )
         return (coeff_a, coeff_b), (occ_a, occ_b), (space_a, space_b)
     else:
-        return _construct(dm1, mf.mo_energy, mf.mo_coeff, mf.mo_occ)
+        return _construct(
+            dm1.astype(types[float]),
+            mf.mo_energy.astype(types[float]),
+            mf.mo_coeff.astype(types[float]),
+            mf.mo_occ.astype(types[float]),
+        )

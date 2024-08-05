@@ -322,13 +322,13 @@ def compress_axes(
     array = array.reshape([sizes[char] ** subscript.count(char) for char in sorted(set(subscript))])
 
     # For each axis type, get the necessary lower-triangular indices:
-    indices = [
+    indices_ndim = [
         tril_indices_ndim(sizes[char], subscript.count(char), include_diagonal=include_diagonal)
         for char in sorted(set(subscript))
     ]
     indices = [
         np.ravel_multi_index(ind, (sizes[char],) * subscript.count(char))
-        for ind, char in zip(indices, sorted(set(subscript)))
+        for ind, char in zip(indices_ndim, sorted(set(subscript)))
     ]
 
     # Apply the indices:
