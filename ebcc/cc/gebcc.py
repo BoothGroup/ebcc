@@ -51,12 +51,11 @@ class GEBCC(BaseEBCC):
     # Types
     ERIs = GERIs
     Fock = GFock
-    CDERIs = None
     ElectronBoson = GElectronBoson
     Brueckner = BruecknerGEBCC
 
     @property
-    def spin_type(self):
+    def spin_type(self) -> str:
         """Get a string representation of the spin type."""
         return "G"
 
@@ -146,8 +145,8 @@ class GEBCC(BaseEBCC):
             else:
                 bare_g_a, bare_g_b = ucc.bare_g
             g = np.zeros((ucc.nbos, ucc.nmo * 2, ucc.nmo * 2))
-            g[np.ix_(range(ucc.nbos), sa, sa)] = bare_g_a.copy()
-            g[np.ix_(range(ucc.nbos), sb, sb)] = bare_g_b.copy()
+            g[np.ix_(np.arange(ucc.nbos), sa, sa)] = bare_g_a.copy()
+            g[np.ix_(np.arange(ucc.nbos), sb, sb)] = bare_g_b.copy()
         else:
             g = None
 
@@ -170,7 +169,7 @@ class GEBCC(BaseEBCC):
         has_lams = bool(ucc.lambdas)
 
         if has_amps:
-            amplitudes = util.Namespace()
+            amplitudes: Namespace[AmplitudeType] = util.Namespace()
 
             for name, key, n in ucc.ansatz.fermionic_cluster_ranks(spin_type=ucc.spin_type):
                 shape = tuple(space.size(k) for k in key)
@@ -211,7 +210,7 @@ class GEBCC(BaseEBCC):
                             if combn in done:
                                 continue
                             mask = np.ix_(
-                                *([range(nbos)] * nb),
+                                *([np.arange(nbos)] * nb),
                                 *[slices[s][k] for s, k in zip(combn, key[nb:])],
                             )
                             transpose = (
@@ -283,7 +282,7 @@ class GEBCC(BaseEBCC):
                             if combn in done:
                                 continue
                             mask = np.ix_(
-                                *([range(nbos)] * nb),
+                                *([np.arange(nbos)] * nb),
                                 *[
                                     slices[s][k]
                                     for s, k in zip(combn, key[nb + nf :] + key[nb : nb + nf])
@@ -374,7 +373,7 @@ class GEBCC(BaseEBCC):
             Initial cluster amplitudes.
         """
         eris = self.get_eris(eris)
-        amplitudes = util.Namespace()
+        amplitudes: Namespace[AmplitudeType] = util.Namespace()
 
         # Build T amplitudes:
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -388,6 +387,8 @@ class GEBCC(BaseEBCC):
 
         if self.boson_ansatz:
             # Only true for real-valued couplings:
+            assert self.g is not None
+            assert self.G is not None
             h = self.g
             H = self.G
 
@@ -424,7 +425,7 @@ class GEBCC(BaseEBCC):
         """
         if amplitudes is None:
             amplitudes = self.amplitudes
-        lambdas = util.Namespace()
+        lambdas: Namespace[AmplitudeType] = util.Namespace()
 
         # Build L amplitudes:
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -461,6 +462,7 @@ class GEBCC(BaseEBCC):
         Returns:
             Updated cluster amplitudes.
         """
+        amplitudes = self._get_amps(amplitudes=amplitudes)
         func, kwargs = self._load_function(
             "update_amps",
             eris=eris,
@@ -509,6 +511,8 @@ class GEBCC(BaseEBCC):
             Updated cluster lambda amplitudes.
         """
         # TODO active
+        amplitudes = self._get_amps(amplitudes=amplitudes)
+        lambdas = self._get_lams(lambdas=lambdas, amplitudes=amplitudes)
         if lambdas_pert is not None:
             lambdas.update(lambdas_pert)
 
@@ -545,7 +549,7 @@ class GEBCC(BaseEBCC):
                 res[lname] += lambdas[lname]
 
         if perturbative:
-            res = {key + "pert": val for key, val in res.items()}
+            res = Namespace(**{key + "pert": val for key, val in res.items()})
 
         return res
 
@@ -573,7 +577,7 @@ class GEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm: AmpliduteType = func(**kwargs)
+        dm: AmplitudeType = func(**kwargs)
 
         if hermitise:
             dm = 0.5 * (dm + dm.T)
@@ -604,7 +608,7 @@ class GEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm: AmpliduteType = func(**kwargs)
+        dm: AmplitudeType = func(**kwargs)
 
         if hermitise:
             dm = 0.5 * (dm.transpose(0, 1, 2, 3) + dm.transpose(2, 3, 0, 1))
@@ -647,7 +651,7 @@ class GEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm_eb: AmpliduteType = func(**kwargs)
+        dm_eb: AmplitudeType = func(**kwargs)
 
         if hermitise:
             dm_eb[0] = 0.5 * (dm_eb[0] + dm_eb[1].transpose(0, 2, 1))
@@ -660,17 +664,18 @@ class GEBCC(BaseEBCC):
 
         return dm_eb
 
-    def energy_sum(self, subscript: str, signs_dict: dict[str, int] = None) -> NDArray[float]:
+    def energy_sum(self, *args: str, signs_dict: Optional[dict[str, str]] = None) -> NDArray[float]:
         """Get a direct sum of energies.
 
         Args:
-            subscript: Subscript for the direct sum.
+            *args: Energies to sum. Should specify a subscript only.
             signs_dict: Signs of the energies in the sum. Default sets `("o", "O", "i")` to be
                 positive, and `("v", "V", "a", "b")` to be negative.
 
         Returns:
             Sum of energies.
         """
+        subscript, = args
         n = 0
 
         def next_char() -> str:
@@ -731,7 +736,7 @@ class GEBCC(BaseEBCC):
         Returns:
             Cluster amplitudes.
         """
-        amplitudes = util.Namespace()
+        amplitudes: Namespace[AmplitudeType] = util.Namespace()
         i0 = 0
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -785,7 +790,7 @@ class GEBCC(BaseEBCC):
         Returns:
             Cluster lambda amplitudes.
         """
-        lambdas = util.Namespace()
+        lambdas: Namespace[AmplitudeType] = util.Namespace()
         i0 = 0
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -847,7 +852,7 @@ class GEBCC(BaseEBCC):
         """
         return self.excitations_to_vector_ip(*excitations)
 
-    def excitations_to_vector_ee(self, *excitations):
+    def excitations_to_vector_ee(self, *excitations: Namespace[AmplitudeType]) -> NDArray[float]:
         """Construct a vector containing all of the EE-EOM excitations.
 
         Args:
@@ -969,6 +974,8 @@ class GEBCC(BaseEBCC):
         Returns:
             Mean-field boson non-conserving term.
         """
+        assert self.g is not None
+        assert self.omega is not None
         # FIXME should this also sum in frozen orbitals?
         val = util.einsum("Ipp->I", self.g.boo)
         val -= self.xi * self.omega
@@ -996,7 +1003,9 @@ class GEBCC(BaseEBCC):
         Returns:
             Shift in the bosonic operators.
         """
+        assert self.omega is not None
         if self.options.shift:
+            assert self.g is not None
             xi = util.einsum("Iii->I", self.g.boo)
             xi /= self.omega
             if self.bare_G is not None:
@@ -1022,10 +1031,10 @@ class GEBCC(BaseEBCC):
         Returns:
             Electron repulsion integrals.
         """
-        if (eris is None) or isinstance(eris, np.ndarray):
-            return self.ERIs(self, array=eris)
-        else:
+        if isinstance(eris, GERIs):
             return eris
+        else:
+            return self.ERIs(self, array=eris)
 
     @property
     def nmo(self) -> int:

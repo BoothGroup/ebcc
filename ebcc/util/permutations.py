@@ -228,8 +228,8 @@ def is_mixed_spin(spin: Iterable[Hashable]) -> bool:
 
 def combine_subscripts(
     *subscripts: str,
-    sizes: Optional[dict[tuple[str, ...], int]] = None,
-) -> Union[str, tuple[str, dict[str, int]]]:
+    sizes: dict[tuple[str, ...], int] = {},
+) -> tuple[str, dict[str, int]]:
     """Combine subscripts into new unique subscripts for functions such as `compress_axes`.
 
     For example, one may wish to compress an amplitude according to both
@@ -240,9 +240,8 @@ def combine_subscripts(
     such that it is unique for a unique value of
     `tuple(s[i] for s in subscripts)` among other values of `i`.
 
-    If `sizes` is passed, this function also returns a dictionary
-    indicating the size of each new character in the subscript according to
-    the size of the corresponding original character in the dictionary
+    This function also returns a dictionary indicating the size of each new character in the
+    subscript according to the size of the corresponding original character in the dictionary
     `sizes`.
 
     Args:
@@ -250,7 +249,7 @@ def combine_subscripts(
         sizes: Dictionary of sizes for each index.
 
     Returns:
-        New subscript, with a dictionary of sizes of each new index if `sizes` is passed.
+        New subscript, with a dictionary of sizes of each new index.
     """
     if len(set(len(s) for s in subscripts)) != 1:
         raise ValueError("Subscripts must be of the same length.")
@@ -269,13 +268,10 @@ def combine_subscripts(
             if j == 123:
                 j = 65
         new_subscript += char_map[key]
-        if sizes is not None:
+        if sizes:
             new_sizes[char_map[key]] = sizes[key]
 
-    if sizes is None:
-        return new_subscript
-    else:
-        return new_subscript, new_sizes
+    return new_subscript, new_sizes
 
 
 def compress_axes(

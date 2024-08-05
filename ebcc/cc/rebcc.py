@@ -17,15 +17,16 @@ from ebcc.ham.elbos import RElectronBoson
 from ebcc.opt.rbrueckner import BruecknerREBCC
 
 if TYPE_CHECKING:
-    from typing import Any, Optional, Union
+    from typing import Any, Optional, Union, TypeAlias
 
     from pyscf.scf.hf import RHF, SCF
 
-    from ebcc.cc.base import BaseOptions, ERIsInputType
+    from ebcc.cc.base import BaseOptions
     from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
 
-    AmplitudeType = NDArray[float]
+    ERIsInputType: TypeAlias = Union[RERIs, RCDERIs, NDArray[float]]
+    AmplitudeType: TypeAlias = NDArray[float]
 
 
 class REBCC(BaseEBCC):
@@ -51,7 +52,7 @@ class REBCC(BaseEBCC):
     Brueckner = BruecknerREBCC
 
     @property
-    def spin_type(self):
+    def spin_type(self) -> str:
         """Get a string representation of the spin type."""
         return "R"
 
@@ -144,7 +145,7 @@ class REBCC(BaseEBCC):
             Initial cluster amplitudes.
         """
         eris = self.get_eris(eris)
-        amplitudes = util.Namespace()
+        amplitudes: Namespace[AmplitudeType] = util.Namespace()
 
         # Build T amplitudes:
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -159,6 +160,8 @@ class REBCC(BaseEBCC):
 
         if self.boson_ansatz:
             # Only true for real-valued couplings:
+            assert self.g is not None
+            assert self.G is not None
             h = self.g
             H = self.G
 
@@ -195,7 +198,7 @@ class REBCC(BaseEBCC):
         """
         if amplitudes is None:
             amplitudes = self.amplitudes
-        lambdas = util.Namespace()
+        lambdas: Namespace[AmplitudeType] = util.Namespace()
 
         # Build L amplitudes:
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -232,6 +235,7 @@ class REBCC(BaseEBCC):
         Returns:
             Updated cluster amplitudes.
         """
+        amplitudes = self._get_amps(amplitudes=amplitudes)
         func, kwargs = self._load_function(
             "update_amps",
             eris=eris,
@@ -280,6 +284,8 @@ class REBCC(BaseEBCC):
             Updated cluster lambda amplitudes.
         """
         # TODO active
+        amplitudes = self._get_amps(amplitudes=amplitudes)
+        lambdas = self._get_lams(lambdas=lambdas, amplitudes=amplitudes)
         if lambdas_pert is not None:
             lambdas.update(lambdas_pert)
 
@@ -316,7 +322,7 @@ class REBCC(BaseEBCC):
                 res[lname] += lambdas[lname]
 
         if perturbative:
-            res = {key + "pert": val for key, val in res.items()}
+            res = util.Namespace(**{key + "pert": val for key, val in res.items()})
 
         return res
 
@@ -431,17 +437,18 @@ class REBCC(BaseEBCC):
 
         return dm_eb
 
-    def energy_sum(self, subscript: str, signs_dict: dict[str, int] = None) -> NDArray[float]:
+    def energy_sum(self, *args: str, signs_dict: Optional[dict[str, str]] = None) -> NDArray[float]:
         """Get a direct sum of energies.
 
         Args:
-            subscript: Subscript for the direct sum.
+            *args: Energies to sum. Should specify a subscript only.
             signs_dict: Signs of the energies in the sum. Default sets `("o", "O", "i")` to be
                 positive, and `("v", "V", "a", "b")` to be negative.
 
         Returns:
             Sum of energies.
         """
+        subscript, = args
         n = 0
 
         def next_char() -> str:
@@ -502,7 +509,7 @@ class REBCC(BaseEBCC):
         Returns:
             Cluster amplitudes.
         """
-        amplitudes = util.Namespace()
+        amplitudes: Namespace[AmplitudeType] = util.Namespace()
         i0 = 0
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -556,7 +563,7 @@ class REBCC(BaseEBCC):
         Returns:
             Cluster lambda amplitudes.
         """
-        lambdas = util.Namespace()
+        lambdas: Namespace[AmplitudeType] = util.Namespace()
         i0 = 0
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -721,6 +728,8 @@ class REBCC(BaseEBCC):
             Mean-field boson non-conserving term.
         """
         # FIXME should this also sum in frozen orbitals?
+        assert self.omega is not None
+        assert self.g is not None
         val = util.einsum("Ipp->I", self.g.boo) * 2.0
         val -= self.xi * self.omega
         if self.bare_G is not None:
@@ -747,7 +756,9 @@ class REBCC(BaseEBCC):
         Returns:
             Shift in the bosonic operators.
         """
+        assert self.omega is not None
         if self.options.shift:
+            assert self.g is not None
             xi = util.einsum("Iii->I", self.g.boo) * 2.0
             xi /= self.omega
             if self.bare_G is not None:
@@ -773,15 +784,15 @@ class REBCC(BaseEBCC):
         Returns:
             Electron repulsion integrals.
         """
-        if (eris is None) or isinstance(eris, np.ndarray):
+        if isinstance(eris, (RERIs, RCDERIs)):
+            return eris
+        else:
             if (isinstance(eris, np.ndarray) and eris.ndim == 3) or getattr(
                 self.mf, "with_df", None
             ):
                 return self.CDERIs(self, array=eris)
             else:
                 return self.ERIs(self, array=eris)
-        else:
-            return eris
 
     @property
     def nmo(self) -> int:

@@ -18,7 +18,7 @@ from ebcc.core.precision import astype, types
 if TYPE_CHECKING:
     from typing import Any, Callable, Literal, Optional, TypeVar, Union, Generic
 
-    from pyscf.scf.hf import SCF  # type: ignore
+    from pyscf.scf.hf import SCF
 
     from ebcc.core.logging import Logger
     from ebcc.ham.base import BaseERIs, BaseFock, BaseElectronBoson
@@ -26,7 +26,7 @@ if TYPE_CHECKING:
     from ebcc.opt.base import BaseBruecknerEBCC
     from ebcc.util import Namespace
 
-    ERIsInputType = Union[BaseERIs, NDArray[float]]
+    ERIsInputType = Any
     AmplitudeType = Any
     SpaceType = Any
 
@@ -81,7 +81,7 @@ class BaseEBCC(ABC):
     space: SpaceType
     amplitudes: Namespace[AmplitudeType]
     lambdas: Namespace[AmplitudeType]
-    g: Optional[NDArray[float]]
+    g: Optional[BaseElectronBoson]
     G: Optional[NDArray[float]]
 
     def __init__(
@@ -482,19 +482,14 @@ class BaseEBCC(ABC):
 
         # Get the amplitudes:
         if not (amplitudes is False):
-            if not amplitudes:
-                amplitudes = self.amplitudes
-            if not amplitudes:
-                amplitudes = self.init_amps(eris=eris)
-            dicts.append(dict(amplitudes))
+            dicts.append(dict(self._get_amps(amplitudes=amplitudes)))
 
         # Get the lambda amplitudes:
         if not (lambdas is False):
-            if not lambdas:
-                lambdas = self.lambdas
-            if not lambdas:
-                lambdas = self.init_lams(amplitudes=amplitudes if amplitudes else None)
-            dicts.append(dict(lambdas))
+            if not (amplitudes is False):
+                dicts.append(dict(self._get_lams(lambdas=lambdas, amplitudes=amplitudes)))
+            else:
+                dicts.append(dict(self._get_lams(lambdas=lambdas)))
 
         # Get the function:
         func = getattr(self._eqns, name, None)
@@ -540,6 +535,22 @@ class BaseEBCC(ABC):
             Initial cluster lambda amplitudes.
         """
         pass
+
+    def _get_amps(self, amplitudes: Optional[Namespace[AmplitudeType]] = None) -> Namespace[AmplitudeType]:
+        """Get the cluster amplitudes, initialising if required."""
+        if not amplitudes:
+            amplitudes = self.amplitudes
+        if not amplitudes:
+            amplitudes = self.init_amps()
+        return amplitudes
+
+    def _get_lams(self, lambdas: Optional[Namespace[AmplitudeType]] = None, amplitudes: Optional[Namespace[AmplitudeType]] = None) -> Namespace[AmplitudeType]:
+        """Get the cluster lambda amplitudes, initialising if required."""
+        if not lambdas:
+            lambdas = self.lambdas
+        if not lambdas:
+            lambdas = self.init_lams(amplitudes=self._get_amps(amplitudes=amplitudes))
+        return lambdas
 
     def energy(
         self,
@@ -1002,7 +1013,7 @@ class BaseEBCC(ABC):
         return res
 
     @abstractmethod
-    def energy_sum(self, *args: str, signs_dict: Optional[dict[str, int]] = None) -> NDArray[float]:
+    def energy_sum(self, *args: str, signs_dict: Optional[dict[str, str]] = None) -> NDArray[float]:
         """Get a direct sum of energies.
 
         Args:
