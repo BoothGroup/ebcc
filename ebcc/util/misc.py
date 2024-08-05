@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
+import sys
 import time
-from collections.abc import MutableMapping
 from typing import TYPE_CHECKING, Generic, TypeVar
+
+if sys.version_info >= (3, 9):
+    from collections.abc import MutableMapping
+else:
+    from typing import MutableMapping
 
 if TYPE_CHECKING:
     from typing import Any, ItemsView, Iterator, KeysView, ValuesView
