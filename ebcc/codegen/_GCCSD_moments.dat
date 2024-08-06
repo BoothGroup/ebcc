@@ -1,0 +1,80 @@
+
+from ebcc.precision import types
+
+def make_ip_mom_kets(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=None, l2=None, **kwargs):
+    delta_oo = np.eye(nocc)
+    delta_vv = np.eye(nvir)
+
+    ket2_o = np.zeros((nocc, nocc, nvir, nocc), dtype=types[float])
+    ket1_o = np.zeros((nocc, nocc), dtype=types[float])
+    ket1_o += einsum("ij->ji", delta_oo)
+    ket1_v = np.zeros((nocc, nvir), dtype=types[float])
+    ket1_v += einsum("ia->ia", t1)
+    ket2_v = np.zeros((nocc, nocc, nvir, nvir), dtype=types[float])
+    ket2_v -= einsum("ijab->jiba", t2)
+
+    ket1 = np.concatenate([ket1_o, ket1_v], axis=1)
+    ket2 = np.concatenate([ket2_o, ket2_v], axis=3)
+
+    return ket1, ket2
+
+def make_ea_mom_kets(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=None, l2=None, **kwargs):
+    delta_oo = np.eye(nocc)
+    delta_vv = np.eye(nvir)
+
+    ket2_v = np.zeros((nvir, nvir, nocc, nvir), dtype=types[float])
+    ket1_o = np.zeros((nvir, nocc), dtype=types[float])
+    ket1_o -= einsum("ia->ai", t1)
+    ket1_v = np.zeros((nvir, nvir), dtype=types[float])
+    ket1_v += einsum("ab->ba", delta_vv)
+    ket2_o = np.zeros((nvir, nvir, nocc, nocc), dtype=types[float])
+    ket2_o += einsum("ijab->baji", t2)
+
+    ket1 = np.concatenate([ket1_o, ket1_v], axis=1)
+    ket2 = np.concatenate([ket2_o, ket2_v], axis=3)
+
+    return ket1, ket2
+
+def make_ip_mom_bras(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=None, l2=None, **kwargs):
+    delta_oo = np.eye(nocc)
+    delta_vv = np.eye(nvir)
+
+    bra1_o = np.zeros((nocc, nocc), dtype=types[float])
+    bra1_o += einsum("abij,kjab->ki", l2, t2) * -0.5
+    bra1_o += einsum("ij->ji", delta_oo)
+    bra1_o -= einsum("ai,ja->ji", l1, t1)
+    bra1_v = np.zeros((nvir, nocc), dtype=types[float])
+    bra1_v += einsum("ai->ai", l1)
+    bra2_o = np.zeros((nocc, nocc, nocc, nvir), dtype=types[float])
+    bra2_o -= einsum("ia,bajk->ikjb", t1, l2)
+    bra2_o += einsum("ij,ak->jika", delta_oo, l1)
+    bra2_o -= einsum("ij,ak->jkia", delta_oo, l1)
+    bra2_v = np.zeros((nvir, nocc, nocc, nvir), dtype=types[float])
+    bra2_v += einsum("abij->bjia", l2)
+
+    bra1 = np.concatenate([bra1_o, bra1_v], axis=0)
+    bra2 = np.concatenate([bra2_o, bra2_v], axis=0)
+
+    return bra1, bra2
+
+def make_ea_mom_bras(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=None, l2=None, **kwargs):
+    delta_oo = np.eye(nocc)
+    delta_vv = np.eye(nvir)
+
+    bra1_o = np.zeros((nocc, nvir), dtype=types[float])
+    bra1_o -= einsum("ai->ia", l1)
+    bra1_v = np.zeros((nvir, nvir), dtype=types[float])
+    bra1_v += einsum("ab->ba", delta_vv)
+    bra1_v -= einsum("ai,ib->ba", l1, t1)
+    bra1_v += einsum("abij,ijcb->ca", l2, t2) * -0.5
+    bra2_o = np.zeros((nocc, nvir, nvir, nocc), dtype=types[float])
+    bra2_o -= einsum("abij->jbai", l2)
+    bra2_v = np.zeros((nvir, nvir, nvir, nocc), dtype=types[float])
+    bra2_v -= einsum("ia,bcji->acbj", t1, l2)
+    bra2_v += einsum("ab,ci->baci", delta_vv, l1)
+    bra2_v -= einsum("ab,ci->bcai", delta_vv, l1)
+
+    bra1 = np.concatenate([bra1_o, bra1_v], axis=0)
+    bra2 = np.concatenate([bra2_o, bra2_v], axis=0)
+
+    return bra1, bra2

@@ -464,6 +464,12 @@ if spin != "rhf":
                 **kwargs,
             )
 
+# Temporary hardcoded parts until we have a proper way to handle them
+if spin == "ghf" or spin == "uhf":
+    with open(f"_{spin[0].upper()}CCSD_moments.dat", "r") as f:
+        for line in f.readlines():
+            codegen.write(line.strip())
+
 for codegen in code_generators.values():
     codegen.postamble()
     codegen.stdout.close()
