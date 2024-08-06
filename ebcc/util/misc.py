@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import sys
 import time
-from typing import TYPE_CHECKING, Generic, TypeVar
 from collections.abc import MutableMapping
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 if TYPE_CHECKING:
     from typing import Any, ItemsView, Iterator, KeysView, ValuesView
