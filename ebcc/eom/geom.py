@@ -74,7 +74,7 @@ class IP_GEOM(GEOM, BaseIP_EOM):
             Bra vectors.
         """
         bras_raw = util.Namespace(
-            **{f"r{n+1}": b for n, b in enumerate(self.ebcc.make_ip_mom_bras(eris=eris))}
+            **{f"r{n + 1}": b for n, b in enumerate(self.ebcc.make_ip_mom_bras(eris=eris))}
         )
         bras = np.array(
             [
@@ -96,7 +96,7 @@ class IP_GEOM(GEOM, BaseIP_EOM):
             Ket vectors.
         """
         kets_raw = util.Namespace(
-            **{f"r{n+1}": k for n, k in enumerate(self.ebcc.make_ip_mom_kets(eris=eris))}
+            **{f"r{n + 1}": k for n, k in enumerate(self.ebcc.make_ip_mom_kets(eris=eris))}
         )
         kets = np.array(
             [
@@ -199,7 +199,7 @@ class EA_GEOM(GEOM, BaseEA_EOM):
             Bra vectors.
         """
         bras_raw = util.Namespace(
-            **{f"r{n+1}": b for n, b in enumerate(self.ebcc.make_ea_mom_bras(eris=eris))}
+            **{f"r{n + 1}": b for n, b in enumerate(self.ebcc.make_ea_mom_bras(eris=eris))}
         )
         bras = np.array(
             [
@@ -221,7 +221,7 @@ class EA_GEOM(GEOM, BaseEA_EOM):
             Ket vectors.
         """
         kets_raw = util.Namespace(
-            **{f"r{n+1}": k for n, k in enumerate(self.ebcc.make_ea_mom_kets(eris=eris))}
+            **{f"r{n + 1}": k for n, k in enumerate(self.ebcc.make_ea_mom_kets(eris=eris))}
         )
         kets = np.array(
             [
@@ -323,7 +323,7 @@ class EE_GEOM(GEOM, BaseEE_EOM):
             Bra vectors.
         """
         bras_raw = util.Namespace(
-            **{f"r{n+1}": b for n, b in enumerate(self.ebcc.make_ee_mom_bras(eris=eris))}
+            **{f"r{n + 1}": b for n, b in enumerate(self.ebcc.make_ee_mom_bras(eris=eris))}
         )
         bras = np.array(
             [
@@ -348,7 +348,7 @@ class EE_GEOM(GEOM, BaseEE_EOM):
             Ket vectors.
         """
         kets_raw = util.Namespace(
-            **{f"r{n+1}": k for n, k in enumerate(self.ebcc.make_ee_mom_kets(eris=eris))}
+            **{f"r{n + 1}": k for n, k in enumerate(self.ebcc.make_ee_mom_kets(eris=eris))}
         )
         kets = np.array(
             [

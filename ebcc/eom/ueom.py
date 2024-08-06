@@ -76,7 +76,7 @@ class IP_UEOM(UEOM, BaseIP_EOM):
             Bra vectors.
         """
         bras_raw = util.Namespace(
-            **{f"r{n+1}": b for n, b in enumerate(self.ebcc.make_ip_mom_bras(eris=eris))}
+            **{f"r{n + 1}": b for n, b in enumerate(self.ebcc.make_ip_mom_bras(eris=eris))}
         )
         bras_tmp: Namespace[list[NDArray[float]]] = util.Namespace(a=[], b=[])
 
@@ -133,7 +133,7 @@ class IP_UEOM(UEOM, BaseIP_EOM):
             Ket vectors.
         """
         kets_raw = util.Namespace(
-            **{f"r{n+1}": k for n, k in enumerate(self.ebcc.make_ip_mom_kets(eris=eris))}
+            **{f"r{n + 1}": k for n, k in enumerate(self.ebcc.make_ip_mom_kets(eris=eris))}
         )
         kets_tmp: Namespace[list[NDArray[float]]] = util.Namespace(a=[], b=[])
 
@@ -279,7 +279,7 @@ class EA_UEOM(UEOM, BaseEA_EOM):
             Bra vectors.
         """
         bras_raw = util.Namespace(
-            **{f"r{n+1}": b for n, b in enumerate(self.ebcc.make_ea_mom_bras(eris=eris))}
+            **{f"r{n + 1}": b for n, b in enumerate(self.ebcc.make_ea_mom_bras(eris=eris))}
         )
         bras_tmp: Namespace[list[NDArray[float]]] = util.Namespace(a=[], b=[])
 
@@ -336,7 +336,7 @@ class EA_UEOM(UEOM, BaseEA_EOM):
             Ket vectors.
         """
         kets_raw = util.Namespace(
-            **{f"r{n+1}": k for n, k in enumerate(self.ebcc.make_ea_mom_kets(eris=eris))}
+            **{f"r{n + 1}": k for n, k in enumerate(self.ebcc.make_ea_mom_kets(eris=eris))}
         )
         kets_tmp: Namespace[list[NDArray[float]]] = util.Namespace(a=[], b=[])
 
