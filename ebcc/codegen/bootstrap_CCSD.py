@@ -337,7 +337,7 @@ if spin != "rhf":
             if name == "einsum":
                 kwargs = {
                     "preamble": "r1new = Namespace()\nr2new = Namespace()" if spin == "uhf" else None,
-                    #"as_dict": True,  # FIXME
+                    "as_dict": True,
                 }
             else:
                 kwargs = {}
@@ -394,7 +394,7 @@ if spin != "rhf":
             if name == "einsum":
                 kwargs = {
                     "preamble": "r1new = Namespace()\nr2new = Namespace()" if spin == "uhf" else None,
-                    #"as_dict": True,  # FIXME
+                    "as_dict": True,
                 }
             else:
                 kwargs = {}
@@ -452,7 +452,7 @@ if spin != "rhf":
                 kwargs = {
                     "preamble": "r1new = Namespace()\nr2new = Namespace()" if spin == "uhf" else None,
                     "postamble": "r2new.baba = r2new.abab.transpose(1, 0, 3, 2)" if spin == "uhf" else None,  # FIXME
-                    #"as_dict": True,  # FIXME
+                    "as_dict": True,
                 }
             else:
                 kwargs = {}
