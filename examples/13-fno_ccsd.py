@@ -2,11 +2,10 @@
 Example of a simple FNO-CCSD calculation.
 """
 
-import numpy as np
 from pyscf import gto, scf
 
 from ebcc import EBCC
-from ebcc.space import construct_fno_space
+from ebcc.ham.space import construct_fno_space
 
 # Define the molecule using PySCF
 mol = gto.Mole()

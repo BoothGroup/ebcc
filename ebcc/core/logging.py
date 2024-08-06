@@ -1,12 +1,18 @@
 """Logging."""
 
+from __future__ import annotations
+
 import logging
 import os
 import subprocess
 import sys
+from typing import TYPE_CHECKING, cast
 
 from ebcc import __version__
 from ebcc.util import Namespace
+
+if TYPE_CHECKING:
+    from typing import Any
 
 HEADER = """        _
        | |
@@ -17,32 +23,41 @@ HEADER = """        _
 %s"""  # noqa: W605
 
 
-def output(self, msg, *args, **kwargs):
-    """Output a message at the `"OUTPUT"` level."""
-    if self.isEnabledFor(25):
-        self._log(25, msg, args, **kwargs)
+class Logger(logging.Logger):
+    """Logger with a custom output level."""
+
+    def __init__(self, name: str, level: int = logging.INFO) -> None:
+        """Initialise the logger."""
+        super().__init__(name, level)
+
+    def output(self, msg: str, *args: Any, **kwargs: Any) -> None:
+        """Output a message at the `"OUTPUT"` level."""
+        if self.isEnabledFor(25):
+            self._log(25, msg, args, **kwargs)
 
 
-default_log = logging.getLogger(__name__)
+logging.setLoggerClass(Logger)
+logging.addLevelName(25, "OUTPUT")
+
+
+default_log = Logger("ebcc")
 default_log.setLevel(logging.INFO)
 default_log.addHandler(logging.StreamHandler(sys.stderr))
-logging.addLevelName(25, "OUTPUT")
-logging.Logger.output = output
 
 
-class NullLogger(logging.Logger):
+class NullLogger(Logger):
     """A logger that does nothing."""
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialise the logger."""
         super().__init__("null")
 
-    def _log(self, level, msg, args, **kwargs):
+    def _log(self, *args, **kwargs):  # type: ignore
         pass
 
 
-def init_logging(log):
+def init_logging(log: Logger) -> None:
     """Initialise the logging with a header."""
-
     if globals().get("_EBCC_LOG_INITIALISED", False):
         return
 
@@ -52,7 +67,7 @@ def init_logging(log):
     log.info(f"{ANSI.B}{HEADER}{ANSI.R}" % f"{space}{ANSI.B}{__version__}{ANSI.R}")
 
     # Print versions of dependencies and ebcc
-    def get_git_hash(directory):
+    def get_git_hash(directory: str) -> str:
         git_directory = os.path.join(directory, ".git")
         cmd = ["git", "--git-dir=%s" % git_directory, "rev-parse", "--short", "HEAD"]
         try:
@@ -86,13 +101,13 @@ def init_logging(log):
     globals()["_EBCC_LOG_INITIALISED"] = True
 
 
-def _check_output(*args, **kwargs):
-    """
-    Call a command. If the return code is non-zero, an empty `bytes`
-    object is returned.
+def _check_output(*args: Any, **kwargs: Any) -> bytes:
+    """Call a command.
+
+    If the return code is non-zero, an empty `bytes` object is returned.
     """
     try:
-        return subprocess.check_output(*args, **kwargs)
+        return cast(bytes, subprocess.check_output(*args, **kwargs))
     except subprocess.CalledProcessError:
         return bytes()
 
@@ -111,8 +126,3 @@ ANSI = Namespace(
     w="\x1b[37m",
     y="\x1b[33m",
 )
-
-
-def colour(text, *cs):
-    """Colour a string."""
-    return f"{''.join([ANSI[c] for c in cs])}{text}{ANSI[None]}"

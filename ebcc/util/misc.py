@@ -1,6 +1,24 @@
 """Miscellaneous utilities."""
 
+from __future__ import annotations
+
 import time
+from collections.abc import MutableMapping
+from typing import TYPE_CHECKING, Generic, TypeVar
+
+if TYPE_CHECKING:
+    from typing import Any, ItemsView, Iterator, KeysView, ValuesView
+
+T = TypeVar("T")
+
+
+class InheritedType:
+    """Type for an inherited variable."""
+
+    pass
+
+
+Inherited = InheritedType()
 
 
 class ModelNotImplemented(NotImplementedError):
@@ -9,8 +27,9 @@ class ModelNotImplemented(NotImplementedError):
     pass
 
 
-class Namespace:
-    """
+class Namespace(MutableMapping[str, T], Generic[T]):
+    """Namespace class.
+
     Replacement for SimpleNamespace, which does not trivially allow
     conversion to a dict for heterogenously nested objects.
 
@@ -18,88 +37,105 @@ class Namespace:
     accessing the attribute directly.
     """
 
-    def __init__(self, **kwargs):
-        self.__dict__["_keys"] = set()
+    _members: dict[str, T]
+
+    def __init__(self, **kwargs: T):
+        """Initialise the namespace."""
+        self.__dict__["_members"] = {}
         for key, val in kwargs.items():
-            self[key] = val
+            self.__dict__["_members"][key] = val
 
-    def __setitem__(self, key, val):
+    def __setitem__(self, key: str, val: T) -> None:
+        """Set an item."""
+        self.__dict__["_members"][key] = val
+
+    def __setattr__(self, key: str, val: T) -> None:
         """Set an attribute."""
-        self._keys.add(key)
-        self.__dict__[key] = val
+        return self.__setitem__(key, val)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> Any:
+        """Get an item."""
+        value: Any = self.__dict__["_members"][key]
+        return value
+
+    def __getattr__(self, key: str) -> Any:
         """Get an attribute."""
-        if key not in self._keys:
-            raise IndexError(key)
-        return self.__dict__[key]
+        if key in self.__dict__:
+            return self.__dict__[key]
+        try:
+            return self.__getitem__(key)
+        except KeyError:
+            raise AttributeError(f"Namespace object has no attribute {key}")
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: str) -> None:
+        """Delete an item."""
+        self._members.pop(key)
+
+    def __delattr__(self, key: str) -> None:
         """Delete an attribute."""
-        if key not in self._keys:
-            raise IndexError(key)
-        del self.__dict__[key]
+        return self.__delitem__(key)
 
-    __setattr__ = __setitem__
-
-    def __iter__(self):
+    def __iter__(self) -> Iterator[str]:
         """Iterate over the namespace as a dictionary."""
-        yield from {key: self[key] for key in self._keys}
+        yield from self._members
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         """Check equality."""
+        if not isinstance(other, Namespace):
+            return False
         return dict(self) == dict(other)
 
-    def __ne__(self, other):
+    def __ne__(self, other: Any) -> bool:
         """Check inequality."""
-        return dict(self) != dict(other)
+        return not self == other
 
-    def __contains__(self, key):
+    def __contains__(self, key: Any) -> bool:
         """Check if an attribute exists."""
-        return key in self._keys
+        return key in self._members
 
-    def __len__(self):
-        """Return the number of attributes."""
-        return len(self._keys)
+    def __len__(self) -> int:
+        """Get the number of attributes."""
+        return len(self._members)
 
-    def keys(self):
-        """Return keys of the namespace as a dictionary."""
-        return {k: None for k in self._keys}.keys()
+    def keys(self) -> KeysView[str]:
+        """Get keys of the namespace as a dictionary."""
+        return self._members.keys()
 
-    def values(self):
-        """Return values of the namespace as a dictionary."""
-        return dict(self).values()
+    def values(self) -> ValuesView[T]:
+        """Get values of the namespace as a dictionary."""
+        return self._members.values()
 
-    def items(self):
-        """Return items of the namespace as a dictionary."""
-        return dict(self).items()
+    def items(self) -> ItemsView[str, T]:
+        """Get items of the namespace as a dictionary."""
+        return self._members.items()
 
-    def get(self, *args, **kwargs):
-        """Get an item of the namespace as a dictionary."""
-        return dict(self).get(*args, **kwargs)
+    def __repr__(self) -> str:
+        """Return a string representation."""
+        return f"Namespace({self._members})"
 
 
 class Timer:
     """Timer class."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Initialise the timer."""
         self.t_init = time.perf_counter()
         self.t_prev = time.perf_counter()
         self.t_curr = time.perf_counter()
 
-    def lap(self):
+    def lap(self) -> float:
         """Return the time since the last call to `lap`."""
         self.t_prev, self.t_curr = self.t_curr, time.perf_counter()
         return self.t_curr - self.t_prev
 
     __call__ = lap
 
-    def total(self):
+    def total(self) -> float:
         """Return the total time since initialization."""
         return time.perf_counter() - self.t_init
 
     @staticmethod
-    def format_time(seconds, precision=2):
+    def format_time(seconds: float, precision: int = 2) -> str:
         """Return a formatted time."""
 
         seconds, milliseconds = divmod(seconds, 1)

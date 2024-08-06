@@ -1,36 +1,44 @@
 """File dumping and reading functionality."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from pyscf import scf
 from pyscf.lib.chkfile import dump, dump_mol, load, load_mol
 
 from ebcc import util
-from ebcc.ansatz import Ansatz
-from ebcc.space import Space
+from ebcc.core.ansatz import Ansatz
+from ebcc.ham.space import Space
+
+if TYPE_CHECKING:
+    from typing import Any, Optional, Union
+
+    from ebcc.cc.base import BaseEBCC
+    from ebcc.space.logging import Logger
 
 
 class Dump:
-    """
-    File handler for reading and writing EBCC calculations.
+    """File handler for reading and writing EBCC calculations.
 
-    Attributes
-    ----------
-    name : str
-        The name of the file.
+    Args:
+        name: The name of the file.
     """
 
-    def __init__(self, name):
+    def __init__(self, name: str) -> None:
+        """Initialise the file handler.
+
+        Args:
+            name: The name of the file.
+        """
         self.name = name
 
-    def write(self, ebcc):
-        """
-        Write the EBCC object to the file.
+    def write(self, ebcc: BaseEBCC) -> None:
+        """Write the EBCC object to the file.
 
-        Parameters
-        ----------
-        ebcc : EBCC
-            The EBCC object to write.
+        Args:
+            ebcc: The EBCC object to write.
         """
-
         # Write the options
         dic = {}
         for key, val in ebcc.options.__dict__.items():
@@ -95,7 +103,7 @@ class Dump:
         # TODO write the Fock matrix class instead
 
         # Write miscellaneous data
-        kwargs = {
+        kwargs: dict[str, Any] = {
             "spin_type": ebcc.spin_type,
         }
         if ebcc.e_corr is not None:
@@ -132,23 +140,16 @@ class Dump:
             if ebcc.lambdas is not None:
                 dump(self.name, "lambdas", {**ebcc.lambdas})
 
-    def read(self, cls, log=None):
-        """
-        Load the file to an EBCC object.
+    def read(self, cls: type[BaseEBCC], log: Optional[Logger] = None) -> BaseEBCC:
+        """Load the file to an EBCC object.
 
-        Parameters
-        ----------
-        cls : type
-            EBCC class to load the file to.
-        log : Logger, optional
-            Logger to assign to the EBCC object.
+        Args:
+            cls: EBCC class to load the file to.
+            log: Logger to assign to the EBCC object.
 
-        Returns
-        -------
-        ebcc : EBCC
+        Returns:
             The EBCC object loaded from the file.
         """
-
         # Load the options
         dic = load(self.name, "options")
         options = cls.Options()
@@ -186,6 +187,7 @@ class Dump:
 
         # Load the space
         dic = load(self.name, "space")
+        space: Union[Space, tuple[Space, Space]]
         if spin_type == "U":
             space = (
                 Space(
