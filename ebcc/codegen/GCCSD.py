@@ -1019,7 +1019,7 @@ def hbar_matvec_ip(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=No
     r1new -= einsum("i,ij->j", r1, f.oo)
     r2new += einsum("i,iajk->kja", r1, v.ovoo)
 
-    return r1new, r2new
+    return {"r1new": r1new, "r2new": r2new}
 
 def hbar_matvec_ea(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=None, l2=None, r1=None, r2=None, **kwargs):
     r2 = -r2
@@ -1247,7 +1247,7 @@ def hbar_matvec_ea(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=No
     r1new += einsum("a,ba->b", r1, f.vv)
     r2new += einsum("a,bcia->cbi", r1, v.vvov)
 
-    return r1new, r2new
+    return {"r1new": r1new, "r2new": r2new}
 
 def make_ee_mom_kets(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=None, l2=None, **kwargs):
     delta_oo = np.eye(nocc)
@@ -1834,5 +1834,5 @@ def hbar_matvec_ee(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=No
     ree2new += einsum("ia,jb->jiab", r1, x125)
     del x125
 
-    return ree1new, ree2new
+    return {"r1new": ree1new, "r2new": ree2new}
 

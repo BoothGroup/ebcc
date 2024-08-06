@@ -4012,7 +4012,7 @@ def hbar_matvec_ip(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=No
     r1new = Namespace(a=r1new_a, b=r1new_b)
     r2new = Namespace(aaa=r2new_aaa, aba=r2new_aba, bab=r2new_bab, bbb=r2new_bbb)
 
-    return r1new, r2new
+    return {"r1new": r1new, "r2new": r2new}
 
 def hbar_matvec_ea(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=None, l2=None, r1=None, r2=None, **kwargs):
     x0 = np.zeros((nocc[0], nocc[1], nvir[1]), dtype=types[float])
@@ -4879,7 +4879,7 @@ def hbar_matvec_ea(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=No
     r2new.bab *= -1
     r2new.bbb *= -1
 
-    return r1new, r2new
+    return {"r1new": r1new, "r2new": r2new}
 
 def make_ee_mom_kets(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=None, l2=None, **kwargs):  # pragma: no cover
     delta_oo = Namespace()
@@ -7373,5 +7373,5 @@ def hbar_matvec_ee(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, l1=No
     ree1new = Namespace(aa=ree1new_aa, bb=ree1new_bb)
     ree2new = Namespace(aaaa=ree2new_aaaa, abab=ree2new_abab, baba=ree2new_baba, bbbb=ree2new_bbbb)
 
-    return ree1new, ree2new
+    return {"r1new": ree1new, "r2new": ree2new}
 
