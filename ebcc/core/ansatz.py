@@ -1,8 +1,15 @@
 """Ansatz definition."""
 
+from __future__ import annotations
+
 import importlib
+from typing import TYPE_CHECKING
 
 from ebcc import METHOD_TYPES, util
+
+if TYPE_CHECKING:
+    from types import ModuleType
+    from typing import Optional
 
 named_ansatzes = {
     "MP2": ("MP2", "", 0, 0),
@@ -24,91 +31,67 @@ named_ansatzes = {
 }
 
 
-def name_to_identifier(name):
-    """
-    Convert an ansatz name to an identifier. The identifier is used as for
-    the filename of the module containing the generated equations, where
-    the name may contain illegal characters.
+def name_to_identifier(name: str) -> str:
+    """Convert an ansatz name to an identifier.
 
-    Parameters
-    ----------
-    name : str
-        Name of the ansatz.
+    The identifier is used as for the filename of the module containing the generated equations,
+    where the name may contain illegal characters.
 
-    Returns
-    -------
-    iden : str
+    Args:
+        name: Name of the ansatz.
+
+    Returns:
         Identifier for the ansatz.
 
-    Examples
-    --------
-    >>> identifier_to_name("CCSD(T)")
-    CCSDxTx
-    >>> identifier_to_name("CCSD-SD-1-2")
-    CCSD_SD_1_2
+    Examples:
+        >>> name_to_identifier("CCSD(T)")
+        'CCSDxTx'
+        >>> name_to_identifier("CCSD-SD-1-2")
+        'CCSD_SD_1_2'
     """
-
     iden = name.replace("(", "x").replace(")", "x")
     iden = iden.replace("[", "y").replace("]", "y")
     iden = iden.replace("-", "_")
     iden = iden.replace("'", "p")
-
     return iden
 
 
-def identifity_to_name(iden):
-    """
-    Convert an ansatz identifier to a name. Inverse operation of
-    `name_to_identifier`.
+def identifity_to_name(iden: str) -> str:
+    """Convert an ansatz identifier to a name.
 
-    Parameters
-    ----------
-    iden : str
-        Identifier for the ansatz.
+    Inverse operation of `name_to_identifier`.
 
-    Returns
-    -------
-    name : str
+    Args:
+        iden: Identifier for the ansatz.
+
+    Returns:
         Name of the ansatz.
 
-    Examples
-    --------
-    >>> identifier_to_name("CCSDxTx")
-    CCSD(T)
-    >>> identifier_to_name("CCSD_SD_1_2")
-    CCSD-SD-1-2
+    Examples:
+        >>> identifier_to_name("CCSDxTx")
+        'CCSD(T)'
+        >>> identifier_to_name("CCSD_SD_1_2")
+        'CCSD-SD-1-2'
     """
-
     name = iden.replace("-", "_")
     while "x" in name:
         name = name.replace("x", "(", 1).replace("x", ")", 1)
     while "y" in name:
         name = name.replace("y", "(", 1).replace("y", ")", 1)
     name = name.replace("p", "'")
-
     return name
 
 
 class Ansatz:
-    """
-    Ansatz class.
+    """Ansatz class.
 
-    Parameters
-    ----------
-    fermion_ansatz : str, optional
-        Fermionic ansatz. Default value is `"CCSD"`.
-    boson_ansatz : str, optional
-        Rank of bosonic excitations. Default value is `""`.
-    fermion_coupling_rank : int, optional
-        Rank of fermionic term in coupling. Default value is `0`.
-    boson_coupling_rank : int, optional
-        Rank of bosonic term in coupling. Default value is `0`.
-    density_fitting : bool, optional
-        Use density fitting. Default value is `False`.
-    module_name : str, optional
-        Name of the module containing the generated equations. If `None`,
-        the module name is generated from the ansatz name. Default value is
-        `None`.
+    Attributes:
+        fermion_ansatz: Fermionic ansatz.
+        boson_ansatz: Rank of bosonic excitations.
+        fermion_coupling_rank: Rank of fermionic term in coupling.
+        boson_coupling_rank: Rank of bosonic term in coupling.
+        density_fitting: Use density fitting.
+        module_name: Name of the module containing the generated equations.
     """
 
     def __init__(
@@ -118,8 +101,18 @@ class Ansatz:
         fermion_coupling_rank: int = 0,
         boson_coupling_rank: int = 0,
         density_fitting: bool = False,
-        module_name: str = None,
-    ):
+        module_name: Optional[str] = None,
+    ) -> None:
+        """Initialise the ansatz.
+
+        Args:
+            fermion_ansatz: Fermionic ansatz.
+            boson_ansatz: Rank of bosonic excitations.
+            fermion_coupling_rank: Rank of fermionic term in coupling.
+            boson_coupling_rank: Rank of bosonic term in coupling.
+            density_fitting: Use density fitting.
+            module_name: Name of the module containing the generated equations.
+        """
         self.fermion_ansatz = fermion_ansatz
         self.boson_ansatz = boson_ansatz
         self.fermion_coupling_rank = fermion_coupling_rank
@@ -127,50 +120,31 @@ class Ansatz:
         self.density_fitting = density_fitting
         self.module_name = module_name
 
-    def _get_eqns(self, prefix):
+    def _get_eqns(self, prefix: str) -> ModuleType:
         """Get the module containing the generated equations."""
-
         if self.module_name is None:
             name = prefix + name_to_identifier(self.name)
         else:
             name = self.module_name
-
-        eqns = importlib.import_module("ebcc.codegen.%s" % name)
-
-        return eqns
+        return importlib.import_module("ebcc.codegen.%s" % name)
 
     @classmethod
-    def from_string(cls, string, density_fitting=False):
+    def from_string(cls, string: str, density_fitting: bool = False) -> Ansatz:
+        """Build an `Ansatz` from a string for the default ansatzes.
+
+        Args:
+            string: Input string.
+            density_fitting: Use density fitting.
+
+        Returns:
+            Ansatz object.
         """
-        Build an Ansatz from a string for the default ansatzes.
-
-        Parameters
-        ----------
-        input : str
-            Input string
-        density_fitting : bool, optional
-            Use density fitting. Default value is `False`.
-
-        Returns
-        -------
-        ansatz : Ansatz
-            Ansatz object
-        """
-
         if string not in named_ansatzes:
             raise util.ModelNotImplemented(string)
-
         return cls(*named_ansatzes[string], density_fitting=density_fitting)
 
-    def __repr__(self):
-        """
-        Get a string with the name of the method.
-
-        Returns
-        -------
-        name : str
-            Name of the method.
-        """
+    def __repr__(self) -> str:
+        """Get a string with the name of the method."""
         name = ""
         if self.density_fitting:
             name += "DF"
@@ -183,60 +157,44 @@ class Ansatz:
         return name
 
     @property
-    def name(self):
+    def name(self) -> str:
         """Get the name of the ansatz."""
         return repr(self)
 
     @property
-    def has_perturbative_correction(self):
-        """
-        Return a boolean indicating whether the ansatz includes a
-        perturbative correction e.g. CCSD(T).
+    def has_perturbative_correction(self) -> bool:
+        """Get a boolean indicating if the ansatz includes a perturbative correction e.g. CCSD(T).
 
-        Returns
-        -------
-        perturbative : bool
-            Boolean indicating if the ansatz is perturbatively
-            corrected.
+        Returns:
+            perturbative: Boolean indicating if the ansatz is perturbatively corrected.
         """
         return any(
             "(" in ansatz and ")" in ansatz for ansatz in (self.fermion_ansatz, self.boson_ansatz)
         )
 
     @property
-    def is_one_shot(self):
-        """
-        Return a boolean indicating whether the ansatz is simply a one-shot
-        energy calculation e.g. MP2.
+    def is_one_shot(self) -> bool:
+        """Get a boolean indicating whether the ansatz is a one-shot energy calculation e.g. MP2.
 
-        Returns
-        -------
-        one_shot : bool
-            Boolean indicating if the ansatz is a one-shot energy
-            calculation.
+        Returns:
+            one_shot: Boolean indicating if the ansatz is a one-shot energy calculation.
         """
         return all(
             ansatz.startswith("MP") or ansatz == ""
             for ansatz in (self.fermion_ansatz, self.boson_ansatz)
         )
 
-    def fermionic_cluster_ranks(self, spin_type="G"):
+    def fermionic_cluster_ranks(self, spin_type: str = "G") -> list[tuple[str, str, int]]:
+        """Get a list of cluster operator ranks for the fermionic space.
+
+        Args:
+            spin_type: Spin type of the cluster operator.
+
+        Returns:
+            List of cluster operator ranks, each element is a tuple containing the name, the slices
+            and the rank.
         """
-        Get a list of cluster operator ranks for the fermionic space.
-
-        Parameters
-        ----------
-        spin_type : str, optional
-            Spin type of the cluster operator. Default value is `"G"`.
-
-        Returns
-        -------
-        ranks : list of tuples
-            List of cluster operator ranks, each element is a tuple
-            containing the name, the slices and the rank.
-        """
-
-        ranks = []
+        ranks: list[tuple[str, str, int]] = []
         if not self.fermion_ansatz:
             return ranks
 
@@ -292,23 +250,17 @@ class Ansatz:
 
         return ranks
 
-    def bosonic_cluster_ranks(self, spin_type="G"):
+    def bosonic_cluster_ranks(self, spin_type: str = "G") -> list[tuple[str, str, int]]:
+        """Get a list of cluster operator ranks for the bosonic space.
+
+        Args:
+            spin_type: Spin type of the cluster operator.
+
+        Returns:
+            List of cluster operator ranks, each element is a tuple containing the name, the slices
+            and the rank.
         """
-        Get a list of cluster operator ranks for the bosonic space.
-
-        Parameters
-        ----------
-        spin_type : str, optional
-            Spin type of the cluster operator. Default value is `"G"`.
-
-        Returns
-        -------
-        ranks : list of tuples
-            List of cluster operator ranks, each element is a tuple
-            containing the name, the slices and the rank.
-        """
-
-        ranks = []
+        ranks: list[tuple[str, str, int]] = []
         if not self.boson_ansatz:
             return ranks
 
@@ -344,23 +296,16 @@ class Ansatz:
 
         return ranks
 
-    def coupling_cluster_ranks(self, spin_type="G"):
+    def coupling_cluster_ranks(self, spin_type: str = "G") -> list[tuple[str, str, int, int]]:
+        """Get a list of cluster operator ranks for the coupling between fermions and bosons.
+
+        Args:
+            spin_type: Spin type of the cluster operator.
+
+        Returns:
+            List of cluster operator ranks, each element is a tuple containing the name, the slices
+            and the rank.
         """
-        Get a list of cluster operator ranks for the coupling between
-        fermionic and bosonic spaces.
-
-        Parameters
-        ----------
-        spin_type : str, optional
-            Spin type of the cluster operator. Default value is `"G"`.
-
-        Returns
-        -------
-        ranks : list of tuple
-            List of cluster operator ranks, each element is a tuple
-            containing the name, slice, fermionic rank and bosonic rank.
-        """
-
         ranks = []
 
         for fermion_rank in range(1, self.fermion_coupling_rank + 1):

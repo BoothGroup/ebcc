@@ -10,7 +10,7 @@ keywords = [
     "ccsd",
 ]
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.9"
 classifiers = [
         "Development Status :: 2 - Pre-Alpha",
         "Intended Audience :: Science/Research",
@@ -18,16 +18,16 @@ classifiers = [
         "Topic :: Scientific/Engineering",
         "Topic :: Software Development",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: POSIX :: Linux",
 ]
 dependencies = [
     "numpy>=1.19.0",
-    "scipy<=1.10.0",
+    "scipy>=1.11.0",
     "pyscf>=2.0.0",
     "h5py>=3.0.0",
 ]
@@ -46,6 +46,7 @@ dev = [
     "flake8-pyproject>=1.2.3",
     "flake8-bugbear>=23.0.0",
     "flake8-docstrings>=1.6.0",
+    "mypy>=1.8.0",
     "coverage[toml]>=5.5.0",
     "pytest>=6.2.4",
     "pytest-cov>=4.0.0",
@@ -61,7 +62,7 @@ include = "ebcc"
 exclude = """
 /(
     | ebcc/codegen
-    | ebcc/__pycache__
+    | __pycache__
     | .git
 )/
 """
@@ -74,14 +75,24 @@ src_paths = [
     "ebcc",
 ]
 skip_glob = [
-    "ebcc/__pycache__/*",
+    "*/__pycache__/*",
     "ebcc/codegen/*",
-    "ebcc/__init__.py",
+    "*/__init__.py",
 ]
+
+[tool.unimport]
+include_star_import = true
+ignore_init = true
+include = '\.pyi?$'
+exclude = """
+/(
+    | __init__.py
+)/
+"""
 
 [tool.flake8]
 max-line-length = 100
-max-doc-length = 75
+max-doc-length = 100
 ignore = [
     "E203",  # Whitespace before ':'
     "E731",  # Do not assign a lambda expression, use a def
@@ -93,19 +104,53 @@ ignore = [
     "B007",  # Loop control variable not used within the loop body
 ]
 per-file-ignores = [
-    "__init__.py:E402,W605,F401,F811,D103",
+    "__init__.py:E402,W605,F401,F811,D103,D212,D415",
 ]
-docstring-convention = "numpy"
-ignore-decorators = "has_docstring"
+docstring-convention = "google"
 count = true
 include = "ebcc"
 exclude = """
 /(
     | ebcc/codegen
-    | ebcc/__pycache__
+    | __pycache__
     | .git
 )/
 """
+
+[tool.mypy]
+python_version = "3.10"
+exclude = """
+/(
+    | ebcc/codegen
+    | __pycache__
+    | .git
+)/
+"""
+
+[[tool.mypy.overrides]]
+module = "ebcc.*"
+strict = true
+ignore_missing_imports = true
+#implicit_optional = true
+disallow_subclassing_any = false
+implicit_reexport = true
+warn_unused_ignores = false
+
+[[tool.mypy.overrides]]
+module = "ebcc.codegen.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "pyscf.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "scipy.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "h5py.*"
+ignore_missing_imports = true
 
 [tool.coverage.run]
 branch = true

@@ -1,12 +1,22 @@
 """Symmetry and permutational utilities."""
 
+from __future__ import annotations
+
 import functools
 import itertools
+from typing import TYPE_CHECKING
 
 import numpy as np
 
+if TYPE_CHECKING:
+    from typing import Any, Generator, Hashable, Iterable, Optional, TypeVar
 
-def factorial(n):
+    from ebcc.numpy.typing import NDArray
+
+    T = TypeVar("T")
+
+
+def factorial(n: int) -> int:
     """Return the factorial of `n`."""
     if n in (0, 1):
         return 1
@@ -14,67 +24,50 @@ def factorial(n):
         return n * factorial(n - 1)
 
 
-def permute_string(string, permutation):
-    """
-    Permute a string.
+def permute_string(string: str, permutation: tuple[int, ...]) -> str:
+    """Permute a string.
 
-    Parameters
-    ----------
-    string : str
-        String to permute.
-    permutation : list of int
-        Permutation to apply.
+    Args:
+        string: String to permute.
+        permutation: Permutation to apply.
 
-    Returns
-    -------
-    permuted : str
+    Returns:
         Permuted string.
 
-    Examples
-    --------
-    >>> permute_string("abcd", [2, 0, 3, 1])
-    "cbda"
+    Examples:
+        >>> permute_string("abcd", (2, 0, 3, 1))
+        "cbda"
     """
     return "".join([string[i] for i in permutation])
 
 
-def tril_indices_ndim(n, dims, include_diagonal=False):
-    """
-    Return lower triangular indices for a multidimensional array.
+def tril_indices_ndim(
+    n: int, dims: int, include_diagonal: Optional[bool] = False
+) -> tuple[NDArray[int]]:
+    """Return lower triangular indices for a multidimensional array.
 
-    Parameters
-    ----------
-    n : int
-        Size of each dimension.
-    dims : int
-        Number of dimensions.
-    include_diagonal : bool, optional
-        If `True`, include diagonal elements. Default value is `False`.
+    Args:
+        n: Size of each dimension.
+        dims: Number of dimensions.
+        include_diagonal: If True, include diagonal elements.
 
-    Returns
-    -------
-    tril : tuple of ndarray
+    Returns:
         Lower triangular indices for each dimension.
     """
-
     ranges = [np.arange(n)] * dims
-
-    if dims == 0:
-        return tuple()
-    elif dims == 1:
+    if dims == 1:
         return (ranges[0],)
-
-    if include_diagonal:
-        func = np.greater_equal
-    else:
-        func = np.greater
+    # func: Callable[[Any, ...], Any] = np.greater_equal if include_diagonal else np.greater
 
     slices = [
         tuple(slice(None) if i == j else np.newaxis for i in range(dims)) for j in range(dims)
     ]
 
     casted = [rng[ind] for rng, ind in zip(ranges, slices)]
-    mask = functools.reduce(np.logical_and, [func(a, b) for a, b in zip(casted[:-1], casted[1:])])
+    if include_diagonal:
+        mask = functools.reduce(np.logical_and, map(np.greater_equal, casted[:-1], casted[1:]))
+    else:
+        mask = functools.reduce(np.logical_and, map(np.greater, casted[:-1], casted[1:]))
 
     tril = tuple(
         np.broadcast_to(inds, mask.shape)[mask] for inds in np.indices(mask.shape, sparse=True)
@@ -83,7 +76,7 @@ def tril_indices_ndim(n, dims, include_diagonal=False):
     return tril
 
 
-def ntril_ndim(n, dims, include_diagonal=False):
+def ntril_ndim(n: int, dims: int, include_diagonal: Optional[bool] = False) -> int:
     """Return `len(tril_indices_ndim(n, dims, include_diagonal))`."""
 
     # FIXME hack until this function is fixed:
@@ -104,38 +97,29 @@ def ntril_ndim(n, dims, include_diagonal=False):
     return out
 
 
-def generate_spin_combinations(n, excited=False, unique=False):
+def generate_spin_combinations(
+    n: int, excited: Optional[bool] = False, unique: Optional[bool] = False
+) -> Generator[str, None, None]:
+    """Generate combinations of spin components for a given number of occupied and virtual axes.
+
+    Args:
+        n: Order of cluster amplitude.
+        excited: If True, treat the amplitudes as excited.
+        unique: If True, return only unique combinations.
+
+    Returns:
+        List of spin combinations.
+
+    Examples:
+        >>> generate_spin_combinations(1)
+        ['aa', 'bb']
+        >>> generate_spin_combinations(2)
+        ['aaaa', 'abab', 'baba', 'bbbb']
+        >>> generate_spin_combinations(2, excited=True)
+        ['aaa', 'aba', 'bab', 'bbb']
+        >>> generate_spin_combinations(2, unique=True)
+        ['aaaa', 'abab', 'bbbb']
     """
-    Generate combinations of spin components for a given number of
-    occupied and virtual axes.
-
-    Parameters
-    ----------
-    n : int
-        Order of cluster amplitude.
-    excited : bool, optional
-        If True, treat the amplitudes as excited. Default value is
-        `False`.
-    unique : bool, optional
-        If True, return only unique combinations.
-
-    Yields
-    ------
-    spin : str
-        String of spin combination.
-
-    Examples
-    --------
-    >>> generate_spin_combinations(1)
-    ['aa', 'bb']
-    >>> generate_spin_combinations(2)
-    ['aaaa', 'abab', 'baba', 'bbbb']
-    >>> generate_spin_combinations(2, excited=True)
-    ['aaa', 'aba', 'bab', 'bbb']
-    >>> generate_spin_combinations(2, unique=True)
-    ['aaaa', 'abab', 'bbbb']
-    """
-
     if unique:
         check = set()
 
@@ -160,31 +144,28 @@ def generate_spin_combinations(n, excited=False, unique=False):
         yield comb
 
 
-def permutations_with_signs(seq):
-    """
-    Return permutations of seq, yielding also a sign which is equal to +1
-    for an even number of swaps, and -1 for an odd number of swaps.
+def permutations_with_signs(seq: Iterable[Any]) -> list[tuple[Any, int]]:
+    """Return permutations of a sequence with a sign indicating the number of swaps.
 
-    Parameters
-    ----------
-    seq : iterable
-        Sequence to permute.
+    The sign is equal to +1 for an even number of swaps, and -1 for an odd number of swaps.
 
-    Returns
-    -------
-    permuted : list of tuple
+    Args:
+        seq: Sequence to permute.
+
+    Returns:
         List of tuples of the form (permuted, sign).
     """
 
-    def _permutations(seq):
+    def _permutations(seq: list[Any]) -> list[list[Any]]:
         if not seq:
             return [[]]
 
         items = []
         for i, item in enumerate(_permutations(seq[:-1])):
-            inds = range(len(item) + 1)
-            if i % 2 == 0:
-                inds = reversed(inds)
+            if i % 2 == 1:
+                inds = range(len(item) + 1)
+            else:
+                inds = range(len(item), -1, -1)
             items += [item[:i] + seq[-1:] + item[i:] for i in inds]
 
         return items
@@ -192,55 +173,41 @@ def permutations_with_signs(seq):
     return [(item, -1 if i % 2 else 1) for i, item in enumerate(_permutations(list(seq)))]
 
 
-def get_symmetry_factor(*numbers):
-    """
-    Get a floating point value corresponding to the factor from the
-    neglection of symmetry in repeated indices.
+def get_symmetry_factor(*numbers: int) -> float:
+    """Get a value corresponding to the factor from the neglection of symmetry in repeated indices.
 
-    Parameters
-    ----------
-    numbers : tuple of int
-        Multiplicity of each distinct degree of freedom.
+    Args:
+        numbers: Multiplicity of each distinct degree of freedom.
 
-    Returns
-    -------
-    factor : float
+    Returns:
         Symmetry factor.
 
-    Examples
-    --------
-    >>> build_symmetry_factor(1, 1)
-    1.0
-    >>> build_symmetry_factor(2, 2)
-    0.25
-    >>> build_symmetry_factor(3, 2, 1)
-    0.125
+    Examples:
+        >>> get_symmetry_factor(1, 1)
+        1.0
+        >>> get_symmetry_factor(2, 2)
+        0.25
+        >>> get_symmetry_factor(3, 2, 1)
+        0.125
     """
-
     ntot = 0
     for n in numbers:
         ntot += max(0, n - 1)
-
     return 1.0 / (2.0**ntot)
 
 
-def antisymmetrise_array(v, axes=(0, 1)):
-    """
-    Antisymmetrise an array.
+def antisymmetrise_array(v: NDArray[T], axes: Optional[tuple[int, ...]] = None) -> NDArray[T]:
+    """Antisymmetrise an array.
 
-    Parameters
-    ----------
-    v : ndarray
-        Array to antisymmetrise.
-    axes : tuple of int, optional
-        Axes to antisymmetrise over. Default value is `(0, 1)`.
+    Args:
+        v: Array to antisymmetrise.
+        axes: Axes to antisymmetrise over.
 
-    Returns
-    -------
-    v_as : ndarray
+    Returns:
         Antisymmetrised array.
     """
-
+    if axes is None:
+        axes = tuple(range(v.ndim))
     v_as = np.zeros_like(v)
 
     for perm, sign in permutations_with_signs(axes):
@@ -254,15 +221,16 @@ def antisymmetrise_array(v, axes=(0, 1)):
     return v_as
 
 
-def is_mixed_spin(spin):
+def is_mixed_spin(spin: Iterable[Hashable]) -> bool:
     """Return a boolean indicating if a list of spins is mixed."""
     return len(set(spin)) != 1
 
 
-def combine_subscripts(*subscripts, sizes=None):
-    """
-    Combine subscripts into new unique subscripts for functions such as
-    `compress_axes`.
+def combine_subscripts(
+    *subscripts: str,
+    sizes: Optional[dict[tuple[str, ...], int]] = None,
+) -> tuple[str, dict[str, int]]:
+    """Combine subscripts into new unique subscripts for functions such as `compress_axes`.
 
     For example, one may wish to compress an amplitude according to both
     occupancy and spin signatures.
@@ -272,35 +240,23 @@ def combine_subscripts(*subscripts, sizes=None):
     such that it is unique for a unique value of
     `tuple(s[i] for s in subscripts)` among other values of `i`.
 
-    If `sizes` is passed, this function also returns a dictionary
-    indicating the size of each new character in the subscript according to
-    the size of the corresponding original character in the dictionary
+    This function also returns a dictionary indicating the size of each new character in the
+    subscript according to the size of the corresponding original character in the dictionary
     `sizes`.
 
-    Parameters
-    ----------
-    subscripts : tuple of str
-        Subscripts to combine. Each subscript must be a string of the same
-        length.
-    sizes : dict, optional
-        Dictionary of sizes for each index. Keys should be
-        `tuple(s[i] for s in subscripts)`. Default value is `None`.
+    Args:
+        subscripts: Subscripts to combine.
+        sizes: Dictionary of sizes for each index.
 
-    Returns
-    -------
-    new_subscript : str
-        Output subscript.
-    new_sizes : dict, optional
-        Dictionary of the sizes of each new index. Only returned if the
-        `sizes` keyword argument is provided.
+    Returns:
+        New subscript, with a dictionary of sizes of each new index.
     """
-
     if len(set(len(s) for s in subscripts)) != 1:
         raise ValueError("Subscripts must be of the same length.")
 
-    char_map = {}
+    char_map: dict[tuple[str, ...], str] = {}
     new_subscript = ""
-    new_sizes = {}
+    new_sizes: dict[str, int] = {}
     j = 0
     for i in range(len(subscripts[0])):
         key = tuple(s[i] for s in subscripts)
@@ -312,43 +268,30 @@ def combine_subscripts(*subscripts, sizes=None):
             if j == 123:
                 j = 65
         new_subscript += char_map[key]
-        if sizes is not None:
+        if sizes:
             new_sizes[char_map[key]] = sizes[key]
 
-    if sizes is None:
-        return new_subscript
-    else:
-        return new_subscript, new_sizes
+    return new_subscript, new_sizes
 
 
-def compress_axes(subscript, array, include_diagonal=False):
-    """
-    Compress an array into lower-triangular representations using an
-    einsum-like input.
+def compress_axes(
+    subscript: str, array: NDArray[T], include_diagonal: Optional[bool] = False
+) -> NDArray[T]:
+    """Compress an array into lower-triangular representations using an einsum-like input.
 
-    Parameters
-    ----------
-    subscript : str
-        Subscript for the input array. The output array will have a
-        compressed representation of the input array according to this
-        subscript, where repeated characters indicate symmetrically
-        equivalent axes.
-    array : numpy.ndarray
-        Array to compress.
-    include_diagonal : bool, optional
-        Whether to include the diagonal elements of the input array in the
-        output array. Default value is `False`.
+    Args:
+        subscript: Subscript for the input array.
+        array: Array to compress.
+        include_diagonal: Whether to include the diagonal elements of the input array in the output
+            array.
 
-    Returns
-    -------
-    compressed_array : numpy.ndarray
+    Returns:
         Compressed array.
 
-    Examples
-    --------
-    >>> t2 = np.zeros((4, 4, 10, 10))
-    >>> compress_axes("iiaa", t2).shape
-    (6, 45)
+    Examples:
+        >>> t2 = np.zeros((4, 4, 10, 10))
+        >>> compress_axes("iiaa", t2).shape
+        (6, 45)
     """
     # TODO out
     # TODO can this be OpenMP parallel?
@@ -365,12 +308,12 @@ def compress_axes(subscript, array, include_diagonal=False):
     subscript = "".join([subs[s] for s in subscript])
 
     # Reshape array so that all axes of the same character are adjacent:
-    arg = np.argsort(list(subscript))
+    arg = tuple(np.argsort(list(subscript)))
     array = array.transpose(arg)
     subscript = permute_string(subscript, arg)
 
     # Reshape array so that all axes of the same character are flattened:
-    sizes = {}
+    sizes: dict[str, int] = {}
     for char, n in zip(subscript, array.shape):
         if char in sizes:
             assert sizes[char] == n
@@ -379,13 +322,13 @@ def compress_axes(subscript, array, include_diagonal=False):
     array = array.reshape([sizes[char] ** subscript.count(char) for char in sorted(set(subscript))])
 
     # For each axis type, get the necessary lower-triangular indices:
-    indices = [
+    indices_ndim = [
         tril_indices_ndim(sizes[char], subscript.count(char), include_diagonal=include_diagonal)
         for char in sorted(set(subscript))
     ]
     indices = [
         np.ravel_multi_index(ind, (sizes[char],) * subscript.count(char))
-        for ind, char in zip(indices, sorted(set(subscript)))
+        for ind, char in zip(indices_ndim, sorted(set(subscript)))
     ]
 
     # Apply the indices:
@@ -399,40 +342,29 @@ def compress_axes(subscript, array, include_diagonal=False):
 
 
 def decompress_axes(
-    subscript,
-    array_flat,
-    shape=None,
-    include_diagonal=False,
-    symmetry=None,
-    out=None,
-):
-    """
-    Reverse operation of `compress_axes`, subscript input is the same. One
-    of `shape` or `out` must be passed.
+    subscript: str,
+    array_flat: NDArray[T],
+    shape: Optional[tuple[int, ...]] = None,
+    include_diagonal: Optional[bool] = False,
+    symmetry: Optional[str] = None,
+    out: Optional[NDArray[T]] = None,
+) -> NDArray[T]:
+    """Reverse operation of `compress_axes`, subscript input is the same.
 
-    Parameters
-    ----------
-    subscript : str
-        Subscript for the output array. The input array will have a
-        compressed representation of the output array according to this
-        subscript, where repeated characters indicate symmetrically
-        equivalent axes.
-    array_flat : numpy.ndarray
-        Array to decompress.
-    shape : tuple of int, optional
-        Shape of the output array. Must be passed if `out` is `None`.
-        Default value is `None`.
-    include_diagonal : bool, optional
-        Whether to include the diagonal elements of the output array in the
-        input array. Default value is `False`.
-    symmetry : str, optional
-        Symmetry of the output array, with a `"+"` indicating symmetry and
-        `"-"` indicating antisymmetry for each dimension in the
-        decompressed array. If `None`, defaults to fully antisymmetric
-        (i.e. all characters are `"-"`). Default value is `None`.
-    out : numpy.ndarray, optional
-        Output array. If `None`, a new array is created, and `shape` must
-        be passed. Default value is `None`.
+    One of `shape` or `out` must be passed.
+
+    Args:
+        subscript: Subscript for the output array.
+        array_flat: Array to decompress.
+        shape: Shape of the output array. Must be passed if `out` is `None`.
+        include_diagonal: Whether to include the diagonal elements of the output array in the input
+            array.
+        symmetry: Symmetry of the output array, with a "+" indicating symmetry and "-" indicating
+            antisymmetry for each dimension in the decompressed array.
+        out: Output array. If `None`, a new array is created, and `shape` must be passed.
+
+    Returns:
+        Decompressed array.
     """
 
     assert "->" not in subscript
@@ -444,6 +376,8 @@ def decompress_axes(
 
     # Initialise decompressed array
     if out is None:
+        if shape is None:
+            raise ValueError("One of `shape` or `out` must be passed.")
         array = np.zeros(shape, dtype=array_flat.dtype)
     else:
         array = out
@@ -459,12 +393,12 @@ def decompress_axes(
     subscript = "".join([subs[s] for s in subscript])
 
     # Reshape array so that all axes of the same character are adjacent:
-    arg = np.argsort(list(subscript))
+    arg = tuple(np.argsort(list(subscript)))
     array = array.transpose(arg)
     subscript = permute_string(subscript, arg)
 
     # Reshape array so that all axes of the same character are flattened:
-    sizes = {}
+    sizes: dict[str, int] = {}
     for char, n in zip(subscript, array.shape):
         if char in sizes:
             assert sizes[char] == n
@@ -489,19 +423,19 @@ def decompress_axes(
     # Iterate over permutations with signs:
     for tup in itertools.product(*[permutations_with_signs(ind) for ind in indices]):
         indices_perm, signs = zip(*tup)
-        signs = [s if symm == "-" else 1 for s, symm in zip(signs, symmetry_compressed)]
+        signs = tuple(s if symm == "-" else 1 for s, symm in zip(signs, symmetry_compressed))
 
         # Apply the indices:
-        indices_perm = [
+        indices_perm = tuple(
             np.ravel_multi_index(ind, (sizes[char],) * subscript.count(char))
             for ind, char in zip(indices_perm, sorted(set(subscript)))
-        ]
-        indices_perm = [
+        )
+        indices_perm = tuple(
             ind[tuple(np.newaxis if i != j else slice(None) for i in range(len(indices_perm)))]
             for j, ind in enumerate(indices_perm)
-        ]
-        shape = array[tuple(indices_perm)].shape
-        array[tuple(indices_perm)] = array_flat.reshape(shape) * np.prod(signs)
+        )
+        shape = array[indices_perm].shape
+        array[indices_perm] = array_flat.reshape(shape) * np.prod(signs)
 
     # Reshape array to non-flattened format
     array = array.reshape(
@@ -509,71 +443,51 @@ def decompress_axes(
     )
 
     # Undo transpose:
-    arg = np.argsort(arg)
+    arg = tuple(np.argsort(arg))
     array = array.transpose(arg)
 
     return array
 
 
-def get_compressed_size(subscript, **sizes):
-    """
-    Get the size of a compressed representation of a matrix based on the
-    subscript input to `compressed_axes` and the sizes of each character.
+def get_compressed_size(subscript: str, **sizes: int) -> int:
+    """Get the size of a compressed representation of a matrix based on the subscript input.
 
-    Parameters
-    ----------
-    subscript : str
-        Subscript for the output array. See `compressed_axes` for details.
-    **sizes : int
-        Sizes of each character in the subscript.
+    Args:
+        subscript: Subscript for the output array. See `compressed_axes` for details.
+        **sizes: Sizes of each character in the subscript.
 
-    Returns
-    -------
-    n : int
+    Returns:
         Size of the compressed representation of the array.
 
-    Examples
-    --------
-    >>> get_compressed_shape("iiaa", i=5, a=3)
-    30
+    Examples:
+        >>> get_compressed_size("iiaa", i=5, a=3)
+        30
     """
-
     n = 1
     for char in set(subscript):
         dims = subscript.count(char)
         n *= ntril_ndim(sizes[char], dims)
-
     return n
 
 
-def symmetrise(subscript, array, symmetry=None, apply_factor=True):
-    """
-    Enforce a symmetry in an array.
+def symmetrise(
+    subscript: str,
+    array: NDArray[T],
+    symmetry: Optional[str] = None,
+    apply_factor: Optional[bool] = True,
+) -> NDArray[T]:
+    """Enforce a symmetry in an array.
 
-    Parameters
-    ----------
-    subscript : str
-        Subscript for the input array. The output array will have a
-        compressed representation of the input array according to this
-        subscript, where repeated characters indicate symmetrically
-        equivalent axes.
-    array : numpy.ndarray
-        Array to compress.
-    symmetry : str, optional
-        Symmetry of the output array, with a `"+"` indicating symmetry and
-        `"-"` indicating antisymmetry for each dimension in the
-        decompressed array. If `None`, defaults to fully symmetric (i.e.
-        all characters are `"+"`). Default value is `None`.
-    apply_factor : bool, optional
-        Whether to apply a factor of to the output array, to account for
-        the symmetry. Default value is `True`.
+    Args:
+        subscript: Subscript for the input array.
+        array: Array to symmetrise.
+        symmetry: Symmetry of the output array, with a "+" indicating symmetry and "-" indicating
+            antisymmetry for each dimension in the decompressed array.
+        apply_factor: Whether to apply a factor to the output array, to account for the symmetry.
 
-    Returns
-    -------
-    array : numpy.ndarray
+    Returns:
         Symmetrised array.
     """
-
     # Substitute the input characters so that they are ordered:
     subs = {}
     i = 0
@@ -603,7 +517,6 @@ def symmetrise(subscript, array, symmetry=None, apply_factor=True):
         for inds_part, perms_part in zip(inds, perms):
             for i, p in zip(inds_part, perms_part):
                 perm[i] = p
-        perm = tuple(perm)
         sign = np.prod(signs) if symmetry[perm[0]] == "-" else 1
         array_as = array_as + sign * array.transpose(perm)
 
@@ -615,7 +528,7 @@ def symmetrise(subscript, array, symmetry=None, apply_factor=True):
     return array_as
 
 
-def pack_2e(*args):  # noqa
+def pack_2e(*args):  # type: ignore  # noqa
     # args should be in the order of ov_2e
     # TODO remove
 
@@ -653,14 +566,12 @@ def pack_2e(*args):  # noqa
     return out
 
 
-def unique(lst):
+def unique(lst: list[Hashable]) -> list[Hashable]:
     """Get unique elements of a list."""
-
     done = set()
     out = []
     for el in lst:
         if el not in done:
             out.append(el)
             done.add(el)
-
     return out
