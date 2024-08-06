@@ -5,15 +5,15 @@ from __future__ import annotations
 import ctypes
 from typing import TYPE_CHECKING
 
-from pyscf.lib import direct_sum, dot  # type: ignore  # noqa: F401
-from pyscf.lib import einsum as pyscf_einsum  # type: ignore  # noqa: F401
+from pyscf.lib import direct_sum, dot  # noqa: F401
+from pyscf.lib import einsum as pyscf_einsum  # noqa: F401
 
 from ebcc import numpy as np
 
 if TYPE_CHECKING:
     from typing import Any, TypeVar, Union
 
-    from ebcc.numpy.typing import NDArray  # type: ignore
+    from ebcc.numpy.typing import NDArray
 
     T = TypeVar("T")
 
@@ -298,7 +298,7 @@ def einsum(*operands: Any, **kwargs: Any) -> Union[T, NDArray[T]]:
         optimize = kwargs.pop("optimize", True)
         args = list(args)
         path_kwargs = dict(optimize=optimize, einsum_call=True)
-        contractions = np.einsum_path(subscript, *args, **path_kwargs)[1]  # type: ignore
+        contractions = np.einsum_path(subscript, *args, **path_kwargs)[1]
         for contraction in contractions:
             inds, idx_rm, einsum_str, remain = list(contraction[:4])
             contraction_args = [args.pop(x) for x in inds]

@@ -58,7 +58,7 @@ from ebcc.opt import BruecknerGEBCC, BruecknerREBCC, BruecknerUEBCC
 if TYPE_CHECKING:
     from typing import Any, Callable
 
-    from pyscf.scf.hf import SCF  # type: ignore
+    from pyscf.scf.hf import SCF
 
     from ebcc.cc.base import BaseEBCC
 
@@ -68,7 +68,7 @@ sys.modules["ebcc.precision"] = precision  # Compatibility with older codegen ve
 
 def EBCC(mf: SCF, *args: Any, **kwargs: Any) -> BaseEBCC:
     """Construct an EBCC object for the given mean-field object."""
-    from pyscf import scf  # type: ignore
+    from pyscf import scf
 
     if isinstance(mf, scf.uhf.UHF):
         return UEBCC(mf, *args, **kwargs)
@@ -83,7 +83,7 @@ EBCC.__doc__ = REBCC.__doc__
 
 def _factory(ansatz: str) -> Callable[[SCF, Any, Any], BaseEBCC]:
     """Constructor for some specific ansatz."""
-    from pyscf import scf  # type: ignore
+    from pyscf import scf
 
     def constructor(mf: SCF, *args: Any, **kwargs: Any) -> BaseEBCC:
         """Construct an EBCC object for the given mean-field object."""
