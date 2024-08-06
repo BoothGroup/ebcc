@@ -305,7 +305,7 @@ class UEBCC(BaseEBCC):
         Returns:
             Initial cluster lambda amplitudes.
         """
-        if amplitudes is None:
+        if not amplitudes:
             amplitudes = self.amplitudes
         lambdas: Namespace[AmplitudeType] = util.Namespace()
 

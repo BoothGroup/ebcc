@@ -358,7 +358,7 @@ def construct_fno_space(
     """
     # Get the MP2 1RDM
     solver = MP2(mf)
-    if amplitudes is None:
+    if not amplitudes:
         solver.kernel()
         dm1 = solver.make_rdm1()
     else:
