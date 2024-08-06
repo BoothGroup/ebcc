@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pyscf import ao2mo
+from pyscf import ao2mo, lib
 
 from ebcc import numpy as np
 from ebcc import util
@@ -49,6 +49,11 @@ class RCDERIs(BaseERIs):
         else:
             raise KeyError("Key must be of length 3 or 4.")
         key_e2 = f"{key}_{'e1' if not e2 else 'e2'}"
+
+        # Check the DF is built incore
+        if not isinstance(self.cc.mf.with_df._cderi, np.ndarray):
+            with lib.temporary_env(self.cc.mf.with_df, max_memory=1e6):
+                self.cc.mf.with_df.build()
 
         if key_e2 not in self._members:
             s = 0 if not e2 else 2

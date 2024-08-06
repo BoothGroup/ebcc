@@ -43,11 +43,7 @@ class RERIs(BaseERIs):
                     self.mo_coeff[i][:, self.space[i].mask(k)].astype(np.float64)
                     for i, k in enumerate(key)
                 ]
-                block = ao2mo.incore.general(
-                    self.cc.mf._eri,
-                    coeffs,
-                    compact=False,
-                )
+                block = ao2mo.kernel(self.cc.mf.mol, coeffs, compact=False, max_memory=1e6)
                 block = block.reshape([c.shape[-1] for c in coeffs])
                 self._members[key] = block.astype(types[float])
             return self._members[key]
@@ -92,14 +88,11 @@ class UERIs(BaseERIs):
                     array = array.transpose(2, 3, 0, 1)
             elif isinstance(self.cc.mf._eri, tuple):
                 # Support spin-dependent integrals in the mean-field
-                array = ao2mo.incore.general(
-                    self.cc.mf._eri[ij],
-                    [
-                        self.mo_coeff[x][y].astype(np.float64)
-                        for y, x in enumerate(sorted((i, i, j, j)))
-                    ],
-                    compact=False,
-                )
+                coeffs = [
+                    self.mo_coeff[x][y].astype(np.float64)
+                    for y, x in enumerate(sorted((i, i, j, j)))
+                ]
+                array = ao2mo.kernel(self.cc.mf.mol, coeffs, compact=False, max_memory=1e6)
                 if key == "bbaa":
                     array = array.transpose(2, 3, 0, 1)
                 array = array.astype(types[float])
@@ -136,10 +129,10 @@ class GERIs(BaseERIs):
         if self.array is None:
             mo_a = [mo[: self.cc.mf.mol.nao].astype(np.float64) for mo in self.mo_coeff]
             mo_b = [mo[self.cc.mf.mol.nao :].astype(np.float64) for mo in self.mo_coeff]
-            array = ao2mo.kernel(self.cc.mf._eri, mo_a)
-            array += ao2mo.kernel(self.cc.mf._eri, mo_b)
-            array += ao2mo.kernel(self.cc.mf._eri, mo_a[:2] + mo_b[2:])
-            array += ao2mo.kernel(self.cc.mf._eri, mo_b[:2] + mo_a[2:])
+            array = ao2mo.kernel(self.cc.mf.mol, mo_a)
+            array += ao2mo.kernel(self.cc.mf.mol, mo_b)
+            array += ao2mo.kernel(self.cc.mf.mol, mo_a[:2] + mo_b[2:])
+            array += ao2mo.kernel(self.cc.mf.mol, mo_b[:2] + mo_a[2:])
             array = ao2mo.addons.restore(1, array, self.cc.nmo).reshape((self.cc.nmo,) * 4)
             array = array.astype(types[float])
             array = array.transpose(0, 2, 1, 3) - array.transpose(0, 2, 3, 1)
