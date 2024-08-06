@@ -16,7 +16,7 @@ from ebcc.core.precision import types
 if TYPE_CHECKING:
     from typing import Any, Callable, Optional, Union
 
-    from ebcc.cc.base import AmplitudeType, BaseEBCC, ERIsInputType, SpaceType
+    from ebcc.cc.base import BaseEBCC, ERIsInputType, SpaceType, SpinArrayType
     from ebcc.core.ansatz import Ansatz
     from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
@@ -121,7 +121,7 @@ class BaseEOM(ABC):
         return f"{self.excitation_type.upper()}-EOM-{self.spin_type}{self.ansatz.name}"
 
     @abstractmethod
-    def amplitudes_to_vector(self, *amplitudes: AmplitudeType) -> NDArray[float]:
+    def amplitudes_to_vector(self, *amplitudes: SpinArrayType) -> NDArray[float]:
         """Construct a vector containing all of the amplitudes used in the given ansatz.
 
         Args:
@@ -133,7 +133,7 @@ class BaseEOM(ABC):
         pass
 
     @abstractmethod
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> tuple[AmplitudeType, ...]:
+    def vector_to_amplitudes(self, vector: NDArray[float]) -> tuple[SpinArrayType, ...]:
         """Construct amplitudes from a vector.
 
         Args:
@@ -172,7 +172,7 @@ class BaseEOM(ABC):
         pass
 
     @abstractmethod
-    def bras(self, eris: Optional[ERIsInputType] = None) -> Namespace[AmplitudeType]:
+    def bras(self, eris: Optional[ERIsInputType] = None) -> Namespace[SpinArrayType]:
         """Get the bra vectors.
 
         Args:
@@ -184,7 +184,7 @@ class BaseEOM(ABC):
         pass
 
     @abstractmethod
-    def kets(self, eris: Optional[ERIsInputType] = None) -> Namespace[AmplitudeType]:
+    def kets(self, eris: Optional[ERIsInputType] = None) -> Namespace[SpinArrayType]:
         """Get the ket vectors.
 
         Args:
@@ -246,7 +246,7 @@ class BaseEOM(ABC):
         pass
 
     @abstractmethod
-    def _quasiparticle_weight(self, r1: AmplitudeType) -> float:
+    def _quasiparticle_weight(self, r1: SpinArrayType) -> float:
         """Get the quasiparticle weight."""
         pass
 
@@ -358,9 +358,9 @@ class BaseEOM(ABC):
         self,
         nmom: int,
         eris: Optional[ERIsInputType] = None,
-        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        amplitudes: Optional[Namespace[SpinArrayType]] = None,
         hermitise: bool = True,
-    ) -> AmplitudeType:
+    ) -> SpinArrayType:
         """Construct the moments of the EOM Hamiltonian.
 
         Args:
@@ -398,7 +398,7 @@ class BaseIP_EOM(BaseEOM):
         """Get the type of excitation."""
         return "ip"
 
-    def amplitudes_to_vector(self, *amplitudes: AmplitudeType) -> NDArray[float]:
+    def amplitudes_to_vector(self, *amplitudes: SpinArrayType) -> NDArray[float]:
         """Construct a vector containing all of the amplitudes used in the given ansatz.
 
         Args:
@@ -409,7 +409,7 @@ class BaseIP_EOM(BaseEOM):
         """
         return self.ebcc.excitations_to_vector_ip(*amplitudes)
 
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> tuple[AmplitudeType, ...]:
+    def vector_to_amplitudes(self, vector: NDArray[float]) -> tuple[SpinArrayType, ...]:
         """Construct amplitudes from a vector.
 
         Args:
@@ -445,7 +445,7 @@ class BaseEA_EOM(BaseEOM):
         """Get the type of excitation."""
         return "ea"
 
-    def amplitudes_to_vector(self, *amplitudes: AmplitudeType) -> NDArray[float]:
+    def amplitudes_to_vector(self, *amplitudes: SpinArrayType) -> NDArray[float]:
         """Construct a vector containing all of the amplitudes used in the given ansatz.
 
         Args:
@@ -456,7 +456,7 @@ class BaseEA_EOM(BaseEOM):
         """
         return self.ebcc.excitations_to_vector_ea(*amplitudes)
 
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> tuple[AmplitudeType, ...]:
+    def vector_to_amplitudes(self, vector: NDArray[float]) -> tuple[SpinArrayType, ...]:
         """Construct amplitudes from a vector.
 
         Args:
@@ -492,7 +492,7 @@ class BaseEE_EOM(BaseEOM):
         """Get the type of excitation."""
         return "ee"
 
-    def amplitudes_to_vector(self, *amplitudes: AmplitudeType) -> NDArray[float]:
+    def amplitudes_to_vector(self, *amplitudes: SpinArrayType) -> NDArray[float]:
         """Construct a vector containing all of the amplitudes used in the given ansatz.
 
         Args:
@@ -503,7 +503,7 @@ class BaseEE_EOM(BaseEOM):
         """
         return self.ebcc.excitations_to_vector_ee(*amplitudes)
 
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> tuple[AmplitudeType, ...]:
+    def vector_to_amplitudes(self, vector: NDArray[float]) -> tuple[SpinArrayType, ...]:
         """Construct amplitudes from a vector.
 
         Args:

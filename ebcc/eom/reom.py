@@ -13,7 +13,7 @@ from ebcc.eom.base import BaseEA_EOM, BaseEE_EOM, BaseEOM, BaseIP_EOM
 if TYPE_CHECKING:
     from typing import Optional
 
-    from ebcc.cc.rebcc import REBCC, AmplitudeType, ERIsInputType
+    from ebcc.cc.rebcc import REBCC, ERIsInputType, SpinArrayType
     from ebcc.ham.space import Space
     from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
@@ -39,7 +39,7 @@ class IP_REOM(REOM, BaseIP_EOM):
             arg = np.argsort(np.abs(diag))
         return arg
 
-    def _quasiparticle_weight(self, r1: AmplitudeType) -> float:
+    def _quasiparticle_weight(self, r1: SpinArrayType) -> float:
         """Get the quasiparticle weight."""
         weight: float = np.dot(r1.ravel(), r1.ravel())
         return astype(weight, float)
@@ -64,7 +64,7 @@ class IP_REOM(REOM, BaseIP_EOM):
 
         return self.amplitudes_to_vector(*parts)
 
-    def bras(self, eris: Optional[ERIsInputType] = None) -> AmplitudeType:
+    def bras(self, eris: Optional[ERIsInputType] = None) -> SpinArrayType:
         """Get the bra vectors.
 
         Args:
@@ -79,7 +79,7 @@ class IP_REOM(REOM, BaseIP_EOM):
         )
         return bras
 
-    def kets(self, eris: Optional[ERIsInputType] = None) -> AmplitudeType:
+    def kets(self, eris: Optional[ERIsInputType] = None) -> SpinArrayType:
         """Get the ket vectors.
 
         Args:
@@ -98,9 +98,9 @@ class IP_REOM(REOM, BaseIP_EOM):
         self,
         nmom: int,
         eris: Optional[ERIsInputType] = None,
-        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        amplitudes: Optional[Namespace[SpinArrayType]] = None,
         hermitise: bool = True,
-    ) -> AmplitudeType:
+    ) -> SpinArrayType:
         """Construct the moments of the EOM Hamiltonian.
 
         Args:
@@ -150,7 +150,7 @@ class EA_REOM(REOM, BaseEA_EOM):
             arg = np.argsort(np.abs(diag))
         return arg
 
-    def _quasiparticle_weight(self, r1: AmplitudeType) -> float:
+    def _quasiparticle_weight(self, r1: SpinArrayType) -> float:
         """Get the quasiparticle weight."""
         weight: float = np.dot(r1.ravel(), r1.ravel())
         return astype(weight, float)
@@ -175,7 +175,7 @@ class EA_REOM(REOM, BaseEA_EOM):
 
         return self.amplitudes_to_vector(*parts)
 
-    def bras(self, eris: Optional[ERIsInputType] = None) -> AmplitudeType:
+    def bras(self, eris: Optional[ERIsInputType] = None) -> SpinArrayType:
         """Get the bra vectors.
 
         Args:
@@ -190,7 +190,7 @@ class EA_REOM(REOM, BaseEA_EOM):
         )
         return bras
 
-    def kets(self, eris: Optional[ERIsInputType] = None) -> AmplitudeType:
+    def kets(self, eris: Optional[ERIsInputType] = None) -> SpinArrayType:
         """Get the ket vectors.
 
         Args:
@@ -209,9 +209,9 @@ class EA_REOM(REOM, BaseEA_EOM):
         self,
         nmom: int,
         eris: Optional[ERIsInputType] = None,
-        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        amplitudes: Optional[Namespace[SpinArrayType]] = None,
         hermitise: bool = True,
-    ) -> AmplitudeType:
+    ) -> SpinArrayType:
         """Construct the moments of the EOM Hamiltonian.
 
         Args:
@@ -261,7 +261,7 @@ class EE_REOM(REOM, BaseEE_EOM):
             arg = np.argsort(diag)
         return arg
 
-    def _quasiparticle_weight(self, r1: AmplitudeType) -> float:
+    def _quasiparticle_weight(self, r1: SpinArrayType) -> float:
         """Get the quasiparticle weight."""
         weight: float = np.dot(r1.ravel(), r1.ravel())
         return astype(weight, float)
@@ -285,7 +285,7 @@ class EE_REOM(REOM, BaseEE_EOM):
 
         return self.amplitudes_to_vector(*parts)
 
-    def bras(self, eris: Optional[ERIsInputType] = None) -> AmplitudeType:
+    def bras(self, eris: Optional[ERIsInputType] = None) -> SpinArrayType:
         """Get the bra vectors.
 
         Args:
@@ -303,7 +303,7 @@ class EE_REOM(REOM, BaseEE_EOM):
         )
         return bras
 
-    def kets(self, eris: Optional[ERIsInputType] = None) -> AmplitudeType:
+    def kets(self, eris: Optional[ERIsInputType] = None) -> SpinArrayType:
         """Get the ket vectors.
 
         Args:
@@ -328,10 +328,10 @@ class EE_REOM(REOM, BaseEE_EOM):
         self,
         nmom: int,
         eris: Optional[ERIsInputType] = None,
-        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        amplitudes: Optional[Namespace[SpinArrayType]] = None,
         hermitise: bool = True,
         diagonal_only: bool = True,
-    ) -> AmplitudeType:
+    ) -> SpinArrayType:
         """Construct the moments of the EOM Hamiltonian.
 
         Args:

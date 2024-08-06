@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from ebcc.util import Namespace
 
     ERIsInputType: TypeAlias = Union[UERIs, UCDERIs, tuple[NDArray[float], ...]]
-    AmplitudeType: TypeAlias = Union[NDArray[float], Namespace[NDArray[float]]]  # S_{n} has no spin
+    SpinArrayType: TypeAlias = Union[NDArray[float], Namespace[NDArray[float]]]  # S_{n} has no spin
 
 
 class UEBCC(BaseEBCC):
@@ -131,7 +131,7 @@ class UEBCC(BaseEBCC):
         has_lams = bool(rcc.lambdas)
 
         if has_amps:
-            amplitudes: Namespace[AmplitudeType] = util.Namespace()
+            amplitudes: Namespace[SpinArrayType] = util.Namespace()
 
             for name, key, n in ucc.ansatz.fermionic_cluster_ranks(spin_type=ucc.spin_type):
                 amplitudes[name] = util.Namespace()
@@ -153,7 +153,7 @@ class UEBCC(BaseEBCC):
             ucc.amplitudes = amplitudes
 
         if has_lams:
-            lambdas: AmplitudeType = util.Namespace()
+            lambdas: SpinArrayType = util.Namespace()
 
             for name, key, n in ucc.ansatz.fermionic_cluster_ranks(spin_type=ucc.spin_type):
                 lname = name.replace("t", "l")
@@ -224,7 +224,7 @@ class UEBCC(BaseEBCC):
 
         return kwargs
 
-    def init_amps(self, eris: Optional[ERIsInputType] = None) -> Namespace[AmplitudeType]:
+    def init_amps(self, eris: Optional[ERIsInputType] = None) -> Namespace[SpinArrayType]:
         """Initialise the cluster amplitudes.
 
         Args:
@@ -234,11 +234,11 @@ class UEBCC(BaseEBCC):
             Initial cluster amplitudes.
         """
         eris = self.get_eris(eris)
-        amplitudes: Namespace[AmplitudeType] = util.Namespace()
+        amplitudes: Namespace[SpinArrayType] = util.Namespace()
 
         # Build T amplitudes
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            tn: AmplitudeType = util.Namespace()
+            tn: SpinArrayType = util.Namespace()
             for comb in util.generate_spin_combinations(n, unique=True):
                 if n == 1:
                     tn[comb] = self.fock[comb][key] / self.energy_sum(key, comb)
@@ -295,8 +295,8 @@ class UEBCC(BaseEBCC):
         return amplitudes
 
     def init_lams(
-        self, amplitudes: Optional[Namespace[AmplitudeType]] = None
-    ) -> Namespace[AmplitudeType]:
+        self, amplitudes: Optional[Namespace[SpinArrayType]] = None
+    ) -> Namespace[SpinArrayType]:
         """Initialise the cluster lambda amplitudes.
 
         Args:
@@ -307,7 +307,7 @@ class UEBCC(BaseEBCC):
         """
         if not amplitudes:
             amplitudes = self.amplitudes
-        lambdas: Namespace[AmplitudeType] = util.Namespace()
+        lambdas: Namespace[SpinArrayType] = util.Namespace()
 
         # Build L amplitudes:
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -337,8 +337,8 @@ class UEBCC(BaseEBCC):
     def update_amps(
         self,
         eris: Optional[ERIsInputType] = None,
-        amplitudes: Optional[Namespace[AmplitudeType]] = None,
-    ) -> Namespace[AmplitudeType]:
+        amplitudes: Optional[Namespace[SpinArrayType]] = None,
+    ) -> Namespace[SpinArrayType]:
         """Update the cluster amplitudes.
 
         Args:
@@ -354,7 +354,7 @@ class UEBCC(BaseEBCC):
             eris=eris,
             amplitudes=amplitudes,
         )
-        res: Namespace[AmplitudeType] = func(**kwargs)
+        res: Namespace[SpinArrayType] = func(**kwargs)
         res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
 
         # Divide T amplitudes:
@@ -390,11 +390,11 @@ class UEBCC(BaseEBCC):
     def update_lams(
         self,
         eris: Optional[ERIsInputType] = None,
-        amplitudes: Optional[Namespace[AmplitudeType]] = None,
-        lambdas: Optional[Namespace[AmplitudeType]] = None,
-        lambdas_pert: Optional[Namespace[AmplitudeType]] = None,
+        amplitudes: Optional[Namespace[SpinArrayType]] = None,
+        lambdas: Optional[Namespace[SpinArrayType]] = None,
+        lambdas_pert: Optional[Namespace[SpinArrayType]] = None,
         perturbative: bool = False,
-    ) -> Namespace[AmplitudeType]:
+    ) -> Namespace[SpinArrayType]:
         """Update the cluster lambda amplitudes.
 
         Args:
@@ -417,7 +417,7 @@ class UEBCC(BaseEBCC):
             lambdas=lambdas,
             lambdas_pert=lambdas_pert,
         )
-        res: Namespace[AmplitudeType] = func(**kwargs)
+        res: Namespace[SpinArrayType] = func(**kwargs)
         res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
 
         # Divide T amplitudes:
@@ -457,10 +457,10 @@ class UEBCC(BaseEBCC):
     def make_rdm1_f(
         self,
         eris: Optional[ERIsInputType] = None,
-        amplitudes: Optional[Namespace[AmplitudeType]] = None,
-        lambdas: Optional[Namespace[AmplitudeType]] = None,
+        amplitudes: Optional[Namespace[SpinArrayType]] = None,
+        lambdas: Optional[Namespace[SpinArrayType]] = None,
         hermitise: bool = True,
-    ) -> AmplitudeType:
+    ) -> SpinArrayType:
         r"""Make the one-particle fermionic reduced density matrix :math:`\langle i^+ j \rangle`.
 
         Args:
@@ -478,7 +478,7 @@ class UEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm: AmplitudeType = func(**kwargs)
+        dm: SpinArrayType = func(**kwargs)
 
         if hermitise:
             dm.aa = 0.5 * (dm.aa + dm.aa.T)
@@ -489,10 +489,10 @@ class UEBCC(BaseEBCC):
     def make_rdm2_f(
         self,
         eris: Optional[ERIsInputType] = None,
-        amplitudes: Optional[Namespace[AmplitudeType]] = None,
-        lambdas: Optional[Namespace[AmplitudeType]] = None,
+        amplitudes: Optional[Namespace[SpinArrayType]] = None,
+        lambdas: Optional[Namespace[SpinArrayType]] = None,
         hermitise: bool = True,
-    ) -> AmplitudeType:
+    ) -> SpinArrayType:
         r"""Make the two-particle fermionic reduced density matrix :math:`\langle i^+j^+lk \rangle`.
 
         Args:
@@ -510,7 +510,7 @@ class UEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm: AmplitudeType = func(**kwargs)
+        dm: SpinArrayType = func(**kwargs)
 
         if hermitise:
 
@@ -531,11 +531,11 @@ class UEBCC(BaseEBCC):
     def make_eb_coup_rdm(
         self,
         eris: Optional[ERIsInputType] = None,
-        amplitudes: Optional[Namespace[AmplitudeType]] = None,
-        lambdas: Optional[Namespace[AmplitudeType]] = None,
+        amplitudes: Optional[Namespace[SpinArrayType]] = None,
+        lambdas: Optional[Namespace[SpinArrayType]] = None,
         unshifted: bool = True,
         hermitise: bool = True,
-    ) -> AmplitudeType:
+    ) -> SpinArrayType:
         r"""Make the electron-boson coupling reduced density matrix.
 
         .. math::
@@ -563,7 +563,7 @@ class UEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm_eb: AmplitudeType = func(**kwargs)
+        dm_eb: SpinArrayType = func(**kwargs)
 
         if hermitise:
             dm_eb.aa[0] = 0.5 * (dm_eb.aa[0] + dm_eb.aa[1].transpose(0, 2, 1))
@@ -621,7 +621,7 @@ class UEBCC(BaseEBCC):
 
         return energy_sum
 
-    def amplitudes_to_vector(self, amplitudes: Namespace[AmplitudeType]) -> NDArray[float]:
+    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[float]:
         """Construct a vector containing all of the amplitudes used in the given ansatz.
 
         Args:
@@ -649,7 +649,7 @@ class UEBCC(BaseEBCC):
 
         return np.concatenate(vectors)
 
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> Namespace[AmplitudeType]:
+    def vector_to_amplitudes(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
         """Construct a namespace of amplitudes from a vector.
 
         Args:
@@ -658,7 +658,7 @@ class UEBCC(BaseEBCC):
         Returns:
             Cluster amplitudes.
         """
-        amplitudes: Namespace[AmplitudeType] = util.Namespace()
+        amplitudes: Namespace[SpinArrayType] = util.Namespace()
         i0 = 0
         sizes: dict[tuple[str, ...], int] = {
             (o, s): self.space[i].size(o) for o in "ovOVia" for i, s in enumerate("ab")
@@ -698,7 +698,7 @@ class UEBCC(BaseEBCC):
 
         return amplitudes
 
-    def lambdas_to_vector(self, lambdas: Namespace[AmplitudeType]) -> NDArray[float]:
+    def lambdas_to_vector(self, lambdas: Namespace[SpinArrayType]) -> NDArray[float]:
         """Construct a vector containing all of the lambda amplitudes used in the given ansatz.
 
         Args:
@@ -728,7 +728,7 @@ class UEBCC(BaseEBCC):
 
         return np.concatenate(vectors)
 
-    def vector_to_lambdas(self, vector: NDArray[float]) -> Namespace[AmplitudeType]:
+    def vector_to_lambdas(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
         """Construct a namespace of lambda amplitudes from a vector.
 
         Args:
@@ -737,7 +737,7 @@ class UEBCC(BaseEBCC):
         Returns:
             Cluster lambda amplitudes.
         """
-        lambdas: AmplitudeType = util.Namespace()
+        lambdas: SpinArrayType = util.Namespace()
         i0 = 0
         sizes: dict[tuple[str, ...], int] = {
             (o, s): self.space[i].size(o) for o in "ovOVia" for i, s in enumerate("ab")
@@ -781,7 +781,7 @@ class UEBCC(BaseEBCC):
 
         return lambdas
 
-    def excitations_to_vector_ip(self, *excitations: Namespace[AmplitudeType]) -> NDArray[float]:
+    def excitations_to_vector_ip(self, *excitations: Namespace[SpinArrayType]) -> NDArray[float]:
         """Construct a vector containing all of the IP-EOM excitations.
 
         Args:
@@ -808,7 +808,7 @@ class UEBCC(BaseEBCC):
 
         return np.concatenate(vectors)
 
-    def excitations_to_vector_ea(self, *excitations: Namespace[AmplitudeType]) -> NDArray[float]:
+    def excitations_to_vector_ea(self, *excitations: Namespace[SpinArrayType]) -> NDArray[float]:
         """Construct a vector containing all of the EA-EOM excitations.
 
         Args:
@@ -836,7 +836,7 @@ class UEBCC(BaseEBCC):
 
         return np.concatenate(vectors)
 
-    def excitations_to_vector_ee(self, *excitations: Namespace[AmplitudeType]) -> NDArray[float]:
+    def excitations_to_vector_ee(self, *excitations: Namespace[SpinArrayType]) -> NDArray[float]:
         """Construct a vector containing all of the EE-EOM excitations.
 
         Args:
@@ -865,7 +865,7 @@ class UEBCC(BaseEBCC):
 
     def vector_to_excitations_ip(
         self, vector: NDArray[float]
-    ) -> tuple[Namespace[AmplitudeType], ...]:
+    ) -> tuple[Namespace[SpinArrayType], ...]:
         """Construct a namespace of IP-EOM excitations from a vector.
 
         Args:
@@ -882,7 +882,7 @@ class UEBCC(BaseEBCC):
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             key = key[:-1]
-            amp: AmplitudeType = util.Namespace()
+            amp: SpinArrayType = util.Namespace()
             for spin in util.generate_spin_combinations(n, excited=True, unique=True):
                 subscript, csizes = util.combine_subscripts(key, spin, sizes=sizes)
                 size = util.get_compressed_size(subscript, **csizes)
@@ -909,7 +909,7 @@ class UEBCC(BaseEBCC):
 
     def vector_to_excitations_ea(
         self, vector: NDArray[float]
-    ) -> tuple[Namespace[AmplitudeType], ...]:
+    ) -> tuple[Namespace[SpinArrayType], ...]:
         """Construct a namespace of EA-EOM excitations from a vector.
 
         Args:
@@ -926,7 +926,7 @@ class UEBCC(BaseEBCC):
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             key = key[n:] + key[: n - 1]
-            amp: AmplitudeType = util.Namespace()
+            amp: SpinArrayType = util.Namespace()
             for spin in util.generate_spin_combinations(n, excited=True, unique=True):
                 subscript, csizes = util.combine_subscripts(key, spin, sizes=sizes)
                 size = util.get_compressed_size(subscript, **csizes)
@@ -953,7 +953,7 @@ class UEBCC(BaseEBCC):
 
     def vector_to_excitations_ee(
         self, vector: NDArray[float]
-    ) -> tuple[Namespace[AmplitudeType], ...]:
+    ) -> tuple[Namespace[SpinArrayType], ...]:
         """Construct a namespace of EE-EOM excitations from a vector.
 
         Args:
@@ -969,7 +969,7 @@ class UEBCC(BaseEBCC):
         }
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            amp: AmplitudeType = util.Namespace()
+            amp: SpinArrayType = util.Namespace()
             for spin in util.generate_spin_combinations(n):
                 subscript, csizes = util.combine_subscripts(key, spin, sizes=sizes)
                 size = util.get_compressed_size(subscript, **csizes)

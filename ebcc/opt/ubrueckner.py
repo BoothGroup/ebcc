@@ -14,7 +14,7 @@ from ebcc.opt.base import BaseBruecknerEBCC
 if TYPE_CHECKING:
     from typing import Optional
 
-    from ebcc.cc.uebcc import UEBCC, AmplitudeType
+    from ebcc.cc.uebcc import UEBCC, SpinArrayType
     from ebcc.core.damping import DIIS
     from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
@@ -33,10 +33,10 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
 
     def get_rotation_matrix(
         self,
-        u_tot: Optional[AmplitudeType] = None,
+        u_tot: Optional[SpinArrayType] = None,
         diis: Optional[DIIS] = None,
-        t1: Optional[AmplitudeType] = None,
-    ) -> tuple[AmplitudeType, AmplitudeType]:
+        t1: Optional[SpinArrayType] = None,
+    ) -> tuple[SpinArrayType, SpinArrayType]:
         """Update the rotation matrix.
 
         Also returns the total rotation matrix.
@@ -96,8 +96,8 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
         return u, u_tot
 
     def transform_amplitudes(
-        self, u: AmplitudeType, amplitudes: Optional[Namespace[AmplitudeType]] = None
-    ) -> Namespace[AmplitudeType]:
+        self, u: SpinArrayType, amplitudes: Optional[Namespace[SpinArrayType]] = None
+    ) -> Namespace[SpinArrayType]:
         """Transform the amplitudes into the Brueckner orbital basis.
 
         Args:
@@ -135,7 +135,7 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
 
         return self.cc.amplitudes
 
-    def get_t1_norm(self, amplitudes: Optional[Namespace[AmplitudeType]] = None) -> float:
+    def get_t1_norm(self, amplitudes: Optional[Namespace[SpinArrayType]] = None) -> float:
         """Get the norm of the T1 amplitude.
 
         Args:
@@ -187,7 +187,7 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
 
     def update_coefficients(
         self,
-        u_tot: AmplitudeType,
+        u_tot: SpinArrayType,
         mo_coeff: tuple[NDArray[float], NDArray[float]],
         mo_coeff_ref: tuple[NDArray[float], NDArray[float]],
     ) -> tuple[NDArray[float], NDArray[float]]:

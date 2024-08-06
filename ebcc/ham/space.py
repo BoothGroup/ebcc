@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
     from pyscf.scf.hf import SCF
 
-    from ebcc.cc.base import AmplitudeType
+    from ebcc.cc.base import SpinArrayType
     from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
 
@@ -340,7 +340,7 @@ def construct_fno_space(
     mf: SCF,
     occ_tol: Optional[float] = 1e-5,
     occ_frac: Optional[float] = None,
-    amplitudes: Optional[Namespace[AmplitudeType]] = None,
+    amplitudes: Optional[Namespace[SpinArrayType]] = None,
 ) -> Union[RConstructSpaceReturnType, UConstructSpaceReturnType]:
     """Construct a frozen natural orbital space.
 

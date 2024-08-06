@@ -12,7 +12,7 @@ from ebcc.eom.base import BaseEA_EOM, BaseEE_EOM, BaseEOM, BaseIP_EOM
 if TYPE_CHECKING:
     from typing import Optional
 
-    from ebcc.cc.uebcc import UEBCC, AmplitudeType, ERIsInputType
+    from ebcc.cc.uebcc import UEBCC, ERIsInputType, SpinArrayType
     from ebcc.ham.space import Space
     from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
@@ -38,7 +38,7 @@ class IP_UEOM(UEOM, BaseIP_EOM):
             arg = np.argsort(np.abs(diag))
         return arg
 
-    def _quasiparticle_weight(self, r1: AmplitudeType) -> float:
+    def _quasiparticle_weight(self, r1: SpinArrayType) -> float:
         """Get the quasiparticle weight."""
         weight: float = np.dot(r1.a.ravel(), r1.a.ravel()) + np.dot(r1.b.ravel(), r1.b.ravel())
         return astype(weight, float)
@@ -56,7 +56,7 @@ class IP_UEOM(UEOM, BaseIP_EOM):
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             key = key[:-1]
-            spin_part: AmplitudeType = util.Namespace()
+            spin_part: SpinArrayType = util.Namespace()
             for comb in util.generate_spin_combinations(n, excited=True):
                 spin_part[comb] = self.ebcc.energy_sum(key, comb)
             parts.append(spin_part)
@@ -66,7 +66,7 @@ class IP_UEOM(UEOM, BaseIP_EOM):
 
         return self.amplitudes_to_vector(*parts)
 
-    def bras(self, eris: Optional[ERIsInputType] = None) -> AmplitudeType:
+    def bras(self, eris: Optional[ERIsInputType] = None) -> SpinArrayType:
         """Get the bra vectors.
 
         Args:
@@ -79,13 +79,13 @@ class IP_UEOM(UEOM, BaseIP_EOM):
         bras_tmp: Namespace[list[NDArray[float]]] = util.Namespace(a=[], b=[])
 
         for i in range(self.nmo):
-            amps_a: list[AmplitudeType] = []
-            amps_b: list[AmplitudeType] = []
+            amps_a: list[SpinArrayType] = []
+            amps_b: list[SpinArrayType] = []
 
             m = 0
             for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-                amp_a: AmplitudeType = util.Namespace()
-                amp_b: AmplitudeType = util.Namespace()
+                amp_a: SpinArrayType = util.Namespace()
+                amp_b: SpinArrayType = util.Namespace()
                 for spin in util.generate_spin_combinations(n, excited=True):
                     shape = tuple(self.space["ab".index(s)].ncocc for s in spin[:n]) + tuple(
                         self.space["ab".index(s)].ncvir for s in spin[n:]
@@ -123,7 +123,7 @@ class IP_UEOM(UEOM, BaseIP_EOM):
 
         return bras
 
-    def kets(self, eris: Optional[ERIsInputType] = None) -> AmplitudeType:
+    def kets(self, eris: Optional[ERIsInputType] = None) -> SpinArrayType:
         """Get the ket vectors.
 
         Args:
@@ -137,13 +137,13 @@ class IP_UEOM(UEOM, BaseIP_EOM):
 
         for i in range(self.nmo):
             j = (Ellipsis, i)
-            amps_a: list[AmplitudeType] = []
-            amps_b: list[AmplitudeType] = []
+            amps_a: list[SpinArrayType] = []
+            amps_b: list[SpinArrayType] = []
 
             m = 0
             for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-                amp_a: AmplitudeType = util.Namespace()
-                amp_b: AmplitudeType = util.Namespace()
+                amp_a: SpinArrayType = util.Namespace()
+                amp_b: SpinArrayType = util.Namespace()
                 for spin in util.generate_spin_combinations(n, excited=True):
                     shape = tuple(self.space["ab".index(s)].ncocc for s in spin[:n]) + tuple(
                         self.space["ab".index(s)].ncvir for s in spin[n:]
@@ -185,7 +185,7 @@ class IP_UEOM(UEOM, BaseIP_EOM):
         self,
         nmom: int,
         eris: Optional[ERIsInputType] = None,
-        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        amplitudes: Optional[Namespace[SpinArrayType]] = None,
         hermitise: bool = True,
     ) -> NDArray[float]:
         """Construct the moments of the EOM Hamiltonian.
@@ -241,7 +241,7 @@ class EA_UEOM(UEOM, BaseEA_EOM):
             arg = np.argsort(np.abs(diag))
         return arg
 
-    def _quasiparticle_weight(self, r1: AmplitudeType) -> float:
+    def _quasiparticle_weight(self, r1: SpinArrayType) -> float:
         """Get the quasiparticle weight."""
         weight: float = np.dot(r1.a.ravel(), r1.a.ravel()) + np.dot(r1.b.ravel(), r1.b.ravel())
         return astype(weight, float)
@@ -259,7 +259,7 @@ class EA_UEOM(UEOM, BaseEA_EOM):
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             key = key[n:] + key[: n - 1]
-            spin_part: AmplitudeType = util.Namespace()
+            spin_part: SpinArrayType = util.Namespace()
             for comb in util.generate_spin_combinations(n, excited=True):
                 spin_part[comb] = -self.ebcc.energy_sum(key, comb)
             parts.append(spin_part)
@@ -269,7 +269,7 @@ class EA_UEOM(UEOM, BaseEA_EOM):
 
         return self.amplitudes_to_vector(*parts)
 
-    def bras(self, eris: Optional[ERIsInputType] = None) -> AmplitudeType:
+    def bras(self, eris: Optional[ERIsInputType] = None) -> SpinArrayType:
         """Get the bra vectors.
 
         Args:
@@ -282,13 +282,13 @@ class EA_UEOM(UEOM, BaseEA_EOM):
         bras_tmp: Namespace[list[NDArray[float]]] = util.Namespace(a=[], b=[])
 
         for i in range(self.nmo):
-            amps_a: list[AmplitudeType] = []
-            amps_b: list[AmplitudeType] = []
+            amps_a: list[SpinArrayType] = []
+            amps_b: list[SpinArrayType] = []
 
             m = 0
             for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-                amp_a: AmplitudeType = util.Namespace()
-                amp_b: AmplitudeType = util.Namespace()
+                amp_a: SpinArrayType = util.Namespace()
+                amp_b: SpinArrayType = util.Namespace()
                 for spin in util.generate_spin_combinations(n, excited=True):
                     shape = tuple(self.space["ab".index(s)].ncvir for s in spin[:n]) + tuple(
                         self.space["ab".index(s)].ncocc for s in spin[n:]
@@ -326,7 +326,7 @@ class EA_UEOM(UEOM, BaseEA_EOM):
 
         return bras
 
-    def kets(self, eris: Optional[ERIsInputType] = None) -> AmplitudeType:
+    def kets(self, eris: Optional[ERIsInputType] = None) -> SpinArrayType:
         """Get the ket vectors.
 
         Args:
@@ -340,13 +340,13 @@ class EA_UEOM(UEOM, BaseEA_EOM):
 
         for i in range(self.nmo):
             j = (Ellipsis, i)
-            amps_a: list[AmplitudeType] = []
-            amps_b: list[AmplitudeType] = []
+            amps_a: list[SpinArrayType] = []
+            amps_b: list[SpinArrayType] = []
 
             m = 0
             for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-                amp_a: AmplitudeType = util.Namespace()
-                amp_b: AmplitudeType = util.Namespace()
+                amp_a: SpinArrayType = util.Namespace()
+                amp_b: SpinArrayType = util.Namespace()
                 for spin in util.generate_spin_combinations(n, excited=True):
                     shape = tuple(self.space["ab".index(s)].ncvir for s in spin[:n]) + tuple(
                         self.space["ab".index(s)].ncocc for s in spin[n:]
@@ -388,7 +388,7 @@ class EA_UEOM(UEOM, BaseEA_EOM):
         self,
         nmom: int,
         eris: Optional[ERIsInputType] = None,
-        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        amplitudes: Optional[Namespace[SpinArrayType]] = None,
         hermitise: bool = True,
     ) -> NDArray[float]:
         """Construct the moments of the EOM Hamiltonian.
@@ -444,7 +444,7 @@ class EE_UEOM(UEOM, BaseEE_EOM):
             arg = np.argsort(diag)
         return arg
 
-    def _quasiparticle_weight(self, r1: AmplitudeType) -> float:
+    def _quasiparticle_weight(self, r1: SpinArrayType) -> float:
         """Get the quasiparticle weight."""
         weight: float = np.dot(r1.aa.ravel(), r1.aa.ravel()) + np.dot(r1.bb.ravel(), r1.bb.ravel())
         return astype(weight, float)
@@ -461,7 +461,7 @@ class EE_UEOM(UEOM, BaseEE_EOM):
         parts = []
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            spin_part: AmplitudeType = util.Namespace()
+            spin_part: SpinArrayType = util.Namespace()
             for comb in util.generate_spin_combinations(n):
                 spin_part[comb] = self.ebcc.energy_sum(key, comb)
             parts.append(spin_part)
@@ -471,7 +471,7 @@ class EE_UEOM(UEOM, BaseEE_EOM):
 
         return self.amplitudes_to_vector(*parts)
 
-    def bras(self, eris: Optional[ERIsInputType] = None) -> AmplitudeType:
+    def bras(self, eris: Optional[ERIsInputType] = None) -> SpinArrayType:
         """Get the bra vectors.
 
         Args:
@@ -482,7 +482,7 @@ class EE_UEOM(UEOM, BaseEE_EOM):
         """
         raise util.ModelNotImplemented("EE moments for UEBCC not working.")
 
-    def kets(self, eris: Optional[ERIsInputType] = None) -> AmplitudeType:
+    def kets(self, eris: Optional[ERIsInputType] = None) -> SpinArrayType:
         """Get the ket vectors.
 
         Args:
@@ -497,7 +497,7 @@ class EE_UEOM(UEOM, BaseEE_EOM):
         self,
         nmom: int,
         eris: Optional[ERIsInputType] = None,
-        amplitudes: Optional[Namespace[AmplitudeType]] = None,
+        amplitudes: Optional[Namespace[SpinArrayType]] = None,
         hermitise: bool = True,
         diagonal_only: bool = True,
     ) -> NDArray[float]:
