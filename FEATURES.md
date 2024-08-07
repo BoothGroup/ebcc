@@ -14,7 +14,7 @@ The following table summarises the available methods and routines for the ansatz
 | MP2         |  RUG  |       |       |       |       |       |       |       |   -   |
 | MP3         |  RUG  |       |       |       |       |       |       |       |   -   |
 | CCD         |  RUG  |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |   -   |
-| CCSD        |  RUG  |  RUG  |  RUG  |  UG   |  UG   |  UG   |  RUG  |  RUG  |   -   |
+| CCSD        |  RUG  |  RUG  |  RUG  |  RUG  |  RUG  |  UG   |  RUG  |  RUG  |   -   |
 | CCSDT       |  RUG  |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |   -   |
 | CCSDTQ      |   g   |   g   |       |       |       |       |       |       |   -   |
 | CCSD(T)     |  RuG  |  RuG  |       |       |       |       |       |       |   -   |
