@@ -405,63 +405,64 @@ with Stopwatch("EA-EOM"):
             **kwargs,
         )
 
-with Stopwatch("EE-EOM"):
-    # Get the R1 contractions in pdaggerq format
-    pq.clear()
-    pq.set_right_operators_type("EE")
-    pq.set_left_operators([["e1(i,a)"]])
-    pq.set_right_operators([["r1"], ["r2"]])
-    pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
-    pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
-    pq.simplify()
-    terms_r1 = pq.fully_contracted_strings()
-    terms_r1 = remove_disconnected_eom(terms_r1)
+if spin != "rhf":  # FIXME
+    with Stopwatch("EE-EOM"):
+        # Get the R1 contractions in pdaggerq format
+        pq.clear()
+        pq.set_right_operators_type("EE")
+        pq.set_left_operators([["e1(i,a)"]])
+        pq.set_right_operators([["r1"], ["r2"]])
+        pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
+        pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
+        pq.simplify()
+        terms_r1 = pq.fully_contracted_strings()
+        terms_r1 = remove_disconnected_eom(terms_r1)
 
-    # Get the R2 contractions in pdaggerq format
-    pq.clear()
-    pq.set_right_operators_type("EE")
-    pq.set_left_operators([["e2(i,j,b,a)"]])
-    pq.set_right_operators([["r1"], ["r2"]])
-    pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
-    pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
-    pq.simplify()
-    terms_r2 = pq.fully_contracted_strings()
-    terms_r2 = remove_disconnected_eom(terms_r2)
+        # Get the R2 contractions in pdaggerq format
+        pq.clear()
+        pq.set_right_operators_type("EE")
+        pq.set_left_operators([["e2(i,j,b,a)"]])
+        pq.set_right_operators([["r1"], ["r2"]])
+        pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
+        pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
+        pq.simplify()
+        terms_r2 = pq.fully_contracted_strings()
+        terms_r2 = remove_disconnected_eom(terms_r2)
 
-    # Get the R amplitudes in albert format
-    terms = [terms_r1, terms_r2]
-    expr = []
-    output = []
-    returns = []
-    for n in range(2):
-        for index_spins in get_amplitude_spins(n + 1, spin, which="ee"):
-            indices = default_indices["o"][: n + 1] + default_indices["v"][: n + 1]
-            expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins)
-            expr_n = spin_integrate(expr_n, spin)
-            output_n = get_t_amplitude_outputs(expr_n, f"r{n+1}new", indices=indices)
-            returns_n = (Tensor(*tuple(Index(i, index_spins[i]) for i in indices), name=f"r{n+1}new"),)
-            expr.extend(expr_n)
-            output.extend(output_n)
-            returns.extend(returns_n)
-    output, expr = optimise(output, expr, spin, strategy="exhaust")
+        # Get the R amplitudes in albert format
+        terms = [terms_r1, terms_r2]
+        expr = []
+        output = []
+        returns = []
+        for n in range(2):
+            for index_spins in get_amplitude_spins(n + 1, spin, which="ee"):
+                indices = default_indices["o"][: n + 1] + default_indices["v"][: n + 1]
+                expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins)
+                expr_n = spin_integrate(expr_n, spin)
+                output_n = get_t_amplitude_outputs(expr_n, f"r{n+1}new", indices=indices)
+                returns_n = (Tensor(*tuple(Index(i, index_spins[i]) for i in indices), name=f"r{n+1}new"),)
+                expr.extend(expr_n)
+                output.extend(output_n)
+                returns.extend(returns_n)
+        output, expr = optimise(output, expr, spin, strategy="exhaust")
 
-    # Generate the R amplitude code
-    for name, codegen in code_generators.items():
-        if name == "einsum":
-            kwargs = {
-                "preamble": "r1new = Namespace()\nr2new = Namespace()" if spin == "uhf" else None,
-                "postamble": "r2new.baba = r2new.abab.transpose(1, 0, 3, 2)" if spin == "uhf" else None,  # FIXME
-                "as_dict": True,
-            }
-        else:
-            kwargs = {}
-        codegen(
-            "hbar_matvec_ee",
-            returns,
-            output,
-            expr,
-            **kwargs,
-        )
+        # Generate the R amplitude code
+        for name, codegen in code_generators.items():
+            if name == "einsum":
+                kwargs = {
+                    "preamble": "r1new = Namespace()\nr2new = Namespace()" if spin == "uhf" else None,
+                    "postamble": "r2new.baba = r2new.abab.transpose(1, 0, 3, 2)" if spin == "uhf" else None,  # FIXME
+                    "as_dict": True,
+                }
+            else:
+                kwargs = {}
+            codegen(
+                "hbar_matvec_ee",
+                returns,
+                output,
+                expr,
+                **kwargs,
+            )
 
 # Temporary hardcoded parts until we have a proper way to handle them
 if spin == "ghf" or spin == "uhf":
