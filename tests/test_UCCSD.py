@@ -284,8 +284,6 @@ class UCCSD_PySCF_Tests(unittest.TestCase):
     def test_eom_ip(self):
         e1 = self.ccsd.ip_eom(nroot=5).kernel()
         e2, v2 = self.ccsd_ref.ipccsd(nroots=5)
-        print(e1)
-        print(e2)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
     def test_eom_ea(self):
