@@ -121,7 +121,7 @@ class BaseEOM(ABC):
         return f"{self.excitation_type.upper()}-EOM-{self.spin_type}{self.ansatz.name}"
 
     @abstractmethod
-    def amplitudes_to_vector(self, *amplitudes: SpinArrayType) -> NDArray[float]:
+    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[float]:
         """Construct a vector containing all of the amplitudes used in the given ansatz.
 
         Args:
@@ -133,7 +133,7 @@ class BaseEOM(ABC):
         pass
 
     @abstractmethod
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> tuple[SpinArrayType, ...]:
+    def vector_to_amplitudes(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
         """Construct amplitudes from a vector.
 
         Args:
@@ -339,7 +339,7 @@ class BaseEOM(ABC):
             f"{ANSI.B}{'Root':>4s} {'Energy':>16s} {'Weight':>13s} {'Conv.':>8s}{ANSI.R}"
         )
         for n, (en, vn, cn) in enumerate(zip(e, v, converged)):
-            r1n = self.vector_to_amplitudes(vn)[0]
+            r1n = self.vector_to_amplitudes(vn)["r1"]
             qpwt = self._quasiparticle_weight(r1n)
             self.log.output(
                 f"{n:>4d} {en:>16.10f} {qpwt:>13.5g} {[ANSI.r, ANSI.g][bool(cn)]}{cn!r:>8s}{ANSI.R}"
@@ -398,7 +398,7 @@ class BaseIP_EOM(BaseEOM):
         """Get the type of excitation."""
         return "ip"
 
-    def amplitudes_to_vector(self, *amplitudes: SpinArrayType) -> NDArray[float]:
+    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[float]:
         """Construct a vector containing all of the amplitudes used in the given ansatz.
 
         Args:
@@ -407,9 +407,9 @@ class BaseIP_EOM(BaseEOM):
         Returns:
             Cluster amplitudes as a vector.
         """
-        return self.ebcc.excitations_to_vector_ip(*amplitudes)
+        return self.ebcc.excitations_to_vector_ip(amplitudes)
 
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> tuple[SpinArrayType, ...]:
+    def vector_to_amplitudes(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
         """Construct amplitudes from a vector.
 
         Args:
@@ -433,8 +433,8 @@ class BaseIP_EOM(BaseEOM):
             Resulting vector.
         """
         amplitudes = self.vector_to_amplitudes(vector)
-        result = self.ebcc.hbar_matvec_ip(*amplitudes, eris=eris)
-        return self.amplitudes_to_vector(*result)
+        result = self.ebcc.hbar_matvec_ip(amplitudes, eris=eris)
+        return self.amplitudes_to_vector(result)
 
 
 class BaseEA_EOM(BaseEOM):
@@ -445,7 +445,7 @@ class BaseEA_EOM(BaseEOM):
         """Get the type of excitation."""
         return "ea"
 
-    def amplitudes_to_vector(self, *amplitudes: SpinArrayType) -> NDArray[float]:
+    def amplitudes_to_vector(self, amplitudes: SpinArrayType) -> NDArray[float]:
         """Construct a vector containing all of the amplitudes used in the given ansatz.
 
         Args:
@@ -454,9 +454,9 @@ class BaseEA_EOM(BaseEOM):
         Returns:
             Cluster amplitudes as a vector.
         """
-        return self.ebcc.excitations_to_vector_ea(*amplitudes)
+        return self.ebcc.excitations_to_vector_ea(amplitudes)
 
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> tuple[SpinArrayType, ...]:
+    def vector_to_amplitudes(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
         """Construct amplitudes from a vector.
 
         Args:
@@ -480,8 +480,8 @@ class BaseEA_EOM(BaseEOM):
             Resulting vector.
         """
         amplitudes = self.vector_to_amplitudes(vector)
-        result = self.ebcc.hbar_matvec_ea(*amplitudes, eris=eris)
-        return self.amplitudes_to_vector(*result)
+        result = self.ebcc.hbar_matvec_ea(amplitudes, eris=eris)
+        return self.amplitudes_to_vector(result)
 
 
 class BaseEE_EOM(BaseEOM):
@@ -492,7 +492,7 @@ class BaseEE_EOM(BaseEOM):
         """Get the type of excitation."""
         return "ee"
 
-    def amplitudes_to_vector(self, *amplitudes: SpinArrayType) -> NDArray[float]:
+    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[float]:
         """Construct a vector containing all of the amplitudes used in the given ansatz.
 
         Args:
@@ -501,9 +501,9 @@ class BaseEE_EOM(BaseEOM):
         Returns:
             Cluster amplitudes as a vector.
         """
-        return self.ebcc.excitations_to_vector_ee(*amplitudes)
+        return self.ebcc.excitations_to_vector_ee(amplitudes)
 
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> tuple[SpinArrayType, ...]:
+    def vector_to_amplitudes(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
         """Construct amplitudes from a vector.
 
         Args:
@@ -527,5 +527,5 @@ class BaseEE_EOM(BaseEOM):
             Resulting vector.
         """
         amplitudes = self.vector_to_amplitudes(vector)
-        result = self.ebcc.hbar_matvec_ee(*amplitudes, eris=eris)
-        return self.amplitudes_to_vector(*result)
+        result = self.ebcc.hbar_matvec_ee(amplitudes, eris=eris)
+        return self.amplitudes_to_vector(result)

@@ -815,7 +815,7 @@ class GEBCC(BaseEBCC):
 
         return lambdas
 
-    def excitations_to_vector_ip(self, *excitations: Namespace[SpinArrayType]) -> NDArray[float]:
+    def excitations_to_vector_ip(self, excitations: Namespace[SpinArrayType]) -> NDArray[float]:
         """Construct a vector containing all of the IP-EOM excitations.
 
         Args:
@@ -825,12 +825,10 @@ class GEBCC(BaseEBCC):
             IP-EOM excitations as a vector.
         """
         vectors = []
-        m = 0
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             key = key[:-1]
-            vectors.append(util.compress_axes(key, excitations[m]).ravel())
-            m += 1
+            vectors.append(util.compress_axes(key, excitations[f"r{n}"]).ravel())
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
@@ -840,7 +838,7 @@ class GEBCC(BaseEBCC):
 
         return np.concatenate(vectors)
 
-    def excitations_to_vector_ea(self, *excitations: Namespace[SpinArrayType]) -> NDArray[float]:
+    def excitations_to_vector_ea(self, excitations: Namespace[SpinArrayType]) -> NDArray[float]:
         """Construct a vector containing all of the EA-EOM excitations.
 
         Args:
@@ -849,9 +847,9 @@ class GEBCC(BaseEBCC):
         Returns:
             EA-EOM excitations as a vector.
         """
-        return self.excitations_to_vector_ip(*excitations)
+        return self.excitations_to_vector_ip(excitations)
 
-    def excitations_to_vector_ee(self, *excitations: Namespace[SpinArrayType]) -> NDArray[float]:
+    def excitations_to_vector_ee(self, excitations: Namespace[SpinArrayType]) -> NDArray[float]:
         """Construct a vector containing all of the EE-EOM excitations.
 
         Args:
@@ -861,11 +859,9 @@ class GEBCC(BaseEBCC):
             EE-EOM excitations as a vector.
         """
         vectors = []
-        m = 0
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            vectors.append(util.compress_axes(key, excitations[m]).ravel())
-            m += 1
+            vectors.append(util.compress_axes(key, excitations[f"r{n}"]).ravel())
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
@@ -875,9 +871,7 @@ class GEBCC(BaseEBCC):
 
         return np.concatenate(vectors)
 
-    def vector_to_excitations_ip(
-        self, vector: NDArray[float]
-    ) -> tuple[Namespace[SpinArrayType], ...]:
+    def vector_to_excitations_ip(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
         """Construct a namespace of IP-EOM excitations from a vector.
 
         Args:
@@ -886,7 +880,7 @@ class GEBCC(BaseEBCC):
         Returns:
             IP-EOM excitations.
         """
-        excitations = []
+        excitations: Namespace[SpinArrayType] = util.Namespace()
         i0 = 0
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -895,7 +889,7 @@ class GEBCC(BaseEBCC):
             shape = tuple(self.space.size(k) for k in key)
             vn_tril = vector[i0 : i0 + size]
             vn = util.decompress_axes(key, vn_tril, shape=shape)
-            excitations.append(vn)
+            excitations[f"r{n}"] = vn
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
@@ -904,11 +898,9 @@ class GEBCC(BaseEBCC):
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
-        return tuple(excitations)
+        return excitations
 
-    def vector_to_excitations_ea(
-        self, vector: NDArray[float]
-    ) -> tuple[Namespace[SpinArrayType], ...]:
+    def vector_to_excitations_ea(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
         """Construct a namespace of EA-EOM excitations from a vector.
 
         Args:
@@ -917,7 +909,7 @@ class GEBCC(BaseEBCC):
         Returns:
             EA-EOM excitations.
         """
-        excitations = []
+        excitations: Namespace[SpinArrayType] = util.Namespace()
         i0 = 0
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -926,7 +918,7 @@ class GEBCC(BaseEBCC):
             shape = tuple(self.space.size(k) for k in key)
             vn_tril = vector[i0 : i0 + size]
             vn = util.decompress_axes(key, vn_tril, shape=shape)
-            excitations.append(vn)
+            excitations[f"r{n}"] = vn
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
@@ -935,11 +927,9 @@ class GEBCC(BaseEBCC):
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
-        return tuple(excitations)
+        return excitations
 
-    def vector_to_excitations_ee(
-        self, vector: NDArray[float]
-    ) -> tuple[Namespace[SpinArrayType], ...]:
+    def vector_to_excitations_ee(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
         """Construct a namespace of EE-EOM excitations from a vector.
 
         Args:
@@ -948,7 +938,7 @@ class GEBCC(BaseEBCC):
         Returns:
             EE-EOM excitations.
         """
-        excitations = []
+        excitations: Namespace[SpinArrayType] = util.Namespace()
         i0 = 0
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -956,7 +946,7 @@ class GEBCC(BaseEBCC):
             shape = tuple(self.space.size(k) for k in key)
             vn_tril = vector[i0 : i0 + size]
             vn = util.decompress_axes(key, vn_tril, shape=shape)
-            excitations.append(vn)
+            excitations[f"r{n}"] = vn
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
@@ -965,7 +955,7 @@ class GEBCC(BaseEBCC):
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
-        return tuple(excitations)
+        return excitations
 
     def get_mean_field_G(self) -> NDArray[float]:
         """Get the mean-field boson non-conserving term.
