@@ -53,7 +53,7 @@ class IP_REOM(REOM, BaseIP_EOM):
         Returns:
             Diagonal of the Hamiltonian.
         """
-        parts: Namespace[SpinArrayType] = Namespace()
+        parts: Namespace[SpinArrayType] = util.Namespace()
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             key = key[:-1]
@@ -178,7 +178,7 @@ class EA_REOM(REOM, BaseEA_EOM):
         Returns:
             Diagonal of the Hamiltonian.
         """
-        parts: Namespace[SpinArrayType] = Namespace()
+        parts: Namespace[SpinArrayType] = util.Namespace()
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             key = key[n:] + key[: n - 1]
@@ -303,7 +303,7 @@ class EE_REOM(REOM, BaseEE_EOM):
         Returns:
             Diagonal of the Hamiltonian.
         """
-        parts: Namespace[SpinArrayType] = Namespace()
+        parts: Namespace[SpinArrayType] = util.Namespace()
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             parts[f"r{n}"] = -self.ebcc.energy_sum(key)
