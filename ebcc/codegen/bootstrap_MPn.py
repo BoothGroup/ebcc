@@ -86,3 +86,7 @@ with Stopwatch("Energy"):
             output,
             expr,
         )
+
+for codegen in code_generators.values():
+    codegen.postamble()
+    codegen.stdout.close()
