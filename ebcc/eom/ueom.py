@@ -32,7 +32,7 @@ class IP_UEOM(UEOM, BaseIP_EOM):
     def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
-            r1 = self.vector_to_amplitudes(diag)[0]
+            r1 = self.vector_to_amplitudes(diag)["r1"]
             arg = np.argsort(np.abs(diag[: r1.a.size + r1.b.size]))
         else:
             arg = np.argsort(np.abs(diag))
@@ -52,19 +52,19 @@ class IP_UEOM(UEOM, BaseIP_EOM):
         Returns:
             Diagonal of the Hamiltonian.
         """
-        parts = []
+        parts: Namespace[SpinArrayType] = util.Namespace()
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             key = key[:-1]
             spin_part: SpinArrayType = util.Namespace()
             for comb in util.generate_spin_combinations(n, excited=True):
                 spin_part[comb] = self.ebcc.energy_sum(key, comb)
-            parts.append(spin_part)
+            parts[f"r{n}"] = spin_part
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
-        return self.amplitudes_to_vector(*parts)
+        return self.amplitudes_to_vector(parts)
 
     def bras(self, eris: Optional[ERIsInputType] = None) -> SpinArrayType:
         """Get the bra vectors.
@@ -75,14 +75,15 @@ class IP_UEOM(UEOM, BaseIP_EOM):
         Returns:
             Bra vectors.
         """
-        bras_raw = list(self.ebcc.make_ip_mom_bras(eris=eris))
+        bras_raw = util.Namespace(
+            **{f"r{n + 1}": b for n, b in enumerate(self.ebcc.make_ip_mom_bras(eris=eris))}
+        )
         bras_tmp: Namespace[list[NDArray[float]]] = util.Namespace(a=[], b=[])
 
         for i in range(self.nmo):
-            amps_a: list[SpinArrayType] = []
-            amps_b: list[SpinArrayType] = []
+            amps_a: Namespace[SpinArrayType] = util.Namespace()
+            amps_b: Namespace[SpinArrayType] = util.Namespace()
 
-            m = 0
             for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
                 amp_a: SpinArrayType = util.Namespace()
                 amp_b: SpinArrayType = util.Namespace()
@@ -93,20 +94,19 @@ class IP_UEOM(UEOM, BaseIP_EOM):
                     setattr(
                         amp_a,
                         spin,
-                        getattr(bras_raw[m], "a" + spin, {i: np.zeros(shape, dtype=types[float])})[
-                            i
-                        ],
+                        getattr(
+                            bras_raw[f"r{n}"], "a" + spin, {i: np.zeros(shape, dtype=types[float])}
+                        )[i],
                     )
                     setattr(
                         amp_b,
                         spin,
-                        getattr(bras_raw[m], "b" + spin, {i: np.zeros(shape, dtype=types[float])})[
-                            i
-                        ],
+                        getattr(
+                            bras_raw[f"r{n}"], "b" + spin, {i: np.zeros(shape, dtype=types[float])}
+                        )[i],
                     )
-                amps_a.append(amp_a)
-                amps_b.append(amp_b)
-                m += 1
+                amps_a[f"r{n}"] = amp_a
+                amps_b[f"r{n}"] = amp_b
 
             for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
                 raise util.ModelNotImplemented
@@ -114,8 +114,8 @@ class IP_UEOM(UEOM, BaseIP_EOM):
             for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
                 raise util.ModelNotImplemented
 
-            bras_tmp.a.append(self.amplitudes_to_vector(*amps_a))
-            bras_tmp.b.append(self.amplitudes_to_vector(*amps_b))
+            bras_tmp.a.append(self.amplitudes_to_vector(amps_a))
+            bras_tmp.b.append(self.amplitudes_to_vector(amps_b))
 
         bras: Namespace[NDArray[float]] = util.Namespace(
             a=np.array(bras_tmp.a), b=np.array(bras_tmp.b)
@@ -132,15 +132,16 @@ class IP_UEOM(UEOM, BaseIP_EOM):
         Returns:
             Ket vectors.
         """
-        kets_raw = list(self.ebcc.make_ip_mom_kets(eris=eris))
+        kets_raw = util.Namespace(
+            **{f"r{n + 1}": k for n, k in enumerate(self.ebcc.make_ip_mom_kets(eris=eris))}
+        )
         kets_tmp: Namespace[list[NDArray[float]]] = util.Namespace(a=[], b=[])
 
         for i in range(self.nmo):
             j = (Ellipsis, i)
-            amps_a: list[SpinArrayType] = []
-            amps_b: list[SpinArrayType] = []
+            amps_a: Namespace[SpinArrayType] = util.Namespace()
+            amps_b: Namespace[SpinArrayType] = util.Namespace()
 
-            m = 0
             for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
                 amp_a: SpinArrayType = util.Namespace()
                 amp_b: SpinArrayType = util.Namespace()
@@ -151,20 +152,19 @@ class IP_UEOM(UEOM, BaseIP_EOM):
                     setattr(
                         amp_a,
                         spin,
-                        getattr(kets_raw[m], spin + "a", {j: np.zeros(shape, dtype=types[float])})[
-                            j
-                        ],
+                        getattr(
+                            kets_raw[f"r{n}"], spin + "a", {j: np.zeros(shape, dtype=types[float])}
+                        )[j],
                     )
                     setattr(
                         amp_b,
                         spin,
-                        getattr(kets_raw[m], spin + "b", {j: np.zeros(shape, dtype=types[float])})[
-                            j
-                        ],
+                        getattr(
+                            kets_raw[f"r{n}"], spin + "b", {j: np.zeros(shape, dtype=types[float])}
+                        )[j],
                     )
-                amps_a.append(amp_a)
-                amps_b.append(amp_b)
-                m += 1
+                amps_a[f"r{n}"] = amp_a
+                amps_b[f"r{n}"] = amp_b
 
             for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
                 raise util.ModelNotImplemented
@@ -172,8 +172,8 @@ class IP_UEOM(UEOM, BaseIP_EOM):
             for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
                 raise util.ModelNotImplemented
 
-            kets_tmp.a.append(self.amplitudes_to_vector(*amps_a))
-            kets_tmp.b.append(self.amplitudes_to_vector(*amps_b))
+            kets_tmp.a.append(self.amplitudes_to_vector(amps_a))
+            kets_tmp.b.append(self.amplitudes_to_vector(amps_b))
 
         kets: Namespace[NDArray[float]] = util.Namespace(
             a=np.array(kets_tmp.a), b=np.array(kets_tmp.b)
@@ -235,7 +235,7 @@ class EA_UEOM(UEOM, BaseEA_EOM):
     def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
-            r1 = self.vector_to_amplitudes(diag)[0]
+            r1 = self.vector_to_amplitudes(diag)["r1"]
             arg = np.argsort(np.abs(diag[: r1.a.size + r1.b.size]))
         else:
             arg = np.argsort(np.abs(diag))
@@ -255,19 +255,19 @@ class EA_UEOM(UEOM, BaseEA_EOM):
         Returns:
             Diagonal of the Hamiltonian.
         """
-        parts = []
+        parts: Namespace[SpinArrayType] = util.Namespace()
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             key = key[n:] + key[: n - 1]
             spin_part: SpinArrayType = util.Namespace()
             for comb in util.generate_spin_combinations(n, excited=True):
                 spin_part[comb] = -self.ebcc.energy_sum(key, comb)
-            parts.append(spin_part)
+            parts[f"r{n}"] = spin_part
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
-        return self.amplitudes_to_vector(*parts)
+        return self.amplitudes_to_vector(parts)
 
     def bras(self, eris: Optional[ERIsInputType] = None) -> SpinArrayType:
         """Get the bra vectors.
@@ -278,14 +278,15 @@ class EA_UEOM(UEOM, BaseEA_EOM):
         Returns:
             Bra vectors.
         """
-        bras_raw = list(self.ebcc.make_ea_mom_bras(eris=eris))
+        bras_raw = util.Namespace(
+            **{f"r{n + 1}": b for n, b in enumerate(self.ebcc.make_ea_mom_bras(eris=eris))}
+        )
         bras_tmp: Namespace[list[NDArray[float]]] = util.Namespace(a=[], b=[])
 
         for i in range(self.nmo):
-            amps_a: list[SpinArrayType] = []
-            amps_b: list[SpinArrayType] = []
+            amps_a: Namespace[SpinArrayType] = util.Namespace()
+            amps_b: Namespace[SpinArrayType] = util.Namespace()
 
-            m = 0
             for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
                 amp_a: SpinArrayType = util.Namespace()
                 amp_b: SpinArrayType = util.Namespace()
@@ -296,20 +297,19 @@ class EA_UEOM(UEOM, BaseEA_EOM):
                     setattr(
                         amp_a,
                         spin,
-                        getattr(bras_raw[m], "a" + spin, {i: np.zeros(shape, dtype=types[float])})[
-                            i
-                        ],
+                        getattr(
+                            bras_raw[f"r{n}"], "a" + spin, {i: np.zeros(shape, dtype=types[float])}
+                        )[i],
                     )
                     setattr(
                         amp_b,
                         spin,
-                        getattr(bras_raw[m], "b" + spin, {i: np.zeros(shape, dtype=types[float])})[
-                            i
-                        ],
+                        getattr(
+                            bras_raw[f"r{n}"], "b" + spin, {i: np.zeros(shape, dtype=types[float])}
+                        )[i],
                     )
-                amps_a.append(amp_a)
-                amps_b.append(amp_b)
-                m += 1
+                amps_a[f"r{n}"] = amp_a
+                amps_b[f"r{n}"] = amp_b
 
             for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
                 raise util.ModelNotImplemented
@@ -317,8 +317,8 @@ class EA_UEOM(UEOM, BaseEA_EOM):
             for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
                 raise util.ModelNotImplemented
 
-            bras_tmp.a.append(self.amplitudes_to_vector(*amps_a))
-            bras_tmp.b.append(self.amplitudes_to_vector(*amps_b))
+            bras_tmp.a.append(self.amplitudes_to_vector(amps_a))
+            bras_tmp.b.append(self.amplitudes_to_vector(amps_b))
 
         bras: Namespace[NDArray[float]] = util.Namespace(
             a=np.array(bras_tmp.a), b=np.array(bras_tmp.b)
@@ -335,15 +335,16 @@ class EA_UEOM(UEOM, BaseEA_EOM):
         Returns:
             Ket vectors.
         """
-        kets_raw = list(self.ebcc.make_ea_mom_kets(eris=eris))
+        kets_raw = util.Namespace(
+            **{f"r{n + 1}": k for n, k in enumerate(self.ebcc.make_ea_mom_kets(eris=eris))}
+        )
         kets_tmp: Namespace[list[NDArray[float]]] = util.Namespace(a=[], b=[])
 
         for i in range(self.nmo):
             j = (Ellipsis, i)
-            amps_a: list[SpinArrayType] = []
-            amps_b: list[SpinArrayType] = []
+            amps_a: Namespace[SpinArrayType] = util.Namespace()
+            amps_b: Namespace[SpinArrayType] = util.Namespace()
 
-            m = 0
             for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
                 amp_a: SpinArrayType = util.Namespace()
                 amp_b: SpinArrayType = util.Namespace()
@@ -354,20 +355,19 @@ class EA_UEOM(UEOM, BaseEA_EOM):
                     setattr(
                         amp_a,
                         spin,
-                        getattr(kets_raw[m], spin + "a", {j: np.zeros(shape, dtype=types[float])})[
-                            j
-                        ],
+                        getattr(
+                            kets_raw[f"r{n}"], spin + "a", {j: np.zeros(shape, dtype=types[float])}
+                        )[j],
                     )
                     setattr(
                         amp_b,
                         spin,
-                        getattr(kets_raw[m], spin + "b", {j: np.zeros(shape, dtype=types[float])})[
-                            j
-                        ],
+                        getattr(
+                            kets_raw[f"r{n}"], spin + "b", {j: np.zeros(shape, dtype=types[float])}
+                        )[j],
                     )
-                amps_a.append(amp_a)
-                amps_b.append(amp_b)
-                m += 1
+                amps_a[f"r{n}"] = amp_a
+                amps_b[f"r{n}"] = amp_b
 
             for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
                 raise util.ModelNotImplemented
@@ -375,8 +375,8 @@ class EA_UEOM(UEOM, BaseEA_EOM):
             for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
                 raise util.ModelNotImplemented
 
-            kets_tmp.a.append(self.amplitudes_to_vector(*amps_a))
-            kets_tmp.b.append(self.amplitudes_to_vector(*amps_b))
+            kets_tmp.a.append(self.amplitudes_to_vector(amps_a))
+            kets_tmp.b.append(self.amplitudes_to_vector(amps_b))
 
         kets: Namespace[NDArray[float]] = util.Namespace(
             a=np.array(kets_tmp.a), b=np.array(kets_tmp.b)
@@ -438,7 +438,7 @@ class EE_UEOM(UEOM, BaseEE_EOM):
     def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
-            r1 = self.vector_to_amplitudes(diag)[0]
+            r1 = self.vector_to_amplitudes(diag)["r1"]
             arg = np.argsort(diag[: r1.aa.size + r1.bb.size])
         else:
             arg = np.argsort(diag)
@@ -458,18 +458,18 @@ class EE_UEOM(UEOM, BaseEE_EOM):
         Returns:
             Diagonal of the Hamiltonian.
         """
-        parts = []
+        parts: Namespace[SpinArrayType] = util.Namespace()
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             spin_part: SpinArrayType = util.Namespace()
             for comb in util.generate_spin_combinations(n):
                 spin_part[comb] = self.ebcc.energy_sum(key, comb)
-            parts.append(spin_part)
+            parts[f"r{n}"] = spin_part
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
-        return self.amplitudes_to_vector(*parts)
+        return self.amplitudes_to_vector(parts)
 
     def bras(self, eris: Optional[ERIsInputType] = None) -> SpinArrayType:
         """Get the bra vectors.

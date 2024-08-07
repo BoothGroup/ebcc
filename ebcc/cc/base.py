@@ -475,6 +475,7 @@ class BaseEBCC(ABC):
         eris: Optional[Union[ERIsInputType, Literal[False]]] = False,
         amplitudes: Optional[Union[Namespace[SpinArrayType], Literal[False]]] = False,
         lambdas: Optional[Union[Namespace[SpinArrayType], Literal[False]]] = False,
+        excitations: Optional[Namespace[SpinArrayType]] = None,
         **kwargs: Any,
     ) -> tuple[Callable[..., Any], dict[str, Any]]:
         """Load a function from the generated code, and return the arguments."""
@@ -496,6 +497,10 @@ class BaseEBCC(ABC):
                 dicts.append(dict(self._get_lams(lambdas=lambdas, amplitudes=amplitudes)))
             else:
                 dicts.append(dict(self._get_lams(lambdas=lambdas)))
+
+        # Get the excitation amplitudes:
+        if excitations:
+            dicts.append(dict(excitations))
 
         # Get the function:
         func = getattr(self._eqns, name, None)
@@ -791,15 +796,14 @@ class BaseEBCC(ABC):
 
     def hbar_matvec_ip(
         self,
-        *excitations: SpinArrayType,
+        excitations: Namespace[SpinArrayType],
         eris: Optional[ERIsInputType] = None,
         amplitudes: Optional[Namespace[SpinArrayType]] = None,
-    ) -> tuple[SpinArrayType, SpinArrayType]:
+    ) -> Namespace[SpinArrayType]:
         """Compute the product between a state vector and the IP-EOM Hamiltonian.
 
         Args:
-            r1: State vector (single excitations).
-            r2: State vector (double excitations).
+            excitations: State vector as a set of excitation amplitudes.
             eris: Electron repulsion integrals.
             amplitudes: Cluster amplitudes.
 
@@ -807,28 +811,26 @@ class BaseEBCC(ABC):
             Products between the state vectors and the IP-EOM Hamiltonian for the singles and
             doubles.
         """
-        r1, r2 = excitations  # FIXME
         func, kwargs = self._load_function(
             "hbar_matvec_ip",
             eris=eris,
             amplitudes=amplitudes,
-            r1=r1,
-            r2=r2,
+            excitations=excitations,
         )
-        res: tuple[SpinArrayType, SpinArrayType] = func(**kwargs)
+        res: Namespace[SpinArrayType] = func(**kwargs)
+        res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
         return res
 
     def hbar_matvec_ea(
         self,
-        *excitations: SpinArrayType,
+        excitations: Namespace[SpinArrayType],
         eris: Optional[ERIsInputType] = None,
         amplitudes: Optional[Namespace[SpinArrayType]] = None,
-    ) -> tuple[SpinArrayType, SpinArrayType]:
+    ) -> Namespace[SpinArrayType]:
         """Compute the product between a state vector and the EA-EOM Hamiltonian.
 
         Args:
-            r1: State vector (single excitations).
-            r2: State vector (double excitations).
+            excitations: State vector as a set of excitation amplitudes.
             eris: Electron repulsion integrals.
             amplitudes: Cluster amplitudes.
 
@@ -836,28 +838,26 @@ class BaseEBCC(ABC):
             Products between the state vectors and the EA-EOM Hamiltonian for the singles and
             doubles.
         """
-        r1, r2 = excitations  # FIXME
         func, kwargs = self._load_function(
             "hbar_matvec_ea",
             eris=eris,
             amplitudes=amplitudes,
-            r1=r1,
-            r2=r2,
+            excitations=excitations,
         )
-        res: tuple[SpinArrayType, SpinArrayType] = func(**kwargs)
+        res: Namespace[SpinArrayType] = func(**kwargs)
+        res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
         return res
 
     def hbar_matvec_ee(
         self,
-        *excitations: SpinArrayType,
+        excitations: Namespace[SpinArrayType],
         eris: Optional[ERIsInputType] = None,
         amplitudes: Optional[Namespace[SpinArrayType]] = None,
-    ) -> tuple[SpinArrayType, SpinArrayType]:
+    ) -> Namespace[SpinArrayType]:
         """Compute the product between a state vector and the EE-EOM Hamiltonian.
 
         Args:
-            r1: State vector (single excitations).
-            r2: State vector (double excitations).
+            excitations: State vector as a set of excitation amplitudes.
             eris: Electron repulsion integrals.
             amplitudes: Cluster amplitudes.
 
@@ -865,15 +865,14 @@ class BaseEBCC(ABC):
             Products between the state vectors and the EE-EOM Hamiltonian for the singles and
             doubles.
         """
-        r1, r2 = excitations  # FIXME
         func, kwargs = self._load_function(
             "hbar_matvec_ee",
             eris=eris,
             amplitudes=amplitudes,
-            r1=r1,
-            r2=r2,
+            excitations=excitations,
         )
-        res: tuple[SpinArrayType, SpinArrayType] = func(**kwargs)
+        res: Namespace[SpinArrayType] = func(**kwargs)
+        res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
         return res
 
     def make_ip_mom_bras(
@@ -1089,7 +1088,7 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def excitations_to_vector_ip(self, *excitations: Namespace[SpinArrayType]) -> NDArray[float]:
+    def excitations_to_vector_ip(self, excitations: Namespace[SpinArrayType]) -> NDArray[float]:
         """Construct a vector containing all of the IP-EOM excitations.
 
         Args:
@@ -1101,7 +1100,7 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def excitations_to_vector_ea(self, *excitations: Namespace[SpinArrayType]) -> NDArray[float]:
+    def excitations_to_vector_ea(self, excitations: Namespace[SpinArrayType]) -> NDArray[float]:
         """Construct a vector containing all of the EA-EOM excitations.
 
         Args:
@@ -1113,7 +1112,7 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def excitations_to_vector_ee(self, *excitations: Namespace[SpinArrayType]) -> NDArray[float]:
+    def excitations_to_vector_ee(self, excitations: Namespace[SpinArrayType]) -> NDArray[float]:
         """Construct a vector containing all of the EE-EOM excitations.
 
         Args:
@@ -1125,9 +1124,7 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def vector_to_excitations_ip(
-        self, vector: NDArray[float]
-    ) -> tuple[Namespace[SpinArrayType], ...]:
+    def vector_to_excitations_ip(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
         """Construct a namespace of IP-EOM excitations from a vector.
 
         Args:
@@ -1139,9 +1136,7 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def vector_to_excitations_ea(
-        self, vector: NDArray[float]
-    ) -> tuple[Namespace[SpinArrayType], ...]:
+    def vector_to_excitations_ea(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
         """Construct a namespace of EA-EOM excitations from a vector.
 
         Args:
@@ -1153,9 +1148,7 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def vector_to_excitations_ee(
-        self, vector: NDArray[float]
-    ) -> tuple[Namespace[SpinArrayType], ...]:
+    def vector_to_excitations_ee(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
         """Construct a namespace of EE-EOM excitations from a vector.
 
         Args:

@@ -33,7 +33,7 @@ class IP_REOM(REOM, BaseIP_EOM):
     def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
-            r1 = self.vector_to_amplitudes(diag)[0]
+            r1 = self.vector_to_amplitudes(diag)["r1"]
             arg = np.argsort(np.abs(diag[: r1.size]))
         else:
             arg = np.argsort(np.abs(diag))
@@ -53,16 +53,16 @@ class IP_REOM(REOM, BaseIP_EOM):
         Returns:
             Diagonal of the Hamiltonian.
         """
-        parts = []
+        parts: Namespace[SpinArrayType] = Namespace()
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             key = key[:-1]
-            parts.append(self.ebcc.energy_sum(key))
+            parts[f"r{n}"] = self.ebcc.energy_sum(key)
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
-        return self.amplitudes_to_vector(*parts)
+        return self.amplitudes_to_vector(parts)
 
     def bras(self, eris: Optional[ERIsInputType] = None) -> SpinArrayType:
         """Get the bra vectors.
@@ -73,9 +73,16 @@ class IP_REOM(REOM, BaseIP_EOM):
         Returns:
             Bra vectors.
         """
-        bras_raw = list(self.ebcc.make_ip_mom_bras(eris=eris))
+        bras_raw = util.Namespace(
+            **{f"r{n + 1}": b for n, b in enumerate(self.ebcc.make_ip_mom_bras(eris=eris))}
+        )
         bras = np.array(
-            [self.amplitudes_to_vector(*[b[i] for b in bras_raw]) for i in range(self.nmo)]
+            [
+                self.amplitudes_to_vector(
+                    util.Namespace(**{key: b[i] for key, b in bras_raw.items()})
+                )
+                for i in range(self.nmo)
+            ]
         )
         return bras
 
@@ -88,9 +95,16 @@ class IP_REOM(REOM, BaseIP_EOM):
         Returns:
             Ket vectors.
         """
-        kets_raw = list(self.ebcc.make_ip_mom_kets(eris=eris))
+        kets_raw = util.Namespace(
+            **{f"r{n + 1}": k for n, k in enumerate(self.ebcc.make_ip_mom_kets(eris=eris))}
+        )
         kets = np.array(
-            [self.amplitudes_to_vector(*[k[..., i] for k in kets_raw]) for i in range(self.nmo)]
+            [
+                self.amplitudes_to_vector(
+                    util.Namespace(**{key: k[..., i] for key, k in kets_raw.items()})
+                )
+                for i in range(self.nmo)
+            ]
         )
         return kets
 
@@ -144,7 +158,7 @@ class EA_REOM(REOM, BaseEA_EOM):
     def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
-            r1 = self.vector_to_amplitudes(diag)[0]
+            r1 = self.vector_to_amplitudes(diag)["r1"]
             arg = np.argsort(np.abs(diag[: r1.size]))
         else:
             arg = np.argsort(np.abs(diag))
@@ -164,16 +178,16 @@ class EA_REOM(REOM, BaseEA_EOM):
         Returns:
             Diagonal of the Hamiltonian.
         """
-        parts = []
+        parts: Namespace[SpinArrayType] = Namespace()
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             key = key[n:] + key[: n - 1]
-            parts.append(-self.ebcc.energy_sum(key))
+            parts[f"r{n}"] = self.ebcc.energy_sum(key)
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
-        return self.amplitudes_to_vector(*parts)
+        return self.amplitudes_to_vector(parts)
 
     def bras(self, eris: Optional[ERIsInputType] = None) -> SpinArrayType:
         """Get the bra vectors.
@@ -184,9 +198,16 @@ class EA_REOM(REOM, BaseEA_EOM):
         Returns:
             Bra vectors.
         """
-        bras_raw = list(self.ebcc.make_ea_mom_bras(eris=eris))
+        bras_raw = util.Namespace(
+            **{f"r{n + 1}": b for n, b in enumerate(self.ebcc.make_ea_mom_bras(eris=eris))}
+        )
         bras = np.array(
-            [self.amplitudes_to_vector(*[b[i] for b in bras_raw]) for i in range(self.nmo)]
+            [
+                self.amplitudes_to_vector(
+                    util.Namespace(**{key: b[i] for key, b in bras_raw.items()})
+                )
+                for i in range(self.nmo)
+            ]
         )
         return bras
 
@@ -199,9 +220,16 @@ class EA_REOM(REOM, BaseEA_EOM):
         Returns:
             Ket vectors.
         """
-        kets_raw = list(self.ebcc.make_ea_mom_kets(eris=eris))
+        kets_raw = util.Namespace(
+            **{f"r{n + 1}": k for n, k in enumerate(self.ebcc.make_ea_mom_kets(eris=eris))}
+        )
         kets = np.array(
-            [self.amplitudes_to_vector(*[k[..., i] for k in kets_raw]) for i in range(self.nmo)]
+            [
+                self.amplitudes_to_vector(
+                    util.Namespace(**{key: k[..., i] for key, k in kets_raw.items()})
+                )
+                for i in range(self.nmo)
+            ]
         )
         return kets
 
@@ -255,7 +283,7 @@ class EE_REOM(REOM, BaseEE_EOM):
     def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
-            r1 = self.vector_to_amplitudes(diag)[0]
+            r1 = self.vector_to_amplitudes(diag)["r1"]
             arg = np.argsort(diag[: r1.size])
         else:
             arg = np.argsort(diag)
@@ -275,15 +303,15 @@ class EE_REOM(REOM, BaseEE_EOM):
         Returns:
             Diagonal of the Hamiltonian.
         """
-        parts = []
+        parts: Namespace[SpinArrayType] = Namespace()
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            parts.append(-self.ebcc.energy_sum(key))
+            parts[f"r{n}"] = -self.ebcc.energy_sum(key)
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
 
-        return self.amplitudes_to_vector(*parts)
+        return self.amplitudes_to_vector(parts)
 
     def bras(self, eris: Optional[ERIsInputType] = None) -> SpinArrayType:
         """Get the bra vectors.
@@ -294,10 +322,17 @@ class EE_REOM(REOM, BaseEE_EOM):
         Returns:
             Bra vectors.
         """
-        bras_raw = list(self.ebcc.make_ee_mom_bras(eris=eris))
+        bras_raw = util.Namespace(
+            **{f"r{n + 1}": b for n, b in enumerate(self.ebcc.make_ee_mom_bras(eris=eris))}
+        )
         bras = np.array(
             [
-                [self.amplitudes_to_vector(*[b[i, j] for b in bras_raw]) for j in range(self.nmo)]
+                [
+                    self.amplitudes_to_vector(
+                        util.Namespace(**{key: b[i, j] for key, b in bras_raw.items()})
+                    )
+                    for j in range(self.nmo)
+                ]
                 for i in range(self.nmo)
             ]
         )
@@ -312,11 +347,15 @@ class EE_REOM(REOM, BaseEE_EOM):
         Returns:
             Ket vectors.
         """
-        kets_raw = list(self.ebcc.make_ee_mom_kets(eris=eris))
+        kets_raw = util.Namespace(
+            **{f"r{n + 1}": k for n, k in enumerate(self.ebcc.make_ee_mom_kets(eris=eris))}
+        )
         kets = np.array(
             [
                 [
-                    self.amplitudes_to_vector(*[k[..., i, j] for k in kets_raw])
+                    self.amplitudes_to_vector(
+                        util.Namespace(**{key: k[..., i, j] for key, k in kets_raw.items()})
+                    )
                     for j in range(self.nmo)
                 ]
                 for i in range(self.nmo)
