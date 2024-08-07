@@ -276,11 +276,10 @@ with Stopwatch("2RDM"):
                         shape = ", ".join(f"t2.shape[{'0' if o == 'o' else '-1'}]" for o in occ)
                         postamble += f"{nm}.{occ} = np.zeros(({shape}))\n"
                 else:
-                    for s1 in "ab":
-                        for s2 in "ab":
-                            for occ in ("ooov", "oovo", "ovoo", "vooo", "ovvv", "vovv", "vvov", "vvvo"):
-                                shape = ", ".join(f"t2.{s}{s}{s}{s}.shape[{'0' if o == 'o' else '-1'}]" for o, s in zip(occ, s1+s1+s2+s2))
-                                postamble += f"{nm}.{s1}{s1}{s2}{s2}.{occ} = np.zeros(({shape}))\n"
+                    for s1, s2 in [("a", "a"), ("a", "b"), ("b", "b")]:
+                        for occ in ("ooov", "oovo", "ovoo", "vooo", "ovvv", "vovv", "vvov", "vvvo"):
+                            shape = ", ".join(f"t2.{s}{s}{s}{s}.shape[{'0' if o == 'o' else '-1'}]" for o, s in zip(occ, s1+s2+s1+s2))
+                            postamble += f"{nm}.{s1}{s2}{s1}{s2}.{occ} = np.zeros(({shape}))\n"
                 return postamble + get_density_einsum_postamble(n, spin)
             kwargs = {
                 "preamble": get_density_einsum_preamble(2, spin),
