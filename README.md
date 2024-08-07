@@ -1,5 +1,10 @@
 # ebcc: Coupled cluster calculations on electron-boson systems
 
+[![CI](https://github.com/BoothGroup/ebcc/workflows/CI/badge.svg)](https://github.com/BoothGroup/ebcc/actions?query=workflow%3ACI+branch%3Amaster)
+[![codecov](https://codecov.io/gh/BoothGroup/ebcc/branch/master/graph/badge.svg?token=QZQZQ2ZQ2Z)](https://codecov.io/gh/BoothGroup/ebcc)
+[![PyPI version](https://badge.fury.io/py/ebcc.svg)](https://badge.fury.io/py/ebcc)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 The `ebcc` package implements various coupled cluster (CC) models for both purely electronic and coupled electron-boson models, with a focus on generality and model extensibility.
 
 For a summary of the implemented models, see the [FEATURES.md](FEATURES.md) file.
