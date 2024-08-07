@@ -29,7 +29,7 @@ from ebcc import EBCC
 mol = gto.M(atom="H 0 0 0; H 0 0 1", basis="cc-pvdz")
 mf = scf.RHF(mol)
 mf.kernel()
-ccsd = EBCC(mf)
+ccsd = EBCC(mf, ansatz="CCSD")
 ccsd.kernel()
 ```
 
