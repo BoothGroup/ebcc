@@ -335,17 +335,18 @@ def get_amplitude_spins(n, spin, which="t"):
         else:
             it = itertools.combinations_with_replacement("αβ", max(no, nv))
         for spins in it:
-            # Canonicalise the spin order
-            best = [None, 1e10]
-            for s in itertools.permutations(spins):
-                penalty = 0
-                for i in range(len(s) - 1):
-                    penalty += int(s[i] == s[i + 1]) * 2
-                if s[0] != min(s):
-                    penalty += 1
-                if penalty < best[1]:
-                    best = [s, penalty]
-            spins = best[0]
+            if which not in ("ip", "ea"):
+                # Canonicalise the spin order -- never for IP/EA...?
+                best = [None, 1e10]
+                for s in itertools.permutations(spins):
+                    penalty = 0
+                    for i in range(len(s) - 1):
+                        penalty += int(s[i] == s[i + 1]) * 2
+                    if s[0] != min(s):
+                        penalty += 1
+                    if penalty < best[1]:
+                        best = [s, penalty]
+                spins = best[0]
             case = {}
             for i, s in enumerate(spins):
                 if i < no:
