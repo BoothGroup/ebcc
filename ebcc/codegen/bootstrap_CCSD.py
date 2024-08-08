@@ -8,6 +8,7 @@ import pdaggerq
 from albert.qc._pdaggerq import import_from_pdaggerq
 from albert.tensor import Tensor
 from albert.qc.index import Index
+from albert.algebra import Mul
 
 from ebcc.codegen.bootstrap_common import *
 
@@ -301,7 +302,7 @@ with Stopwatch("IP-EOM"):
     pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
     pq.simplify()
     terms_r1 = pq.fully_contracted_strings()
-    terms_r1 = remove_disconnected_eom(terms_r1)
+    terms_r1 = remove_e0_eom(terms_r1)
 
     # Get the R2 contractions in pdaggerq format
     pq.clear()
@@ -312,7 +313,7 @@ with Stopwatch("IP-EOM"):
     pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
     pq.simplify()
     terms_r2 = pq.fully_contracted_strings()
-    terms_r2 = remove_disconnected_eom(terms_r2)
+    terms_r2 = remove_e0_eom(terms_r2)
 
     # Get the R amplitudes in albert format
     terms = [terms_r1, terms_r2]
@@ -358,7 +359,7 @@ with Stopwatch("EA-EOM"):
     pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
     pq.simplify()
     terms_r1 = pq.fully_contracted_strings()
-    terms_r1 = remove_disconnected_eom(terms_r1)
+    terms_r1 = remove_e0_eom(terms_r1)
 
     # Get the R2 contractions in pdaggerq format
     pq.clear()
@@ -369,7 +370,7 @@ with Stopwatch("EA-EOM"):
     pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
     pq.simplify()
     terms_r2 = pq.fully_contracted_strings()
-    terms_r2 = remove_disconnected_eom(terms_r2)
+    terms_r2 = remove_e0_eom(terms_r2)
 
     # Get the R amplitudes in albert format
     terms = [terms_r1, terms_r2]
@@ -416,7 +417,7 @@ if spin != "rhf":  # FIXME
         pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
         pq.simplify()
         terms_r1 = pq.fully_contracted_strings()
-        terms_r1 = remove_disconnected_eom(terms_r1)
+        terms_r1 = remove_e0_eom(terms_r1)
 
         # Get the R2 contractions in pdaggerq format
         pq.clear()
@@ -427,7 +428,7 @@ if spin != "rhf":  # FIXME
         pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
         pq.simplify()
         terms_r2 = pq.fully_contracted_strings()
-        terms_r2 = remove_disconnected_eom(terms_r2)
+        terms_r2 = remove_e0_eom(terms_r2)
 
         # Get the R amplitudes in albert format
         terms = [terms_r1, terms_r2]

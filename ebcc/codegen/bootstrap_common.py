@@ -12,6 +12,7 @@ from albert.qc.spin import generalised_to_restricted, generalised_to_unrestricte
 from albert.qc.index import Index
 from albert.qc.rhf import ERI as RERI, CDERI as RCDERI
 from albert.qc.uhf import ERI as UERI, CDERI as UCDERI
+from albert.qc._pdaggerq import import_from_pdaggerq
 from albert.tensor import Tensor
 from pdaggerq.config import OCC_INDICES, VIRT_INDICES
 
@@ -236,10 +237,11 @@ def remove_hf_energy(terms):
     return terms
 
 
-def remove_disconnected_eom(terms):
-    """Remove the EOM terms that are not connected to the R amplitudes."""
+def remove_e0_eom(terms):
+    """Remove the EOM terms to transform H v -> (H - E0) v."""
     new_terms = []
     for term in terms:
+        # Find if the term is disconnected
         r = None
         rest = []
         for t in term[1:]:
@@ -253,8 +255,32 @@ def remove_disconnected_eom(terms):
             if "<" in r:
                 r = r.replace("<", "(").replace(">", ")").replace("||", ",")
             rest_inds.update(r.split("(")[1].split(")")[0].split(","))
-        if r_inds & rest_inds:
+        connected = r_inds & rest_inds
+        if connected:
             new_terms.append(term)
+            continue
+
+        # We only want to remove the E0 terms:
+        #  f(i,i) r
+        #  f(i,a) t(a,i) r
+        #  <i,j||i,j> r
+        #  <i,a||j,b> t2(a,b,i,j) r
+        #  <i,a||j,b> t1(a,i) t1(b,j) r
+        if len(term) == 3:
+            tensor = [t for t in term[1:] if not t.startswith("r")][0]
+            if tensor.startswith("f") and tensor[2] == tensor[4]:
+                continue
+            if tensor.startswith("<") and tensor[1] == tensor[6] and tensor[3] == tensor[8]:
+                continue
+        else:
+            tensors = sorted([t for t in term[1:] if not t.startswith("r")])
+            if tensors[0].startswith("f") and tensors[1].startswith("t"):
+                continue
+            if tensors[0].startswith("<") and all(t.startswith("t") for t in tensors[1:]):
+                continue
+
+        new_terms.append(term)
+
     return new_terms
 
 
