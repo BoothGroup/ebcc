@@ -20,9 +20,9 @@ plugins:
             rendering:
                 show_source: false
             options:
-                docstring_style: numpy
+                docstring_style: google
                 members_order: source
-                line_length: 72
+                line_length: 100
                 merge_init_into_class: true
                 show_if_no_docstring: false
                 show_root_members_full_path: true
@@ -32,13 +32,35 @@ nav:
 - Home: "index.md"
 - Features: "features.md"
 - Code Reference:
-  - rebcc: reference/rebcc.md
-  - uebcc: reference/uebcc.md
-  - gebcc: reference/gebcc.md
-  - reom: reference/reom.md
-  - ueom: reference/ueom.md
-  - geom: reference/geom.md
-  - brueckner: reference/brueckner.md
-  - space: reference/space.md
-  - ansatz: reference/ansatz.md
-  - util: reference/util.md
+  - Coupled cluster:
+    - Restricted: reference/cc/rebcc.md
+    - Unrestricted: reference/cc/uebcc.md
+    - Generalised: reference/cc/gebcc.md
+    - Base: reference/cc/base.md
+  - Equation of motion:
+    - Restricted: reference/eom/reom.md
+    - Unrestricted: reference/eom/ueom.md
+    - Generalised: reference/eom/geom.md
+    - Base: reference/eom/base.md
+  - Orbital optimisation:
+    - Brueckner:
+      - Restricted: reference/opt/rbrueckner.md
+      - Unrestricted: reference/opt/ubrueckner.md
+      - Generalised: reference/opt/gbrueckner.md
+    - Base: reference/opt/base.md
+  - Core:
+    - Ansatz: reference/core/ansatz.md
+    - Damping: reference/core/damping.md
+    - Dumping: reference/core/dump.md
+    - Logging: reference/core/logging.md
+    - Precision: reference/core/precision.md
+  - Hamiltonian:
+    - Space: reference/ham/space.md
+    - Fock: reference/ham/fock.md
+    - ERIs: reference/ham/eris.md
+    - CDERIs: reference/ham/cderis.md
+    - Bosonic: reference/ham/elbos.md
+    - Base: reference/ham/base.md
+  - Utility:
+    - Permutations: reference/util/permutations.py
+    - Einstein summations: reference/util/einsumfunc.py
