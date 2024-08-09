@@ -48,7 +48,7 @@ jobs:
         run: |
           python -m pip install pytest
           pytest
-        if: !matrix.coverage
+        if: ${{ ! matrix.coverage }}
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
