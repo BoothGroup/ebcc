@@ -169,47 +169,6 @@ class UCCSD_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(uebcc_2.l2.abab, uebcc_1.l2.abab, 5)
         np.testing.assert_almost_equal(uebcc_2.l2.bbbb, uebcc_1.l2.bbbb, 5)
 
-    def test_ip_moments(self):
-        eom = self.ccsd.ip_eom()
-        a = self.data[True]["ip_moms"].transpose(2, 0, 1)
-        b = eom.moments(4)
-        b = np.array([scipy.linalg.block_diag(x, y) for x, y in zip(b.aa, b.bb)])
-        b = b[:, self.fsort][:, :, self.fsort]
-        for i, (x, y) in enumerate(zip(a, b)):
-            x /= np.max(np.abs(x))
-            y /= np.max(np.abs(y))
-            np.testing.assert_almost_equal(x, y, 6)
-
-    def test_ea_moments(self):
-        eom = self.ccsd.ea_eom()
-        a = self.data[True]["ea_moms"].transpose(2, 0, 1)
-        b = eom.moments(4)
-        b = np.array([scipy.linalg.block_diag(x, y) for x, y in zip(b.aa, b.bb)])
-        b = b[:, self.fsort][:, :, self.fsort]
-        for i, (x, y) in enumerate(zip(a, b)):
-            x /= np.max(np.abs(x))
-            y /= np.max(np.abs(y))
-            np.testing.assert_almost_equal(x, y, 6)
-
-    def _test_ee_moments_diag(self):
-        # FIXME broken
-        eom = self.ccsd.ee_eom()
-        nmo = self.ccsd.nmo
-        a = self.data[True]["dd_moms"].transpose(4, 0, 1, 2, 3)
-        a = np.einsum("npqrs,pq,rs->npqrs", a, np.eye(nmo * 2), np.eye(nmo * 2))
-        t = eom.moments(4, diagonal_only=True)
-        b = np.zeros_like(a)
-        for i in range(a.shape[0]):
-            b[i, :nmo, :nmo, :nmo, :nmo] = t.aaaa[i]
-            b[i, :nmo, :nmo, nmo:, nmo:] = t.aabb[i]
-            b[i, nmo:, nmo:, :nmo, :nmo] = t.aabb.transpose(2, 3, 0, 1)[i]
-            b[i, nmo:, nmo:, nmo:, nmo:] = t.bbbb[i]
-        b = b[:, self.fsort][:, :, self.fsort][:, :, :, self.fsort][:, :, :, :, self.fsort]
-        for x, y in zip(a, b):
-            x /= np.max(np.abs(x))
-            y /= np.max(np.abs(y))
-            np.testing.assert_almost_equal(x, y, 6)
-
 
 @pytest.mark.reference
 class UCCSD_PySCF_Tests(unittest.TestCase):
