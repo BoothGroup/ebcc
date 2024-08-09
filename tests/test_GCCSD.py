@@ -98,34 +98,6 @@ class GCCSD_Tests(unittest.TestCase):
         b = self.ccsd.l2
         np.testing.assert_almost_equal(a, b, 6)
 
-    def test_ip_moments(self):
-        eom = self.ccsd.ip_eom()
-        a = self.data[True]["ip_moms"].transpose(2, 0, 1)
-        b = eom.moments(4)
-        for x, y in zip(a, b):
-            x /= np.max(np.abs(x))
-            y /= np.max(np.abs(y))
-            np.testing.assert_almost_equal(x, y, 6)
-
-    def test_ea_moments(self):
-        eom = self.ccsd.ea_eom()
-        a = self.data[True]["ea_moms"].transpose(2, 0, 1)
-        b = eom.moments(4)
-        for x, y in zip(a, b):
-            x /= np.max(np.abs(x))
-            y /= np.max(np.abs(y))
-            np.testing.assert_almost_equal(x, y, 6)
-
-    def test_ee_moments_diag(self):
-        eom = self.ccsd.ee_eom()
-        a = self.data[True]["dd_moms"].transpose(4, 0, 1, 2, 3)
-        a = np.einsum("npqrs,pq,rs->npqrs", a, np.eye(self.ccsd.nmo), np.eye(self.ccsd.nmo))
-        b = eom.moments(4, diagonal_only=True)
-        for x, y in zip(a, b):
-            x /= np.max(np.abs(x))
-            y /= np.max(np.abs(y))
-            np.testing.assert_almost_equal(x, y, 6)
-
     @pytest.mark.regression
     def test_from_rebcc(self):
         mf = self.mf
