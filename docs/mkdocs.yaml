@@ -8,6 +8,8 @@ theme:
 
 docs_dir: .
 
+site_dir: ../site
+
 plugins:
 - search
 - gen-files:
