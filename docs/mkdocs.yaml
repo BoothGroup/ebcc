@@ -1,7 +1,7 @@
 site_name: ebcc
 
 watch:
-- ebcc
+- ../ebcc
 
 theme:
   name: material
