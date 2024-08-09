@@ -11,13 +11,7 @@ if TYPE_CHECKING:
 
 
 class DIIS(diis.DIIS):
-    """Direct inversion in the iterative subspace.
-
-    Attributes:
-        space: The number of vectors to store in the DIIS space.
-        min_space: The minimum number of vectors to store in the DIIS space.
-        damping: The damping factor to apply to the extrapolated vector.
-    """
+    """Direct inversion in the iterative subspace."""
 
     def __init__(self, space: int = 6, min_space: int = 1, damping: float = 0.0) -> None:
         """Initialize the DIIS object.

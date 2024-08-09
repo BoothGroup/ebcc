@@ -31,19 +31,7 @@ if TYPE_CHECKING:
 
 
 class UEBCC(BaseEBCC):
-    """Unrestricted electron-boson coupled cluster.
-
-    Attributes:
-        mf: PySCF mean-field object.
-        log: Log to write output to.
-        options: Options for the EBCC calculation.
-        e_corr: Correlation energy.
-        amplitudes: Cluster amplitudes.
-        converged: Convergence flag.
-        lambdas: Cluster lambda amplitudes.
-        converged_lambda: Lambda convergence flag.
-        name: Name of the method.
-    """
+    """Unrestricted electron-boson coupled cluster."""
 
     # Types
     ERIs = UERIs

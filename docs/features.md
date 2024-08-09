@@ -1,0 +1,4 @@
+{%
+   include-markdown "../FEATURES.md"
+%}
+

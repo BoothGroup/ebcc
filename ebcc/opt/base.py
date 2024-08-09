@@ -44,12 +44,7 @@ class BaseOptions:
 
 
 class BaseBruecknerEBCC(ABC):
-    """Base class for Brueckner-orbital coupled cluster.
-
-    Attributes:
-        cc: Parent `BaseEBCC` object.
-        options: Options for the EOM calculation.
-    """
+    """Base class for Brueckner-orbital coupled cluster."""
 
     # Types
     Options: type[BaseOptions] = BaseOptions

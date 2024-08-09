@@ -83,16 +83,7 @@ def identifity_to_name(iden: str) -> str:
 
 
 class Ansatz:
-    """Ansatz class.
-
-    Attributes:
-        fermion_ansatz: Fermionic ansatz.
-        boson_ansatz: Rank of bosonic excitations.
-        fermion_coupling_rank: Rank of fermionic term in coupling.
-        boson_coupling_rank: Rank of bosonic term in coupling.
-        density_fitting: Use density fitting.
-        module_name: Name of the module containing the generated equations.
-    """
+    """Ansatz class."""
 
     def __init__(
         self,
