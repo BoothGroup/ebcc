@@ -7,7 +7,6 @@ The `ebcc`  package implements various coupled cluster (CC) models
 for application to electron-boson systems, with a focus on
 generality and model extensibility.
 
-
 Installation
 ------------
 
@@ -19,7 +18,6 @@ From source:
 
     git clone https://github.com/BoothGroup/ebcc
     pip install .
-
 
 Usage
 -----
@@ -34,106 +32,42 @@ The implemented models are built upon the mean-field objects of
 >>> mf.kernel()
 >>> ccsd = EBCC(mf)
 >>> ccsd.kernel()
-
 """
 
-__version__ = "1.2.0"
+from __future__ import annotations
 
-import logging
+"""Version of the package."""
+__version__ = "1.4.5"
+
+"""List of supported ansatz types."""
+METHOD_TYPES = ["MP", "CC", "LCC", "QCI", "QCC", "DC"]
+
 import os
-import subprocess
 import sys
+from typing import TYPE_CHECKING
 
-# --- Logging:
+import numpy
 
+from ebcc.core.logging import NullLogger, default_log, init_logging
+from ebcc.cc import GEBCC, REBCC, UEBCC
+from ebcc.core import precision
+from ebcc.core.ansatz import Ansatz
+from ebcc.ham.space import Space
+from ebcc.opt import BruecknerGEBCC, BruecknerREBCC, BruecknerUEBCC
 
-def output(self, msg, *args, **kwargs):
-    if self.isEnabledFor(25):
-        self._log(25, msg, args, **kwargs)
+if TYPE_CHECKING:
+    from typing import Any, Callable
 
+    from pyscf.scf.hf import SCF
 
-default_log = logging.getLogger(__name__)
-default_log.setLevel(logging.INFO)
-default_log.addHandler(logging.StreamHandler(sys.stderr))
-logging.addLevelName(25, "OUTPUT")
-logging.Logger.output = output
-
-
-class NullLogger(logging.Logger):
-    def __init__(self, *args, **kwargs):
-        super().__init__("null")
-
-    def _log(self, level, msg, args, **kwargs):
-        pass
+    from ebcc.cc.base import BaseEBCC
 
 
-HEADER = """        _
-       | |
-   ___ | |__    ___   ___
-  / _ \| '_ \  / __| / __|
- |  __/| |_) || (__ | (__
-  \___||_.__/  \___| \___|
-%s"""
+sys.modules["ebcc.precision"] = precision  # Compatibility with older codegen versions
 
 
-def init_logging(log):
-    """Initialise the logging with a header."""
-
-    if globals().get("_EBCC_LOG_INITIALISED", False):
-        return
-
-    # Print header
-    header_size = max([len(line) for line in HEADER.split("\n")])
-    log.info(HEADER % (" " * (header_size - len(__version__)) + __version__))
-
-    # Print versions of dependencies and ebcc
-    def get_git_hash(directory):
-        git_directory = os.path.join(directory, ".git")
-        cmd = ["git", "--git-dir=%s" % git_directory, "rev-parse", "--short", "HEAD"]
-        try:
-            git_hash = subprocess.check_output(
-                cmd, universal_newlines=True, stderr=subprocess.STDOUT
-            ).rstrip()
-        except subprocess.CalledProcessError:
-            git_hash = "N/A"
-        return git_hash
-
-    import numpy
-    import pyscf
-
-    log.info("numpy:")
-    log.info(" > Version:  %s" % numpy.__version__)
-    log.info(" > Git hash: %s" % get_git_hash(os.path.join(os.path.dirname(numpy.__file__), "..")))
-
-    log.info("pyscf:")
-    log.info(" > Version:  %s" % pyscf.__version__)
-    log.info(" > Git hash: %s" % get_git_hash(os.path.join(os.path.dirname(pyscf.__file__), "..")))
-
-    log.info("ebcc:")
-    log.info(" > Version:  %s" % __version__)
-    log.info(" > Git hash: %s" % get_git_hash(os.path.join(os.path.dirname(__file__), "..")))
-
-    # Environment variables
-    log.info("OMP_NUM_THREADS = %s" % os.environ.get("OMP_NUM_THREADS", ""))
-
-    log.info("")
-
-    globals()["_EBCC_LOG_INITIALISED"] = True
-
-
-# --- Types of ansatz supporting by the EBCC solvers:
-
-METHOD_TYPES = ["CC", "LCC", "QCI", "QCC"]
-
-
-# --- General constructor:
-
-from ebcc.gebcc import GEBCC
-from ebcc.rebcc import REBCC
-from ebcc.uebcc import UEBCC
-
-
-def EBCC(mf, *args, **kwargs):
+def EBCC(mf: SCF, *args: Any, **kwargs: Any) -> BaseEBCC:
+    """Construct an EBCC object for the given mean-field object."""
     from pyscf import scf
 
     if isinstance(mf, scf.uhf.UHF):
@@ -147,25 +81,20 @@ def EBCC(mf, *args, **kwargs):
 EBCC.__doc__ = REBCC.__doc__
 
 
-# --- Constructors for boson-free calculations:
+def _factory(ansatz: str) -> Callable[[SCF, Any, Any], BaseEBCC]:
+    """Constructor for some specific ansatz."""
+    from pyscf import scf
 
-
-def _factory(ansatz):
-    def constructor(mf, *args, **kwargs):
-        from pyscf import scf
-
+    def constructor(mf: SCF, *args: Any, **kwargs: Any) -> BaseEBCC:
+        """Construct an EBCC object for the given mean-field object."""
         kwargs["ansatz"] = ansatz
 
         if isinstance(mf, scf.uhf.UHF):
-            cc = UEBCC(mf, *args, **kwargs)
+            return UEBCC(mf, *args, **kwargs)
         elif isinstance(mf, scf.ghf.GHF):
-            cc = GEBCC(mf, *args, **kwargs)
+            return GEBCC(mf, *args, **kwargs)
         else:
-            cc = REBCC(mf, *args, **kwargs)
-
-        cc.__doc__ = REBCC.__doc__
-
-        return cc
+            return REBCC(mf, *args, **kwargs)
 
     return constructor
 
@@ -178,20 +107,10 @@ CC3 = _factory("CC3")
 del _factory
 
 
-# --- Other imports:
-
-from ebcc.ansatz import Ansatz
-from ebcc.brueckner import BruecknerGEBCC, BruecknerREBCC, BruecknerUEBCC
-from ebcc.space import Space
-
-# --- List available methods:
-
-
-def available_models(verbose=True):  # pragma: no cover
-    """List available coupled-cluster models for each of general (G),
-    restricted (R) and unrestricted (U) Hartree--Fock references.
-    """
-
+def available_models(
+    verbose: bool = True,
+) -> tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...]]:  # pragma: no cover
+    """List available coupled-cluster models for each spin type."""
     cd = os.path.dirname(os.path.realpath(__file__))
     path = os.path.join(cd, "codegen")
     _, _, files = list(os.walk(path))[0]

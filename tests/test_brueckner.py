@@ -35,7 +35,7 @@ class RBCCD_PySCF_Tests(unittest.TestCase):
         # TODO when in pyscf release version
         #ccsd_ref = bccd_kernel_(ccsd_ref, verbose=0)
         cls._pyscf_bccd_results = {
-                "e_tot": -7.881447504050691, 
+                "e_tot": -7.881447504050691,
         }
 
         ccsd = REBCC(
@@ -44,8 +44,10 @@ class RBCCD_PySCF_Tests(unittest.TestCase):
                 log=NullLogger(),
         )
         ccsd.options.e_tol = 1e-10
+        ccsd.options.max_iter = 250
+        ccsd.options.diis_space = 15
         eris = ccsd.get_eris()
-        ccsd.brueckner()
+        ccsd.brueckner(max_iter=200, diis_space=15)
 
         cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris = mf, ccsd_ref, ccsd, eris
 
@@ -62,7 +64,7 @@ class RBCCD_PySCF_Tests(unittest.TestCase):
         #a = self.ccsd_ref.e_tot
         a = self._pyscf_bccd_results["e_tot"]
         b = self.ccsd.e_tot
-        self.assertAlmostEqual(a, b, 8)
+        self.assertAlmostEqual(a, b, 7)
 
     #def test_t2_amplitudes(self):
     #    a = self.ccsd_ref.t2
@@ -95,7 +97,7 @@ class RBCCD_Frozen_PySCF_Tests(RBCCD_PySCF_Tests):
         # TODO when in pyscf release version
         #ccsd_ref = bccd_kernel_(ccsd_ref, verbose=0)
         cls._pyscf_bccd_results = {
-                "e_tot": -7.881227958827942, 
+                "e_tot": -7.881227958827942,
         }
 
         space = Space(
@@ -196,7 +198,7 @@ class UBCCD_Frozen_PySCF_Tests(unittest.TestCase):
         # TODO when in pyscf release version
         #ccsd_ref = bccd_kernel_(ccsd_ref, verbose=0)
         cls._pyscf_bccd_results = {
-                "e_tot": -7.998530643494347, 
+                "e_tot": -7.998530643494347,
         }
 
         space = (

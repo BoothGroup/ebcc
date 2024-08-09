@@ -135,7 +135,6 @@ class UCCSD_S_1_1_Tests(unittest.TestCase):
         rdm2_f = self.ccsd.make_rdm2_f()
         self.assertAlmostEqual(lib.fp(rdm2_f.aaaa), -12.786523249055215, 6)
         self.assertAlmostEqual(lib.fp(rdm2_f.aabb),  11.890684207128526, 6)
-        self.assertAlmostEqual(lib.fp(rdm2_f.bbaa),  11.890684207128526, 6)
         self.assertAlmostEqual(lib.fp(rdm2_f.bbbb), -12.786523249055215, 6)
 
     def test_rdm1_b(self):
@@ -172,7 +171,6 @@ class UCCSD_S_1_1_NoShift_Tests(UCCSD_S_1_1_Tests):
         rdm2_f = self.ccsd.make_rdm2_f()
         self.assertAlmostEqual(lib.fp(rdm2_f.aaaa), -12.79911097464784, 6)
         self.assertAlmostEqual(lib.fp(rdm2_f.aabb),  11.88942992495012, 6)
-        self.assertAlmostEqual(lib.fp(rdm2_f.bbaa),  11.88942992495012, 6)
         self.assertAlmostEqual(lib.fp(rdm2_f.bbbb), -12.79911097464784, 6)
 
 

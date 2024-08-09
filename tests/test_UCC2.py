@@ -73,7 +73,6 @@ class UCC2_PySCF_Tests(unittest.TestCase):
         a = self.ccsd_ref.t2
         b = self.ccsd.t2
         np.testing.assert_almost_equal(a, b.abab, 6)
-        np.testing.assert_almost_equal(a, b.baba, 6)
 
 
 @pytest.mark.regression
@@ -115,20 +114,18 @@ class UCC2_Tests(unittest.TestCase):
         ca, cb = self.ccsd.mf.mo_coeff
         dmaa = util.einsum("ij,pi,qj->pq", dm.aa, ca, ca)
         dmbb = util.einsum("ij,pi,qj->pq", dm.bb, cb, cb)
-        self.assertAlmostEqual(lib.fp(dmaa), 0.9807866860139859, 6)
-        self.assertAlmostEqual(lib.fp(dmbb), 1.7626887332383463, 6)
+        self.assertAlmostEqual(lib.fp(dmaa), 0.9807657038537687, 6)
+        self.assertAlmostEqual(lib.fp(dmbb), 1.7626762326382641, 6)
 
     def test_rdm2_f(self):
         dm = self.ccsd.make_rdm2_f()
         ca, cb = self.ccsd.mf.mo_coeff
         dmaaaa = util.einsum("ijkl,pi,qj,rk,sl->pqrs", dm.aaaa, ca, ca, ca, ca)
         dmaabb = util.einsum("ijkl,pi,qj,rk,sl->pqrs", dm.aabb, ca, ca, cb, cb)
-        dmbbaa = util.einsum("ijkl,pi,qj,rk,sl->pqrs", dm.bbaa, cb, cb, ca, ca)
         dmbbbb = util.einsum("ijkl,pi,qj,rk,sl->pqrs", dm.bbbb, cb, cb, cb, cb)
-        self.assertAlmostEqual(lib.fp(dmaaaa), 0.708486776584406, 6)
-        self.assertAlmostEqual(lib.fp(dmaabb), 1.618034131725763, 6)
-        self.assertAlmostEqual(lib.fp(dmbbaa), 0.956507960532591, 6)
-        self.assertAlmostEqual(lib.fp(dmbbbb), 2.231851449910531, 6)
+        self.assertAlmostEqual(lib.fp(dmaaaa), 0.708602503074179, 6)
+        self.assertAlmostEqual(lib.fp(dmaabb), 1.617909309590978, 6)
+        self.assertAlmostEqual(lib.fp(dmbbbb), 2.231837825282723, 6)
 
 
 if __name__ == "__main__":

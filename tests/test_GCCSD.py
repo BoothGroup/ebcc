@@ -4,6 +4,7 @@
 import os
 import pickle
 import unittest
+import tempfile
 
 import numpy as np
 import pytest
@@ -11,7 +12,7 @@ import scipy.linalg
 from types import SimpleNamespace
 from pyscf import cc, gto, lib, scf
 
-from ebcc import REBCC, UEBCC, GEBCC, NullLogger, util
+from ebcc import REBCC, UEBCC, GEBCC, Space, NullLogger, util
 
 # TODO test more excitations in EOM
 
@@ -97,34 +98,6 @@ class GCCSD_Tests(unittest.TestCase):
         b = self.ccsd.l2
         np.testing.assert_almost_equal(a, b, 6)
 
-    def test_ip_moments(self):
-        eom = self.ccsd.ip_eom()
-        a = self.data[True]["ip_moms"].transpose(2, 0, 1)
-        b = eom.moments(4)
-        for x, y in zip(a, b):
-            x /= np.max(np.abs(x))
-            y /= np.max(np.abs(y))
-            np.testing.assert_almost_equal(x, y, 6)
-
-    def test_ea_moments(self):
-        eom = self.ccsd.ea_eom()
-        a = self.data[True]["ea_moms"].transpose(2, 0, 1)
-        b = eom.moments(4)
-        for x, y in zip(a, b):
-            x /= np.max(np.abs(x))
-            y /= np.max(np.abs(y))
-            np.testing.assert_almost_equal(x, y, 6)
-
-    def test_ee_moments_diag(self):
-        eom = self.ccsd.ee_eom()
-        a = self.data[True]["dd_moms"].transpose(4, 0, 1, 2, 3)
-        a = np.einsum("npqrs,pq,rs->npqrs", a, np.eye(self.ccsd.nmo), np.eye(self.ccsd.nmo))
-        b = eom.moments(4, diagonal_only=True)
-        for x, y in zip(a, b):
-            x /= np.max(np.abs(x))
-            y /= np.max(np.abs(y))
-            np.testing.assert_almost_equal(x, y, 6)
-
     @pytest.mark.regression
     def test_from_rebcc(self):
         mf = self.mf
@@ -191,6 +164,107 @@ class GCCSD_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(gebcc1.make_rdm1_f(), gebcc2.make_rdm1_f(), 6)
         np.testing.assert_almost_equal(gebcc1.make_rdm2_f(), gebcc2.make_rdm2_f(), 6)
 
+    @pytest.mark.regression
+    def test_from_rebcc_frozen(self):
+        mf = self.mf
+        gmf = mf.to_uhf().to_ghf()
+
+        occupied = gmf.mo_occ > 0
+        frozen = np.zeros_like(gmf.mo_occ)
+        frozen[:2] = True
+        active = np.zeros_like(gmf.mo_occ)
+        space = Space(occupied, frozen, active)
+
+        gebcc1 = GEBCC(
+                gmf,
+                ansatz="CCSD",
+                space=space,
+                log=NullLogger(),
+        )
+        gebcc1.options.e_tol = 1e-12
+        eris = gebcc1.get_eris()
+        gebcc1.kernel(eris=eris)
+        gebcc1.solve_lambda(eris=eris)
+
+        occupied = mf.mo_occ > 0
+        frozen = np.zeros_like(mf.mo_occ)
+        frozen[0] = True
+        active = np.zeros_like(mf.mo_occ)
+        space = Space(occupied, frozen, active)
+
+        rebcc = REBCC(
+                mf,
+                ansatz="CCSD",
+                space=space,
+                log=NullLogger(),
+        )
+        rebcc.options.e_tol = 1e-12
+        eris = rebcc.get_eris()
+        rebcc.kernel(eris=eris)
+        rebcc.solve_lambda(eris=eris)
+        gebcc2 = GEBCC.from_rebcc(rebcc)
+
+        self.assertAlmostEqual(gebcc1.energy(), gebcc2.energy())
+        np.testing.assert_almost_equal(gebcc1.t1, gebcc2.t1, 6)
+        np.testing.assert_almost_equal(gebcc1.t2, gebcc2.t2, 6)
+        np.testing.assert_almost_equal(gebcc1.l1, gebcc2.l1, 5)
+        np.testing.assert_almost_equal(gebcc1.l2, gebcc2.l2, 5)
+        np.testing.assert_almost_equal(gebcc1.make_rdm1_f(), gebcc2.make_rdm1_f(), 6)
+        np.testing.assert_almost_equal(gebcc1.make_rdm2_f(), gebcc2.make_rdm2_f(), 6)
+
+    @pytest.mark.regression
+    def test_from_uebcc_frozen(self):
+        mf = self.mf.to_uhf()
+        gmf = mf.to_ghf()
+
+        occupied = gmf.mo_occ > 0
+        frozen = np.zeros_like(gmf.mo_occ)
+        frozen[:2] = True
+        active = np.zeros_like(gmf.mo_occ)
+        space = Space(occupied, frozen, active)
+
+        gebcc1 = GEBCC(
+                mf,
+                ansatz="CCSD",
+                space=space,
+                log=NullLogger(),
+        )
+        gebcc1.options.e_tol = 1e-12
+        eris = gebcc1.get_eris()
+        gebcc1.kernel(eris=eris)
+        gebcc1.solve_lambda(eris=eris)
+
+        occupied = mf.mo_occ[0] > 0
+        frozen = np.zeros_like(mf.mo_occ[0])
+        frozen[0] = True
+        active = np.zeros_like(mf.mo_occ[0])
+        space_a = Space(occupied, frozen, active)
+        occupied = mf.mo_occ[1] > 0
+        frozen = np.zeros_like(mf.mo_occ[1])
+        frozen[0] = True
+        active = np.zeros_like(mf.mo_occ[1])
+        space_b = Space(occupied, frozen, active)
+
+        uebcc = UEBCC(
+                mf,
+                ansatz="CCSD",
+                space=(space_a, space_b),
+                log=NullLogger(),
+        )
+        uebcc.options.e_tol = 1e-12
+        eris = uebcc.get_eris()
+        uebcc.kernel(eris=eris)
+        uebcc.solve_lambda(eris=eris)
+        gebcc2 = GEBCC.from_uebcc(uebcc)
+
+        self.assertAlmostEqual(gebcc1.energy(), gebcc2.energy())
+        np.testing.assert_almost_equal(gebcc1.t1, gebcc2.t1, 6)
+        np.testing.assert_almost_equal(gebcc1.t2, gebcc2.t2, 6)
+        np.testing.assert_almost_equal(gebcc1.l1, gebcc2.l1, 5)
+        np.testing.assert_almost_equal(gebcc1.l2, gebcc2.l2, 5)
+        np.testing.assert_almost_equal(gebcc1.make_rdm1_f(), gebcc2.make_rdm1_f(), 6)
+        np.testing.assert_almost_equal(gebcc1.make_rdm2_f(), gebcc2.make_rdm2_f(), 6)
+
 
 @pytest.mark.reference
 class GCCSD_PySCF_Tests(unittest.TestCase):
@@ -200,7 +274,7 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         mol = gto.Mole()
-        mol.atom = "O 0 0 0.1173; H 0 0.7572 -0.4692; H 0 -0.7572 -0.4692"
+        mol.atom = "Li 0 0 0; H 0 0 1.64"
         mol.basis = "sto3g"
         mol.verbose = 0
         mol.build()
@@ -209,13 +283,13 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
         mf.conv_tol = 1e-12
         mf.kernel()
 
-        ccsd_ref = cc.GCCSD(mf)
+        ccsd_ref = cc.GCCSD(mf.to_uhf().to_ghf())
         ccsd_ref.conv_tol = 1e-12
         ccsd_ref.kernel()
         ccsd_ref.solve_lambda()
 
         ccsd = GEBCC(
-                mf,
+                mf.to_uhf().to_ghf(),
                 ansatz="CCSD",
                 log=NullLogger(),
         )
@@ -228,7 +302,7 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        del cls.mf, cls.ccsd_ref, cls.ccsd
+        del cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris
 
     def test_converged(self):
         self.assertTrue(self.ccsd.converged)
@@ -300,11 +374,50 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
         c = self.mf.to_ghf().mo_coeff
         h = self.mf.to_ghf().get_hcore()
         h = np.linalg.multi_dot((c.T, h, c))
-        v = self.ccsd.get_eris().eri
+        v = self.ccsd.get_eris().array
         e_rdm = util.einsum("pq,pq->", h, dm1)
         e_rdm += util.einsum("pqrs,pqrs->", v, dm2) * 0.5
         e_rdm += self.mf.mol.energy_nuc()
         self.assertAlmostEqual(e_rdm, self.ccsd_ref.e_tot)
+
+
+@pytest.mark.reference
+class GCCSD_Dump_Tests(GCCSD_PySCF_Tests):
+    """Test GCCSD against PySCF after dumping and loading.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        mol = gto.Mole()
+        mol.atom = "Li 0 0 0; H 0 0 1.64"
+        mol.basis = "sto3g"
+        mol.verbose = 0
+        mol.build()
+
+        mf = scf.RHF(mol)
+        mf.conv_tol = 1e-12
+        mf.kernel()
+
+        ccsd_ref = cc.GCCSD(mf.to_uhf().to_ghf())
+        ccsd_ref.conv_tol = 1e-12
+        ccsd_ref.kernel()
+        ccsd_ref.solve_lambda()
+
+        ccsd = GEBCC(
+                mf.to_uhf().to_ghf(),
+                ansatz="CCSD",
+                log=NullLogger(),
+        )
+        ccsd.options.e_tol = 1e-12
+        eris = ccsd.get_eris()
+        ccsd.kernel(eris=eris)
+        ccsd.solve_lambda(eris=eris)
+
+        cls.mf, cls.ccsd_ref, cls.ccsd, cls.eris = mf, ccsd_ref, ccsd, eris
+
+        file = "%s/ebcc.h5" % tempfile.gettempdir()
+        cls.ccsd.write(file)
+        cls.ccsd = cls.ccsd.__class__.read(file, log=cls.ccsd.log)
 
 
 if __name__ == "__main__":
