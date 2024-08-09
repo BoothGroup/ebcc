@@ -38,35 +38,35 @@ nav:
 - Features: "features.md"
 - Code Reference:
   - Coupled cluster:
-    - Restricted: reference/cc/rebcc.md
-    - Unrestricted: reference/cc/uebcc.md
-    - Generalised: reference/cc/gebcc.md
-    - Base: reference/cc/base.md
+    - Restricted: reference/cc/rebcc.html
+    - Unrestricted: reference/cc/uebcc.html
+    - Generalised: reference/cc/gebcc.html
+    - Base: reference/cc/base.html
   - Equation of motion:
-    - Restricted: reference/eom/reom.md
-    - Unrestricted: reference/eom/ueom.md
-    - Generalised: reference/eom/geom.md
-    - Base: reference/eom/base.md
+    - Restricted: reference/eom/reom.html
+    - Unrestricted: reference/eom/ueom.html
+    - Generalised: reference/eom/geom.html
+    - Base: reference/eom/base.html
   - Orbital optimisation:
     - Brueckner:
-      - Restricted: reference/opt/rbrueckner.md
-      - Unrestricted: reference/opt/ubrueckner.md
-      - Generalised: reference/opt/gbrueckner.md
-    - Base: reference/opt/base.md
+      - Restricted: reference/opt/rbrueckner.html
+      - Unrestricted: reference/opt/ubrueckner.html
+      - Generalised: reference/opt/gbrueckner.html
+    - Base: reference/opt/base.html
   - Core:
-    - Ansatz: reference/core/ansatz.md
-    - Damping: reference/core/damping.md
-    - Dumping: reference/core/dump.md
-    - Logging: reference/core/logging.md
-    - Precision: reference/core/precision.md
+    - Ansatz: reference/core/ansatz.html
+    - Damping: reference/core/damping.html
+    - Dumping: reference/core/dump.html
+    - Logging: reference/core/logging.html
+    - Precision: reference/core/precision.html
   - Hamiltonian:
-    - Space: reference/ham/space.md
-    - Fock: reference/ham/fock.md
-    - ERIs: reference/ham/eris.md
-    - CDERIs: reference/ham/cderis.md
-    - Bosonic: reference/ham/elbos.md
-    - Base: reference/ham/base.md
+    - Space: reference/ham/space.html
+    - Fock: reference/ham/fock.html
+    - ERIs: reference/ham/eris.html
+    - CDERIs: reference/ham/cderis.html
+    - Bosonic: reference/ham/elbos.html
+    - Base: reference/ham/base.html
   - Utility:
-    - Permutations: reference/util/permutations.py
-    - Einstein summations: reference/util/einsumfunc.py
-    - Miscellaneous: reference/util/misc.py
+    - Permutations: reference/util/permutations.html
+    - Einstein summations: reference/util/einsumfunc.html
+    - Miscellaneous: reference/util/misc.html
