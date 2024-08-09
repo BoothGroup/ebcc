@@ -23,24 +23,21 @@ if TYPE_CHECKING:
 class Space:
     """Space class.
 
-            ─┬─ ┌──────────┐
-             │  │  frozen  │
-             │  ├──────────┤ ─┬─
-     virtual │  │  active  │  │
-             │  ├──────────┤  │ correlated
-             │  │ inactive │  │
-            ─┼─ ├══════════┤ ─┼─
-             │  │ inactive │  │
-             │  ├──────────┤  │ correlated
-    occupied │  │  active  │  │
-             │  ├──────────┤ ─┴─
-             │  │  frozen  │
-            ─┴─ └──────────┘
+    .. code-block:: none
 
-    Args:
-        occupied: Array containing boolean flags indicating whether or not each orbital is occupied.
-        frozen: Array containing boolean flags indicating whether or not each orbital is frozen.
-        active: Array containing boolean flags indicating whether or not each orbital is active.
+                ─┬─ ┌──────────┐
+                 │  │  frozen  │
+                 │  ├──────────┤ ─┬─
+         virtual │  │  active  │  │
+                 │  ├──────────┤  │ correlated
+                 │  │ inactive │  │
+                ─┼─ ├══════════┤ ─┼─
+                 │  │ inactive │  │
+                 │  ├──────────┤  │ correlated
+        occupied │  │  active  │  │
+                 │  ├──────────┤ ─┴─
+                 │  │  frozen  │
+                ─┴─ └──────────┘
     """
 
     def __init__(

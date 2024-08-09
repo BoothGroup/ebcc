@@ -22,6 +22,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          key: ${{ github.ref }}
+          path: .cache
       - name: Set up python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
@@ -55,3 +59,6 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
         if: matrix.coverage
+      - name: Deploy documentation
+        run: mkdocs gh-deploy --force -f docs/mkdocs.yaml
+        if: matrix.documentation && github.ref == 'refs/heads/master'

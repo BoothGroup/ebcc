@@ -21,12 +21,7 @@ if TYPE_CHECKING:
 
 
 class BruecknerREBCC(BaseBruecknerEBCC):
-    """Restricted Brueckner-orbital coupled cluster.
-
-    Attributes:
-        cc: Parent `BaseEBCC` object.
-        options: Options for the EOM calculation.
-    """
+    """Restricted Brueckner-orbital coupled cluster."""
 
     # Attributes
     cc: REBCC
