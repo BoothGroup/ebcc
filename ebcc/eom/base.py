@@ -14,7 +14,7 @@ from ebcc.core.logging import ANSI
 from ebcc.core.precision import types
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Optional, Union
+    from typing import Any, Callable, Optional
 
     from ebcc.cc.base import BaseEBCC, ERIsInputType, SpaceType, SpinArrayType
     from ebcc.core.ansatz import Ansatz
@@ -171,34 +171,6 @@ class BaseEOM(ABC):
         """
         pass
 
-    @abstractmethod
-    def bras(self, eris: Optional[ERIsInputType] = None) -> Namespace[SpinArrayType]:
-        """Get the bra vectors.
-
-        Args:
-            eris: Electronic repulsion integrals.
-
-        Returns:
-            Bra vectors.
-        """
-        pass
-
-    @abstractmethod
-    def kets(self, eris: Optional[ERIsInputType] = None) -> Namespace[SpinArrayType]:
-        """Get the ket vectors.
-
-        Args:
-            eris: Electronic repulsion integrals.
-
-        Returns:
-            Ket vectors.
-        """
-        pass
-
-    def dot_braket(self, bra: NDArray[float], ket: NDArray[float]) -> Union[float, NDArray[float]]:
-        """Compute the dot product of a bra and ket."""
-        return np.dot(bra, ket)
-
     def get_pick(
         self, guesses: Optional[NDArray[float]] = None, real_system: bool = True
     ) -> PickFunctionType:
@@ -352,27 +324,6 @@ class BaseEOM(ABC):
         return e
 
     kernel = davidson
-
-    @abstractmethod
-    def moments(
-        self,
-        nmom: int,
-        eris: Optional[ERIsInputType] = None,
-        amplitudes: Optional[Namespace[SpinArrayType]] = None,
-        hermitise: bool = True,
-    ) -> SpinArrayType:
-        """Construct the moments of the EOM Hamiltonian.
-
-        Args:
-            nmom: Number of moments.
-            eris: Electronic repulsion integrals.
-            amplitudes: Cluster amplitudes.
-            hermitise: Hermitise the moments.
-
-        Returns:
-            Moments of the EOM Hamiltonian.
-        """
-        pass
 
     @property
     def nmo(self) -> Any:
