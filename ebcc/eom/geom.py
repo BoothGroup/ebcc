@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import warnings
 from typing import TYPE_CHECKING
 
 from ebcc import numpy as np
 from ebcc import util
-from ebcc.core.precision import astype, types
+from ebcc.core.precision import astype
 from ebcc.eom.base import BaseEA_EOM, BaseEE_EOM, BaseEOM, BaseIP_EOM
 
 if TYPE_CHECKING:

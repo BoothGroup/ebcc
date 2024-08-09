@@ -14,7 +14,7 @@ from ebcc.core.logging import ANSI
 from ebcc.core.precision import types
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Optional, Union
+    from typing import Any, Callable, Optional
 
     from ebcc.cc.base import BaseEBCC, ERIsInputType, SpaceType, SpinArrayType
     from ebcc.core.ansatz import Ansatz
