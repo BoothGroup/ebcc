@@ -4,7 +4,7 @@ watch:
 - ../ebcc
 
 theme:
-  name: material
+  name: terminal
 
 docs_dir: .
 
@@ -17,6 +17,7 @@ plugins:
     - gen_files.py
 - section-index
 - include-markdown
+- md-to-html
 - mkdocstrings:
     default_handler: python
     handlers:
