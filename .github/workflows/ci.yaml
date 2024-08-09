@@ -61,4 +61,4 @@ jobs:
         if: matrix.coverage
       - name: Deploy documentation
         run: mkdocs gh-deploy --force -f docs/mkdocs.yaml
-        if: matrix.documentation && github.ref == 'refs/heads/master'
+        if: matrix.documentation #&& github.ref == 'refs/heads/master'
