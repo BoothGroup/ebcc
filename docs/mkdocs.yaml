@@ -6,11 +6,13 @@ watch:
 theme:
   name: material
 
+docs_dir: .
+
 plugins:
 - search
 - gen-files:
     scripts:
-    - docs/gen_files.py
+    - gen_files.py
 - section-index
 - include-markdown
 - mkdocstrings:
