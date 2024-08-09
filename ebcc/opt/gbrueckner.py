@@ -21,12 +21,7 @@ if TYPE_CHECKING:
 
 
 class BruecknerGEBCC(BaseBruecknerEBCC):
-    """Generalised Brueckner-orbital coupled cluster.
-
-    Attributes:
-        cc: Parent `BaseEBCC` object.
-        options: Options for the EOM calculation.
-    """
+    """Generalised Brueckner-orbital coupled cluster."""
 
     # Attributes
     cc: GEBCC

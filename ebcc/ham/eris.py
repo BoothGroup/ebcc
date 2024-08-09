@@ -17,14 +17,7 @@ if TYPE_CHECKING:
 
 
 class RERIs(BaseERIs):
-    """Restricted ERIs container class.
-
-    Attributes:
-        cc: Coupled cluster object.
-        space: Space object for each index.
-        mo_coeff: Molecular orbital coefficients for each index.
-        array: ERIs in the MO basis.
-    """
+    """Restricted ERIs container class."""
 
     _members: dict[str, NDArray[float]]
 
@@ -54,14 +47,7 @@ class RERIs(BaseERIs):
 
 
 class UERIs(BaseERIs):
-    """Unrestricted ERIs container class.
-
-    Attributes:
-        cc: Coupled cluster object.
-        space: Space object for each index.
-        mo_coeff: Molecular orbital coefficients for each index.
-        array: ERIs in the MO basis.
-    """
+    """Unrestricted ERIs container class."""
 
     _members: dict[str, RERIs]
 
@@ -112,14 +98,7 @@ class UERIs(BaseERIs):
 
 
 class GERIs(BaseERIs):
-    """Generalised ERIs container class.
-
-    Attributes:
-        cc: Coupled cluster object.
-        space: Space object for each index.
-        mo_coeff: Molecular orbital coefficients for each index.
-        array: ERIs in the MO basis.
-    """
+    """Generalised ERIs container class."""
 
     _members: dict[str, UERIs]
 

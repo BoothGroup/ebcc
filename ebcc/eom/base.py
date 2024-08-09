@@ -47,12 +47,7 @@ class BaseOptions:
 
 
 class BaseEOM(ABC):
-    """Base class for equation-of-motion coupled cluster.
-
-    Attributes:
-        ebcc: Parent `EBCC` object.
-        options: Options for the EBCC calculation.
-    """
+    """Base class for equation-of-motion coupled cluster."""
 
     # Types
     Options = BaseOptions

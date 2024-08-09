@@ -68,3 +68,4 @@ nav:
   - Utility:
     - Permutations: reference/util/permutations.py
     - Einstein summations: reference/util/einsumfunc.py
+    - Miscellaneous: reference/util/misc.py

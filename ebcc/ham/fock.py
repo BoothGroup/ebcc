@@ -14,17 +14,7 @@ if TYPE_CHECKING:
 
 
 class RFock(BaseFock):
-    """Restricted Fock matrix container class.
-
-    Attributes:
-        cc: Coupled cluster object.
-        space: Space object for each index.
-        mo_coeff: Molecular orbital coefficients for each index.
-        array: Fock matrix in the MO basis.
-        g: Namespace containing blocks of the electron-boson coupling matrix.
-        shift: Shift parameter.
-        xi: Boson parameters.
-    """
+    """Restricted Fock matrix container class."""
 
     _members: dict[str, NDArray[float]]
 
@@ -56,15 +46,7 @@ class RFock(BaseFock):
 
 
 class UFock(BaseFock):
-    """Unrestricted Fock matrix container class.
-
-    Attributes:
-        cc: Coupled cluster object.
-        space: Space object for each index.
-        mo_coeff: Molecular orbital coefficients for each index.
-        array: Fock matrix in the MO basis.
-        g: Namespace containing blocks of the electron-boson coupling matrix
-    """
+    """Unrestricted Fock matrix container class."""
 
     _members: dict[str, RFock]
 
@@ -99,17 +81,7 @@ class UFock(BaseFock):
 
 
 class GFock(BaseFock):
-    """Generalised Fock matrix container class.
-
-    Attributes:
-        cc: Coupled cluster object.
-        space: Space object for each index.
-        mo_coeff: Molecular orbital coefficients for each index.
-        array: Fock matrix in the MO basis.
-        g: Namespace containing blocks of the electron-boson coupling matrix.
-        shift: Shift parameter.
-        xi: Boson parameters.
-    """
+    """Generalised Fock matrix container class."""
 
     _members: dict[str, NDArray[float]]
 

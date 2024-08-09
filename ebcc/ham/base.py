@@ -33,17 +33,7 @@ class BaseHamiltonian(Namespace[Any], ABC):
 
 
 class BaseFock(BaseHamiltonian):
-    """Base class for Fock matrices.
-
-    Attributes:
-        cc: Coupled cluster object.
-        space: Space object.
-        mo_coeff: Molecular orbital coefficients.
-        array: Fock matrix in the MO basis.
-        g: Namespace containing blocks of the electron-boson coupling matrix.
-        shift: Shift parameter.
-        xi: Boson parameters.
-    """
+    """Base class for Fock matrices."""
 
     def __init__(
         self,
@@ -109,13 +99,7 @@ class BaseERIs(BaseHamiltonian):
 
 
 class BaseElectronBoson(BaseHamiltonian):
-    """Base class for electron-boson coupling matrices.
-
-    Attributes:
-        cc: Coupled cluster object.
-        space: Space object.
-        array: Electron-boson coupling matrix in the MO basis.
-    """
+    """Base class for electron-boson coupling matrices."""
 
     def __init__(
         self,

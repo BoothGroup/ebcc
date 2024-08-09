@@ -21,12 +21,7 @@ if TYPE_CHECKING:
 
 
 class BruecknerUEBCC(BaseBruecknerEBCC):
-    """Unrestricted Brueckner-orbital coupled cluster.
-
-    Attributes:
-        cc: Parent `BaseEBCC` object.
-        options: Options for the EOM calculation.
-    """
+    """Unrestricted Brueckner-orbital coupled cluster."""
 
     # Attributes
     cc: UEBCC

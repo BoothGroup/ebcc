@@ -18,14 +18,7 @@ if TYPE_CHECKING:
 
 
 class RCDERIs(BaseERIs):
-    """Restricted Cholesky-decomposed ERIs container class.
-
-    Attributes:
-        cc: Coupled cluster object.
-        space: Space object for each index.
-        mo_coeff: Molecular orbital coefficients for each index.
-        array: ERIs in the MO basis.
-    """
+    """Restricted Cholesky-decomposed ERIs container class."""
 
     def __getitem__(self, key: str, e2: Optional[bool] = False) -> NDArray[float]:
         """Just-in-time getter.
@@ -93,14 +86,7 @@ class RCDERIs(BaseERIs):
 
 
 class UCDERIs(BaseERIs):
-    """Unrestricted Cholesky-decomposed ERIs container class.
-
-    Attributes:
-        cc: Coupled cluster object.
-        space: Space object for each index.
-        mo_coeff: Molecular orbital coefficients for each index.
-        array: ERIs in the MO basis.
-    """
+    """Unrestricted Cholesky-decomposed ERIs container class."""
 
     _members: dict[str, RCDERIs]
 

@@ -12,13 +12,7 @@ if TYPE_CHECKING:
 
 
 class RElectronBoson(BaseElectronBoson):
-    """Restricted electron-boson coupling matrices.
-
-    Attributes:
-        cc: Coupled cluster object.
-        space: Space object.
-        array: Electron-boson coupling matrix in the MO basis.
-    """
+    """Restricted electron-boson coupling matrices."""
 
     _members: dict[str, NDArray[float]]
 
@@ -40,13 +34,7 @@ class RElectronBoson(BaseElectronBoson):
 
 
 class UElectronBoson(BaseElectronBoson):
-    """Unrestricted electron-boson coupling matrices.
-
-    Attributes:
-        cc: Coupled cluster object.
-        space: Space object.
-        array: Electron-boson coupling matrix in the MO basis.
-    """
+    """Unrestricted electron-boson coupling matrices."""
 
     _members: dict[str, RElectronBoson]
 
@@ -72,13 +60,7 @@ class UElectronBoson(BaseElectronBoson):
 
 
 class GElectronBoson(BaseElectronBoson):
-    """Generalised electron-boson coupling matrices.
-
-    Attributes:
-        cc: Coupled cluster object.
-        space: Space object.
-        array: Electron-boson coupling matrix in the MO basis.
-    """
+    """Generalised electron-boson coupling matrices."""
 
     _members: dict[str, NDArray[float]]
 
