@@ -249,7 +249,7 @@ def remove_e0_eom(terms):
         r = None
         rest = []
         for t in term[1:]:
-            if "r" in t:
+            if "r" in t or "l" in t:
                 r = t
             elif not t.startswith("P("):
                 rest.append(t)
@@ -271,13 +271,13 @@ def remove_e0_eom(terms):
         #  <i,a||j,b> t2(a,b,i,j) r
         #  <i,a||j,b> t1(a,i) t1(b,j) r
         if len(term) == 3:
-            tensor = [t for t in term[1:] if not t.startswith("r")][0]
+            tensor = [t for t in term[1:] if not (t.startswith("r") or t.startswith("l"))][0]
             if tensor.startswith("f") and tensor[2] == tensor[4]:
                 continue
             if tensor.startswith("<") and tensor[1] == tensor[6] and tensor[3] == tensor[8]:
                 continue
         else:
-            tensors = sorted([t for t in term[1:] if not t.startswith("r")])
+            tensors = sorted([t for t in term[1:] if not (t.startswith("r") or t.startswith("l"))])
             if tensors[0].startswith("f") and tensors[1].startswith("t"):
                 continue
             if tensors[0].startswith("<") and all(t.startswith("t") for t in tensors[1:]):
@@ -543,7 +543,7 @@ def optimise_eom(returns, output, expr, spin, strategy="exhaust"):
                     tensor_types[i.name] = i._symbol
             a = [Tensor(*x.indices, symmetry=x.symmetry, name=x.name) if isinstance(x, Tensor) else x for x in a]
             for i in range(len(a)):
-                if isinstance(a[i], Tensor) and a[i].name.startswith("r"):
+                if isinstance(a[i], Tensor) and (a[i].name.startswith("r") or a[i].name.startswith("l")):
                     a[i] = a[i].copy(
                         Index("DUMMY1", space="d"),
                         *a[i].indices,
@@ -598,19 +598,19 @@ def optimise_eom(returns, output, expr, spin, strategy="exhaust"):
     output = new_output
     expr = new_expr
 
-    # Extract the intermediates that don't depend on R
+    # Extract the intermediates that don't depend on R/L
     output_r = []
     expr_r = []
     output_nr = []
     expr_nr = []
     cache = set()
     for o, e in zip(output, expr):
-        depends_on_r = o.name.startswith("r")
+        depends_on_r = o.name.startswith("r") or o.name.startswith("l")
         if not depends_on_r:
             for a in e.nested_view():
                 for i in a:
                     if isinstance(i, Tensor):
-                        if i.name.startswith("r") or i.name in cache:
+                        if i.name.startswith("r") or i.name.startswith("l") or i.name in cache:
                             depends_on_r = True
         if depends_on_r:
             output_r.append(o)
@@ -650,7 +650,7 @@ def optimise_eom(returns, output, expr, spin, strategy="exhaust"):
     while True:
         oi, ei = output_r[0], expr_r[0]
         ei = ei.expand()
-        if oi.name.startswith("r"):
+        if oi.name.startswith("r") or oi.name.startswith("l"):
             break
         for j, (oj, ej) in enumerate(zip(output_r[1:], expr_r[1:])):
             new_muls = []
