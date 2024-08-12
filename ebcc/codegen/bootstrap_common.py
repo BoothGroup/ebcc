@@ -14,6 +14,8 @@ from albert.qc.rhf import ERI as RERI, CDERI as RCDERI
 from albert.qc.uhf import ERI as UERI, CDERI as UCDERI
 from albert.qc._pdaggerq import import_from_pdaggerq
 from albert.tensor import Tensor
+from albert.symmetry import Symmetry, Permutation
+from albert.algebra import Mul, Add
 from pdaggerq.config import OCC_INDICES, VIRT_INDICES
 
 ov_2e = [
@@ -44,6 +46,7 @@ default_indices = {
     "V": [i.upper() for i in VIRT_INDICES],
     "b": ["x", "y", "z", "b0", "b1", "b2", "b3"],
     "x": ["P", "Q", "R", "S", "x0", "x1", "x2", "x3", "x4", "x5", "x7"],
+    "d": ["DUMMY1", "DUMMY2", "DUMMY3", "DUMMY4"],
 }
 
 
@@ -57,6 +60,7 @@ default_sizes = {
     "V": 16,
     "b": 10,
     "x": 3000,
+    "d": 100000,
 }
 
 
@@ -293,7 +297,7 @@ def optimise(outputs, exprs, spin, strategy="greedy", sizes=None):
     index_sizes = {}
     index_groups = []
     for sector, indices in default_indices.items():
-        spins = ("α", "β") if spin == "uhf" and sector not in ("b", "x") else (None,)
+        spins = ("α", "β") if spin == "uhf" and sector not in ("b", "x", "d") else (None,)
         for s in spins:
             index_sizes.update({Index(index, space=sector, spin=s): sizes[sector] for index in indices})
             index_groups.append([Index(index, space=sector, spin=s) for index in indices])
@@ -523,3 +527,197 @@ def get_density_fit():
         return left * right
 
     return density_fit
+
+
+def optimise_eom(returns, output, expr, spin, strategy="exhaust"):
+    """Optimise EOM expressions into intermediates and final output."""
+    # Hack the expressions to make the optimiser more likely to optimise out
+    # intermediates that are constant between EOM iterations
+    new_output = []
+    new_expr = []
+    tensor_types = {}
+    for o, e in zip(output, expr):
+        for a in e.nested_view():
+            for i in a:
+                if isinstance(i, Tensor):
+                    tensor_types[i.name] = i._symbol
+            a = [Tensor(*x.indices, symmetry=x.symmetry, name=x.name) if isinstance(x, Tensor) else x for x in a]
+            for i in range(len(a)):
+                if isinstance(a[i], Tensor) and a[i].name.startswith("r"):
+                    a[i] = a[i].copy(
+                        Index("DUMMY1", space="d"),
+                        *a[i].indices,
+                        symmetry=Symmetry(*[Permutation((0,), 1) + p for p in a[i].symmetry.permutations]),
+                    )
+            oa = o.copy(
+                Index("DUMMY1", space="d"),
+                *o.indices,
+            )
+            new_output.append(oa)
+            new_expr.append(Mul(*a))
+    output = new_output
+    expr = new_expr
+
+    output, expr = optimise(output, expr, spin, strategy=strategy)
+
+    # Unhack
+    new_output = []
+    new_expr = []
+    for o, e in zip(output, expr):
+        for a in e.nested_view():
+            for i in range(len(a)):
+                if isinstance(a[i], Tensor):
+                    remove = [ind.space == "d" for ind in a[i].indices]
+                    a[i] = a[i].copy(
+                        *tuple(ind for ind, r in zip(a[i].indices, remove) if not r),
+                        symmetry=Symmetry(
+                            *[
+                                Permutation(
+                                    tuple(x-sum(remove) for j, x in enumerate(p.permutation) if not remove[j]),
+                                    p.sign,
+                                )
+                                for p in a[i].symmetry.permutations
+                            ]
+                        ) if a[i].symmetry else None
+                    )
+            remove = [ind.space == "d" for ind in o.indices]
+            oa = o.copy(
+                *tuple(ind for ind, r in zip(o.indices, remove) if not r),
+                symmetry=Symmetry(
+                    *[
+                        Permutation(
+                            tuple(x-sum(remove) for j, x in enumerate(p.permutation) if not remove[j]),
+                            p.sign,
+                        )
+                        for p in o.symmetry.permutations
+                    ]
+                ) if o.symmetry else None
+            )
+            new_output.append(oa)
+            new_expr.append(Mul(*a))
+    output = new_output
+    expr = new_expr
+
+    # Extract the intermediates that don't depend on R
+    output_r = []
+    expr_r = []
+    output_nr = []
+    expr_nr = []
+    cache = set()
+    for o, e in zip(output, expr):
+        depends_on_r = o.name.startswith("r")
+        if not depends_on_r:
+            for a in e.nested_view():
+                for i in a:
+                    if isinstance(i, Tensor):
+                        if i.name.startswith("r") or i.name in cache:
+                            depends_on_r = True
+        if depends_on_r:
+            output_r.append(o)
+            expr_r.append(e)
+            cache.add(o.name)
+        else:
+            output_nr.append(o)
+            expr_nr.append(e)
+
+    # Get the tmps needed to return from the intermediates function
+    returns_r = returns
+    returns_nr = []
+    initialised_here = set()
+    for o, e in zip(output_r, expr_r):
+        if o.name.startswith("tmp"):
+            initialised_here.add(o.name)
+        for a in e.nested_view():
+            for i in a:
+                if isinstance(i, Tensor) and i.name.startswith("tmp"):
+                    if i.name not in initialised_here:
+                        returns_nr.append(i)
+
+    # Transform the names of the intermediates
+    new_expr_r = []
+    for o, e in zip(output_r, expr_r):
+        add_args = []
+        for args in e.nested_view():
+            args = list(args)
+            for i, a in enumerate(args):
+                if isinstance(a, Tensor) and a.name.startswith("tmp") and a.name not in initialised_here:
+                    args[i] = Tensor(*a.indices, name=f"ints.{a.name}")
+            add_args.append(Mul(*args))
+        new_expr_r.append(Add(*add_args))
+    expr_r = new_expr_r
+
+    # Re-optimise the output part -- first resub the tmps in
+    while True:
+        oi, ei = output_r[0], expr_r[0]
+        ei = ei.expand()
+        if oi.name.startswith("r"):
+            break
+        for j, (oj, ej) in enumerate(zip(output_r[1:], expr_r[1:])):
+            new_muls = []
+            for mul_args in ej.nested_view():
+                new_args = []
+                for arg in mul_args:
+                    if isinstance(arg, Tensor) and arg.name == oi.name:
+                        index_map = dict(zip(oi.external_indices, arg.external_indices))
+                        for index in ei.dummy_indices:
+                            # avoid collision
+                            i = 0
+                            new_index = None
+                            while new_index is None or new_index in ei.external_indices or new_index in ei.dummy_indices or new_index in index_map.values():
+                                new_index = Index(name=default_indices[index.space][-(i + 1)], space=index.space, spin=index.spin)
+                                i += 1
+                            index_map[index] = new_index
+                        new_arg = ei.map_indices(index_map)
+                        new_args.append(new_arg)
+                    else:
+                        new_args.append(arg)
+                new_muls.append(Mul(*new_args))
+            expr_r[j + 1] = Add(*new_muls)
+        output_r = output_r[1:]
+        expr_r = expr_r[1:]
+    # Sum the R terms, else factorisation is not complete after the optimisation
+    new_output_expr_r = {}
+    new_output_r = []
+    key = lambda o: (o.name, tuple(i.spin for i in o.indices), tuple(i.space for i in o.indices))
+    for o, e in zip(output_r, expr_r):
+        okey = key(o)
+        if okey not in new_output_expr_r:
+            new_output_expr_r[okey] = Add(e)
+            new_output_r.append(o)
+        elif isinstance(new_output_expr_r[okey], Add):
+            new_output_expr_r[okey] = Add(*new_output_expr_r[okey].args, e)
+        else:
+            new_output_expr_r[okey] = Add(new_output_expr_r[okey], e)
+    output_r, expr_r = optimise(new_output_r, [new_output_expr_r[key(o)] for o in new_output_r], spin, strategy=strategy)
+
+    # Replace the tensor types so the canonicalisation works
+    new_output_nr = []
+    new_expr_nr = []
+    for o, e in zip(output_nr, expr_nr):
+        new_args = []
+        for args in e.nested_view():
+            args = list(args)
+            for i, a in enumerate(args):
+                if isinstance(a, Tensor) and a.name in tensor_types:
+                    args[i] = tensor_types[a.name][a.indices].canonicalise()
+            new_args.append(Mul(*args))
+        new_output_nr.append(o)
+        new_expr_nr.append(Add(*new_args))
+    output_nr = new_output_nr
+    expr_nr = new_expr_nr
+    new_output_r = []
+    new_expr_r = []
+    for o, e in zip(output_r, expr_r):
+        new_args = []
+        for args in e.nested_view():
+            args = list(args)
+            for i, a in enumerate(args):
+                if isinstance(a, Tensor) and a.name in tensor_types:
+                    args[i] = tensor_types[a.name][a.indices].canonicalise()
+            new_args.append(Mul(*args))
+        new_output_r.append(o)
+        new_expr_r.append(Add(*new_args))
+    output_r = new_output_r
+    expr_r = new_expr_r
+
+    return (returns_nr, output_nr, expr_nr), (returns, output_r, expr_r)
