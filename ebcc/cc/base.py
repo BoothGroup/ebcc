@@ -782,11 +782,34 @@ class BaseEBCC(ABC):
         """
         pass
 
+    def hbar_matvec_ip_intermediates(
+        self,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[SpinArrayType]] = None,
+    ) -> Namespace[NDArray[float]]:
+        """Compute intermediates for the IP-EOM Hamiltonian.
+
+        Args:
+            eris: Electron repulsion integrals.
+            amplitudes: Cluster amplitudes.
+
+        Returns:
+            Intermediate products for the IP-EOM Hamiltonian.
+        """
+        func, kwargs = self._load_function(
+            "hbar_matvec_ip_intermediates",
+            eris=eris,
+            amplitudes=amplitudes,
+        )
+        res: Namespace[NDArray[float]] = util.Namespace(**func(**kwargs))
+        return res
+
     def hbar_matvec_ip(
         self,
         excitations: Namespace[SpinArrayType],
         eris: Optional[ERIsInputType] = None,
         amplitudes: Optional[Namespace[SpinArrayType]] = None,
+        ints: Optional[Namespace[NDArray[float]]] = None,
     ) -> Namespace[SpinArrayType]:
         """Compute the product between a state vector and the IP-EOM Hamiltonian.
 
@@ -794,19 +817,45 @@ class BaseEBCC(ABC):
             excitations: State vector as a set of excitation amplitudes.
             eris: Electron repulsion integrals.
             amplitudes: Cluster amplitudes.
+            ints: Intermediate products.
 
         Returns:
             Products between the state vectors and the IP-EOM Hamiltonian for the singles and
             doubles.
         """
+        if not ints:
+            ints = self.hbar_matvec_ip_intermediates(eris=eris, amplitudes=amplitudes)
         func, kwargs = self._load_function(
             "hbar_matvec_ip",
             eris=eris,
             amplitudes=amplitudes,
             excitations=excitations,
+            ints=ints,
         )
         res: Namespace[SpinArrayType] = func(**kwargs)
         res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
+        return res
+
+    def hbar_matvec_ea_intermediates(
+        self,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[SpinArrayType]] = None,
+    ) -> Namespace[NDArray[float]]:
+        """Compute intermediates for the EA-EOM Hamiltonian.
+
+        Args:
+            eris: Electron repulsion integrals.
+            amplitudes: Cluster amplitudes.
+
+        Returns:
+            Intermediate products for the EA-EOM Hamiltonian.
+        """
+        func, kwargs = self._load_function(
+            "hbar_matvec_ea_intermediates",
+            eris=eris,
+            amplitudes=amplitudes,
+        )
+        res: Namespace[NDArray[float]] = util.Namespace(**func(**kwargs))
         return res
 
     def hbar_matvec_ea(
@@ -814,6 +863,7 @@ class BaseEBCC(ABC):
         excitations: Namespace[SpinArrayType],
         eris: Optional[ERIsInputType] = None,
         amplitudes: Optional[Namespace[SpinArrayType]] = None,
+        ints: Optional[Namespace[NDArray[float]]] = None,
     ) -> Namespace[SpinArrayType]:
         """Compute the product between a state vector and the EA-EOM Hamiltonian.
 
@@ -821,19 +871,45 @@ class BaseEBCC(ABC):
             excitations: State vector as a set of excitation amplitudes.
             eris: Electron repulsion integrals.
             amplitudes: Cluster amplitudes.
+            ints: Intermediate products.
 
         Returns:
             Products between the state vectors and the EA-EOM Hamiltonian for the singles and
             doubles.
         """
+        if not ints:
+            ints = self.hbar_matvec_ea_intermediates(eris=eris, amplitudes=amplitudes)
         func, kwargs = self._load_function(
             "hbar_matvec_ea",
             eris=eris,
             amplitudes=amplitudes,
             excitations=excitations,
+            ints=ints,
         )
         res: Namespace[SpinArrayType] = func(**kwargs)
         res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
+        return res
+
+    def hbar_matvec_ee_intermediates(
+        self,
+        eris: Optional[ERIsInputType] = None,
+        amplitudes: Optional[Namespace[SpinArrayType]] = None,
+    ) -> Namespace[NDArray[float]]:
+        """Compute intermediates for the EE-EOM Hamiltonian.
+
+        Args:
+            eris: Electron repulsion integrals.
+            amplitudes: Cluster amplitudes.
+
+        Returns:
+            Intermediate products for the EE-EOM Hamiltonian.
+        """
+        func, kwargs = self._load_function(
+            "hbar_matvec_ee_intermediates",
+            eris=eris,
+            amplitudes=amplitudes,
+        )
+        res: Namespace[NDArray[float]] = util.Namespace(**func(**kwargs))
         return res
 
     def hbar_matvec_ee(
@@ -841,6 +917,7 @@ class BaseEBCC(ABC):
         excitations: Namespace[SpinArrayType],
         eris: Optional[ERIsInputType] = None,
         amplitudes: Optional[Namespace[SpinArrayType]] = None,
+        ints: Optional[Namespace[NDArray[float]]] = None,
     ) -> Namespace[SpinArrayType]:
         """Compute the product between a state vector and the EE-EOM Hamiltonian.
 
@@ -848,16 +925,20 @@ class BaseEBCC(ABC):
             excitations: State vector as a set of excitation amplitudes.
             eris: Electron repulsion integrals.
             amplitudes: Cluster amplitudes.
+            ints: Intermediate products.
 
         Returns:
             Products between the state vectors and the EE-EOM Hamiltonian for the singles and
             doubles.
         """
+        if not ints:
+            ints = self.hbar_matvec_ee_intermediates(eris=eris, amplitudes=amplitudes)
         func, kwargs = self._load_function(
             "hbar_matvec_ee",
             eris=eris,
             amplitudes=amplitudes,
             excitations=excitations,
+            ints=ints,
         )
         res: Namespace[SpinArrayType] = func(**kwargs)
         res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
