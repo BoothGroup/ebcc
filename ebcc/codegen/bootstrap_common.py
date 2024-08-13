@@ -249,7 +249,7 @@ def remove_e0_eom(terms):
         r = None
         rest = []
         for t in term[1:]:
-            if "r" in t or "l" in t:
+            if "r" in t:
                 r = t
             elif not t.startswith("P("):
                 rest.append(t)
@@ -271,13 +271,13 @@ def remove_e0_eom(terms):
         #  <i,a||j,b> t2(a,b,i,j) r
         #  <i,a||j,b> t1(a,i) t1(b,j) r
         if len(term) == 3:
-            tensor = [t for t in term[1:] if not (t.startswith("r") or t.startswith("l"))][0]
+            tensor = [t for t in term[1:] if not t.startswith("r")][0]
             if tensor.startswith("f") and tensor[2] == tensor[4]:
                 continue
             if tensor.startswith("<") and tensor[1] == tensor[6] and tensor[3] == tensor[8]:
                 continue
         else:
-            tensors = sorted([t for t in term[1:] if not (t.startswith("r") or t.startswith("l"))])
+            tensors = sorted([t for t in term[1:] if not t.startswith("r")])
             if tensors[0].startswith("f") and tensors[1].startswith("t"):
                 continue
             if tensors[0].startswith("<") and all(t.startswith("t") for t in tensors[1:]):
@@ -598,7 +598,7 @@ def optimise_eom(returns, output, expr, spin, strategy="exhaust"):
     output = new_output
     expr = new_expr
 
-    # Extract the intermediates that don't depend on R/L
+    # Extract the intermediates that don't depend on R
     output_r = []
     expr_r = []
     output_nr = []
