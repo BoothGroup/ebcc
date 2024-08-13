@@ -558,7 +558,7 @@ with Stopwatch("L-IP-EOM"):
     returns = []
     for n in range(2):
         for index_spins in get_amplitude_spins(n + 1, spin, which="ip"):
-            indices = default_indices["v"][: n] + default_indices["o"][: n + 1]
+            indices = default_indices["o"][: n + 1] + default_indices["v"][: n]
             expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins, l_is_lambda=False)
             expr_n = spin_integrate(expr_n, spin)
             output_n = get_t_amplitude_outputs(expr_n, f"r{n+1}new", indices=indices)
@@ -635,7 +635,7 @@ with Stopwatch("L-EA-EOM"):
     returns = []
     for n in range(2):
         for index_spins in get_amplitude_spins(n + 1, spin, which="ea"):
-            indices = default_indices["o"][: n] + default_indices["v"][: n + 1]
+            indices = default_indices["v"][: n + 1] + default_indices["o"][: n]
             expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins, l_is_lambda=False)
             expr_n = spin_integrate(expr_n, spin)
             output_n = get_t_amplitude_outputs(expr_n, f"r{n+1}new", indices=indices)
@@ -713,7 +713,7 @@ if spin != "rhf":  # FIXME
         returns = []
         for n in range(2):
             for index_spins in get_amplitude_spins(n + 1, spin, which="ee"):
-                indices = default_indices["v"][: n + 1] + default_indices["o"][: n + 1]
+                indices = default_indices["o"][: n + 1] + default_indices["v"][: n + 1]
                 expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins, l_is_lambda=False)
                 expr_n = spin_integrate(expr_n, spin)
                 output_n = get_t_amplitude_outputs(expr_n, f"r{n+1}new", indices=indices)
