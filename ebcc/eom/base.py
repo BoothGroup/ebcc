@@ -37,6 +37,7 @@ class BaseOptions:
         max_iter: Maximum number of iterations.
         max_space: Maximum size of the Lanczos vector space.
         koopmans: Whether to use a Koopmans'-like guess.
+        left: Whether to apply the left-hand side of the Hamiltonian.
     """
 
     nroots: int = 5
@@ -44,6 +45,7 @@ class BaseOptions:
     max_iter: int = 100
     max_space: int = 12
     koopmans: bool = False
+    left: bool = False
 
 
 class BaseEOM(ABC):
@@ -145,6 +147,7 @@ class BaseEOM(ABC):
         vector: NDArray[float],
         eris: Optional[ERIsInputType] = None,
         ints: Optional[NDArray[float]] = None,
+        left: bool = False,
     ) -> NDArray[float]:
         """Apply the Hamiltonian to a vector.
 
@@ -152,6 +155,7 @@ class BaseEOM(ABC):
             vector: State vector to apply the Hamiltonian to.
             eris: Electronic repulsion integrals.
             ints: Intermediate products.
+            left: Whether to apply the left-hand side of the Hamiltonian.
 
         Returns:
             Resulting vector.
@@ -160,12 +164,13 @@ class BaseEOM(ABC):
 
     @abstractmethod
     def matvec_intermediates(
-        self, eris: Optional[ERIsInputType] = None
+        self, eris: Optional[ERIsInputType] = None, left: bool = False
     ) -> Namespace[NDArray[float]]:
         """Get the intermediates for application of the Hamiltonian to a vector.
 
         Args:
             eris: Electronic repulsion integrals.
+            left: Whether to apply the left-hand side of the Hamiltonian.
 
         Returns:
             Intermediate products.
@@ -281,8 +286,10 @@ class BaseEOM(ABC):
         )
 
         # Get the matrix-vector products and the diagonal:
-        ints = self.matvec_intermediates(eris=eris)
-        matvecs = lambda vs: [self.matvec(v, eris=eris, ints=ints) for v in vs]
+        ints = self.matvec_intermediates(eris=eris, left=self.options.left)
+        matvecs = lambda vs: [
+            self.matvec(v, eris=eris, ints=ints, left=self.options.left) for v in vs
+        ]
         diag = self.diag(eris=eris)
 
         # Get the guesses:
@@ -363,33 +370,12 @@ class BaseIP_EOM(BaseEOM):
         """Get the type of excitation."""
         return "ip"
 
-    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[float]:
-        """Construct a vector containing all of the amplitudes used in the given ansatz.
-
-        Args:
-            amplitudes: Cluster amplitudes.
-
-        Returns:
-            Cluster amplitudes as a vector.
-        """
-        return self.ebcc.excitations_to_vector_ip(amplitudes)
-
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
-        """Construct amplitudes from a vector.
-
-        Args:
-            vector: Cluster amplitudes as a vector.
-
-        Returns:
-            Cluster amplitudes.
-        """
-        return self.ebcc.vector_to_excitations_ip(vector)
-
     def matvec(
         self,
         vector: NDArray[float],
         eris: Optional[ERIsInputType] = None,
         ints: Optional[NDArray[float]] = None,
+        left: bool = False,
     ) -> NDArray[float]:
         """Apply the Hamiltonian to a vector.
 
@@ -397,26 +383,44 @@ class BaseIP_EOM(BaseEOM):
             vector: State vector to apply the Hamiltonian to.
             eris: Electronic repulsion integrals.
             ints: Intermediate products.
+            left: Whether to apply the left-hand side of the Hamiltonian.
 
         Returns:
             Resulting vector.
         """
+        if not ints:
+            ints = self.matvec_intermediates(eris=eris, left=left)
         amplitudes = self.vector_to_amplitudes(vector)
-        result = self.ebcc.hbar_matvec_ip(amplitudes, eris=eris, ints=ints)
-        return self.amplitudes_to_vector(result)
+        func, kwargs = self.ebcc._load_function(
+            f"hbar_{'l' if left else ''}matvec_ip",
+            eris=eris,
+            ints=ints,
+            amplitudes=self.ebcc.amplitudes,
+            excitations=amplitudes,
+        )
+        res: Namespace[SpinArrayType] = func(**kwargs)
+        res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
+        return self.amplitudes_to_vector(res)
 
     def matvec_intermediates(
-        self, eris: Optional[ERIsInputType] = None
+        self, eris: Optional[ERIsInputType] = None, left: bool = False
     ) -> Namespace[NDArray[float]]:
         """Get the intermediates for application of the Hamiltonian to a vector.
 
         Args:
             eris: Electronic repulsion integrals.
+            left: Whether to apply the left-hand side of the Hamiltonian.
 
         Returns:
             Intermediate products.
         """
-        return self.ebcc.hbar_matvec_ip_intermediates(eris=eris)
+        func, kwargs = self.ebcc._load_function(
+            f"hbar_{'l' if left else ''}matvec_ip_intermediates",
+            eris=eris,
+            amplitudes=self.ebcc.amplitudes,
+        )
+        res: Namespace[NDArray[float]] = util.Namespace(**func(**kwargs))
+        return res
 
 
 class BaseEA_EOM(BaseEOM):
@@ -427,33 +431,12 @@ class BaseEA_EOM(BaseEOM):
         """Get the type of excitation."""
         return "ea"
 
-    def amplitudes_to_vector(self, amplitudes: SpinArrayType) -> NDArray[float]:
-        """Construct a vector containing all of the amplitudes used in the given ansatz.
-
-        Args:
-            amplitudes: Cluster amplitudes.
-
-        Returns:
-            Cluster amplitudes as a vector.
-        """
-        return self.ebcc.excitations_to_vector_ea(amplitudes)
-
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
-        """Construct amplitudes from a vector.
-
-        Args:
-            vector: Cluster amplitudes as a vector.
-
-        Returns:
-            Cluster amplitudes.
-        """
-        return self.ebcc.vector_to_excitations_ea(vector)
-
     def matvec(
         self,
         vector: NDArray[float],
         eris: Optional[ERIsInputType] = None,
         ints: Optional[NDArray[float]] = None,
+        left: bool = False,
     ) -> NDArray[float]:
         """Apply the Hamiltonian to a vector.
 
@@ -461,26 +444,44 @@ class BaseEA_EOM(BaseEOM):
             vector: State vector to apply the Hamiltonian to.
             eris: Electronic repulsion integrals.
             ints: Intermediate products.
+            left: Whether to apply the left-hand side of the Hamiltonian.
 
         Returns:
             Resulting vector.
         """
+        if not ints:
+            ints = self.matvec_intermediates(eris=eris, left=left)
         amplitudes = self.vector_to_amplitudes(vector)
-        result = self.ebcc.hbar_matvec_ea(amplitudes, eris=eris, ints=ints)
-        return self.amplitudes_to_vector(result)
+        func, kwargs = self.ebcc._load_function(
+            f"hbar_{'l' if left else ''}matvec_ea",
+            eris=eris,
+            ints=ints,
+            amplitudes=self.ebcc.amplitudes,
+            excitations=amplitudes,
+        )
+        res: Namespace[SpinArrayType] = func(**kwargs)
+        res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
+        return self.amplitudes_to_vector(res)
 
     def matvec_intermediates(
-        self, eris: Optional[ERIsInputType] = None
+        self, eris: Optional[ERIsInputType] = None, left: bool = False
     ) -> Namespace[NDArray[float]]:
         """Get the intermediates for application of the Hamiltonian to a vector.
 
         Args:
             eris: Electronic repulsion integrals.
+            left: Whether to apply the left-hand side of the Hamiltonian.
 
         Returns:
             Intermediate products.
         """
-        return self.ebcc.hbar_matvec_ea_intermediates(eris=eris)
+        func, kwargs = self.ebcc._load_function(
+            f"hbar_{'l' if left else ''}matvec_ea_intermediates",
+            eris=eris,
+            amplitudes=self.ebcc.amplitudes,
+        )
+        res: Namespace[NDArray[float]] = util.Namespace(**func(**kwargs))
+        return res
 
 
 class BaseEE_EOM(BaseEOM):
@@ -491,33 +492,12 @@ class BaseEE_EOM(BaseEOM):
         """Get the type of excitation."""
         return "ee"
 
-    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[float]:
-        """Construct a vector containing all of the amplitudes used in the given ansatz.
-
-        Args:
-            amplitudes: Cluster amplitudes.
-
-        Returns:
-            Cluster amplitudes as a vector.
-        """
-        return self.ebcc.excitations_to_vector_ee(amplitudes)
-
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
-        """Construct amplitudes from a vector.
-
-        Args:
-            vector: Cluster amplitudes as a vector.
-
-        Returns:
-            Cluster amplitudes.
-        """
-        return self.ebcc.vector_to_excitations_ee(vector)
-
     def matvec(
         self,
         vector: NDArray[float],
         eris: Optional[ERIsInputType] = None,
         ints: Optional[NDArray[float]] = None,
+        left: bool = False,
     ) -> NDArray[float]:
         """Apply the Hamiltonian to a vector.
 
@@ -525,23 +505,41 @@ class BaseEE_EOM(BaseEOM):
             vector: State vector to apply the Hamiltonian to.
             eris: Electronic repulsion integrals.
             ints: Intermediate products.
+            left: Whether to apply the left-hand side of the Hamiltonian.
 
         Returns:
             Resulting vector.
         """
+        if not ints:
+            ints = self.matvec_intermediates(eris=eris, left=left)
         amplitudes = self.vector_to_amplitudes(vector)
-        result = self.ebcc.hbar_matvec_ee(amplitudes, eris=eris, ints=ints)
-        return self.amplitudes_to_vector(result)
+        func, kwargs = self.ebcc._load_function(
+            f"hbar_{'l' if left else ''}matvec_ee",
+            eris=eris,
+            ints=ints,
+            amplitudes=self.ebcc.amplitudes,
+            excitations=amplitudes,
+        )
+        res: Namespace[SpinArrayType] = func(**kwargs)
+        res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
+        return self.amplitudes_to_vector(res)
 
     def matvec_intermediates(
-        self, eris: Optional[ERIsInputType] = None
+        self, eris: Optional[ERIsInputType] = None, left: bool = False
     ) -> Namespace[NDArray[float]]:
         """Get the intermediates for application of the Hamiltonian to a vector.
 
         Args:
             eris: Electronic repulsion integrals.
+            left: Whether to apply the left-hand side of the Hamiltonian.
 
         Returns:
             Intermediate products.
         """
-        return self.ebcc.hbar_matvec_ee_intermediates(eris=eris)
+        func, kwargs = self.ebcc._load_function(
+            f"hbar_{'l' if left else ''}matvec_ee_intermediates",
+            eris=eris,
+            amplitudes=self.ebcc.amplitudes,
+        )
+        res: Namespace[NDArray[float]] = util.Namespace(**func(**kwargs))
+        return res

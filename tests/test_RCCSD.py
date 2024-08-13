@@ -232,6 +232,18 @@ class RCCSD_PySCF_Tests(unittest.TestCase):
         e2, v2 = self.ccsd_ref.eaccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    def test_eom_ip_left(self):
+        eom = self.ccsd.ip_eom(nroots=5, left=True)
+        e1 = eom.kernel()
+        e2, v2 = self.ccsd_ref.ipccsd(nroots=5, left=True)
+        self.assertAlmostEqual(e1[0], e2[0], 5)
+
+    def test_eom_ea_left(self):
+        eom = self.ccsd.ea_eom(nroots=5, left=True)
+        e1 = eom.kernel()
+        e2, v2 = self.ccsd_ref.eaccsd(nroots=5, left=True)
+        self.assertAlmostEqual(e1[0], e2[0], 5)
+
 
 @pytest.mark.reference
 class FNORCCSD_PySCF_Tests(RCCSD_PySCF_Tests):
@@ -390,6 +402,18 @@ class RCCSD_PySCF_Frozen_Tests(unittest.TestCase):
         eom = self.ccsd.ea_eom(nroots=5)
         e1 = eom.kernel()
         e2, v2 = self.ccsd_ref.eaccsd(nroots=5)
+        self.assertAlmostEqual(e1[0], e2[0], 5)
+
+    def test_eom_ip_left(self):
+        eom = self.ccsd.ip_eom(nroots=5, left=True)
+        e1 = eom.kernel()
+        e2, v2 = self.ccsd_ref.ipccsd(nroots=5, left=True)
+        self.assertAlmostEqual(e1[0], e2[0], 5)
+
+    def test_eom_ea_left(self):
+        eom = self.ccsd.ea_eom(nroots=5, left=True)
+        e1 = eom.kernel()
+        e2, v2 = self.ccsd_ref.eaccsd(nroots=5, left=True)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
 
