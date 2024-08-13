@@ -287,7 +287,9 @@ class BaseEOM(ABC):
 
         # Get the matrix-vector products and the diagonal:
         ints = self.matvec_intermediates(eris=eris, left=self.options.left)
-        matvecs = lambda vs: [self.matvec(v, eris=eris, ints=ints, left=self.options.left) for v in vs]
+        matvecs = lambda vs: [
+            self.matvec(v, eris=eris, ints=ints, left=self.options.left) for v in vs
+        ]
         diag = self.diag(eris=eris)
 
         # Get the guesses:
