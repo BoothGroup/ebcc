@@ -37,6 +37,7 @@ class BaseOptions:
         max_iter: Maximum number of iterations.
         max_space: Maximum size of the Lanczos vector space.
         koopmans: Whether to use a Koopmans'-like guess.
+        left: Whether to apply the left-hand side of the Hamiltonian.
     """
 
     nroots: int = 5
@@ -44,6 +45,7 @@ class BaseOptions:
     max_iter: int = 100
     max_space: int = 12
     koopmans: bool = False
+    left: bool = False
 
 
 class BaseEOM(ABC):
@@ -284,8 +286,8 @@ class BaseEOM(ABC):
         )
 
         # Get the matrix-vector products and the diagonal:
-        ints = self.matvec_intermediates(eris=eris)
-        matvecs = lambda vs: [self.matvec(v, eris=eris, ints=ints) for v in vs]
+        ints = self.matvec_intermediates(eris=eris, left=self.options.left)
+        matvecs = lambda vs: [self.matvec(v, eris=eris, ints=ints, left=self.options.left) for v in vs]
         diag = self.diag(eris=eris)
 
         # Get the guesses:
