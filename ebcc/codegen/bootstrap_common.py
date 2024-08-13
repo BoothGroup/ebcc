@@ -249,7 +249,7 @@ def remove_e0_eom(terms):
         r = None
         rest = []
         for t in term[1:]:
-            if "r" in t:
+            if t.startswith("r") or t.startswith("l"):
                 r = t
             elif not t.startswith("P("):
                 rest.append(t)

@@ -528,82 +528,238 @@ if spin != "rhf":  # FIXME
                 **kwargs,
             )
 
-#with Stopwatch("L-IP-EOM"):
-#    # Get the L1 contractions in pdaggerq format
-#    pq.clear()
-#    pq.set_left_operators_type("IP")
-#    pq.set_left_operators([["l1"], ["l2"]])
-#    pq.set_right_operators([["a(i)"]])
-#    pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
-#    pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
-#    pq.simplify()
-#    terms_r1 = pq.fully_contracted_strings()
-#    terms_r1 = remove_e0_eom(terms_r1)
-#
-#    # Get the L2 contractions in pdaggerq format
-#    pq.clear()
-#    pq.set_left_operators_type("IP")
-#    pq.set_right_operators([["a*(a)", "a(i)", "a(j)"]])
-#    pq.set_left_operators([["l1"], ["l2"]])
-#    pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
-#    pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
-#    pq.simplify()
-#    terms_r2 = pq.fully_contracted_strings()
-#    terms_r2 = remove_e0_eom(terms_r2)
-#
-#    # Get the L amplitudes in albert format
-#    terms = [terms_r1, terms_r2]
-#    expr = []
-#    output = []
-#    returns = []
-#    for n in range(2):
-#        for index_spins in get_amplitude_spins(n + 1, spin, which="ip"):
-#            indices = default_indices["v"][: n] + default_indices["o"][: n + 1]
-#            expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins)
-#            expr_n = spin_integrate(expr_n, spin)
-#            output_n = get_t_amplitude_outputs(expr_n, f"l{n+1}new", indices=indices)
-#            returns_n = (Tensor(*tuple(Index(i, index_spins[i]) for i in indices), name=f"l{n+1}new"),)
-#            expr.extend(expr_n)
-#            output.extend(output_n)
-#            returns.extend(returns_n)
-#
-#    (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="exhaust")
-#
-#    # Generate the L amplitude intermediates code
-#    for name, codegen in code_generators.items():
-#        if name == "einsum":
-#            kwargs = {
-#                "as_dict": True,
-#            }
-#        else:
-#            kwargs = {}
-#        codegen(
-#            "hbar_lmatvec_ip_intermediates",
-#            returns_nr,
-#            output_nr,
-#            expr_nr,
-#            **kwargs,
-#        )
-#
-#    # Generate the L amplitude code
-#    for name, codegen in code_generators.items():
-#        if name == "einsum":
-#            preamble = "ints = kwargs[\"ints\"]"
-#            if spin == "uhf":
-#                preamble += "\nl1new = Namespace()\nl2new = Namespace()"
-#            kwargs = {
-#                "preamble": preamble,
-#                "as_dict": True,
-#            }
-#        else:
-#            kwargs = {}
-#        codegen(
-#            "hbar_lmatvec_ip",
-#            returns_r,
-#            output_r,
-#            expr_r,
-#            **kwargs,
-#        )
+with Stopwatch("L-IP-EOM"):
+    # Get the L1 contractions in pdaggerq format
+    pq.clear()
+    pq.set_left_operators_type("IP")
+    pq.set_left_operators([["l1"], ["l2"]])
+    pq.set_right_operators([["a(i)"]])
+    pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
+    pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
+    pq.simplify()
+    terms_r1 = pq.fully_contracted_strings()
+    terms_r1 = remove_e0_eom(terms_r1)
+
+    # Get the L2 contractions in pdaggerq format
+    pq.clear()
+    pq.set_left_operators_type("IP")
+    pq.set_right_operators([["a*(a)", "a(i)", "a(j)"]])
+    pq.set_left_operators([["l1"], ["l2"]])
+    pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
+    pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
+    pq.simplify()
+    terms_r2 = pq.fully_contracted_strings()
+    terms_r2 = remove_e0_eom(terms_r2)
+
+    # Get the L amplitudes in albert format
+    terms = [terms_r1, terms_r2]
+    expr = []
+    output = []
+    returns = []
+    for n in range(2):
+        for index_spins in get_amplitude_spins(n + 1, spin, which="ip"):
+            indices = default_indices["v"][: n] + default_indices["o"][: n + 1]
+            expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins)
+            expr_n = spin_integrate(expr_n, spin)
+            output_n = get_t_amplitude_outputs(expr_n, f"l{n+1}new", indices=indices)
+            returns_n = (Tensor(*tuple(Index(i, index_spins[i]) for i in indices), name=f"l{n+1}new"),)
+            expr.extend(expr_n)
+            output.extend(output_n)
+            returns.extend(returns_n)
+
+    (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="exhaust")
+
+    # Generate the L amplitude intermediates code
+    for name, codegen in code_generators.items():
+        if name == "einsum":
+            kwargs = {
+                "as_dict": True,
+            }
+        else:
+            kwargs = {}
+        codegen(
+            "hbar_lmatvec_ip_intermediates",
+            returns_nr,
+            output_nr,
+            expr_nr,
+            **kwargs,
+        )
+
+    # Generate the L amplitude code
+    for name, codegen in code_generators.items():
+        if name == "einsum":
+            preamble = "ints = kwargs[\"ints\"]"
+            if spin == "uhf":
+                preamble += "\nl1new = Namespace()\nl2new = Namespace()"
+            kwargs = {
+                "preamble": preamble,
+                "as_dict": True,
+            }
+        else:
+            kwargs = {}
+        codegen(
+            "hbar_lmatvec_ip",
+            returns_r,
+            output_r,
+            expr_r,
+            **kwargs,
+        )
+
+with Stopwatch("L-EA-EOM"):
+    # Get the L1 contractions in pdaggerq format
+    pq.clear()
+    pq.set_left_operators_type("EA")
+    pq.set_left_operators([["l1"], ["l2"]])
+    pq.set_right_operators([["a*(a)"]])
+    pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
+    pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
+    pq.simplify()
+    terms_r1 = pq.fully_contracted_strings()
+    terms_r1 = remove_e0_eom(terms_r1)
+
+    # Get the L2 contractions in pdaggerq format
+    pq.clear()
+    pq.set_left_operators_type("EA")
+    pq.set_right_operators([["a*(a)", "a*(b)", "a(i)"]])
+    pq.set_left_operators([["l1"], ["l2"]])
+    pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
+    pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
+    pq.simplify()
+    terms_r2 = pq.fully_contracted_strings()
+    terms_r2 = remove_e0_eom(terms_r2)
+
+    # Get the L amplitudes in albert format
+    terms = [terms_r1, terms_r2]
+    expr = []
+    output = []
+    returns = []
+    for n in range(2):
+        for index_spins in get_amplitude_spins(n + 1, spin, which="ea"):
+            indices = default_indices["o"][: n] + default_indices["v"][: n + 1]
+            expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins)
+            expr_n = spin_integrate(expr_n, spin)
+            output_n = get_t_amplitude_outputs(expr_n, f"l{n+1}new", indices=indices)
+            returns_n = (Tensor(*tuple(Index(i, index_spins[i]) for i in indices), name=f"l{n+1}new"),)
+            expr.extend(expr_n)
+            output.extend(output_n)
+            returns.extend(returns_n)
+
+    (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="exhaust")
+
+    # Generate the L amplitude intermediates code
+    for name, codegen in code_generators.items():
+        if name == "einsum":
+            kwargs = {
+                "as_dict": True,
+            }
+        else:
+            kwargs = {}
+        codegen(
+            "hbar_lmatvec_ea_intermediates",
+            returns_nr,
+            output_nr,
+            expr_nr,
+            **kwargs,
+        )
+
+    # Generate the L amplitude code
+    for name, codegen in code_generators.items():
+        if name == "einsum":
+            preamble = "ints = kwargs[\"ints\"]"
+            if spin == "uhf":
+                preamble += "\nl1new = Namespace()\nl2new = Namespace()"
+            kwargs = {
+                "preamble": preamble,
+                "as_dict": True,
+            }
+        else:
+            kwargs = {}
+        codegen(
+            "hbar_lmatvec_ea",
+            returns_r,
+            output_r,
+            expr_r,
+            **kwargs,
+        )
+
+if spin != "rhf":  # FIXME
+    with Stopwatch("L-EE-EOM"):
+        # Get the L1 contractions in pdaggerq format
+        pq.clear()
+        pq.set_left_operators_type("EE")
+        pq.set_left_operators([["l1"], ["l2"]])
+        pq.set_right_operators([["e1(a,i)"]])
+        pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
+        pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
+        pq.simplify()
+        terms_r1 = pq.fully_contracted_strings()
+        terms_r1 = remove_e0_eom(terms_r1)
+
+        # Get the L2 contractions in pdaggerq format
+        pq.clear()
+        pq.set_left_operators_type("EE")
+        pq.set_left_operators([["l1"], ["l2"]])
+        pq.set_right_operators([["e2(a,b,j,i)"]])
+        pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
+        pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
+        pq.simplify()
+        terms_r2 = pq.fully_contracted_strings()
+        terms_r2 = remove_e0_eom(terms_r2)
+
+        # Get the L amplitudes in albert format
+        terms = [terms_r1, terms_r2]
+        expr = []
+        output = []
+        returns = []
+        for n in range(2):
+            for index_spins in get_amplitude_spins(n + 1, spin, which="ee"):
+                indices = default_indices["v"][: n + 1] + default_indices["o"][: n + 1]
+                expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins)
+                expr_n = spin_integrate(expr_n, spin)
+                output_n = get_t_amplitude_outputs(expr_n, f"l{n+1}new", indices=indices)
+                returns_n = (Tensor(*tuple(Index(i, index_spins[i]) for i in indices), name=f"l{n+1}new"),)
+                expr.extend(expr_n)
+                output.extend(output_n)
+                returns.extend(returns_n)
+
+        (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="trav")
+
+        # Generate the L amplitude intermediates code
+        for name, codegen in code_generators.items():
+            if name == "einsum":
+                kwargs = {
+                    "as_dict": True,
+                }
+            else:
+                kwargs = {}
+            codegen(
+                "hbar_lmatvec_ee_intermediates",
+                returns_nr,
+                output_nr,
+                expr_nr,
+                **kwargs,
+            )
+
+        # Generate the L amplitude code
+        for name, codegen in code_generators.items():
+            if name == "einsum":
+                preamble = "ints = kwargs[\"ints\"]"
+                if spin == "uhf":
+                    preamble += "\nl1new = Namespace()\nl2new = Namespace()"
+                kwargs = {
+                    "preamble": preamble,
+                    "postamble": "l2new.baba = l2new.abab.transpose(1, 0, 3, 2)" if spin == "uhf" else None,  # FIXME
+                    "as_dict": True,
+                }
+            else:
+                kwargs = {}
+            codegen(
+                "hbar_lmatvec_ee",
+                returns_r,
+                output_r,
+                expr_r,
+                **kwargs,
+            )
 
 for codegen in code_generators.values():
     codegen.postamble()
