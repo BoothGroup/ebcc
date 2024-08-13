@@ -380,7 +380,7 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
 
     def test_eom_ee_left(self):
         e1 = self.ccsd.ee_eom(nroots=5, left=True).kernel()
-        e2, v2 = self.ccsd_ref.eeccsd(nroots=5, left=True)
+        e2, v2 = self.ccsd_ref.eeccsd(nroots=5)  # No left EE-EOM in PySCF
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
     def test_rdm_energy(self):
