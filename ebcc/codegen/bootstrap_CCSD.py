@@ -543,7 +543,7 @@ with Stopwatch("L-IP-EOM"):
     # Get the L2 contractions in pdaggerq format
     pq.clear()
     pq.set_left_operators_type("IP")
-    pq.set_right_operators([["a*(a)", "a(i)", "a(j)"]])
+    pq.set_right_operators([["a*(a)", "a(j)", "a(i)"]])
     pq.set_left_operators([["l1"], ["l2"]])
     pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
     pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
