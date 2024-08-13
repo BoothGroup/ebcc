@@ -387,7 +387,7 @@ class BaseIP_EOM(BaseEOM):
             Resulting vector.
         """
         if not ints:
-            ints = self.matvec_intermediates(eris=eris)
+            ints = self.matvec_intermediates(eris=eris, left=left)
         amplitudes = self.vector_to_amplitudes(vector)
         func, kwargs = self.ebcc._load_function(
             f"hbar_{'l' if left else ''}matvec_ip",
@@ -448,7 +448,7 @@ class BaseEA_EOM(BaseEOM):
             Resulting vector.
         """
         if not ints:
-            ints = self.matvec_intermediates(eris=eris)
+            ints = self.matvec_intermediates(eris=eris, left=left)
         amplitudes = self.vector_to_amplitudes(vector)
         func, kwargs = self.ebcc._load_function(
             f"hbar_{'l' if left else ''}matvec_ea",
@@ -509,7 +509,7 @@ class BaseEE_EOM(BaseEOM):
             Resulting vector.
         """
         if not ints:
-            ints = self.matvec_intermediates(eris=eris)
+            ints = self.matvec_intermediates(eris=eris, left=left)
         amplitudes = self.vector_to_amplitudes(vector)
         func, kwargs = self.ebcc._load_function(
             f"hbar_{'l' if left else ''}matvec_ee",
