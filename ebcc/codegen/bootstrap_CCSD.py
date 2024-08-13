@@ -559,10 +559,10 @@ with Stopwatch("L-IP-EOM"):
     for n in range(2):
         for index_spins in get_amplitude_spins(n + 1, spin, which="ip"):
             indices = default_indices["v"][: n] + default_indices["o"][: n + 1]
-            expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins)
+            expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins, l_is_lambda=False)
             expr_n = spin_integrate(expr_n, spin)
-            output_n = get_t_amplitude_outputs(expr_n, f"l{n+1}new", indices=indices)
-            returns_n = (Tensor(*tuple(Index(i, index_spins[i]) for i in indices), name=f"l{n+1}new"),)
+            output_n = get_t_amplitude_outputs(expr_n, f"r{n+1}new", indices=indices)
+            returns_n = (Tensor(*tuple(Index(i, index_spins[i]) for i in indices), name=f"r{n+1}new"),)
             expr.extend(expr_n)
             output.extend(output_n)
             returns.extend(returns_n)
@@ -590,7 +590,7 @@ with Stopwatch("L-IP-EOM"):
         if name == "einsum":
             preamble = "ints = kwargs[\"ints\"]"
             if spin == "uhf":
-                preamble += "\nl1new = Namespace()\nl2new = Namespace()"
+                preamble += "\nr1new = Namespace()\nr2new = Namespace()"
             kwargs = {
                 "preamble": preamble,
                 "as_dict": True,
@@ -636,10 +636,10 @@ with Stopwatch("L-EA-EOM"):
     for n in range(2):
         for index_spins in get_amplitude_spins(n + 1, spin, which="ea"):
             indices = default_indices["o"][: n] + default_indices["v"][: n + 1]
-            expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins)
+            expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins, l_is_lambda=False)
             expr_n = spin_integrate(expr_n, spin)
-            output_n = get_t_amplitude_outputs(expr_n, f"l{n+1}new", indices=indices)
-            returns_n = (Tensor(*tuple(Index(i, index_spins[i]) for i in indices), name=f"l{n+1}new"),)
+            output_n = get_t_amplitude_outputs(expr_n, f"r{n+1}new", indices=indices)
+            returns_n = (Tensor(*tuple(Index(i, index_spins[i]) for i in indices), name=f"r{n+1}new"),)
             expr.extend(expr_n)
             output.extend(output_n)
             returns.extend(returns_n)
@@ -667,7 +667,7 @@ with Stopwatch("L-EA-EOM"):
         if name == "einsum":
             preamble = "ints = kwargs[\"ints\"]"
             if spin == "uhf":
-                preamble += "\nl1new = Namespace()\nl2new = Namespace()"
+                preamble += "\nr1new = Namespace()\nr2new = Namespace()"
             kwargs = {
                 "preamble": preamble,
                 "as_dict": True,
@@ -714,10 +714,10 @@ if spin != "rhf":  # FIXME
         for n in range(2):
             for index_spins in get_amplitude_spins(n + 1, spin, which="ee"):
                 indices = default_indices["v"][: n + 1] + default_indices["o"][: n + 1]
-                expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins)
+                expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins, l_is_lambda=False)
                 expr_n = spin_integrate(expr_n, spin)
-                output_n = get_t_amplitude_outputs(expr_n, f"l{n+1}new", indices=indices)
-                returns_n = (Tensor(*tuple(Index(i, index_spins[i]) for i in indices), name=f"l{n+1}new"),)
+                output_n = get_t_amplitude_outputs(expr_n, f"r{n+1}new", indices=indices)
+                returns_n = (Tensor(*tuple(Index(i, index_spins[i]) for i in indices), name=f"r{n+1}new"),)
                 expr.extend(expr_n)
                 output.extend(output_n)
                 returns.extend(returns_n)
@@ -745,10 +745,10 @@ if spin != "rhf":  # FIXME
             if name == "einsum":
                 preamble = "ints = kwargs[\"ints\"]"
                 if spin == "uhf":
-                    preamble += "\nl1new = Namespace()\nl2new = Namespace()"
+                    preamble += "\nr1new = Namespace()\nr2new = Namespace()"
                 kwargs = {
                     "preamble": preamble,
-                    "postamble": "l2new.baba = l2new.abab.transpose(1, 0, 3, 2)" if spin == "uhf" else None,  # FIXME
+                    "postamble": "r2new.baba = r2new.abab.transpose(1, 0, 3, 2)" if spin == "uhf" else None,  # FIXME
                     "as_dict": True,
                 }
             else:
