@@ -291,7 +291,7 @@ def remove_e0_eom(terms):
     return new_terms
 
 
-def optimise(outputs, exprs, spin, strategy="greedy", sizes=None):
+def optimise(outputs, exprs, spin, strategy="greedy", sizes=None, **kwargs):
     """Optimise the expressions."""
 
     if sizes is None:
@@ -310,6 +310,7 @@ def optimise(outputs, exprs, spin, strategy="greedy", sizes=None):
         index_groups=index_groups,
         sizes=index_sizes,
         strategy=strategy,
+        **kwargs,
     )
 
     return zip(*opt)
@@ -728,6 +729,8 @@ def optimise_eom(returns, output, expr, spin, strategy="exhaust"):
 
 def optimise_trans_dm(output, expr, spin, strategy="exhaust"):
     """Optimise TDM expressions into intermediates and final output."""
+    #raise NotImplementedError("broken")
+
     # Split the expressions into those that depend on R0 or L0 and those that don't
     output_r0 = []
     expr_r0 = []
@@ -768,11 +771,11 @@ def optimise_trans_dm(output, expr, spin, strategy="exhaust"):
 
     # Optimise the expressions
     if output_r0:
-        output_r0, expr_r0 = optimise(output_r0, expr_r0, spin, strategy=strategy)
+        output_r0, expr_r0 = optimise(output_r0, expr_r0, spin, strategy=strategy, interm_fmt="tmp_r0_{}")
     if output_l0:
-        output_l0, expr_l0 = optimise(output_l0, expr_l0, spin, strategy=strategy)
+        output_l0, expr_l0 = optimise(output_l0, expr_l0, spin, strategy=strategy, interm_fmt="tmp_l0_{}")
     if output_r0_l0:
-        output_r0_l0, expr_r0_l0 = optimise(output_r0_l0, expr_r0_l0, spin, strategy=strategy)
+        output_r0_l0, expr_r0_l0 = optimise(output_r0_l0, expr_r0_l0, spin, strategy=strategy, interm_fmt="tmp_r0_l0_{}")
     if output_rest:
         output_rest, expr_rest = optimise(output_rest, expr_rest, spin, strategy=strategy)
 
