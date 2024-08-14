@@ -10,8 +10,9 @@ from albert.codegen.base import sort_exprs
 from albert.optim._gristmill import optimise as _optimise
 from albert.qc.spin import generalised_to_restricted, generalised_to_unrestricted
 from albert.qc.index import Index
-from albert.qc.rhf import ERI as RERI, CDERI as RCDERI
-from albert.qc.uhf import ERI as UERI, CDERI as UCDERI
+from albert.qc.rhf import ERI as RERI, CDERI as RCDERI, R0 as RR0, L0 as RL0
+from albert.qc.uhf import ERI as UERI, CDERI as UCDERI, R0 as UR0, L0 as UL0
+from albert.qc.ghf import R0 as GR0, L0 as GL0
 from albert.qc._pdaggerq import import_from_pdaggerq
 from albert.tensor import Tensor
 from albert.symmetry import Symmetry, Permutation
@@ -40,6 +41,7 @@ ov_1e = ["oo", "ov", "vo", "vv"]
 
 
 default_indices = {
+    "1": ["1"],
     "o": OCC_INDICES,
     "v": VIRT_INDICES,
     "O": [i.upper() for i in OCC_INDICES],
@@ -54,6 +56,7 @@ default_sectors = {i: k for k, v in default_indices.items() for i in v}
 
 
 default_sizes = {
+    "1": 1,
     "o": 200,
     "v": 1000,
     "O": 8,
@@ -721,3 +724,81 @@ def optimise_eom(returns, output, expr, spin, strategy="exhaust"):
     expr_r = new_expr_r
 
     return (returns_nr, output_nr, expr_nr), (returns, output_r, expr_r)
+
+
+def optimise_trans_dm(output, expr, spin, strategy="exhaust"):
+    """Optimise TDM expressions into intermediates and final output."""
+    # Split the expressions into those that depend on R0 or L0 and those that don't
+    output_r0 = []
+    expr_r0 = []
+    output_l0 = []
+    expr_l0 = []
+    output_r0_l0 = []
+    expr_r0_l0 = []
+    output_rest = []
+    expr_rest = []
+    for o, e in zip(output, expr):
+        for args in e.nested_view():
+            depends_on_r0 = False
+            depends_on_l0 = False
+            mul_args = []
+            for i, a in enumerate(args):
+                if isinstance(a, Tensor) and a.name.startswith("r0"):
+                    depends_on_r0 = True
+                if isinstance(a, Tensor) and a.name.startswith("l0"):
+                    depends_on_l0 = True
+                mul_args.append(a)
+            if depends_on_r0 and depends_on_l0:
+                output_r0_l0.append(o)
+                expr_r0_l0.append(Mul(*mul_args))
+            elif depends_on_r0:
+                output_r0.append(o)
+                expr_r0.append(Mul(*mul_args))
+            elif depends_on_l0:
+                output_l0.append(o)
+                expr_l0.append(Mul(*mul_args))
+            else:
+                output_rest.append(o)
+                expr_rest.append(Mul(*mul_args))
+
+    # Store the original outputs
+    original_output_r0 = set(o.name for o in output_r0)
+    original_output_l0 = set(o.name for o in output_l0)
+    original_output_r0_l0 = set(o.name for o in output_r0_l0)
+
+    # Optimise the expressions
+    if output_r0:
+        output_r0, expr_r0 = optimise(output_r0, expr_r0, spin, strategy=strategy)
+    if output_l0:
+        output_l0, expr_l0 = optimise(output_l0, expr_l0, spin, strategy=strategy)
+    if output_r0_l0:
+        output_r0_l0, expr_r0_l0 = optimise(output_r0_l0, expr_r0_l0, spin, strategy=strategy)
+    if output_rest:
+        output_rest, expr_rest = optimise(output_rest, expr_rest, spin, strategy=strategy)
+
+    # Add the factors back in
+    new_expr_r0 = []
+    for i, (o, e) in enumerate(zip(output_r0, expr_r0)):
+        if o.name in original_output_r0:
+            e = e * {"rhf": RR0, "uhf": UR0, "ghf": GR0}[spin][tuple()]
+        new_expr_r0.append(e)
+    expr_r0 = new_expr_r0
+    new_expr_l0 = []
+    for i, (o, e) in enumerate(zip(output_l0, expr_l0)):
+        if o.name in original_output_l0:
+            e = e * {"rhf": RL0, "uhf": UL0, "ghf": GL0}[spin][tuple()]
+        new_expr_l0.append(e)
+    expr_l0 = new_expr_l0
+    new_expr_r0_l0 = []
+    for i, (o, e) in enumerate(zip(output_r0_l0, expr_r0_l0)):
+        if o.name in original_output_r0_l0:
+            e = e * {"rhf": RR0, "uhf": UR0, "ghf": GR0}[spin][tuple()]
+            e = e * {"rhf": RL0, "uhf": UL0, "ghf": GL0}[spin][tuple()]
+        new_expr_r0_l0.append(e)
+    expr_r0_l0 = new_expr_r0_l0
+
+    # Combine the results
+    output = tuple(output_rest) + tuple(output_r0) + tuple(output_l0) + tuple(output_r0_l0)
+    expr = tuple(expr_rest) + tuple(expr_r0) + tuple(expr_l0) + tuple(expr_r0_l0)
+
+    return output, expr
