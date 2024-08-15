@@ -805,9 +805,9 @@ with Stopwatch("1TDM (GS -> EE)"):
             expr.extend(expr_n)
             output.extend(output_n)
             returns.extend(returns_n)
-    output, expr = optimise_trans_dm(output, expr, spin, strategy="exhaust")
-    output = output_r0 + output
-    expr = expr_r0 + expr
+    #output, expr = optimise_trans_dm(output, expr, spin, strategy="exhaust")
+    output = tuple(output_r0) + tuple(output)
+    expr = tuple(expr_r0) + tuple(expr)
 
     # Generate the 1TDM code
     for name, codegen in code_generators.items():
