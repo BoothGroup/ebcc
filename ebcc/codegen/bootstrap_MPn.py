@@ -179,7 +179,7 @@ if order == 2:
             ("vvvv", "abcd"),
         ]:
             if (sectors, indices) not in terms:
-                continue
+                terms[sectors, indices] = []
             for index_spins in get_density_spins(2, spin, indices):
                 expr_n = import_from_pdaggerq(terms[sectors, indices], index_spins=index_spins)
                 if not (isinstance(expr_n, int) and expr_n == 0):
@@ -198,12 +198,12 @@ if order == 2:
                     nm = name.format(n=n)
                     postamble = ""
                     if spin != "uhf":
-                        for occ in [k[0] for k, v in terms.items() if v]:
+                        for occ in [k[0] for k, v in terms.items() if not v]:
                             shape = ", ".join(f"t2.shape[{'0' if o == 'o' else '-1'}]" for o in occ)
                             postamble += f"{nm}.{occ} = np.zeros(({shape}))\n"
                     else:
                         for s1, s2 in [("a", "a"), ("a", "b"), ("b", "b")]:
-                            for occ in [k[0] for k, v in terms.items() if v]:
+                            for occ in [k[0] for k, v in terms.items() if not v]:
                                 shape = ", ".join(f"t2.{s}{s}{s}{s}.shape[{'0' if o == 'o' else '-1'}]" for o, s in zip(occ, s1+s2+s1+s2))
                                 postamble += f"{nm}.{s1}{s2}{s1}{s2}.{occ} = np.zeros(({shape}))\n"
                     return postamble + get_density_einsum_postamble(n, spin)
