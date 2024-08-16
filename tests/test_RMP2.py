@@ -68,6 +68,16 @@ class RMP2_PySCF_Tests(unittest.TestCase):
         e2, v2 = adc2.ea_adc(nroots=5)[:2]
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    def test_rdm1(self):
+        a = self.mp2.make_rdm1_f()
+        b = self.mp2_ref.make_rdm1()
+        np.testing.assert_allclose(a, b, 6, verbose=True)
+
+    def test_rdm2(self):
+        a = self.mp2.make_rdm2_f()
+        b = self.mp2_ref.make_rdm2()
+        np.testing.assert_allclose(a, b, 6, verbose=True)
+
 
 @pytest.mark.reference
 class RMP2_PySCF_Frozen_Tests(unittest.TestCase):

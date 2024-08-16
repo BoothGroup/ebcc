@@ -52,6 +52,16 @@ class GMP2_PySCF_Tests(unittest.TestCase):
         b = self.mp2.e_tot
         self.assertAlmostEqual(a, b, 7)
 
+    def test_rdm1(self):
+        a = self.mp2.make_rdm1_f()
+        b = self.mp2_ref.make_rdm1()
+        np.testing.assert_allclose(a, b, rtol=1e10, atol=1e-8, verbose=True)
+
+    def test_rdm2(self):
+        a = self.mp2.make_rdm2_f()
+        b = self.mp2_ref.make_rdm2()
+        np.testing.assert_allclose(a, b, rtol=1e10, atol=1e-8, verbose=True)
+
 
 @pytest.mark.reference
 class GMP2_PySCF_Frozen_Tests(unittest.TestCase):
