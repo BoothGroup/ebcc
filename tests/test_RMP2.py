@@ -61,7 +61,7 @@ class RMP2_PySCF_Tests(unittest.TestCase):
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
     def test_eom_ea(self):
-        eom = self.mp2.ea_eom(nroots=5, e_tol=1e-12)
+        eom = self.mp2.ea_eom(nroots=5, e_tol=1e-10)
         e1 = eom.kernel()
         adc2 = adc.ADC(self.mf)
         adc2.kernel_gs()
