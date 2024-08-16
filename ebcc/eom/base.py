@@ -209,8 +209,7 @@ class BaseEOM(ABC):
                 w: NDArray[float], v: NDArray[float], nroots: int, env: dict[str, Any]
             ) -> tuple[NDArray[float], NDArray[float], int]:
                 """Pick the eigenvalues."""
-                x0 = lib.linalg_helper._gen_x0(env["v"], env["xs"])
-                x0 = np.asarray(x0)
+                x0 = np.asarray(lib.linalg_helper._gen_x0(env["v"], env["xs"]))
                 s = np.dot(guesses_array.conj(), x0.T)
                 s = util.einsum("pi,qi->i", s.conj(), s)
                 arg = np.argsort(-s)[:nroots]
@@ -223,10 +222,7 @@ class BaseEOM(ABC):
             ) -> tuple[NDArray[float], NDArray[float], int]:
                 """Pick the eigenvalues."""
                 real_idx = np.where(abs(w.imag) < 1e-3)[0]
-                w, v, idx = lib.linalg_helper._eigs_cmplx2real(w, v, real_idx, real_system)
-                mask = np.argsort(np.abs(w))
-                w, v = w[mask], v[:, mask]
-                return w, v, 0
+                return lib.linalg_helper._eigs_cmplx2real(w, v, real_idx, real_system)
 
         return pick
 
