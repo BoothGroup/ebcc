@@ -359,81 +359,82 @@ if order == 2:
                 **kwargs,
             )
 
-    with Stopwatch("EE-EOM"):
-        # Get the R1 contractions in pdaggerq format
-        terms_r1 = [
-            ["-1.0", "f(j,i)", "r1(a,j)"],
-            ["+1.0", "f(a,b)", "r1(b,i)"],
-            ["+1.0", "<j,a||b,i>", "r1(b,j)"],
-            ["-0.5", "<k,j||b,i>", "r2(b,a,k,j)"],
-            ["-0.5", "<j,a||b,c>", "r2(b,c,i,j)"],
-            ["-0.5", "<k,j||b,c>", "r1(a,k)", "t2(b,c,i,j)"],
-            ["-0.5", "<k,j||b,c>", "r1(c,i)", "t2(b,a,k,j)"],
-            ["+1.0", "<k,j||b,c>", "r1(c,k)", "t2(b,a,i,j)"],
-        ]
+    if spin != "rhf":  # FIXME
+        with Stopwatch("EE-EOM"):
+            # Get the R1 contractions in pdaggerq format
+            terms_r1 = [
+                ["-1.0", "f(j,i)", "r1(a,j)"],
+                ["+1.0", "f(a,b)", "r1(b,i)"],
+                ["+1.0", "<j,a||b,i>", "r1(b,j)"],
+                ["-0.5", "<k,j||b,i>", "r2(b,a,k,j)"],
+                ["-0.5", "<j,a||b,c>", "r2(b,c,i,j)"],
+                ["-0.5", "<k,j||b,c>", "r1(a,k)", "t2(b,c,i,j)"],
+                ["-0.5", "<k,j||b,c>", "r1(c,i)", "t2(b,a,k,j)"],
+                ["+1.0", "<k,j||b,c>", "r1(c,k)", "t2(b,a,i,j)"],
+            ]
 
-        # Get the R2 contractions in pdaggerq format
-        terms_r2 = [
-            ["-1.0", "P(i,j)", "f(k,j)", "r2(a,b,i,k)"],
-            ["+1.0", "P(a,b)", "f(a,c)", "r2(c,b,i,j)"],
-            ["+1.0", "P(a,b)", "<k,a||i,j>", "r1(b,k)"],
-            ["+1.0", "P(i,j)", "<a,b||c,j>", "r1(c,i)"],
-        ]
+            # Get the R2 contractions in pdaggerq format
+            terms_r2 = [
+                ["-1.0", "P(i,j)", "f(k,j)", "r2(a,b,i,k)"],
+                ["+1.0", "P(a,b)", "f(a,c)", "r2(c,b,i,j)"],
+                ["+1.0", "P(a,b)", "<k,a||i,j>", "r1(b,k)"],
+                ["+1.0", "P(i,j)", "<a,b||c,j>", "r1(c,i)"],
+            ]
 
-        # Get the R amplitudes in albert format
-        terms = [terms_r1, terms_r2]
-        expr = []
-        output = []
-        returns = []
-        for n in range(2):
-            for index_spins in get_amplitude_spins(n + 1, spin, which="ee"):
-                indices = default_indices["o"][: n + 1] + default_indices["v"][: n + 1]
-                expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins)
-                expr_n = spin_integrate(expr_n, spin)
-                output_n = get_t_amplitude_outputs(expr_n, f"r{n+1}new", indices=indices)
-                returns_n = (Tensor(*tuple(Index(i, index_spins[i]) for i in indices), name=f"r{n+1}new"),)
-                expr.extend(expr_n)
-                output.extend(output_n)
-                returns.extend(returns_n)
+            # Get the R amplitudes in albert format
+            terms = [terms_r1, terms_r2]
+            expr = []
+            output = []
+            returns = []
+            for n in range(2):
+                for index_spins in get_amplitude_spins(n + 1, spin, which="ee"):
+                    indices = default_indices["o"][: n + 1] + default_indices["v"][: n + 1]
+                    expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins)
+                    expr_n = spin_integrate(expr_n, spin)
+                    output_n = get_t_amplitude_outputs(expr_n, f"r{n+1}new", indices=indices)
+                    returns_n = (Tensor(*tuple(Index(i, index_spins[i]) for i in indices), name=f"r{n+1}new"),)
+                    expr.extend(expr_n)
+                    output.extend(output_n)
+                    returns.extend(returns_n)
 
-        (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="trav")
+            (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="trav")
 
-        # Generate the R amplitude intermediates code
-        for name, codegen in code_generators.items():
-            if name == "einsum":
-                kwargs = {
-                    "as_dict": True,
-                }
-            else:
-                kwargs = {}
-            codegen(
-                "hbar_matvec_ee_intermediates",
-                returns_nr,
-                output_nr,
-                expr_nr,
-                **kwargs,
-            )
+            # Generate the R amplitude intermediates code
+            for name, codegen in code_generators.items():
+                if name == "einsum":
+                    kwargs = {
+                        "as_dict": True,
+                    }
+                else:
+                    kwargs = {}
+                codegen(
+                    "hbar_matvec_ee_intermediates",
+                    returns_nr,
+                    output_nr,
+                    expr_nr,
+                    **kwargs,
+                )
 
-        # Generate the R amplitude code
-        for name, codegen in code_generators.items():
-            if name == "einsum":
-                preamble = "ints = kwargs[\"ints\"]"
-                if spin == "uhf":
-                    preamble += "\nr1new = Namespace()\nr2new = Namespace()"
-                kwargs = {
-                    "preamble": preamble,
-                    "postamble": "r2new.baba = r2new.abab.transpose(1, 0, 3, 2)" if spin == "uhf" else None,  # FIXME
-                    "as_dict": True,
-                }
-            else:
-                kwargs = {}
-            codegen(
-                "hbar_matvec_ee",
-                returns_r,
-                output_r,
-                expr_r,
-                **kwargs,
-            )
+            # Generate the R amplitude code
+            for name, codegen in code_generators.items():
+                if name == "einsum":
+                    preamble = "ints = kwargs[\"ints\"]"
+                    if spin == "uhf":
+                        preamble += "\nr1new = Namespace()\nr2new = Namespace()"
+                    kwargs = {
+                        "preamble": preamble,
+                        "postamble": "r2new.baba = r2new.abab.transpose(1, 0, 3, 2)" if spin == "uhf" else None,  # FIXME
+                        "as_dict": True,
+                    }
+                else:
+                    kwargs = {}
+                codegen(
+                    "hbar_matvec_ee",
+                    returns_r,
+                    output_r,
+                    expr_r,
+                    **kwargs,
+                )
 
 for codegen in code_generators.values():
     codegen.postamble()
