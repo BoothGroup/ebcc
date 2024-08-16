@@ -241,7 +241,7 @@ class Ansatz:
 
         # If it's MP we only ever need to initialise second-order
         # amplitudes
-        if method_type == "MP":
+        if method_type == "MP" and which in ("t", "l"):
             op = "D"
 
         # Determine the ranks
