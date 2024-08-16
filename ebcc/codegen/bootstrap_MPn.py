@@ -369,20 +369,20 @@ if order == 2:
             ["+0.25", "t2(c,d,j,k)", "<i,k||c,d>", "r1(a,j)"],  # ph-ph 2nd
             ["-0.50", "t2(a,c,i,k)", "<j,k||b,c>", "r1(b,j)"],  # ph-ph 2nd
             ["-0.50", "t2(b,c,j,k)", "<i,k||a,c>", "r1(b,j)"],  # ph-ph 2nd
-            ["+1.0", "d(a,c)", "<k,l||i,d>", "r2(c,d,k,l)"],  # ph-pphh 1st
-            ["-1.0", "d(a,d)", "<k,l||i,c>", "r2(c,d,k,l)"],  # ph-pphh 1st
-            ["-1.0", "d(i,k)", "<a,l||c,d>", "r2(c,d,k,l)"],  # ph-pphh 1st
-            ["+1.0", "d(i,l)", "<a,k||c,d>", "r2(c,d,k,l)"],  # ph-pphh 1st
+            ["+1.0", "<k,l||i,d>", "r2(a,d,k,l)"],  # ph-pphh 1st
+            ["-1.0", "<k,l||i,c>", "r2(c,a,k,l)"],  # ph-pphh 1st
+            ["-1.0", "<a,l||c,d>", "r2(c,d,i,l)"],  # ph-pphh 1st
+            ["+1.0", "<a,k||c,d>", "r2(c,d,k,i)"],  # ph-pphh 1st
         ]
 
         # Get the R2 contractions in pdaggerq format
         terms_r2 = [
             ["-1.0", "P(i,j)", "f(k,j)", "r2(a,b,i,k)"],  # pphh-pphh 0th
             ["+1.0", "P(a,b)", "f(a,c)", "r2(c,b,i,j)"],  # pphh-pphh 0th
-            ["+1.00", "d(a,c)", "<k,b||i,j>", "r1(c,k)"],  # pphh-ph 1st
-            ["-1.00", "d(b,c)", "<k,a||i,j>", "r1(c,k)"],  # pphh-ph 1st
-            ["-1.00", "d(i,k)", "<a,b||c,j>", "r1(c,k)"],  # pphh-ph 1st
-            ["+1.00", "d(j,k)", "<a,b||c,i>", "r1(c,k)"],  # pphh-ph 1st
+            ["+1.00", "<k,b||i,j>", "r1(a,k)"],  # pphh-ph 1st
+            ["-1.00", "<k,a||i,j>", "r1(b,k)"],  # pphh-ph 1st
+            ["-1.00", "<a,b||c,j>", "r1(c,i)"],  # pphh-ph 1st
+            ["+1.00", "<a,b||c,i>", "r1(c,j)"],  # pphh-ph 1st
         ]
 
         # Get the R amplitudes in albert format
