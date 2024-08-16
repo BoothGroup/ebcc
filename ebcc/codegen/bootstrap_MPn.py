@@ -360,29 +360,29 @@ if order == 2:
     with Stopwatch("EE-EOM"):
         # Get the R1 contractions in pdaggerq format
         terms_r1 = [
-            ["-1.0", "f(j,i)", "r1(a,j)"],  # ph-ph 0th
-            ["+1.0", "f(a,b)", "r1(b,i)"],  # ph-ph 0th
-            ["+1.00", "<i,j||a,b>", "r1(b,j)"],  # ph-ph 1st
+            ["-1.00", "f(j,i)", "r1(a,j)"],  # ph-ph 0th
+            ["+1.00", "f(a,b)", "r1(b,i)"],  # ph-ph 0th
+            ["-1.00", "<a,j||b,i>", "r1(b,j)"],  # ph-ph 1st
             ["+0.25", "t2(a,c,k,l)", "<k,l||b,c>", "r1(b,i)"],  # ph-ph 2nd
             ["+0.25", "t2(b,c,k,l)", "<k,l||a,c>", "r1(b,i)"],  # ph-ph 2nd
             ["+0.25", "t2(c,d,i,k)", "<j,k||c,d>", "r1(a,j)"],  # ph-ph 2nd
             ["+0.25", "t2(c,d,j,k)", "<i,k||c,d>", "r1(a,j)"],  # ph-ph 2nd
             ["-0.50", "t2(a,c,i,k)", "<j,k||b,c>", "r1(b,j)"],  # ph-ph 2nd
             ["-0.50", "t2(b,c,j,k)", "<i,k||a,c>", "r1(b,j)"],  # ph-ph 2nd
-            ["+1.0", "<k,l||i,d>", "r2(a,d,k,l)"],  # ph-pphh 1st
-            ["-1.0", "<k,l||i,c>", "r2(c,a,k,l)"],  # ph-pphh 1st
-            ["-1.0", "<a,l||c,d>", "r2(c,d,i,l)"],  # ph-pphh 1st
-            ["+1.0", "<a,k||c,d>", "r2(c,d,k,i)"],  # ph-pphh 1st
+            ["+1.00", "<k,l||i,d>", "r2(a,d,k,l)"],  # ph-pphh 1st
+            ["-1.00", "<k,l||i,c>", "r2(c,a,k,l)"],  # ph-pphh 1st
+            ["-1.00", "<a,l||c,d>", "r2(c,d,i,l)"],  # ph-pphh 1st
+            ["+1.00", "<a,k||c,d>", "r2(c,d,k,i)"],  # ph-pphh 1st
         ]
 
         # Get the R2 contractions in pdaggerq format
         terms_r2 = [
             ["-1.0", "P(i,j)", "f(k,j)", "r2(a,b,i,k)"],  # pphh-pphh 0th
             ["+1.0", "P(a,b)", "f(a,c)", "r2(c,b,i,j)"],  # pphh-pphh 0th
-            ["+1.00", "<k,b||i,j>", "r1(a,k)"],  # pphh-ph 1st
-            ["-1.00", "<k,a||i,j>", "r1(b,k)"],  # pphh-ph 1st
-            ["-1.00", "<a,b||c,j>", "r1(c,i)"],  # pphh-ph 1st
-            ["+1.00", "<a,b||c,i>", "r1(c,j)"],  # pphh-ph 1st
+            ["+1.0", "<k,b||i,j>", "r1(a,k)"],  # pphh-ph 1st
+            ["-1.0", "<k,a||i,j>", "r1(b,k)"],  # pphh-ph 1st
+            ["-1.0", "<a,b||c,j>", "r1(c,i)"],  # pphh-ph 1st
+            ["+1.0", "<a,b||c,i>", "r1(c,j)"],  # pphh-ph 1st
         ]
 
         # Get the R amplitudes in albert format
