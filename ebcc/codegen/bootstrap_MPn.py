@@ -153,7 +153,7 @@ if order == 2:
         terms = {
             ('oooo', 'ijkl'): [['+1.0', 'P(i,j)', 'd(i,k)', 'd(j,l)']],
             ('oovv', 'ijab'): [['+0.25', 't2(a,b,i,j)']],
-            ('vvoo', 'abij'): [['+0.25', 'l2(a,b,i,j)']],
+            ('vvoo', 'abij'): [['+0.25', 'l2(i,j,a,b)']],
         }
 
         # Get the 2RDM in albert format
