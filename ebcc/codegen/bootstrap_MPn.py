@@ -224,7 +224,8 @@ if order == 2:
         terms_r1 = [
             ["-1.0", "f(j,i)", "r1(j)"],
             ["+0.5", "<k,j||a,i>", "r2(a,k,j)"],
-            ["-0.5", "<k,j||a,b>", "r1(k)", "t2(a,b,i,j)"],
+            ["-0.25", "<k,j||a,b>", "t2(a,b,i,j)", "r1(k)"],
+            ["-0.25", "<i,j||a,b>", "t2(a,b,k,j)", "r1(k)"],
         ]
 
         # Get the R2 contractions in pdaggerq format
@@ -293,7 +294,8 @@ if order == 2:
         terms_r1 = [
             ["+1.0", "f(a,b)", "r1(b)"],
             ["-0.5", "<i,a||b,c>", "r2(b,c,i)"],
-            ["-0.5", "<j,i||b,c>", "r1(c)", "t2(b,a,j,i)"],
+            ["-0.25", "<j,i||b,c>", "t2(b,a,j,i)", "r1(c)"],
+            ["-0.25", "<j,i||b,a>", "t2(b,c,j,i)", "r1(c)"],
         ]
 
         # Get the R2 contractions in pdaggerq format
