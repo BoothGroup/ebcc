@@ -359,6 +359,33 @@ if order == 2:
 
     with Stopwatch("EE-EOM"):
         # Get the R1 contractions in pdaggerq format
+        pq.clear()
+        pq.set_right_operators_type("EE")
+        pq.set_left_operators([["e1(i,a)"]])
+        pq.set_right_operators([["r1"], ["r2"]])
+        pq.add_st_operator(1.0, ["f"], ["t2"])
+        pq.add_st_operator(1.0, ["v"], ["t2"])
+        pq.simplify()
+        terms_r1 = pq.fully_contracted_strings()
+        terms_r1 = remove_e0_eom(terms_r1)
+
+        # Get the R2 contractions in pdaggerq format
+        pq.clear()
+        pq.set_right_operators_type("EE")
+        pq.set_left_operators([["e2(i,j,b,a)"]])
+        pq.set_right_operators([["r1"], ["r2"]])
+        pq.add_st_operator(1.0, ["f"], ["t2"])
+        pq.add_st_operator(1.0, ["v"], ["t2"])
+        pq.simplify()
+        terms_r2 = pq.fully_contracted_strings()
+        terms_r2 = remove_e0_eom(terms_r2)
+
+        for terms in [terms_r1, terms_r2]:
+            for term in terms:
+                print(term)
+            print()
+
+        # Get the R1 contractions in pdaggerq format
         terms_r1 = [
             ["-1.00", "f(j,i)", "r1(a,j)"],  # ph-ph 0th
             ["+1.00", "f(a,b)", "r1(b,i)"],  # ph-ph 0th
@@ -384,6 +411,25 @@ if order == 2:
             ["-1.0", "<a,b||c,j>", "r1(c,i)"],  # pphh-ph 1st
             ["+1.0", "<a,b||c,i>", "r1(c,j)"],  # pphh-ph 1st
         ]
+
+        terms_r1 = [
+            ['-1.00000000000000', 'f(j,i)', 'r1(a,j)'],
+            ['+1.00000000000000', 'f(a,b)', 'r1(b,i)'],
+            ['+1.00000000000000', '<j,a||b,i>', 'r1(b,j)'],
+            ['-0.50000000000000', '<k,j||b,i>', 'r2(b,a,k,j)'],
+            ['-0.50000000000000', '<j,a||b,c>', 'r2(b,c,i,j)'],
+            ['-0.50000000000000', '<k,j||b,c>', 'r1(a,k)', 't2(b,c,i,j)'],
+            ['-0.50000000000000', '<k,j||b,c>', 'r1(c,i)', 't2(b,a,k,j)'],
+            ['+1.00000000000000', '<k,j||b,c>', 'r1(c,k)', 't2(b,a,i,j)'],
+        ]
+
+        terms_r2 = [
+            ['-1.00000000000000', 'P(i,j)', 'f(k,j)', 'r2(a,b,i,k)'],
+            ['+1.00000000000000', 'P(a,b)', 'f(a,c)', 'r2(c,b,i,j)'],
+            ['+1.00000000000000', 'P(a,b)', '<k,a||i,j>', 'r1(b,k)'],
+            ['+1.00000000000000', 'P(i,j)', '<a,b||c,j>', 'r1(c,i)'],
+        ]
+
 
         # Get the R amplitudes in albert format
         terms = [terms_r1, terms_r2]
