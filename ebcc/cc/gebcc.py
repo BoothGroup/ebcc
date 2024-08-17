@@ -513,7 +513,9 @@ class GEBCC(BaseEBCC):
         res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
 
         # Divide T amplitudes:
-        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type, which="l"):
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(
+            spin_type=self.spin_type, which="l"
+        ):
             res[name] /= self.energy_sum(key)
             if not perturbative:
                 res[name] += lambdas[name]
@@ -525,7 +527,9 @@ class GEBCC(BaseEBCC):
                 res[name] += lambdas[name]
 
         # Divide U amplitudes:
-        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type, which="l"):
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+            spin_type=self.spin_type, which="l"
+        ):
             if nf != 1:
                 raise util.ModelNotImplemented
             res[name] /= self.energy_sum(key)
@@ -754,13 +758,17 @@ class GEBCC(BaseEBCC):
         """
         vectors = []
 
-        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type, which="l"):
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(
+            spin_type=self.spin_type, which="l"
+        ):
             vectors.append(lambdas[name].ravel())
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="l"):
             vectors.append(lambdas[name].ravel())
 
-        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type, which="l"):
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+            spin_type=self.spin_type, which="l"
+        ):
             vectors.append(lambdas[name].ravel())
 
         return np.concatenate(vectors)
@@ -777,7 +785,9 @@ class GEBCC(BaseEBCC):
         lambdas: Namespace[SpinArrayType] = util.Namespace()
         i0 = 0
 
-        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type, which="l"):
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(
+            spin_type=self.spin_type, which="l"
+        ):
             shape = tuple(self.space.size(k) for k in key)
             size = np.prod(shape)
             lambdas[name] = vector[i0 : i0 + size].reshape(shape)
@@ -789,7 +799,9 @@ class GEBCC(BaseEBCC):
             lambdas[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
-        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type, which="l"):
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+            spin_type=self.spin_type, which="l"
+        ):
             shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
             size = np.prod(shape)
             lambdas[name] = vector[i0 : i0 + size].reshape(shape)

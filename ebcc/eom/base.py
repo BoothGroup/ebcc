@@ -222,7 +222,8 @@ class BaseEOM(ABC):
             ) -> tuple[NDArray[float], NDArray[float], int]:
                 """Pick the eigenvalues."""
                 real_idx = np.where(abs(w.imag) < 1e-3)[0]
-                return lib.linalg_helper._eigs_cmplx2real(w, v, real_idx, real_system)
+                w, v, idx = lib.linalg_helper._eigs_cmplx2real(w, v, real_idx, real_system)
+                return w, v, idx
 
         return pick
 

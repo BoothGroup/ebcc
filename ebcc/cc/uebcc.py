@@ -409,7 +409,9 @@ class UEBCC(BaseEBCC):
         res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
 
         # Divide T amplitudes:
-        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type, which="l"):
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(
+            spin_type=self.spin_type, which="l"
+        ):
             for comb in util.generate_spin_combinations(n, unique=True):
                 subscript, _ = util.combine_subscripts(key, comb)
                 tn = res[name][comb]
@@ -420,11 +422,13 @@ class UEBCC(BaseEBCC):
 
         # Divide S amplitudes:
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="l"):
-            res[lname] /= self.energy_sum(key, "_" * n)
-            res[lname] += lambdas[lname]
+            res[name] /= self.energy_sum(key, "_" * n)
+            res[name] += lambdas[name]
 
         # Divide U amplitudes:
-        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type, which="l"):
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+            spin_type=self.spin_type, which="l"
+        ):
             if nf != 1:
                 raise util.ModelNotImplemented
             tn = res[name].aa
@@ -693,7 +697,9 @@ class UEBCC(BaseEBCC):
         """
         vectors = []
 
-        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type, which="l"):
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(
+            spin_type=self.spin_type, which="l"
+        ):
             for spin in util.generate_spin_combinations(n, unique=True):
                 tn = lambdas[name][spin]
                 subscript, _ = util.combine_subscripts(key, spin)
@@ -702,7 +708,9 @@ class UEBCC(BaseEBCC):
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="l"):
             vectors.append(lambdas[name].ravel())
 
-        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type, which="l"):
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+            spin_type=self.spin_type, which="l"
+        ):
             if nf != 1:
                 raise util.ModelNotImplemented
             vectors.append(lambdas[name].aa.ravel())
@@ -725,7 +733,9 @@ class UEBCC(BaseEBCC):
             (o, s): self.space[i].size(o) for o in "ovOVia" for i, s in enumerate("ab")
         }
 
-        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type, which="l"):
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(
+            spin_type=self.spin_type, which="l"
+        ):
             lambdas[name] = util.Namespace()
             for spin in util.generate_spin_combinations(n, unique=True):
                 subscript, csizes = util.combine_subscripts(key, spin, sizes=sizes)
@@ -742,7 +752,9 @@ class UEBCC(BaseEBCC):
             lambdas[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
-        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type, which="l"):
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+            spin_type=self.spin_type, which="l"
+        ):
             if nf != 1:
                 raise util.ModelNotImplemented
             lambdas[name] = util.Namespace()

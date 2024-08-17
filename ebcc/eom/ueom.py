@@ -54,7 +54,9 @@ class IP_UEOM(UEOM, BaseIP_EOM):
         """
         parts: Namespace[SpinArrayType] = util.Namespace()
 
-        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type, which="ip"):
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(
+            spin_type=self.spin_type, which="ip"
+        ):
             spin_part: SpinArrayType = util.Namespace()
             for comb in util.generate_spin_combinations(n, excited=True):
                 spin_part[comb] = self.ebcc.energy_sum(key, comb)
@@ -76,7 +78,9 @@ class IP_UEOM(UEOM, BaseIP_EOM):
         """
         vectors = []
 
-        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type, which="ip"):
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(
+            spin_type=self.spin_type, which="ip"
+        ):
             for spin in util.generate_spin_combinations(n, excited=True, unique=True):
                 vn = amplitudes[name][spin]
                 subscript, _ = util.combine_subscripts(key, spin)
@@ -85,7 +89,9 @@ class IP_UEOM(UEOM, BaseIP_EOM):
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ip"):
             raise util.ModelNotImplemented
 
-        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type, which="ip"):
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+            spin_type=self.spin_type, which="ip"
+        ):
             raise util.ModelNotImplemented
 
         return np.concatenate(vectors)
@@ -105,7 +111,9 @@ class IP_UEOM(UEOM, BaseIP_EOM):
             (o, s): self.space[i].size(o) for o in "ovOVia" for i, s in enumerate("ab")
         }
 
-        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type, which="ip"):
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(
+            spin_type=self.spin_type, which="ip"
+        ):
             amp: SpinArrayType = util.Namespace()
             for spin in util.generate_spin_combinations(n, excited=True, unique=True):
                 subscript, csizes = util.combine_subscripts(key, spin, sizes=sizes)
@@ -124,7 +132,9 @@ class IP_UEOM(UEOM, BaseIP_EOM):
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ip"):
             raise util.ModelNotImplemented
 
-        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type, which="ip"):
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+            spin_type=self.spin_type, which="ip"
+        ):
             raise util.ModelNotImplemented
 
         assert i0 == len(vector)
@@ -160,7 +170,9 @@ class EA_UEOM(UEOM, BaseEA_EOM):
         """
         parts: Namespace[SpinArrayType] = util.Namespace()
 
-        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type, which="ea"):
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(
+            spin_type=self.spin_type, which="ea"
+        ):
             spin_part: SpinArrayType = util.Namespace()
             for comb in util.generate_spin_combinations(n, excited=True):
                 spin_part[comb] = -self.ebcc.energy_sum(key, comb)
@@ -182,7 +194,9 @@ class EA_UEOM(UEOM, BaseEA_EOM):
         """
         vectors = []
 
-        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type, which="ea"):
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(
+            spin_type=self.spin_type, which="ea"
+        ):
             for spin in util.generate_spin_combinations(n, excited=True, unique=True):
                 vn = amplitudes[name][spin]
                 subscript, _ = util.combine_subscripts(key, spin)
@@ -191,7 +205,9 @@ class EA_UEOM(UEOM, BaseEA_EOM):
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ea"):
             raise util.ModelNotImplemented
 
-        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type, which="ea"):
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+            spin_type=self.spin_type, which="ea"
+        ):
             raise util.ModelNotImplemented
 
         return np.concatenate(vectors)
@@ -211,7 +227,9 @@ class EA_UEOM(UEOM, BaseEA_EOM):
             (o, s): self.space[i].size(o) for o in "ovOVia" for i, s in enumerate("ab")
         }
 
-        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type, which="ea"):
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(
+            spin_type=self.spin_type, which="ea"
+        ):
             amp: SpinArrayType = util.Namespace()
             for spin in util.generate_spin_combinations(n, excited=True, unique=True):
                 subscript, csizes = util.combine_subscripts(key, spin, sizes=sizes)
@@ -230,7 +248,9 @@ class EA_UEOM(UEOM, BaseEA_EOM):
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ea"):
             raise util.ModelNotImplemented
 
-        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type, which="ea"):
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+            spin_type=self.spin_type, which="ea"
+        ):
             raise util.ModelNotImplemented
 
         assert i0 == len(vector)
@@ -266,7 +286,9 @@ class EE_UEOM(UEOM, BaseEE_EOM):
         """
         parts: Namespace[SpinArrayType] = util.Namespace()
 
-        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type, which="ee"):
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(
+            spin_type=self.spin_type, which="ee"
+        ):
             spin_part: SpinArrayType = util.Namespace()
             for comb in util.generate_spin_combinations(n):
                 spin_part[comb] = self.ebcc.energy_sum(key, comb)
@@ -288,7 +310,9 @@ class EE_UEOM(UEOM, BaseEE_EOM):
         """
         vectors = []
 
-        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type, which="ee"):
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(
+            spin_type=self.spin_type, which="ee"
+        ):
             for spin in util.generate_spin_combinations(n):
                 vn = amplitudes[name][spin]
                 subscript, _ = util.combine_subscripts(key, spin)
@@ -297,7 +321,9 @@ class EE_UEOM(UEOM, BaseEE_EOM):
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ee"):
             raise util.ModelNotImplemented
 
-        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type, which="ee"):
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+            spin_type=self.spin_type, which="ee"
+        ):
             raise util.ModelNotImplemented
 
         return np.concatenate(vectors)
@@ -317,7 +343,9 @@ class EE_UEOM(UEOM, BaseEE_EOM):
             (o, s): self.space[i].size(o) for o in "ovOVia" for i, s in enumerate("ab")
         }
 
-        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type, which="ee"):
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(
+            spin_type=self.spin_type, which="ee"
+        ):
             amp: SpinArrayType = util.Namespace()
             for spin in util.generate_spin_combinations(n):
                 subscript, csizes = util.combine_subscripts(key, spin, sizes=sizes)
@@ -336,7 +364,9 @@ class EE_UEOM(UEOM, BaseEE_EOM):
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ee"):
             raise util.ModelNotImplemented
 
-        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type, which="ee"):
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+            spin_type=self.spin_type, which="ee"
+        ):
             raise util.ModelNotImplemented
 
         assert i0 == len(vector)

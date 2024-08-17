@@ -9,7 +9,7 @@ from ebcc import METHOD_TYPES, util
 
 if TYPE_CHECKING:
     from types import ModuleType
-    from typing import Optional, Literal
+    from typing import Literal, Optional
 
 named_ansatzes = {
     "MP2": ("MP2", "", 0, 0),
@@ -330,7 +330,9 @@ class Ansatz:
         def _adapt_key(key: str, fermion_rank: int, boson_rank: int) -> str:
             """Adapt the key to the `which` argument."""
             if which in ("ip", "ea", "ee"):
-                raise util.ModelNotImplemented("Cluster ranks for coupling space not implemented for %s" % which)
+                raise util.ModelNotImplemented(
+                    "Cluster ranks for coupling space not implemented for %s" % which
+                )
             if which == "l":
                 nf = fermion_rank
                 nb = boson_rank
@@ -343,7 +345,11 @@ class Ansatz:
         for fermion_rank in range(1, self.fermion_coupling_rank + 1):
             for boson_rank in range(1, self.boson_coupling_rank + 1):
                 name = f"{symbol}{fermion_rank}{boson_rank}"
-                key = _adapt_key("b" * boson_rank + "o" * fermion_rank + "v" * fermion_rank)
+                key = _adapt_key(
+                    "b" * boson_rank + "o" * fermion_rank + "v" * fermion_rank,
+                    fermion_rank,
+                    boson_rank,
+                )
                 ranks.append((name, key, fermion_rank, boson_rank))
 
         return ranks
