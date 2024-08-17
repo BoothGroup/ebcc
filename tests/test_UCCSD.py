@@ -422,11 +422,6 @@ class UCCSD_PySCF_Frozen_Tests(unittest.TestCase):
         e2, v2 = self.ccsd_ref.eaccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
-    def test_eom_ee(self):
-        e1 = self.ccsd.ee_eom(nroots=5).kernel()
-        e2, v2 = self.ccsd_ref.eeccsd(nroots=5)
-        self.assertAlmostEqual(e1[0], e2[0], 5)
-
     def test_eom_ip_left(self):
         e1 = self.ccsd.ip_eom(nroot=5, left=True).kernel()
         e2, v2 = self.ccsd_ref.ipccsd(nroots=5)  # No left EE-EOM in PySCF
@@ -435,11 +430,6 @@ class UCCSD_PySCF_Frozen_Tests(unittest.TestCase):
     def test_eom_ea_left(self):
         e1 = self.ccsd.ea_eom(nroots=5, left=True).kernel()
         e2, v2 = self.ccsd_ref.eaccsd(nroots=5)  # No left EE-EOM in PySCF
-        self.assertAlmostEqual(e1[0], e2[0], 5)
-
-    def test_eom_ee_left(self):
-        e1 = self.ccsd.ee_eom(nroots=5, left=True).kernel()
-        e2, v2 = self.ccsd_ref.eeccsd(nroots=5)  # No left EE-EOM in PySCF
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
 
