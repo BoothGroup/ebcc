@@ -290,7 +290,7 @@ class EE_UEOM(UEOM, BaseEE_EOM):
             spin_type=self.spin_type, which="ee"
         ):
             spin_part: SpinArrayType = util.Namespace()
-            for comb in util.generate_spin_combinations(n):
+            for comb in util.generate_spin_combinations(n, unique=True):
                 spin_part[comb] = self.ebcc.energy_sum(key, comb)
             parts[name] = spin_part
 
@@ -313,7 +313,7 @@ class EE_UEOM(UEOM, BaseEE_EOM):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(
             spin_type=self.spin_type, which="ee"
         ):
-            for spin in util.generate_spin_combinations(n):
+            for spin in util.generate_spin_combinations(n, unique=True):
                 vn = amplitudes[name][spin]
                 subscript, _ = util.combine_subscripts(key, spin)
                 vectors.append(util.compress_axes(subscript, vn).ravel())
@@ -347,7 +347,7 @@ class EE_UEOM(UEOM, BaseEE_EOM):
             spin_type=self.spin_type, which="ee"
         ):
             amp: SpinArrayType = util.Namespace()
-            for spin in util.generate_spin_combinations(n):
+            for spin in util.generate_spin_combinations(n, unique=True):
                 subscript, csizes = util.combine_subscripts(key, spin, sizes=sizes)
                 size = util.get_compressed_size(subscript, **csizes)
                 shape = tuple(self.space["ab".index(s)].size(k) for s, k in zip(spin, key))
