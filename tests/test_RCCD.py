@@ -182,6 +182,55 @@ class RCCD_PySCF_Frozen_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(a, b, 6, verbose=True)
 
 
+@pytest.mark.reference
+class RCCD_PySCF_Tests(unittest.TestCase):
+    """Test RCCD against the PySCF values.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        mol = gto.Mole()
+        mol.atom = "Li 0 0 0; H 0 0 1.4"
+        mol.basis = "cc-pvdz"
+        mol.verbose = 0
+        mol.build()
+
+        mf = scf.RHF(mol)
+        mf.conv_tol = 1e-12
+        mf.kernel()
+
+        ccd_ref = pyscf_ccd.CCD(mf)
+        ccd_ref.conv_tol = 1e-10
+        ccd_ref.conv_tol_normt = 1e-14
+        ccd_ref.max_cycle = 200
+        ccd_ref.kernel()
+        ccd_ref.solve_lambda()
+
+        ccd = REBCC(
+                mf,
+                ansatz="CCD",
+                log=NullLogger(),
+        )
+        ccd.options.e_tol = 1e-10
+        eris = ccd.get_eris()
+        ccd.kernel(eris=eris)
+        ccd.solve_lambda(eris=eris)
+
+        cls.mf, cls.ccd_ref, cls.ccd, cls.eris = mf, ccd_ref, ccd, eris
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.mf, cls.ccd_ref, cls.ccd
+
+    def test_eom_ip(self):
+        e1 = self.ccd.ip_eom(nroots=5).kernel()
+        self.assertAlmostEqual(e1[0], 0.2979663212884527)
+
+    def test_eom_ea(self):
+        e1 = self.ccd.ea_eom(nroots=5).kernel()
+        self.assertAlmostEqual(e1[0], 0.0008750978075545658)
+
+
 if __name__ == "__main__":
     print("Tests for RCCD")
     unittest.main()

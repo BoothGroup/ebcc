@@ -123,6 +123,18 @@ class GCCD_Tests(unittest.TestCase):
         rdm2 = util.einsum("ijkl,pi,qj,rk,sl->pqrs", self.ccd.make_rdm2_f(), c, c, c, c)
         self.assertAlmostEqual(lib.fp(rdm2), 0.21661134391721626)
 
+    def test_eom_ip(self):
+        e1 = self.ccd.ip_eom(nroots=5).kernel()
+        self.assertAlmostEqual(e1[0], 0.2979663212884527)
+
+    def test_eom_ea(self):
+        e1 = self.ccd.ea_eom(nroots=5).kernel()
+        self.assertAlmostEqual(e1[0], 0.0008756747431478695)
+
+    def test_eom_ee(self):
+        e1 = self.ccd.ee_eom(nroots=5).kernel()
+        self.assertAlmostEqual(e1[0], 0.12304746736972356)
+
 
 if __name__ == "__main__":
     print("Tests for GCCD")

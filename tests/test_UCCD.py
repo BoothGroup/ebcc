@@ -86,6 +86,49 @@ class UCCD_PySCF_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(a, b, 6, verbose=True)
 
 
+@pytest.mark.regression
+class UCCD_Tests(unittest.TestCase):
+    """Test UCCD against regression.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        mol = gto.Mole()
+        mol.atom = "Be 0 0 0; H 0 0 1.4"
+        mol.basis = "cc-pvdz"
+        mol.spin = 1
+        mol.verbose = 0
+        mol.build()
+
+        mf = scf.UHF(mol)
+        mf.conv_tol = 1e-12
+        mf.kernel()
+
+        ccd = UEBCC(
+                mf,
+                ansatz="CCD",
+                log=NullLogger(),
+        )
+        ccd.options.e_tol = 1e-10
+        eris = ccd.get_eris()
+        ccd.kernel(eris=eris)
+        ccd.solve_lambda(eris=eris)
+
+        cls.mf, cls.ccd, cls.eris = mf, ccd, eris
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.mf, cls.ccd, cls.eris
+
+    def test_eom_ip(self):
+        e1 = self.ccd.ip_eom(nroots=5).kernel()
+        self.assertAlmostEqual(e1[0], 0.3054216876546247)
+
+    def test_eom_ea(self):
+        e1 = self.ccd.ea_eom(nroots=5).kernel()
+        self.assertAlmostEqual(e1[0], 0.002154489320978545)
+
+
 if __name__ == "__main__":
     print("Tests for UCCD")
     unittest.main()
