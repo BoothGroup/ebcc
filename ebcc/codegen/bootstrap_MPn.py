@@ -151,7 +151,6 @@ if order == 2:
     with Stopwatch("2RDM"):
         # Get the 2RDM contractions in pdaggerq format
         terms = {
-            ("oooo", "ijkl"): [["+1.00", "P(i,j)", "d(i,k)", "d(j,l)"]],
             ("oovv", "ijab"): [["+0.25", "t2(a,b,i,j)"]],
             ("vvoo", "abij"): [["+0.25", "l2(i,j,a,b)"]],
         }
@@ -194,9 +193,90 @@ if order == 2:
         # Generate the 2RDM code
         for name, codegen in code_generators.items():
             if name == "einsum":
-                def get_postamble(n, spin, n)
+                def get_postamble(n, spin, name="rdm{n}"):
+                    nm = name.format(n=n)
+                    postamble = ""
+                    if spin != "uhf":
+                        for occ in [k[0] for k, v in terms.items() if not v]:
+                            shape = ", ".join(f"t2.shape[{'0' if o == 'o' else '-1'}]" for o in occ)
+                            postamble += f"{nm}.{occ} = np.zeros(({shape}))\n"
+                    else:
+                        for s1, s2 in [("a", "a"), ("a", "b"), ("b", "b")]:
+                            for occ in [k[0] for k, v in terms.items() if not v]:
+                                shape = ", ".join(f"t2.{s}{s}{s}{s}.shape[{'0' if o == 'o' else '-1'}]" for o, s in zip(occ, s1+s2+s1+s2))
+                                postamble += f"{nm}.{s1}{s2}{s1}{s2}.{occ} = np.zeros(({shape}))\n"
+
+                    # Pack
+                    postamble += get_density_einsum_postamble(n, spin)
+
+                    # Add the one-body terms -- adapted from pyscf
+                    # Can be done succinctly with tensor expressions but requires
+                    # a second Norb^4 tensor
+                    postamble += "\nrdm1 = make_rdm1_f(t2=t2, l2=l2)\n"
+                    if spin == "uhf":
+                        postamble += "nocc = Namespace(a=t2.aaaa.shape[0], b=t2.bbbb.shape[0])\n"
+                        postamble += "rdm1.aa[np.diag_indices(nocc.a)] -= 1\n"
+                        postamble += "rdm1.bb[np.diag_indices(nocc.b)] -= 1\n"
+                        postamble += "for i in range(nocc.a):\n"
+                        postamble += "    rdm2.aaaa[i, i, :, :] += rdm1.aa.T\n"
+                        postamble += "    rdm2.aaaa[:, :, i, i] += rdm1.aa.T\n"
+                        postamble += "    rdm2.aaaa[:, i, i, :] -= rdm1.aa.T\n"
+                        postamble += "    rdm2.aaaa[i, :, :, i] -= rdm1.aa\n"
+                        postamble += "    rdm2.aabb[i, i, :, :] += rdm1.bb.T\n"
+                        postamble += "for i in range(nocc.b):\n"
+                        postamble += "    rdm2.bbbb[i, i, :, :] += rdm1.bb.T\n"
+                        postamble += "    rdm2.bbbb[:, :, i, i] += rdm1.bb.T\n"
+                        postamble += "    rdm2.bbbb[:, i, i, :] -= rdm1.bb.T\n"
+                        postamble += "    rdm2.bbbb[i, :, :, i] -= rdm1.bb\n"
+                        postamble += "    rdm2.aabb[:, :, i, i] += rdm1.aa.T\n"
+                        postamble += "for i in range(nocc.a):\n"
+                        postamble += "    for j in range(nocc.a):\n"
+                        postamble += "        rdm2.aaaa[i, i, j, j] += 1\n"
+                        postamble += "        rdm2.aaaa[i, j, j, i] -= 1\n"
+                        postamble += "for i in range(nocc.b):\n"
+                        postamble += "    for j in range(nocc.b):\n"
+                        postamble += "        rdm2.bbbb[i, i, j, j] += 1\n"
+                        postamble += "        rdm2.bbbb[i, j, j, i] -= 1\n"
+                        postamble += "for i in range(nocc.a):\n"
+                        postamble += "    for j in range(nocc.b):\n"
+                        postamble += "        rdm2.aabb[i, i, j, j] += 1"
+                    elif spin == "ghf":
+                        postamble += "nocc = t2.shape[0]\n"
+                        postamble += "rdm1[np.diag_indices(nocc)] -= 1\n"
+                        postamble += "for i in range(nocc):\n"
+                        postamble += "    rdm2[i, i, :, :] += rdm1.T\n"
+                        postamble += "    rdm2[:, :, i, i] += rdm1.T\n"
+                        postamble += "    rdm2[:, i, i, :] -= rdm1.T\n"
+                        postamble += "    rdm2[i, :, :, i] -= rdm1\n"
+                        postamble += "for i in range(nocc):\n"
+                        postamble += "    for j in range(nocc):\n"
+                        postamble += "        rdm2[i, i, j, j] += 1\n"
+                        postamble += "        rdm2[i, j, j, i] -= 1"
+                    elif spin == "rhf":
+                        postamble += "nocc = t2.shape[0]\n"
+                        postamble += "rdm1[np.diag_indices(nocc)] -= 2\n"
+                        postamble += "for i in range(nocc):\n"
+                        postamble += "    rdm2[i, i, :, :] += rdm1.T * 2\n"
+                        postamble += "    rdm2[:, :, i, i] += rdm1.T * 2\n"
+                        postamble += "    rdm2[:, i, i, :] -= rdm1.T\n"
+                        postamble += "    rdm2[i, :, :, i] -= rdm1\n"
+                        postamble += "for i in range(nocc):\n"
+                        postamble += "    for j in range(nocc):\n"
+                        postamble += "        rdm2[i, i, j, j] += 4\n"
+                        postamble += "        rdm2[i, j, j, i] -= 2"
+
+                    return postamble
+
+                def get_preamble(n, spin, name="rdm{n}"):
+                    name = name.format(n=n)
+                    preamble = f"{name} = Namespace()"
+                    if spin == "uhf":
+                        for spins in itertools.combinations_with_replacement(["a", "b"], n):
+                            preamble += f"\n{name}.{''.join(spins+spins)} = Namespace()"
+                    return preamble
+
                 kwargs = {
-                    "preamble": get_density_einsum_preamble(2, spin),
+                    "preamble": get_preamble(2, spin),
                     "postamble": get_postamble(2, spin),
                 }
             codegen(
