@@ -308,7 +308,7 @@ class REBCC(BaseEBCC):
         ):
             if nf != 1:
                 raise util.ModelNotImplemented
-            res[name] /= self.energy_sum()
+            res[name] /= self.energy_sum(key)
             if not perturbative:
                 res[name] += lambdas[name]
 
