@@ -313,7 +313,19 @@ def optimise(outputs, exprs, spin, strategy="greedy", sizes=None, **kwargs):
         **kwargs,
     )
 
-    return zip(*opt)
+    # Add expressions with the same output -- gristmill avoids this sometimes
+    # if you set shallow intermediates to False
+    output_exprs = {}
+    for o, e in opt:
+        if o not in output_exprs:
+            output_exprs[o] = e
+        elif isinstance(output_exprs[o], Add):
+            output_exprs[o] = Add(*output_exprs[o].args, e)
+        else:
+            output_exprs[o] += e
+    outputs, exprs = zip(*output_exprs.items())
+
+    return outputs, exprs
 
 
 def get_t_amplitude_outputs(exprs, name, indices=None):

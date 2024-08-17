@@ -151,9 +151,9 @@ if order == 2:
     with Stopwatch("2RDM"):
         # Get the 2RDM contractions in pdaggerq format
         terms = {
-            ('oooo', 'ijkl'): [['+1.0', 'P(i,j)', 'd(i,k)', 'd(j,l)']],
-            ('oovv', 'ijab'): [['+0.25', 't2(a,b,i,j)']],
-            ('vvoo', 'abij'): [['+0.25', 'l2(i,j,a,b)']],
+            ("oooo", "ijkl"): [["+1.00", "P(i,j)", "d(i,k)", "d(j,l)"]],
+            ("oovv", "ijab"): [["+0.25", "t2(a,b,i,j)"]],
+            ("vvoo", "abij"): [["+0.25", "l2(i,j,a,b)"]],
         }
 
         # Get the 2RDM in albert format
@@ -194,19 +194,7 @@ if order == 2:
         # Generate the 2RDM code
         for name, codegen in code_generators.items():
             if name == "einsum":
-                def get_postamble(n, spin, name="rdm{n}"):
-                    nm = name.format(n=n)
-                    postamble = ""
-                    if spin != "uhf":
-                        for occ in [k[0] for k, v in terms.items() if not v]:
-                            shape = ", ".join(f"t2.shape[{'0' if o == 'o' else '-1'}]" for o in occ)
-                            postamble += f"{nm}.{occ} = np.zeros(({shape}))\n"
-                    else:
-                        for s1, s2 in [("a", "a"), ("a", "b"), ("b", "b")]:
-                            for occ in [k[0] for k, v in terms.items() if not v]:
-                                shape = ", ".join(f"t2.{s}{s}{s}{s}.shape[{'0' if o == 'o' else '-1'}]" for o, s in zip(occ, s1+s2+s1+s2))
-                                postamble += f"{nm}.{s1}{s2}{s1}{s2}.{occ} = np.zeros(({shape}))\n"
-                    return postamble + get_density_einsum_postamble(n, spin)
+                def get_postamble(n, spin, n)
                 kwargs = {
                     "preamble": get_density_einsum_preamble(2, spin),
                     "postamble": get_postamble(2, spin),
