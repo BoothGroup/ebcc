@@ -336,7 +336,7 @@ class Ansatz:
             if which == "l":
                 nf = fermion_rank
                 nb = boson_rank
-                key[:nb] + key[nb + nf :] + key[nb : nb + nf]
+                key = key[:nb] + key[nb + nf :] + key[nb : nb + nf]
             return key
 
         symbol = "u" if which == "t" else "lu"
