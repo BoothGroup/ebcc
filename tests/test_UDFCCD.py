@@ -76,6 +76,16 @@ class UDFCCD_Tests(unittest.TestCase):
         b = self.ccd.l2.aaaa
         np.testing.assert_almost_equal(a, b, 4)
 
+    def test_eom_ip(self):
+        e1 = self.ccd.ip_eom(nroots=5).kernel()
+        e2 = self.ccd_ref.ip_eom(nroots=5).kernel()
+        self.assertAlmostEqual(e1[0], e2[0], 6)
+
+    def test_eom_ea(self):
+        e1 = self.ccd.ea_eom(nroots=5).kernel()
+        e2 = self.ccd_ref.ea_eom(nroots=5).kernel()
+        self.assertAlmostEqual(e1[0], e2[0], 6)
+
 
 if __name__ == "__main__":
     print("Tests for UDFCCD")
