@@ -151,8 +151,8 @@ if order == 2:
     with Stopwatch("2RDM"):
         # Get the 2RDM contractions in pdaggerq format
         terms = {
-            ("oovv", "ijab"): [["+0.25", "t2(a,b,i,j)"]],
-            ("vvoo", "abij"): [["+0.25", "l2(i,j,a,b)"]],
+            ("oovv", "ijab"): [["t2(a,b,i,j)"]],
+            ("vvoo", "abij"): [["l2(i,j,a,b)"]],
         }
 
         # Get the 2RDM in albert format
