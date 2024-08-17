@@ -449,7 +449,7 @@ with Stopwatch("EA-EOM"):
             **kwargs,
         )
 
-if spin != "rhf":  # FIXME
+if spin == "ghf":  # FIXME
     with Stopwatch("EE-EOM"):
         # Get the R1 contractions in pdaggerq format
         pq.clear()
@@ -682,7 +682,7 @@ with Stopwatch("L-EA-EOM"):
             **kwargs,
         )
 
-if spin != "rhf":  # FIXME
+if spin == "ghf":  # FIXME
     with Stopwatch("L-EE-EOM"):
         # Get the L1 contractions in pdaggerq format
         pq.clear()

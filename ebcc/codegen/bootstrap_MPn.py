@@ -427,7 +427,7 @@ if order == 2:
                 **kwargs,
             )
 
-    if spin != "rhf":  # FIXME
+    if spin == "ghf":  # FIXME
         with Stopwatch("EE-EOM"):
             # Get the R1 contractions in pdaggerq format
             terms_r1 = [
