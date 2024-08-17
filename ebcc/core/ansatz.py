@@ -9,7 +9,7 @@ from ebcc import METHOD_TYPES, util
 
 if TYPE_CHECKING:
     from types import ModuleType
-    from typing import Optional
+    from typing import Literal, Optional
 
 named_ansatzes = {
     "MP2": ("MP2", "", 0, 0),
@@ -175,11 +175,16 @@ class Ansatz:
             for ansatz in (self.fermion_ansatz, self.boson_ansatz)
         )
 
-    def fermionic_cluster_ranks(self, spin_type: str = "G") -> list[tuple[str, str, int]]:
+    def fermionic_cluster_ranks(
+        self,
+        spin_type: str = "G",
+        which: Literal["t", "l", "ip", "ea", "ee"] = "t",
+    ) -> list[tuple[str, str, int]]:
         """Get a list of cluster operator ranks for the fermionic space.
 
         Args:
             spin_type: Spin type of the cluster operator.
+            which: Type of cluster operator to return.
 
         Returns:
             List of cluster operator ranks, each element is a tuple containing the name, the slices
@@ -189,17 +194,30 @@ class Ansatz:
         if not self.fermion_ansatz:
             return ranks
 
+        def _adapt_key(key: str) -> str:
+            """Adapt the key to the `which` argument."""
+            if which == "ip":
+                return key[:-1]
+            if which == "ea":
+                n = len(key) // 2
+                key = key[n:] + key[: n - 1]
+            if which == "l":
+                n = len(key) // 2
+                key = key[n:] + key[:n]
+            return key
+
+        symbol = which if which in ("t", "l") else "r"
         notations = {
-            "S": [("t1", "ov", 1)],
-            "D": [("t2", "oovv", 2)],
-            "T": [("t3", "ooovvv", 3)],
-            "t": [("t3", "ooOvvV", 3)],
-            "t'": [("t3", "OOOVVV", 3)],
+            "S": [(f"{symbol}1", _adapt_key("ov"), 1)],
+            "D": [(f"{symbol}2", _adapt_key("oovv"), 2)],
+            "T": [(f"{symbol}3", _adapt_key("ooovvv"), 3)],
+            "t": [(f"{symbol}3", _adapt_key("ooOvvV"), 3)],
+            "t'": [(f"{symbol}3", _adapt_key("OOOVVV"), 3)],
         }
         if spin_type == "R":
-            notations["Q"] = [("t4a", "oooovvvv", 4), ("t4b", "oooovvvv", 4)]
+            notations["Q"] = [(f"{symbol}4a", "oooovvvv", 4), (f"{symbol}4b", "oooovvvv", 4)]
         else:
-            notations["Q"] = [("t4", "oooovvvv", 4)]
+            notations["Q"] = [(f"{symbol}4", "oooovvvv", 4)]
         notations["2"] = notations["S"] + notations["D"]
         notations["3"] = notations["2"] + notations["T"]
         notations["4"] = notations["3"] + notations["Q"]
@@ -223,7 +241,7 @@ class Ansatz:
 
         # If it's MP we only ever need to initialise second-order
         # amplitudes
-        if method_type == "MP":
+        if method_type == "MP" and which in ("t", "l"):
             op = "D"
 
         # Determine the ranks
@@ -241,11 +259,16 @@ class Ansatz:
 
         return ranks
 
-    def bosonic_cluster_ranks(self, spin_type: str = "G") -> list[tuple[str, str, int]]:
+    def bosonic_cluster_ranks(
+        self,
+        spin_type: str = "G",
+        which: Literal["t", "l", "ip", "ea", "ee"] = "t",
+    ) -> list[tuple[str, str, int]]:
         """Get a list of cluster operator ranks for the bosonic space.
 
         Args:
             spin_type: Spin type of the cluster operator.
+            which: Type of cluster operator.
 
         Returns:
             List of cluster operator ranks, each element is a tuple containing the name, the slices
@@ -255,10 +278,11 @@ class Ansatz:
         if not self.boson_ansatz:
             return ranks
 
+        symbol = "s" if which == "t" else "ls"
         notations = {
-            "S": [("s1", "b", 1)],
-            "D": [("s2", "bb", 2)],
-            "T": [("s3", "bbb", 3)],
+            "S": [(f"{symbol}1", "b", 1)],
+            "D": [(f"{symbol}2", "bb", 2)],
+            "T": [(f"{symbol}3", "bbb", 3)],
         }
         notations["2"] = notations["S"] + notations["D"]
         notations["3"] = notations["2"] + notations["T"]
@@ -287,22 +311,45 @@ class Ansatz:
 
         return ranks
 
-    def coupling_cluster_ranks(self, spin_type: str = "G") -> list[tuple[str, str, int, int]]:
+    def coupling_cluster_ranks(
+        self,
+        spin_type: str = "G",
+        which: Literal["t", "l", "ip", "ea", "ee"] = "t",
+    ) -> list[tuple[str, str, int, int]]:
         """Get a list of cluster operator ranks for the coupling between fermions and bosons.
 
         Args:
             spin_type: Spin type of the cluster operator.
+            which: Type of cluster operator to return.
 
         Returns:
             List of cluster operator ranks, each element is a tuple containing the name, the slices
             and the rank.
         """
-        ranks = []
 
+        def _adapt_key(key: str, fermion_rank: int, boson_rank: int) -> str:
+            """Adapt the key to the `which` argument."""
+            if which in ("ip", "ea", "ee"):
+                raise util.ModelNotImplemented(
+                    "Cluster ranks for coupling space not implemented for %s" % which
+                )
+            if which == "l":
+                nf = fermion_rank
+                nb = boson_rank
+                key = key[:nb] + key[nb + nf :] + key[nb : nb + nf]
+            return key
+
+        symbol = "u" if which == "t" else "lu"
+
+        ranks = []
         for fermion_rank in range(1, self.fermion_coupling_rank + 1):
             for boson_rank in range(1, self.boson_coupling_rank + 1):
-                name = f"u{fermion_rank}{boson_rank}"
-                key = "b" * boson_rank + "o" * fermion_rank + "v" * fermion_rank
+                name = f"{symbol}{fermion_rank}{boson_rank}"
+                key = _adapt_key(
+                    "b" * boson_rank + "o" * fermion_rank + "v" * fermion_rank,
+                    fermion_rank,
+                    boson_rank,
+                )
                 ranks.append((name, key, fermion_rank, boson_rank))
 
         return ranks
