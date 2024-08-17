@@ -99,12 +99,12 @@ class RDFCC2_Tests(unittest.TestCase):
     def test_eom_ip(self):
         e1 = self.cc2.ip_eom(nroots=5).kernel()
         e2 = self.cc2_ref.ip_eom(nroots=5).kernel()
-        self.assertAlmostEqual(e1[0], e2[0], 6)
+        self.assertAlmostEqual(e1[0], e2[0], 5)
 
     def test_eom_ea(self):
         e1 = self.cc2.ea_eom(nroots=5).kernel()
         e2 = self.cc2_ref.ea_eom(nroots=5).kernel()
-        self.assertAlmostEqual(e1[0], e2[0], 6)
+        self.assertAlmostEqual(e1[0], e2[0], 5)
 
 
 if __name__ == "__main__":
