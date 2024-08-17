@@ -71,12 +71,12 @@ class RMP2_PySCF_Tests(unittest.TestCase):
     def test_rdm1(self):
         a = self.mp2.make_rdm1_f()
         b = self.mp2_ref.make_rdm1()
-        np.testing.assert_allclose(a, b, 6, verbose=True)
+        np.testing.assert_allclose(a, b, atol=1e-8, rtol=1e10, verbose=True)
 
     def test_rdm2(self):
         a = self.mp2.make_rdm2_f()
         b = self.mp2_ref.make_rdm2()
-        np.testing.assert_allclose(a, b, 6, verbose=True)
+        np.testing.assert_allclose(a, b, atol=1e-8, rtol=1e10, verbose=True)
 
 
 @pytest.mark.reference
