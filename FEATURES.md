@@ -11,7 +11,7 @@ The following table summarises the available methods and routines for the ansatz
 
 | Ansatz      |   E   |   T   |   Λ   |  IP   |  EA   |  EE   |  DM1  |  DM2  |  BDM  |
 | :---------: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| MP2         |  RUG  |       |       |       |       |       |       |       |   -   |
+| MP2         |  RUG  |   -   |   -   |  RUG  |  RUG  |  UG   |  RUG  |  RUG  |   -   |
 | MP3         |  RUG  |       |       |       |       |       |       |       |   -   |
 | CCD         |  RUG  |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |   -   |
 | CCSD        |  RUG  |  RUG  |  RUG  |  RUG  |  RUG  |  UG   |  RUG  |  RUG  |   -   |

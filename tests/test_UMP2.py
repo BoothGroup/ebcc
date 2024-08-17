@@ -9,7 +9,7 @@ import unittest
 import numpy as np
 import pytest
 import scipy.linalg
-from pyscf import mp, gto, lib, scf
+from pyscf import mp, gto, lib, scf, adc
 
 from ebcc import UEBCC, NullLogger, Space
 
@@ -52,6 +52,35 @@ class UMP2_PySCF_Tests(unittest.TestCase):
         a = self.mp2_ref.e_tot
         b = self.mp2.e_tot
         self.assertAlmostEqual(a, b, 7)
+
+    def test_eom_ip(self):
+        eom = self.mp2.ip_eom(nroots=5, e_tol=1e-10)
+        e1 = eom.kernel()
+        adc2 = adc.ADC(self.mf)
+        adc2.kernel_gs()
+        e2, v2 = adc2.ip_adc(nroots=5)[:2]
+        self.assertAlmostEqual(e1[0], e2[0], 5)
+
+    def test_eom_ea(self):
+        eom = self.mp2.ea_eom(nroots=5, e_tol=1e-12)
+        e1 = eom.kernel()
+        adc2 = adc.ADC(self.mf)
+        adc2.kernel_gs()
+        e2, v2 = adc2.ea_adc(nroots=5)[:2]
+        self.assertAlmostEqual(e1[0], e2[0], 5)
+
+    def test_rdm1(self):
+        a = self.mp2.make_rdm1_f()
+        b = self.mp2_ref.make_rdm1()
+        np.testing.assert_allclose(a.aa, b[0], rtol=1e10, atol=1e-8, verbose=True)
+        np.testing.assert_allclose(a.bb, b[1], rtol=1e10, atol=1e-8, verbose=True)
+
+    def test_rdm2(self):
+        a = self.mp2.make_rdm2_f()
+        b = self.mp2_ref.make_rdm2()
+        np.testing.assert_allclose(a.aaaa, b[0], rtol=1e10, atol=1e-8, verbose=True)
+        np.testing.assert_allclose(a.aabb, b[1], rtol=1e10, atol=1e-8, verbose=True)
+        np.testing.assert_allclose(a.bbbb, b[2], rtol=1e10, atol=1e-8, verbose=True)
 
 
 @pytest.mark.reference

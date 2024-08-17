@@ -289,27 +289,28 @@ class REBCC(BaseEBCC):
         res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
 
         # Divide T amplitudes:
-        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            lname = name.replace("t", "l")
-            res[lname] /= self.energy_sum(key[n:] + key[:n])
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(
+            spin_type=self.spin_type, which="l"
+        ):
+            res[name] /= self.energy_sum(key)
             if not perturbative:
-                res[lname] += lambdas[lname]
+                res[name] += lambdas[name]
 
         # Divide S amplitudes:
-        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
-            lname = "l" + name
-            res[lname] /= self.energy_sum(key[n:] + key[:n])
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="l"):
+            res[name] /= self.energy_sum(key)
             if not perturbative:
-                res[lname] += lambdas[lname]
+                res[name] += lambdas[name]
 
         # Divide U amplitudes:
-        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+            spin_type=self.spin_type, which="l"
+        ):
             if nf != 1:
                 raise util.ModelNotImplemented
-            lname = "l" + name
-            res[lname] /= self.energy_sum(key[:nb] + key[nb + nf :] + key[nb : nb + nf])
+            res[name] /= self.energy_sum()
             if not perturbative:
-                res[lname] += lambdas[lname]
+                res[name] += lambdas[name]
 
         if perturbative:
             res = util.Namespace(**{key + "pert": val for key, val in res.items()})
@@ -533,14 +534,18 @@ class REBCC(BaseEBCC):
         """
         vectors = []
 
-        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            vectors.append(lambdas[name.replace("t", "l")].ravel())
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(
+            spin_type=self.spin_type, which="l"
+        ):
+            vectors.append(lambdas[name].ravel())
 
-        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
-            vectors.append(lambdas["l" + name].ravel())
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="l"):
+            vectors.append(lambdas[name].ravel())
 
-        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
-            vectors.append(lambdas["l" + name].ravel())
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+            spin_type=self.spin_type, which="l"
+        ):
+            vectors.append(lambdas[name].ravel())
 
         return np.concatenate(vectors)
 
@@ -556,25 +561,26 @@ class REBCC(BaseEBCC):
         lambdas: Namespace[SpinArrayType] = util.Namespace()
         i0 = 0
 
-        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            lname = name.replace("t", "l")
-            key = key[n:] + key[:n]
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(
+            spin_type=self.spin_type, which="l"
+        ):
             shape = tuple(self.space.size(k) for k in key)
             size = np.prod(shape)
-            lambdas[lname] = vector[i0 : i0 + size].reshape(shape)
+            lambdas[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
-        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="l"):
             shape = (self.nbos,) * n
             size = np.prod(shape)
-            lambdas["l" + name] = vector[i0 : i0 + size].reshape(shape)
+            lambdas[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
-        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
-            key = key[:nb] + key[nb + nf :] + key[nb : nb + nf]
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+            spin_type=self.spin_type, which="l"
+        ):
             shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
             size = np.prod(shape)
-            lambdas["l" + name] = vector[i0 : i0 + size].reshape(shape)
+            lambdas[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
         return lambdas
