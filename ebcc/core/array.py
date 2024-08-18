@@ -21,16 +21,16 @@ if TYPE_CHECKING:
     T = TypeVar("T", float, complex)
 
 
-def loop_block_indices(num_blocks: tuple[int]) -> Iterator[tuple[int]]:
+def loop_block_indices(block_num: tuple[int]) -> Iterator[tuple[int]]:
     """Loop over the block indices.
 
     Args:
-        num_blocks: The number of blocks in each dimension.
+        block_num: The number of blocks in each dimension.
 
     Returns:
         The block indices.
     """
-    yield from itertools.product(*map(range, num_blocks))
+    yield from itertools.product(*map(range, block_num))
 
 
 def _check_shapes(first: TiledArray, second: TiledArray) -> None:
@@ -46,24 +46,79 @@ def _check_shapes(first: TiledArray, second: TiledArray) -> None:
         raise ValueError("Block shapes must be equal.")
 
 
-class TiledArray:
-    """Tiled array."""
+def _bilinear_map(
+    func: Callable[[NDArray[float], NDArray[float]], NDArray[float]],
+    first: TiledArray,
+    second: TiledArray,
+) -> TiledArray:
+    """Bilinear map between two tiled arrays.
+
+    Applies a function to each pair of blocks, handling communication. The function should be a
+    bilinear map of the matrix elements, i.e. `result[i, j] = func(first[i, j], second[i, j])`.
+
+    Args:
+        func: The function to apply.
+        first: The first tiled array.
+        second: The second tiled array.
+
+    Returns:
+        The result of the bilinear map.
+    """
+    _check_shapes(first, second)
+    result = TiledArray(first.shape, first.block_shape, world=first.world)
+
+    # Loop over the blocks
+    for block_index in loop_block_indices(first.block_num):
+        if first.owns_block(block_index):
+            if second.owns_block(block_index):
+                block = func(first._get_block(block_index), second._get_block(block_index))
+            else:
+                other_block = second.recv_block(block_index, second.get_owner(block_index), store=False)
+                block = func(first._get_block(block_index), other_block)
+            result._set_block(block_index, block)
+
+    return result
+
+
+def _auto_block(shape: tuple[int], world: Optional[MPI.Comm] = None) -> tuple[int]:
+    """Automatically determine the block shape.
+
+    Args:
+        shape: The shape of the tensor.
+
+    Returns:
+        The block shape.
+    """
+    best_divisors = [1] * len(shape)
+    for i, s in enumerate(shape):
+        for divisor in range(2, 9):
+            if s % divisor == 0:
+                best_divisors[i] = divisor
+
+
+class Tensor:
+    """Tensor class."""
 
     def __init__(
         self,
         shape: tuple[int],
-        block_shape: tuple[int],
         dtype: Optional[Type[T]] = None,
+        block_shape: Optional[tuple[int]] = None,
+        block_num: Optional[tuple[int]] = None,
         world: Optional[MPI.Comm] = None,
     ) -> None:
-        """Initialise the tiled array.
+        """Initialise the tensor.
 
         Args:
-            shape: The shape of the array.
-            block_shape: The shape of the blocks.
-            dtype: The data type of the array.
+            shape: The shape of the tensor.
+            dtype: The data type of the tensor.
+            block_shape: The shape of the blocks in each dimension.
+            block_num: The number of blocks in each dimension. If provided, `block_shape` is
+                ignored.
             world: The MPI communicator.
         """
+        if block_num is not None:
+            block_shape = tuple(s // bs for s, bs in zip(shape, block_num))
         if any(s % bs != 0 for s, bs in zip(shape, block_shape)):
             raise ValueError("Block shape must divide shape.")
 
@@ -73,13 +128,13 @@ class TiledArray:
             dtype = types[float]
 
         self.shape = shape
-        self.block_shape = block_shape
         self.dtype = dtype
+        self.block_shape = block_shape
         self.world = world
 
         self._blocks: dict[tuple[int], NDArray[T]] = {}
 
-    def __setitem__(self, index: tuple[int], block: NDArray[T]) -> None:
+    def _set_block(self, index: tuple[int], block: NDArray[T]) -> None:
         """Set a block in the distributed array.
 
         Args:
@@ -88,7 +143,7 @@ class TiledArray:
         """
         self._blocks[index] = block
 
-    def __getitem__(self, index: tuple[int]) -> NDArray[T]:
+    def _get_block(self, index: tuple[int]) -> NDArray[T]:
         """Get a block from the distributed array.
 
         Args:
@@ -100,7 +155,7 @@ class TiledArray:
         return self._blocks[index]
 
     @property
-    def num_blocks(self) -> tuple[int]:
+    def block_num(self) -> tuple[int]:
         """Get the number of blocks in each dimension."""
         return tuple(s // bs for s, bs in zip(self.shape, self.block_shape))
 
@@ -148,7 +203,7 @@ class TiledArray:
             index: The index of the block.
             dest: The rank of the destination process.
         """
-        block = self._blocks[index]
+        block = self._get_block(index)
         self.world.Send(block, dest=dest)
 
     def recv_block(self, index: tuple[int], source: int, store: bool = True) -> NDArray[T]:
@@ -165,7 +220,7 @@ class TiledArray:
         block = np.empty(self.block_shape, dtype=self.dtype)
         self.world.Recv(block, source=source)
         if store:
-            self._blocks[index] = block
+            self._set_block(index, block)
         return block
 
     def as_local_ndarray(self) -> NDArray[T]:
@@ -175,13 +230,13 @@ class TiledArray:
             The local numpy array.
         """
         array = np.zeros(self.shape, dtype=self.dtype)
-        for block_index in loop_block_indices(self.num_blocks):
+        for block_index in loop_block_indices(self.block_num):
             if self.owns_block(block_index):
                 index = tuple(
                     slice(i * bs, (i + 1) * bs)
                     for i, bs in zip(block_index, self.block_shape)
                 )
-                array[index] = self._blocks[block_index]
+                array._set_block(index, self._get_block(block_index))
         return array
 
     def as_global_ndarray(self) -> NDArray[T]:
@@ -191,14 +246,14 @@ class TiledArray:
             The global numpy array.
         """
         array = np.empty(self.shape, dtype=self.dtype)
-        for block_index in loop_block_indices(self.num_blocks):
+        for block_index in loop_block_indices(self.block_num):
             index = tuple(
                 slice(i * bs, (i + 1) * bs)
                 for i, bs in zip(block_index, self.block_shape)
             )
             owner = self.get_owner(block_index)
             if self.owns_block(block_index):
-                array[index] = self._blocks[block_index]
+                array._set_block(index, self._get_block(block_index))
         return array
 
     def __add__(self, other: TiledArray) -> TiledArray:
@@ -210,14 +265,70 @@ class TiledArray:
         Returns:
             The sum of the two tiled arrays.
         """
-        _check_shapes(self, other)
-        output = TiledArray(self.shape, self.block_shape, world=self.world)
-        for block_index in loop_block_indices(self.num_blocks):
-            if self.owns_block(block_index):
-                if other.owns_block(block_index):
-                    block = self[block_index] + other[block_index]
-                else:
-                    other_block = other.recv_block(block_index, other.get_owner(block_index), store=False)
-                    block = self[block_index] + other_block
-                output[block_index] = block
-        return output
+        return _bilinear_map(np.add, self, other)
+
+    def __sub__(self, other: TiledArray) -> TiledArray:
+        """Distributed subtraction.
+
+        Args:
+            other: The other tiled array.
+
+        Returns:
+            The difference of the two tiled arrays.
+        """
+        return _bilinear_map(np.subtract, self, other)
+
+    def __mul__(self, other: TiledArray) -> TiledArray:
+        """Distributed multiplication.
+
+        Args:
+            other: The other tiled array.
+
+        Returns:
+            The product of the two tiled arrays.
+        """
+        return _bilinear_map(np.multiply, self, other)
+
+    def __truediv__(self, other: TiledArray) -> TiledArray:
+        """Distributed division.
+
+        Args:
+            other: The other tiled array.
+
+        Returns:
+            The quotient of the two tiled arrays.
+        """
+        return _bilinear_map(np.divide, self, other)
+
+    def __iadd__(self, other: TiledArray) -> TiledArray:
+        """In-place addition.
+
+        Args:
+            other: The other tiled array.
+
+        Returns:
+            The sum of the two tiled arrays.
+        """
+        return _bilinear_map(np.add, self, other)
+
+    def __isub__(self, other: TiledArray) -> TiledArray:
+        """In-place subtraction.
+
+        Args:
+            other: The other tiled array.
+
+        Returns:
+            The difference of the two tiled arrays.
+        """
+        return _bilinear_map(np.subtract, self, other)
+
+    def __imul__(self, other: TiledArray) -> TiledArray:
+        """In-place multiplication.
+
+        Args:
+            other: The other tiled array.
+
+        Returns:
+            The product of the two tiled arrays.
+        """
+        return _bilinear_map(np.multiply, self, other)
