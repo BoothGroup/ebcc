@@ -122,6 +122,14 @@ class RCC2_Tests(unittest.TestCase):
         dm = util.einsum("ijkl,pi,qj,rk,sl->pqrs", dm, c, c, c, c)
         self.assertAlmostEqual(lib.fp(dm), 6.475456720894991, 6)
 
+    def test_eom_ip(self):
+        e1 = self.ccsd.ip_eom(nroots=5).kernel()
+        self.assertAlmostEqual(e1[0], 0.433406912467204)
+
+    def test_eom_ea(self):
+        e1 = self.ccsd.ea_eom(nroots=5).kernel()
+        self.assertAlmostEqual(e1[0], 0.16637220504347422)
+
 
 if __name__ == "__main__":
     print("Tests for RCC2")

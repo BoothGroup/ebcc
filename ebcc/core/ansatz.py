@@ -244,6 +244,10 @@ class Ansatz:
         if method_type == "MP" and which in ("t", "l"):
             op = "D"
 
+        # If it's for EOM-CCD we still need the singles
+        if self.fermion_ansatz == "CCD" and which in ("ip", "ea", "ee"):
+            op = "SD"
+
         # Determine the ranks
         for key in sorted(notations.keys(), key=len)[::-1]:
             if key in op:

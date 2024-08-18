@@ -135,6 +135,18 @@ class GCC2_Tests(unittest.TestCase):
         dm = util.einsum("ijkl,pi,qj,rk,sl->pqrs", dm, c, c, c, c)
         self.assertAlmostEqual(lib.fp(dm), 2.491733293012602, 6)
 
+    def test_eom_ip(self):
+        e1 = self.ccsd.ip_eom(nroots=5).kernel()
+        self.assertAlmostEqual(e1[0], 0.4334082808900563)
+
+    def test_eom_ea(self):
+        e1 = self.ccsd.ea_eom(nroots=5).kernel()
+        self.assertAlmostEqual(e1[0], 0.1663724198593271)
+
+    def test_eom_ee(self):
+        e1 = self.ccsd.ee_eom(nroots=5).kernel()
+        self.assertAlmostEqual(e1[0], 0.27385429984532744)
+
 
 if __name__ == "__main__":
     print("Tests for GCC2")

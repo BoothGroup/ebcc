@@ -82,6 +82,16 @@ class UDFCCSD_PySCF_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(a[1], b.aabb, 6)
         np.testing.assert_almost_equal(a[2], b.bbbb, 6)
 
+    def test_eom_ip(self):
+        e1 = self.ccsd.ip_eom(nroot=5).kernel()
+        e2, v2 = self.ccsd_ref.ipccsd(nroots=5)
+        self.assertAlmostEqual(e1[0], e2[0], 5)
+
+    def test_eom_ea(self):
+        e1 = self.ccsd.ea_eom(nroots=5).kernel()
+        e2, v2 = self.ccsd_ref.eaccsd(nroots=5)
+        self.assertAlmostEqual(e1[0], e2[0], 5)
+
 
 @pytest.mark.reference
 class UDFCCSD_PySCF_Frozen_Tests(unittest.TestCase):

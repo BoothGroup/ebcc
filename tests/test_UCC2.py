@@ -127,6 +127,14 @@ class UCC2_Tests(unittest.TestCase):
         self.assertAlmostEqual(lib.fp(dmaabb), 1.617909309590978, 6)
         self.assertAlmostEqual(lib.fp(dmbbbb), 2.231837825282723, 6)
 
+    def test_eom_ip(self):
+        e1 = self.ccsd.ip_eom(nroots=5).kernel()
+        self.assertAlmostEqual(e1[0], 0.1596528431761164)
+
+    def test_eom_ea(self):
+        e1 = self.ccsd.ea_eom(nroots=5).kernel()
+        self.assertAlmostEqual(e1[0], -0.11586919638803718)
+
 
 if __name__ == "__main__":
     print("Tests for UCC2")
