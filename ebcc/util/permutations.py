@@ -173,6 +173,29 @@ def permutations_with_signs(seq: Iterable[Any]) -> list[tuple[Any, int]]:
     return [(item, -1 if i % 2 else 1) for i, item in enumerate(_permutations(list(seq)))]
 
 
+def sorted_with_signs(seq: Iterable[Any]) -> tuple[list[Any], int]:
+    """Return a sorted sequence with a sign indicating the number of swaps.
+
+    The sign is equal to +1 for an even number of swaps, and -1 for an odd number of swaps.
+
+    Args:
+        seq: Sequence to sort.
+
+    Returns:
+        Tuple of the form (sorted, sign).
+    """
+    swaps = 0
+    seq = list(seq)
+
+    for i in range(len(seq)):
+        for j in range(n - i - 1):
+            if seq[j] > seq[j + 1]:
+                seq[j], seq[j + 1] = seq[j + 1], seq[j]
+                swaps += 1
+
+    return seq, -1 if swaps % 2 else 1
+
+
 def get_symmetry_factor(*numbers: int) -> float:
     """Get a value corresponding to the factor from the neglection of symmetry in repeated indices.
 
