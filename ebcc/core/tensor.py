@@ -37,6 +37,9 @@ else:
 
 T = TypeVar("T", float, complex)
 
+einsum_symbols = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+einsum_symbols_set = set(einsum_symbols)
+
 
 def loop_block_indices(block_num: tuple[int, ...]) -> Iterator[tuple[int, ...]]:
     """Loop over the block indices.
@@ -581,6 +584,17 @@ class Tensor(Generic[T]):
         """
         return _bilinear_map(np.multiply, self, other)
 
+    def __array__(self, dtype: Optional[Type[T]] = None) -> NDArray[T]:
+        """Convert the tiled array to a numpy array.
+
+        Args:
+            dtype: The data type of the array.
+
+        Returns:
+            The array.
+        """
+        return self.as_global_ndarray().astype(dtype)
+
     def copy(self) -> Tensor[T]:
         """Copy the tiled array.
 
@@ -588,6 +602,17 @@ class Tensor(Generic[T]):
             The copy of the tiled array.
         """
         return _unary_map(np.copy, self)
+
+    def astype(self, dtype: Type[T]) -> Tensor[T]:
+        """Change the data type of the tiled array.
+
+        Args:
+            dtype: The data type.
+
+        Returns:
+            The tiled array with the new data type.
+        """
+        return _unary_map(lambda x: x.astype(dtype), self)
 
     def transpose(self, *axes: int) -> Tensor[T]:
         """Transpose the tiled array.
@@ -782,6 +807,8 @@ def tensordot(
     output_shape = tuple(a.shape[i] for i in axes_external[0])
     output_shape += tuple(b.shape[i] for i in axes_external[1])
     block_num_dummy = tuple(a.block_num[i] for i in axes_dummy[0])
+    if block_num_dummy != tuple(b.block_num[i] for i in axes_dummy[1]):
+        raise ValueError("Block shapes must be compatible.")
     block_num_external = tuple(a.block_num[i] for i in axes_external[0]) + tuple(
         b.block_num[i] for i in axes_external[1]
     )
@@ -849,7 +876,7 @@ def tensordot(
     return c
 
 
-def contract(*operands: Any, **kwargs: Any) -> Union[T, NDArray[T]]:
+def _contract(*operands: Any, **kwargs: Any) -> Union[T, NDArray[T]]:
     """Dispatch a two-term einsum contraction."""
     subscript, a, b = operands  # FIXME
     abk, rk = subscript.split("->")
@@ -915,6 +942,150 @@ def contract(*operands: Any, **kwargs: Any) -> Union[T, NDArray[T]]:
     return res
 
 
+def _parse_einsum_input(operands: list[Any]) -> tuple[str, str, list[Tensor[T]]]:
+    """Parse the input for an einsum contraction.
+
+    Args:
+        operands: The input operands.
+
+    Returns:
+        The parsed input.
+
+    Notes:
+        This function is a modified version of `numpy.core.einsumfunc._parse_einsum_input`. The
+        modifications are necessary to prevent `numpy` from converting the `Tensor` objects to
+        `ndarray` objects.
+    """
+    if len(operands) == 0:
+        raise ValueError("No input operands")
+
+    if isinstance(operands[0], str):
+        subscripts = operands[0].replace(" ", "")
+        operands = operands[1:]
+
+        # Ensure all characters are valid
+        for s in subscripts:
+            if s in ".,->":
+                continue
+            if s not in einsum_symbols:
+                raise ValueError(f"Character {s} is not a valid symbol.")
+
+    else:
+        tmp_operands = list(operands)
+        operand_list: list[Tensor[T]] = []
+        subscript_list: list[tuple[int, ...]] = []
+        for p in range(len(operands) // 2):
+            operand_list.append(tmp_operands.pop(0))
+            subscript_list.append(tmp_operands.pop(0))
+
+        output_list: Optional[tuple[int, ...]] = tmp_operands[-1] if len(tmp_operands) else None
+        operands = operand_list
+        subscripts = ""
+        last = len(subscript_list) - 1
+        for num, sub in enumerate(subscript_list):
+            for i in sub:
+                subscripts += einsum_symbols[i]
+            if num != last:
+                subscripts += ","
+
+        if output_list is not None:
+            subscripts += "->"
+            for i in output_list:
+                subscripts += einsum_symbols[i]
+
+    # Check for proper "->"
+    if ("-" in subscripts) or (">" in subscripts):
+        invalid = (subscripts.count("-") > 1) or (subscripts.count(">") > 1)
+        if invalid or (subscripts.count("->") != 1):
+            raise ValueError("Subscripts can only contain one '->'.")
+
+    # Parse ellipses
+    if "." in subscripts:
+        used = subscripts.replace(".", "").replace(",", "").replace("->", "")
+        unused = list(einsum_symbols_set - set(used))
+        ellipse_inds = "".join(unused)
+        longest = 0
+
+        if "->" in subscripts:
+            input_tmp, output_sub = subscripts.split("->")
+            split_subscripts = input_tmp.split(",")
+            out_sub = True
+        else:
+            split_subscripts = subscripts.split(",")
+            out_sub = False
+
+        for num, ssub in enumerate(split_subscripts):
+            if "." in ssub:
+                if (ssub.count(".") != 3) or (ssub.count("...") != 1):
+                    raise ValueError("Invalid Ellipses.")
+
+                # Take into account numerical values
+                if operands[num].shape == ():
+                    ellipse_count = 0
+                else:
+                    ellipse_count = max(operands[num].ndim, 1)
+                    ellipse_count -= len(ssub) - 3
+
+                if ellipse_count > longest:
+                    longest = ellipse_count
+
+                if ellipse_count < 0:
+                    raise ValueError("Ellipses lengths do not match.")
+                elif ellipse_count == 0:
+                    split_subscripts[num] = ssub.replace("...", "")
+                else:
+                    rep_inds = ellipse_inds[-ellipse_count:]
+                    split_subscripts[num] = ssub.replace("...", rep_inds)
+
+        subscripts = ",".join(split_subscripts)
+        if longest == 0:
+            out_ellipse = ""
+        else:
+            out_ellipse = ellipse_inds[-longest:]
+
+        if out_sub:
+            subscripts += "->" + output_sub.replace("...", out_ellipse)
+        else:
+            # Special care for outputless ellipses
+            output_subscript = ""
+            tmp_subscripts = subscripts.replace(",", "")
+            for s in sorted(set(tmp_subscripts)):
+                if s not in (einsum_symbols):
+                    raise ValueError(f"Character {s} is not a valid symbol.")
+                if tmp_subscripts.count(s) == 1:
+                    output_subscript += s
+            normal_inds = "".join(sorted(set(output_subscript) - set(out_ellipse)))
+
+            subscripts += "->" + out_ellipse + normal_inds
+
+    # Build output string if does not exist
+    if "->" in subscripts:
+        input_subscripts, output_subscript = subscripts.split("->")
+    else:
+        input_subscripts = subscripts
+        # Build output subscripts
+        tmp_subscripts = subscripts.replace(",", "")
+        output_subscript = ""
+        for s in sorted(set(tmp_subscripts)):
+            if s not in einsum_symbols:
+                raise ValueError(f"Character {s} is not a valid symbol.")
+            if tmp_subscripts.count(s) == 1:
+                output_subscript += s
+
+    # Make sure output subscripts are in the input
+    for char in output_subscript:
+        if output_subscript.count(char) != 1:
+            raise ValueError(f"Output character {s} appeared more than once in the output.")
+        if char not in input_subscripts:
+            raise ValueError(f"Output character {s} did not appear in the input")
+
+    # Make sure number operands is equivalent to the number of terms
+    if len(input_subscripts.split(",")) != len(operands):
+        raise ValueError("Number of einsum subscripts must be equal to the number of operands.")
+
+    return (input_subscripts, output_subscript, operands)
+
+
 def einsum(*operands: Any, **kwargs: Any) -> Union[T, NDArray[T]]:
     """Evaluate an Einstein summation convention on the operands.
 
@@ -947,21 +1118,22 @@ def einsum(*operands: Any, **kwargs: Any) -> Union[T, NDArray[T]]:
         This function may use `numpy.einsum`, `pyscf.lib.einsum`, or `tblis_einsum` as a backend,
         depending on the problem size and the modules available.
     """
+    # Parse the operands
+    inp, out, args = _parse_einsum_input(list(operands))
+    subscript = inp + "->" + out
+
     # Parse the kwargs
-    subscript = operands[0]  # FIXME
-    args = list(operands[1:])
-    _contract = kwargs.get("contract", contract)
+    contract = kwargs.get("contract", _contract)
     optimize = kwargs.get("optimize", True)
 
     # Perform the contraction
     if len(args) < 2:
         # If it's just a transpose, use the fallback
-        inp, out = subscript.split("->")
         transpose = [inp.index(x) for x in out]
-        out = args[0].transpose(*transpose)
+        res = args[0].transpose(*transpose)
     elif len(args) < 3:
         # If it's a single contraction, call the backend directly
-        out = _contract(subscript, *args, **kwargs)
+        res = contract(subscript, *args, **kwargs)
     else:
         raise NotImplementedError("More than two arguments not yet supported")
 
@@ -972,7 +1144,7 @@ def einsum(*operands: Any, **kwargs: Any) -> Union[T, NDArray[T]]:
             contraction_args = [args.pop(x) for x in inds]
             if kwargs.get("alpha", 1.0) != 1.0 or kwargs.get("beta", 0.0) != 0.0:
                 raise NotImplementedError("Scaling factors not supported for >2 arguments")
-            out = _contract(einsum_str, *contraction_args, **kwargs)
-            args.append(out)
+            res = contract(einsum_str, *contraction_args, **kwargs)
+            args.append(res)
 
-    return out
+    return res
