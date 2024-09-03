@@ -37,8 +37,10 @@ else:
 
 T = TypeVar("T", float, complex)
 
-einsum_symbols = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-einsum_symbols_set = set(einsum_symbols)
+EINSUM_SYMBOLS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+EINSUM_SYMBOLS_SET = set(EINSUM_SYMBOLS)
+
+DEFAULT_BLOCK_SIZE = 32
 
 
 def loop_block_indices(block_num: tuple[int, ...]) -> Iterator[tuple[int, ...]]:
@@ -275,7 +277,9 @@ class Tensor(Generic[T]):
 
         self.shape = shape
         self.dtype = dtype
-        self.block_num = block_num if block_num is not None else (1,) * len(shape)
+        self.block_num = (
+            block_num if block_num is not None else tuple(s // DEFAULT_BLOCK_SIZE for s in shape)
+        )
         self.permutations = permutations
         self.world = world
 
@@ -967,7 +971,7 @@ def _parse_einsum_input(operands: list[Any]) -> tuple[str, str, list[Tensor[T]]]
         for s in subscripts:
             if s in ".,->":
                 continue
-            if s not in einsum_symbols:
+            if s not in EINSUM_SYMBOLS:
                 raise ValueError(f"Character {s} is not a valid symbol.")
 
     else:
@@ -984,14 +988,14 @@ def _parse_einsum_input(operands: list[Any]) -> tuple[str, str, list[Tensor[T]]]
         last = len(subscript_list) - 1
         for num, sub in enumerate(subscript_list):
             for i in sub:
-                subscripts += einsum_symbols[i]
+                subscripts += EINSUM_SYMBOLS[i]
             if num != last:
                 subscripts += ","
 
         if output_list is not None:
             subscripts += "->"
             for i in output_list:
-                subscripts += einsum_symbols[i]
+                subscripts += EINSUM_SYMBOLS[i]
 
     # Check for proper "->"
     if ("-" in subscripts) or (">" in subscripts):
@@ -1002,7 +1006,7 @@ def _parse_einsum_input(operands: list[Any]) -> tuple[str, str, list[Tensor[T]]]
     # Parse ellipses
     if "." in subscripts:
         used = subscripts.replace(".", "").replace(",", "").replace("->", "")
-        unused = list(einsum_symbols_set - set(used))
+        unused = list(EINSUM_SYMBOLS_SET - set(used))
         ellipse_inds = "".join(unused)
         longest = 0
 
@@ -1050,7 +1054,7 @@ def _parse_einsum_input(operands: list[Any]) -> tuple[str, str, list[Tensor[T]]]
             output_subscript = ""
             tmp_subscripts = subscripts.replace(",", "")
             for s in sorted(set(tmp_subscripts)):
-                if s not in (einsum_symbols):
+                if s not in (EINSUM_SYMBOLS):
                     raise ValueError(f"Character {s} is not a valid symbol.")
                 if tmp_subscripts.count(s) == 1:
                     output_subscript += s
@@ -1067,7 +1071,7 @@ def _parse_einsum_input(operands: list[Any]) -> tuple[str, str, list[Tensor[T]]]
         tmp_subscripts = subscripts.replace(",", "")
         output_subscript = ""
         for s in sorted(set(tmp_subscripts)):
-            if s not in einsum_symbols:
+            if s not in EINSUM_SYMBOLS:
                 raise ValueError(f"Character {s} is not a valid symbol.")
             if tmp_subscripts.count(s) == 1:
                 output_subscript += s
