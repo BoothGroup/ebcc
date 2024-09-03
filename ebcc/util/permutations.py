@@ -188,7 +188,7 @@ def sorted_with_signs(seq: Iterable[Any]) -> tuple[list[Any], int]:
     seq = list(seq)
 
     for i in range(len(seq)):
-        for j in range(n - i - 1):
+        for j in range(len(seq) - i - 1):
             if seq[j] > seq[j + 1]:
                 seq[j], seq[j + 1] = seq[j + 1], seq[j]
                 swaps += 1

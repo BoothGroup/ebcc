@@ -109,6 +109,7 @@ ignore = [
     "D205",  # 1 blank line required between summary line and description
     "D400",  # First line should end with a period
     "B007",  # Loop control variable not used within the loop body
+    "B019",  # Use of `functools.lru_cache` or `functools.cache`
 ]
 per-file-ignores = [
     "__init__.py:E402,W605,F401,F811,D103,D212,D415",

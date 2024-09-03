@@ -1,47 +1,83 @@
-"""Tiled arrays with MPI support."""
+"""Tensor class."""
 
 from __future__ import annotations
 
-import itertools
 import functools
-from typing import TYPE_CHECKING
+import itertools
+from typing import TYPE_CHECKING, Generic, TypeVar
 
 from ebcc import numpy as np
 from ebcc.core.precision import types
-from ebcc.util.permutations import sorted_with_signs
-
-try:
-    from mpi4py import MPI
-except ImportError:
-    MPI = None
-
 
 if TYPE_CHECKING:
-    from typing import Type, TypeVar, Optional, Iterator, Union, Any, Callable
+    from typing import Any, Callable, Iterator, Optional, Type, Union
+    from unittest.mock import MagicMock
 
     from ebcc.numpy.typing import NDArray
 
-    T = TypeVar("T", float, complex)
     Permutation = tuple[tuple[int, ...], int]
 
+    MPI = MagicMock()
 
-def loop_block_indices(block_num: tuple[int]) -> Iterator[tuple[int]]:
+    class Comm:
+        """Mock MPI communicator."""
+
+        size: int
+        rank: int
+
+        def Send(self, buf: Any, dest: Optional[int]) -> None: ...  # noqa: D102, E704
+        def Recv(self, buf: Any, source: Optional[int]) -> None: ...  # noqa: D102, E704
+        def allreduce(self, buf: Any, op: Callable[[Any, Any], Any]) -> Any: ...  # noqa: D102, E704
+
+else:
+    try:
+        from mpi4py import MPI
+    except ImportError:
+        MPI = None
+
+T = TypeVar("T", float, complex)
+
+
+def loop_block_indices(block_num: tuple[int, ...]) -> Iterator[tuple[int, ...]]:
     """Loop over the block indices.
 
     Args:
         block_num: The number of blocks in each dimension.
 
-    Returns:
+    Yields:
         The block indices.
     """
     return itertools.product(*map(range, block_num))
 
 
+def loop_rank_block_indices(tensor: Tensor[T]) -> Iterator[tuple[int, ...]]:
+    """Loop over the block indices for a given rank.
+
+    Includes consideration of symmetry, keeping symmetrically equivalent blocks on the same rank.
+
+    Args:
+        tensor: The tensor.
+
+    Yields:
+        The block indices.
+    """
+    done = set()
+    rank = 0
+    for i, indices in enumerate(loop_block_indices(tensor.block_num)):
+        canon, _, _ = symmetrise_indices(indices, tensor.permutations)
+        if canon in done:
+            continue
+        if rank == tensor.world.rank:
+            yield indices
+        done.add(canon)
+        rank = (rank + 1) % tensor.world.size
+
+
 def symmetrise_indices(
-    indices: tuple[int],
-    permutations: Optional[tuple[Permutation]],
+    indices: tuple[int, ...],
+    permutations: Optional[tuple[Permutation, ...]],
     forward: bool = True,
-) -> tuple[int]:
+) -> tuple[tuple[int, ...], tuple[int, ...], int]:
     """Symmetrise indices to get the canonical block index.
 
     Args:
@@ -64,6 +100,8 @@ def symmetrise_indices(
         if best is None or candidate < best:
             best = candidate
 
+    assert best is not None
+
     if not forward:
         perm = tuple(np.argsort(best[1]))
         best = (tuple(indices[i] for i in perm), perm, best[2])
@@ -72,8 +110,8 @@ def symmetrise_indices(
 
 
 def _combine_permutations(
-    subscript: str, permutations1: tuple[Permutation], permutations2: tuple[Permutation]
-) -> tuple[Permutation]:
+    subscript: str, permutations1: tuple[Permutation, ...], permutations2: tuple[Permutation, ...]
+) -> tuple[Permutation, ...]:
     """Get the permutations for the result of a contraction.
 
     Args:
@@ -89,12 +127,24 @@ def _combine_permutations(
     perms_and_signs1 = {perm: sign for perm, sign in permutations1}
     perms_and_signs2 = {perm: sign for perm, sign in permutations2}
 
-    # Generate all possible permutations of output indices
+    # Generate all possible permutations of output indices and check if they are valid
     permutations = set()
     for perm in itertools.permutations(range(len(c))):
-        c_p = [c[i] for i in perm]
-        perm1 = tuple(a.index(c_p[i]) if c_p[i] in a else b.index(c_p[i]) for i in range(len(c)))
-        perm2 = tuple(b.index(c_p[i]) if c_p[i] in b else a.index(c_p[i]) for i in range(len(c)))
+        # Permute characters in a
+        swaps_a = {c[i]: c[j] for i, j in enumerate(perm) if c[i] in a}
+        if set(swaps_a.keys()) != set(swaps_a.values()):
+            continue
+        a_p = "".join([swaps_a.get(a[i], a[i]) for i in range(len(a))])
+
+        # Permute characters in b
+        swaps_b = {c[i]: c[j] for i, j in enumerate(perm) if c[i] in b}
+        if set(swaps_b.keys()) != set(swaps_b.values()):
+            continue
+        b_p = "".join([swaps_b.get(b[i], b[i]) for i in range(len(b))])
+
+        # Get the permutations of a and b
+        perm1 = tuple(a.index(a_p[i]) for i in range(len(a)))
+        perm2 = tuple(b.index(b_p[i]) for i in range(len(b)))
         if perm1 in perms_and_signs1 and perm2 in perms_and_signs2:
             sign = perms_and_signs1[perm1] * perms_and_signs2[perm2]
             permutations.add((tuple(perm), sign))
@@ -102,7 +152,7 @@ def _combine_permutations(
     return tuple(sorted(permutations))
 
 
-def _check_shapes(first: Tensor, second: Tensor) -> None:
+def _check_shapes(first: Tensor[T], second: Tensor[T]) -> None:
     """Check that the shapes of two tiled arrays are compatible.
 
     Args:
@@ -117,9 +167,9 @@ def _check_shapes(first: Tensor, second: Tensor) -> None:
 
 def _bilinear_map(
     func: Callable[[NDArray[float], NDArray[float]], NDArray[float]],
-    first: Tensor,
-    second: Tensor,
-) -> Tensor:
+    first: Tensor[T],
+    second: Tensor[T],
+) -> Tensor[T]:
     """Bilinear map between two tiled arrays.
 
     Applies a function to each pair of blocks, handling communication. The function should be a
@@ -134,11 +184,12 @@ def _bilinear_map(
         The result of the bilinear map.
     """
     _check_shapes(first, second)
-    result = Tensor(
+    result: Tensor[T] = Tensor(
         first.shape,
         first.block_num,
         permutations=first.permutations,
         world=first.world,
+        dtype=first.dtype,
     )
 
     # Loop over the blocks
@@ -147,14 +198,16 @@ def _bilinear_map(
             if second.owns_block(block_index):
                 block = func(first._get_block(block_index), second._get_block(block_index))
             else:
-                other_block = second.recv_block(block_index, second.get_owner(block_index), store=False)
+                other_block = second.recv_block(
+                    block_index, second.get_owner(block_index), store=False
+                )
                 block = func(first._get_block(block_index), other_block)
             result._set_block(block_index, block)
 
     return result
 
 
-def _unary_map(func: Callable[[NDArray[float]], NDArray[float]], array: Tensor) -> Tensor:
+def _unary_map(func: Callable[[NDArray[float]], NDArray[float]], array: Tensor[T]) -> Tensor[T]:
     """Unary map on a tiled array.
 
     Args:
@@ -164,32 +217,43 @@ def _unary_map(func: Callable[[NDArray[float]], NDArray[float]], array: Tensor) 
     Returns:
         The result of the unary map.
     """
-    result = Tensor(
+    result: Tensor[T] = Tensor(
         array.shape,
         array.block_num,
         permutations=array.permutations,
         world=array.world,
+        dtype=array.dtype,
     )
 
     # Loop over the blocks
-    for block_index in loop_block_indices(array.block_num):
-        if array.owns_block(block_index):
-            block = func(array._get_block(block_index))
-            result._set_block(block_index, block)
+    for block_index in loop_rank_block_indices(array):
+        block = func(array._get_block(block_index))
+        result._set_block(block_index, block)
 
     return result
 
 
-class Tensor:
-    """Tensor class."""
+class Tensor(Generic[T]):
+    """Tensor class.
+
+    Tensors are distributed arrays that are tiled into blocks. Each block is assigned to a process
+    when MPI is enabled. The blocks are stored in a dictionary where the key is the block index and
+    the value is the block. The blocks are stored in a C-contiguous order.
+
+    When symmetry is present, the blocks are stored in a canonical form. The canonical form is
+    determined by the permutation that sorts the indices in ascending order. The sign of the
+    permutation is stored to account for the sign of the permutation.
+    """
+
+    dtype: Type[T]
 
     def __init__(
         self,
-        shape: tuple[int],
-        block_num: Optional[tuple[int]] = None,
+        shape: tuple[int, ...],
+        block_num: Optional[tuple[int, ...]] = None,
         dtype: Optional[Type[T]] = None,
-        permutations: Optional[tuple[Permutation]] = None,
-        world: Optional[MPI.Comm] = None,
+        permutations: Optional[tuple[Permutation, ...]] = None,
+        world: Optional[Comm] = None,
     ) -> None:
         """Initialise the tensor.
 
@@ -208,17 +272,17 @@ class Tensor:
 
         self.shape = shape
         self.dtype = dtype
-        self.block_num = block_num
+        self.block_num = block_num if block_num is not None else (1,) * len(shape)
         self.permutations = permutations
         self.world = world
 
-        self._blocks: dict[tuple[int], NDArray[T]] = {}
+        self._blocks: dict[tuple[int, ...], NDArray[T]] = {}
 
-    def _set_block(self, index: tuple[int], block: NDArray[T]) -> None:
+    def _set_block(self, index: tuple[int, ...], block: NDArray[T]) -> None:
         """Set a block in the distributed array."""
         self._blocks[index] = block
 
-    def __setitem__(self, index: tuple[int], block: NDArray[T]) -> None:
+    def __setitem__(self, index: tuple[int, ...], block: NDArray[T]) -> None:
         """Set a block in the distributed array.
 
         Args:
@@ -229,17 +293,18 @@ class Tensor:
             raise ValueError(
                 "Block index out of range. The `__setitem__` method sets blocks, not elements."
             )
+        assert block.shape == self.get_block_shape(index)
         index, perm, sign = symmetrise_indices(index, self.permutations, forward=False)
         block = block.transpose(perm) * sign
         if not (block.flags.c_contiguous or block.flags.f_contiguous):
             block = np.copy(block, order="C")
         self._set_block(index, block)
 
-    def _get_block(self, index: tuple[int]) -> NDArray[T]:
+    def _get_block(self, index: tuple[int, ...]) -> NDArray[T]:
         """Get a block from the distributed array."""
         return self._blocks[index]
 
-    def __getitem__(self, index: tuple[int]) -> NDArray[T]:
+    def __getitem__(self, index: tuple[int, ...]) -> NDArray[T]:
         """Get a block from the distributed array.
 
         Args:
@@ -259,7 +324,7 @@ class Tensor:
             raise ValueError(f"Block {index} not found.")
 
     @functools.lru_cache
-    def get_block_shape(self, index: tuple[int]) -> tuple[int]:
+    def get_block_shape(self, index: tuple[int, ...]) -> tuple[int, ...]:
         """Get the shape of a block.
 
         Args:
@@ -274,7 +339,7 @@ class Tensor:
         )
 
     @functools.lru_cache
-    def get_block_slice(self, index: tuple[int]) -> tuple[slice]:
+    def get_block_slice(self, index: tuple[int, ...]) -> tuple[slice, ...]:
         """Get the slice of a block.
 
         Args:
@@ -283,9 +348,14 @@ class Tensor:
         Returns:
             The slice of the block.
         """
-        _shape = lambda i, bs, s: s // bs + (1 if i < s % bs else 0)
+
+        def _shape(i: int, bs: int, s: int) -> int:
+            return s // bs + (1 if i < s % bs else 0)
+
         return tuple(
-            slice(sum(_shape(j, bs, s) for j in range(i)), sum(_shape(j, bs, s) for j in range(i + 1)))
+            slice(
+                sum(_shape(j, bs, s) for j in range(i)), sum(_shape(j, bs, s) for j in range(i + 1))
+            )
             for i, bs, s in zip(index, self.block_num, self.shape)
         )
 
@@ -294,7 +364,7 @@ class Tensor:
         """Get the number of dimensions."""
         return len(self.shape)
 
-    def owns_block(self, index: tuple[int]) -> bool:
+    def owns_block(self, index: tuple[int, ...]) -> bool:
         """Check if the current process owns a block.
 
         Args:
@@ -306,7 +376,7 @@ class Tensor:
         index, _, _ = symmetrise_indices(index, self.permutations)
         return index in self._blocks
 
-    def get_owner(self, index: tuple[int], raise_error: bool = True) -> Optional[int]:
+    def get_owner(self, index: tuple[int, ...], raise_error: bool = True) -> Optional[int]:
         """Get the owner of a block.
 
         Args:
@@ -322,35 +392,41 @@ class Tensor:
         if self.owns_block(index):
             check[self.world.rank] = 1
         check = self.world.allreduce(check, op=MPI.SUM)
-        rank = np.argmax(check)
+        rank: Optional[int] = int(np.argmax(check))
         if check[rank] != 1:
             rank = None
         if raise_error and rank is None:
             raise ValueError(f"Block {index} is not owned by any process.")
         return rank
 
-    def send_block(self, index: tuple[int], dest: int) -> None:
+    def send_block(self, index: tuple[int, ...], dest: Optional[int]) -> None:
         """Send a block to another process.
 
         Args:
             index: The index of the block.
-            dest: The rank of the destination process.
+            dest: The rank of the destination process. Must be provided if MPI is used.
         """
+        if dest is None and self.world is not None:
+            raise ValueError("Destination process must be provided if MPI is used.")
         if self.world is None or self.world.size == 1:
             return
         self.world.Send(self[index], dest=dest)
 
-    def recv_block(self, index: tuple[int], source: int, store: bool = True) -> NDArray[T]:
+    def recv_block(
+        self, index: tuple[int, ...], source: Optional[int], store: bool = True
+    ) -> NDArray[T]:
         """Receive a block from another process.
 
         Args:
             index: The index of the block.
-            source: The rank of the source process.
+            source: The rank of the source process. Must be provided if MPI is used.
             store: Whether to store the block.
 
         Returns:
             The block.
         """
+        if source is None and self.world is not None:
+            raise ValueError("Source process must be provided if MPI is used.")
         index, perm, sign = symmetrise_indices(index, self.permutations)
         if self.world is None or self.world.size == 1:
             return self[index].transpose(perm) * sign
@@ -360,7 +436,7 @@ class Tensor:
             self[index] = block
         return block.transpose(perm) * sign
 
-    def as_local_ndarray(self, fill=0.0) -> NDArray[T]:
+    def as_local_ndarray(self, fill: Any = 0.0) -> NDArray[T]:
         """Convert the tiled array to a local numpy array.
 
         Args:
@@ -382,20 +458,12 @@ class Tensor:
         Returns:
             The global numpy array.
         """
-        array = np.empty(self.shape, dtype=self.dtype)
-        for block_index in loop_block_indices(self.block_num):
-            owner = self.get_owner(block_index)
-            s = self.get_block_slice(block_index)
-            if self.owns_block(block_index):
-                array[s] = self[block_index]
-                for i in range(self.world.size):
-                    if i != self.world.rank:
-                        self.send_block(block_index, i)
-            else:
-                array[s] = self.recv_block(block_index, owner, store=False)
-        return array
+        array = self.as_local_ndarray()
+        if self.world is None or self.world.size == 1:
+            return array
+        return self.world.allreduce(array, op=MPI.SUM)
 
-    def __add__(self, other: Tensor) -> Tensor:
+    def __add__(self, other: Tensor[T]) -> Tensor[T]:
         """Distributed addition.
 
         Args:
@@ -406,7 +474,7 @@ class Tensor:
         """
         return _bilinear_map(np.add, self, other)
 
-    def __sub__(self, other: Tensor) -> Tensor:
+    def __sub__(self, other: Tensor[T]) -> Tensor[T]:
         """Distributed subtraction.
 
         Args:
@@ -417,7 +485,7 @@ class Tensor:
         """
         return _bilinear_map(np.subtract, self, other)
 
-    def __mul__(self, other: Tensor) -> Tensor:
+    def __mul__(self, other: Tensor[T]) -> Tensor[T]:
         """Distributed multiplication.
 
         Args:
@@ -428,7 +496,7 @@ class Tensor:
         """
         return _bilinear_map(np.multiply, self, other)
 
-    def __truediv__(self, other: Tensor) -> Tensor:
+    def __truediv__(self, other: Tensor[T]) -> Tensor[T]:
         """Distributed division.
 
         Args:
@@ -439,7 +507,7 @@ class Tensor:
         """
         return _bilinear_map(np.divide, self, other)
 
-    def __neg__(self) -> Tensor:
+    def __neg__(self) -> Tensor[T]:
         """Negation.
 
         Returns:
@@ -447,7 +515,7 @@ class Tensor:
         """
         return _unary_map(np.negative, self)
 
-    def __abs__(self) -> Tensor:
+    def __abs__(self) -> Tensor[T]:
         """Absolute value.
 
         Returns:
@@ -455,7 +523,7 @@ class Tensor:
         """
         return _unary_map(np.abs, self)
 
-    def __pow__(self, other: Union[int, float, Tensor]) -> Tensor:
+    def __pow__(self, other: Union[int, float, Tensor[T]]) -> Tensor[T]:
         """Distributed exponentiation.
 
         Args:
@@ -469,7 +537,7 @@ class Tensor:
         else:
             return _unary_map(lambda x: np.power(x, other), self)
 
-    def __matmul__(self, other: Tensor) -> Tensor:
+    def __matmul__(self, other: Tensor[T]) -> Tensor[T]:
         """Distributed matrix multiplication.
 
         Args:
@@ -480,7 +548,7 @@ class Tensor:
         """
         return dot(self, other)
 
-    def __iadd__(self, other: Tensor) -> Tensor:
+    def __iadd__(self, other: Tensor[T]) -> Tensor[T]:
         """In-place addition.
 
         Args:
@@ -491,7 +559,7 @@ class Tensor:
         """
         return _bilinear_map(np.add, self, other)
 
-    def __isub__(self, other: Tensor) -> Tensor:
+    def __isub__(self, other: Tensor[T]) -> Tensor[T]:
         """In-place subtraction.
 
         Args:
@@ -502,7 +570,7 @@ class Tensor:
         """
         return _bilinear_map(np.subtract, self, other)
 
-    def __imul__(self, other: Tensor) -> Tensor:
+    def __imul__(self, other: Tensor[T]) -> Tensor[T]:
         """In-place multiplication.
 
         Args:
@@ -513,7 +581,7 @@ class Tensor:
         """
         return _bilinear_map(np.multiply, self, other)
 
-    def copy(self) -> Tensor:
+    def copy(self) -> Tensor[T]:
         """Copy the tiled array.
 
         Returns:
@@ -521,7 +589,7 @@ class Tensor:
         """
         return _unary_map(np.copy, self)
 
-    def transpose(self, *axes: int) -> Tensor:
+    def transpose(self, *axes: int) -> Tensor[T]:
         """Transpose the tiled array.
 
         Args:
@@ -532,16 +600,29 @@ class Tensor:
         """
         if axes == tuple(range(self.ndim)):
             return self
+
+        # Transpose the blocks
         res = _unary_map(lambda x: x.transpose(*axes), self)
         res.shape = tuple(res.shape[i] for i in axes)
         res.block_num = tuple(res.block_num[i] for i in axes)
         res._blocks = {tuple(i[j] for j in axes): block for i, block in res._blocks.items()}
-        res.permutations = tuple(
-            (tuple(perm[i] for i in axes), sign) for perm, sign in res.permutations
-        )
+
+        # Transpose the permutations
+        if res.permutations is not None:
+            res.permutations = tuple(
+                (tuple(perm[i] for i in axes), sign) for perm, sign in res.permutations
+            )
+
+        # Canonicalise the blocks
+        blocks = {}
+        for index, block in res._blocks.items():
+            canon, perm, sign = symmetrise_indices(index, res.permutations)
+            blocks[canon] = block.transpose(perm) * sign
+        res._blocks = blocks
+
         return res
 
-    def swapaxes(self, axis1: int, axis2: int) -> Tensor:
+    def swapaxes(self, axis1: int, axis2: int) -> Tensor[T]:
         """Swap the axes of the tiled array.
 
         Args:
@@ -557,9 +638,9 @@ class Tensor:
 
 
 def dot(
-    first: Tensor,
-    second: Tensor,
-) -> Tensor:
+    first: Tensor[T],
+    second: Tensor[T],
+) -> Tensor[T]:
     """Distributed dot product.
 
     Args:
@@ -580,11 +661,15 @@ def dot(
     world_size = world.size if world is not None else 1
     world_rank = world.rank if world is not None else 0
 
-    result = Tensor(
+    permutations = None
+    if first.permutations is not None and second.permutations is not None:
+        permutations = _combine_permutations("ij,jk->ik", first.permutations, second.permutations)
+
+    result: Tensor[T] = Tensor(
         (first.shape[0], second.shape[1]),
         dtype=first.dtype,
         block_num=first.block_num,
-        permutations=_combine_permutations("ij,jk->ik", first.permutations, second.permutations),
+        permutations=permutations,
         world=world,
     )
 
@@ -632,11 +717,12 @@ def dot(
 
 
 def tensordot(
-    a: Tensor,
-    b: Tensor,
+    a: Tensor[T],
+    b: Tensor[T],
     axes: Union[int, tuple[int, int], tuple[tuple[int, ...], tuple[int, ...]]],
     subscript: Optional[str] = None,
-) -> Tensor:
+    permutations: Optional[tuple[Permutation, ...]] = None,
+) -> Tensor[T]:
     """Compute a generalized tensor dot product over the specified axes.
 
     See `numpy.tensordot` for more information on the `axes` argument.
@@ -646,35 +732,22 @@ def tensordot(
         b: The second tiled array.
         axes: The axes to sum over.
         subscript: The subscript notation for the contraction. Must be provided to preserve
-            permutations.
+            permutations, unless the permutations are provided explicitly.
+        permutations: The permutations of the result. If not provided, the permutations are
+            inferred from the subscript.
 
     Returns:
         The tensor dot product of the two tiled arrays.
     """
-    try:
-        iter(axes)
-    except Exception:
-        axes_a = list(range(-axes, 0))
-        axes_b = list(range(0, axes))
+    # Parse the axes
+    if isinstance(axes, int):
+        axes_a = tuple(range(-axes, 0))
+        axes_b = tuple(range(0, axes))
     else:
-        axes_a, axes_b = axes
-
-    try:
-        na = len(axes_a)
-        axes_a = list(axes_a)
-    except TypeError:
-        axes_a = [axes_a]
-        na = 1
-
-    try:
-        nb = len(axes_a)
-        axes_b = list(axes_b)
-    except TypeError:
-        axes_b = [axes_b]
-        nb = 1
-
-    axes_a = [a.ndim + axis if axis < 0 else axis for axis in axes_a]
-    axes_b = [b.ndim + axis if axis < 0 else axis for axis in axes_b]
+        axes_a = (axes[0],) if isinstance(axes[0], int) else tuple(axes[0])
+        axes_b = (axes[1],) if isinstance(axes[1], int) else tuple(axes[1])
+    axes_a = tuple(a.ndim + axis if axis < 0 else axis for axis in axes_a)
+    axes_b = tuple(b.ndim + axis if axis < 0 else axis for axis in axes_b)
 
     def _combined_block_indices(
         block_indices_external: tuple[int, ...],
@@ -683,7 +756,7 @@ def tensordot(
         axes_dummy: tuple[int, ...],
     ) -> tuple[int, ...]:
         """Combine the external and dummy block indices."""
-        block_indices = [None] * (len(axes_external) + len(axes_dummy))
+        block_indices = [-1] * (len(axes_external) + len(axes_dummy))
         for axes, block in zip(axes_external, block_indices_external):
             block_indices[axes] = block
         for axes, block in zip(axes_dummy, block_indices_dummy):
@@ -693,31 +766,39 @@ def tensordot(
     # Get the dummy and external axes
     axes_dummy = (axes_a, axes_b)
     axes_external = (
-        [i for i in range(a.ndim) if i not in axes_a],
-        [i for i in range(b.ndim) if i not in axes_b],
+        tuple(i for i in range(a.ndim) if i not in axes_a),
+        tuple(i for i in range(b.ndim) if i not in axes_b),
     )
 
+    # Get the output permutations
+    if permutations is None and subscript is not None:
+        if a.permutations is None or b.permutations is None:
+            raise ValueError(
+                "Input tensors must have permutations to determine the output permutations."
+            )
+        permutations = _combine_permutations(subscript, a.permutations, b.permutations)
+
     # Get the output array
-    output_shape = [a.shape[i] for i in axes_external[0]]
-    output_shape += [b.shape[i] for i in axes_external[1]]
+    output_shape = tuple(a.shape[i] for i in axes_external[0])
+    output_shape += tuple(b.shape[i] for i in axes_external[1])
+    block_num_dummy = tuple(a.block_num[i] for i in axes_dummy[0])
+    block_num_external = tuple(a.block_num[i] for i in axes_external[0]) + tuple(
+        b.block_num[i] for i in axes_external[1]
+    )
     world = a.world
     world_rank = world.rank if world is not None else 0
-    c = Tensor(
+    world_size = world.size if world is not None else 1
+    c: Tensor[T] = Tensor(
         output_shape,
         dtype=a.dtype,
-        block_num=a.block_num,
-        permutations=(
-            _combine_permutations(subscript, a.permutations, b.permutations)
-            if subscript is not None
-            else None
-        ),
+        block_num=block_num_external,
+        permutations=permutations,
         world=world,
     )
 
-    for block_indices_external in loop_block_indices(a.block_num):
-        for block_indices_dummy in itertools.product(
-            *map(range, [a.block_num[i] for i in axes_a])
-        ):
+    rank = 0
+    for block_indices_external in loop_block_indices(block_num_external):
+        for block_indices_dummy in loop_block_indices(block_num_dummy):
             block_indices_a = _combined_block_indices(
                 block_indices_external[: len(axes_external[0])],
                 block_indices_dummy,
@@ -740,7 +821,10 @@ def tensordot(
             # Get the owners
             owner_a = a.get_owner(block_indices_a)
             owner_b = b.get_owner(block_indices_b)
-            owner_c = np.ravel_multi_index(block_indices_c, c.block_num) % c.world.size
+            owner_c = c.get_owner(block_indices_c, raise_error=False)  # In case permutation exists
+            if owner_c is None:
+                owner_c = rank
+                rank = (rank + 1) % world_size
 
             # Send [a] to [b]
             if owner_a == world_rank:
@@ -756,18 +840,17 @@ def tensordot(
 
             # Multiply [a] @ [b] and add to [c]
             if owner_c == world_rank:
-                block_c = block_a @ block_b
+                block_c = np.tensordot(block_a, block_b, axes=(axes_a, axes_b))
                 if c.owns_block(block_indices_c):
-                    c[block_indices_external] += block_c
+                    c[block_indices_c] += block_c
                 else:
-                    c[block_indices_external] = block_c
+                    c[block_indices_c] = block_c
 
     return c
 
 
 def contract(*operands: Any, **kwargs: Any) -> Union[T, NDArray[T]]:
-    """Dispatch a two-term einsum contraction.
-    """
+    """Dispatch a two-term einsum contraction."""
     subscript, a, b = operands  # FIXME
     abk, rk = subscript.split("->")
     ak, bk = abk.split(",")
@@ -777,17 +860,17 @@ def contract(*operands: Any, **kwargs: Any) -> Union[T, NDArray[T]]:
     for i, aki in enumerate(ak):
         if aki not in bk and aki not in rk:
             a = np.sum(a, axis=i)
-            ak = ak[:i] + ak[i+1:]
+            ak = ak[:i] + ak[i + 1 :]
 
     # Sum over any axes that are not in the output for the second array
     for i, bki in enumerate(bk):
         if bki not in ak and bki not in rk:
             b = np.sum(b, axis=i)
-            bk = bk[:i] + bk[i+1:]
+            bk = bk[:i] + bk[i + 1 :]
 
     # Get the axes for the first array
     axes_a = []
-    for i,k in enumerate(ak):
+    for i, k in enumerate(ak):
         if k in rk:
             if k not in rk_def:
                 rk_def += k
@@ -796,7 +879,7 @@ def contract(*operands: Any, **kwargs: Any) -> Union[T, NDArray[T]]:
 
     # Get the axes for the second array
     axes_b = []
-    for i,k in enumerate(bk):
+    for i, k in enumerate(bk):
         if k in rk:
             if k not in rk_def:
                 rk_def += k
@@ -805,23 +888,29 @@ def contract(*operands: Any, **kwargs: Any) -> Union[T, NDArray[T]]:
 
     # Must be the same length
     if len(axes_a) != len(axes_b):
-        raise ValueError(f"Could not dispatch \"{ak},{bk}->{rk}\"")
+        raise ValueError(f'Could not dispatch "{ak},{bk}->{rk}"')
 
     # Check the transpose for the second array
     k_sum_a = "".join([ak[x] for x in axes_a])
     k_sum_b = "".join([bk[x] for x in axes_b])
     if k_sum_a != k_sum_b:
-        perm = np.argsort([k_sum_a.index(k) for k in k_sum_b])
+        perm = list(np.argsort([k_sum_a.index(k) for k in k_sum_b]))
         axes_b = [axes_b[x] for x in perm]
 
+    # Get the output permutations
+    permutations = kwargs.get("permutations", None)
+    if permutations is not None and rk != rk_def:
+        perm = [rk_def.index(k) for k in rk]
+        permutations = tuple((tuple(perm[i] for i in p), sign) for p, sign in permutations)
+
     # Dispatch the contraction
-    axes = (tuple(axes_a[::-1]), tuple(axes_b[::-1])) # reverse necessary?
-    res = tensordot(a, b, axes=axes, subscript=subscript)
+    axes = (tuple(axes_a[::-1]), tuple(axes_b[::-1]))  # reverse necessary?
+    res = tensordot(a, b, axes=axes, subscript=subscript, permutations=permutations)
 
     # Transpose the result
     if rk != rk_def:
-        perm = [rk_def.index(k) for k in rk]
-        res = res.transpose(*perm)
+        perm_res = [rk_def.index(k) for k in rk]
+        res = res.transpose(*perm_res)
 
     return res
 
@@ -848,6 +937,8 @@ def einsum(*operands: Any, **kwargs: Any) -> Union[T, NDArray[T]]:
         out: If provided, the calculation is done into this array.
         contract: The function to use for contraction.
         optimize: If `True`, use the `numpy.einsum_path` to optimize the contraction.
+        permutations: The permutations of the output tensor. If not provided, the permutations
+            are inferred from the input tensors.
 
     Returns:
         The calculation based on the Einstein summation convention.
@@ -858,8 +949,9 @@ def einsum(*operands: Any, **kwargs: Any) -> Union[T, NDArray[T]]:
     """
     # Parse the kwargs
     subscript = operands[0]  # FIXME
-    args = operands[1:]
+    args = list(operands[1:])
     _contract = kwargs.get("contract", contract)
+    optimize = kwargs.get("optimize", True)
 
     # Perform the contraction
     if len(args) < 2:
@@ -871,11 +963,10 @@ def einsum(*operands: Any, **kwargs: Any) -> Union[T, NDArray[T]]:
         # If it's a single contraction, call the backend directly
         out = _contract(subscript, *args, **kwargs)
     else:
+        raise NotImplementedError("More than two arguments not yet supported")
+
         # If it's a chain of contractions, use the path optimizer
-        optimize = kwargs.pop("optimize", True)
-        args = list(args)
-        path_kwargs = dict(optimize=optimize, einsum_call=True)
-        contractions = np.einsum_path(subscript, *args, **path_kwargs)[1]
+        contractions = np.einsum_path(subscript, *args, optimize=optimize, einsum_call=True)[1]
         for contraction in contractions:
             inds, idx_rm, einsum_str, remain = list(contraction[:4])
             contraction_args = [args.pop(x) for x in inds]
