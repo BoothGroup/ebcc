@@ -40,7 +40,7 @@ T = TypeVar("T", float, complex)
 EINSUM_SYMBOLS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 EINSUM_SYMBOLS_SET = set(EINSUM_SYMBOLS)
 
-DEFAULT_BLOCK_SIZE = 32
+DEFAULT_BLOCK_SIZE = 16
 
 
 def loop_block_indices(block_num: tuple[int, ...]) -> Iterator[tuple[int, ...]]:
