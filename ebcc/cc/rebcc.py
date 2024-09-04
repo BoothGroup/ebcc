@@ -15,6 +15,7 @@ from ebcc.ham.eris import RERIs
 from ebcc.ham.fock import RFock
 from ebcc.ham.space import Space
 from ebcc.opt.rbrueckner import BruecknerREBCC
+from ebcc.core.tensor import Tensor, initialise_from_array, zeros
 
 if TYPE_CHECKING:
     from typing import Any, Optional, TypeAlias, Union
@@ -25,7 +26,7 @@ if TYPE_CHECKING:
     from ebcc.util import Namespace
 
     ERIsInputType: TypeAlias = Union[RERIs, RCDERIs, NDArray[float]]
-    SpinArrayType: TypeAlias = NDArray[float]
+    SpinArrayType: TypeAlias = Tensor[float]
 
 
 class REBCC(BaseEBCC):
@@ -146,7 +147,7 @@ class REBCC(BaseEBCC):
                 amplitudes[name] = eris[key_t].swapaxes(1, 2) / self.energy_sum(key)
             else:
                 shape = tuple(self.space.size(k) for k in key)
-                amplitudes[name] = np.zeros(shape, dtype=types[float])
+                amplitudes[name] = zeros(shape, dtype=types[float])
 
         if self.boson_ansatz:
             # Only true for real-valued couplings:
@@ -158,10 +159,10 @@ class REBCC(BaseEBCC):
         # Build S amplitudes:
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             if n == 1:
-                amplitudes[name] = -H / self.omega
+                amplitudes[name] = initialise_from_array(-H / self.omega)
             else:
                 shape = (self.nbos,) * n
-                amplitudes[name] = np.zeros(shape, dtype=types[float])
+                amplitudes[name] = zeros(shape, dtype=types[float])
 
         # Build U amplitudes:
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
@@ -171,7 +172,7 @@ class REBCC(BaseEBCC):
                 amplitudes[name] = h[key] / self.energy_sum(key)
             else:
                 shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
-                amplitudes[name] = np.zeros(shape, dtype=types[float])
+                amplitudes[name] = zeros(shape, dtype=types[float])
 
         return amplitudes
 
@@ -340,7 +341,7 @@ class REBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm: NDArray[float] = func(**kwargs)
+        dm: NDArray[float] = np.asarray(func(**kwargs))
 
         if hermitise:
             dm = 0.5 * (dm + dm.T)
@@ -371,7 +372,7 @@ class REBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm: NDArray[float] = func(**kwargs)
+        dm: NDArray[float] = np.asarray(func(**kwargs))
 
         if hermitise:
             dm = 0.5 * (dm.transpose(0, 1, 2, 3) + dm.transpose(2, 3, 0, 1))
@@ -414,7 +415,7 @@ class REBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm_eb: NDArray[float] = func(**kwargs)
+        dm_eb: NDArray[float] = np.asarray(func(**kwargs))
 
         if hermitise:
             dm_eb[0] = 0.5 * (dm_eb[0] + dm_eb[1].transpose(0, 2, 1))
@@ -427,7 +428,7 @@ class REBCC(BaseEBCC):
 
         return dm_eb
 
-    def energy_sum(self, *args: str, signs_dict: Optional[dict[str, str]] = None) -> NDArray[float]:
+    def energy_sum(self, *args: str, signs_dict: Optional[dict[str, str]] = None) -> Tensor[float]:
         """Get a direct sum of energies.
 
         Args:
@@ -463,8 +464,21 @@ class REBCC(BaseEBCC):
             else:
                 energies.append(np.diag(self.fock[key + key]))
 
+        perms = {tuple(range(len(subscript)))}
+        for char in set(subscript):
+            indices = [i for i, k in enumerate(subscript) if k == char]
+            for perm in perms.copy():
+                for indices_perm, _ in util.permutations.permutations_with_signs(indices):
+                    new_perm = list(perm)
+                    for i, j in zip(indices, indices_perm):
+                        new_perm[i] = perm[j]
+                    perms.add(tuple(new_perm))
+
         subscript = "".join([signs_dict[k] + next_char() for k in subscript])
-        energy_sum = util.direct_sum(subscript, *energies)
+        energy_sum = initialise_from_array(
+            util.direct_sum(subscript, *energies),
+            permutations=[(perm, 1) for perm in perms],
+        )
 
         return energy_sum
 
@@ -505,19 +519,19 @@ class REBCC(BaseEBCC):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             shape = tuple(self.space.size(k) for k in key)
             size = np.prod(shape)
-            amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[name] = initialise_from_array(vector[i0 : i0 + size].reshape(shape))
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * n
             size = np.prod(shape)
-            amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[name] = initialise_from_array(vector[i0 : i0 + size].reshape(shape))
             i0 += size
 
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
             size = np.prod(shape)
-            amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[name] = initialise_from_array(vector[i0 : i0 + size].reshape(shape))
             i0 += size
 
         return amplitudes
@@ -561,20 +575,20 @@ class REBCC(BaseEBCC):
             key = key[n:] + key[:n]
             shape = tuple(self.space.size(k) for k in key)
             size = np.prod(shape)
-            lambdas[lname] = vector[i0 : i0 + size].reshape(shape)
+            lambdas[lname] = initialise_from_array(vector[i0 : i0 + size].reshape(shape))
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * n
             size = np.prod(shape)
-            lambdas["l" + name] = vector[i0 : i0 + size].reshape(shape)
+            lambdas["l" + name] = initialise_from_array(vector[i0 : i0 + size].reshape(shape))
             i0 += size
 
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             key = key[:nb] + key[nb + nf :] + key[nb : nb + nf]
             shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
             size = np.prod(shape)
-            lambdas["l" + name] = vector[i0 : i0 + size].reshape(shape)
+            lambdas["l" + name] = initialise_from_array(vector[i0 : i0 + size].reshape(shape))
             i0 += size
 
         return lambdas
@@ -588,7 +602,7 @@ class REBCC(BaseEBCC):
         # FIXME should this also sum in frozen orbitals?
         assert self.omega is not None
         assert self.g is not None
-        val = util.einsum("Ipp->I", self.g.boo) * 2.0
+        val = np.asarray(einsum("Ipp->I", self.g.boo)) * 2.0
         val -= self.xi * self.omega
         if self.bare_G is not None:
             val += self.bare_G
@@ -617,7 +631,7 @@ class REBCC(BaseEBCC):
         assert self.omega is not None
         if self.options.shift:
             assert self.g is not None
-            xi = util.einsum("Iii->I", self.g.boo) * 2.0
+            xi = np.asarray(einsum("Iii->I", self.g.boo)) * 2.0
             xi /= self.omega
             if self.bare_G is not None:
                 xi += self.bare_G / self.omega

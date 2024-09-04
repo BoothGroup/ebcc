@@ -10,6 +10,7 @@ from ebcc import numpy as np
 from ebcc import util
 from ebcc.core.precision import types
 from ebcc.ham.base import BaseERIs
+from ebcc.core.tensor import Tensor, loop_rank_block_indices, initialise_from_array, einsum
 
 if TYPE_CHECKING:
     from typing import Optional
@@ -36,7 +37,7 @@ class RCDERIs(BaseERIs):
         if len(key) == 4:
             e1 = self.__getitem__("Q" + key[:2])
             e2 = self.__getitem__("Q" + key[2:], e2=True)  # type: ignore
-            return util.einsum("Qij,Qkl->ijkl", e1, e2)
+            return einsum("Qij,Qkl->ijkl", e1, e2)
         elif len(key) == 3:
             key = key[1:]
         else:
@@ -54,32 +55,24 @@ class RCDERIs(BaseERIs):
                 self.mo_coeff[i + s][:, self.space[i + s].mask(k)].astype(np.float64)
                 for i, k in enumerate(key)
             ]
-            if types[float] == np.float64:
+            block = Tensor(
+                tuple(c.shape[1] for c in coeffs),
+                permutations=[((0, 1, 2), 1), ((0, 2, 1), 1)] if key[0] == key[1] else [((0, 1, 2), 1)],
+            )
+            for indices in loop_rank_block_indices(block):
+                part_coeffs = [c[:, i] for c, i in zip(coeffs, indices)]
                 ijslice = (
                     0,
-                    coeffs[0].shape[-1],
-                    coeffs[0].shape[-1],
-                    coeffs[0].shape[-1] + coeffs[1].shape[-1],
+                    part_coeffs[0].shape[-1],
+                    part_coeffs[0].shape[-1],
+                    part_coeffs[0].shape[-1] + part_coeffs[1].shape[-1],
                 )
-                coeffs = np.concatenate(coeffs, axis=1)
-                block = ao2mo._ao2mo.nr_e2(
-                    self.cc.mf.with_df._cderi, coeffs, ijslice, aosym="s2", mosym="s1"
+                part_coeffs = np.concatenate(part_coeffs, axis=1)
+                part = ao2mo._ao2mo.nr_e2(
+                    self.cc.mf.with_df._cderi, part_coeffs, ijslice, aosym="s2", mosym="s1"
                 )
-                block = block.reshape(-1, ijslice[1] - ijslice[0], ijslice[3] - ijslice[2])
-            else:
-                shape = (
-                    self.cc.mf.with_df.get_naoaux(),
-                    self.cc.mf.with_df.mol.nao_nr(),
-                    self.cc.mf.with_df.mol.nao_nr(),
-                )
-                block = util.decompress_axes(
-                    "Qpp",
-                    self.cc.mf.with_df._cderi.astype(types[float]),
-                    include_diagonal=True,
-                    symmetry="+++",
-                    shape=shape,
-                )
-                block = util.einsum("Qpq,pi,qj->Qij", block, coeffs[s].conj(), coeffs[s + 1])
+                part = part.astype(block.dtype)
+                part = part.reshape(-1, ijslice[1] - ijslice[0], ijslice[3] - ijslice[2])
             self._members[key_e2] = block
 
         return self._members[key_e2]

@@ -74,6 +74,8 @@ class BaseFock(BaseHamiltonian):
 class BaseERIs(BaseHamiltonian):
     """Base class for electronic repulsion integrals."""
 
+    _from_uhf: bool
+
     def __init__(
         self,
         cc: BaseEBCC,

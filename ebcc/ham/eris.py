@@ -9,6 +9,7 @@ from pyscf import ao2mo
 from ebcc import numpy as np
 from ebcc.core.precision import types
 from ebcc.ham.base import BaseERIs
+from ebcc.core.tensor import Tensor, loop_rank_block_indices, initialise_from_array
 
 if TYPE_CHECKING:
     from typing import Any, Optional
@@ -21,6 +22,8 @@ class RERIs(BaseERIs):
 
     _members: dict[str, NDArray[float]]
 
+    _from_uhf = False
+
     def __getitem__(self, key: str) -> NDArray[float]:
         """Just-in-time getter.
 
@@ -30,26 +33,48 @@ class RERIs(BaseERIs):
         Returns:
             ERIs for the given spaces.
         """
+        perms = [(0, 1, 2, 3), (0, 1, 3, 2), (1, 0, 2, 3), (1, 0, 3, 2)]
+        if not self._from_uhf:
+            perms += [(2, 3, 0, 1), (3, 2, 0, 1), (2, 3, 1, 0), (3, 2, 1, 0)]
         if self.array is None:
             if key not in self._members.keys():
                 coeffs = [
                     self.mo_coeff[i][:, self.space[i].mask(k)].astype(np.float64)
                     for i, k in enumerate(key)
                 ]
-                block = ao2mo.kernel(self.cc.mf.mol, coeffs, compact=False, max_memory=1e6)
-                block = block.reshape([c.shape[-1] for c in coeffs])
-                self._members[key] = block.astype(types[float])
-            return self._members[key]
+                block = Tensor(
+                    tuple(c.shape[1] for c in coeffs),
+                    permutations=[
+                        (perm, 1) for perm in perms if tuple(key) == tuple(key[i] for i in perm)
+                    ],
+                )
+                for indices in loop_rank_block_indices(block):
+                    part_coeffs = [c[:, s] for c, s in zip(coeffs, block.get_block_slice(indices))]
+                    part = ao2mo.kernel(
+                        self.cc.mf.mol,
+                        part_coeffs,
+                        compact=False,
+                        max_memory=1e6,
+                    )
+                    part = part.astype(block.dtype)
+                    part = part.reshape([c.shape[1] for c in part_coeffs])
+                    block[indices] = part
+                self._members[key] = block
         else:
-            i, j, k, l = [self.space[i].mask(k) for i, k in enumerate(key)]
-            block = self.array[i][:, j][:, :, k][:, :, :, l]
-            return block
+            if key not in self._members.keys():
+                i, j, k, l = [self.space[i].mask(k) for i, k in enumerate(key)]
+                block = initialise_from_array(self.array[i][:, j][:, :, k][:, :, :, l])
+                self._members[key] = block
+
+        return self._members[key]
 
 
 class UERIs(BaseERIs):
     """Unrestricted ERIs container class."""
 
     _members: dict[str, RERIs]
+
+    _from_uhf = True
 
     def __getitem__(self, key: str) -> RERIs:
         """Just-in-time getter.
@@ -102,6 +127,8 @@ class GERIs(BaseERIs):
 
     _members: dict[str, UERIs]
 
+    _from_uhf = False
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialise the class."""
         super().__init__(*args, **kwargs)
@@ -126,6 +153,17 @@ class GERIs(BaseERIs):
         Returns:
             ERIs for the given spaces.
         """
-        i, j, k, l = [self.space[i].mask(k) for i, k in enumerate(key)]
-        block = self.array[i][:, j][:, :, k][:, :, :, l]
-        return block
+        if key not in self._members.keys():
+            i, j, k, l = [self.space[i].mask(k) for i, k in enumerate(key)]
+            block = initialise_from_array(
+                self.array[i][:, j][:, :, k][:, :, :, l],
+                permutations=[
+                    perm for perm in [
+                        ((0, 1, 2, 3), 1), ((0, 3, 2, 1), -1),
+                        ((2, 1, 0, 3), -1), ((2, 3, 0, 1), 1),
+                    ]
+                    if tuple(key) == tuple(key[i] for i in perm)
+                ],
+            )
+            self._members[key] = block
+        return self._members[key]

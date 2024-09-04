@@ -8,6 +8,7 @@ from ebcc import numpy as np
 from ebcc import util
 from ebcc.core.precision import types
 from ebcc.ham.base import BaseFock
+from ebcc.core.tensor import Tensor, initialise_from_array, einsum as tensor_einsum
 
 if TYPE_CHECKING:
     from ebcc.numpy.typing import NDArray
@@ -34,13 +35,16 @@ class RFock(BaseFock):
         if key not in self._members:
             i = self.space[0].mask(key[0])
             j = self.space[1].mask(key[1])
-            self._members[key] = self.array[i][:, j].copy()
+            self._members[key] = initialise_from_array(
+                self.array[i][:, j].copy(),
+                permutations=[((0, 1), 1), ((1, 0), 1)] if key[0] == key[1] else [((0, 1), 1)],
+            )
 
             if self.shift:
-                xi = self.xi
+                xi = initialise_from_array(self.xi, permutations=[((0,), 1)])
                 g = self.g.__getattr__(f"b{key}").copy()
                 g += self.g.__getattr__(f"b{key[::-1]}").transpose(0, 2, 1)
-                self._members[key] -= np.einsum("I,Ipq->pq", xi, g)
+                self._members[key] -= tensor_einsum("I,Ipq->pq", xi, g)
 
         return self._members[key]
 
@@ -101,12 +105,15 @@ class GFock(BaseFock):
         if key not in self._members:
             i = self.space[0].mask(key[0])
             j = self.space[1].mask(key[1])
-            self._members[key] = self.array[i][:, j].copy()
+            self._members[key] = initialise_from_array(
+                self.array[i][:, j].copy(),
+                permutations=[((0, 1), 1), ((1, 0), 1)] if key[0] == key[1] else [((0, 1), 1)],
+            )
 
             if self.shift:
-                xi = self.xi
+                xi = initialise_from_array(self.xi, permutations=[((0,), 1)])
                 g = self.g.__getattr__(f"b{key}").copy()
                 g += self.g.__getattr__(f"b{key[::-1]}").transpose(0, 2, 1)
-                self._members[key] -= np.einsum("I,Ipq->pq", xi, g)
+                self._members[key] -= tensor_einsum("I,Ipq->pq", xi, g)
 
         return self._members[key]

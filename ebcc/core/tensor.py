@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import functools
 import itertools
 from typing import TYPE_CHECKING, Generic, TypeVar
@@ -244,16 +245,16 @@ def _bilinear_map(
     )
 
     # Loop over the blocks
-    for block_index in loop_block_indices(first.block_num):
-        if first.owns_block(block_index):
-            if second.owns_block(block_index):
-                block = func(first._get_block(block_index), second._get_block(block_index))
+    for block_index in loop_rank_block_indices(first):
+        if second.owns_block(block_index):
+            second_block = second[block_index]
+        else:
+            owner_second = second.get_owner(block_index)
+            if owner_second == first.world.rank:
+                second.send_block(block_index, owner_second)
             else:
-                other_block = second.recv_block(
-                    block_index, second.get_owner(block_index), store=False
-                )
-                block = func(first._get_block(block_index), other_block)
-            result._set_block(block_index, block)
+                second_block = second.recv_block(block_index, owner_second, store=False)
+        result[block_index] = func(first[block_index], second_block)
 
     return result
 
@@ -278,8 +279,7 @@ def _unary_map(func: Callable[[NDArray[float]], NDArray[float]], array: Tensor[T
 
     # Loop over the blocks
     for block_index in loop_rank_block_indices(array):
-        block = func(array._get_block(block_index))
-        result._set_block(block_index, block)
+        result[block_index] = func(array[block_index])
 
     return result
 
@@ -324,7 +324,9 @@ class Tensor(Generic[T]):
         self.shape = shape
         self.dtype = dtype
         self.block_num = (
-            block_num if block_num is not None else tuple(s // DEFAULT_BLOCK_SIZE for s in shape)
+            block_num
+            if block_num is not None
+            else tuple(math.ceil(s / DEFAULT_BLOCK_SIZE) for s in shape)
         )
         self.permutations = permutations
         self.world = world
@@ -346,7 +348,8 @@ class Tensor(Generic[T]):
             raise ValueError(
                 "Block index out of range. The `__setitem__` method sets blocks, not elements."
             )
-        assert block.shape == self.get_block_shape(index)
+        if block.shape != self.get_block_shape(index):
+            raise ValueError("Block shape does not match the block shape of the tensor.")
         index, perm, sign = symmetrise_indices(index, self.permutations, forward=False)
         block = block.transpose(perm) * sign
         if not (block.flags.c_contiguous or block.flags.f_contiguous):
@@ -461,7 +464,7 @@ class Tensor(Generic[T]):
         """
         if dest is None and self.world is not None:
             raise ValueError("Destination process must be provided if MPI is used.")
-        index, perm, sign = symmetrise_indices(index, self.permutations)
+        index, _, _ = symmetrise_indices(index, self.permutations)
         if self.world is None or self.world.size == 1:
             return
         self.world.Send(self[index], dest=dest)
@@ -687,6 +690,8 @@ class Tensor(Generic[T]):
         Returns:
             The transposed tensor.
         """
+        if not axes:
+            raise ValueError("No axes provided.")
         if isinstance(axes[0], tuple):
             if len(axes) > 1:
                 raise ValueError("Only one tuple of axes can be provided.")
@@ -695,29 +700,39 @@ class Tensor(Generic[T]):
             return self
 
         # Transpose the blocks
-        res = _unary_map(lambda x: x.transpose(*axes), self)
-        res.shape = tuple(res.shape[i] for i in axes)
-        res.block_num = tuple(res.block_num[i] for i in axes)
-        res._blocks = {tuple(i[j] for j in axes): block for i, block in res._blocks.items()}
+        shape = tuple(self.shape[i] for i in axes)
+        block_num = tuple(self.block_num[i] for i in axes)
+        blocks = {
+            tuple(i[j] for j in axes): block.transpose(axes) for i, block in self._blocks.items()
+        }
 
         # Transpose the permutations
-        if res.permutations is not None:
+        permutations = None
+        if self.permutations is not None:
             chars = [EINSUM_SYMBOLS[i] for i in range(len(axes))]
             chars_transpose = [chars[i] for i in axes]
             permutations = []
-            for perm, sign in res.permutations:
+            for perm, sign in self.permutations:
                 chars_perm = [chars_transpose[i] for i in perm]
                 perm = tuple(chars.index(c) for c in chars_perm)
-                perm = tuple(perm[i] for i in axes)
+                perm = tuple(perm[i] for i in np.argsort(axes))
                 permutations.append((perm, sign))
-            res.permutations = permutations
 
         # Canonicalise the blocks
-        blocks = {}
-        for index, block in res._blocks.items():
-            canon, perm, sign = symmetrise_indices(index, res.permutations)
-            blocks[canon] = block.transpose(perm) * sign
-        res._blocks = blocks
+        canon_blocks = {}
+        for index, block in blocks.items():
+            canon, perm, sign = symmetrise_indices(index, permutations)
+            canon_blocks[canon] = block.transpose(perm) * sign
+
+        # Build the tensor
+        res = Tensor(
+            shape=shape,
+            block_num=block_num,
+            dtype=self.dtype,
+            permutations=permutations,
+            world=self.world,
+        )
+        res._blocks = canon_blocks
 
         return res
 
@@ -750,6 +765,24 @@ class Tensor(Generic[T]):
             The ravelled array.
         """
         return self.as_local_ndarray().ravel()  # FIXME
+
+    def _describe(self):
+        """Describe the tensor for debugging."""
+        output = ""
+        output += f"Tensor [{self}, rank {self.world.rank}]\n"
+        output += f"  Shape: {self.shape}\n"
+        output += f"  Block num: {self.block_num}\n"
+        output += f"  Block shapes (predicted):\n"
+        for block_index in loop_rank_block_indices(self):
+            output += f"    {block_index}: {self.get_block_shape(block_index)}\n"
+        output += f"  Block shapes (existing):\n"
+        for block_index, block in self._blocks.items():
+            output += f"    {block_index}: {block.shape}\n"
+        if self.permutations:
+            output += f"  Permutations:\n"
+            for perm, sign in self.permutations:
+                output += f"    {perm} ({sign:+d})\n"
+        return output
 
 
 def dot(
