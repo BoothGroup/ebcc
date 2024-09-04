@@ -78,9 +78,56 @@ def loop_rank_block_indices(tensor: Tensor[T]) -> Iterator[tuple[int, ...]]:
         rank = (rank + 1) % tensor.world.size
 
 
+def set_blocks_from_array(tensor: Tensor[T], array: NDArray[T]) -> Tensor[T]:
+    """Set the blocks of a tensor from a numpy array.
+
+    Args:
+        tensor: The tensor.
+        NDArray: The numpy array.
+
+    Returns:
+        The tensor with the blocks set.
+
+    Notes:
+        The blocks are set in-place.
+    """
+    for block_index in loop_rank_block_indices(tensor):
+        s = tensor.get_block_slice(block_index)
+        tensor[block_index] = array[s]
+    return tensor
+
+
+def initialise_from_array(array: NDArray[T], **kwargs: Any) -> Tensor[T]:
+    """Initialise a tensor from a numpy array.
+
+    Args:
+        array: The numpy array.
+        **kwargs: Additional arguments to pass to the tensor constructor.
+
+    Returns:
+        The tensor.
+    """
+    tensor = Tensor(array.shape, **kwargs)
+    set_blocks_from_array(tensor, array)
+    return tensor
+
+
+def zeros(shape: tuple[int, ...], **kwargs: Any) -> Tensor[T]:
+    """Create a tensor of zeros.
+
+    Args:
+        shape: The shape of the tensor.
+        **kwargs: Additional arguments to pass to the tensor constructor.
+
+    Returns:
+        The tensor of zeros.
+    """
+    return Tensor(shape, **kwargs)
+
+
 def symmetrise_indices(
     indices: tuple[int, ...],
-    permutations: Optional[tuple[Permutation, ...]],
+    permutations: Optional[list[Permutation, ...]],
     forward: bool = True,
 ) -> tuple[tuple[int, ...], tuple[int, ...], int]:
     """Symmetrise indices to get the canonical block index.
@@ -115,8 +162,8 @@ def symmetrise_indices(
 
 
 def _combine_permutations(
-    subscript: str, permutations1: tuple[Permutation, ...], permutations2: tuple[Permutation, ...]
-) -> tuple[Permutation, ...]:
+    subscript: str, permutations1: list[Permutation, ...], permutations2: list[Permutation, ...]
+) -> list[Permutation, ...]:
     """Get the permutations for the result of a contraction.
 
     Args:
@@ -154,20 +201,18 @@ def _combine_permutations(
             sign = perms_and_signs1[perm1] * perms_and_signs2[perm2]
             permutations.add((tuple(perm), sign))
 
-    return tuple(sorted(permutations))
+    return sorted(permutations)
 
 
 def _check_shapes(first: Tensor[T], second: Tensor[T]) -> None:
-    """Check that the shapes of two tiled arrays are compatible.
+    """Check that the shapes of two tensors are compatible.
 
     Args:
-        first: The first tiled array.
-        second: The second tiled array.
+        first: The first tensor.
+        second: The second tensor.
     """
     if first.shape != second.shape:
         raise ValueError("Shapes must be equal.")
-    if first.permutations != second.permutations:
-        raise ValueError("Permutations must be equal.")
 
 
 def _bilinear_map(
@@ -175,24 +220,25 @@ def _bilinear_map(
     first: Tensor[T],
     second: Tensor[T],
 ) -> Tensor[T]:
-    """Bilinear map between two tiled arrays.
+    """Bilinear map between two tensors.
 
     Applies a function to each pair of blocks, handling communication. The function should be a
     bilinear map of the matrix elements, i.e. `result[i, j] = func(first[i, j], second[i, j])`.
 
     Args:
         func: The function to apply.
-        first: The first tiled array.
-        second: The second tiled array.
+        first: The first tensor.
+        second: The second tensor.
 
     Returns:
         The result of the bilinear map.
     """
     _check_shapes(first, second)
+    permutations = list(set(first.permutations or ()) & set(second.permutations or ()))
     result: Tensor[T] = Tensor(
         first.shape,
         first.block_num,
-        permutations=first.permutations,
+        permutations=permutations,
         world=first.world,
         dtype=first.dtype,
     )
@@ -213,11 +259,11 @@ def _bilinear_map(
 
 
 def _unary_map(func: Callable[[NDArray[float]], NDArray[float]], array: Tensor[T]) -> Tensor[T]:
-    """Unary map on a tiled array.
+    """Unary map on a tensor.
 
     Args:
         func: The function to apply.
-        array: The tiled array.
+        array: The tensor.
 
     Returns:
         The result of the unary map.
@@ -257,7 +303,7 @@ class Tensor(Generic[T]):
         shape: tuple[int, ...],
         block_num: Optional[tuple[int, ...]] = None,
         dtype: Optional[Type[T]] = None,
-        permutations: Optional[tuple[Permutation, ...]] = None,
+        permutations: Optional[list[Permutation, ...]] = None,
         world: Optional[Comm] = None,
     ) -> None:
         """Initialise the tensor.
@@ -415,6 +461,7 @@ class Tensor(Generic[T]):
         """
         if dest is None and self.world is not None:
             raise ValueError("Destination process must be provided if MPI is used.")
+        index, perm, sign = symmetrise_indices(index, self.permutations)
         if self.world is None or self.world.size == 1:
             return
         self.world.Send(self[index], dest=dest)
@@ -444,7 +491,7 @@ class Tensor(Generic[T]):
         return block.transpose(perm) * sign
 
     def as_local_ndarray(self, fill: Any = 0.0) -> NDArray[T]:
-        """Convert the tiled array to a local numpy array.
+        """Convert the tensor to a local numpy array.
 
         Args:
             fill: The value to fill the array with where blocks are not owned.
@@ -460,7 +507,7 @@ class Tensor(Generic[T]):
         return array
 
     def as_global_ndarray(self) -> NDArray[T]:
-        """Convert the tiled array to a global numpy array.
+        """Convert the tensor to a global numpy array.
 
         Returns:
             The global numpy array.
@@ -470,55 +517,63 @@ class Tensor(Generic[T]):
             return array
         return self.world.allreduce(array, op=MPI.SUM)
 
-    def __add__(self, other: Tensor[T]) -> Tensor[T]:
+    def __add__(self, other: Union[Tensor[T], T]) -> Tensor[T]:
         """Distributed addition.
 
         Args:
-            other: The other tiled array.
+            other: The other tensor, or a scalar.
 
         Returns:
-            The sum of the two tiled arrays.
+            The sum of the two tensors.
         """
-        return _bilinear_map(np.add, self, other)
+        if isinstance(other, Tensor):
+            return _bilinear_map(np.add, self, other)
+        return _unary_map(lambda x: np.add(x, other), self)
 
-    def __sub__(self, other: Tensor[T]) -> Tensor[T]:
+    def __sub__(self, other: Union[Tensor[T], T]) -> Tensor[T]:
         """Distributed subtraction.
 
         Args:
-            other: The other tiled array.
+            other: The other tensor, or a scalar.
 
         Returns:
-            The difference of the two tiled arrays.
+            The difference of the two tensors.
         """
-        return _bilinear_map(np.subtract, self, other)
+        if isinstance(other, Tensor):
+            return _bilinear_map(np.subtract, self, other)
+        return _unary_map(lambda x: np.subtract(x, other), self)
 
-    def __mul__(self, other: Tensor[T]) -> Tensor[T]:
+    def __mul__(self, other: Union[Tensor[T], T]) -> Tensor[T]:
         """Distributed multiplication.
 
         Args:
-            other: The other tiled array.
+            other: The other tensor, or a scalar.
 
         Returns:
-            The product of the two tiled arrays.
+            The product of the two tensors.
         """
-        return _bilinear_map(np.multiply, self, other)
+        if isinstance(other, Tensor):
+            return _bilinear_map(np.multiply, self, other)
+        return _unary_map(lambda x: np.multiply(x, other), self)
 
-    def __truediv__(self, other: Tensor[T]) -> Tensor[T]:
+    def __truediv__(self, other: Union[Tensor[T], T]) -> Tensor[T]:
         """Distributed division.
 
         Args:
-            other: The other tiled array.
+            other: The other tensor, or a scalar.
 
         Returns:
-            The quotient of the two tiled arrays.
+            The quotient of the two tensors.
         """
-        return _bilinear_map(np.divide, self, other)
+        if isinstance(other, Tensor):
+            return _bilinear_map(np.divide, self, other)
+        return _unary_map(lambda x: np.divide(x, other), self)
 
     def __neg__(self) -> Tensor[T]:
         """Negation.
 
         Returns:
-            The negated tiled array.
+            The negated tensor.
         """
         return _unary_map(np.negative, self)
 
@@ -526,70 +581,75 @@ class Tensor(Generic[T]):
         """Absolute value.
 
         Returns:
-            The absolute tiled array.
+            The absolute tensor.
         """
         return _unary_map(np.abs, self)
 
-    def __pow__(self, other: Union[int, float, Tensor[T]]) -> Tensor[T]:
+    def __pow__(self, other: Union[Tensor[T], T]) -> Tensor[T]:
         """Distributed exponentiation.
 
         Args:
-            other: The other tiled array.
+            other: The other tensor, or a scalar.
 
         Returns:
-            The exponentiated tiled array.
+            The exponentiated tensor.
         """
         if isinstance(other, Tensor):
             return _bilinear_map(np.power, self, other)
-        else:
-            return _unary_map(lambda x: np.power(x, other), self)
+        return _unary_map(lambda x: np.power(x, other), self)
 
     def __matmul__(self, other: Tensor[T]) -> Tensor[T]:
         """Distributed matrix multiplication.
 
         Args:
-            other: The other tiled array.
+            other: The other tensor.
 
         Returns:
-            The matrix product of the two tiled arrays.
+            The matrix product of the two tensors.
         """
         return dot(self, other)
 
-    def __iadd__(self, other: Tensor[T]) -> Tensor[T]:
+    def __iadd__(self, other: Union[Tensor[T], T]) -> Tensor[T]:
         """In-place addition.
 
         Args:
-            other: The other tiled array.
+            other: The other tensor, or a scalar.
 
         Returns:
-            The sum of the two tiled arrays.
+            The sum of the two tensors.
         """
-        return _bilinear_map(np.add, self, other)
+        if isinstance(other, Tensor):
+            return _bilinear_map(np.add, self, other)
+        return _unary_map(lambda x: np.add(x, other), self)
 
-    def __isub__(self, other: Tensor[T]) -> Tensor[T]:
+    def __isub__(self, other: Union[Tensor[T], T]) -> Tensor[T]:
         """In-place subtraction.
 
         Args:
-            other: The other tiled array.
+            other: The other tensor, or a scalar.
 
         Returns:
-            The difference of the two tiled arrays.
+            The difference of the two tensors.
         """
-        return _bilinear_map(np.subtract, self, other)
+        if isinstance(other, Tensor):
+            return _bilinear_map(np.subtract, self, other)
+        return _unary_map(lambda x: np.subtract(x, other), self)
 
-    def __imul__(self, other: Tensor[T]) -> Tensor[T]:
+    def __imul__(self, other: Union[Tensor[T], T]) -> Tensor[T]:
         """In-place multiplication.
 
         Args:
-            other: The other tiled array.
+            other: The other tensor, or a scalar.
 
         Returns:
-            The product of the two tiled arrays.
+            The product of the two tensors.
         """
-        return _bilinear_map(np.multiply, self, other)
+        if isinstance(other, Tensor):
+            return _bilinear_map(np.multiply, self, other)
+        return _unary_map(lambda x: np.multiply(x, other), self)
 
     def __array__(self, dtype: Optional[Type[T]] = None) -> NDArray[T]:
-        """Convert the tiled array to a numpy array.
+        """Convert the tensor to a numpy array.
 
         Args:
             dtype: The data type of the array.
@@ -600,33 +660,37 @@ class Tensor(Generic[T]):
         return self.as_global_ndarray().astype(dtype)
 
     def copy(self) -> Tensor[T]:
-        """Copy the tiled array.
+        """Copy the tensor.
 
         Returns:
-            The copy of the tiled array.
+            The copy of the tensor.
         """
         return _unary_map(np.copy, self)
 
     def astype(self, dtype: Type[T]) -> Tensor[T]:
-        """Change the data type of the tiled array.
+        """Change the data type of the tensor.
 
         Args:
             dtype: The data type.
 
         Returns:
-            The tiled array with the new data type.
+            The tensor with the new data type.
         """
         return _unary_map(lambda x: x.astype(dtype), self)
 
-    def transpose(self, *axes: int) -> Tensor[T]:
-        """Transpose the tiled array.
+    def transpose(self, *axes: Union[int, tuple[int, ...]]) -> Tensor[T]:
+        """Transpose the tensor.
 
         Args:
             axes: The axes to transpose.
 
         Returns:
-            The transposed tiled array.
+            The transposed tensor.
         """
+        if isinstance(axes[0], tuple):
+            if len(axes) > 1:
+                raise ValueError("Only one tuple of axes can be provided.")
+            axes = axes[0]
         if axes == tuple(range(self.ndim)):
             return self
 
@@ -638,9 +702,15 @@ class Tensor(Generic[T]):
 
         # Transpose the permutations
         if res.permutations is not None:
-            res.permutations = tuple(
-                (tuple(perm[i] for i in axes), sign) for perm, sign in res.permutations
-            )
+            chars = [EINSUM_SYMBOLS[i] for i in range(len(axes))]
+            chars_transpose = [chars[i] for i in axes]
+            permutations = []
+            for perm, sign in res.permutations:
+                chars_perm = [chars_transpose[i] for i in perm]
+                perm = tuple(chars.index(c) for c in chars_perm)
+                perm = tuple(perm[i] for i in axes)
+                permutations.append((perm, sign))
+            res.permutations = permutations
 
         # Canonicalise the blocks
         blocks = {}
@@ -651,19 +721,35 @@ class Tensor(Generic[T]):
 
         return res
 
+    def T(self) -> Tensor[T]:
+        """Transpose the tensor.
+
+        Returns:
+            The transposed tensor.
+        """
+        return self.transpose(*range(self.ndim)[::-1])
+
     def swapaxes(self, axis1: int, axis2: int) -> Tensor[T]:
-        """Swap the axes of the tiled array.
+        """Swap the axes of the tensor.
 
         Args:
             axis1: The first axis.
             axis2: The second axis.
 
         Returns:
-            The tiled array with the axes swapped.
+            The tensor with the axes swapped.
         """
         transpose = list(range(self.ndim))
         transpose[axis1], transpose[axis2] = transpose[axis2], transpose[axis1]
         return self.transpose(*transpose)
+
+    def ravel(self) -> NDArray[T]:
+        """Ravel the tensor.
+
+        Returns:
+            The ravelled array.
+        """
+        return self.as_local_ndarray().ravel()  # FIXME
 
 
 def dot(
@@ -673,11 +759,11 @@ def dot(
     """Distributed dot product.
 
     Args:
-        first: The first tiled array.
-        second: The second tiled array.
+        first: The first tensor.
+        second: The second tensor.
 
     Returns:
-        The dot product of the two tiled arrays.
+        The dot product of the two tensors.
     """
     if first.ndim != 2 or second.ndim != 2:
         raise ValueError("Arrays must be 2D.")
@@ -750,15 +836,15 @@ def tensordot(
     b: Tensor[T],
     axes: Union[int, tuple[int, int], tuple[tuple[int, ...], tuple[int, ...]]],
     subscript: Optional[str] = None,
-    permutations: Optional[tuple[Permutation, ...]] = None,
+    permutations: Optional[list[Permutation, ...]] = None,
 ) -> Tensor[T]:
     """Compute a generalized tensor dot product over the specified axes.
 
     See `numpy.tensordot` for more information on the `axes` argument.
 
     Args:
-        a: The first tiled array.
-        b: The second tiled array.
+        a: The first tensor.
+        b: The second tensor.
         axes: The axes to sum over.
         subscript: The subscript notation for the contraction. Must be provided to preserve
             permutations, unless the permutations are provided explicitly.
@@ -766,7 +852,7 @@ def tensordot(
             inferred from the subscript.
 
     Returns:
-        The tensor dot product of the two tiled arrays.
+        The tensor dot product of the two tensors.
     """
     # Parse the axes
     if isinstance(axes, int):
@@ -932,7 +1018,7 @@ def _contract(*operands: Any, **kwargs: Any) -> Union[T, NDArray[T]]:
     permutations = kwargs.get("permutations", None)
     if permutations is not None and rk != rk_def:
         perm = [rk_def.index(k) for k in rk]
-        permutations = tuple((tuple(perm[i] for i in p), sign) for p, sign in permutations)
+        permutations = [(tuple(perm[i] for i in p), sign) for p, sign in permutations]
 
     # Dispatch the contraction
     axes = (tuple(axes_a[::-1]), tuple(axes_b[::-1]))  # reverse necessary?
