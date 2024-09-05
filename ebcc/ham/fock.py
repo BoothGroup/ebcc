@@ -7,8 +7,10 @@ from typing import TYPE_CHECKING
 from ebcc import numpy as np
 from ebcc import util
 from ebcc.core.precision import types
+from ebcc.core.tensor import Tensor
+from ebcc.core.tensor import einsum as tensor_einsum
+from ebcc.core.tensor import initialise_from_array
 from ebcc.ham.base import BaseFock
-from ebcc.core.tensor import Tensor, initialise_from_array, einsum as tensor_einsum
 
 if TYPE_CHECKING:
     from ebcc.numpy.typing import NDArray

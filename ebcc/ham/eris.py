@@ -8,8 +8,8 @@ from pyscf import ao2mo
 
 from ebcc import numpy as np
 from ebcc.core.precision import types
+from ebcc.core.tensor import Tensor, initialise_from_array, loop_rank_block_indices
 from ebcc.ham.base import BaseERIs
-from ebcc.core.tensor import Tensor, loop_rank_block_indices, initialise_from_array
 
 if TYPE_CHECKING:
     from typing import Any, Optional
@@ -158,9 +158,12 @@ class GERIs(BaseERIs):
             block = initialise_from_array(
                 self.array[i][:, j][:, :, k][:, :, :, l],
                 permutations=[
-                    perm for perm in [
-                        ((0, 1, 2, 3), 1), ((0, 3, 2, 1), -1),
-                        ((2, 1, 0, 3), -1), ((2, 3, 0, 1), 1),
+                    perm
+                    for perm in [
+                        ((0, 1, 2, 3), 1),
+                        ((0, 3, 2, 1), -1),
+                        ((2, 1, 0, 3), -1),
+                        ((2, 3, 0, 1), 1),
                     ]
                     if tuple(key) == tuple(key[i] for i in perm)
                 ],

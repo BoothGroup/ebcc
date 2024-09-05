@@ -246,10 +246,7 @@ class BaseEBCC(ABC):
                 # Update the amplitudes, extrapolate with DIIS and calculate change:
                 amplitudes_prev = amplitudes
                 amplitudes = self.update_amps(amplitudes=amplitudes, eris=eris)
-                vector = self.amplitudes_to_vector(amplitudes)
-                vector = diis.update(vector)
-                amplitudes = self.vector_to_amplitudes(vector)
-                dt = np.linalg.norm(vector - self.amplitudes_to_vector(amplitudes_prev), ord=np.inf)
+                amplitudes, dt = self.damp_amps(amplitudes, amplitudes_prev, diis)
 
                 # Update the energy and calculate change:
                 e_prev = e_cc
@@ -841,6 +838,25 @@ class BaseEBCC(ABC):
 
         Returns:
             Cluster lambda amplitudes.
+        """
+        pass
+
+    @abstractmethod
+    def damp_amps(
+        self,
+        amplitudes: Namespace[SpinArrayType],
+        amplitudes_prev: Namespace[SpinArrayType],
+        diis: DIIS,
+    ) -> tuple[Namespace[SpinArrayType], float]:
+        """Damp the amplitudes using DIIS.
+
+        Args:
+            amplitudes: Cluster amplitudes.
+            amplitudes_prev: Previous cluster amplitudes.
+            diis: DIIS object.
+
+        Returns:
+            Damped cluster amplitudes, and the error between the current and previous amplitudes.
         """
         pass
 

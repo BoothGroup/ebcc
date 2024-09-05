@@ -13,7 +13,8 @@ https://github.com/obackhouse/albert
 """
 
 from ebcc import numpy as np
-from ebcc.util import pack_2e, einsum, direct_sum, Namespace
+from ebcc.util import pack_2e, direct_sum, Namespace
+from ebcc.core.tensor import einsum
 
 
 def energy(f=None, t1=None, t2=None, v=None, **kwargs):

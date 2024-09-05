@@ -8,6 +8,7 @@ from ebcc import numpy as np
 from ebcc import util
 from ebcc.cc.base import BaseEBCC
 from ebcc.core.precision import types
+from ebcc.core.tensor import Tensor, initialise_from_array, zeros, einsum
 from ebcc.eom import EA_REOM, EE_REOM, IP_REOM
 from ebcc.ham.cderis import RCDERIs
 from ebcc.ham.elbos import RElectronBoson
@@ -15,7 +16,6 @@ from ebcc.ham.eris import RERIs
 from ebcc.ham.fock import RFock
 from ebcc.ham.space import Space
 from ebcc.opt.rbrueckner import BruecknerREBCC
-from ebcc.core.tensor import Tensor, initialise_from_array, zeros
 
 if TYPE_CHECKING:
     from typing import Any, Optional, TypeAlias, Union
@@ -592,6 +592,33 @@ class REBCC(BaseEBCC):
             i0 += size
 
         return lambdas
+
+    def damp_amps(
+        self,
+        amplitudes: Namespace[SpinArrayType],
+        amplitudes_prev: Namespace[SpinArrayType],
+        diis: DIIS,
+    ) -> tuple[Namespace[SpinArrayType], float]:
+        """Damp the amplitudes using DIIS.
+
+        Args:
+            amplitudes: Cluster amplitudes.
+            amplitudes_prev: Previous cluster amplitudes.
+            diis: DIIS object.
+
+        Returns:
+            Damped cluster amplitudes, and the error between the current and previous amplitudes.
+        """
+        # Damp amplitudes using DIIS
+        amplitudes_tuple = tuple(amplitudes.values())
+        amplitudes_prev_tuple = tuple(amplitudes_prev.values())
+        amplitudes_new_tuple = diis.update(amplitudes_tuple)
+        amplitudes_new = util.Namespace(**dict(zip(amplitudes.keys(), amplitudes_new_tuple)))
+
+        # Get the error between the current and previous amplitudes
+        dt = max((x - y).abs().max() for x, y in zip(amplitudes_tuple, amplitudes_prev_tuple))
+
+        return amplitudes_new, dt
 
     def get_mean_field_G(self) -> NDArray[float]:
         """Get the mean-field boson non-conserving term.

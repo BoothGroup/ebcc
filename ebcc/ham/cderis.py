@@ -9,8 +9,8 @@ from pyscf import ao2mo, lib
 from ebcc import numpy as np
 from ebcc import util
 from ebcc.core.precision import types
+from ebcc.core.tensor import Tensor, einsum, initialise_from_array, loop_rank_block_indices
 from ebcc.ham.base import BaseERIs
-from ebcc.core.tensor import Tensor, loop_rank_block_indices, initialise_from_array, einsum
 
 if TYPE_CHECKING:
     from typing import Optional
@@ -57,7 +57,9 @@ class RCDERIs(BaseERIs):
             ]
             block = Tensor(
                 tuple(c.shape[1] for c in coeffs),
-                permutations=[((0, 1, 2), 1), ((0, 2, 1), 1)] if key[0] == key[1] else [((0, 1, 2), 1)],
+                permutations=(
+                    [((0, 1, 2), 1), ((0, 2, 1), 1)] if key[0] == key[1] else [((0, 1, 2), 1)]
+                ),
             )
             for indices in loop_rank_block_indices(block):
                 part_coeffs = [c[:, i] for c, i in zip(coeffs, indices)]

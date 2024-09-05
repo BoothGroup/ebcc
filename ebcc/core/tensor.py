@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import math
 import functools
 import itertools
+import math
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 from ebcc import numpy as np
@@ -42,6 +42,8 @@ EINSUM_SYMBOLS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 EINSUM_SYMBOLS_SET = set(EINSUM_SYMBOLS)
 
 DEFAULT_BLOCK_SIZE = 16
+
+# TODO: Generate permutations from contraction of identical tensors
 
 
 def loop_block_indices(block_num: tuple[int, ...]) -> Iterator[tuple[int, ...]]:
@@ -123,7 +125,26 @@ def zeros(shape: tuple[int, ...], **kwargs: Any) -> Tensor[T]:
     Returns:
         The tensor of zeros.
     """
-    return Tensor(shape, **kwargs)
+    tensor = Tensor(shape, **kwargs)
+    for block_index in loop_rank_block_indices(tensor):
+        tensor[block_index] = np.zeros(tensor.get_block_shape(block_index), dtype=tensor.dtype)
+    return tensor
+
+
+def zeros_like(tensor: Tensor[T], **kwargs: Any) -> Tensor[T]:
+    """Create a tensor of zeros with the same shape as another tensor.
+
+    Args:
+        tensor: The tensor.
+        **kwargs: Additional arguments to pass to the tensor constructor.
+
+    Returns:
+        The tensor of zeros.
+    """
+    for key in ("shape", "block_num", "dtype", "permutations", "world"):
+        if key not in kwargs:
+            kwargs[key] = getattr(tensor, key)
+    return zeros(**kwargs)
 
 
 def symmetrise_indices(
@@ -333,6 +354,8 @@ class Tensor(Generic[T]):
 
         self._blocks: dict[tuple[int, ...], NDArray[T]] = {}
 
+        self._check_sanity()
+
     def _set_block(self, index: tuple[int, ...], block: NDArray[T]) -> None:
         """Set a block in the distributed array."""
         self._blocks[index] = block
@@ -378,6 +401,18 @@ class Tensor(Generic[T]):
             return self._get_block(canon).transpose(perm) * sign
         except KeyError:
             raise ValueError(f"Block {index} not found.")
+
+    def _check_sanity(self) -> None:
+        """Run sanity checks on the tensor."""
+        for block_index, block in self._blocks.items():
+            if block.shape != self.get_block_shape(block_index):
+                raise ValueError(f"Block shape mismatch ({block_index}).")
+        if self.permutations is not None:
+            for block_index, block in self._blocks.items():
+                for perm, sign in self.permutations:
+                    shape = tuple(block.shape[i] for i in perm)
+                    if shape != self.get_block_shape(block_index):
+                        raise ValueError(f"Block shape mismatch ({block_index}).")
 
     @functools.lru_cache
     def get_block_shape(self, index: tuple[int, ...]) -> tuple[int, ...]:
@@ -681,6 +716,60 @@ class Tensor(Generic[T]):
         """
         return _unary_map(lambda x: x.astype(dtype), self)
 
+    def real(self) -> Tensor[float]:
+        """Get the real part of the tensor.
+
+        Returns:
+            The real part of the tensor.
+        """
+        return _unary_map(np.real, self)
+
+    def imag(self) -> Tensor[float]:
+        """Get the imaginary part of the tensor.
+
+        Returns:
+            The imaginary part of the tensor.
+        """
+        return _unary_map(np.imag, self)
+
+    def conj(self) -> Tensor[T]:
+        """Get the complex conjugate of the tensor.
+
+        Returns:
+            The complex conjugate of the tensor.
+        """
+        return _unary_map(np.conj, self)
+
+    def abs(self) -> Tensor[float]:
+        """Get the absolute value of the tensor.
+
+        Returns:
+            The absolute value of the tensor.
+        """
+        return _unary_map(np.abs, self)
+
+    def min(self) -> T:
+        """Get the minimum value of the tensor.
+
+        Returns:
+            The minimum value of the tensor.
+        """
+        min_local = min(block.min() for block in self._blocks.values())
+        if self.world is None or self.world.size == 1:
+            return min_local
+        return self.world.allreduce(min_local, op=MPI.MIN)
+
+    def max(self) -> T:
+        """Get the maximum value of the tensor.
+
+        Returns:
+            The maximum value of the tensor.
+        """
+        max_local = max(block.max() for block in self._blocks.values())
+        if self.world is None or self.world.size == 1:
+            return max_local
+        return self.world.allreduce(max_local, op=MPI.MAX)
+
     def transpose(self, *axes: Union[int, tuple[int, ...]]) -> Tensor[T]:
         """Transpose the tensor.
 
@@ -709,13 +798,10 @@ class Tensor(Generic[T]):
         # Transpose the permutations
         permutations = None
         if self.permutations is not None:
-            chars = [EINSUM_SYMBOLS[i] for i in range(len(axes))]
-            chars_transpose = [chars[i] for i in axes]
             permutations = []
+            swaps = {axes[i]: i for i in range(len(axes))}
             for perm, sign in self.permutations:
-                chars_perm = [chars_transpose[i] for i in perm]
-                perm = tuple(chars.index(c) for c in chars_perm)
-                perm = tuple(perm[i] for i in np.argsort(axes))
+                perm = tuple(swaps[perm[i]] for i in axes)
                 permutations.append((perm, sign))
 
         # Canonicalise the blocks
@@ -764,7 +850,17 @@ class Tensor(Generic[T]):
         Returns:
             The ravelled array.
         """
-        return self.as_local_ndarray().ravel()  # FIXME
+        blocks = []
+        for block_index in loop_rank_block_indices(self):
+            blocks.append(self[block_index].ravel())
+        return np.concatenate(blocks)
+
+    def sum(self):
+        """Sum the tensor."""
+        sum_local = sum(block.sum() for block in self._blocks.values())
+        if self.world is None or self.world.size == 1:
+            return sum_local
+        return self.world.allreduce(sum_local, op=MPI.SUM)
 
     def _describe(self):
         """Describe the tensor for debugging."""
@@ -781,7 +877,10 @@ class Tensor(Generic[T]):
         if self.permutations:
             output += f"  Permutations:\n"
             for perm, sign in self.permutations:
-                output += f"    {perm} ({sign:+d})\n"
+                chars = f"{''.join(EINSUM_SYMBOLS[i + 8] for i in range(len(perm)))}"
+                chars += f" <-> {'+' if sign == 1 else '-'}"
+                chars += f"{''.join(EINSUM_SYMBOLS[i + 8] for i in perm)}"
+                output += f"    {perm} ({sign:+d}) [{chars}]\n"
         return output
 
 
@@ -1270,4 +1369,13 @@ def einsum(*operands: Any, **kwargs: Any) -> Union[T, NDArray[T]]:
             res = contract(einsum_str, *contraction_args, **kwargs)
             args.append(res)
 
-    return res
+    # Squeeze and reduce if scalar output
+    if not out:
+        if res._blocks:
+            res_scal = res.as_global_ndarray().item()
+        else:
+            res_scal = 0.0
+        res_scal = res.world.allreduce(res_scal, op=MPI.SUM)
+        return res_scal
+    else:
+        return res
