@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     from ebcc.cc.rebcc import REBCC, ERIsInputType, SpinArrayType
     from ebcc.ham.space import Space
     from ebcc.numpy.typing import NDArray
-    from ebcc.core.tensor import Tensor
     from ebcc.util import Namespace
 
 

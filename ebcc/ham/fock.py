@@ -4,10 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ebcc import numpy as np
 from ebcc import util
 from ebcc.core.precision import types
-from ebcc.core.tensor import Tensor
 from ebcc.core.tensor import einsum as tensor_einsum
 from ebcc.core.tensor import initialise_from_array
 from ebcc.ham.base import BaseFock

@@ -11,13 +11,13 @@ from ebcc import numpy as np
 from ebcc import util
 from ebcc.cc.base import BaseEBCC
 from ebcc.core.precision import types
+from ebcc.core.tensor import Tensor, initialise_from_array, zeros
 from ebcc.eom import EA_GEOM, EE_GEOM, IP_GEOM
 from ebcc.ham.elbos import GElectronBoson
 from ebcc.ham.eris import GERIs
 from ebcc.ham.fock import GFock
 from ebcc.ham.space import Space
 from ebcc.opt.gbrueckner import BruecknerGEBCC
-from ebcc.core.tensor import zeros, einsum, initialise_from_array, Tensor
 
 if TYPE_CHECKING:
     from typing import Any, Optional, TypeAlias, Union
@@ -162,7 +162,11 @@ class GEBCC(BaseEBCC):
 
             for name, key, n in ucc.ansatz.fermionic_cluster_ranks(spin_type=ucc.spin_type):
                 shape = tuple(space.size(k) for k in key)
-                amplitudes[name] = np.zeros(shape, dtype=types[float])
+                amplitudes[name] = zeros(
+                    shape,
+                    permutations=[(perm, 1) for perm in itertools.permutations(range(n * 2))],
+                    dtype=types[float],
+                )
                 for comb in util.generate_spin_combinations(n, unique=True):
                     done = set()
                     for lperm, lsign in util.permutations_with_signs(tuple(range(n))):
@@ -189,7 +193,11 @@ class GEBCC(BaseEBCC):
 
             for name, key, nf, nb in ucc.ansatz.coupling_cluster_ranks(spin_type=ucc.spin_type):
                 shape = (nbos,) * nb + tuple(space.size(k) for k in key[nb:])
-                amplitudes[name] = np.zeros(shape, dtype=types[float])
+                amplitudes[name] = zeros(
+                    shape,
+                    permutations=[(perm, 1) for perm in itertools.permutations(range(nb + nf * 2))],
+                    dtype=types[float],
+                )
                 for comb in util.generate_spin_combinations(nf):
                     done = set()
                     for lperm, lsign in util.permutations_with_signs(tuple(range(nf))):
@@ -230,7 +238,11 @@ class GEBCC(BaseEBCC):
             for name, key, n in ucc.ansatz.fermionic_cluster_ranks(spin_type=ucc.spin_type):
                 lname = name.replace("t", "l")
                 shape = tuple(space.size(k) for k in key[n:] + key[:n])
-                lambdas[lname] = np.zeros(shape, dtype=types[float])
+                lambdas[lname] = zeros(
+                    shape,
+                    permutations=[(perm, 1) for perm in itertools.permutations(range(n * 2))],
+                    dtype=types[float],
+                )
                 for comb in util.generate_spin_combinations(n, unique=True):
                     done = set()
                     for lperm, lsign in util.permutations_with_signs(tuple(range(n))):
@@ -261,7 +273,11 @@ class GEBCC(BaseEBCC):
                 shape = (nbos,) * nb + tuple(
                     space.size(k) for k in key[nb + nf :] + key[nb : nb + nf]
                 )
-                lambdas[lname] = np.zeros(shape, dtype=types[float])
+                lambdas[lname] = zeros(
+                    shape,
+                    permutations=[(perm, 1) for perm in itertools.permutations(range(nb + nf * 2))],
+                    dtype=types[float],
+                )
                 for comb in util.generate_spin_combinations(nf, unique=True):
                     done = set()
                     for lperm, lsign in util.permutations_with_signs(tuple(range(nf))):
@@ -555,7 +571,7 @@ class GEBCC(BaseEBCC):
         amplitudes: Optional[Namespace[SpinArrayType]] = None,
         lambdas: Optional[Namespace[SpinArrayType]] = None,
         hermitise: bool = True,
-    ) -> SpinArrayType:
+    ) -> NDArray[float]:
         r"""Make the one-particle fermionic reduced density matrix :math:`\langle i^+ j \rangle`.
 
         Args:
@@ -573,7 +589,7 @@ class GEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm: SpinArrayType = np.asarray(func(**kwargs))
+        dm: NDArray[float] = np.asarray(func(**kwargs))
 
         if hermitise:
             dm = 0.5 * (dm + dm.T)
@@ -586,7 +602,7 @@ class GEBCC(BaseEBCC):
         amplitudes: Optional[Namespace[SpinArrayType]] = None,
         lambdas: Optional[Namespace[SpinArrayType]] = None,
         hermitise: bool = True,
-    ) -> SpinArrayType:
+    ) -> NDArray[float]:
         r"""Make the two-particle fermionic reduced density matrix :math:`\langle i^+j^+lk \rangle`.
 
         Args:
@@ -604,7 +620,7 @@ class GEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm: SpinArrayType = np.asarray(func(**kwargs))
+        dm: NDArray[float] = np.asarray(func(**kwargs))
 
         if hermitise:
             dm = 0.5 * (dm.transpose(0, 1, 2, 3) + dm.transpose(2, 3, 0, 1))
@@ -619,7 +635,7 @@ class GEBCC(BaseEBCC):
         lambdas: Optional[Namespace[SpinArrayType]] = None,
         unshifted: bool = True,
         hermitise: bool = True,
-    ) -> SpinArrayType:
+    ) -> NDArray[float]:
         r"""Make the electron-boson coupling reduced density matrix.
 
         .. math::
@@ -647,7 +663,7 @@ class GEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm_eb: SpinArrayType = np.asarray(func(**kwargs))
+        dm_eb: NDArray[float] = np.asarray(func(**kwargs))
 
         if hermitise:
             dm_eb[0] = 0.5 * (dm_eb[0] + dm_eb[1].transpose(0, 2, 1))
@@ -825,32 +841,55 @@ class GEBCC(BaseEBCC):
 
         return lambdas
 
-    def damp_amps(
-        self,
-        amplitudes: Namespace[SpinArrayType],
-        amplitudes_prev: Namespace[SpinArrayType],
-        diis: DIIS,
-    ) -> tuple[Namespace[SpinArrayType], float]:
-        """Damp the amplitudes using DIIS.
+    def amplitudes_to_tuple(
+        self, amplitudes: Namespace[SpinArrayType]
+    ) -> tuple[SpinArrayType, ...]:
+        """Convert the cluster amplitudes to a tuple.
 
         Args:
             amplitudes: Cluster amplitudes.
-            amplitudes_prev: Previous cluster amplitudes.
-            diis: DIIS object.
 
         Returns:
-            Damped cluster amplitudes, and the error between the current and previous amplitudes.
+            Cluster amplitudes as a tuple.
         """
-        # Damp amplitudes using DIIS
-        amplitudes_tuple = tuple(amplitudes.values())
-        amplitudes_prev_tuple = tuple(amplitudes_prev.values())
-        amplitudes_new_tuple = diis.update(amplitudes_tuple)
-        amplitudes_new = util.Namespace(**dict(zip(amplitudes.keys(), amplitudes_new_tuple)))
+        amplitudes_tuple: tuple[SpinArrayType, ...] = tuple()
 
-        # Get the error between the current and previous amplitudes
-        dt = max((x - y).abs().max() for x, y in zip(amplitudes_tuple, amplitudes_prev_tuple))
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            amplitudes_tuple += (amplitudes[name],)
 
-        return amplitudes_new, dt
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
+            amplitudes_tuple += (amplitudes[name],)
+
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            amplitudes_tuple += (amplitudes[name],)
+
+        return amplitudes_tuple
+
+    def tuple_to_amplitudes(self, amps: tuple[SpinArrayType, ...]) -> Namespace[SpinArrayType]:
+        """Convert a tuple to cluster amplitudes.
+
+        Args:
+            amps: Cluster amplitudes as a tuple.
+
+        Returns:
+            Cluster amplitudes.
+        """
+        amplitudes: Namespace[SpinArrayType] = util.Namespace()
+        i = 0
+
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            amplitudes[name] = amps[i]
+            i += 1
+
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
+            amplitudes[name] = amps[i]
+            i += 1
+
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            amplitudes[name] = amps[i]
+            i += 1
+
+        return amplitudes
 
     def get_mean_field_G(self) -> NDArray[float]:
         """Get the mean-field boson non-conserving term.

@@ -147,7 +147,7 @@ class BaseEOM(ABC):
         self,
         vector: NDArray[float],
         eris: Optional[ERIsInputType] = None,
-        ints: Optional[Tensor[float]] = None,
+        ints: Optional[SpinArrayType] = None,
         left: bool = False,
     ) -> NDArray[float]:
         """Apply the Hamiltonian to a vector.
@@ -375,7 +375,7 @@ class BaseIP_EOM(BaseEOM):
         self,
         vector: NDArray[float],
         eris: Optional[ERIsInputType] = None,
-        ints: Optional[Tensor[float]] = None,
+        ints: Optional[SpinArrayType] = None,
         left: bool = False,
     ) -> NDArray[float]:
         """Apply the Hamiltonian to a vector.
@@ -436,7 +436,7 @@ class BaseEA_EOM(BaseEOM):
         self,
         vector: NDArray[float],
         eris: Optional[ERIsInputType] = None,
-        ints: Optional[Tensor[float]] = None,
+        ints: Optional[SpinArrayType] = None,
         left: bool = False,
     ) -> NDArray[float]:
         """Apply the Hamiltonian to a vector.
@@ -497,7 +497,7 @@ class BaseEE_EOM(BaseEOM):
         self,
         vector: NDArray[float],
         eris: Optional[ERIsInputType] = None,
-        ints: Optional[Tensor[float]] = None,
+        ints: Optional[SpinArrayType] = None,
         left: bool = False,
     ) -> NDArray[float]:
         """Apply the Hamiltonian to a vector.

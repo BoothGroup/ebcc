@@ -47,6 +47,10 @@ import sys
 from typing import TYPE_CHECKING
 
 import numpy
+import numpy.typing
+
+sys.modules["ebcc.numpy"] = numpy
+sys.modules["ebcc.numpy.typing"] = numpy.typing
 
 from ebcc.core.logging import NullLogger, default_log, init_logging
 from ebcc.cc import GEBCC, REBCC, UEBCC

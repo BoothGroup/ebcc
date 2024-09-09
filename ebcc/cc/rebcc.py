@@ -9,7 +9,7 @@ from ebcc import numpy as np
 from ebcc import util
 from ebcc.cc.base import BaseEBCC
 from ebcc.core.precision import types
-from ebcc.core.tensor import Tensor, initialise_from_array, zeros, einsum
+from ebcc.core.tensor import Tensor, einsum, initialise_from_array, zeros
 from ebcc.eom import EA_REOM, EE_REOM, IP_REOM
 from ebcc.ham.cderis import RCDERIs
 from ebcc.ham.elbos import RElectronBoson
@@ -610,32 +610,55 @@ class REBCC(BaseEBCC):
 
         return lambdas
 
-    def damp_amps(
-        self,
-        amplitudes: Namespace[SpinArrayType],
-        amplitudes_prev: Namespace[SpinArrayType],
-        diis: DIIS,
-    ) -> tuple[Namespace[SpinArrayType], float]:
-        """Damp the amplitudes using DIIS.
+    def amplitudes_to_tuple(
+        self, amplitudes: Namespace[SpinArrayType]
+    ) -> tuple[SpinArrayType, ...]:
+        """Convert the cluster amplitudes to a tuple.
 
         Args:
             amplitudes: Cluster amplitudes.
-            amplitudes_prev: Previous cluster amplitudes.
-            diis: DIIS object.
 
         Returns:
-            Damped cluster amplitudes, and the error between the current and previous amplitudes.
+            Cluster amplitudes as a tuple.
         """
-        # Damp amplitudes using DIIS
-        amplitudes_tuple = tuple(amplitudes.values())
-        amplitudes_prev_tuple = tuple(amplitudes_prev.values())
-        amplitudes_new_tuple = diis.update(amplitudes_tuple)
-        amplitudes_new = util.Namespace(**dict(zip(amplitudes.keys(), amplitudes_new_tuple)))
+        amplitudes_tuple: tuple[SpinArrayType, ...] = tuple()
 
-        # Get the error between the current and previous amplitudes
-        dt = max((x - y).abs().max() for x, y in zip(amplitudes_tuple, amplitudes_prev_tuple))
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            amplitudes_tuple += (amplitudes[name],)
 
-        return amplitudes_new, dt
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
+            amplitudes_tuple += (amplitudes[name],)
+
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            amplitudes_tuple += (amplitudes[name],)
+
+        return amplitudes_tuple
+
+    def tuple_to_amplitudes(self, amps: tuple[SpinArrayType, ...]) -> Namespace[SpinArrayType]:
+        """Convert a tuple to cluster amplitudes.
+
+        Args:
+            amps: Cluster amplitudes as a tuple.
+
+        Returns:
+            Cluster amplitudes.
+        """
+        amplitudes: Namespace[SpinArrayType] = util.Namespace()
+        i = 0
+
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            amplitudes[name] = amps[i]
+            i += 1
+
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
+            amplitudes[name] = amps[i]
+            i += 1
+
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            amplitudes[name] = amps[i]
+            i += 1
+
+        return amplitudes
 
     def get_mean_field_G(self) -> NDArray[float]:
         """Get the mean-field boson non-conserving term.

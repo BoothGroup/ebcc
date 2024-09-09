@@ -10,7 +10,7 @@ from ebcc import default_log, init_logging
 from ebcc import numpy as np
 from ebcc import util
 from ebcc.core.ansatz import Ansatz
-from ebcc.core.damping import DIIS
+from ebcc.core.damping import DIIS  # type: ignore  # FIXME
 from ebcc.core.dump import Dump
 from ebcc.core.logging import ANSI
 from ebcc.core.precision import astype, types
@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from pyscf.scf.hf import SCF
 
     from ebcc.core.logging import Logger
+    from ebcc.core.tensor import Tensor
     from ebcc.ham.base import BaseElectronBoson, BaseERIs, BaseFock
     from ebcc.numpy.typing import NDArray
     from ebcc.opt.base import BaseBruecknerEBCC
@@ -237,7 +238,7 @@ class BaseEBCC(ABC):
 
         if not self.ansatz.is_one_shot:
             # Set up DIIS:
-            diis = DIIS()
+            diis: DIIS[Tensor[float]] = DIIS()
             diis.space = self.options.diis_space
             diis.damping = self.options.damping
 
@@ -333,7 +334,7 @@ class BaseEBCC(ABC):
         self.log.info(f"{ANSI.B}{'Iter':>4s} {'Δ(Ampl.)':>13s}{ANSI.R}")
 
         # Set up DIIS:
-        diis = DIIS()
+        diis: DIIS[Tensor[float]] = DIIS()
         diis.space = self.options.diis_space
         diis.damping = self.options.damping
 
@@ -839,11 +840,36 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
+    def amplitudes_to_tuple(
+        self, amplitudes: Namespace[SpinArrayType]
+    ) -> tuple[SpinArrayType, ...]:
+        """Convert the cluster amplitudes to a tuple.
+
+        Args:
+            amplitudes: Cluster amplitudes.
+
+        Returns:
+            Cluster amplitudes as a tuple.
+        """
+        pass
+
+    @abstractmethod
+    def tuple_to_amplitudes(self, amps: tuple[SpinArrayType, ...]) -> Namespace[SpinArrayType]:
+        """Convert a tuple to cluster amplitudes.
+
+        Args:
+            amps: Cluster amplitudes as a tuple.
+
+        Returns:
+            Cluster amplitudes.
+        """
+        pass
+
     def damp_amps(
         self,
         amplitudes: Namespace[SpinArrayType],
         amplitudes_prev: Namespace[SpinArrayType],
-        diis: DIIS,
+        diis: DIIS[Tensor[float]],
     ) -> tuple[Namespace[SpinArrayType], float]:
         """Damp the amplitudes using DIIS.
 
@@ -855,7 +881,16 @@ class BaseEBCC(ABC):
         Returns:
             Damped cluster amplitudes, and the error between the current and previous amplitudes.
         """
-        pass
+        # Damp amplitudes using DIIS
+        amplitudes_tuple = self.amplitudes_to_tuple(amplitudes)
+        amplitudes_prev_tuple = self.amplitudes_to_tuple(amplitudes_prev)
+        amplitudes_new = self.tuple_to_amplitudes(diis.update(amplitudes_tuple))
+        amplitudes_new_tuple = self.amplitudes_to_tuple(amplitudes_new)
+
+        # Get the error between the current and previous amplitudes
+        dt = max((x - y).abs().max() for x, y in zip(amplitudes_new_tuple, amplitudes_prev_tuple))
+
+        return amplitudes_new, dt
 
     @property
     def fermion_ansatz(self) -> str:

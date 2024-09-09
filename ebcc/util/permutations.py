@@ -6,10 +6,11 @@ import functools
 import itertools
 from typing import TYPE_CHECKING
 
-import numpy as np
+from ebcc import numpy as np
+from ebcc.core.tensor import Tensor, zeros_like
 
 if TYPE_CHECKING:
-    from typing import Any, Generator, Hashable, Iterable, Optional, TypeVar
+    from typing import Any, Generator, Hashable, Iterable, Optional, TypeVar, Union
 
     from ebcc.numpy.typing import NDArray
 
@@ -495,22 +496,27 @@ def get_compressed_size(subscript: str, **sizes: int) -> int:
 
 def symmetrise(
     subscript: str,
-    array: NDArray[T],
+    array: Union[NDArray[T], Tensor[T]],
     symmetry: Optional[str] = None,
     apply_factor: Optional[bool] = True,
 ) -> NDArray[T]:
-    """Enforce a symmetry in an array.
+    """Enforce a symmetry in an array or tensor.
 
     Args:
         subscript: Subscript for the input array.
-        array: Array to symmetrise.
+        array: Array or tensor to symmetrise.
         symmetry: Symmetry of the output array, with a "+" indicating symmetry and "-" indicating
             antisymmetry for each dimension in the decompressed array.
         apply_factor: Whether to apply a factor to the output array, to account for the symmetry.
 
     Returns:
-        Symmetrised array.
+        Symmetrised array or tensor.
+
+    Notes:
+        If a `Tensor` is passed, the `permutations` variable in the result will reflect the
+        symmetrisation.
     """
+    # TODO use tensors, update permutations
     # Substitute the input characters so that they are ordered:
     subs = {}
     i = 0
@@ -531,9 +537,10 @@ def symmetrise(
         n += subscript.count(char)
 
     # Iterate over permutations and signs:
-    array_as = np.zeros_like(array)
+    array_as = zeros_like(array) if isinstance(array, Tensor) else np.zeros_like(array)
     groups = tuple(sorted(set(zip(sorted(set(subscript)), symmetry_compressed))))  # don't ask
     inds = [tuple(i for i, s in enumerate(subscript) if s == char) for char, symm in groups]
+    tensor_permutations = set(array.permutations) if isinstance(array, Tensor) else None
     for tup in itertools.product(*(permutations_with_signs(ind) for ind in inds)):
         perms, signs = zip(*tup)
         perm = list(range(len(subscript)))
@@ -542,6 +549,13 @@ def symmetrise(
                 perm[i] = p
         sign = np.prod(signs) if symmetry[perm[0]] == "-" else 1
         array_as = array_as + sign * array.transpose(perm)
+
+        # If a tensor is passed, update the permutations
+        if isinstance(array, Tensor):
+            for tensor_perm, tensor_sign in list(tensor_permutations):
+                new_perm = tuple(tensor_perm[i] for i in perm)
+                new_sign = tensor_sign * sign
+                tensor_permutations.add((new_perm, new_sign))
 
     if apply_factor:
         # Apply factor

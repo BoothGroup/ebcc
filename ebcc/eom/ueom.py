@@ -7,15 +7,19 @@ from typing import TYPE_CHECKING
 from ebcc import numpy as np
 from ebcc import util
 from ebcc.core.precision import astype
+from ebcc.core.tensor import einsum, initialise_from_array
 from ebcc.eom.base import BaseEA_EOM, BaseEE_EOM, BaseEOM, BaseIP_EOM
 
 if TYPE_CHECKING:
     from typing import Optional
 
     from ebcc.cc.uebcc import UEBCC, ERIsInputType, SpinArrayType
+    from ebcc.core.tensor import Tensor
     from ebcc.ham.space import Space
     from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
+
+# FIXME Some SpinArrayType have to be Namespace[Tensor[float]] because of S_n amplitudes
 
 
 class UEOM(BaseEOM):
@@ -32,15 +36,15 @@ class IP_UEOM(UEOM, BaseIP_EOM):
     def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
-            r1 = self.vector_to_amplitudes(diag)["r1"]
+            r1 = self.vector_to_amplitudes(diag).r1
             arg = np.argsort(np.abs(diag[: r1.a.size + r1.b.size]))
         else:
             arg = np.argsort(np.abs(diag))
         return arg
 
-    def _quasiparticle_weight(self, r1: SpinArrayType) -> float:
+    def _quasiparticle_weight(self, r1: Namespace[Tensor[float]]) -> float:
         """Get the quasiparticle weight."""
-        weight: float = np.dot(r1.a.ravel(), r1.a.ravel()) + np.dot(r1.b.ravel(), r1.b.ravel())
+        weight: float = einsum("i,i->", r1.a, r1.a) + einsum("i,i->", r1.b, r1.b)
         return astype(weight, float)
 
     def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
@@ -56,7 +60,7 @@ class IP_UEOM(UEOM, BaseIP_EOM):
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             key = key[:-1]
-            spin_part: SpinArrayType = util.Namespace()
+            spin_part: Namespace[Tensor[float]] = util.Namespace()
             for comb in util.generate_spin_combinations(n, excited=True):
                 spin_part[comb] = self.ebcc.energy_sum(key, comb)
             parts[f"r{n}"] = spin_part
@@ -81,7 +85,7 @@ class IP_UEOM(UEOM, BaseIP_EOM):
             for spin in util.generate_spin_combinations(n, excited=True, unique=True):
                 vn = amplitudes[f"r{n}"][spin]
                 subscript, _ = util.combine_subscripts(key[:-1], spin)
-                vectors.append(util.compress_axes(subscript, vn).ravel())
+                vectors.append(util.compress_axes(subscript, np.asarray(vn)).ravel())
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
@@ -108,7 +112,7 @@ class IP_UEOM(UEOM, BaseIP_EOM):
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             key = key[:-1]
-            amp: SpinArrayType = util.Namespace()
+            amp: Namespace[Tensor[float]] = util.Namespace()
             for spin in util.generate_spin_combinations(n, excited=True, unique=True):
                 subscript, csizes = util.combine_subscripts(key, spin, sizes=sizes)
                 size = util.get_compressed_size(subscript, **csizes)
@@ -118,7 +122,7 @@ class IP_UEOM(UEOM, BaseIP_EOM):
                     spin[:n].count(s) for s in set(spin[:n])
                 )  # FIXME why? untested for n > 2
                 vn = util.decompress_axes(subscript, vn_tril, shape=shape) / factor
-                amp[spin] = vn
+                amp[spin] = initialise_from_array(vn)
                 i0 += size
 
             amplitudes[f"r{n}"] = amp
@@ -140,15 +144,15 @@ class EA_UEOM(UEOM, BaseEA_EOM):
     def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
-            r1 = self.vector_to_amplitudes(diag)["r1"]
+            r1 = self.vector_to_amplitudes(diag).r1
             arg = np.argsort(np.abs(diag[: r1.a.size + r1.b.size]))
         else:
             arg = np.argsort(np.abs(diag))
         return arg
 
-    def _quasiparticle_weight(self, r1: SpinArrayType) -> float:
+    def _quasiparticle_weight(self, r1: Namespace[Tensor[float]]) -> float:
         """Get the quasiparticle weight."""
-        weight: float = np.dot(r1.a.ravel(), r1.a.ravel()) + np.dot(r1.b.ravel(), r1.b.ravel())
+        weight: float = einsum("a,a->", r1.a, r1.a) + einsum("a,a->", r1.b, r1.b)
         return astype(weight, float)
 
     def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
@@ -164,7 +168,7 @@ class EA_UEOM(UEOM, BaseEA_EOM):
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             key = key[n:] + key[: n - 1]
-            spin_part: SpinArrayType = util.Namespace()
+            spin_part: Namespace[Tensor[float]] = util.Namespace()
             for comb in util.generate_spin_combinations(n, excited=True):
                 spin_part[comb] = -self.ebcc.energy_sum(key, comb)
             parts[f"r{n}"] = spin_part
@@ -190,7 +194,7 @@ class EA_UEOM(UEOM, BaseEA_EOM):
             for spin in util.generate_spin_combinations(n, excited=True, unique=True):
                 vn = amplitudes[f"r{n}"][spin]
                 subscript, _ = util.combine_subscripts(key[:-1], spin)
-                vectors.append(util.compress_axes(subscript, vn).ravel())
+                vectors.append(util.compress_axes(subscript, np.asarray(vn)).ravel())
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
@@ -217,7 +221,7 @@ class EA_UEOM(UEOM, BaseEA_EOM):
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             key = key[n:] + key[: n - 1]
-            amp: SpinArrayType = util.Namespace()
+            amp: Namespace[Tensor[float]] = util.Namespace()
             for spin in util.generate_spin_combinations(n, excited=True, unique=True):
                 subscript, csizes = util.combine_subscripts(key, spin, sizes=sizes)
                 size = util.get_compressed_size(subscript, **csizes)
@@ -227,7 +231,7 @@ class EA_UEOM(UEOM, BaseEA_EOM):
                     spin[:n].count(s) for s in set(spin[:n])
                 )  # FIXME why? untested for n > 2
                 vn = util.decompress_axes(subscript, vn_tril, shape=shape) / factor
-                amp[spin] = vn
+                amp[spin] = initialise_from_array(vn)
                 i0 += size
 
             amplitudes[f"r{n}"] = amp
@@ -249,15 +253,15 @@ class EE_UEOM(UEOM, BaseEE_EOM):
     def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
-            r1 = self.vector_to_amplitudes(diag)["r1"]
+            r1 = self.vector_to_amplitudes(diag).r1
             arg = np.argsort(diag[: r1.aa.size + r1.bb.size])
         else:
             arg = np.argsort(diag)
         return arg
 
-    def _quasiparticle_weight(self, r1: SpinArrayType) -> float:
+    def _quasiparticle_weight(self, r1: Namespace[Tensor[float]]) -> float:
         """Get the quasiparticle weight."""
-        weight: float = np.dot(r1.aa.ravel(), r1.aa.ravel()) + np.dot(r1.bb.ravel(), r1.bb.ravel())
+        weight: float = einsum("ia,ia->", r1.aa, r1.aa) + einsum("ia,ia->", r1.bb, r1.bb)
         return astype(weight, float)
 
     def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
@@ -272,7 +276,7 @@ class EE_UEOM(UEOM, BaseEE_EOM):
         parts: Namespace[SpinArrayType] = util.Namespace()
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            spin_part: SpinArrayType = util.Namespace()
+            spin_part: Namespace[Tensor[float]] = util.Namespace()
             for comb in util.generate_spin_combinations(n):
                 spin_part[comb] = self.ebcc.energy_sum(key, comb)
             parts[f"r{n}"] = spin_part
@@ -297,7 +301,7 @@ class EE_UEOM(UEOM, BaseEE_EOM):
             for spin in util.generate_spin_combinations(n):
                 vn = amplitudes[f"r{n}"][spin]
                 subscript, _ = util.combine_subscripts(key, spin)
-                vectors.append(util.compress_axes(subscript, vn).ravel())
+                vectors.append(util.compress_axes(subscript, np.asarray(vn)).ravel())
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             raise util.ModelNotImplemented
@@ -323,7 +327,7 @@ class EE_UEOM(UEOM, BaseEE_EOM):
         }
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            amp: SpinArrayType = util.Namespace()
+            amp: Namespace[Tensor[float]] = util.Namespace()
             for spin in util.generate_spin_combinations(n):
                 subscript, csizes = util.combine_subscripts(key, spin, sizes=sizes)
                 size = util.get_compressed_size(subscript, **csizes)
@@ -333,7 +337,7 @@ class EE_UEOM(UEOM, BaseEE_EOM):
                     spin[:n].count(s) for s in set(spin[:n])
                 )  # FIXME why? untested for n > 2
                 vn = util.decompress_axes(subscript, vn_tril, shape=shape) / factor
-                amp[spin] = vn
+                amp[spin] = initialise_from_array(vn)
                 i0 += size
 
             amplitudes[f"r{n}"] = amp

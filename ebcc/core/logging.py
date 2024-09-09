@@ -9,8 +9,8 @@ import sys
 from typing import TYPE_CHECKING, cast
 
 from ebcc import __version__
-from ebcc.util import Namespace
 from ebcc.core.tensor import MPI
+from ebcc.util import Namespace
 
 if TYPE_CHECKING:
     from typing import Any

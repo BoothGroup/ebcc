@@ -7,9 +7,7 @@ from typing import TYPE_CHECKING
 from pyscf import ao2mo, lib
 
 from ebcc import numpy as np
-from ebcc import util
-from ebcc.core.precision import types
-from ebcc.core.tensor import Tensor, einsum, initialise_from_array, loop_rank_block_indices
+from ebcc.core.tensor import Tensor, einsum, loop_rank_block_indices
 from ebcc.ham.base import BaseERIs
 
 if TYPE_CHECKING:

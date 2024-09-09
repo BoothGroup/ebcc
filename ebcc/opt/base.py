@@ -10,7 +10,7 @@ from pyscf import lib
 
 from ebcc import numpy as np
 from ebcc import util
-from ebcc.core.damping import DIIS
+from ebcc.core.damping import DIIS  # type: ignore  # FIXME
 from ebcc.core.logging import ANSI, NullLogger, init_logging
 from ebcc.core.precision import types
 
