@@ -20,11 +20,9 @@ if TYPE_CHECKING:
 class RERIs(BaseERIs):
     """Restricted ERIs container class."""
 
-    _members: dict[str, NDArray[float]]
+    _members: dict[str, Tensor[float]]
 
-    _from_uhf = False
-
-    def __getitem__(self, key: str) -> NDArray[float]:
+    def __getitem__(self, key: str) -> Tensor[float]:
         """Just-in-time getter.
 
         Args:
@@ -34,8 +32,6 @@ class RERIs(BaseERIs):
             ERIs for the given spaces.
         """
         perms = [(0, 1, 2, 3), (0, 1, 3, 2), (1, 0, 2, 3), (1, 0, 3, 2)]
-        if not self._from_uhf:
-            perms += [(2, 3, 0, 1), (3, 2, 0, 1), (2, 3, 1, 0), (3, 2, 1, 0)]
         if self.array is None:
             if key not in self._members.keys():
                 coeffs = [
@@ -73,8 +69,6 @@ class UERIs(BaseERIs):
     """Unrestricted ERIs container class."""
 
     _members: dict[str, RERIs]
-
-    _from_uhf = True
 
     def __getitem__(self, key: str) -> RERIs:
         """Just-in-time getter.
@@ -125,9 +119,7 @@ class UERIs(BaseERIs):
 class GERIs(BaseERIs):
     """Generalised ERIs container class."""
 
-    _members: dict[str, UERIs]
-
-    _from_uhf = False
+    _members: dict[str, Tensor[float]]
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialise the class."""
@@ -144,7 +136,7 @@ class GERIs(BaseERIs):
             array = array.transpose(0, 2, 1, 3) - array.transpose(0, 2, 3, 1)
             self.__dict__["array"] = array
 
-    def __getitem__(self, key: str) -> NDArray[float]:
+    def __getitem__(self, key: str) -> Tensor[float]:
         """Just-in-time getter.
 
         Args:

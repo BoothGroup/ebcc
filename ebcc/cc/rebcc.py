@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 from typing import TYPE_CHECKING, cast
 
 from ebcc import numpy as np
@@ -147,7 +148,12 @@ class REBCC(BaseEBCC):
                 amplitudes[name] = eris[key_t].swapaxes(1, 2) / self.energy_sum(key)
             else:
                 shape = tuple(self.space.size(k) for k in key)
-                amplitudes[name] = zeros(shape, dtype=types[float])
+                permutations = [
+                    (perm_o + perm_v, 1)
+                    for perm_o in itertools.permutations(range(n))
+                    for perm_v in itertools.permutations(range(n, 2 * n))
+                ]
+                amplitudes[name] = zeros(shape, permutations=permutations, dtype=types[float])
 
         if self.boson_ansatz:
             # Only true for real-valued couplings:
@@ -159,10 +165,14 @@ class REBCC(BaseEBCC):
         # Build S amplitudes:
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             if n == 1:
-                amplitudes[name] = initialise_from_array(-H / self.omega)
+                amplitudes[name] = initialise_from_array(
+                    -H / self.omega,
+                    permutations=[((0,), 1)],
+                )
             else:
                 shape = (self.nbos,) * n
-                amplitudes[name] = zeros(shape, dtype=types[float])
+                permutations = [(perm, 1) for perm in itertools.permutations(range(n))]
+                amplitudes[name] = zeros(shape, permutations=permutations, dtype=types[float])
 
         # Build U amplitudes:
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
@@ -172,7 +182,13 @@ class REBCC(BaseEBCC):
                 amplitudes[name] = h[key] / self.energy_sum(key)
             else:
                 shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
-                amplitudes[name] = zeros(shape, dtype=types[float])
+                permutations = [
+                    (perm_b + perm_o + perm_v, 1)
+                    for perm_b in itertools.permutations(range(nb))
+                    for perm_o in itertools.permutations(range(nb, nb + nf))
+                    for perm_v in itertools.permutations(range(nb + nf, nb + nf + nf))
+                ]
+                amplitudes[name] = zeros(shape, permutations=permutations, dtype=types[float])
 
         return amplitudes
 
@@ -439,6 +455,7 @@ class REBCC(BaseEBCC):
         Returns:
             Sum of energies.
         """
+        # TODO how to make this efficient with tensors?
         (subscript,) = args
         n = 0
 

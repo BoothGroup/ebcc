@@ -102,7 +102,7 @@ class DIIS(diis.DIIS, Generic[T]):
             x2 = self.get_err_vec(i)
             tmp = sum((x1i.conj() * x2i).sum() for x1i, x2i in zip(x1, x2))
             self._H[self._head, i+1] = tmp
-            self._H[i+1, self._head] = tmp.conj()
+            self._H[i+1, self._head] = tmp.conjugate()
         dt = None
 
         if self._xprev is None:

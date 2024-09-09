@@ -14,7 +14,7 @@ https://github.com/obackhouse/albert
 
 from ebcc import numpy as np
 from ebcc.util import pack_2e, direct_sum, Namespace
-from ebcc.core.tensor import einsum
+from ebcc.core.tensor import einsum, eye
 
 
 def energy(f=None, t1=None, t2=None, v=None, **kwargs):
@@ -718,8 +718,8 @@ def make_rdm1_f(l1=None, l2=None, t1=None, t2=None, **kwargs):
 
     rdm1 = Namespace()
     delta = Namespace(
-        oo=np.eye(t2.shape[0]),
-        vv=np.eye(t2.shape[-1]),
+        oo=eye(t2.shape[0]),
+        vv=eye(t2.shape[-1]),
     )
     tmp0 = einsum(l1, (0, 1), t1, (2, 0), (1, 2))
     rdm1.oo = tmp0.transpose((1, 0)).copy() * -2
@@ -781,8 +781,8 @@ def make_rdm2_f(l1=None, l2=None, t1=None, t2=None, **kwargs):
 
     rdm2 = Namespace()
     delta = Namespace(
-        oo=np.eye(t2.shape[0]),
-        vv=np.eye(t2.shape[-1]),
+        oo=eye(t2.shape[0]),
+        vv=eye(t2.shape[-1]),
     )
     tmp4 = einsum(l2, (0, 1, 2, 3), t1, (4, 1), (2, 3, 4, 0))
     rdm2.vooo = tmp4.transpose((3, 2, 1, 0)).copy()

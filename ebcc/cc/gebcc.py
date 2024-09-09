@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 from typing import TYPE_CHECKING, cast
 
 from pyscf import scf
@@ -16,6 +17,7 @@ from ebcc.ham.eris import GERIs
 from ebcc.ham.fock import GFock
 from ebcc.ham.space import Space
 from ebcc.opt.gbrueckner import BruecknerGEBCC
+from ebcc.core.tensor import zeros, einsum, initialise_from_array, Tensor
 
 if TYPE_CHECKING:
     from typing import Any, Optional, TypeAlias, Union
@@ -29,7 +31,7 @@ if TYPE_CHECKING:
     from ebcc.util import Namespace
 
     ERIsInputType: TypeAlias = Union[GERIs, NDArray[float]]
-    SpinArrayType: TypeAlias = NDArray[float]
+    SpinArrayType: TypeAlias = Tensor[float]
 
 
 class GEBCC(BaseEBCC):
@@ -370,7 +372,8 @@ class GEBCC(BaseEBCC):
                 amplitudes[name] = getattr(eris, key) / self.energy_sum(key)
             else:
                 shape = tuple(self.space.size(k) for k in key)
-                amplitudes[name] = np.zeros(shape, dtype=types[float])
+                permutations = list(util.permutations_with_signs(tuple(range(n * 2))))
+                amplitudes[name] = zeros(shape, permutations=permutations, dtype=types[float])
 
         if self.boson_ansatz:
             # Only true for real-valued couplings:
@@ -382,20 +385,26 @@ class GEBCC(BaseEBCC):
         # Build S amplitudes:
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             if n == 1:
-                amplitudes[name] = -H / self.omega
+                amplitudes[name] = initialise_from_array(-H / self.omega, permutations=[((0,), 1)])
             else:
                 shape = (self.nbos,) * n
-                amplitudes[name] = np.zeros(shape, dtype=types[float])
+                permutations = [(perm, 1) for perm in itertools.permutations(range(n))]
+                amplitudes[name] = zeros(shape, permutations=permutations, dtype=types[float])
 
         # Build U amplitudes:
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             if nf != 1:
                 raise util.ModelNotImplemented
-            if n == 1:
+            if nb == 1:
                 amplitudes[name] = h[key] / self.energy_sum(key)
             else:
                 shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
-                amplitudes[name] = np.zeros(shape, dtype=types[float])
+                permutations = [
+                    (perm_f + perm_b, sign_f)
+                    for perm_f, sign_f in util.permutations_with_signs(range(nf))
+                    for perm_b in itertools.permutations(range(nf, nb + nf))
+                ]
+                amplitudes[name] = zeros(shape, permutations=permutations, dtype=types[float])
 
         return amplitudes
 
@@ -564,7 +573,7 @@ class GEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm: SpinArrayType = func(**kwargs)
+        dm: SpinArrayType = np.asarray(func(**kwargs))
 
         if hermitise:
             dm = 0.5 * (dm + dm.T)
@@ -595,7 +604,7 @@ class GEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm: SpinArrayType = func(**kwargs)
+        dm: SpinArrayType = np.asarray(func(**kwargs))
 
         if hermitise:
             dm = 0.5 * (dm.transpose(0, 1, 2, 3) + dm.transpose(2, 3, 0, 1))
@@ -638,7 +647,7 @@ class GEBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm_eb: SpinArrayType = func(**kwargs)
+        dm_eb: SpinArrayType = np.asarray(func(**kwargs))
 
         if hermitise:
             dm_eb[0] = 0.5 * (dm_eb[0] + dm_eb[1].transpose(0, 2, 1))
@@ -651,7 +660,7 @@ class GEBCC(BaseEBCC):
 
         return dm_eb
 
-    def energy_sum(self, *args: str, signs_dict: Optional[dict[str, str]] = None) -> NDArray[float]:
+    def energy_sum(self, *args: str, signs_dict: Optional[dict[str, str]] = None) -> Tensor[float]:
         """Get a direct sum of energies.
 
         Args:
@@ -687,8 +696,21 @@ class GEBCC(BaseEBCC):
             else:
                 energies.append(np.diag(self.fock[key + key]))
 
+        perms = {tuple(range(len(subscript)))}
+        for char in set(subscript):
+            indices = [i for i, k in enumerate(subscript) if k == char]
+            for perm in perms.copy():
+                for indices_perm, _ in util.permutations.permutations_with_signs(indices):
+                    new_perm = list(perm)
+                    for i, j in zip(indices, indices_perm):
+                        new_perm[i] = perm[j]
+                    perms.add(tuple(new_perm))
+
         subscript = "".join([signs_dict[k] + next_char() for k in subscript])
-        energy_sum = util.direct_sum(subscript, *energies)
+        energy_sum = initialise_from_array(
+            util.direct_sum(subscript, *energies),
+            permutations=[(perm, 1) for perm in perms],
+        )
 
         return energy_sum
 
@@ -729,19 +751,19 @@ class GEBCC(BaseEBCC):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             shape = tuple(self.space.size(k) for k in key)
             size = np.prod(shape)
-            amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[name] = initialise_from_array(vector[i0 : i0 + size].reshape(shape))
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * n
             size = np.prod(shape)
-            amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[name] = initialise_from_array(vector[i0 : i0 + size].reshape(shape))
             i0 += size
 
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
             size = np.prod(shape)
-            amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[name] = initialise_from_array(vector[i0 : i0 + size].reshape(shape))
             i0 += size
 
         return amplitudes
@@ -785,23 +807,50 @@ class GEBCC(BaseEBCC):
             key = key[n:] + key[:n]
             shape = tuple(self.space.size(k) for k in key)
             size = np.prod(shape)
-            lambdas[lname] = vector[i0 : i0 + size].reshape(shape)
+            lambdas[lname] = initialise_from_array(vector[i0 : i0 + size].reshape(shape))
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * n
             size = np.prod(shape)
-            lambdas["l" + name] = vector[i0 : i0 + size].reshape(shape)
+            lambdas["l" + name] = initialise_from_array(vector[i0 : i0 + size].reshape(shape))
             i0 += size
 
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             key = key[:nb] + key[nb + nf :] + key[nb : nb + nf]
             shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
             size = np.prod(shape)
-            lambdas["l" + name] = vector[i0 : i0 + size].reshape(shape)
+            lambdas["l" + name] = initialise_from_array(vector[i0 : i0 + size].reshape(shape))
             i0 += size
 
         return lambdas
+
+    def damp_amps(
+        self,
+        amplitudes: Namespace[SpinArrayType],
+        amplitudes_prev: Namespace[SpinArrayType],
+        diis: DIIS,
+    ) -> tuple[Namespace[SpinArrayType], float]:
+        """Damp the amplitudes using DIIS.
+
+        Args:
+            amplitudes: Cluster amplitudes.
+            amplitudes_prev: Previous cluster amplitudes.
+            diis: DIIS object.
+
+        Returns:
+            Damped cluster amplitudes, and the error between the current and previous amplitudes.
+        """
+        # Damp amplitudes using DIIS
+        amplitudes_tuple = tuple(amplitudes.values())
+        amplitudes_prev_tuple = tuple(amplitudes_prev.values())
+        amplitudes_new_tuple = diis.update(amplitudes_tuple)
+        amplitudes_new = util.Namespace(**dict(zip(amplitudes.keys(), amplitudes_new_tuple)))
+
+        # Get the error between the current and previous amplitudes
+        dt = max((x - y).abs().max() for x, y in zip(amplitudes_tuple, amplitudes_prev_tuple))
+
+        return amplitudes_new, dt
 
     def get_mean_field_G(self) -> NDArray[float]:
         """Get the mean-field boson non-conserving term.

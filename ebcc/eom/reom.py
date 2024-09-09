@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from ebcc import numpy as np
 from ebcc import util
 from ebcc.core.precision import astype
+from ebcc.core.tensor import einsum, initialise_from_array
 from ebcc.eom.base import BaseEA_EOM, BaseEE_EOM, BaseEOM, BaseIP_EOM
 
 if TYPE_CHECKING:
@@ -15,6 +16,7 @@ if TYPE_CHECKING:
     from ebcc.cc.rebcc import REBCC, ERIsInputType, SpinArrayType
     from ebcc.ham.space import Space
     from ebcc.numpy.typing import NDArray
+    from ebcc.core.tensor import Tensor
     from ebcc.util import Namespace
 
 
@@ -32,7 +34,7 @@ class IP_REOM(REOM, BaseIP_EOM):
     def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
-            r1 = self.vector_to_amplitudes(diag)["r1"]
+            r1 = np.asarray(self.vector_to_amplitudes(diag)["r1"])
             arg = np.argsort(np.abs(diag[: r1.size]))
         else:
             arg = np.argsort(np.abs(diag))
@@ -40,7 +42,7 @@ class IP_REOM(REOM, BaseIP_EOM):
 
     def _quasiparticle_weight(self, r1: SpinArrayType) -> float:
         """Get the quasiparticle weight."""
-        weight: float = np.dot(r1.ravel(), r1.ravel())
+        weight: float = einsum("i,i->", r1, r1)
         return astype(weight, float)
 
     def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
@@ -101,7 +103,7 @@ class IP_REOM(REOM, BaseIP_EOM):
             key = key[:-1]
             shape = tuple(self.space.size(k) for k in key)
             size = int(np.prod(shape))
-            amplitudes[f"r{n}"] = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[f"r{n}"] = initialise_from_array(vector[i0 : i0 + size].reshape(shape))
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
@@ -119,7 +121,7 @@ class EA_REOM(REOM, BaseEA_EOM):
     def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
-            r1 = self.vector_to_amplitudes(diag)["r1"]
+            r1 = np.asarray(self.vector_to_amplitudes(diag)["r1"])
             arg = np.argsort(np.abs(diag[: r1.size]))
         else:
             arg = np.argsort(np.abs(diag))
@@ -127,7 +129,7 @@ class EA_REOM(REOM, BaseEA_EOM):
 
     def _quasiparticle_weight(self, r1: SpinArrayType) -> float:
         """Get the quasiparticle weight."""
-        weight: float = np.dot(r1.ravel(), r1.ravel())
+        weight: float = einsum("a,a->", r1, r1)
         return astype(weight, float)
 
     def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
@@ -188,7 +190,7 @@ class EA_REOM(REOM, BaseEA_EOM):
             key = key[n:] + key[: n - 1]
             shape = tuple(self.space.size(k) for k in key)
             size = int(np.prod(shape))
-            amplitudes[f"r{n}"] = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[f"r{n}"] = initialise_from_array(vector[i0 : i0 + size].reshape(shape))
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
@@ -206,7 +208,7 @@ class EE_REOM(REOM, BaseEE_EOM):
     def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
-            r1 = self.vector_to_amplitudes(diag)["r1"]
+            r1 = np.asarray(self.vector_to_amplitudes(diag)["r1"]).ravel()
             arg = np.argsort(diag[: r1.size])
         else:
             arg = np.argsort(diag)
@@ -214,7 +216,7 @@ class EE_REOM(REOM, BaseEE_EOM):
 
     def _quasiparticle_weight(self, r1: SpinArrayType) -> float:
         """Get the quasiparticle weight."""
-        weight: float = np.dot(r1.ravel(), r1.ravel())
+        weight: float = einsum("ia,ia->", r1, r1)
         return astype(weight, float)
 
     def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
@@ -273,7 +275,7 @@ class EE_REOM(REOM, BaseEE_EOM):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             shape = tuple(self.space.size(k) for k in key)
             size = int(np.prod(shape))
-            amplitudes[f"r{n}"] = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[f"r{n}"] = initialise_from_array(vector[i0 : i0 + size].reshape(shape))
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):

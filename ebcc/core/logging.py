@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, cast
 
 from ebcc import __version__
 from ebcc.util import Namespace
+from ebcc.core.tensor import MPI
 
 if TYPE_CHECKING:
     from typing import Any
@@ -41,7 +42,10 @@ logging.addLevelName(25, "OUTPUT")
 
 
 default_log = Logger("ebcc")
-default_log.setLevel(logging.INFO)
+if MPI is None or MPI.COMM_WORLD.rank == 0:
+    default_log.setLevel(logging.INFO)
+else:
+    default_log.setLevel(logging.ERROR)
 default_log.addHandler(logging.StreamHandler(sys.stderr))
 
 

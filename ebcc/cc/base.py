@@ -347,10 +347,7 @@ class BaseEBCC(ABC):
                 lambdas_pert=lambdas_pert,
                 eris=eris,
             )
-            vector = self.lambdas_to_vector(lambdas)
-            vector = diis.update(vector)
-            lambdas = self.vector_to_lambdas(vector)
-            dl = np.linalg.norm(vector - self.lambdas_to_vector(lambdas_prev), ord=np.inf)
+            lambdas, dl = self.damp_amps(lambdas, lambdas_prev, diis)
 
             # Log the iteration:
             converged = bool(dl < self.options.t_tol)

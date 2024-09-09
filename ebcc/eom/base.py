@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 
     from ebcc.cc.base import BaseEBCC, ERIsInputType, SpaceType, SpinArrayType
     from ebcc.core.ansatz import Ansatz
+    from ebcc.core.tensor import Tensor
     from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
 
@@ -146,7 +147,7 @@ class BaseEOM(ABC):
         self,
         vector: NDArray[float],
         eris: Optional[ERIsInputType] = None,
-        ints: Optional[NDArray[float]] = None,
+        ints: Optional[Tensor[float]] = None,
         left: bool = False,
     ) -> NDArray[float]:
         """Apply the Hamiltonian to a vector.
@@ -165,7 +166,7 @@ class BaseEOM(ABC):
     @abstractmethod
     def matvec_intermediates(
         self, eris: Optional[ERIsInputType] = None, left: bool = False
-    ) -> Namespace[NDArray[float]]:
+    ) -> Namespace[Tensor[float]]:
         """Get the intermediates for application of the Hamiltonian to a vector.
 
         Args:
@@ -374,7 +375,7 @@ class BaseIP_EOM(BaseEOM):
         self,
         vector: NDArray[float],
         eris: Optional[ERIsInputType] = None,
-        ints: Optional[NDArray[float]] = None,
+        ints: Optional[Tensor[float]] = None,
         left: bool = False,
     ) -> NDArray[float]:
         """Apply the Hamiltonian to a vector.
@@ -404,7 +405,7 @@ class BaseIP_EOM(BaseEOM):
 
     def matvec_intermediates(
         self, eris: Optional[ERIsInputType] = None, left: bool = False
-    ) -> Namespace[NDArray[float]]:
+    ) -> Namespace[Tensor[float]]:
         """Get the intermediates for application of the Hamiltonian to a vector.
 
         Args:
@@ -419,7 +420,7 @@ class BaseIP_EOM(BaseEOM):
             eris=eris,
             amplitudes=self.ebcc.amplitudes,
         )
-        res: Namespace[NDArray[float]] = util.Namespace(**func(**kwargs))
+        res: Namespace[Tensor[float]] = util.Namespace(**func(**kwargs))
         return res
 
 
@@ -435,7 +436,7 @@ class BaseEA_EOM(BaseEOM):
         self,
         vector: NDArray[float],
         eris: Optional[ERIsInputType] = None,
-        ints: Optional[NDArray[float]] = None,
+        ints: Optional[Tensor[float]] = None,
         left: bool = False,
     ) -> NDArray[float]:
         """Apply the Hamiltonian to a vector.
@@ -465,7 +466,7 @@ class BaseEA_EOM(BaseEOM):
 
     def matvec_intermediates(
         self, eris: Optional[ERIsInputType] = None, left: bool = False
-    ) -> Namespace[NDArray[float]]:
+    ) -> Namespace[Tensor[float]]:
         """Get the intermediates for application of the Hamiltonian to a vector.
 
         Args:
@@ -480,7 +481,7 @@ class BaseEA_EOM(BaseEOM):
             eris=eris,
             amplitudes=self.ebcc.amplitudes,
         )
-        res: Namespace[NDArray[float]] = util.Namespace(**func(**kwargs))
+        res: Namespace[Tensor[float]] = util.Namespace(**func(**kwargs))
         return res
 
 
@@ -496,7 +497,7 @@ class BaseEE_EOM(BaseEOM):
         self,
         vector: NDArray[float],
         eris: Optional[ERIsInputType] = None,
-        ints: Optional[NDArray[float]] = None,
+        ints: Optional[Tensor[float]] = None,
         left: bool = False,
     ) -> NDArray[float]:
         """Apply the Hamiltonian to a vector.
@@ -526,7 +527,7 @@ class BaseEE_EOM(BaseEOM):
 
     def matvec_intermediates(
         self, eris: Optional[ERIsInputType] = None, left: bool = False
-    ) -> Namespace[NDArray[float]]:
+    ) -> Namespace[Tensor[float]]:
         """Get the intermediates for application of the Hamiltonian to a vector.
 
         Args:
@@ -541,5 +542,5 @@ class BaseEE_EOM(BaseEOM):
             eris=eris,
             amplitudes=self.ebcc.amplitudes,
         )
-        res: Namespace[NDArray[float]] = util.Namespace(**func(**kwargs))
+        res: Namespace[Tensor[float]] = util.Namespace(**func(**kwargs))
         return res
