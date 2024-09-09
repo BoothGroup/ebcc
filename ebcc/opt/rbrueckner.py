@@ -9,13 +9,14 @@ import scipy.linalg
 from ebcc import numpy as np
 from ebcc import util
 from ebcc.core.precision import types
+from ebcc.core.tensor import einsum, initialise_from_array
 from ebcc.opt.base import BaseBruecknerEBCC
 
 if TYPE_CHECKING:
     from typing import Optional
 
     from ebcc.cc.rebcc import REBCC, SpinArrayType
-    from ebcc.core.damping import DIIS
+    from ebcc.core.damping import DIIS  # type: ignore
     from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
 
@@ -28,10 +29,10 @@ class BruecknerREBCC(BaseBruecknerEBCC):
 
     def get_rotation_matrix(
         self,
-        u_tot: Optional[SpinArrayType] = None,
+        u_tot: Optional[NDArray[float]] = None,
         diis: Optional[DIIS] = None,
         t1: Optional[SpinArrayType] = None,
-    ) -> tuple[SpinArrayType, SpinArrayType]:
+    ) -> tuple[NDArray[float], NDArray[float]]:
         """Update the rotation matrix.
 
         Also returns the total rotation matrix.
@@ -71,7 +72,7 @@ class BruecknerREBCC(BaseBruecknerEBCC):
         return u, u_tot
 
     def transform_amplitudes(
-        self, u: SpinArrayType, amplitudes: Optional[Namespace[SpinArrayType]] = None
+        self, u: NDArray[float], amplitudes: Optional[Namespace[SpinArrayType]] = None
     ) -> Namespace[SpinArrayType]:
         """Transform the amplitudes into the Brueckner orbital basis.
 
@@ -86,8 +87,8 @@ class BruecknerREBCC(BaseBruecknerEBCC):
             amplitudes = self.cc.amplitudes
 
         nocc = self.cc.space.ncocc
-        ci = u[:nocc, :nocc]
-        ca = u[nocc:, nocc:]
+        ci = initialise_from_array(u[:nocc, :nocc])
+        ca = initialise_from_array(u[nocc:, nocc:])
 
         # Transform T amplitudes:
         for name, key, n in self.cc.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
@@ -97,7 +98,7 @@ class BruecknerREBCC(BaseBruecknerEBCC):
             for i in range(n):
                 args += [ca, (i + n, i + n * 3)]
             args += [tuple(range(n * 2, n * 4))]
-            self.cc.amplitudes[name] = util.einsum(*args)
+            self.cc.amplitudes[name] = einsum(*args)
 
         # Transform S amplitudes:
         for name, key, n in self.cc.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
@@ -150,7 +151,7 @@ class BruecknerREBCC(BaseBruecknerEBCC):
         return mo_coeff
 
     def update_coefficients(
-        self, u_tot: SpinArrayType, mo_coeff: NDArray[float], mo_coeff_ref: NDArray[float]
+        self, u_tot: NDArray[float], mo_coeff: NDArray[float], mo_coeff_ref: NDArray[float]
     ) -> NDArray[float]:
         """Update the MO coefficients.
 

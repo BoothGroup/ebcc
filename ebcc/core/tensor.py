@@ -5,7 +5,7 @@ from __future__ import annotations
 import functools
 import itertools
 import math
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, TypeVar, overload
 
 from ebcc import numpy as np
 from ebcc.core.precision import types
@@ -114,7 +114,7 @@ def set_blocks_from_array(tensor: Tensor[F], array: NDArray[F]) -> Tensor[F]:
     """
     for block_index in loop_rank_block_indices(tensor):
         s = tensor.get_block_slice(block_index)
-        tensor[block_index] = array[s]
+        tensor.set_block(block_index, array[s])
     return tensor
 
 
@@ -145,7 +145,9 @@ def zeros(shape: tuple[int, ...], **kwargs: Any) -> Tensor[F]:
     """
     tensor: Tensor[F] = Tensor(shape, **kwargs)
     for block_index in loop_rank_block_indices(tensor):
-        tensor[block_index] = np.zeros(tensor.get_block_shape(block_index), dtype=tensor.dtype)
+        tensor.set_block(
+            block_index, np.zeros(tensor.get_block_shape(block_index), dtype=tensor.dtype)
+        )
     return tensor
 
 
@@ -180,7 +182,9 @@ def eye(size: int, **kwargs: Any) -> Tensor[F]:
     tensor: Tensor[F] = zeros((size, size), **kwargs)
     for block_index in loop_rank_block_indices(tensor):
         if block_index[0] == block_index[1]:
-            tensor[block_index] = np.eye(tensor.get_block_shape(block_index)[0], dtype=tensor.dtype)
+            tensor.set_block(
+                block_index, np.eye(tensor.get_block_shape(block_index)[0], dtype=tensor.dtype)
+            )
     return tensor
 
 
@@ -337,7 +341,7 @@ def _bilinear_map(
         # Get the first block
         owner_a = a.get_owner(block_index_a_canon)
         if owner_a == rank == a.world.rank:
-            block_a = a[block_index]
+            block_a = a.get_block(block_index)
         elif owner_a == a.world.rank:
             a.send_block(block_index_a_canon, rank)
         elif rank == a.world.rank:
@@ -348,7 +352,7 @@ def _bilinear_map(
         # Get the b block
         owner_b = b.get_owner(block_index_b_canon)
         if owner_b == rank == b.world.rank:
-            block_b = b[block_index]
+            block_b = b.get_block(block_index)
         elif owner_b == b.world.rank:
             b.send_block(block_index_b_canon, rank)
         elif rank == b.world.rank:
@@ -358,7 +362,7 @@ def _bilinear_map(
 
         # Compute the c
         if rank == a.world.rank:
-            c[block_index] = func(block_a, block_b)
+            c.set_block(block_index, func(block_a, block_b))
 
     if DEBUG:
         c._check_sanity()
@@ -388,7 +392,7 @@ def _unary_map(func: Callable[[NDArray[float]], NDArray[float]], array: Tensor[F
 
     # Loop over the blocks
     for block_index, block in array._blocks.items():
-        result[block_index] = func(block)
+        result.set_block(block_index, func(block))
     array.world.barrier()
 
     if DEBUG:
@@ -454,7 +458,7 @@ class Tensor(Generic[F]):
         """Set a block in the distributed array."""
         self._blocks[index] = block
 
-    def __setitem__(self, index: tuple[int, ...], block: NDArray[F]) -> None:
+    def set_block(self, index: tuple[int, ...], block: NDArray[F]) -> None:
         """Set a block in the distributed array.
 
         Args:
@@ -474,11 +478,72 @@ class Tensor(Generic[F]):
         assert block.flags.c_contiguous
         self._set_block(index, block)
 
+    @overload
+    def __setitem__(self, _index: tuple[int, ...], _value: F) -> None:  # noqa: D105
+        ...
+
+    @overload
+    def __setitem__(self, _index: tuple[slice, ...], _value: NDArray[F]) -> None:  # noqa: D105
+        ...
+
+    def __setitem__(self, _index: Any, _value: Any) -> None:
+        """Set an element or block in the tensor.
+
+        Args:
+            _index: The index or slice.
+            _value: The value to set.
+        """
+        if not len(_index) == self.ndim:
+            raise TensorError("Incorrect number of indices provided.")
+        if not len(set(type(i) for i in _index)) == 1:
+            raise TensorError("Indices must be either all integers or all slices.")
+
+        if all(isinstance(i, int) for i in _index):
+            slices = tuple(slice(i, i + 1) for i in _index)
+            values = np.array(_value, dtype=self.dtype).reshape((1,) * self.ndim)
+        else:
+            # TODO If `_value` is a Tensor, we can map the blocks directly
+            slices = _index
+            values = np.asarray(_value, dtype=self.dtype)
+
+        # Loop over the blocks
+        for block_index in loop_rank_block_indices(self):
+            block_slice = self.get_block_slice(block_index)
+
+            # Find the slice into the block to get the intersection
+            intersection = tuple(
+                slice(
+                    max(s.start - bs.start, 0),
+                    min(s.stop - bs.start, bs.stop - bs.start),
+                    s.step,
+                )
+                for s, bs in zip(slices, block_slice)
+            )
+            if any(s.start >= s.stop for s in intersection):
+                continue
+
+            # Find the slice into the values to get the intersection
+            intersection_values = tuple(
+                slice(
+                    max(bs.start - s.start, 0),
+                    min(bs.stop - s.start, s.stop - s.start),
+                    s.step,
+                )
+                for s, bs in zip(slices, block_slice)
+            )
+            if any(s.start >= s.stop for s in intersection_values):
+                continue
+
+            # Update the block
+            block = self._get_block(block_index)
+            block[intersection] = values[intersection_values]
+            self._set_block(block_index, block)
+
     def _get_block(self, index: tuple[int, ...]) -> NDArray[F]:
         """Get a block from the distributed array."""
         return self._blocks[index]
 
-    def __getitem__(self, index: tuple[int, ...]) -> NDArray[F]:
+    def get_block(self, index: tuple[int, ...]) -> NDArray[F]:
         """Get a block from the distributed array.
 
         Args:
@@ -498,6 +563,71 @@ class Tensor(Generic[F]):
             return self._get_block(canon).transpose(perm) * sign
         except KeyError:
             raise TensorError(f"Block {index} not found.")
+
+    @overload
+    def __getitem__(self, _index: tuple[int, ...]) -> F:  # noqa: D105
+        ...
+
+    @overload
+    def __getitem__(self, _index: tuple[slice, ...]) -> Tensor[F]:  # noqa: D105
+        ...
+
+    def __getitem__(self, _index: Any) -> Any:
+        """Get an element or block from the tensor.
+
+        Args:
+            _index: The index or slice.
+
+        Returns:
+            The element or block.
+        """
+        if not len(_index) == self.ndim:
+            raise TensorError("Incorrect number of indices provided.")
+        if not len(set(type(i) for i in _index)) == 1:
+            raise TensorError("Indices must be either all integers or all slices.")
+
+        if all(isinstance(i, int) for i in _index):
+            slices = tuple(slice(i, i + 1) for i in _index)
+        else:
+            slices = _index
+
+        # TODO Map the blocks directly
+        result = np.zeros(tuple(s.stop - s.start for s in slices), dtype=self.dtype)
+        for block_index in loop_rank_block_indices(self):
+            block_slice = self.get_block_slice(block_index)
+
+            # Find the slice into the block to get the intersection
+            intersection = tuple(
+                slice(
+                    max(s.start - bs.start, 0),
+                    min(s.stop - bs.start, bs.stop - bs.start),
+                    s.step,
+                )
+                for s, bs in zip(slices, block_slice)
+            )
+            if any(s.start >= s.stop for s in intersection):
+                continue
+
+            # Find the slice into the result to get the intersection
+            intersection_result = tuple(
+                slice(
+                    max(bs.start - s.start, 0),
+                    min(bs.stop - s.start, s.stop - s.start),
+                    s.step,
+                )
+                for s, bs in zip(slices, block_slice)
+            )
+            if any(s.start >= s.stop for s in intersection_result):
+                continue
+
+            # Update the result
+            block = self._get_block(block_index)
+            result[intersection_result] = block[intersection]
+
+        if all(isinstance(i, int) for i in _index):
+            return result.item()
+        else:
+            return initialise_from_array(result)
 
     def _check_sanity(self) -> None:
         """Run sanity checks on the tensor."""
@@ -655,7 +785,7 @@ class Tensor(Generic[F]):
         for block_index in loop_block_indices(self.block_num):
             if self.owns_block(block_index):
                 s = self.get_block_slice(block_index)
-                array[s] = self[block_index]
+                array[s] = self.get_block(block_index)
         return array
 
     def as_global_ndarray(self) -> NDArray[F]:
@@ -821,7 +951,7 @@ class Tensor(Generic[F]):
             The matrix product of the two tensors.
         """
         _check_not_array(other)
-        return dot(self, other)
+        return tensordot(self, other, axes=1)
 
     def __iadd__(self, other: Union[Tensor[F], F]) -> Tensor[F]:
         """In-place addition.
@@ -1096,7 +1226,7 @@ class Tensor(Generic[F]):
         """
         blocks = []
         for block_index in sorted(self._blocks.keys()):
-            blocks.append(self[block_index].ravel())
+            blocks.append(self.get_block(block_index).ravel())
         return np.concatenate(blocks)
 
     def _describe(self) -> str:
@@ -1116,84 +1246,6 @@ class Tensor(Generic[F]):
                 chars += f"{''.join(EINSUM_SYMBOLS[i + 8] for i in perm)}"
                 output += f"    {perm} ({sign:+d}) [{chars}]\n"
         return output
-
-
-def dot(
-    first: Tensor[F],
-    second: Tensor[F],
-) -> Tensor[F]:
-    """Distributed dot product.
-
-    Args:
-        first: The first tensor.
-        second: The second tensor.
-
-    Returns:
-        The dot product of the two tensors.
-    """
-    raise NotImplementedError
-    if first.ndim != 2 or second.ndim != 2:
-        raise TensorError("Arrays must be 2D.")
-    if first.shape[1] != second.shape[0]:
-        raise TensorError("Shapes must be compatible.")
-    if first.block_num[1] != second.block_num[0]:
-        raise TensorError("Block shapes must be compatible.")
-
-    world = first.world
-    world_size = world.size if world is not None else 1
-    world_rank = world.rank if world is not None else 0
-
-    permutations = _combine_permutations("ij,jk->ik", first.permutations, second.permutations)
-
-    result: Tensor[F] = Tensor(
-        (first.shape[0], second.shape[1]),
-        dtype=first.dtype,
-        block_num=first.block_num,
-        permutations=permutations,
-        world=world,
-    )
-
-    block_num = tuple(first.block_num) + (second.block_num[1],)
-    rank = 0
-    for i, j, k in itertools.product(*[range(n) for n in block_num]):
-        ij = (i, j)
-        ik = (i, k)
-        kj = (k, j)
-
-        # Check if the computation has already been done under a different permutation
-        ij_canon, _, _ = symmetrise_indices(ij, result.permutations)
-        if ij != ij_canon:
-            continue
-
-        # Get the owners
-        owner_ij = result.get_owner(ij, raise_error=False)  # In case a permutation exists
-        if owner_ij is None:
-            owner_ij = rank
-            rank = (rank + 1) % world_size
-        owner_ik = first.get_owner(ik)
-        owner_kj = second.get_owner(kj)
-
-        # Send [ik] to owner_ij
-        if owner_ik == world_rank:
-            first.send_block(ik, owner_ij)
-        if owner_ij == world_rank:
-            block_ik = first.recv_block(ik, owner_ik, store=False)
-
-        # Send [kj] to owner_ij
-        if owner_kj == world_rank:
-            second.send_block(kj, owner_ij)
-        if owner_ij == world_rank:
-            block_kj = second.recv_block(kj, owner_kj, store=False)
-
-        # Multiply [ik] @ [kj] and add to [ij]
-        if owner_ij == world_rank:
-            block_ij = block_ik @ block_kj
-            if result.owns_block(ij):
-                result[ij] += block_ij
-            else:
-                result[ij] = block_ij
-
-    return result
 
 
 def tensordot(
@@ -1339,7 +1391,7 @@ def tensordot(
 
             # Send [a] to [b]
             if owner_a == owner_c == world_rank:
-                block_a = a[block_indices_a]
+                block_a = a.get_block(block_indices_a)
             elif owner_a == world_rank:
                 a.send_block(block_indices_a_canon, owner_c)
             elif owner_c == world_rank:
@@ -1349,7 +1401,7 @@ def tensordot(
 
             # Send [b] to [a]
             if owner_b == owner_c == world_rank:
-                block_b = b[block_indices_b]
+                block_b = b.get_block(block_indices_b)
             elif owner_b == world_rank:
                 b.send_block(block_indices_b_canon, owner_c)
             elif owner_c == world_rank:
@@ -1361,9 +1413,9 @@ def tensordot(
             if owner_c == world_rank:
                 block_c = np.tensordot(block_a, block_b, axes=(axes_a, axes_b))
                 if c.owns_block(block_indices_c):
-                    c[block_indices_c] += block_c
+                    c.set_block(block_indices_c, c.get_block(block_indices_c) + block_c)
                 else:
-                    c[block_indices_c] = block_c
+                    c.set_block(block_indices_c, block_c)
 
     if DEBUG:
         c._check_sanity()

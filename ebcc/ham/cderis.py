@@ -73,6 +73,7 @@ class RCDERIs(BaseERIs):
                 )
                 part = part.astype(block.dtype)
                 part = part.reshape(-1, ijslice[1] - ijslice[0], ijslice[3] - ijslice[2])
+                block.set_block(indices, part)
             self._members[key_e2] = block
 
         return self._members[key_e2]

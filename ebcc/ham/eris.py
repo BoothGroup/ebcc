@@ -54,7 +54,7 @@ class RERIs(BaseERIs):
                     )
                     part = part.astype(block.dtype)
                     part = part.reshape([c.shape[1] for c in part_coeffs])
-                    block[indices] = part
+                    block.set_block(indices, part)
                 self._members[key] = block
         else:
             if key not in self._members.keys():

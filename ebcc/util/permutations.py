@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
     from ebcc.numpy.typing import NDArray
 
-    T = TypeVar("T")
+    T = TypeVar("T", float, complex)
 
 
 def factorial(n: int) -> int:
@@ -540,7 +540,8 @@ def symmetrise(
     array_as = zeros_like(array) if isinstance(array, Tensor) else np.zeros_like(array)
     groups = tuple(sorted(set(zip(sorted(set(subscript)), symmetry_compressed))))  # don't ask
     inds = [tuple(i for i, s in enumerate(subscript) if s == char) for char, symm in groups]
-    tensor_permutations = set(array.permutations) if isinstance(array, Tensor) else None
+    if isinstance(array, Tensor):
+        tensor_permutations = set(array.permutations)
     for tup in itertools.product(*(permutations_with_signs(ind) for ind in inds)):
         perms, signs = zip(*tup)
         perm = list(range(len(subscript)))
@@ -548,7 +549,7 @@ def symmetrise(
             for i, p in zip(inds_part, perms_part):
                 perm[i] = p
         sign = np.prod(signs) if symmetry[perm[0]] == "-" else 1
-        array_as = array_as + sign * array.transpose(perm)
+        array_as = array_as + sign * array.transpose(*perm)
 
         # If a tensor is passed, update the permutations
         if isinstance(array, Tensor):
@@ -556,6 +557,10 @@ def symmetrise(
                 new_perm = tuple(tensor_perm[i] for i in perm)
                 new_sign = tensor_sign * sign
                 tensor_permutations.add((new_perm, new_sign))
+
+    # Add the new permutations to the tensor
+    if isinstance(array, Tensor):
+        array_as.permutations = sorted(tensor_permutations)
 
     if apply_factor:
         # Apply factor
