@@ -868,6 +868,65 @@ class UEBCC(BaseEBCC):
 
         return amplitudes
 
+    def lambdas_to_tuple(
+        self, lambdas: Namespace[SpinArrayType]
+    ) -> tuple[Tensor[float], ...]:
+        """Convert the cluster lambda amplitudes to a tuple.
+
+        Args:
+            lambdas: Cluster lambda amplitudes.
+
+        Returns:
+            Cluster lambda amplitudes as a tuple.
+        """
+        lambdas_tuple: tuple[Tensor[float], ...] = tuple()
+
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            lname = name.replace("t", "l")
+            for spin in util.generate_spin_combinations(n, unique=True):
+                lambdas_tuple += (lambdas[lname][spin],)
+
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
+            lambdas_tuple += (lambdas["l" + name],)
+
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            if nf != 1:
+                raise util.ModelNotImplemented
+            lambdas_tuple += (lambdas["l" + name].aa, lambdas["l" + name].bb)
+
+        return lambdas_tuple
+
+    def tuple_to_lambdas(
+        self, lams: tuple[Tensor[float], ...]
+    ) -> Namespace[SpinArrayType]:
+        """Convert a tuple to cluster lambda amplitudes.
+
+        Args:
+            lams: Cluster lambda amplitudes as a tuple.
+
+        Returns:
+            Cluster lambda amplitudes.
+        """
+        lambdas: Namespace[SpinArrayType] = util.Namespace()
+        i = 0
+
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            lname = name.replace("t", "l")
+            for spin in util.generate_spin_combinations(n, unique=True):
+                lambdas[lname][spin] = lams[i]
+                i += 1
+
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
+            lambdas["l" + name] = lams[i]
+
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            if nf != 1:
+                raise util.ModelNotImplemented
+            lambdas["l" + name] = util.Namespace(aa=lams[i], bb=lams[i + 1])
+            i += 2
+
+        return lambdas
+
     def get_mean_field_G(self) -> NDArray[float]:
         """Get the mean-field boson non-conserving term.
 

@@ -42,7 +42,7 @@ F = TypeVar("F", float, complex)
 EINSUM_SYMBOLS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 EINSUM_SYMBOLS_SET = set(EINSUM_SYMBOLS)
 
-DEFAULT_BLOCK_SIZE = 8  # FIXME
+DEFAULT_BLOCK_SIZE = 32  # FIXME
 
 DEBUG = False
 
@@ -1130,7 +1130,7 @@ class Tensor(Generic[F]):
         sum_global: F = self.world.allreduce(sum_local, op=MPI.SUM)
         return sum_global
 
-    def transpose(self, *_axes: Union[int]) -> Tensor[F]:
+    def transpose(self, *_axes: int) -> Tensor[F]:
         """Transpose the tensor.
 
         Args:
@@ -1141,7 +1141,7 @@ class Tensor(Generic[F]):
         """
         if not _axes:
             raise TensorError("No axes provided.")
-        if isinstance(_axes[0], tuple):
+        if isinstance(_axes[0], (tuple, list)):
             if len(_axes) > 1:
                 raise TensorError("Only one tuple of axes can be provided.")
             axes = tuple(_axes[0])

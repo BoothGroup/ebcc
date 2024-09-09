@@ -891,6 +891,60 @@ class GEBCC(BaseEBCC):
 
         return amplitudes
 
+    def lambdas_to_tuple(
+        self, lambdas: Namespace[SpinArrayType]
+    ) -> tuple[SpinArrayType, ...]:
+        """Convert the cluster lambda amplitudes to a tuple.
+
+        Args:
+            lambdas: Cluster lambda amplitudes.
+
+        Returns:
+            Cluster lambda amplitudes as a tuple.
+        """
+        lambdas_tuple: tuple[SpinArrayType, ...] = tuple()
+
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            lname = name.replace("t", "l")
+            lambdas_tuple += (lambdas[lname],)
+
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
+            lambdas_tuple += (lambdas["l" + name],)
+
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            lambdas_tuple += (lambdas["l" + name],)
+
+        return lambdas_tuple
+
+    def tuple_to_lambdas(
+        self, lams: tuple[SpinArrayType, ...]
+    ) -> Namespace[SpinArrayType]:
+        """Convert a tuple to cluster lambda amplitudes.
+
+        Args:
+            lams: Cluster lambda amplitudes as a tuple.
+
+        Returns:
+            Cluster lambda amplitudes.
+        """
+        lambdas: Namespace[SpinArrayType] = util.Namespace()
+        i = 0
+
+        for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+            lname = name.replace("t", "l")
+            lambdas[lname] = lams[i]
+            i += 1
+
+        for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
+            lambdas["l" + name] = lams[i]
+            i += 1
+
+        for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            lambdas["l" + name] = lams[i]
+            i += 1
+
+        return lambdas
+
     def get_mean_field_G(self) -> NDArray[float]:
         """Get the mean-field boson non-conserving term.
 

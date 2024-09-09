@@ -348,7 +348,7 @@ class BaseEBCC(ABC):
                 lambdas_pert=lambdas_pert,
                 eris=eris,
             )
-            lambdas, dl = self.damp_amps(lambdas, lambdas_prev, diis)
+            lambdas, dl = self.damp_lams(lambdas, lambdas_prev, diis)
 
             # Log the iteration:
             converged = bool(dl < self.options.t_tol)
@@ -865,6 +865,32 @@ class BaseEBCC(ABC):
         """
         pass
 
+    @abstractmethod
+    def lambdas_to_tuple(
+        self, lambdas: Namespace[SpinArrayType]
+    ) -> tuple[SpinArrayType, ...]:
+        """Convert the cluster lambda amplitudes to a tuple.
+
+        Args:
+            lambdas: Cluster lambda amplitudes.
+
+        Returns:
+            Cluster lambda amplitudes as a tuple.
+        """
+        pass
+
+    @abstractmethod
+    def tuple_to_lambdas(self, lams: tuple[SpinArrayType, ...]) -> Namespace[SpinArrayType]:
+        """Convert a tuple to cluster lambda amplitudes.
+
+        Args:
+            lams: Cluster lambda amplitudes as a tuple.
+
+        Returns:
+            Cluster lambda amplitudes.
+        """
+        pass
+
     def damp_amps(
         self,
         amplitudes: Namespace[SpinArrayType],
@@ -891,6 +917,33 @@ class BaseEBCC(ABC):
         dt = max((x - y).abs().max() for x, y in zip(amplitudes_new_tuple, amplitudes_prev_tuple))
 
         return amplitudes_new, dt
+
+    def damp_lams(
+        self,
+        lambdas: Namespace[SpinArrayType],
+        lambdas_prev: Namespace[SpinArrayType],
+        diis: DIIS[Tensor[float]],
+    ) -> tuple[Namespace[SpinArrayType], float]:
+        """Damp the lambda amplitudes using DIIS.
+
+        Args:
+            lambdas: Cluster lambda amplitudes.
+            lambdas_prev: Previous cluster lambda amplitudes.
+            diis: DIIS object.
+
+        Returns:
+            Damped cluster lambda amplitudes, and the error between the current and previous amplitudes.
+        """
+        # Damp lambda amplitudes using DIIS
+        lambdas_tuple = self.lambdas_to_tuple(lambdas)
+        lambdas_prev_tuple = self.lambdas_to_tuple(lambdas_prev)
+        lambdas_new = self.tuple_to_lambdas(diis.update(lambdas_tuple))
+        lambdas_new_tuple = self.lambdas_to_tuple(lambdas_new)
+
+        # Get the error between the current and previous amplitudes
+        dt = max((x - y).abs().max() for x, y in zip(lambdas_new_tuple, lambdas_prev_tuple))
+
+        return lambdas_new, dt
 
     @property
     def fermion_ansatz(self) -> str:
