@@ -7,7 +7,7 @@ from collections.abc import MutableMapping
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 if TYPE_CHECKING:
-    from typing import Any, ItemsView, Iterator, KeysView, ValuesView
+    from typing import Any, ItemsView, Iterator, KeysView, ValuesView, Sequence
 
 T = TypeVar("T")
 
@@ -154,3 +154,11 @@ class Timer:
             out.append("%d ms" % milliseconds)
 
         return " ".join(out[-max(precision, len(out)) :])
+
+
+def prod(seq: Sequence[int]) -> int:
+    """Return the product of a sequence."""
+    out = 1
+    for val in seq:
+        out *= val
+    return out

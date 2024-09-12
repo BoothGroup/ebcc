@@ -20,16 +20,20 @@ from ebcc.opt.gbrueckner import BruecknerGEBCC
 if TYPE_CHECKING:
     from typing import Any, Optional, TypeAlias, Union
 
+    from numpy import float64
+    from numpy.typing import NDArray
     from pyscf.scf.ghf import GHF
     from pyscf.scf.hf import SCF
 
     from ebcc.cc.rebcc import REBCC
     from ebcc.cc.uebcc import UEBCC
-    from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
 
-    ERIsInputType: TypeAlias = Union[GERIs, NDArray[float]]
-    SpinArrayType: TypeAlias = NDArray[float]
+    T = float64
+
+    ERIsInputType: TypeAlias = Union[GERIs, NDArray[T]]
+    SpinArrayType: TypeAlias = NDArray[T]
+    SpaceType: TypeAlias = Space
 
 
 class GEBCC(BaseEBCC):
@@ -40,6 +44,13 @@ class GEBCC(BaseEBCC):
     Fock = GFock
     ElectronBoson = GElectronBoson
     Brueckner = BruecknerGEBCC
+
+    # Attributes
+    space: SpaceType
+    amplitudes: Namespace[SpinArrayType]
+    lambdas: Namespace[SpinArrayType]
+    fock: GFock
+    g: Optional[GElectronBoson]
 
     @property
     def spin_type(self) -> str:
@@ -652,7 +663,7 @@ class GEBCC(BaseEBCC):
 
         return dm_eb
 
-    def energy_sum(self, *args: str, signs_dict: Optional[dict[str, str]] = None) -> NDArray[float]:
+    def energy_sum(self, *args: str, signs_dict: Optional[dict[str, str]] = None) -> NDArray[T]:
         """Get a direct sum of energies.
 
         Args:
@@ -693,7 +704,7 @@ class GEBCC(BaseEBCC):
 
         return energy_sum
 
-    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[float]:
+    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[T]:
         """Construct a vector containing all of the amplitudes used in the given ansatz.
 
         Args:
@@ -715,7 +726,7 @@ class GEBCC(BaseEBCC):
 
         return np.concatenate(vectors)
 
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
+    def vector_to_amplitudes(self, vector: NDArray[T]) -> Namespace[SpinArrayType]:
         """Construct a namespace of amplitudes from a vector.
 
         Args:
@@ -729,25 +740,25 @@ class GEBCC(BaseEBCC):
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             shape = tuple(self.space.size(k) for k in key)
-            size = np.prod(shape)
+            size = util.prod(shape)
             amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * n
-            size = np.prod(shape)
+            size = util.prod(shape)
             amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
-            size = np.prod(shape)
+            size = util.prod(shape)
             amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
         return amplitudes
 
-    def lambdas_to_vector(self, lambdas: Namespace[SpinArrayType]) -> NDArray[float]:
+    def lambdas_to_vector(self, lambdas: Namespace[SpinArrayType]) -> NDArray[T]:
         """Construct a vector containing all of the lambda amplitudes used in the given ansatz.
 
         Args:
@@ -773,7 +784,7 @@ class GEBCC(BaseEBCC):
 
         return np.concatenate(vectors)
 
-    def vector_to_lambdas(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
+    def vector_to_lambdas(self, vector: NDArray[T]) -> Namespace[SpinArrayType]:
         """Construct a namespace of lambda amplitudes from a vector.
 
         Args:
@@ -789,13 +800,13 @@ class GEBCC(BaseEBCC):
             spin_type=self.spin_type, which="l"
         ):
             shape = tuple(self.space.size(k) for k in key)
-            size = np.prod(shape)
+            size = util.prod(shape)
             lambdas[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="l"):
             shape = (self.nbos,) * n
-            size = np.prod(shape)
+            size = util.prod(shape)
             lambdas[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
@@ -803,13 +814,13 @@ class GEBCC(BaseEBCC):
             spin_type=self.spin_type, which="l"
         ):
             shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
-            size = np.prod(shape)
+            size = util.prod(shape)
             lambdas[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
         return lambdas
 
-    def get_mean_field_G(self) -> NDArray[float]:
+    def get_mean_field_G(self) -> NDArray[T]:
         """Get the mean-field boson non-conserving term.
 
         Returns:
@@ -825,7 +836,7 @@ class GEBCC(BaseEBCC):
         return val
 
     @property
-    def bare_fock(self) -> NDArray[float]:
+    def bare_fock(self) -> NDArray[T]:
         """Get the mean-field Fock matrix in the MO basis, including frozen parts.
 
         Returns an array and not a `BaseFock` object.
@@ -838,7 +849,7 @@ class GEBCC(BaseEBCC):
         return fock
 
     @property
-    def xi(self) -> NDArray[float]:
+    def xi(self) -> NDArray[T]:
         """Get the shift in the bosonic operators to diagonalise the photon Hamiltonian.
 
         Returns:
@@ -884,7 +895,7 @@ class GEBCC(BaseEBCC):
         Returns:
             Number of molecular orbitals.
         """
-        return cast(int, self.space.nmo)
+        return self.space.nmo
 
     @property
     def nocc(self) -> int:
@@ -893,7 +904,7 @@ class GEBCC(BaseEBCC):
         Returns:
             Number of occupied molecular orbitals.
         """
-        return cast(int, self.space.nocc)
+        return self.space.nocc
 
     @property
     def nvir(self) -> int:
@@ -902,4 +913,4 @@ class GEBCC(BaseEBCC):
         Returns:
             Number of virtual molecular orbitals.
         """
-        return cast(int, self.space.nvir)
+        return self.space.nvir

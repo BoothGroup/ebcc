@@ -16,15 +16,18 @@ from ebcc.core.logging import ANSI
 from ebcc.core.precision import astype, types
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Literal, Optional, Union
+    from typing import Any, Callable, Literal, Optional, Union, TypeVar
 
+    from numpy import float64
+    from numpy.typing import NDArray
     from pyscf.scf.hf import SCF
 
     from ebcc.core.logging import Logger
     from ebcc.ham.base import BaseElectronBoson, BaseERIs, BaseFock
-    from ebcc.numpy.typing import NDArray
     from ebcc.opt.base import BaseBruecknerEBCC
     from ebcc.util import Namespace
+
+    T = float64
 
     """Defines the type for the `eris` argument in functions."""
     ERIsInputType = Any
@@ -74,8 +77,12 @@ class BaseEBCC(ABC):
     space: SpaceType
     amplitudes: Namespace[SpinArrayType]
     lambdas: Namespace[SpinArrayType]
+    fock: BaseFock
+    omega: Optional[NDArray[T]]
+    bare_g: Optional[NDArray[T]]
+    bare_G: Optional[NDArray[T]]
     g: Optional[BaseElectronBoson]
-    G: Optional[NDArray[float]]
+    G: Optional[NDArray[T]]
 
     def __init__(
         self,
@@ -84,11 +91,11 @@ class BaseEBCC(ABC):
         ansatz: Optional[Union[Ansatz, str]] = "CCSD",
         options: Optional[BaseOptions] = None,
         space: Optional[SpaceType] = None,
-        omega: Optional[NDArray[float]] = None,
-        g: Optional[NDArray[float]] = None,
-        G: Optional[NDArray[float]] = None,
-        mo_coeff: Optional[NDArray[float]] = None,
-        mo_occ: Optional[NDArray[float]] = None,
+        omega: Optional[NDArray[T]] = None,
+        g: Optional[NDArray[T]] = None,
+        G: Optional[NDArray[T]] = None,
+        mo_coeff: Optional[NDArray[T]] = None,
+        mo_occ: Optional[NDArray[T]] = None,
         fock: Optional[BaseFock] = None,
         **kwargs: Any,
     ) -> None:
@@ -121,10 +128,10 @@ class BaseEBCC(ABC):
         # Parameters:
         self.log = default_log if log is None else log
         self.mf = self._convert_mf(mf)
-        self._mo_coeff: Optional[NDArray[float]] = (
+        self._mo_coeff: Optional[NDArray[T]] = (
             np.asarray(mo_coeff).astype(types[float]) if mo_coeff is not None else None
         )
-        self._mo_occ: Optional[NDArray[float]] = (
+        self._mo_occ: Optional[NDArray[T]] = (
             np.asarray(mo_occ).astype(types[float]) if mo_occ is not None else None
         )
 
@@ -649,7 +656,7 @@ class BaseEBCC(ABC):
         eris: Optional[ERIsInputType] = None,
         amplitudes: Optional[Namespace[SpinArrayType]] = None,
         lambdas: Optional[Namespace[SpinArrayType]] = None,
-    ) -> NDArray[float]:
+    ) -> NDArray[T]:
         r"""Make the single boson density matrix :math:`\langle b \rangle`.
 
         Args:
@@ -666,7 +673,7 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        res: NDArray[float] = func(**kwargs)
+        res: NDArray[T] = func(**kwargs)
         return res
 
     def make_rdm1_b(
@@ -676,7 +683,7 @@ class BaseEBCC(ABC):
         lambdas: Optional[Namespace[SpinArrayType]] = None,
         unshifted: bool = True,
         hermitise: bool = True,
-    ) -> NDArray[float]:
+    ) -> NDArray[T]:
         r"""Make the one-particle boson reduced density matrix :math:`\langle b^+ c \rangle`.
 
         Args:
@@ -696,7 +703,7 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm: NDArray[float] = func(**kwargs)
+        dm: NDArray[T] = func(**kwargs)
 
         if hermitise:
             dm = 0.5 * (dm + dm.T)
@@ -783,7 +790,7 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def energy_sum(self, *args: str, signs_dict: Optional[dict[str, str]] = None) -> NDArray[float]:
+    def energy_sum(self, *args: str, signs_dict: Optional[dict[str, str]] = None) -> NDArray[T]:
         """Get a direct sum of energies.
 
         Args:
@@ -797,7 +804,7 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[float]:
+    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[T]:
         """Construct a vector containing all of the amplitudes used in the given ansatz.
 
         Args:
@@ -809,7 +816,7 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
+    def vector_to_amplitudes(self, vector: NDArray[T]) -> Namespace[SpinArrayType]:
         """Construct a namespace of amplitudes from a vector.
 
         Args:
@@ -821,7 +828,7 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def lambdas_to_vector(self, lambdas: Namespace[SpinArrayType]) -> NDArray[float]:
+    def lambdas_to_vector(self, lambdas: Namespace[SpinArrayType]) -> NDArray[T]:
         """Construct a vector containing all of the lambda amplitudes used in the given ansatz.
 
         Args:
@@ -833,7 +840,7 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def vector_to_lambdas(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
+    def vector_to_lambdas(self, vector: NDArray[T]) -> Namespace[SpinArrayType]:
         """Construct a namespace of lambda amplitudes from a vector.
 
         Args:
@@ -927,7 +934,7 @@ class BaseEBCC(ABC):
 
     @property
     @abstractmethod
-    def xi(self) -> NDArray[float]:
+    def xi(self) -> NDArray[T]:
         """Get the shift in the bosonic operators to diagonalise the photon Hamiltonian.
 
         Returns:
@@ -947,7 +954,7 @@ class BaseEBCC(ABC):
         return 0.0
 
     @property
-    def mo_coeff(self) -> NDArray[float]:
+    def mo_coeff(self) -> NDArray[T]:
         """Get the molecular orbital coefficients.
 
         Returns:
@@ -958,7 +965,7 @@ class BaseEBCC(ABC):
         return self._mo_coeff
 
     @property
-    def mo_occ(self) -> NDArray[float]:
+    def mo_occ(self) -> NDArray[T]:
         """Get the molecular orbital occupation numbers.
 
         Returns:

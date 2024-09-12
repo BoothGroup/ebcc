@@ -1,7 +1,7 @@
 """Utilities."""
 
 from ebcc.util.einsumfunc import direct_sum, dot, einsum
-from ebcc.util.misc import Inherited, ModelNotImplemented, Namespace, Timer
+from ebcc.util.misc import Inherited, ModelNotImplemented, Namespace, Timer, prod
 from ebcc.util.permutations import (
     antisymmetrise_array,
     combine_subscripts,

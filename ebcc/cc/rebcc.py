@@ -19,13 +19,17 @@ from ebcc.opt.rbrueckner import BruecknerREBCC
 if TYPE_CHECKING:
     from typing import Any, Optional, TypeAlias, Union
 
+    from numpy import float64
+    from numpy.typing import NDArray
     from pyscf.scf.hf import RHF, SCF
 
-    from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
 
-    ERIsInputType: TypeAlias = Union[RERIs, RCDERIs, NDArray[float]]
-    SpinArrayType: TypeAlias = NDArray[float]
+    T = float64
+
+    ERIsInputType: TypeAlias = Union[RERIs, RCDERIs, NDArray[T]]
+    SpinArrayType: TypeAlias = NDArray[T]
+    SpaceType: TypeAlias = Space
 
 
 class REBCC(BaseEBCC):
@@ -37,6 +41,13 @@ class REBCC(BaseEBCC):
     CDERIs = RCDERIs
     ElectronBoson = RElectronBoson
     Brueckner = BruecknerREBCC
+
+    # Attributes
+    space: SpaceType
+    amplitudes: Namespace[SpinArrayType]
+    lambdas: Namespace[SpinArrayType]
+    fock: RFock
+    g: Optional[RElectronBoson]
 
     @property
     def spin_type(self) -> str:
@@ -323,7 +334,7 @@ class REBCC(BaseEBCC):
         amplitudes: Optional[Namespace[SpinArrayType]] = None,
         lambdas: Optional[Namespace[SpinArrayType]] = None,
         hermitise: bool = True,
-    ) -> NDArray[float]:
+    ) -> NDArray[T]:
         r"""Make the one-particle fermionic reduced density matrix :math:`\langle i^+ j \rangle`.
 
         Args:
@@ -341,7 +352,7 @@ class REBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm: NDArray[float] = func(**kwargs)
+        dm: NDArray[T] = func(**kwargs)
 
         if hermitise:
             dm = 0.5 * (dm + dm.T)
@@ -354,7 +365,7 @@ class REBCC(BaseEBCC):
         amplitudes: Optional[Namespace[SpinArrayType]] = None,
         lambdas: Optional[Namespace[SpinArrayType]] = None,
         hermitise: bool = True,
-    ) -> NDArray[float]:
+    ) -> NDArray[T]:
         r"""Make the two-particle fermionic reduced density matrix :math:`\langle i^+j^+lk \rangle`.
 
         Args:
@@ -372,7 +383,7 @@ class REBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm: NDArray[float] = func(**kwargs)
+        dm: NDArray[T] = func(**kwargs)
 
         if hermitise:
             dm = 0.5 * (dm.transpose(0, 1, 2, 3) + dm.transpose(2, 3, 0, 1))
@@ -387,7 +398,7 @@ class REBCC(BaseEBCC):
         lambdas: Optional[Namespace[SpinArrayType]] = None,
         unshifted: bool = True,
         hermitise: bool = True,
-    ) -> NDArray[float]:
+    ) -> NDArray[T]:
         r"""Make the electron-boson coupling reduced density matrix.
 
         .. math::
@@ -415,7 +426,7 @@ class REBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm_eb: NDArray[float] = func(**kwargs)
+        dm_eb: NDArray[T] = func(**kwargs)
 
         if hermitise:
             dm_eb[0] = 0.5 * (dm_eb[0] + dm_eb[1].transpose(0, 2, 1))
@@ -428,7 +439,7 @@ class REBCC(BaseEBCC):
 
         return dm_eb
 
-    def energy_sum(self, *args: str, signs_dict: Optional[dict[str, str]] = None) -> NDArray[float]:
+    def energy_sum(self, *args: str, signs_dict: Optional[dict[str, str]] = None) -> NDArray[T]:
         """Get a direct sum of energies.
 
         Args:
@@ -469,7 +480,7 @@ class REBCC(BaseEBCC):
 
         return energy_sum
 
-    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[float]:
+    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[T]:
         """Construct a vector containing all of the amplitudes used in the given ansatz.
 
         Args:
@@ -491,7 +502,7 @@ class REBCC(BaseEBCC):
 
         return np.concatenate(vectors)
 
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
+    def vector_to_amplitudes(self, vector: NDArray[T]) -> Namespace[SpinArrayType]:
         """Construct a namespace of amplitudes from a vector.
 
         Args:
@@ -505,25 +516,25 @@ class REBCC(BaseEBCC):
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             shape = tuple(self.space.size(k) for k in key)
-            size = np.prod(shape)
+            size = util.prod(shape)
             amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * n
-            size = np.prod(shape)
+            size = util.prod(shape)
             amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
-            size = np.prod(shape)
+            size = util.prod(shape)
             amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
         return amplitudes
 
-    def lambdas_to_vector(self, lambdas: Namespace[SpinArrayType]) -> NDArray[float]:
+    def lambdas_to_vector(self, lambdas: Namespace[SpinArrayType]) -> NDArray[T]:
         """Construct a vector containing all of the lambda amplitudes used in the given ansatz.
 
         Args:
@@ -549,7 +560,7 @@ class REBCC(BaseEBCC):
 
         return np.concatenate(vectors)
 
-    def vector_to_lambdas(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
+    def vector_to_lambdas(self, vector: NDArray[T]) -> Namespace[SpinArrayType]:
         """Construct a namespace of lambda amplitudes from a vector.
 
         Args:
@@ -565,13 +576,13 @@ class REBCC(BaseEBCC):
             spin_type=self.spin_type, which="l"
         ):
             shape = tuple(self.space.size(k) for k in key)
-            size = np.prod(shape)
+            size = util.prod(shape)
             lambdas[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="l"):
             shape = (self.nbos,) * n
-            size = np.prod(shape)
+            size = util.prod(shape)
             lambdas[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
@@ -579,13 +590,13 @@ class REBCC(BaseEBCC):
             spin_type=self.spin_type, which="l"
         ):
             shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
-            size = np.prod(shape)
+            size = util.prod(shape)
             lambdas[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
         return lambdas
 
-    def get_mean_field_G(self) -> NDArray[float]:
+    def get_mean_field_G(self) -> NDArray[T]:
         """Get the mean-field boson non-conserving term.
 
         Returns:
@@ -601,7 +612,7 @@ class REBCC(BaseEBCC):
         return val
 
     @property
-    def bare_fock(self) -> NDArray[float]:
+    def bare_fock(self) -> NDArray[T]:
         """Get the mean-field Fock matrix in the MO basis, including frozen parts.
 
         Returns an array and not a `BaseFock` object.
@@ -614,7 +625,7 @@ class REBCC(BaseEBCC):
         return fock
 
     @property
-    def xi(self) -> NDArray[float]:
+    def xi(self) -> NDArray[T]:
         """Get the shift in the bosonic operators to diagonalise the photon Hamiltonian.
 
         Returns:
@@ -665,7 +676,7 @@ class REBCC(BaseEBCC):
         Returns:
             Number of molecular orbitals.
         """
-        return cast(int, self.space.nmo)
+        return self.space.nmo
 
     @property
     def nocc(self) -> int:
@@ -674,7 +685,7 @@ class REBCC(BaseEBCC):
         Returns:
             Number of occupied molecular orbitals.
         """
-        return cast(int, self.space.nocc)
+        return self.space.nocc
 
     @property
     def nvir(self) -> int:
@@ -683,4 +694,4 @@ class REBCC(BaseEBCC):
         Returns:
             Number of virtual molecular orbitals.
         """
-        return cast(int, self.space.nvir)
+        return self.space.nvir

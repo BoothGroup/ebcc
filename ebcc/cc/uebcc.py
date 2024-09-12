@@ -19,15 +19,19 @@ from ebcc.opt.ubrueckner import BruecknerUEBCC
 if TYPE_CHECKING:
     from typing import Any, Optional, TypeAlias, Union
 
+    from numpy import float64
+    from numpy.typing import NDArray
     from pyscf.scf.hf import SCF
     from pyscf.scf.uhf import UHF
 
     from ebcc.cc.rebcc import REBCC
-    from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
 
-    ERIsInputType: TypeAlias = Union[UERIs, UCDERIs, tuple[NDArray[float], ...]]
-    SpinArrayType: TypeAlias = Union[NDArray[float], Namespace[NDArray[float]]]  # S_{n} has no spin
+    T = float64
+
+    ERIsInputType: TypeAlias = Union[UERIs, UCDERIs, tuple[NDArray[T], ...]]
+    SpinArrayType: TypeAlias = Union[NDArray[T], Namespace[NDArray[T]]]  # S_{n} has no spin
+    SpaceType: TypeAlias = tuple[Space, Space]
 
 
 class UEBCC(BaseEBCC):
@@ -502,11 +506,11 @@ class UEBCC(BaseEBCC):
 
         if hermitise:
 
-            def transpose1(dm: NDArray[float]) -> NDArray[float]:
+            def transpose1(dm: NDArray[T]) -> NDArray[T]:
                 dm = 0.5 * (dm.transpose(0, 1, 2, 3) + dm.transpose(2, 3, 0, 1))
                 return dm
 
-            def transpose2(dm: NDArray[float]) -> NDArray[float]:
+            def transpose2(dm: NDArray[T]) -> NDArray[T]:
                 dm = 0.5 * (dm.transpose(0, 1, 2, 3) + dm.transpose(1, 0, 3, 2))
                 return dm
 
@@ -568,7 +572,7 @@ class UEBCC(BaseEBCC):
 
         return dm_eb
 
-    def energy_sum(self, *args: str, signs_dict: Optional[dict[str, str]] = None) -> NDArray[float]:
+    def energy_sum(self, *args: str, signs_dict: Optional[dict[str, str]] = None) -> NDArray[T]:
         """Get a direct sum of energies.
 
         Args:
@@ -609,7 +613,7 @@ class UEBCC(BaseEBCC):
 
         return energy_sum
 
-    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[float]:
+    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[T]:
         """Construct a vector containing all of the amplitudes used in the given ansatz.
 
         Args:
@@ -637,7 +641,7 @@ class UEBCC(BaseEBCC):
 
         return np.concatenate(vectors)
 
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
+    def vector_to_amplitudes(self, vector: NDArray[T]) -> Namespace[SpinArrayType]:
         """Construct a namespace of amplitudes from a vector.
 
         Args:
@@ -674,11 +678,11 @@ class UEBCC(BaseEBCC):
                 raise util.ModelNotImplemented
             amplitudes[name] = util.Namespace()
             shape = (self.nbos,) * nb + tuple(self.space[0].size(k) for k in key[nb:])
-            size = np.prod(shape)
+            size = util.prod(shape)
             amplitudes[name].aa = vector[i0 : i0 + size].reshape(shape)
             i0 += size
             shape = (self.nbos,) * nb + tuple(self.space[1].size(k) for k in key[nb:])
-            size = np.prod(shape)
+            size = util.prod(shape)
             amplitudes[name].bb = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
@@ -686,7 +690,7 @@ class UEBCC(BaseEBCC):
 
         return amplitudes
 
-    def lambdas_to_vector(self, lambdas: Namespace[SpinArrayType]) -> NDArray[float]:
+    def lambdas_to_vector(self, lambdas: Namespace[SpinArrayType]) -> NDArray[T]:
         """Construct a vector containing all of the lambda amplitudes used in the given ansatz.
 
         Args:
@@ -718,7 +722,7 @@ class UEBCC(BaseEBCC):
 
         return np.concatenate(vectors)
 
-    def vector_to_lambdas(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
+    def vector_to_lambdas(self, vector: NDArray[T]) -> Namespace[SpinArrayType]:
         """Construct a namespace of lambda amplitudes from a vector.
 
         Args:
@@ -759,11 +763,11 @@ class UEBCC(BaseEBCC):
                 raise util.ModelNotImplemented
             lambdas[name] = util.Namespace()
             shape = (self.nbos,) * nb + tuple(self.space[0].size(k) for k in key[nb:])
-            size = np.prod(shape)
+            size = util.prod(shape)
             lambdas[name].aa = vector[i0 : i0 + size].reshape(shape)
             i0 += size
             shape = (self.nbos,) * nb + tuple(self.space[1].size(k) for k in key[nb:])
-            size = np.prod(shape)
+            size = util.prod(shape)
             lambdas[name].bb = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
@@ -771,7 +775,7 @@ class UEBCC(BaseEBCC):
 
         return lambdas
 
-    def get_mean_field_G(self) -> NDArray[float]:
+    def get_mean_field_G(self) -> NDArray[T]:
         """Get the mean-field boson non-conserving term.
 
         Returns:
@@ -790,7 +794,7 @@ class UEBCC(BaseEBCC):
         return val
 
     @property
-    def bare_fock(self) -> Namespace[NDArray[float]]:
+    def bare_fock(self) -> Namespace[NDArray[T]]:
         """Get the mean-field Fock matrix in the MO basis, including frozen parts.
 
         Returns an array and not a `BaseFock` object.
@@ -808,7 +812,7 @@ class UEBCC(BaseEBCC):
         return fock
 
     @property
-    def xi(self) -> NDArray[float]:
+    def xi(self) -> NDArray[T]:
         """Get the shift in the bosonic operators to diagonalise the photon Hamiltonian.
 
         Returns:

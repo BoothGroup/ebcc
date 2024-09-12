@@ -8,12 +8,14 @@ from typing import TYPE_CHECKING, Any
 from ebcc.util import Namespace
 
 if TYPE_CHECKING:
-    from typing import Optional, TypeVar
+    from typing import Optional
+
+    from numpy import float64
+    from numpy.typing import NDArray
 
     from ebcc.cc.base import BaseEBCC
-    from ebcc.numpy.typing import NDArray
 
-    T = TypeVar("T")
+    T = float64
 
 
 class BaseHamiltonian(Namespace[Any], ABC):
@@ -121,6 +123,6 @@ class BaseElectronBoson(BaseHamiltonian):
         self.__dict__["space"] = space if space is not None else (cc.space,) * 2
         self.__dict__["array"] = array if array is not None else self._get_g()
 
-    def _get_g(self) -> NDArray[float]:
+    def _get_g(self) -> NDArray[T]:
         """Get the electron-boson coupling matrix."""
         return self.cc.bare_g
