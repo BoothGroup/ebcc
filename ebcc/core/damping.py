@@ -7,7 +7,14 @@ from typing import TYPE_CHECKING
 from pyscf.lib import diis
 
 if TYPE_CHECKING:
-    from ebcc.numpy.typing import NDArray
+    from typing import Optional
+
+    from numpy import float64
+    from numpy.typing import NDArray
+
+    T = float64
+
+# TODO Custom version
 
 
 class DIIS(diis.DIIS):
@@ -27,9 +34,9 @@ class DIIS(diis.DIIS):
         self.min_space = min_space
         self.damping = damping
 
-    def update(self, x: NDArray[float], xerr: NDArray[float] = None) -> NDArray[float]:
+    def update(self, x: NDArray[T], xerr: Optional[NDArray[T]] = None) -> NDArray[T]:
         """Extrapolate a vector."""
-        x = super().update(x, xerr=xerr)
+        x: NDArray[T] = super().update(x, xerr=xerr)
 
         # Apply damping
         if self.damping:

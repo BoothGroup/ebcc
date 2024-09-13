@@ -17,11 +17,13 @@ from ebcc.core.precision import types
 if TYPE_CHECKING:
     from typing import Any, Optional, TypeVar
 
+    from numpy import float64
+    from numpy.typing import NDArray
+
     from ebcc.cc.base import BaseEBCC, SpinArrayType
-    from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
 
-    T = TypeVar("T")
+    T = float64
 
 
 @dataclass
@@ -121,8 +123,8 @@ class BaseBruecknerEBCC(ABC):
         diis.damping = self.options.damping
 
         # Initialise coefficients:
-        mo_coeff_new: NDArray[float] = np.array(self.cc.mo_coeff, copy=True, dtype=types[float])
-        mo_coeff_ref: NDArray[float] = np.array(self.cc.mo_coeff, copy=True, dtype=types[float])
+        mo_coeff_new: NDArray[T] = self.cc.mo_coeff.astype(types[float]).copy()
+        mo_coeff_ref: NDArray[T] = self.cc.mo_coeff.astype(types[float]).copy()
         mo_coeff_ref = self.mo_to_correlated(mo_coeff_ref)
         u_tot = None
 
@@ -235,7 +237,7 @@ class BaseBruecknerEBCC(ABC):
         pass
 
     @abstractmethod
-    def get_t1_norm(self, amplitudes: Optional[Namespace[SpinArrayType]] = None) -> float:
+    def get_t1_norm(self, amplitudes: Optional[Namespace[SpinArrayType]] = None) -> T:
         """Get the norm of the T1 amplitude.
 
         Args:

@@ -16,7 +16,7 @@ from ebcc.core.logging import ANSI
 from ebcc.core.precision import astype, types
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Literal, Optional, Union, TypeVar
+    from typing import Any, Callable, Literal, Optional, Union
 
     from numpy import float64
     from numpy.typing import NDArray
@@ -77,12 +77,11 @@ class BaseEBCC(ABC):
     space: SpaceType
     amplitudes: Namespace[SpinArrayType]
     lambdas: Namespace[SpinArrayType]
-    fock: BaseFock
+    g: Optional[BaseElectronBoson]
+    G: Optional[NDArray[T]]
     omega: Optional[NDArray[T]]
     bare_g: Optional[NDArray[T]]
     bare_G: Optional[NDArray[T]]
-    g: Optional[BaseElectronBoson]
-    G: Optional[NDArray[T]]
 
     def __init__(
         self,
@@ -129,10 +128,10 @@ class BaseEBCC(ABC):
         self.log = default_log if log is None else log
         self.mf = self._convert_mf(mf)
         self._mo_coeff: Optional[NDArray[T]] = (
-            np.asarray(mo_coeff).astype(types[float]) if mo_coeff is not None else None
+            mo_coeff.astype(types[float]) if mo_coeff is not None else None
         )
         self._mo_occ: Optional[NDArray[T]] = (
-            np.asarray(mo_occ).astype(types[float]) if mo_occ is not None else None
+            mo_occ.astype(types[float]) if mo_occ is not None else None
         )
 
         # Ansatz:
@@ -256,7 +255,7 @@ class BaseEBCC(ABC):
                 vector = self.amplitudes_to_vector(amplitudes)
                 vector = diis.update(vector)
                 amplitudes = self.vector_to_amplitudes(vector)
-                dt = np.linalg.norm(vector - self.amplitudes_to_vector(amplitudes_prev), ord=np.inf)
+                dt = np.max(np.abs(vector - self.amplitudes_to_vector(amplitudes_prev)))
 
                 # Update the energy and calculate change:
                 e_prev = e_cc
@@ -360,7 +359,7 @@ class BaseEBCC(ABC):
             vector = self.lambdas_to_vector(lambdas)
             vector = diis.update(vector)
             lambdas = self.vector_to_lambdas(vector)
-            dl = np.linalg.norm(vector - self.lambdas_to_vector(lambdas_prev), ord=np.inf)
+            dl = np.max(np.abs(vector - self.lambdas_to_vector(lambdas_prev)))
 
             # Log the iteration:
             converged = bool(dl < self.options.t_tol)
@@ -583,7 +582,7 @@ class BaseEBCC(ABC):
             eris=eris,
             amplitudes=amplitudes,
         )
-        res: float = func(**kwargs).real
+        res: float = func(**kwargs).real.item()
         return astype(res, float)
 
     def energy_perturbative(
@@ -608,7 +607,7 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        res: float = func(**kwargs).real
+        res: float = func(**kwargs).real.item()
         return astype(res, float)
 
     @abstractmethod
@@ -709,9 +708,9 @@ class BaseEBCC(ABC):
             dm = 0.5 * (dm + dm.T)
 
         if unshifted and self.options.shift:
-            dm_cre, dm_ann = self.make_sing_b_dm()
             xi = self.xi
-            dm[np.diag_indices_from(dm)] -= xi * (dm_cre + dm_ann) - xi**2
+            dm_b = util.einsum("ni->i", self.make_sing_b_dm())
+            dm -= util.einsum("ii,i->", np.eye(dm.shape[0]), xi * dm_b - xi**2.0)
 
         return dm
 
@@ -872,7 +871,7 @@ class BaseEBCC(ABC):
         return self.ansatz.boson_coupling_rank
 
     @abstractmethod
-    def init_space(self) -> Any:
+    def init_space(self) -> SpaceType:
         """Initialise the fermionic space.
 
         Returns:
@@ -950,7 +949,8 @@ class BaseEBCC(ABC):
             Constant energy shift due to the polaritonic basis.
         """
         if self.options.shift:
-            return util.einsum("I,I->", self.omega, self.xi**2)
+            assert self.omega is not None
+            return util.einsum("I,I->", self.omega, self.xi**2.0).item()
         return 0.0
 
     @property
@@ -961,7 +961,7 @@ class BaseEBCC(ABC):
             Molecular orbital coefficients.
         """
         if self._mo_coeff is None:
-            return np.asarray(self.mf.mo_coeff).astype(types[float])
+            return self.mf.mo_coeff.astype(types[float])  # type: ignore
         return self._mo_coeff
 
     @property
@@ -972,7 +972,7 @@ class BaseEBCC(ABC):
             Molecular orbital occupation numbers.
         """
         if self._mo_occ is None:
-            return np.asarray(self.mf.mo_occ).astype(types[float])
+            return self.mf.mo_occ.astype(types[float])  # type: ignore
         return self._mo_occ
 
     @property

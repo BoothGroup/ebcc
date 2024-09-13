@@ -138,10 +138,10 @@ exclude = """
 module = "ebcc.*"
 strict = true
 ignore_missing_imports = true
-#implicit_optional = true
 disallow_subclassing_any = false
 implicit_reexport = true
 warn_unused_ignores = false
+allow_redefinition = true
 
 [[tool.mypy.overrides]]
 module = "ebcc.codegen.*"

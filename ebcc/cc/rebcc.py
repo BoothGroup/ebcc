@@ -46,8 +46,6 @@ class REBCC(BaseEBCC):
     space: SpaceType
     amplitudes: Namespace[SpinArrayType]
     lambdas: Namespace[SpinArrayType]
-    fock: RFock
-    g: Optional[RElectronBoson]
 
     @property
     def spin_type(self) -> str:
@@ -98,7 +96,7 @@ class REBCC(BaseEBCC):
             hf.e_tot = hf.energy_tot()
         return hf
 
-    def init_space(self) -> Space:
+    def init_space(self) -> SpaceType:
         """Initialise the fermionic space.
 
         Returns:
@@ -106,8 +104,8 @@ class REBCC(BaseEBCC):
         """
         space = Space(
             self.mo_occ > 0,
-            np.zeros_like(self.mo_occ, dtype=bool),
-            np.zeros_like(self.mo_occ, dtype=bool),
+            np.zeros(self.mo_occ.shape, dtype=bool),
+            np.zeros(self.mo_occ.shape, dtype=bool),
         )
         return space
 
@@ -159,27 +157,24 @@ class REBCC(BaseEBCC):
                 shape = tuple(self.space.size(k) for k in key)
                 amplitudes[name] = np.zeros(shape, dtype=types[float])
 
-        if self.boson_ansatz:
-            # Only true for real-valued couplings:
-            assert self.g is not None
-            assert self.G is not None
-            h = self.g
-            H = self.G
-
         # Build S amplitudes:
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
+            if self.omega is None or self.G is None:
+                raise ValueError("Bosonic parameters not set.")
             if n == 1:
-                amplitudes[name] = -H / self.omega
+                amplitudes[name] = -self.G / self.omega
             else:
                 shape = (self.nbos,) * n
                 amplitudes[name] = np.zeros(shape, dtype=types[float])
 
         # Build U amplitudes:
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            if self.omega is None or self.g is None:
+                raise ValueError("Bosonic parameters not set.")
             if nf != 1:
                 raise util.ModelNotImplemented
             if nb == 1:
-                amplitudes[name] = h[key] / self.energy_sum(key)
+                amplitudes[name] = self.g[key] / self.energy_sum(key)
             else:
                 shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
                 amplitudes[name] = np.zeros(shape, dtype=types[float])
@@ -266,7 +261,7 @@ class REBCC(BaseEBCC):
 
     def update_lams(
         self,
-        eris: ERIsInputType = None,
+        eris: Optional[ERIsInputType] = None,
         amplitudes: Optional[Namespace[SpinArrayType]] = None,
         lambdas: Optional[Namespace[SpinArrayType]] = None,
         lambdas_pert: Optional[Namespace[SpinArrayType]] = None,
@@ -470,13 +465,15 @@ class REBCC(BaseEBCC):
 
         energies = []
         for key in subscript:
+            factor = 1 if signs_dict[key] == "+" else -1
             if key == "b":
-                energies.append(self.omega)
+                assert self.omega is not None
+                energies.append(factor * self.omega)
             else:
-                energies.append(np.diag(self.fock[key + key]))
+                energies.append(factor * self.fock[key + key].diag())
 
-        subscript = "".join([signs_dict[k] + next_char() for k in subscript])
-        energy_sum = util.direct_sum(subscript, *energies)
+        subscript = ",".join([next_char() for k in subscript])
+        energy_sum = util.dirsum(subscript, *energies)
 
         return energy_sum
 
@@ -605,7 +602,8 @@ class REBCC(BaseEBCC):
         # FIXME should this also sum in frozen orbitals?
         assert self.omega is not None
         assert self.g is not None
-        val = util.einsum("Ipp->I", self.g.boo) * 2.0
+        boo: NDArray[T] = self.g.boo
+        val = util.einsum("Ipp->I", boo) * 2.0
         val -= self.xi * self.omega
         if self.bare_G is not None:
             val += self.bare_G
@@ -620,7 +618,7 @@ class REBCC(BaseEBCC):
         Returns:
             Mean-field Fock matrix.
         """
-        fock_ao = self.mf.get_fock().astype(types[float])
+        fock_ao: NDArray[T] = self.mf.get_fock().astype(types[float])
         fock = util.einsum("pq,pi,qj->ij", fock_ao, self.mo_coeff, self.mo_coeff)
         return fock
 
@@ -634,12 +632,13 @@ class REBCC(BaseEBCC):
         assert self.omega is not None
         if self.options.shift:
             assert self.g is not None
-            xi = util.einsum("Iii->I", self.g.boo) * 2.0
+            boo: NDArray[T] = self.g.boo
+            xi = util.einsum("Iii->I", boo) * 2.0
             xi /= self.omega
             if self.bare_G is not None:
                 xi += self.bare_G / self.omega
         else:
-            xi = np.zeros_like(self.omega, dtype=types[float])
+            xi = np.zeros(self.omega.shape, dtype=types[float])
         return xi
 
     def get_fock(self) -> RFock:
@@ -659,15 +658,13 @@ class REBCC(BaseEBCC):
         Returns:
             Electron repulsion integrals.
         """
+        use_df = getattr(self.mf, "with_df", None) is not None
         if isinstance(eris, (RERIs, RCDERIs)):
             return eris
+        elif (isinstance(eris, np.ndarray) and eris.ndim == 3) or use_df:
+            return self.CDERIs(self, array=eris)
         else:
-            if (isinstance(eris, np.ndarray) and eris.ndim == 3) or getattr(
-                self.mf, "with_df", None
-            ):
-                return self.CDERIs(self, array=eris)
-            else:
-                return self.ERIs(self, array=eris)
+            return self.ERIs(self, array=eris)
 
     @property
     def nmo(self) -> int:

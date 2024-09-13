@@ -4,19 +4,21 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ebcc import numpy as np
-from ebcc.ham.base import BaseElectronBoson
+from ebcc.ham.base import BaseElectronBoson, BaseGHamiltonian, BaseRHamiltonian, BaseUHamiltonian
 
 if TYPE_CHECKING:
-    from ebcc.numpy.typing import NDArray
+    from numpy import float64
+    from numpy.typing import NDArray
+
+    T = float64
 
 
-class RElectronBoson(BaseElectronBoson):
+class RElectronBoson(BaseElectronBoson, BaseRHamiltonian):
     """Restricted electron-boson coupling matrices."""
 
-    _members: dict[str, NDArray[float]]
+    _members: dict[str, NDArray[T]]
 
-    def __getitem__(self, key: str) -> NDArray[float]:
+    def __getitem__(self, key: str) -> NDArray[T]:
         """Just-in-time getter.
 
         Args:
@@ -32,8 +34,13 @@ class RElectronBoson(BaseElectronBoson):
             self._members[key] = self.array[:, i][:, :, j].copy()
         return self._members[key]
 
+    def _get_g(self) -> NDArray[T]:
+        """Get the electron-boson coupling matrix."""
+        assert self.cc.bare_g is not None
+        return self.cc.bare_g
 
-class UElectronBoson(BaseElectronBoson):
+
+class UElectronBoson(BaseElectronBoson, BaseUHamiltonian):
     """Unrestricted electron-boson coupling matrices."""
 
     _members: dict[str, RElectronBoson]
@@ -53,18 +60,23 @@ class UElectronBoson(BaseElectronBoson):
             i = "ab".index(key[0])
             self._members[key] = RElectronBoson(
                 self.cc,
-                array=self.array[i] if np.asarray(self.array).ndim == 4 else self.array,
+                array=self.array[i] if self.array.ndim == 4 else self.array,
                 space=(self.space[0][i], self.space[1][i]),
             )
         return self._members[key]
 
+    def _get_g(self) -> NDArray[T]:
+        """Get the electron-boson coupling matrix."""
+        assert self.cc.bare_g is not None
+        return self.cc.bare_g
 
-class GElectronBoson(BaseElectronBoson):
+
+class GElectronBoson(BaseElectronBoson, BaseGHamiltonian):
     """Generalised electron-boson coupling matrices."""
 
-    _members: dict[str, NDArray[float]]
+    _members: dict[str, NDArray[T]]
 
-    def __getitem__(self, key: str) -> NDArray[float]:
+    def __getitem__(self, key: str) -> NDArray[T]:
         """Just-in-time getter.
 
         Args:
@@ -79,3 +91,8 @@ class GElectronBoson(BaseElectronBoson):
             j = self.space[1].mask(key[2])
             self._members[key] = self.array[:, i][:, :, j].copy()
         return self._members[key]
+
+    def _get_g(self) -> NDArray[T]:
+        """Get the electron-boson coupling matrix."""
+        assert self.cc.bare_g is not None
+        return self.cc.bare_g

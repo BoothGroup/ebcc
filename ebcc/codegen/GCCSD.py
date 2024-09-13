@@ -12,8 +12,8 @@ https://github.com/obackhouse/albert
   * release: 6.5.0-44-generic
 """
 
-from ebcc import numpy as np
-from ebcc.util import pack_2e, einsum, direct_sum, Namespace
+from ebcc.util import pack_2e, Namespace
+from ebcc.backend import block, dirsum, einsum, Tensor
 
 
 def energy(f=None, t1=None, t2=None, v=None, **kwargs):
@@ -481,8 +481,8 @@ def make_rdm1_f(l1=None, l2=None, t1=None, t2=None, **kwargs):
 
     rdm1 = Namespace()
     delta = Namespace(
-        oo=np.eye(t2.shape[0]),
-        vv=np.eye(t2.shape[-1]),
+        oo=Tensor.eye(t2.shape[0]),
+        vv=Tensor.eye(t2.shape[-1]),
     )
     tmp1 = einsum(l2, (0, 1, 2, 3), t2, (4, 3, 0, 1), (2, 4))
     tmp0 = einsum(t1, (0, 1), l1, (1, 2), (2, 0))
@@ -504,7 +504,7 @@ def make_rdm1_f(l1=None, l2=None, t1=None, t2=None, **kwargs):
     del tmp0
     rdm1.oo += tmp1.transpose((1, 0)) * -0.5
     del tmp1
-    rdm1 = np.block([[rdm1.oo, rdm1.ov], [rdm1.vo, rdm1.vv]])
+    rdm1 = block([[rdm1.oo, rdm1.ov], [rdm1.vo, rdm1.vv]])
 
     return rdm1
 
@@ -531,8 +531,8 @@ def make_rdm2_f(l1=None, l2=None, t1=None, t2=None, **kwargs):
 
     rdm2 = Namespace()
     delta = Namespace(
-        oo=np.eye(t2.shape[0]),
-        vv=np.eye(t2.shape[-1]),
+        oo=Tensor.eye(t2.shape[0]),
+        vv=Tensor.eye(t2.shape[-1]),
     )
     tmp4 = einsum(t1, (0, 1), l1, (1, 2), (2, 0))
     tmp1 = einsum(l2, (0, 1, 2, 3), t1, (4, 1), (2, 3, 4, 0))

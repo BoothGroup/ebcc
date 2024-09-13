@@ -4,25 +4,27 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ebcc import numpy as np
 from ebcc import util
 from ebcc.core.precision import types
-from ebcc.ham.base import BaseFock
+from ebcc.ham.base import BaseFock, BaseGHamiltonian, BaseRHamiltonian, BaseUHamiltonian
 
 if TYPE_CHECKING:
-    from ebcc.numpy.typing import NDArray
+    from numpy import float64
+    from numpy.typing import NDArray
+
+    T = float64
 
 
-class RFock(BaseFock):
+class RFock(BaseFock, BaseRHamiltonian):
     """Restricted Fock matrix container class."""
 
-    _members: dict[str, NDArray[float]]
+    _members: dict[str, NDArray[T]]
 
-    def _get_fock(self) -> NDArray[float]:
+    def _get_fock(self) -> NDArray[T]:
         fock_ao = self.cc.mf.get_fock().astype(types[float])
         return util.einsum("pq,pi,qj->ij", fock_ao, self.mo_coeff[0], self.mo_coeff[1])
 
-    def __getitem__(self, key: str) -> NDArray[float]:
+    def __getitem__(self, key: str) -> NDArray[T]:
         """Just-in-time getter.
 
         Args:
@@ -40,17 +42,17 @@ class RFock(BaseFock):
                 xi = self.xi
                 g = self.g.__getattr__(f"b{key}").copy()
                 g += self.g.__getattr__(f"b{key[::-1]}").transpose(0, 2, 1)
-                self._members[key] -= np.einsum("I,Ipq->pq", xi, g)
+                self._members[key] -= util.einsum("I,Ipq->pq", xi, g)
 
         return self._members[key]
 
 
-class UFock(BaseFock):
+class UFock(BaseFock, BaseUHamiltonian):
     """Unrestricted Fock matrix container class."""
 
     _members: dict[str, RFock]
 
-    def _get_fock(self) -> tuple[NDArray[float], NDArray[float]]:
+    def _get_fock(self) -> tuple[NDArray[T], NDArray[T]]:
         fock_ao = self.cc.mf.get_fock().astype(types[float])
         return (
             util.einsum("pq,pi,qj->ij", fock_ao[0], self.mo_coeff[0][0], self.mo_coeff[1][0]),
@@ -80,16 +82,16 @@ class UFock(BaseFock):
         return self._members[key]
 
 
-class GFock(BaseFock):
+class GFock(BaseFock, BaseGHamiltonian):
     """Generalised Fock matrix container class."""
 
-    _members: dict[str, NDArray[float]]
+    _members: dict[str, NDArray[T]]
 
-    def _get_fock(self) -> NDArray[float]:
+    def _get_fock(self) -> NDArray[T]:
         fock_ao = self.cc.mf.get_fock().astype(types[float])
         return util.einsum("pq,pi,qj->ij", fock_ao, self.mo_coeff[0], self.mo_coeff[1])
 
-    def __getitem__(self, key: str) -> NDArray[float]:
+    def __getitem__(self, key: str) -> NDArray[T]:
         """Just-in-time getter.
 
         Args:
@@ -107,6 +109,6 @@ class GFock(BaseFock):
                 xi = self.xi
                 g = self.g.__getattr__(f"b{key}").copy()
                 g += self.g.__getattr__(f"b{key[::-1]}").transpose(0, 2, 1)
-                self._members[key] -= np.einsum("I,Ipq->pq", xi, g)
+                self._members[key] -= util.einsum("I,Ipq->pq", xi, g)
 
         return self._members[key]

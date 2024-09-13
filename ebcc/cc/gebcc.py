@@ -49,8 +49,6 @@ class GEBCC(BaseEBCC):
     space: SpaceType
     amplitudes: Namespace[SpinArrayType]
     lambdas: Namespace[SpinArrayType]
-    fock: GFock
-    g: Optional[GElectronBoson]
 
     @property
     def spin_type(self) -> str:
@@ -137,16 +135,15 @@ class GEBCC(BaseEBCC):
             b=util.Namespace(**{k: np.where(orbspin[space.mask(k)] == 1)[0] for k in "oOivVa"}),
         )
 
+        g: Optional[NDArray[T]] = None
         if ucc.bare_g is not None:
-            if np.asarray(ucc.bare_g).ndim == 3:
+            if ucc.bare_g.ndim == 3:
                 bare_g_a = bare_g_b = ucc.bare_g
             else:
                 bare_g_a, bare_g_b = ucc.bare_g
-            g = np.zeros((ucc.nbos, ucc.nmo * 2, ucc.nmo * 2))
+            g = np.zeros((ucc.nbos, ucc.nmo * 2, ucc.nmo * 2), dtype=types[float])
             g[np.ix_(np.arange(ucc.nbos), sa, sa)] = bare_g_a.copy()
             g[np.ix_(np.arange(ucc.nbos), sb, sb)] = bare_g_b.copy()
-        else:
-            g = None
 
         gcc = cls(
             ucc.mf,
@@ -194,7 +191,7 @@ class GEBCC(BaseEBCC):
                             done.add(combn)
 
             for name, key, n in ucc.ansatz.bosonic_cluster_ranks(spin_type=ucc.spin_type):
-                amplitudes[name] = ucc.amplitudes[name].copy()
+                amplitudes[name] = ucc.amplitudes[name].copy()  # type: ignore
 
             for name, key, nf, nb in ucc.ansatz.coupling_cluster_ranks(spin_type=ucc.spin_type):
                 shape = (nbos,) * nb + tuple(space.size(k) for k in key[nb:])
@@ -263,7 +260,7 @@ class GEBCC(BaseEBCC):
 
             for name, key, n in ucc.ansatz.bosonic_cluster_ranks(spin_type=ucc.spin_type):
                 lname = "l" + name
-                lambdas[lname] = ucc.lambdas[lname].copy()
+                lambdas[lname] = ucc.lambdas[lname].copy()  # type: ignore
 
             for name, key, nf, nb in ucc.ansatz.coupling_cluster_ranks(spin_type=ucc.spin_type):
                 lname = "l" + name
@@ -326,7 +323,7 @@ class GEBCC(BaseEBCC):
         gcc = cls.from_uebcc(ucc)
         return gcc
 
-    def init_space(self) -> Space:
+    def init_space(self) -> SpaceType:
         """Initialise the fermionic space.
 
         Returns:
@@ -334,8 +331,8 @@ class GEBCC(BaseEBCC):
         """
         space = Space(
             self.mo_occ > 0,
-            np.zeros_like(self.mo_occ, dtype=bool),
-            np.zeros_like(self.mo_occ, dtype=bool),
+            np.zeros(self.mo_occ.shape, dtype=bool),
+            np.zeros(self.mo_occ.shape, dtype=bool),
         )
         return space
 
@@ -383,27 +380,24 @@ class GEBCC(BaseEBCC):
                 shape = tuple(self.space.size(k) for k in key)
                 amplitudes[name] = np.zeros(shape, dtype=types[float])
 
-        if self.boson_ansatz:
-            # Only true for real-valued couplings:
-            assert self.g is not None
-            assert self.G is not None
-            h = self.g
-            H = self.G
-
         # Build S amplitudes:
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
+            if self.omega is None or self.G is None:
+                raise ValueError("Bosonic parameters not set.")
             if n == 1:
-                amplitudes[name] = -H / self.omega
+                amplitudes[name] = -self.G / self.omega
             else:
                 shape = (self.nbos,) * n
                 amplitudes[name] = np.zeros(shape, dtype=types[float])
 
         # Build U amplitudes:
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            if self.omega is None or self.g is None:
+                raise ValueError("Bosonic parameters not set.")
             if nf != 1:
                 raise util.ModelNotImplemented
             if n == 1:
-                amplitudes[name] = h[key] / self.energy_sum(key)
+                amplitudes[name] = self.g[key] / self.energy_sum(key)
             else:
                 shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
                 amplitudes[name] = np.zeros(shape, dtype=types[float])
@@ -490,7 +484,7 @@ class GEBCC(BaseEBCC):
 
     def update_lams(
         self,
-        eris: ERIsInputType = None,
+        eris: Optional[ERIsInputType] = None,
         amplitudes: Optional[Namespace[SpinArrayType]] = None,
         lambdas: Optional[Namespace[SpinArrayType]] = None,
         lambdas_pert: Optional[Namespace[SpinArrayType]] = None,
@@ -694,13 +688,15 @@ class GEBCC(BaseEBCC):
 
         energies = []
         for key in subscript:
+            factor = 1 if signs_dict[key] == "+" else -1
             if key == "b":
-                energies.append(self.omega)
+                assert self.omega is not None
+                energies.append(factor * self.omega)
             else:
-                energies.append(np.diag(self.fock[key + key]))
+                energies.append(factor * self.fock[key + key].diag())
 
-        subscript = "".join([signs_dict[k] + next_char() for k in subscript])
-        energy_sum = util.direct_sum(subscript, *energies)
+        subscript = ",".join([next_char() for k in subscript])
+        energy_sum = util.dirsum(subscript, *energies)
 
         return energy_sum
 
@@ -829,7 +825,8 @@ class GEBCC(BaseEBCC):
         assert self.g is not None
         assert self.omega is not None
         # FIXME should this also sum in frozen orbitals?
-        val = util.einsum("Ipp->I", self.g.boo)
+        boo: NDArray[T] = self.g.boo
+        val = util.einsum("Ipp->I", boo)
         val -= self.xi * self.omega
         if self.bare_G is not None:
             val += self.bare_G
@@ -844,7 +841,7 @@ class GEBCC(BaseEBCC):
         Returns:
             Mean-field Fock matrix.
         """
-        fock_ao = self.mf.get_fock().astype(types[float])
+        fock_ao: NDArray[T] = self.mf.get_fock().astype(types[float])
         fock = util.einsum("pq,pi,qj->ij", fock_ao, self.mo_coeff, self.mo_coeff)
         return fock
 
@@ -858,12 +855,13 @@ class GEBCC(BaseEBCC):
         assert self.omega is not None
         if self.options.shift:
             assert self.g is not None
-            xi = util.einsum("Iii->I", self.g.boo)
+            boo: NDArray[T] = self.g.boo
+            xi = util.einsum("Iii->I", boo)
             xi /= self.omega
             if self.bare_G is not None:
                 xi += self.bare_G / self.omega
         else:
-            xi = np.zeros_like(self.omega)
+            xi = np.zeros(self.omega.shape)
         return xi
 
     def get_fock(self) -> GFock:
