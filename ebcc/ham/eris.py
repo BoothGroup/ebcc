@@ -74,7 +74,6 @@ class UERIs(BaseERIs, BaseUHamiltonian):
             j = "ab".index(key[2])
             ij = i * (i + 1) // 2 + j
 
-            array: Optional[NDArray[T]] = None
             if self.array is not None:
                 array = self.array[ij]
                 if key == "bbaa":
@@ -92,6 +91,8 @@ class UERIs(BaseERIs, BaseUHamiltonian):
                 if key == "bbaa":
                     array = array.transpose(2, 3, 0, 1)
                 array = array.astype(types[float])
+            else:
+                array = None
 
             self._members[key] = RERIs(
                 self.cc,

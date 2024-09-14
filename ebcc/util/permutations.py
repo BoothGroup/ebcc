@@ -10,7 +10,7 @@ from ebcc import numpy as np
 from ebcc import util
 
 if TYPE_CHECKING:
-    from typing import Any, Generator, Hashable, Iterable, Optional, TypeVar
+    from typing import Any, Generator, Hashable, Iterable, Optional
 
     from numpy import float64, int64
     from numpy.typing import NDArray

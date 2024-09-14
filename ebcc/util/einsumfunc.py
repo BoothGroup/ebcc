@@ -12,7 +12,7 @@ from ebcc import numpy as np
 from ebcc.core.precision import types
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Optional, Sequence, TypeVar, Union
+    from typing import Callable, Optional, Union
 
     from numpy import float64
     from numpy.typing import NDArray
@@ -96,7 +96,9 @@ def _parse_einsum_input(operands: list[OperandType]) -> tuple[str, str, list[NDA
             raise EinsumOperandError("Invalid subscripts for einsum")
         operand_list: list[NDArray[T]] = operands[:-1:2]  # type: ignore
         subscript_list: list[tuple[int, ...]] = operands[1::2]  # type: ignore
-        output_list: Optional[tuple[int, ...]] = operands[-1] if len(operands) % 2 else None  # type: ignore
+        output_list: Optional[tuple[int, ...]] = (
+            operands[-1] if len(operands) % 2 else None  # type: ignore
+        )
 
         subscripts = ""
         last = len(subscript_list) - 1

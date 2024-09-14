@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any
 from ebcc.util import Namespace
 
 if TYPE_CHECKING:
-    from typing import Optional, TypeVar
+    from typing import Optional
 
     from ebcc.cc.base import BaseEBCC
     from ebcc.cc.gebcc import GEBCC

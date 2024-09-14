@@ -8,14 +8,13 @@ from typing import TYPE_CHECKING
 
 from pyscf import lib
 
-from ebcc import numpy as np
 from ebcc import util
 from ebcc.core.damping import DIIS
 from ebcc.core.logging import ANSI, NullLogger, init_logging
 from ebcc.core.precision import types
 
 if TYPE_CHECKING:
-    from typing import Any, Optional, TypeVar
+    from typing import Any, Optional
 
     from numpy import float64
     from numpy.typing import NDArray
