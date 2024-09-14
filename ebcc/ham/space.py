@@ -65,7 +65,7 @@ class Space:
         # Checks:
         if not (self._occupied.size == self._frozen.size == self._active.size):
             raise ValueError("The sizes of the space arrays must match.")
-        if (self._frozen & self._active).any():
+        if np.any(self._frozen & self._active):
             raise ValueError("Frozen and active orbitals must be mutually exclusive.")
 
     def __repr__(self) -> str:
@@ -160,12 +160,12 @@ class Space:
     @property
     def nocc(self) -> int:
         """Get the number of occupied orbitals."""
-        return cast(int, self.occupied.sum())
+        return cast(int, np.sum(self.occupied))
 
     @property
     def nvir(self) -> int:
         """Get the number of virtual orbitals."""
-        return cast(int, self.virtual.sum())
+        return cast(int, np.sum(self.virtual))
 
     # Correlated space:
 
@@ -187,17 +187,17 @@ class Space:
     @property
     def ncorr(self) -> int:
         """Get the number of correlated orbitals."""
-        return cast(int, self.correlated.sum())
+        return cast(int, np.sum(self.correlated))
 
     @property
     def ncocc(self) -> int:
         """Get the number of occupied correlated orbitals."""
-        return cast(int, self.correlated_occupied.sum())
+        return cast(int, np.sum(self.correlated_occupied))
 
     @property
     def ncvir(self) -> int:
         """Get the number of virtual correlated orbitals."""
-        return cast(int, self.correlated_virtual.sum())
+        return cast(int, np.sum(self.correlated_virtual))
 
     # Inactive space:
 
@@ -219,17 +219,17 @@ class Space:
     @property
     def ninact(self) -> int:
         """Get the number of inactive orbitals."""
-        return cast(int, self.inactive.sum())
+        return cast(int, np.sum(self.inactive))
 
     @property
     def niocc(self) -> int:
         """Get the number of occupied inactive orbitals."""
-        return cast(int, self.inactive_occupied.sum())
+        return cast(int, np.sum(self.inactive_occupied))
 
     @property
     def nivir(self) -> int:
         """Get the number of virtual inactive orbitals."""
-        return cast(int, self.inactive_virtual.sum())
+        return cast(int, np.sum(self.inactive_virtual))
 
     # Frozen space:
 
@@ -251,12 +251,12 @@ class Space:
     @property
     def nfroz(self) -> int:
         """Get the number of frozen orbitals."""
-        return cast(int, self.frozen.sum())
+        return cast(int, np.sum(self.frozen))
 
     @property
     def nfocc(self) -> int:
         """Get the number of occupied frozen orbitals."""
-        return cast(int, self.frozen_occupied.sum())
+        return cast(int, np.sum(self.frozen_occupied))
 
     @property
     def nfvir(self) -> int:
@@ -283,17 +283,17 @@ class Space:
     @property
     def nact(self) -> int:
         """Get the number of active orbitals."""
-        return cast(int, self.active.sum())
+        return cast(int, np.sum(self.active))
 
     @property
     def naocc(self) -> int:
         """Get the number of occupied active orbitals."""
-        return cast(int, self.active_occupied.sum())
+        return cast(int, np.sum(self.active_occupied))
 
     @property
     def navir(self) -> int:
         """Get the number of virtual active orbitals."""
-        return cast(int, self.active_virtual.sum())
+        return cast(int, np.sum(self.active_virtual))
 
 
 if TYPE_CHECKING:
@@ -377,7 +377,7 @@ def construct_fno_space(
         mo_occ: NDArray[T],
     ) -> RConstructSpaceReturnType:
         # Get the number of occupied orbitals
-        nocc = (mo_occ > 0).astype(int).sum()
+        nocc = np.sum((mo_occ > 0).astype(int))
 
         # Calculate the natural orbitals
         n, c = np.linalg.eigh(dm1[nocc:, nocc:])
@@ -387,8 +387,8 @@ def construct_fno_space(
         if occ_frac is None:
             active_vir = n > occ_tol
         else:
-            active_vir = np.cumsum(n / n.sum()) <= occ_frac
-        num_active_vir = active_vir.astype(int).sum()
+            active_vir = np.cumsum(n / np.sum(n)) <= occ_frac
+        num_active_vir = np.sum(active_vir.astype(int))
 
         # Canonicalise the natural orbitals
         fock_vv = np.diag(mo_energy[nocc:])

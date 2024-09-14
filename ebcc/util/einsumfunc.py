@@ -64,8 +64,6 @@ def _parse_einsum_input(operands: list[OperandType]) -> tuple[str, str, list[NDA
         raise ValueError("No input operands")
 
     if isinstance(operands[0], str):
-        if not all(isinstance(op, np.ndarray) for op in operands[1:]):
-            raise EinsumOperandError("Invalid operands for einsum")
         subscripts = operands[0].replace(" ", "")
         operand_list: list[NDArray[T]] = operands[1:]  # type: ignore
 
@@ -90,10 +88,6 @@ def _parse_einsum_input(operands: list[OperandType]) -> tuple[str, str, list[NDA
                 raise ValueError(f"Character {s} is not a valid symbol.")
 
     else:
-        if not all(isinstance(op, np.ndarray) for op in operands[:-1:2]):
-            raise EinsumOperandError("Invalid operands for einsum")
-        if not all(isinstance(op, tuple) for op in operands[1::2]):
-            raise EinsumOperandError("Invalid subscripts for einsum")
         operand_list: list[NDArray[T]] = operands[:-1:2]  # type: ignore
         subscript_list: list[tuple[int, ...]] = operands[1::2]  # type: ignore
         output_list: Optional[tuple[int, ...]] = (
