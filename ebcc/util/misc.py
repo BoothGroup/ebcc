@@ -7,7 +7,7 @@ from collections.abc import MutableMapping
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 if TYPE_CHECKING:
-    from typing import Any, ItemsView, Iterator, KeysView, ValuesView
+    from typing import Any, ItemsView, Iterator, KeysView, Union, ValuesView
 
 T = TypeVar("T")
 
@@ -53,15 +53,15 @@ class Namespace(MutableMapping[str, T], Generic[T]):
         """Set an attribute."""
         return self.__setitem__(key, val)
 
-    def __getitem__(self, key: str) -> Any:
+    def __getitem__(self, key: str) -> T:
         """Get an item."""
-        value: Any = self.__dict__["_members"][key]
+        value: T = self.__dict__["_members"][key]
         return value
 
-    def __getattr__(self, key: str) -> Any:
+    def __getattr__(self, key: str) -> T:
         """Get an attribute."""
         if key in self.__dict__:
-            return self.__dict__[key]
+            return self.__dict__[key]  # type: ignore[no-any-return]
         try:
             return self.__getitem__(key)
         except KeyError:
@@ -154,3 +154,35 @@ class Timer:
             out.append("%d ms" % milliseconds)
 
         return " ".join(out[-max(precision, len(out)) :])
+
+
+def prod(values: Union[list[int], tuple[int, ...]]) -> int:
+    """Return the product of values."""
+    out = 1
+    for value in values:
+        out *= value
+    return out
+
+
+def regularise_tuple(*_items: Union[Any, tuple[Any, ...], list[Any]]) -> tuple[Any, ...]:
+    """Regularise the input tuples.
+
+    Allows input of the forms
+    - `func((a, b, c))`
+    - `func([a, b, c])`
+    - `func(a, b, c)`
+    - `func(a)`
+
+    Args:
+        _items: The input tuples.
+
+    Returns:
+        The regularised tuple.
+    """
+    if isinstance(_items[0], (tuple, list)):
+        if len(_items) > 1:
+            raise ValueError("Only one tuple can be passed.")
+        items = _items[0]
+    else:
+        items = _items
+    return tuple(items)

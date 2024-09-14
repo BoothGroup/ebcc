@@ -344,42 +344,42 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
         np.testing.assert_almost_equal(a, b, 6, verbose=True)
 
     def test_eom_ip(self):
-        e1 = self.ccsd.ip_eom(nroots=5).kernel()
+        e1 = np.asarray(self.ccsd.ip_eom(nroots=5).kernel())
         e2, v2 = self.ccsd_ref.ipccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
     def test_eom_ea(self):
-        e1 = self.ccsd.ea_eom(nroots=5).kernel()
+        e1 = np.asarray(self.ccsd.ea_eom(nroots=5).kernel())
         e2, v2 = self.ccsd_ref.eaccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
     def test_eom_ee(self):
-        e1 = self.ccsd.ee_eom(nroots=5).kernel()
+        e1 = np.asarray(self.ccsd.ee_eom(nroots=5).kernel())
         e2, v2 = self.ccsd_ref.eeccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
     def test_eom_ip_koopmans(self):
-        e1 = self.ccsd.ip_eom(nroots=5, koopmans=True).kernel()
+        e1 = np.asarray(self.ccsd.ip_eom(nroots=5, koopmans=True).kernel())
         e2, v2 = self.ccsd_ref.ipccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
     def test_eom_ea_koopmans(self):
-        e1 = self.ccsd.ea_eom(nroots=5, koopmans=True).kernel()
+        e1 = np.asarray(self.ccsd.ea_eom(nroots=5, koopmans=True).kernel())
         e2, v2 = self.ccsd_ref.eaccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
     def test_eom_ip_left(self):
-        e1 = self.ccsd.ip_eom(nroots=5, left=True).kernel()
+        e1 = np.asarray(self.ccsd.ip_eom(nroots=5, left=True).kernel())
         e2, v2 = self.ccsd_ref.ipccsd(nroots=5, left=True)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
     def test_eom_ea_left(self):
-        e1 = self.ccsd.ea_eom(nroots=5, left=True).kernel()
+        e1 = np.asarray(self.ccsd.ea_eom(nroots=5, left=True).kernel())
         e2, v2 = self.ccsd_ref.eaccsd(nroots=5, left=True)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
     def test_eom_ee_left(self):
-        e1 = self.ccsd.ee_eom(nroots=5, left=True).kernel()
+        e1 = np.asarray(self.ccsd.ee_eom(nroots=5, left=True).kernel())
         e2, v2 = self.ccsd_ref.eeccsd(nroots=5)  # No left EE-EOM in PySCF
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
@@ -390,8 +390,8 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
         h = self.mf.to_ghf().get_hcore()
         h = np.linalg.multi_dot((c.T, h, c))
         v = self.ccsd.get_eris().array
-        e_rdm = util.einsum("pq,pq->", h, dm1)
-        e_rdm += util.einsum("pqrs,pqrs->", v, dm2) * 0.5
+        e_rdm = np.einsum("pq,pq->", h, dm1)
+        e_rdm += np.einsum("pqrs,pqrs->", v, dm2) * 0.5
         e_rdm += self.mf.mol.energy_nuc()
         self.assertAlmostEqual(e_rdm, self.ccsd_ref.e_tot)
 

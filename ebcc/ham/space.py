@@ -13,11 +13,15 @@ from ebcc.core.precision import types
 if TYPE_CHECKING:
     from typing import Optional, Union
 
+    from numpy import bool_, float64
+    from numpy.typing import NDArray
     from pyscf.scf.hf import SCF
 
     from ebcc.cc.base import SpinArrayType
-    from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
+
+    T = float64
+    B = bool_
 
 
 class Space:
@@ -42,9 +46,9 @@ class Space:
 
     def __init__(
         self,
-        occupied: NDArray[bool],
-        frozen: NDArray[bool],
-        active: NDArray[bool],
+        occupied: NDArray[B],
+        frozen: NDArray[B],
+        active: NDArray[B],
     ) -> None:
         """Initialise the space.
 
@@ -61,7 +65,7 @@ class Space:
         # Checks:
         if not (self._occupied.size == self._frozen.size == self._active.size):
             raise ValueError("The sizes of the space arrays must match.")
-        if np.any(np.logical_and(self._frozen, self._active)):
+        if (self._frozen & self._active).any():
             raise ValueError("Frozen and active orbitals must be mutually exclusive.")
 
     def __repr__(self) -> str:
@@ -95,7 +99,7 @@ class Space:
             "a": self.nivir,
         }[char]
 
-    def mask(self, char: str) -> NDArray[bool]:
+    def mask(self, char: str) -> NDArray[B]:
         """Convert a character corresponding to a space to a mask of that space.
 
         Args:
@@ -114,7 +118,7 @@ class Space:
             "a": self.inactive_virtual,
         }[char]
 
-    def omask(self, char: str) -> NDArray[bool]:
+    def omask(self, char: str) -> NDArray[B]:
         """Like `mask`, but returns only a mask into only the occupied sector.
 
         Args:
@@ -125,7 +129,7 @@ class Space:
         """
         return self.mask(char)[self.occupied]
 
-    def vmask(self, char: str) -> NDArray[bool]:
+    def vmask(self, char: str) -> NDArray[B]:
         """Like `mask`, but returns only a mask into only the virtual sector.
 
         Args:
@@ -139,165 +143,165 @@ class Space:
     # Full space:
 
     @property
-    def occupied(self) -> NDArray[bool]:
+    def occupied(self) -> NDArray[B]:
         """Get a boolean mask of occupied orbitals."""
         return self._occupied
 
     @property
-    def virtual(self) -> NDArray[bool]:
+    def virtual(self) -> NDArray[B]:
         """Get a boolean mask of virtual orbitals."""
         return ~self.occupied
 
     @property
     def nmo(self) -> int:
         """Get the number of orbitals."""
-        return cast(int, self.occupied.size)
+        return self.occupied.size
 
     @property
     def nocc(self) -> int:
         """Get the number of occupied orbitals."""
-        return cast(int, np.sum(self.occupied))
+        return cast(int, self.occupied.sum())
 
     @property
     def nvir(self) -> int:
         """Get the number of virtual orbitals."""
-        return cast(int, np.sum(self.virtual))
+        return cast(int, self.virtual.sum())
 
     # Correlated space:
 
     @property
-    def correlated(self) -> NDArray[bool]:
+    def correlated(self) -> NDArray[B]:
         """Get a boolean mask of correlated orbitals."""
         return ~self.frozen
 
     @property
-    def correlated_occupied(self) -> NDArray[bool]:
+    def correlated_occupied(self) -> NDArray[B]:
         """Get a boolean mask of occupied correlated orbitals."""
-        return np.logical_and(self.correlated, self.occupied)
+        return self.correlated & self.occupied
 
     @property
-    def correlated_virtual(self) -> NDArray[bool]:
+    def correlated_virtual(self) -> NDArray[B]:
         """Get a boolean mask of virtual correlated orbitals."""
-        return np.logical_and(self.correlated, self.virtual)
+        return self.correlated & self.virtual
 
     @property
     def ncorr(self) -> int:
         """Get the number of correlated orbitals."""
-        return cast(int, np.sum(self.correlated))
+        return cast(int, self.correlated.sum())
 
     @property
     def ncocc(self) -> int:
         """Get the number of occupied correlated orbitals."""
-        return cast(int, np.sum(self.correlated_occupied))
+        return cast(int, self.correlated_occupied.sum())
 
     @property
     def ncvir(self) -> int:
         """Get the number of virtual correlated orbitals."""
-        return cast(int, np.sum(self.correlated_virtual))
+        return cast(int, self.correlated_virtual.sum())
 
     # Inactive space:
 
     @property
-    def inactive(self) -> NDArray[bool]:
+    def inactive(self) -> NDArray[B]:
         """Get a boolean mask of inactive orbitals."""
         return ~self.active
 
     @property
-    def inactive_occupied(self) -> NDArray[bool]:
+    def inactive_occupied(self) -> NDArray[B]:
         """Get a boolean mask of occupied inactive orbitals."""
-        return np.logical_and(self.inactive, self.occupied)
+        return self.inactive & self.occupied
 
     @property
-    def inactive_virtual(self) -> NDArray[bool]:
+    def inactive_virtual(self) -> NDArray[B]:
         """Get a boolean mask of virtual inactive orbitals."""
-        return np.logical_and(self.inactive, self.virtual)
+        return self.inactive & self.virtual
 
     @property
     def ninact(self) -> int:
         """Get the number of inactive orbitals."""
-        return cast(int, np.sum(self.inactive))
+        return cast(int, self.inactive.sum())
 
     @property
     def niocc(self) -> int:
         """Get the number of occupied inactive orbitals."""
-        return cast(int, np.sum(self.inactive_occupied))
+        return cast(int, self.inactive_occupied.sum())
 
     @property
     def nivir(self) -> int:
         """Get the number of virtual inactive orbitals."""
-        return cast(int, np.sum(self.inactive_virtual))
+        return cast(int, self.inactive_virtual.sum())
 
     # Frozen space:
 
     @property
-    def frozen(self) -> NDArray[bool]:
+    def frozen(self) -> NDArray[B]:
         """Get a boolean mask of frozen orbitals."""
         return self._frozen
 
     @property
-    def frozen_occupied(self) -> NDArray[bool]:
+    def frozen_occupied(self) -> NDArray[B]:
         """Get a boolean mask of occupied frozen orbitals."""
-        return np.logical_and(self.frozen, self.occupied)
+        return self.frozen & self.occupied
 
     @property
-    def frozen_virtual(self) -> NDArray[bool]:
+    def frozen_virtual(self) -> NDArray[B]:
         """Get a boolean mask of virtual frozen orbitals."""
-        return np.logical_and(self.frozen, self.virtual)
+        return self.frozen & self.virtual
 
     @property
     def nfroz(self) -> int:
         """Get the number of frozen orbitals."""
-        return cast(int, np.sum(self.frozen))
+        return cast(int, self.frozen.sum())
 
     @property
     def nfocc(self) -> int:
         """Get the number of occupied frozen orbitals."""
-        return cast(int, np.sum(self.frozen_occupied))
+        return cast(int, self.frozen_occupied.sum())
 
     @property
     def nfvir(self) -> int:
         """Get the number of virtual frozen orbitals."""
-        return cast(int, np.sum(self.frozen_virtual))
+        return cast(int, self.frozen_virtual.sum())
 
     # Active space:
 
     @property
-    def active(self) -> NDArray[bool]:
+    def active(self) -> NDArray[B]:
         """Get a boolean mask of active orbitals."""
         return self._active
 
     @property
-    def active_occupied(self) -> NDArray[bool]:
+    def active_occupied(self) -> NDArray[B]:
         """Get a boolean mask of occupied active orbitals."""
-        return np.logical_and(self.active, self.occupied)
+        return self.active & self.occupied
 
     @property
-    def active_virtual(self) -> NDArray[bool]:
+    def active_virtual(self) -> NDArray[B]:
         """Get a boolean mask of virtual active orbitals."""
-        return np.logical_and(self.active, self.virtual)
+        return self.active & self.virtual
 
     @property
     def nact(self) -> int:
         """Get the number of active orbitals."""
-        return cast(int, np.sum(self.active))
+        return cast(int, self.active.sum())
 
     @property
     def naocc(self) -> int:
         """Get the number of occupied active orbitals."""
-        return cast(int, np.sum(self.active_occupied))
+        return cast(int, self.active_occupied.sum())
 
     @property
     def navir(self) -> int:
         """Get the number of virtual active orbitals."""
-        return cast(int, np.sum(self.active_virtual))
+        return cast(int, self.active_virtual.sum())
 
 
 if TYPE_CHECKING:
     # Needs to be defined after Space
-    RConstructSpaceReturnType = tuple[NDArray[float], NDArray[float], Space]
+    RConstructSpaceReturnType = tuple[NDArray[T], NDArray[T], Space]
     UConstructSpaceReturnType = tuple[
-        tuple[NDArray[float], NDArray[float]],
-        tuple[NDArray[float], NDArray[float]],
+        tuple[NDArray[T], NDArray[T]],
+        tuple[NDArray[T], NDArray[T]],
         tuple[Space, Space],
     ]
 
@@ -313,10 +317,10 @@ def construct_default_space(mf: SCF) -> Union[RConstructSpaceReturnType, UConstr
         default space.
     """
 
-    def _construct(mo_occ: NDArray[float]) -> Space:
+    def _construct(mo_occ: NDArray[T]) -> Space:
         """Build the default space."""
-        frozen = np.zeros_like(mo_occ, dtype=bool)
-        active = np.zeros_like(mo_occ, dtype=bool)
+        frozen = np.zeros(mo_occ.shape, dtype=bool)
+        active = np.zeros(mo_occ.shape, dtype=bool)
         space = Space(
             occupied=mo_occ > 0,
             frozen=frozen,
@@ -325,7 +329,7 @@ def construct_default_space(mf: SCF) -> Union[RConstructSpaceReturnType, UConstr
         return space
 
     # Construct the default space
-    if np.ndim(mf.mo_occ) == 2:
+    if mf.mo_occ.ndim == 2:
         space_a = _construct(mf.mo_occ[0])
         space_b = _construct(mf.mo_occ[1])
         return mf.mo_coeff, mf.mo_occ, (space_a, space_b)
@@ -357,23 +361,23 @@ def construct_fno_space(
     solver = MP2(mf)
     if not amplitudes:
         solver.kernel()
-        dm1 = solver.make_rdm1()
+        dm1 = solver.make_rdm1().astype(types[float])
     else:
         if isinstance(amplitudes.t2, util.Namespace):
             t2 = (amplitudes.t2.aaaa, amplitudes.t2.abab, amplitudes.t2.bbbb)
-            dm1 = solver.make_rdm1(t2=t2)
+            dm1 = solver.make_rdm1(t2=t2).astype(types[float])
         else:
-            dm1 = solver.make_rdm1(t2=amplitudes.t2)
+            dm1 = solver.make_rdm1(t2=amplitudes.t2).astype(types[float])
 
     # def _construct(dm1, mo_energy, mo_coeff, mo_occ):
     def _construct(
-        dm1: NDArray[float],
-        mo_energy: NDArray[float],
-        mo_coeff: NDArray[float],
-        mo_occ: NDArray[float],
+        dm1: NDArray[T],
+        mo_energy: NDArray[T],
+        mo_coeff: NDArray[T],
+        mo_occ: NDArray[T],
     ) -> RConstructSpaceReturnType:
         # Get the number of occupied orbitals
-        nocc = int(np.sum(mo_occ > 0))
+        nocc = (mo_occ > 0).astype(int).sum()
 
         # Calculate the natural orbitals
         n, c = np.linalg.eigh(dm1[nocc:, nocc:])
@@ -383,8 +387,8 @@ def construct_fno_space(
         if occ_frac is None:
             active_vir = n > occ_tol
         else:
-            active_vir = np.cumsum(n / np.sum(n)) <= occ_frac
-        num_active_vir = int(np.sum(active_vir))
+            active_vir = np.cumsum(n / n.sum()) <= occ_frac
+        num_active_vir = active_vir.astype(int).sum()
 
         # Canonicalise the natural orbitals
         fock_vv = np.diag(mo_energy[nocc:])
@@ -392,24 +396,27 @@ def construct_fno_space(
         _, c_can = np.linalg.eigh(fock_vv[active_vir][:, active_vir])
 
         # Transform the natural orbitals
-        no_coeff_avir = np.linalg.multi_dot((mo_coeff[:, nocc:], c[:, :num_active_vir], c_can))
-        no_coeff_fvir = np.dot(mo_coeff[:, nocc:], c[:, num_active_vir:])
+        no_coeff_avir = util.einsum(
+            "pi,iq,qj->pj", mo_coeff[:, nocc:], c[:, :num_active_vir], c_can
+        )
+        no_coeff_fvir = mo_coeff[:, nocc:] @ c[:, num_active_vir:]
         no_coeff_occ = mo_coeff[:, :nocc]
-        no_coeff: NDArray[float] = np.hstack((no_coeff_occ, no_coeff_avir, no_coeff_fvir))
+        no_coeff = np.concatenate((no_coeff_occ, no_coeff_avir, no_coeff_fvir), axis=1)
 
         # Build the natural orbital space
-        frozen = np.zeros_like(mo_occ, dtype=bool)
+        active = np.zeros(mo_occ.shape, dtype=bool)
+        frozen = np.zeros(mo_occ.shape, dtype=bool)
         frozen[nocc + num_active_vir :] = True
         no_space = Space(
             occupied=mo_occ > 0,
             frozen=frozen,
-            active=np.zeros_like(mo_occ, dtype=bool),
+            active=active,
         )
 
         return no_coeff, mo_occ, no_space
 
     # Construct the natural orbitals
-    if np.ndim(mf.mo_occ) == 2:
+    if mf.mo_occ.ndim == 2:
         coeff_a, occ_a, space_a = _construct(
             dm1[0].astype(types[float]),
             mf.mo_energy[0].astype(types[float]),

@@ -1,7 +1,7 @@
 # Code generated for ebcc.
 
 from ebcc import numpy as np
-from ebcc.util import pack_2e, einsum, direct_sum, Namespace
+from ebcc.util import pack_2e, einsum, dirsum, Namespace
 from ebcc.precision import types
 
 def energy(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, **kwargs):
@@ -932,29 +932,29 @@ def energy_perturbative(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, 
     t3_bbbbbb += einsum(x17, (0, 1, 2, 3, 4, 5), (2, 1, 0, 4, 5, 3)) * 2.0
     t3_bbbbbb += einsum(x17, (0, 1, 2, 3, 4, 5), (2, 1, 0, 5, 4, 3)) * -2.0
     del x17
-    t3_aaaaaa /= direct_sum(
+    t3_aaaaaa /= dirsum(
             "ia+jb+kc->ijkabc",
-            direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
-            direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
-            direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
+            dirsum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
+            dirsum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
+            dirsum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
     )
-    t3_babbab /= direct_sum(
+    t3_babbab /= dirsum(
             "ia+jb+kc->ijkabc",
-            direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
-            direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
-            direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
+            dirsum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
+            dirsum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
+            dirsum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
     )
-    t3_abaaba /= direct_sum(
+    t3_abaaba /= dirsum(
             "ia+jb+kc->ijkabc",
-            direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
-            direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
-            direct_sum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
+            dirsum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
+            dirsum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
+            dirsum("i-a->ia", np.diag(f.aa.oo), np.diag(f.aa.vv)),
     )
-    t3_bbbbbb /= direct_sum(
+    t3_bbbbbb /= dirsum(
             "ia+jb+kc->ijkabc",
-            direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
-            direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
-            direct_sum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
+            dirsum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
+            dirsum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
+            dirsum("i-a->ia", np.diag(f.bb.oo), np.diag(f.bb.vv)),
     )
 
     # energy

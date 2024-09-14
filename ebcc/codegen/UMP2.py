@@ -13,7 +13,7 @@ https://github.com/obackhouse/albert
 """
 
 from ebcc import numpy as np
-from ebcc.util import pack_2e, einsum, direct_sum, Namespace
+from ebcc.util import pack_2e, einsum, dirsum, Namespace
 
 
 def energy(t2=None, v=None, **kwargs):

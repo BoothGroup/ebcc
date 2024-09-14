@@ -12,12 +12,16 @@ from ebcc.core.precision import types
 from ebcc.opt.base import BaseBruecknerEBCC
 
 if TYPE_CHECKING:
-    from typing import Optional
+    from typing import Optional, Union
+
+    from numpy import float64
+    from numpy.typing import NDArray
 
     from ebcc.cc.gebcc import GEBCC, SpinArrayType
     from ebcc.core.damping import DIIS
-    from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
+
+    T = float64
 
 
 class BruecknerGEBCC(BaseBruecknerEBCC):
@@ -49,7 +53,7 @@ class BruecknerGEBCC(BaseBruecknerEBCC):
         if u_tot is None:
             u_tot = np.eye(self.cc.space.ncorr, dtype=types[float])
 
-        t1_block: NDArray[float] = np.zeros(
+        t1_block: NDArray[T] = np.zeros(
             (self.cc.space.ncorr, self.cc.space.ncorr), dtype=types[float]
         )
         t1_block[: self.cc.space.ncocc, self.cc.space.ncocc :] = -t1
@@ -57,8 +61,8 @@ class BruecknerGEBCC(BaseBruecknerEBCC):
 
         u = scipy.linalg.expm(t1_block)
 
-        u_tot = np.dot(u_tot, u)
-        if scipy.linalg.det(u_tot) < 0:
+        u_tot = u_tot @ u
+        if np.linalg.det(u_tot) < 0:
             u_tot[:, 0] *= -1
 
         a = scipy.linalg.logm(u_tot)
@@ -91,7 +95,10 @@ class BruecknerGEBCC(BaseBruecknerEBCC):
 
         # Transform T amplitudes:
         for name, key, n in self.cc.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            args = [self.cc.amplitudes[name], tuple(range(n * 2))]
+            args: list[Union[tuple[int, ...], NDArray[T]]] = [
+                self.cc.amplitudes[name],
+                tuple(range(n * 2)),
+            ]
             for i in range(n):
                 args += [ci, (i, i + n * 2)]
             for i in range(n):
@@ -109,7 +116,7 @@ class BruecknerGEBCC(BaseBruecknerEBCC):
 
         return self.cc.amplitudes
 
-    def get_t1_norm(self, amplitudes: Optional[Namespace[SpinArrayType]] = None) -> float:
+    def get_t1_norm(self, amplitudes: Optional[Namespace[SpinArrayType]] = None) -> T:
         """Get the norm of the T1 amplitude.
 
         Args:
@@ -120,10 +127,10 @@ class BruecknerGEBCC(BaseBruecknerEBCC):
         """
         if not amplitudes:
             amplitudes = self.cc.amplitudes
-        weight: float = types[float](np.linalg.norm(amplitudes["t1"]))
+        weight: T = np.linalg.norm(amplitudes["t1"])
         return weight
 
-    def mo_to_correlated(self, mo_coeff: NDArray[float]) -> NDArray[float]:
+    def mo_to_correlated(self, mo_coeff: NDArray[T]) -> NDArray[T]:
         """Transform the MO coefficients into the correlated basis.
 
         Args:
@@ -134,9 +141,7 @@ class BruecknerGEBCC(BaseBruecknerEBCC):
         """
         return mo_coeff[:, self.cc.space.correlated]
 
-    def mo_update_correlated(
-        self, mo_coeff: NDArray[float], mo_coeff_corr: NDArray[float]
-    ) -> NDArray[float]:
+    def mo_update_correlated(self, mo_coeff: NDArray[T], mo_coeff_corr: NDArray[T]) -> NDArray[T]:
         """Update the correlated slice of a set of MO coefficients.
 
         Args:
@@ -150,8 +155,8 @@ class BruecknerGEBCC(BaseBruecknerEBCC):
         return mo_coeff
 
     def update_coefficients(
-        self, u_tot: SpinArrayType, mo_coeff: NDArray[float], mo_coeff_ref: NDArray[float]
-    ) -> NDArray[float]:
+        self, u_tot: SpinArrayType, mo_coeff: NDArray[T], mo_coeff_ref: NDArray[T]
+    ) -> NDArray[T]:
         """Update the MO coefficients.
 
         Args:

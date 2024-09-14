@@ -8,16 +8,18 @@ from typing import TYPE_CHECKING, Any
 from ebcc.util import Namespace
 
 if TYPE_CHECKING:
-    from typing import Optional, TypeVar
+    from typing import Optional
 
     from ebcc.cc.base import BaseEBCC
-    from ebcc.numpy.typing import NDArray
-
-    T = TypeVar("T")
+    from ebcc.cc.gebcc import GEBCC
+    from ebcc.cc.rebcc import REBCC
+    from ebcc.cc.uebcc import UEBCC
 
 
 class BaseHamiltonian(Namespace[Any], ABC):
     """Base class for Hamiltonians."""
+
+    cc: BaseEBCC
 
     @abstractmethod
     def __getitem__(self, key: str) -> Any:
@@ -30,6 +32,24 @@ class BaseHamiltonian(Namespace[Any], ABC):
             Slice of the Hamiltonian.
         """
         pass
+
+
+class BaseRHamiltonian(BaseHamiltonian):
+    """Base class for restricted Hamiltonians."""
+
+    cc: REBCC
+
+
+class BaseUHamiltonian(BaseHamiltonian):
+    """Base class for unrestricted Hamiltonians."""
+
+    cc: UEBCC
+
+
+class BaseGHamiltonian(BaseHamiltonian):
+    """Base class for general Hamiltonians."""
+
+    cc: GEBCC
 
 
 class BaseFock(BaseHamiltonian):
@@ -120,7 +140,3 @@ class BaseElectronBoson(BaseHamiltonian):
         self.__dict__["cc"] = cc
         self.__dict__["space"] = space if space is not None else (cc.space,) * 2
         self.__dict__["array"] = array if array is not None else self._get_g()
-
-    def _get_g(self) -> NDArray[float]:
-        """Get the electron-boson coupling matrix."""
-        return self.cc.bare_g

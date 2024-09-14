@@ -6,16 +6,19 @@ from typing import TYPE_CHECKING
 
 from ebcc import numpy as np
 from ebcc import util
-from ebcc.core.precision import astype
 from ebcc.eom.base import BaseEA_EOM, BaseEE_EOM, BaseEOM, BaseIP_EOM
 
 if TYPE_CHECKING:
     from typing import Optional
 
+    from numpy import float64, int64
+    from numpy.typing import NDArray
+
     from ebcc.cc.rebcc import REBCC, ERIsInputType, SpinArrayType
     from ebcc.ham.space import Space
-    from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
+
+    T = float64
 
 
 class REOM(BaseEOM):
@@ -29,7 +32,7 @@ class REOM(BaseEOM):
 class IP_REOM(REOM, BaseIP_EOM):
     """Restricted ionisation potential equation-of-motion coupled cluster."""
 
-    def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
+    def _argsort_guesses(self, diag: NDArray[T]) -> NDArray[int64]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]
@@ -38,12 +41,11 @@ class IP_REOM(REOM, BaseIP_EOM):
             arg = np.argsort(np.abs(diag))
         return arg
 
-    def _quasiparticle_weight(self, r1: SpinArrayType) -> float:
+    def _quasiparticle_weight(self, r1: SpinArrayType) -> T:
         """Get the quasiparticle weight."""
-        weight: float = np.dot(r1.ravel(), r1.ravel())
-        return astype(weight, float)
+        return np.vdot(r1, r1)
 
-    def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
+    def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[T]:
         """Get the diagonal of the Hamiltonian.
 
         Args:
@@ -64,7 +66,7 @@ class IP_REOM(REOM, BaseIP_EOM):
 
         return self.amplitudes_to_vector(parts)
 
-    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[float]:
+    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[T]:
         """Construct a vector containing all of the IP-EOM amplitudes.
 
         Args:
@@ -90,7 +92,7 @@ class IP_REOM(REOM, BaseIP_EOM):
 
         return np.concatenate(vectors)
 
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
+    def vector_to_amplitudes(self, vector: NDArray[T]) -> Namespace[SpinArrayType]:
         """Construct a namespace of IP-EOM amplitudes from a vector.
 
         Args:
@@ -106,7 +108,7 @@ class IP_REOM(REOM, BaseIP_EOM):
             spin_type=self.spin_type, which="ip"
         ):
             shape = tuple(self.space.size(k) for k in key)
-            size = int(np.prod(shape))
+            size = util.prod(shape)
             amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
@@ -124,7 +126,7 @@ class IP_REOM(REOM, BaseIP_EOM):
 class EA_REOM(REOM, BaseEA_EOM):
     """Restricted electron affinity equation-of-motion coupled cluster."""
 
-    def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
+    def _argsort_guesses(self, diag: NDArray[T]) -> NDArray[int64]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]
@@ -133,12 +135,11 @@ class EA_REOM(REOM, BaseEA_EOM):
             arg = np.argsort(np.abs(diag))
         return arg
 
-    def _quasiparticle_weight(self, r1: SpinArrayType) -> float:
+    def _quasiparticle_weight(self, r1: SpinArrayType) -> T:
         """Get the quasiparticle weight."""
-        weight: float = np.dot(r1.ravel(), r1.ravel())
-        return astype(weight, float)
+        return np.vdot(r1, r1)
 
-    def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
+    def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[T]:
         """Get the diagonal of the Hamiltonian.
 
         Args:
@@ -159,7 +160,7 @@ class EA_REOM(REOM, BaseEA_EOM):
 
         return self.amplitudes_to_vector(parts)
 
-    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[float]:
+    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[T]:
         """Construct a vector containing all of the EA-EOM amplitudes.
 
         Args:
@@ -185,7 +186,7 @@ class EA_REOM(REOM, BaseEA_EOM):
 
         return np.concatenate(vectors)
 
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
+    def vector_to_amplitudes(self, vector: NDArray[T]) -> Namespace[SpinArrayType]:
         """Construct a namespace of EA-EOM amplitudes from a vector.
 
         Args:
@@ -201,7 +202,7 @@ class EA_REOM(REOM, BaseEA_EOM):
             spin_type=self.spin_type, which="ea"
         ):
             shape = tuple(self.space.size(k) for k in key)
-            size = int(np.prod(shape))
+            size = util.prod(shape)
             amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
@@ -219,7 +220,7 @@ class EA_REOM(REOM, BaseEA_EOM):
 class EE_REOM(REOM, BaseEE_EOM):
     """Restricted electron-electron equation-of-motion coupled cluster."""
 
-    def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
+    def _argsort_guesses(self, diag: NDArray[T]) -> NDArray[int64]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]
@@ -228,12 +229,11 @@ class EE_REOM(REOM, BaseEE_EOM):
             arg = np.argsort(diag)
         return arg
 
-    def _quasiparticle_weight(self, r1: SpinArrayType) -> float:
+    def _quasiparticle_weight(self, r1: SpinArrayType) -> T:
         """Get the quasiparticle weight."""
-        weight: float = np.dot(r1.ravel(), r1.ravel())
-        return astype(weight, float)
+        return np.vdot(r1, r1)
 
-    def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
+    def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[T]:
         """Get the diagonal of the Hamiltonian.
 
         Args:
@@ -254,7 +254,7 @@ class EE_REOM(REOM, BaseEE_EOM):
 
         return self.amplitudes_to_vector(parts)
 
-    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[float]:
+    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[T]:
         """Construct a vector containing all of the EE-EOM amplitudes.
 
         Args:
@@ -280,7 +280,7 @@ class EE_REOM(REOM, BaseEE_EOM):
 
         return np.concatenate(vectors)
 
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
+    def vector_to_amplitudes(self, vector: NDArray[T]) -> Namespace[SpinArrayType]:
         """Construct a namespace of EE-EOM amplitudes from a vector.
 
         Args:
@@ -296,7 +296,7 @@ class EE_REOM(REOM, BaseEE_EOM):
             spin_type=self.spin_type, which="ee"
         ):
             shape = tuple(self.space.size(k) for k in key)
-            size = int(np.prod(shape))
+            size = util.prod(shape)
             amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 

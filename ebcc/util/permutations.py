@@ -6,14 +6,16 @@ import functools
 import itertools
 from typing import TYPE_CHECKING
 
-import numpy as np
+from ebcc import numpy as np
+from ebcc import util
 
 if TYPE_CHECKING:
-    from typing import Any, Generator, Hashable, Iterable, Optional, TypeVar
+    from typing import Any, Generator, Hashable, Iterable, Optional
 
-    from ebcc.numpy.typing import NDArray
+    from numpy import float64, int64
+    from numpy.typing import NDArray
 
-    T = TypeVar("T")
+    T = float64
 
 
 def factorial(n: int) -> int:
@@ -43,7 +45,7 @@ def permute_string(string: str, permutation: tuple[int, ...]) -> str:
 
 def tril_indices_ndim(
     n: int, dims: int, include_diagonal: Optional[bool] = False
-) -> tuple[NDArray[int]]:
+) -> tuple[NDArray[int64], ...]:
     """Return lower triangular indices for a multidimensional array.
 
     Args:
@@ -59,15 +61,17 @@ def tril_indices_ndim(
         return (ranges[0],)
     # func: Callable[[Any, ...], Any] = np.greater_equal if include_diagonal else np.greater
 
-    slices = [
-        tuple(slice(None) if i == j else np.newaxis for i in range(dims)) for j in range(dims)
-    ]
+    slices = [tuple(slice(None) if i == j else None for i in range(dims)) for j in range(dims)]
 
     casted = [rng[ind] for rng, ind in zip(ranges, slices)]
     if include_diagonal:
-        mask = functools.reduce(np.logical_and, map(np.greater_equal, casted[:-1], casted[1:]))
+        mask = functools.reduce(
+            lambda x, y: x & y, map(lambda x, y: x >= y, casted[:-1], casted[1:])
+        )
     else:
-        mask = functools.reduce(np.logical_and, map(np.greater, casted[:-1], casted[1:]))
+        mask = functools.reduce(
+            lambda x, y: x & y, map(lambda x, y: x > y, casted[:-1], casted[1:])
+        )
 
     tril = tuple(
         np.broadcast_to(inds, mask.shape)[mask] for inds in np.indices(mask.shape, sparse=True)
@@ -208,7 +212,7 @@ def antisymmetrise_array(v: NDArray[T], axes: Optional[tuple[int, ...]] = None) 
     """
     if axes is None:
         axes = tuple(range(v.ndim))
-    v_as = np.zeros_like(v)
+    v_as = np.zeros(v.shape, dtype=v.dtype)
 
     for perm, sign in permutations_with_signs(axes):
         transpose = list(range(v.ndim))
@@ -333,10 +337,10 @@ def compress_axes(
 
     # Apply the indices:
     indices = [
-        ind[tuple(np.newaxis if i != j else slice(None) for i in range(len(indices)))]
+        ind[tuple(None if i != j else slice(None) for i in range(len(indices)))]
         for j, ind in enumerate(indices)
     ]
-    array_flat = array[tuple(indices)]
+    array_flat: NDArray[T] = array[tuple(indices)]
 
     return array_flat
 
@@ -431,11 +435,10 @@ def decompress_axes(
             for ind, char in zip(indices_perm, sorted(set(subscript)))
         )
         indices_perm = tuple(
-            ind[tuple(np.newaxis if i != j else slice(None) for i in range(len(indices_perm)))]
+            ind[tuple(None if i != j else slice(None) for i in range(len(indices_perm)))]
             for j, ind in enumerate(indices_perm)
         )
-        shape = array[indices_perm].shape
-        array[indices_perm] = array_flat.reshape(shape) * np.prod(signs)
+        array[indices_perm] = array_flat.reshape(array[indices_perm].shape) * util.prod(signs)
 
     # Reshape array to non-flattened format
     array = array.reshape(
@@ -508,7 +511,7 @@ def symmetrise(
         n += subscript.count(char)
 
     # Iterate over permutations and signs:
-    array_as = np.zeros_like(array)
+    array_as = np.zeros(array.shape, dtype=array.dtype)
     groups = tuple(sorted(set(zip(sorted(set(subscript)), symmetry_compressed))))  # don't ask
     inds = [tuple(i for i, s in enumerate(subscript) if s == char) for char, symm in groups]
     for tup in itertools.product(*(permutations_with_signs(ind) for ind in inds)):
@@ -517,7 +520,7 @@ def symmetrise(
         for inds_part, perms_part in zip(inds, perms):
             for i, p in zip(inds_part, perms_part):
                 perm[i] = p
-        sign = np.prod(signs) if symmetry[perm[0]] == "-" else 1
+        sign = util.prod(signs) if symmetry[perm[0]] == "-" else 1
         array_as = array_as + sign * array.transpose(perm)
 
     if apply_factor:

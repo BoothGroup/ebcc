@@ -5,7 +5,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
-from ebcc import numpy as np
+import numpy as np
 
 if TYPE_CHECKING:
     from collections.abc import Iterator

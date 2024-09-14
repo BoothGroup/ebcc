@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from ebcc import numpy as np
 from ebcc import util
@@ -19,13 +19,17 @@ from ebcc.opt.rbrueckner import BruecknerREBCC
 if TYPE_CHECKING:
     from typing import Any, Optional, TypeAlias, Union
 
+    from numpy import float64
+    from numpy.typing import NDArray
     from pyscf.scf.hf import RHF, SCF
 
-    from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
 
-    ERIsInputType: TypeAlias = Union[RERIs, RCDERIs, NDArray[float]]
-    SpinArrayType: TypeAlias = NDArray[float]
+    T = float64
+
+    ERIsInputType: TypeAlias = Union[RERIs, RCDERIs, NDArray[T]]
+    SpinArrayType: TypeAlias = NDArray[T]
+    SpaceType: TypeAlias = Space
 
 
 class REBCC(BaseEBCC):
@@ -37,6 +41,12 @@ class REBCC(BaseEBCC):
     CDERIs = RCDERIs
     ElectronBoson = RElectronBoson
     Brueckner = BruecknerREBCC
+
+    # Attributes
+    space: SpaceType
+    amplitudes: Namespace[SpinArrayType]
+    lambdas: Namespace[SpinArrayType]
+    fock: RFock
 
     @property
     def spin_type(self) -> str:
@@ -87,7 +97,7 @@ class REBCC(BaseEBCC):
             hf.e_tot = hf.energy_tot()
         return hf
 
-    def init_space(self) -> Space:
+    def init_space(self) -> SpaceType:
         """Initialise the fermionic space.
 
         Returns:
@@ -95,8 +105,8 @@ class REBCC(BaseEBCC):
         """
         space = Space(
             self.mo_occ > 0,
-            np.zeros_like(self.mo_occ, dtype=bool),
-            np.zeros_like(self.mo_occ, dtype=bool),
+            np.zeros(self.mo_occ.shape, dtype=bool),
+            np.zeros(self.mo_occ.shape, dtype=bool),
         )
         return space
 
@@ -148,27 +158,24 @@ class REBCC(BaseEBCC):
                 shape = tuple(self.space.size(k) for k in key)
                 amplitudes[name] = np.zeros(shape, dtype=types[float])
 
-        if self.boson_ansatz:
-            # Only true for real-valued couplings:
-            assert self.g is not None
-            assert self.G is not None
-            h = self.g
-            H = self.G
-
         # Build S amplitudes:
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
+            if self.omega is None or self.G is None:
+                raise ValueError("Bosonic parameters not set.")
             if n == 1:
-                amplitudes[name] = -H / self.omega
+                amplitudes[name] = -self.G / self.omega
             else:
                 shape = (self.nbos,) * n
                 amplitudes[name] = np.zeros(shape, dtype=types[float])
 
         # Build U amplitudes:
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+            if self.omega is None or self.g is None:
+                raise ValueError("Bosonic parameters not set.")
             if nf != 1:
                 raise util.ModelNotImplemented
             if nb == 1:
-                amplitudes[name] = h[key] / self.energy_sum(key)
+                amplitudes[name] = self.g[key] / self.energy_sum(key)
             else:
                 shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
                 amplitudes[name] = np.zeros(shape, dtype=types[float])
@@ -255,7 +262,7 @@ class REBCC(BaseEBCC):
 
     def update_lams(
         self,
-        eris: ERIsInputType = None,
+        eris: Optional[ERIsInputType] = None,
         amplitudes: Optional[Namespace[SpinArrayType]] = None,
         lambdas: Optional[Namespace[SpinArrayType]] = None,
         lambdas_pert: Optional[Namespace[SpinArrayType]] = None,
@@ -323,7 +330,7 @@ class REBCC(BaseEBCC):
         amplitudes: Optional[Namespace[SpinArrayType]] = None,
         lambdas: Optional[Namespace[SpinArrayType]] = None,
         hermitise: bool = True,
-    ) -> NDArray[float]:
+    ) -> NDArray[T]:
         r"""Make the one-particle fermionic reduced density matrix :math:`\langle i^+ j \rangle`.
 
         Args:
@@ -341,7 +348,7 @@ class REBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm: NDArray[float] = func(**kwargs)
+        dm: NDArray[T] = func(**kwargs)
 
         if hermitise:
             dm = 0.5 * (dm + dm.T)
@@ -354,7 +361,7 @@ class REBCC(BaseEBCC):
         amplitudes: Optional[Namespace[SpinArrayType]] = None,
         lambdas: Optional[Namespace[SpinArrayType]] = None,
         hermitise: bool = True,
-    ) -> NDArray[float]:
+    ) -> NDArray[T]:
         r"""Make the two-particle fermionic reduced density matrix :math:`\langle i^+j^+lk \rangle`.
 
         Args:
@@ -372,7 +379,7 @@ class REBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm: NDArray[float] = func(**kwargs)
+        dm: NDArray[T] = func(**kwargs)
 
         if hermitise:
             dm = 0.5 * (dm.transpose(0, 1, 2, 3) + dm.transpose(2, 3, 0, 1))
@@ -387,7 +394,7 @@ class REBCC(BaseEBCC):
         lambdas: Optional[Namespace[SpinArrayType]] = None,
         unshifted: bool = True,
         hermitise: bool = True,
-    ) -> NDArray[float]:
+    ) -> NDArray[T]:
         r"""Make the electron-boson coupling reduced density matrix.
 
         .. math::
@@ -415,7 +422,7 @@ class REBCC(BaseEBCC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm_eb: NDArray[float] = func(**kwargs)
+        dm_eb: NDArray[T] = func(**kwargs)
 
         if hermitise:
             dm_eb[0] = 0.5 * (dm_eb[0] + dm_eb[1].transpose(0, 2, 1))
@@ -428,7 +435,7 @@ class REBCC(BaseEBCC):
 
         return dm_eb
 
-    def energy_sum(self, *args: str, signs_dict: Optional[dict[str, str]] = None) -> NDArray[float]:
+    def energy_sum(self, *args: str, signs_dict: Optional[dict[str, str]] = None) -> NDArray[T]:
         """Get a direct sum of energies.
 
         Args:
@@ -459,17 +466,19 @@ class REBCC(BaseEBCC):
 
         energies = []
         for key in subscript:
+            factor = 1 if signs_dict[key] == "+" else -1
             if key == "b":
-                energies.append(self.omega)
+                assert self.omega is not None
+                energies.append(factor * self.omega)
             else:
-                energies.append(np.diag(self.fock[key + key]))
+                energies.append(factor * np.diag(self.fock[key + key]))
 
-        subscript = "".join([signs_dict[k] + next_char() for k in subscript])
-        energy_sum = util.direct_sum(subscript, *energies)
+        subscript = ",".join([next_char() for k in subscript])
+        energy_sum = util.dirsum(subscript, *energies)
 
         return energy_sum
 
-    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[float]:
+    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[T]:
         """Construct a vector containing all of the amplitudes used in the given ansatz.
 
         Args:
@@ -491,7 +500,7 @@ class REBCC(BaseEBCC):
 
         return np.concatenate(vectors)
 
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
+    def vector_to_amplitudes(self, vector: NDArray[T]) -> Namespace[SpinArrayType]:
         """Construct a namespace of amplitudes from a vector.
 
         Args:
@@ -505,25 +514,25 @@ class REBCC(BaseEBCC):
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             shape = tuple(self.space.size(k) for k in key)
-            size = np.prod(shape)
+            size = util.prod(shape)
             amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * n
-            size = np.prod(shape)
+            size = util.prod(shape)
             amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
-            size = np.prod(shape)
+            size = util.prod(shape)
             amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
         return amplitudes
 
-    def lambdas_to_vector(self, lambdas: Namespace[SpinArrayType]) -> NDArray[float]:
+    def lambdas_to_vector(self, lambdas: Namespace[SpinArrayType]) -> NDArray[T]:
         """Construct a vector containing all of the lambda amplitudes used in the given ansatz.
 
         Args:
@@ -549,7 +558,7 @@ class REBCC(BaseEBCC):
 
         return np.concatenate(vectors)
 
-    def vector_to_lambdas(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
+    def vector_to_lambdas(self, vector: NDArray[T]) -> Namespace[SpinArrayType]:
         """Construct a namespace of lambda amplitudes from a vector.
 
         Args:
@@ -565,13 +574,13 @@ class REBCC(BaseEBCC):
             spin_type=self.spin_type, which="l"
         ):
             shape = tuple(self.space.size(k) for k in key)
-            size = np.prod(shape)
+            size = util.prod(shape)
             lambdas[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="l"):
             shape = (self.nbos,) * n
-            size = np.prod(shape)
+            size = util.prod(shape)
             lambdas[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
@@ -579,13 +588,13 @@ class REBCC(BaseEBCC):
             spin_type=self.spin_type, which="l"
         ):
             shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
-            size = np.prod(shape)
+            size = util.prod(shape)
             lambdas[name] = vector[i0 : i0 + size].reshape(shape)
             i0 += size
 
         return lambdas
 
-    def get_mean_field_G(self) -> NDArray[float]:
+    def get_mean_field_G(self) -> NDArray[T]:
         """Get the mean-field boson non-conserving term.
 
         Returns:
@@ -594,14 +603,15 @@ class REBCC(BaseEBCC):
         # FIXME should this also sum in frozen orbitals?
         assert self.omega is not None
         assert self.g is not None
-        val = util.einsum("Ipp->I", self.g.boo) * 2.0
+        boo: NDArray[T] = self.g.boo
+        val = util.einsum("Ipp->I", boo) * 2.0
         val -= self.xi * self.omega
         if self.bare_G is not None:
             val += self.bare_G
         return val
 
     @property
-    def bare_fock(self) -> NDArray[float]:
+    def bare_fock(self) -> NDArray[T]:
         """Get the mean-field Fock matrix in the MO basis, including frozen parts.
 
         Returns an array and not a `BaseFock` object.
@@ -609,12 +619,12 @@ class REBCC(BaseEBCC):
         Returns:
             Mean-field Fock matrix.
         """
-        fock_ao = self.mf.get_fock().astype(types[float])
+        fock_ao: NDArray[T] = self.mf.get_fock().astype(types[float])
         fock = util.einsum("pq,pi,qj->ij", fock_ao, self.mo_coeff, self.mo_coeff)
         return fock
 
     @property
-    def xi(self) -> NDArray[float]:
+    def xi(self) -> NDArray[T]:
         """Get the shift in the bosonic operators to diagonalise the photon Hamiltonian.
 
         Returns:
@@ -623,12 +633,13 @@ class REBCC(BaseEBCC):
         assert self.omega is not None
         if self.options.shift:
             assert self.g is not None
-            xi = util.einsum("Iii->I", self.g.boo) * 2.0
+            boo: NDArray[T] = self.g.boo
+            xi = util.einsum("Iii->I", boo) * 2.0
             xi /= self.omega
             if self.bare_G is not None:
                 xi += self.bare_G / self.omega
         else:
-            xi = np.zeros_like(self.omega, dtype=types[float])
+            xi = np.zeros(self.omega.shape, dtype=types[float])
         return xi
 
     def get_fock(self) -> RFock:
@@ -648,15 +659,13 @@ class REBCC(BaseEBCC):
         Returns:
             Electron repulsion integrals.
         """
+        use_df = getattr(self.mf, "with_df", None) is not None
         if isinstance(eris, (RERIs, RCDERIs)):
             return eris
+        elif (isinstance(eris, np.ndarray) and eris.ndim == 3) or use_df:
+            return self.CDERIs(self, array=eris)
         else:
-            if (isinstance(eris, np.ndarray) and eris.ndim == 3) or getattr(
-                self.mf, "with_df", None
-            ):
-                return self.CDERIs(self, array=eris)
-            else:
-                return self.ERIs(self, array=eris)
+            return self.ERIs(self, array=eris)
 
     @property
     def nmo(self) -> int:
@@ -665,7 +674,7 @@ class REBCC(BaseEBCC):
         Returns:
             Number of molecular orbitals.
         """
-        return cast(int, self.space.nmo)
+        return self.space.nmo
 
     @property
     def nocc(self) -> int:
@@ -674,7 +683,7 @@ class REBCC(BaseEBCC):
         Returns:
             Number of occupied molecular orbitals.
         """
-        return cast(int, self.space.nocc)
+        return self.space.nocc
 
     @property
     def nvir(self) -> int:
@@ -683,4 +692,4 @@ class REBCC(BaseEBCC):
         Returns:
             Number of virtual molecular orbitals.
         """
-        return cast(int, self.space.nvir)
+        return self.space.nvir
