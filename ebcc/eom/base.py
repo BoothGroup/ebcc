@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+import numpy
 from pyscf import lib
 
 from ebcc import numpy as np
@@ -215,11 +216,17 @@ class BaseEOM(ABC):
                 w: NDArray[T], v: NDArray[T], nroots: int, env: dict[str, Any]
             ) -> tuple[NDArray[T], NDArray[T], int]:
                 """Pick the eigenvalues."""
-                x0 = np.asarray(lib.linalg_helper._gen_x0(env["v"], env["xs"]))
-                s = guesses.conj() @ x0.T
-                s = util.einsum("pi,pi->i", s.conj(), s)
-                arg = np.argsort(-s)[:nroots]
-                return lib.linalg_helper._eigs_cmplx2real(w, v, arg, real_system)  # type: ignore
+                x0 = numpy.asarray(lib.linalg_helper._gen_x0(env["v"], env["xs"]))
+                s = numpy.asarray(guesses).conj() @ x0.T
+                s = numpy.einsum("pi,pi->i", s.conj(), s)
+                arg = numpy.argsort(-s)[:nroots]
+                w, v, idx = lib.linalg_helper._eigs_cmplx2real(
+                    numpy.asarray(w),
+                    numpy.asarray(v),
+                    arg,
+                    real_system,
+                )
+                return w, v, idx
 
         else:
 
@@ -227,8 +234,13 @@ class BaseEOM(ABC):
                 w: NDArray[T], v: NDArray[T], nroots: int, env: dict[str, Any]
             ) -> tuple[NDArray[T], NDArray[T], int]:
                 """Pick the eigenvalues."""
-                real_idx = np.where(abs(w.imag) < 1e-3)[0]
-                w, v, idx = lib.linalg_helper._eigs_cmplx2real(w, v, real_idx, real_system)
+                real_idx = numpy.where(abs(w.imag) < 1e-3)[0]
+                w, v, idx = lib.linalg_helper._eigs_cmplx2real(
+                    numpy.asarray(w),
+                    numpy.asarray(v),
+                    real_idx,
+                    real_system,
+                )
                 return w, v, idx
 
         return pick
@@ -259,9 +271,7 @@ class BaseEOM(ABC):
         nroots = min(self.options.nroots, diag.size)
         guesses: list[NDArray[T]] = []
         for root, guess in enumerate(arg[:nroots]):
-            g: NDArray[T] = np.zeros(diag.shape, dtype=types[float])
-            g[guess] = 1.0
-            guesses.append(g)
+            guesses.append(np.eye(1, diag.size, guess, dtype=types[float])[0])
 
         return guesses
 
@@ -295,7 +305,10 @@ class BaseEOM(ABC):
         # Get the matrix-vector products and the diagonal:
         ints = self.matvec_intermediates(eris=eris, left=self.options.left)
         matvecs = lambda vs: [
-            self.matvec(v, eris=eris, ints=ints, left=self.options.left) for v in vs
+            numpy.asarray(
+                self.matvec(np.asarray(v), eris=eris, ints=ints, left=self.options.left)
+            )
+            for v in vs
         ]
         diag = self.diag(eris=eris)
 
@@ -308,8 +321,8 @@ class BaseEOM(ABC):
         pick = self.get_pick(guesses=np.stack(guesses))
         converged, e, v = lib.davidson_nosym1(
             matvecs,
-            guesses,
-            diag,
+            [numpy.asarray(g) for g in guesses],
+            numpy.asarray(diag),
             tol=self.options.e_tol,
             nroots=nroots,
             pick=pick,
@@ -318,6 +331,8 @@ class BaseEOM(ABC):
             callback=self.callback,
             verbose=0,
         )
+        e = np.asarray(e)
+        v = np.asarray(v)
 
         # Check for convergence:
         if all(converged):
