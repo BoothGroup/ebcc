@@ -69,6 +69,19 @@ def _parse_einsum_input(operands: list[OperandType]) -> tuple[str, str, list[NDA
         subscripts = operands[0].replace(" ", "")
         operand_list: list[NDArray[T]] = operands[1:]  # type: ignore
 
+        # Replace signs for `dirsum`
+        j = int(subscripts[0] not in "+-")
+        for i, s in enumerate(subscripts):
+            if s == "+":
+                subscripts = subscripts[:i] + "," + subscripts[i + 1 :]
+                j += 1
+            elif s == "-" and subscripts[i + 1] != ">":
+                subscripts = subscripts[:i] + "," + subscripts[i + 1 :]
+                operand_list[j] = -operand_list[j]
+                j += 1
+            elif s == ",":
+                j += 1
+
         # Ensure all characters are valid
         for s in subscripts:
             if s in ".,->":
