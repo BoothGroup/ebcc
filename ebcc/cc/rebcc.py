@@ -46,6 +46,7 @@ class REBCC(BaseEBCC):
     space: SpaceType
     amplitudes: Namespace[SpinArrayType]
     lambdas: Namespace[SpinArrayType]
+    fock: RFock
 
     @property
     def spin_type(self) -> str:
@@ -470,7 +471,7 @@ class REBCC(BaseEBCC):
                 assert self.omega is not None
                 energies.append(factor * self.omega)
             else:
-                energies.append(factor * self.fock[key + key].diag())
+                energies.append(factor * np.diag(self.fock[key + key]))
 
         subscript = ",".join([next_char() for k in subscript])
         energy_sum = util.dirsum(subscript, *energies)

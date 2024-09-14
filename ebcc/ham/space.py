@@ -58,9 +58,9 @@ class Space:
             frozen: Array containing boolean flags indicating whether or not each orbital is frozen.
             active: Array containing boolean flags indicating whether or not each orbital is active.
         """
-        self._occupied = occupied.astype(bool)
-        self._frozen = frozen.astype(bool)
-        self._active = active.astype(bool)
+        self._occupied = np.asarray(occupied, dtype=bool)
+        self._frozen = np.asarray(frozen, dtype=bool)
+        self._active = np.asarray(active, dtype=bool)
 
         # Checks:
         if not (self._occupied.size == self._frozen.size == self._active.size):

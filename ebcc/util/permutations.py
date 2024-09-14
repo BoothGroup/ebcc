@@ -511,7 +511,7 @@ def symmetrise(
         n += subscript.count(char)
 
     # Iterate over permutations and signs:
-    array_as = np.zeros(array, dtype=array.dtype)
+    array_as = np.zeros(array.shape, dtype=array.dtype)
     groups = tuple(sorted(set(zip(sorted(set(subscript)), symmetry_compressed))))  # don't ask
     inds = [tuple(i for i, s in enumerate(subscript) if s == char) for char, symm in groups]
     for tup in itertools.product(*(permutations_with_signs(ind) for ind in inds)):

@@ -48,6 +48,7 @@ class UEBCC(BaseEBCC):
     space: SpaceType
     amplitudes: Namespace[SpinArrayType]
     lambdas: Namespace[SpinArrayType]
+    fock: UFock
 
     @property
     def spin_type(self) -> str:
@@ -610,7 +611,7 @@ class UEBCC(BaseEBCC):
                 assert self.omega is not None
                 energies.append(factor * self.omega)
             else:
-                energies.append(factor * self.fock[spin + spin][key + key].diag())
+                energies.append(factor * np.diag(self.fock[spin + spin][key + key]))
 
         subscript = ",".join([next_char() for k in subscript])
         energy_sum = util.dirsum(subscript, *energies)

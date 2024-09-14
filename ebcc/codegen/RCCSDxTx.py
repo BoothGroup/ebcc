@@ -1,7 +1,7 @@
 # Code generated for ebcc.
 
 from ebcc import numpy as np
-from ebcc.util import pack_2e, einsum, direct_sum, Namespace
+from ebcc.util import pack_2e, einsum, dirsum, Namespace
 from ebcc.precision import types
 
 def energy(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, **kwargs):
@@ -332,8 +332,8 @@ def energy_perturbative(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, 
     t3 += einsum(x1, (0, 1, 2, 3, 4, 5), (2, 1, 0, 3, 4, 5))
     t3 += einsum(x1, (0, 1, 2, 3, 4, 5), (2, 1, 0, 5, 4, 3)) * -1.0
     del x1
-    e_ia = direct_sum("i-a->ia", np.diag(f.oo), np.diag(f.vv))
-    t3 /= direct_sum("ia+jb+kc->ijkabc", e_ia, e_ia, e_ia)
+    e_ia = dirsum("i-a->ia", np.diag(f.oo), np.diag(f.vv))
+    t3 /= dirsum("ia+jb+kc->ijkabc", e_ia, e_ia, e_ia)
 
     # energy
     x0 = np.zeros((nocc, nocc, nvir, nvir), dtype=types[float])

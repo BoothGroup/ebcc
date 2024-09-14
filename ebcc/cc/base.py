@@ -77,6 +77,7 @@ class BaseEBCC(ABC):
     space: SpaceType
     amplitudes: Namespace[SpinArrayType]
     lambdas: Namespace[SpinArrayType]
+    fock: BaseFock
     g: Optional[BaseElectronBoson]
     G: Optional[NDArray[T]]
     omega: Optional[NDArray[T]]
@@ -710,7 +711,7 @@ class BaseEBCC(ABC):
         if unshifted and self.options.shift:
             xi = self.xi
             dm_b = util.einsum("ni->i", self.make_sing_b_dm())
-            dm -= util.einsum("ii,i->", np.eye(dm.shape[0]), xi * dm_b - xi**2.0)
+            dm -= util.einsum("ij,i->ij", np.eye(dm.shape[0]), xi * dm_b - xi**2.0)
 
         return dm
 

@@ -217,7 +217,7 @@ class BaseEOM(ABC):
                 """Pick the eigenvalues."""
                 x0 = np.asarray(lib.linalg_helper._gen_x0(env["v"], env["xs"]))
                 s = guesses.conj() @ x0.T
-                s = np.trace(s.conj().T @ s)
+                s = util.einsum("pi,pi->i", s.conj(), s)
                 arg = np.argsort(-s)[:nroots]
                 return lib.linalg_helper._eigs_cmplx2real(w, v, arg, real_system)  # type: ignore
 

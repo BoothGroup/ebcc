@@ -74,7 +74,7 @@ class UERIs(BaseERIs, BaseUHamiltonian):
             j = "ab".index(key[2])
             ij = i * (i + 1) // 2 + j
 
-            array: NDArray[T]
+            array: Optional[NDArray[T]] = None
             if self.array is not None:
                 array = self.array[ij]
                 if key == "bbaa":

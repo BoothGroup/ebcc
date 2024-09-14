@@ -12,8 +12,8 @@ https://github.com/obackhouse/albert
   * release: 6.5.0-44-generic
 """
 
-from ebcc.util import pack_2e, Namespace
-from ebcc.backend import block, dirsum, einsum, Tensor
+from ebcc import numpy as np
+from ebcc.util import pack_2e, Namespace, einsum, dirsum
 
 
 def energy(f=None, t1=None, t2=None, v=None, **kwargs):
@@ -1980,8 +1980,8 @@ def make_rdm1_f(l1=None, l2=None, t1=None, t2=None, **kwargs):
     rdm1.aa = Namespace()
     rdm1.bb = Namespace()
     delta = Namespace(
-        aa=Namespace(oo=Tensor.eye(t2.aaaa.shape[0]), vv=Tensor.eye(t2.aaaa.shape[-1])),
-        bb=Namespace(oo=Tensor.eye(t2.bbbb.shape[0]), vv=Tensor.eye(t2.bbbb.shape[-1])),
+        aa=Namespace(oo=np.eye(t2.aaaa.shape[0]), vv=np.eye(t2.aaaa.shape[-1])),
+        bb=Namespace(oo=np.eye(t2.bbbb.shape[0]), vv=np.eye(t2.bbbb.shape[-1])),
     )
     tmp4 = einsum(l1.bb, (0, 1), t1.bb, (2, 0), (1, 2))
     rdm1.bb.oo = tmp4.transpose((1, 0)).copy() * -1
@@ -2040,8 +2040,8 @@ def make_rdm1_f(l1=None, l2=None, t1=None, t2=None, **kwargs):
     rdm1.bb.vv = einsum(t1.bb, (0, 1), l1.bb, (2, 0), (2, 1))
     rdm1.bb.vv += einsum(l2.bbbb, (0, 1, 2, 3), t2.bbbb, (2, 3, 4, 1), (0, 4)) * 2
     rdm1.bb.vv += einsum(t2.abab, (0, 1, 2, 3), l2.abab, (2, 4, 0, 1), (4, 3))
-    rdm1.aa = block([[rdm1.aa.oo, rdm1.aa.ov], [rdm1.aa.vo, rdm1.aa.vv]])
-    rdm1.bb = block([[rdm1.bb.oo, rdm1.bb.ov], [rdm1.bb.vo, rdm1.bb.vv]])
+    rdm1.aa = np.block([[rdm1.aa.oo, rdm1.aa.ov], [rdm1.aa.vo, rdm1.aa.vv]])
+    rdm1.bb = np.block([[rdm1.bb.oo, rdm1.bb.ov], [rdm1.bb.vo, rdm1.bb.vv]])
 
     return rdm1
 
@@ -2071,8 +2071,8 @@ def make_rdm2_f(l1=None, l2=None, t1=None, t2=None, **kwargs):
     rdm2.abab = Namespace()
     rdm2.bbbb = Namespace()
     delta = Namespace(
-        aa=Namespace(oo=Tensor.eye(t2.aaaa.shape[0]), vv=Tensor.eye(t2.aaaa.shape[-1])),
-        bb=Namespace(oo=Tensor.eye(t2.bbbb.shape[0]), vv=Tensor.eye(t2.bbbb.shape[-1])),
+        aa=Namespace(oo=np.eye(t2.aaaa.shape[0]), vv=np.eye(t2.aaaa.shape[-1])),
+        bb=Namespace(oo=np.eye(t2.bbbb.shape[0]), vv=np.eye(t2.bbbb.shape[-1])),
     )
     tmp10 = einsum(l2.bbbb, (0, 1, 2, 3), t2.bbbb, (4, 3, 0, 1), (2, 4))
     tmp9 = einsum(t2.abab, (0, 1, 2, 3), l2.abab, (2, 3, 0, 4), (4, 1))
