@@ -42,11 +42,19 @@ __version__ = "1.5.0"
 """List of supported ansatz types."""
 METHOD_TYPES = ["MP", "CC", "LCC", "QCI", "QCC", "DC"]
 
+import importlib
 import os
 import sys
 from typing import TYPE_CHECKING
 
-import numpy
+"""Backend to use for NumPy operations."""
+BACKEND = os.environ.get("EBCC_BACKEND", "numpy")
+
+if TYPE_CHECKING:
+    # Import NumPy directly for type-checking purposes
+    import numpy
+else:
+    numpy = importlib.import_module(f"ebcc.backend._{BACKEND}")
 
 from ebcc.core.logging import NullLogger, default_log, init_logging
 from ebcc.cc import GEBCC, REBCC, UEBCC
