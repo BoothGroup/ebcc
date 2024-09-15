@@ -7,7 +7,8 @@ import itertools
 from typing import TYPE_CHECKING
 
 from ebcc import numpy as np
-from ebcc import util, BACKEND
+from ebcc import util
+from ebcc.backend import _put
 
 if TYPE_CHECKING:
     from typing import Any, Generator, Hashable, Iterable, Optional
@@ -438,18 +439,7 @@ def decompress_axes(
             ind[tuple(None if i != j else slice(None) for i in range(len(indices_perm)))]
             for j, ind in enumerate(indices_perm)
         )
-        # FIXME Properly interface with backend
-        if BACKEND.lower() == "numpy":
-            array[indices_perm] = array_flat.reshape(array[indices_perm].shape) * util.prod(signs)
-        elif BACKEND.lower() == "tensorflow":
-            import tensorflow as tf
-            indices_perm_grid = tf.meshgrid(*indices_perm, indexing="ij")
-            indices_perm_flat = tf.stack([tf.cast(ind, tf.int32).ravel() for ind in indices_perm_grid], axis=1)
-            array = tf.tensor_scatter_nd_update(
-                array,
-                indices_perm_flat,
-                array_flat * util.prod(signs),
-            )
+        array = _put(array, indices_perm, array_flat * util.prod(signs))
 
     # Reshape array to non-flattened format
     array = array.reshape(
@@ -546,14 +536,33 @@ def pack_2e(*args):  # type: ignore  # noqa
     # args should be in the order of ov_2e
     # TODO remove
 
+    ov_2e = [
+        "oooo",
+        "ooov",
+        "oovo",
+        "ovoo",
+        "vooo",
+        "oovv",
+        "ovov",
+        "ovvo",
+        "voov",
+        "vovo",
+        "vvoo",
+        "ovvv",
+        "vovv",
+        "vvov",
+        "vvvo",
+        "vvvv",
+    ]
+
     assert len(args) == 16
-    blocks = [[[[None, None]] * 2] * 2] * 2
+    blocks = [[[[None, None] for _ in range(2)] for _ in range(2)] for _ in range(2)]
 
     for n in range(16):
-        i, j, k, l = [int(x) for x in f"{n:04b}"]
+        i, j, k, l = ["ov".index(x) for x in ov_2e[n]]
         blocks[i][j][k][l] = args[n]
 
-    return np.block(blocks)
+    return np.block(blocks)  # type: ignore
 
 
 def unique(lst: list[Hashable]) -> list[Hashable]:

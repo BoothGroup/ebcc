@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
+from ebcc import BACKEND
 from ebcc import numpy as np
 from ebcc import util
 from ebcc.cc.base import BaseEBCC
@@ -110,6 +111,11 @@ class UEBCC(BaseEBCC):
         Returns:
             UEBCC object.
         """
+        if BACKEND != "numpy":
+            raise NotImplementedError(
+                "Spin conversion routines currently not implemented for immutable backends."
+            )
+
         ucc = cls(
             rcc.mf,
             log=rcc.log,
@@ -561,10 +567,18 @@ class UEBCC(BaseEBCC):
         dm_eb: SpinArrayType = func(**kwargs)
 
         if hermitise:
-            dm_eb.aa[0] = 0.5 * (dm_eb.aa[0] + dm_eb.aa[1].transpose(0, 2, 1))
-            dm_eb.bb[0] = 0.5 * (dm_eb.bb[0] + dm_eb.bb[1].transpose(0, 2, 1))
-            dm_eb.aa[1] = dm_eb.aa[0].transpose(0, 2, 1).copy()
-            dm_eb.bb[1] = dm_eb.bb[0].transpose(0, 2, 1).copy()
+            dm_eb.aa = np.array(
+                [
+                    0.5 * (dm_eb.aa[0] + dm_eb.aa[1].transpose(0, 2, 1)),
+                    0.5 * (dm_eb.aa[1] + dm_eb.aa[0].transpose(0, 2, 1)),
+                ]
+            )
+            dm_eb.bb = np.array(
+                [
+                    0.5 * (dm_eb.bb[0] + dm_eb.bb[1].transpose(0, 2, 1)),
+                    0.5 * (dm_eb.bb[1] + dm_eb.bb[0].transpose(0, 2, 1)),
+                ]
+            )
 
         if unshifted and self.options.shift:
             rdm1_f = self.make_rdm1_f(hermitise=hermitise)
@@ -810,7 +824,7 @@ class UEBCC(BaseEBCC):
         """
         fock_array = util.einsum(
             "npq,npi,nqj->nij",
-            self.mf.get_fock().astype(types[float]),
+            np.asarray(self.mf.get_fock(), dtype=types[float]),
             self.mo_coeff,
             self.mo_coeff,
         )

@@ -85,7 +85,7 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
     def test_xi(self):
         a = self.data[self.shift]["xi"]
         b = self.ccsd.xi
-        np.testing.assert_almost_equal(a, b, 7)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
     def test_energy(self):
         a = self.data[self.shift]["e_corr"]
@@ -95,24 +95,24 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
     def test_t1_amplitudes(self):
         a = self.data[self.shift]["t1"]
         b = scipy.linalg.block_diag(self.ccsd.t1.aa, self.ccsd.t1.bb)[self.osort][:, self.vsort]
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_s1_amplitudes(self):
         a = self.data[self.shift]["s1"]
         b = self.ccsd.amplitudes["s1"]
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_s1_amplitudes(self):
         a = self.data[self.shift]["s2"]
         b = self.ccsd.amplitudes["s2"]
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_u11_amplitudes(self):
         a = self.data[self.shift]["u11"]
         b = self.ccsd.amplitudes["u11"]
         b = np.array([scipy.linalg.block_diag(x, y) for x, y in zip(b.aa, b.bb)])
         b = b[:, self.osort][:, :, self.vsort]
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     @pytest.mark.regression
     def test_lambdas(self):
@@ -173,29 +173,29 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
         rebcc.solve_lambda(eris=eris)
         uebcc2 = UEBCC.from_rebcc(rebcc)
 
-        np.testing.assert_almost_equal(uebcc1.amplitudes["t1"].aa,   uebcc2.amplitudes["t1"].aa,   5)
-        np.testing.assert_almost_equal(uebcc1.amplitudes["t1"].bb,   uebcc2.amplitudes["t1"].bb,   5)
-        np.testing.assert_almost_equal(uebcc1.amplitudes["t2"].aaaa, uebcc2.amplitudes["t2"].aaaa, 5)
-        np.testing.assert_almost_equal(uebcc1.amplitudes["t2"].abab, uebcc2.amplitudes["t2"].abab, 5)
-        np.testing.assert_almost_equal(uebcc1.amplitudes["t2"].bbbb, uebcc2.amplitudes["t2"].bbbb, 5)
-        np.testing.assert_almost_equal(uebcc1.amplitudes["s1"],      uebcc2.amplitudes["s1"],      5)
-        np.testing.assert_almost_equal(uebcc1.amplitudes["s1"],      uebcc2.amplitudes["s1"],      5)
-        np.testing.assert_almost_equal(uebcc1.amplitudes["s2"],      uebcc2.amplitudes["s2"],      5)
-        np.testing.assert_almost_equal(uebcc1.amplitudes["s2"],      uebcc2.amplitudes["s2"],      5)
-        np.testing.assert_almost_equal(uebcc1.amplitudes["u11"].aa,  uebcc2.amplitudes["u11"].aa,  5)
-        np.testing.assert_almost_equal(uebcc1.amplitudes["u11"].bb,  uebcc2.amplitudes["u11"].bb,  5)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1.amplitudes["t1"].aa -   uebcc2.amplitudes["t1"].aa)), 0.0,   5)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1.amplitudes["t1"].bb -   uebcc2.amplitudes["t1"].bb)), 0.0,   5)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1.amplitudes["t2"].aaaa - uebcc2.amplitudes["t2"].aaaa)), 0.0, 5)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1.amplitudes["t2"].abab - uebcc2.amplitudes["t2"].abab)), 0.0, 5)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1.amplitudes["t2"].bbbb - uebcc2.amplitudes["t2"].bbbb)), 0.0, 5)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1.amplitudes["s1"] -      uebcc2.amplitudes["s1"])), 0.0,      5)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1.amplitudes["s1"] -      uebcc2.amplitudes["s1"])), 0.0,      5)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1.amplitudes["s2"] -      uebcc2.amplitudes["s2"])), 0.0,      5)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1.amplitudes["s2"] -      uebcc2.amplitudes["s2"])), 0.0,      5)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1.amplitudes["u11"].aa -  uebcc2.amplitudes["u11"].aa)), 0.0,  5)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1.amplitudes["u11"].bb -  uebcc2.amplitudes["u11"].bb)), 0.0,  5)
 
-        np.testing.assert_almost_equal(uebcc1.lambdas["l1"].aa,   uebcc2.lambdas["l1"].aa,   5)
-        np.testing.assert_almost_equal(uebcc1.lambdas["l1"].bb,   uebcc2.lambdas["l1"].bb,   5)
-        np.testing.assert_almost_equal(uebcc1.lambdas["l2"].aaaa, uebcc2.lambdas["l2"].aaaa, 5)
-        np.testing.assert_almost_equal(uebcc1.lambdas["l2"].abab, uebcc2.lambdas["l2"].abab, 5)
-        np.testing.assert_almost_equal(uebcc1.lambdas["l2"].bbbb, uebcc2.lambdas["l2"].bbbb, 5)
-        np.testing.assert_almost_equal(uebcc1.lambdas["ls1"],     uebcc2.lambdas["ls1"],     5)
-        np.testing.assert_almost_equal(uebcc1.lambdas["ls1"],     uebcc2.lambdas["ls1"],     5)
-        np.testing.assert_almost_equal(uebcc1.lambdas["ls2"],     uebcc2.lambdas["ls2"],     5)
-        np.testing.assert_almost_equal(uebcc1.lambdas["ls2"],     uebcc2.lambdas["ls2"],     5)
-        np.testing.assert_almost_equal(uebcc1.lambdas["lu11"].aa, uebcc2.lambdas["lu11"].aa, 5)
-        np.testing.assert_almost_equal(uebcc1.lambdas["lu11"].bb, uebcc2.lambdas["lu11"].bb, 5)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1.lambdas["l1"].aa -   uebcc2.lambdas["l1"].aa)), 0.0,   5)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1.lambdas["l1"].bb -   uebcc2.lambdas["l1"].bb)), 0.0,   5)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1.lambdas["l2"].aaaa - uebcc2.lambdas["l2"].aaaa)), 0.0, 5)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1.lambdas["l2"].abab - uebcc2.lambdas["l2"].abab)), 0.0, 5)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1.lambdas["l2"].bbbb - uebcc2.lambdas["l2"].bbbb)), 0.0, 5)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1.lambdas["ls1"] -     uebcc2.lambdas["ls1"])), 0.0,     5)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1.lambdas["ls1"] -     uebcc2.lambdas["ls1"])), 0.0,     5)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1.lambdas["ls2"] -     uebcc2.lambdas["ls2"])), 0.0,     5)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1.lambdas["ls2"] -     uebcc2.lambdas["ls2"])), 0.0,     5)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1.lambdas["lu11"].aa - uebcc2.lambdas["lu11"].aa)), 0.0, 5)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1.lambdas["lu11"].bb - uebcc2.lambdas["lu11"].bb)), 0.0, 5)
 
         uebcc1_rdm1_f = uebcc1.make_rdm1_f()
         uebcc1_rdm2_f = uebcc1.make_rdm2_f()
@@ -208,15 +208,15 @@ class UCCSD_SD_1_2_Tests(unittest.TestCase):
         uebcc2_dm_b = uebcc2.make_sing_b_dm()
         uebcc2_dm_eb = uebcc2.make_eb_coup_rdm()
 
-        np.testing.assert_almost_equal(uebcc1_rdm1_f.aa,   uebcc2_rdm1_f.aa,   6)
-        np.testing.assert_almost_equal(uebcc1_rdm1_f.bb,   uebcc2_rdm1_f.bb,   6)
-        np.testing.assert_almost_equal(uebcc1_rdm2_f.aaaa, uebcc2_rdm2_f.aaaa, 6)
-        np.testing.assert_almost_equal(uebcc1_rdm2_f.aabb, uebcc2_rdm2_f.aabb, 6)
-        np.testing.assert_almost_equal(uebcc1_rdm2_f.bbbb, uebcc2_rdm2_f.bbbb, 6)
-        np.testing.assert_almost_equal(uebcc1_rdm1_b,      uebcc2_rdm1_b,      6)
-        np.testing.assert_almost_equal(uebcc1_dm_b,        uebcc2_dm_b,        6)
-        np.testing.assert_almost_equal(uebcc1_dm_eb.aa,    uebcc2_dm_eb.aa,    6)
-        np.testing.assert_almost_equal(uebcc1_dm_eb.bb,    uebcc2_dm_eb.bb,    6)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1_rdm1_f.aa -   uebcc2_rdm1_f.aa)), 0.0,   6)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1_rdm1_f.bb -   uebcc2_rdm1_f.bb)), 0.0,   6)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1_rdm2_f.aaaa - uebcc2_rdm2_f.aaaa)), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1_rdm2_f.aabb - uebcc2_rdm2_f.aabb)), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1_rdm2_f.bbbb - uebcc2_rdm2_f.bbbb)), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1_rdm1_b -      uebcc2_rdm1_b)), 0.0,      6)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1_dm_b -        uebcc2_dm_b)), 0.0,        6)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1_dm_eb.aa -    uebcc2_dm_eb.aa)), 0.0,    6)
+        self.assertAlmostEqual(np.max(np.abs(uebcc1_dm_eb.bb -    uebcc2_dm_eb.bb)), 0.0,    6)
 
 
 @pytest.mark.reference

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from pyscf import scf
 
+from ebcc import BACKEND
 from ebcc import numpy as np
 from ebcc import util
 from ebcc.cc.base import BaseEBCC
@@ -113,6 +114,11 @@ class GEBCC(BaseEBCC):
         Returns:
             GEBCC object.
         """
+        if BACKEND != "numpy":
+            raise NotImplementedError(
+                "Spin conversion routines currently not implemented for immutable backends."
+            )
+
         orbspin = scf.addons.get_ghf_orbspin(ucc.mf.mo_energy, ucc.mf.mo_occ, False)
         nocc = ucc.space[0].nocc + ucc.space[1].nocc
         nvir = ucc.space[0].nvir + ucc.space[1].nvir
@@ -648,8 +654,12 @@ class GEBCC(BaseEBCC):
         dm_eb: SpinArrayType = func(**kwargs)
 
         if hermitise:
-            dm_eb[0] = 0.5 * (dm_eb[0] + dm_eb[1].transpose(0, 2, 1))
-            dm_eb[1] = dm_eb[0].transpose(0, 2, 1).copy()
+            dm_eb = np.array(
+                [
+                    0.5 * (dm_eb[0] + dm_eb[1].transpose(0, 2, 1)),
+                    0.5 * (dm_eb[1] + dm_eb[0].transpose(0, 2, 1)),
+                ]
+            )
 
         if unshifted and self.options.shift:
             rdm1_f = self.make_rdm1_f(hermitise=hermitise)
@@ -842,7 +852,7 @@ class GEBCC(BaseEBCC):
         Returns:
             Mean-field Fock matrix.
         """
-        fock_ao: NDArray[T] = self.mf.get_fock().astype(types[float])
+        fock_ao: NDArray[T] = np.asarray(self.mf.get_fock(), dtype=types[float])
         fock = util.einsum("pq,pi,qj->ij", fock_ao, self.mo_coeff, self.mo_coeff)
         return fock
 

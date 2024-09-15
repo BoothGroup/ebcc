@@ -69,7 +69,7 @@ class RBCCD_PySCF_Tests(unittest.TestCase):
     #def test_t2_amplitudes(self):
     #    a = self.ccsd_ref.t2
     #    b = self.ccsd.t2
-    #    np.testing.assert_almost_equal(a, b, 6)
+    #    self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
 
 @pytest.mark.reference

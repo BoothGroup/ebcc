@@ -71,7 +71,7 @@ class RCDERIs(BaseERIs, BaseRHamiltonian):
                 self.cc.mf.with_df._cderi, coeffs, ijslice, aosym="s2", mosym="s1"
             )
             block = block.reshape(-1, ijslice[1] - ijslice[0], ijslice[3] - ijslice[2])
-            self._members[key_e2] = block.astype(types[float])
+            self._members[key_e2] = np.asarray(block, dtype=types[float])
 
         return self._members[key_e2]
 

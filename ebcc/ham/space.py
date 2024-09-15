@@ -261,7 +261,7 @@ class Space:
     @property
     def nfvir(self) -> int:
         """Get the number of virtual frozen orbitals."""
-        return cast(int, self.frozen_virtual.sum())
+        return cast(int, np.sum(self.frozen_virtual))
 
     # Active space:
 
@@ -377,7 +377,7 @@ def construct_fno_space(
         mo_occ: NDArray[T],
     ) -> RConstructSpaceReturnType:
         # Get the number of occupied orbitals
-        nocc = np.sum((mo_occ > 0).astype(int))
+        nocc = cast(int, np.sum(mo_occ > 0))
 
         # Calculate the natural orbitals
         n, c = np.linalg.eigh(dm1[nocc:, nocc:])
@@ -388,7 +388,7 @@ def construct_fno_space(
             active_vir = n > occ_tol
         else:
             active_vir = np.cumsum(n / np.sum(n)) <= occ_frac
-        num_active_vir = np.sum(active_vir.astype(int))
+        num_active_vir = cast(int, np.sum(active_vir))
 
         # Canonicalise the natural orbitals
         fock_vv = np.diag(mo_energy[nocc:])
@@ -405,8 +405,12 @@ def construct_fno_space(
 
         # Build the natural orbital space
         active = np.zeros(mo_occ.shape, dtype=bool)
-        frozen = np.zeros(mo_occ.shape, dtype=bool)
-        frozen[nocc + num_active_vir :] = True
+        frozen = np.concatenate(
+            (
+                np.zeros((nocc + num_active_vir,), dtype=bool),
+                np.ones((mo_occ.size - nocc - num_active_vir,), dtype=bool),
+            )
+        )
         no_space = Space(
             occupied=mo_occ > 0,
             frozen=frozen,

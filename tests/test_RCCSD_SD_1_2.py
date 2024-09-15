@@ -82,7 +82,7 @@ class RCCSD_SD_1_2_Tests(unittest.TestCase):
     def test_xi(self):
         a = self.data[self.shift]["xi"]
         b = self.ccsd.xi
-        np.testing.assert_almost_equal(a, b, 7)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
     def test_energy(self):
         a = self.data[self.shift]["e_corr"]
@@ -92,18 +92,18 @@ class RCCSD_SD_1_2_Tests(unittest.TestCase):
     def test_t1_amplitudes(self):
         a = self.data[self.shift]["t1"]
         b = scipy.linalg.block_diag(self.ccsd.t1, self.ccsd.t1)[self.osort][:, self.vsort]
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_s1_amplitudes(self):
         a = self.data[self.shift]["s1"]
         b = self.ccsd.amplitudes["s1"]
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_u11_amplitudes(self):
         a = self.data[self.shift]["u11"]
         b = np.array([scipy.linalg.block_diag(x, x) for x in self.ccsd.amplitudes["u11"]])
         b = b[:, self.osort][:, :, self.vsort]
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     @pytest.mark.regression
     def test_lambdas(self):

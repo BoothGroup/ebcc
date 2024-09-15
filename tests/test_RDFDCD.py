@@ -65,7 +65,7 @@ class RDFDCD_Tests(unittest.TestCase):
     def test_t2_amplitudes(self):
         a = self.ccd_ref.t2
         b = self.ccd.t2
-        np.testing.assert_almost_equal(a, b, 4)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 4)
 
 
 if __name__ == "__main__":

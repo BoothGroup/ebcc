@@ -79,19 +79,19 @@ class GCCSD_SD_1_1_Tests(unittest.TestCase):
     def test_xi(self):
         a = self.data[self.shift]["xi"]
         b = self.ccsd.xi
-        np.testing.assert_almost_equal(a, b, 7)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
     def test_fock(self):
         for tag in ("oo", "ov", "vo", "vv"):
             a = self.data[self.shift]["f"+tag]
             b = getattr(self.ccsd.fock, tag)
-            np.testing.assert_almost_equal(a, b, 7)
+            self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
     def test_g(self):
         for tag in ("oo", "ov", "vo", "vv"):
             a = self.data[self.shift]["gb"+tag]
             b = getattr(self.ccsd.g, "b"+tag)
-            np.testing.assert_almost_equal(a, b, 7)
+            self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
     def test_energy(self):
         a = self.data[self.shift]["e_corr"]
@@ -101,27 +101,27 @@ class GCCSD_SD_1_1_Tests(unittest.TestCase):
     def test_t1_amplitudes(self):
         a = self.data[self.shift]["t1"]
         b = self.ccsd.t1
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_t2_amplitudes(self):
         a = self.data[self.shift]["t2"]
         b = self.ccsd.t2
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_s1_amplitudes(self):
         a = self.data[self.shift]["s1"]
         b = self.ccsd.amplitudes["s1"]
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_s2_amplitudes(self):
         a = self.data[self.shift]["s2"]
         b = self.ccsd.amplitudes["s2"]
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_u11_amplitudes(self):
         a = self.data[self.shift]["u11"]
         b = self.ccsd.amplitudes["u11"]
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     @pytest.mark.regression
     def test_lambdas(self):

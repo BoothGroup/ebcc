@@ -71,22 +71,22 @@ class RCCD_PySCF_Tests(unittest.TestCase):
     def test_t2_amplitudes(self):
         a = self.ccd_ref.t2
         b = self.ccd.t2
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_l2_amplitudes(self):
         a = self.ccd_ref.l2
         b = self.ccd.l2.transpose(2, 3, 0, 1)
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm1(self):
         a = self.ccd_ref.make_rdm1()
         b = self.ccd.make_rdm1_f(eris=self.eris)
-        np.testing.assert_almost_equal(a, b, 6, verbose=True)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm2(self):
         a = self.ccd_ref.make_rdm2()
         b = self.ccd.make_rdm2_f(eris=self.eris)
-        np.testing.assert_almost_equal(a, b, 6, verbose=True)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
 
 @pytest.mark.reference
@@ -156,12 +156,12 @@ class RCCD_PySCF_Frozen_Tests(unittest.TestCase):
     def test_t2_amplitudes(self):
         a = self.ccd_ref.t2
         b = self.ccd.t2
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_l2_amplitudes(self):
         a = self.ccd_ref.l2
         b = self.ccd.l2.transpose(2, 3, 0, 1)
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm1(self):
         nocc = self.ccd_ref.nocc
@@ -170,7 +170,7 @@ class RCCD_PySCF_Frozen_Tests(unittest.TestCase):
         l2, t2 = self.ccd_ref.l2, self.ccd_ref.t2
         a = ccsd_rdm.make_rdm1(self.ccd_ref, t1, t2, l1, l2, with_frozen=False)
         b = self.ccd.make_rdm1_f(eris=self.eris)
-        np.testing.assert_almost_equal(a, b, 6, verbose=True)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm2(self):
         nocc = self.ccd_ref.nocc
@@ -179,7 +179,7 @@ class RCCD_PySCF_Frozen_Tests(unittest.TestCase):
         l2, t2 = self.ccd_ref.l2, self.ccd_ref.t2
         a = ccsd_rdm.make_rdm2(self.ccd_ref, t1, t2, l1, l2, with_frozen=False)
         b = self.ccd.make_rdm2_f(eris=self.eris)
-        np.testing.assert_almost_equal(a, b, 6, verbose=True)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
 
 @pytest.mark.reference

@@ -67,7 +67,7 @@ class RCC3_Tests(unittest.TestCase):
     def test_t1(self):
         a = scipy.linalg.block_diag(self.rcc3.t1, self.rcc3.t1)[self.osort][:, self.vsort]
         b = self.gcc3.t1
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     # TODO reference test, too slow
     #def test_h2o_ccpvdz(self):

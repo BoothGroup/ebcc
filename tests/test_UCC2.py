@@ -66,13 +66,13 @@ class UCC2_PySCF_Tests(unittest.TestCase):
     def test_t1_amplitudes(self):
         a = self.ccsd_ref.t1
         b = self.ccsd.t1
-        np.testing.assert_almost_equal(a, b.aa, 6)
-        np.testing.assert_almost_equal(a, b.bb, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b.aa)), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b.bb)), 0.0, 6)
 
     def test_t2_amplitudes(self):
         a = self.ccsd_ref.t2
         b = self.ccsd.t2
-        np.testing.assert_almost_equal(a, b.abab, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b.abab)), 0.0, 6)
 
 
 @pytest.mark.regression

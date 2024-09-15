@@ -305,9 +305,7 @@ class BaseEOM(ABC):
         # Get the matrix-vector products and the diagonal:
         ints = self.matvec_intermediates(eris=eris, left=self.options.left)
         matvecs = lambda vs: [
-            numpy.asarray(
-                self.matvec(np.asarray(v), eris=eris, ints=ints, left=self.options.left)
-            )
+            numpy.asarray(self.matvec(np.asarray(v), eris=eris, ints=ints, left=self.options.left))
             for v in vs
         ]
         diag = self.diag(eris=eris)

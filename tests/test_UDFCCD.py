@@ -69,12 +69,12 @@ class UDFCCD_Tests(unittest.TestCase):
     def test_t2_amplitudes(self):
         a = self.ccd_ref.t2.aaaa
         b = self.ccd.t2.aaaa
-        np.testing.assert_almost_equal(a, b, 4)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 4)
 
     def test_l2_amplitudes(self):
         a = self.ccd_ref.l2.aaaa
         b = self.ccd.l2.aaaa
-        np.testing.assert_almost_equal(a, b, 4)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 4)
 
     def test_eom_ip(self):
         e1 = self.ccd.ip_eom(nroots=5).kernel()

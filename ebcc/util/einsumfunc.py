@@ -330,10 +330,11 @@ def _contract_ttdt(
         out = out.reshape(shape_ct_flat)
 
     # Perform the contraction
+    ct: NDArray[T]
     if BACKEND == "numpy":
-        ct: NDArray[T] = dot(at, bt, alpha=alpha, beta=beta, c=out)
+        ct = dot(at, bt, alpha=alpha, beta=beta, c=out)
     else:
-        ct: NDArray[T] = np.dot(at, bt) * alpha
+        ct = np.dot(at, bt) * alpha
         if out is not None:
             ct += beta * out
 

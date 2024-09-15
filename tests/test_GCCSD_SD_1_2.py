@@ -81,19 +81,19 @@ class GCCSD_SD_1_2_Tests(unittest.TestCase):
     def test_xi(self):
         a = self.data[self.shift]["xi"]
         b = self.ccsd.xi
-        np.testing.assert_almost_equal(a, b, 7)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
     def test_fock(self):
         for tag in ("oo", "ov", "vo", "vv"):
             a = self.data[self.shift]["f"+tag]
             b = getattr(self.ccsd.fock, tag)
-            np.testing.assert_almost_equal(a, b, 7)
+            self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
     def test_g(self):
         for tag in ("oo", "ov", "vo", "vv"):
             a = self.data[self.shift]["gb"+tag]
             b = getattr(self.ccsd.g, "b"+tag)
-            np.testing.assert_almost_equal(a, b, 7)
+            self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
     def test_energy(self):
         a = self.data[self.shift]["e_corr"]
@@ -103,27 +103,27 @@ class GCCSD_SD_1_2_Tests(unittest.TestCase):
     def test_t1_amplitudes(self):
         a = self.data[self.shift]["t1"]
         b = self.ccsd.t1
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_t2_amplitudes(self):
         a = self.data[self.shift]["t2"]
         b = self.ccsd.t2
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_s1_amplitudes(self):
         a = self.data[self.shift]["s1"]
         b = self.ccsd.amplitudes["s1"]
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_s2_amplitudes(self):
         a = self.data[self.shift]["s2"]
         b = self.ccsd.amplitudes["s2"]
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_u11_amplitudes(self):
         a = self.data[self.shift]["u11"]
         b = self.ccsd.amplitudes["u11"]
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     @pytest.mark.regression
     def test_lambdas(self):
@@ -182,14 +182,14 @@ class GCCSD_SD_1_2_Tests(unittest.TestCase):
 
         self.assertAlmostEqual(gebcc1.energy(), gebcc2.energy())
         for key in gebcc1.amplitudes.keys():
-            np.testing.assert_almost_equal(gebcc1.amplitudes[key], gebcc2.amplitudes[key], 6)
+            self.assertAlmostEqual(np.max(np.abs(gebcc1.amplitudes[key] - gebcc2.amplitudes[key])), 0.0, 6)
         for key in gebcc1.lambdas.keys():
-            np.testing.assert_almost_equal(gebcc1.lambdas[key], gebcc2.lambdas[key], 5)
-        np.testing.assert_almost_equal(gebcc1.make_rdm1_f(), gebcc2.make_rdm1_f(), 6)
-        np.testing.assert_almost_equal(gebcc1.make_rdm2_f(), gebcc2.make_rdm2_f(), 6)
-        np.testing.assert_almost_equal(gebcc1.make_rdm1_b(), gebcc2.make_rdm1_b(), 6)
-        np.testing.assert_almost_equal(gebcc1.make_sing_b_dm(), gebcc2.make_sing_b_dm(), 6)
-        np.testing.assert_almost_equal(gebcc1.make_eb_coup_rdm(), gebcc2.make_eb_coup_rdm(), 6)
+            self.assertAlmostEqual(np.max(np.abs(gebcc1.lambdas[key] - gebcc2.lambdas[key])), 0.0, 5)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.make_rdm1_f() - gebcc2.make_rdm1_f())), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.make_rdm2_f() - gebcc2.make_rdm2_f())), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.make_rdm1_b() - gebcc2.make_rdm1_b())), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.make_sing_b_dm() - gebcc2.make_sing_b_dm())), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.make_eb_coup_rdm() - gebcc2.make_eb_coup_rdm())), 0.0, 6)
 
     @pytest.mark.regression
     def test_from_uebcc(self):
@@ -234,14 +234,14 @@ class GCCSD_SD_1_2_Tests(unittest.TestCase):
 
         self.assertAlmostEqual(gebcc1.energy(), gebcc2.energy())
         for key in gebcc1.amplitudes.keys():
-            np.testing.assert_almost_equal(gebcc1.amplitudes[key], gebcc2.amplitudes[key], 6)
+            self.assertAlmostEqual(np.max(np.abs(gebcc1.amplitudes[key] - gebcc2.amplitudes[key])), 0.0, 6)
         for key in gebcc1.lambdas.keys():
-            np.testing.assert_almost_equal(gebcc1.lambdas[key], gebcc2.lambdas[key], 5)
-        np.testing.assert_almost_equal(gebcc1.make_rdm1_f(), gebcc2.make_rdm1_f(), 6)
-        np.testing.assert_almost_equal(gebcc1.make_rdm2_f(), gebcc2.make_rdm2_f(), 6)
-        np.testing.assert_almost_equal(gebcc1.make_rdm1_b(), gebcc2.make_rdm1_b(), 6)
-        np.testing.assert_almost_equal(gebcc1.make_sing_b_dm(), gebcc2.make_sing_b_dm(), 6)
-        np.testing.assert_almost_equal(gebcc1.make_eb_coup_rdm(), gebcc2.make_eb_coup_rdm(), 6)
+            self.assertAlmostEqual(np.max(np.abs(gebcc1.lambdas[key] - gebcc2.lambdas[key])), 0.0, 5)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.make_rdm1_f() - gebcc2.make_rdm1_f())), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.make_rdm2_f() - gebcc2.make_rdm2_f())), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.make_rdm1_b() - gebcc2.make_rdm1_b())), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.make_sing_b_dm() - gebcc2.make_sing_b_dm())), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.make_eb_coup_rdm() - gebcc2.make_eb_coup_rdm())), 0.0, 6)
 
 
 @pytest.mark.reference

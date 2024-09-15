@@ -4,11 +4,14 @@
 import opt_einsum
 import tensorflow as tf
 import tensorflow.experimental.numpy
+
 tensorflow.experimental.numpy.experimental_enable_numpy_behavior()
 
 
 def __getattr__(name):
     """Get the attribute from the NumPy drop-in."""
+    if name == "linalg":
+        return tf.linalg
     return getattr(tensorflow.experimental.numpy, name)
 
 
@@ -21,7 +24,9 @@ tf.Tensor.conj = lambda self: tensorflow.experimental.numpy.conj(self)
 
 def _argsort(strings, **kwargs):
     if not isinstance(strings, tf.Tensor):
-        return tf.convert_to_tensor(sorted(range(len(strings)), key=lambda i: strings[i]), dtype=tf.int32)
+        return tf.convert_to_tensor(
+            sorted(range(len(strings)), key=lambda i: strings[i]), dtype=tf.int32
+        )
     return _tf_argsort(strings, **kwargs)
 
 
@@ -30,26 +35,19 @@ tf.experimental.numpy.argsort = _argsort
 
 
 def _block(arrays):
-    if isinstance(arrays, list):
-        # Recursively process the nested list
-        if all(isinstance(arr, list) for arr in arrays):
-            # Concatenate along the first axis
-            return tf.concat([_block(arr) for arr in arrays], axis=0)
-        else:
-            # Concatenate along the second axis
-            return tf.concat([_block(arr) for arr in arrays], axis=1)
-    else:
-        # Return the tensor as is
-        return arrays
+    # FIXME Can't get this to work
+    import numpy
+
+    return tensorflow.experimental.numpy.asarray(numpy.block(arrays))
 
 
 tf.experimental.numpy.block = _block
 
 
-def _ravel_multi_index(multi_index, dims, mode='raise', order='C'):
-    if mode != 'raise':
+def _ravel_multi_index(multi_index, dims, mode="raise", order="C"):
+    if mode != "raise":
         raise NotImplementedError("Only 'raise' mode is implemented")
-    if order != 'C':
+    if order != "C":
         raise NotImplementedError("Only 'C' order is implemented")
 
     # Calculate the strides for each dimension
@@ -70,11 +68,14 @@ def _indices(dimensions, dtype=tf.int32, sparse=False):
 
     if sparse:
         # Create sparse representation by reshaping ranges
-        grids = [tf.reshape(r, [-1 if i == j else 1 for j in range(len(dimensions))]) for i, r in enumerate(ranges)]
+        grids = [
+            tf.reshape(r, [-1 if i == j else 1 for j in range(len(dimensions))])
+            for i, r in enumerate(ranges)
+        ]
         return grids
     else:
         # Create a dense meshgrid of indices for each dimension
-        grids = tf.meshgrid(*ranges, indexing='ij')
+        grids = tf.meshgrid(*ranges, indexing="ij")
         # Stack the grids together to form the final result
         indices = tf.stack(grids, axis=0)
         return indices

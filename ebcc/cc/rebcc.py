@@ -425,8 +425,12 @@ class REBCC(BaseEBCC):
         dm_eb: NDArray[T] = func(**kwargs)
 
         if hermitise:
-            dm_eb[0] = 0.5 * (dm_eb[0] + dm_eb[1].transpose(0, 2, 1))
-            dm_eb[1] = dm_eb[0].transpose(0, 2, 1).copy()
+            dm_eb = np.array(
+                [
+                    0.5 * (dm_eb[0] + dm_eb[1].transpose(0, 2, 1)),
+                    0.5 * (dm_eb[1] + dm_eb[0].transpose(0, 2, 1)),
+                ]
+            )
 
         if unshifted and self.options.shift:
             rdm1_f = self.make_rdm1_f(hermitise=hermitise)
@@ -619,7 +623,7 @@ class REBCC(BaseEBCC):
         Returns:
             Mean-field Fock matrix.
         """
-        fock_ao: NDArray[T] = self.mf.get_fock().astype(types[float])
+        fock_ao: NDArray[T] = np.asarray(self.mf.get_fock(), dtype=types[float])
         fock = util.einsum("pq,pi,qj->ij", fock_ao, self.mo_coeff, self.mo_coeff)
         return fock
 

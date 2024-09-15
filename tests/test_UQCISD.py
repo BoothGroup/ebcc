@@ -61,12 +61,12 @@ class UQCISD_PySCF_Tests(unittest.TestCase):
     def test_t1_amplitudes(self):
         a = self.qcisd_ref.t1
         b = self.qcisd.t1.aa
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_t2_amplitudes(self):
         a = self.qcisd_ref.t2
         b = self.qcisd.t2.abab
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
 
 if __name__ == "__main__":

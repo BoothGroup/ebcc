@@ -60,27 +60,27 @@ class UDFCCSD_PySCF_Tests(unittest.TestCase):
     def test_t1_amplitudes(self):
         a = self.ccsd_ref.t1
         b = self.ccsd.t1
-        np.testing.assert_almost_equal(a[0], b.aa, 6)
-        np.testing.assert_almost_equal(a[1], b.bb, 6)
+        self.assertAlmostEqual(np.max(np.abs(a[0] - b.aa)), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(a[1] - b.bb)), 0.0, 6)
 
     def test_l1_amplitudes(self):
         a = self.ccsd_ref.l1
         b = self.ccsd.l1
-        np.testing.assert_almost_equal(a[0], b.aa.T, 6)
-        np.testing.assert_almost_equal(a[1], b.bb.T, 6)
+        self.assertAlmostEqual(np.max(np.abs(a[0] - b.aa.T)), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(a[1] - b.bb.T)), 0.0, 6)
 
     def test_rdm1(self):
         a = self.ccsd_ref.make_rdm1()
         b = self.ccsd.make_rdm1_f(eris=self.eris)
-        np.testing.assert_almost_equal(a[0], b.aa, 6)
-        np.testing.assert_almost_equal(a[1], b.bb, 6)
+        self.assertAlmostEqual(np.max(np.abs(a[0] - b.aa)), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(a[1] - b.bb)), 0.0, 6)
 
     def test_rdm2(self):
         a = self.ccsd_ref.make_rdm2()
         b = self.ccsd.make_rdm2_f(eris=self.eris)
-        np.testing.assert_almost_equal(a[0], b.aaaa, 6)
-        np.testing.assert_almost_equal(a[1], b.aabb, 6)
-        np.testing.assert_almost_equal(a[2], b.bbbb, 6)
+        self.assertAlmostEqual(np.max(np.abs(a[0] - b.aaaa)), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(a[1] - b.aabb)), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(a[2] - b.bbbb)), 0.0, 6)
 
     def test_eom_ip(self):
         e1 = self.ccsd.ip_eom(nroot=5).kernel()
@@ -167,27 +167,27 @@ class UDFCCSD_PySCF_Frozen_Tests(unittest.TestCase):
     def test_t1_amplitudes(self):
         a = self.ccsd_ref.t1
         b = self.ccsd.t1
-        np.testing.assert_almost_equal(a[0], b.aa, 6)
-        np.testing.assert_almost_equal(a[1], b.bb, 6)
+        self.assertAlmostEqual(np.max(np.abs(a[0] - b.aa)), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(a[1] - b.bb)), 0.0, 6)
 
     def test_l1_amplitudes(self):
         a = self.ccsd_ref.l1
         b = self.ccsd.l1
-        np.testing.assert_almost_equal(a[0], b.aa.T, 6)
-        np.testing.assert_almost_equal(a[1], b.bb.T, 6)
+        self.assertAlmostEqual(np.max(np.abs(a[0] - b.aa.T)), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(a[1] - b.bb.T)), 0.0, 6)
 
     def test_rdm1(self):
         a = self.ccsd_ref.make_rdm1(with_frozen=False)
         b = self.ccsd.make_rdm1_f(eris=self.eris)
-        np.testing.assert_almost_equal(a[0], b.aa, 6)
-        np.testing.assert_almost_equal(a[1], b.bb, 6)
+        self.assertAlmostEqual(np.max(np.abs(a[0] - b.aa)), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(a[1] - b.bb)), 0.0, 6)
 
     def test_rdm2(self):
         a = self.ccsd_ref.make_rdm2(with_frozen=False)
         b = self.ccsd.make_rdm2_f(eris=self.eris)
-        np.testing.assert_almost_equal(a[0], b.aaaa, 6)
-        np.testing.assert_almost_equal(a[1], b.aabb, 6)
-        np.testing.assert_almost_equal(a[2], b.bbbb, 6)
+        self.assertAlmostEqual(np.max(np.abs(a[0] - b.aaaa)), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(a[1] - b.aabb)), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(a[2] - b.bbbb)), 0.0, 6)
 
 
 if __name__ == "__main__":

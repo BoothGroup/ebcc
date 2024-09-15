@@ -74,7 +74,7 @@ class GCC2_PySCF_Tests(unittest.TestCase):
     def test_t1_amplitudes(self):
         a = scipy.linalg.block_diag(self.ccsd_ref.t1, self.ccsd_ref.t1)[self.osort][:, self.vsort]
         b = self.ccsd.t1
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     # This fails:
     #def test_rdm_energy(self):
