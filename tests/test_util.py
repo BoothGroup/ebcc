@@ -167,10 +167,10 @@ class Util_Tests(unittest.TestCase):
         self.assertAlmostEqual(ebcc.CC2(uhf, e_tol=1e-10, log=log).kernel(), e_cc2_u, 8)
         self.assertAlmostEqual(ebcc.CC2(ghf, e_tol=1e-10, log=log).kernel(), e_cc2_g, 8)
 
-    def test_einsum(self):
+    def _test_einsum(self, contract):
         # Tests the einsum implementation
-        _size = util.einsumfunc.BACKEND_EINSUM_SIZE
-        util.einsumfunc.BACKEND_EINSUM_SIZE = 0
+        _contract = util.einsumfunc.CONTRACTION_METHOD
+        util.einsumfunc.CONTRACTION_METHOD = contract
 
         x = np.random.random((10, 11, 12, 13))
         y = np.random.random((13, 12, 5, 6))
@@ -185,7 +185,7 @@ class Util_Tests(unittest.TestCase):
         self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
         b = util.einsum("ijkl,lkab->ijab", x, y, out=b, alpha=1.0, beta=1.0)
-        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
+        self.assertAlmostEqual(np.max(np.abs(a * 2 - b)), 0.0, 7)
 
         b = util.einsum("ijkl,lkab->ijab", x, y, out=b, alpha=2.0, beta=0.0)
         self.assertAlmostEqual(np.max(np.abs(a * 2 - b)), 0.0, 7)
@@ -231,7 +231,17 @@ class Util_Tests(unittest.TestCase):
         b = util.einsum("ikl,jkl->ij", x, x)
         self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
-        util.einsumfunc.BACKEND_EINSUM_SIZE = _size
+        util.einsumfunc.CONTRACTION_METHOD = _contract
+
+    def test_einsum_backend(self):
+        self._test_einsum("backend")
+
+    def test_einsum_ttdt(self):
+        self._test_einsum("ttdt")
+
+    @pytest.mark.skipif(util.einsumfunc.FOUND_TBLIS is False, reason="TBLIS not found")
+    def test_einsum_tblis(self):
+        self._test_einsum("tblis")
 
 
 if __name__ == "__main__":
