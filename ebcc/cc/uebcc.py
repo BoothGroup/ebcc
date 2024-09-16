@@ -111,11 +111,6 @@ class UEBCC(BaseEBCC):
         Returns:
             UEBCC object.
         """
-        if BACKEND != "numpy":
-            raise NotImplementedError(
-                "Spin conversion routines currently not implemented for immutable backends."
-            )
-
         ucc = cls(
             rcc.mf,
             log=rcc.log,

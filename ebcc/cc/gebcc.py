@@ -9,6 +9,7 @@ from pyscf import scf
 from ebcc import BACKEND
 from ebcc import numpy as np
 from ebcc import util
+from ebcc.backend import _put
 from ebcc.cc.base import BaseEBCC
 from ebcc.core.precision import types
 from ebcc.eom import EA_GEOM, EE_GEOM, IP_GEOM
@@ -114,11 +115,6 @@ class GEBCC(BaseEBCC):
         Returns:
             GEBCC object.
         """
-        if BACKEND != "numpy":
-            raise NotImplementedError(
-                "Spin conversion routines currently not implemented for immutable backends."
-            )
-
         orbspin = scf.addons.get_ghf_orbspin(ucc.mf.mo_energy, ucc.mf.mo_occ, False)
         nocc = ucc.space[0].nocc + ucc.space[1].nocc
         nvir = ucc.space[0].nvir + ucc.space[1].nvir
@@ -127,14 +123,14 @@ class GEBCC(BaseEBCC):
         sb = np.where(orbspin == 1)[0]
 
         occupied = np.zeros((nocc + nvir,), dtype=bool)
-        occupied[sa] = ucc.space[0]._occupied.copy()
-        occupied[sb] = ucc.space[1]._occupied.copy()
+        occupied = _put(occupied, sa, ucc.space[0]._occupied.copy())
+        occupied = _put(occupied, sb, ucc.space[1]._occupied.copy())
         frozen = np.zeros((nocc + nvir,), dtype=bool)
-        frozen[sa] = ucc.space[0]._frozen.copy()
-        frozen[sb] = ucc.space[1]._frozen.copy()
+        frozen = _put(frozen, sa, ucc.space[0]._frozen.copy())
+        frozen = _put(frozen, sb, ucc.space[1]._frozen.copy())
         active = np.zeros((nocc + nvir,), dtype=bool)
-        active[sa] = ucc.space[0]._active.copy()
-        active[sb] = ucc.space[1]._active.copy()
+        active = _put(active, sa, ucc.space[0]._active.copy())
+        active = _put(active, sb, ucc.space[1]._active.copy())
         space = Space(occupied, frozen, active)
 
         slices = util.Namespace(
@@ -149,8 +145,8 @@ class GEBCC(BaseEBCC):
             else:
                 bare_g_a, bare_g_b = ucc.bare_g
             g = np.zeros((ucc.nbos, ucc.nmo * 2, ucc.nmo * 2), dtype=types[float])
-            g[np.ix_(np.arange(ucc.nbos), sa, sa)] = bare_g_a.copy()
-            g[np.ix_(np.arange(ucc.nbos), sb, sb)] = bare_g_b.copy()
+            g = _put(g, np.ix_(np.arange(ucc.nbos), sa, sa), bare_g_a.copy())
+            g = _put(g, np.ix_(np.arange(ucc.nbos), sb, sb), bare_g_b.copy())
 
         gcc = cls(
             ucc.mf,
@@ -194,7 +190,11 @@ class GEBCC(BaseEBCC):
                             for perm, sign in util.permutations_with_signs(tuple(range(n))):
                                 transpose = tuple(perm) + tuple(range(n, 2 * n))
                                 if util.permute_string(comb[:n], perm) == comb[:n]:
-                                    amplitudes[name][mask] += amp.transpose(transpose).copy() * sign
+                                    amplitudes[name] = _put(
+                                        amplitudes[name],
+                                        mask,
+                                        amplitudes[name][mask] + amp.transpose(transpose) * sign,
+                                    )
                             done.add(combn)
 
             for name, key, n in ucc.ansatz.bosonic_cluster_ranks(spin_type=ucc.spin_type):
@@ -232,7 +232,11 @@ class GEBCC(BaseEBCC):
                                     + tuple(range(nb + nf, nb + 2 * nf))
                                 )
                                 if util.permute_string(comb[:nf], perm) == comb[:nf]:
-                                    amplitudes[name][mask] += amp.transpose(transpose).copy() * sign
+                                    amplitudes[name] = _put(
+                                        amplitudes[name],
+                                        mask,
+                                        amplitudes[name][mask] + amp.transpose(transpose) * sign,
+                                    )
                             done.add(combn)
 
             gcc.amplitudes = amplitudes
@@ -262,7 +266,11 @@ class GEBCC(BaseEBCC):
                             for perm, sign in util.permutations_with_signs(tuple(range(n))):
                                 transpose = tuple(perm) + tuple(range(n, 2 * n))
                                 if util.permute_string(comb[:n], perm) == comb[:n]:
-                                    lambdas[lname][mask] += amp.transpose(transpose).copy() * sign
+                                    lambdas[lname] = _put(
+                                        lambdas[lname],
+                                        mask,
+                                        lambdas[lname][mask] + amp.transpose(transpose) * sign,
+                                    )
                             done.add(combn)
 
             for name, key, n in ucc.ansatz.bosonic_cluster_ranks(spin_type=ucc.spin_type):
@@ -307,7 +315,11 @@ class GEBCC(BaseEBCC):
                                     + tuple(range(nb + nf, nb + 2 * nf))
                                 )
                                 if util.permute_string(comb[:nf], perm) == comb[:nf]:
-                                    lambdas[lname][mask] += amp.transpose(transpose).copy() * sign
+                                    lambdas[lname] = _put(
+                                        lambdas[lname],
+                                        mask,
+                                        lambdas[lname][mask] + amp.transpose(transpose) * sign,
+                                    )
                             done.add(combn)
 
             gcc.lambdas = lambdas

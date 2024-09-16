@@ -59,7 +59,7 @@ def _put(
         else:
             indices = tf.cast(tf.convert_to_tensor(indices), tf.int32)
             indices = tf.expand_dims(indices, axis=-1)
-        values = tf.convert_to_tensor(values, dtype=array.dtype)
+        values = tf.convert_to_tensor(values, dtype=array.dtype).ravel()
         return tf.tensor_scatter_nd_update(array, indices, values)  # type: ignore
     else:
         raise NotImplementedError(f"Backend {BACKEND} _put not implemented.")
