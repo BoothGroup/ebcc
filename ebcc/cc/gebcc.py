@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING
 
 from pyscf import scf
 
-from ebcc import BACKEND
 from ebcc import numpy as np
 from ebcc import util
 from ebcc.backend import _put

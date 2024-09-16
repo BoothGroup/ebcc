@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast
 
-from ebcc import BACKEND
 from ebcc import numpy as np
 from ebcc import util
 from ebcc.cc.base import BaseEBCC

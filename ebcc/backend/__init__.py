@@ -9,12 +9,12 @@ from ebcc import BACKEND
 
 if TYPE_CHECKING:
     from types import ModuleType
-    from typing import Union
+    from typing import Union, TypeVar
 
-    from numpy import int64, float64
+    from numpy import int64, generic
     from numpy.typing import NDArray
 
-    T = float64
+    T = TypeVar("T", bound=generic)
 
 if BACKEND == "numpy":  # type: ignore
     import numpy as np
