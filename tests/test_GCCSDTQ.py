@@ -11,6 +11,7 @@ from ebcc import GEBCC, NullLogger
 
 
 @pytest.mark.regression
+@pytest.mark.slow
 class GCCSDTQ_Tests(unittest.TestCase):
     """Test GCCSDTQ against regression.
     """
