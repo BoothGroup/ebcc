@@ -8,6 +8,7 @@ import scipy.linalg
 
 from ebcc import numpy as np
 from ebcc import util
+from ebcc.backend import _put
 from ebcc.core.precision import types
 from ebcc.opt.base import BaseBruecknerEBCC
 
@@ -56,23 +57,22 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
                 bb=np.eye(self.cc.space[1].ncorr, dtype=types[float]),
             )
 
-        t1_block: Namespace[NDArray[T]] = util.Namespace(
-            aa=np.zeros((self.cc.space[0].ncorr, self.cc.space[0].ncorr), dtype=types[float]),
-            bb=np.zeros((self.cc.space[1].ncorr, self.cc.space[1].ncorr), dtype=types[float]),
-        )
-        t1_block.aa[: self.cc.space[0].ncocc, self.cc.space[0].ncocc :] = -t1.aa
-        t1_block.aa[self.cc.space[0].ncocc :, : self.cc.space[0].ncocc] = t1.aa.T
-        t1_block.bb[: self.cc.space[1].ncocc, self.cc.space[1].ncocc :] = -t1.bb
-        t1_block.bb[self.cc.space[1].ncocc :, : self.cc.space[1].ncocc] = t1.bb.T
+        t1_block: Namespace[NDArray[T]] = util.Namespace()
+        zocc = np.zeros((self.cc.space[0].ncocc, self.cc.space[0].ncocc))
+        zvir = np.zeros((self.cc.space[0].ncvir, self.cc.space[0].ncvir))
+        t1_block.aa = np.block([[zocc, -t1.aa], [t1.aa.T, zvir]])
+        zocc = np.zeros((self.cc.space[1].ncocc, self.cc.space[1].ncocc))
+        zvir = np.zeros((self.cc.space[1].ncvir, self.cc.space[1].ncvir))
+        t1_block.bb = np.block([[zocc, -t1.bb], [t1.bb.T, zvir]])
 
         u = util.Namespace(aa=scipy.linalg.expm(t1_block.aa), bb=scipy.linalg.expm(t1_block.bb))
 
         u_tot.aa = u_tot.aa @ u.aa
         u_tot.bb = u_tot.bb @ u.bb
         if np.linalg.det(u_tot.aa) < 0:
-            u_tot.aa[:, 0] *= -1
+            u_tot = _put(u_tot.aa, np.ix(slice(None), [0]), -u_tot[:, 0])
         if np.linalg.det(u_tot.bb) < 0:
-            u_tot.bb[:, 0] *= -1
+            u_tot = _put(u_tot.bb, np.ix(slice(None), [0]), -u_tot[:, 0])
 
         a = np.concatenate(
             [scipy.linalg.logm(u_tot.aa).ravel(), scipy.linalg.logm(u_tot.bb).ravel()], axis=0
@@ -173,8 +173,8 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
         Returns:
             Updated MO coefficients.
         """
-        mo_coeff[0][:, self.cc.space[0].correlated] = mo_coeff_corr[0]
-        mo_coeff[1][:, self.cc.space[1].correlated] = mo_coeff_corr[1]
+        mo_coeff[0] = _put(mo_coeff[0], np.ix_(np.arange(mo_coeff[0].shape[0]), self.cc.space[0].correlated), mo_coeff_corr[0])
+        mo_coeff[1] = _put(mo_coeff[1], np.ix_(np.arange(mo_coeff[1].shape[0]), self.cc.space[1].correlated), mo_coeff_corr[1])
         return mo_coeff
 
     def update_coefficients(
