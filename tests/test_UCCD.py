@@ -9,7 +9,7 @@ from pyscf import cc, gto, lib, scf
 from pyscf.cc import ccd as pyscf_ccd
 from pyscf.cc import ccsd_rdm
 
-from ebcc import REBCC, UEBCC, NullLogger, Space
+from ebcc import REBCC, UEBCC, NullLogger, Space, BACKEND
 
 
 @pytest.mark.reference
@@ -120,10 +120,12 @@ class UCCD_Tests(unittest.TestCase):
     def tearDownClass(cls):
         del cls.mf, cls.ccd, cls.eris
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ip(self):
         e1 = self.ccd.ip_eom(nroots=5).kernel()
         self.assertAlmostEqual(e1[0], 0.3054216876546247)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ea(self):
         e1 = self.ccd.ea_eom(nroots=5).kernel()
         self.assertAlmostEqual(e1[0], 0.002154489320978545)

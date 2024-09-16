@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 from pyscf import gto, scf, lib
 
-from ebcc import UEBCC, NullLogger, Space
+from ebcc import UEBCC, NullLogger, Space, BACKEND
 
 
 @pytest.mark.regression
@@ -76,11 +76,13 @@ class UDFCCD_Tests(unittest.TestCase):
         b = self.ccd.l2.aaaa
         self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 4)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ip(self):
         e1 = self.ccd.ip_eom(nroots=5).kernel()
         e2 = self.ccd_ref.ip_eom(nroots=5).kernel()
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ea(self):
         e1 = self.ccd.ea_eom(nroots=5).kernel()
         e2 = self.ccd_ref.ea_eom(nroots=5).kernel()

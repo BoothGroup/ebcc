@@ -8,7 +8,7 @@ import numpy as np
 import scipy.linalg
 import pytest
 
-from ebcc import UEBCC, NullLogger, util
+from ebcc import UEBCC, NullLogger, util, BACKEND
 
 
 @pytest.mark.reference
@@ -127,10 +127,12 @@ class UCC2_Tests(unittest.TestCase):
         self.assertAlmostEqual(lib.fp(dmaabb), 1.617909309590978, 6)
         self.assertAlmostEqual(lib.fp(dmbbbb), 2.231837825282723, 6)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ip(self):
         e1 = self.ccsd.ip_eom(nroots=5).kernel()
         self.assertAlmostEqual(e1[0], 0.1596528431761164)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ea(self):
         e1 = self.ccsd.ea_eom(nroots=5).kernel()
         self.assertAlmostEqual(e1[0], -0.11586919638803718)

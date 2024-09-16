@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 from pyscf import gto, scf, lib
 
-from ebcc import REBCC, NullLogger, Space
+from ebcc import REBCC, NullLogger, Space, BACKEND
 
 
 @pytest.mark.regression
@@ -96,11 +96,13 @@ class RDFCC2_Tests(unittest.TestCase):
         b = self.cc2.make_rdm2_f()
         self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 4)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ip(self):
         e1 = self.cc2.ip_eom(nroots=5).kernel()
         e2 = self.cc2_ref.ip_eom(nroots=5).kernel()
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ea(self):
         e1 = self.cc2.ea_eom(nroots=5).kernel()
         e2 = self.cc2_ref.ea_eom(nroots=5).kernel()

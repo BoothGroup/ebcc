@@ -12,7 +12,7 @@ import scipy.linalg
 from types import SimpleNamespace
 from pyscf import cc, gto, lib, scf
 
-from ebcc import REBCC, UEBCC, GEBCC, Space, NullLogger, util
+from ebcc import REBCC, UEBCC, GEBCC, Space, NullLogger, util, BACKEND
 
 # TODO test more excitations in EOM
 
@@ -343,41 +343,49 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
         b = self.ccsd.make_rdm2_f(eris=self.eris)
         self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ip(self):
         e1 = np.asarray(self.ccsd.ip_eom(nroots=5).kernel())
         e2, v2 = self.ccsd_ref.ipccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ea(self):
         e1 = np.asarray(self.ccsd.ea_eom(nroots=5).kernel())
         e2, v2 = self.ccsd_ref.eaccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ee(self):
         e1 = np.asarray(self.ccsd.ee_eom(nroots=5).kernel())
         e2, v2 = self.ccsd_ref.eeccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ip_koopmans(self):
         e1 = np.asarray(self.ccsd.ip_eom(nroots=5, koopmans=True).kernel())
         e2, v2 = self.ccsd_ref.ipccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ea_koopmans(self):
         e1 = np.asarray(self.ccsd.ea_eom(nroots=5, koopmans=True).kernel())
         e2, v2 = self.ccsd_ref.eaccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ip_left(self):
         e1 = np.asarray(self.ccsd.ip_eom(nroots=5, left=True).kernel())
         e2, v2 = self.ccsd_ref.ipccsd(nroots=5, left=True)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ea_left(self):
         e1 = np.asarray(self.ccsd.ea_eom(nroots=5, left=True).kernel())
         e2, v2 = self.ccsd_ref.eaccsd(nroots=5, left=True)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ee_left(self):
         e1 = np.asarray(self.ccsd.ee_eom(nroots=5, left=True).kernel())
         e2, v2 = self.ccsd_ref.eeccsd(nroots=5)  # No left EE-EOM in PySCF

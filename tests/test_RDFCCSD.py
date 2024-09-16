@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 from pyscf import gto, scf, cc, lib
 
-from ebcc import REBCC, NullLogger, Space
+from ebcc import REBCC, NullLogger, Space, BACKEND
 
 
 @pytest.mark.reference
@@ -92,12 +92,14 @@ class RDFCCSD_PySCF_Tests(unittest.TestCase):
         b = self.ccsd.make_rdm2_f(eris=self.eris)
         self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ip(self):
         eom = self.ccsd.ip_eom(nroots=5)
         e1 = eom.kernel()
         e2, v2 = self.ccsd_ref.ipccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ea(self):
         eom = self.ccsd.ea_eom(nroots=5)
         e1 = eom.kernel()
