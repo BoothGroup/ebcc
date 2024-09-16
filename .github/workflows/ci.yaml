@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: python ${{ matrix.python-version }} on ${{matrix.os}}
+    name: python ${{ matrix.python-version }} on ${{ matrix.os }} with ${{ matrix.backend }} backend
     runs-on: ${{ matrix.os }}
 
     strategy:
