@@ -8,10 +8,11 @@ import numpy as np
 import pytest
 from pyscf import gto, lib, scf, fci
 
-from ebcc import GEBCC, REBCC, Space, NullLogger, util
+from ebcc import GEBCC, REBCC, Space, NullLogger, util, BACKEND
 
 
 @pytest.mark.regression
+@pytest.mark.skipif(BACKEND != "numpy", reason="Currently requires mutable backend.")
 class GCCSDtp_Tests(unittest.TestCase):
     """Test GCCSDt' against regression.
     """

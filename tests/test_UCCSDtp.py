@@ -15,6 +15,7 @@ from ebcc import UEBCC, GEBCC, Space, NullLogger, util
 
 
 @pytest.mark.regression
+@pytest.mark.skipif(BACKEND != "numpy", reason="Currently requires mutable backend.")
 class UCCSDtp_Tests(unittest.TestCase):
     """Test UCCSDt' against GCCSDt'.
     """
