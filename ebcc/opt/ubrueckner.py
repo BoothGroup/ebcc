@@ -70,9 +70,13 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
         u_tot.aa = u_tot.aa @ u.aa
         u_tot.bb = u_tot.bb @ u.bb
         if np.linalg.det(u_tot.aa) < 0:
-            u_tot = _put(u_tot.aa, np.ix(slice(None), [0]), -u_tot[:, 0])
+            u_tot.aa = _put(
+                u_tot.aa, np.ix_(np.arange(u_tot.aa.shape[0]), np.array([0])), -u_tot.aa[:, 0]
+            )
         if np.linalg.det(u_tot.bb) < 0:
-            u_tot = _put(u_tot.bb, np.ix(slice(None), [0]), -u_tot[:, 0])
+            u_tot.bb = _put(
+                u_tot.bb, np.ix_(np.arange(u_tot.aa.shape[0]), np.array([0])), -u_tot.bb[:, 0]
+            )
 
         a = np.concatenate(
             [scipy.linalg.logm(u_tot.aa).ravel(), scipy.linalg.logm(u_tot.bb).ravel()], axis=0
@@ -173,8 +177,19 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
         Returns:
             Updated MO coefficients.
         """
-        mo_coeff[0] = _put(mo_coeff[0], np.ix_(np.arange(mo_coeff[0].shape[0]), self.cc.space[0].correlated), mo_coeff_corr[0])
-        mo_coeff[1] = _put(mo_coeff[1], np.ix_(np.arange(mo_coeff[1].shape[0]), self.cc.space[1].correlated), mo_coeff_corr[1])
+        space = self.cc.space
+        mo_coeff = (
+            _put(
+                mo_coeff[0],
+                np.ix_(np.arange(mo_coeff[0].shape[0]), space[0].correlated),  # type: ignore
+                mo_coeff_corr[0],
+            ),
+            _put(
+                mo_coeff[1],
+                np.ix_(np.arange(mo_coeff[1].shape[0]), space[1].correlated),  # type: ignore
+                mo_coeff_corr[1],
+            ),
+        )
         return mo_coeff
 
     def update_coefficients(

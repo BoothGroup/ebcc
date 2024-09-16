@@ -36,8 +36,8 @@ tf.experimental.numpy.argsort = _argsort
 
 def _block_recursive(arrays, max_depth, depth=0):
     if depth < max_depth:
-        arrs = [_block_recursive(arr, max_depth, depth+1) for arr in arrays]
-        return tensorflow.experimental.numpy.concatenate(arrs, axis=-(max_depth-depth))
+        arrs = [_block_recursive(arr, max_depth, depth + 1) for arr in arrays]
+        return tensorflow.experimental.numpy.concatenate(arrs, axis=-(max_depth - depth))
     else:
         return arrays
 

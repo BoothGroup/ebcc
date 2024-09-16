@@ -62,7 +62,7 @@ class BruecknerREBCC(BaseBruecknerEBCC):
 
         u_tot = u_tot @ u
         if np.linalg.det(u_tot) < 0:
-            u_tot = _put(u_tot, np.ix(slice(None), [0]), -u_tot[:, 0])
+            u_tot = _put(u_tot, np.ix_(np.arange(u_tot.shape[0]), np.array([0])), -u_tot[:, 0])
 
         a = scipy.linalg.logm(u_tot)
         a = a.real.astype(types[float])
@@ -150,7 +150,11 @@ class BruecknerREBCC(BaseBruecknerEBCC):
         Returns:
             Updated MO coefficients.
         """
-        mo_coeff = _put(mo_coeff, np.ix_(np.arange(mo_coeff.shape[0]), self.cc.space.correlated), mo_coeff_corr)
+        mo_coeff = _put(
+            mo_coeff,
+            np.ix_(np.arange(mo_coeff.shape[0]), self.cc.space.correlated),  # type: ignore
+            mo_coeff_corr,
+        )
         return mo_coeff
 
     def update_coefficients(

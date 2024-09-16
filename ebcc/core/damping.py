@@ -103,10 +103,12 @@ class DIIS(diis.DIIS):
         # Build the error matrix
         x1 = self.get_err_vec(self._head - 1)
         if self._H is None:
-            self._H = np.block([
-                [np.zeros((1, 1)), np.ones((1, self.space))],
-                [np.ones((self.space, 1)), np.zeros((self.space, self.space))]
-            ])
+            self._H = np.block(
+                [
+                    [np.zeros((1, 1)), np.ones((1, self.space))],
+                    [np.ones((self.space, 1)), np.zeros((self.space, self.space))],
+                ]
+            )
         # this looks crazy, but it's just updating the `self._head`th row and
         # column with the new errors, it's just done this way to avoid using
         # calls to `__setitem__` in immutable backends
@@ -116,11 +118,13 @@ class DIIS(diis.DIIS):
         Hj = Hi.T.conj()
         pre = slice(0, self._head)
         pos = slice(self._head + 1, self.space + 1)
-        self._H = np.block([
-            [self._H[pre, pre], Hi[pre, :], self._H[pre, pos]],
-            [Hj[:, pre], Hi[[self._head]].reshape(1, 1), Hj[:, pos]],
-            [self._H[pos, pre], Hi[pos, :], self._H[pos, pos]],
-        ])
+        self._H = np.block(
+            [
+                [self._H[pre, pre], Hi[pre, :], self._H[pre, pos]],
+                [Hj[:, pre], Hi[[self._head]].reshape(1, 1), Hj[:, pos]],
+                [self._H[pos, pre], Hi[pos, :], self._H[pos, pos]],
+            ]
+        )
 
         if self._xprev is None:
             xnew = self.extrapolate(nd)
