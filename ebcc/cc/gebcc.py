@@ -114,7 +114,7 @@ class GEBCC(BaseEBCC):
         Returns:
             GEBCC object.
         """
-        orbspin = scf.addons.get_ghf_orbspin(ucc.mf.mo_energy, ucc.mf.mo_occ, False)
+        orbspin = np.asarray(scf.addons.get_ghf_orbspin(ucc.mf.mo_energy, ucc.mf.mo_occ, False))
         nocc = ucc.space[0].nocc + ucc.space[1].nocc
         nvir = ucc.space[0].nvir + ucc.space[1].nvir
         nbos = ucc.nbos
