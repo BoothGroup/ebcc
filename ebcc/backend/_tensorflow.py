@@ -34,11 +34,21 @@ _tf_argsort = tf.experimental.numpy.argsort
 tf.experimental.numpy.argsort = _argsort
 
 
-def _block(arrays):
-    # FIXME Can't get this to work
-    import numpy
+def _block_recursive(arrays, max_depth, depth=0):
+    if depth < max_depth:
+        arrs = [_block_recursive(arr, max_depth, depth+1) for arr in arrays]
+        return tensorflow.experimental.numpy.concatenate(arrs, axis=-(max_depth-depth))
+    else:
+        return arrays
 
-    return tensorflow.experimental.numpy.asarray(numpy.block(arrays))
+
+def _block(arrays):
+    def _get_max_depth(arrays):
+        if isinstance(arrays, list):
+            return 1 + max([_get_max_depth(arr) for arr in arrays])
+        return 0
+
+    return _block_recursive(arrays, _get_max_depth(arrays))
 
 
 tf.experimental.numpy.block = _block

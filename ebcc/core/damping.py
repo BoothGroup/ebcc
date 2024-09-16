@@ -103,13 +103,24 @@ class DIIS(diis.DIIS):
         # Build the error matrix
         x1 = self.get_err_vec(self._head - 1)
         if self._H is None:
-            self._H = np.zeros((self.space + 1, self.space + 1), x1[0].dtype)
-            self._H[0, 1:] = self._H[1:, 0] = 1
-        for i in range(nd):
-            x2 = self.get_err_vec(i)
-            tmp = np.dot(x1.conj(), x2)
-            self._H[self._head, i + 1] = tmp
-            self._H[i + 1, self._head] = tmp.conjugate()
+            self._H = np.block([
+                [np.zeros((1, 1)), np.ones((1, self.space))],
+                [np.ones((self.space, 1)), np.zeros((self.space, self.space))]
+            ])
+        # this looks crazy, but it's just updating the `self._head`th row and
+        # column with the new errors, it's just done this way to avoid using
+        # calls to `__setitem__` in immutable backends
+        Hi = np.array([np.dot(x1.ravel().conj(), self.get_err_vec(i).ravel()) for i in range(nd)])
+        Hi = np.concatenate([np.array([1.0]), Hi, np.zeros(self.space - nd)])
+        Hi = Hi.reshape(-1, 1)
+        Hj = Hi.T.conj()
+        pre = slice(0, self._head)
+        pos = slice(self._head + 1, self.space + 1)
+        self._H = np.block([
+            [self._H[pre, pre], Hi[pre, :], self._H[pre, pos]],
+            [Hj[:, pre], Hi[[self._head]].reshape(1, 1), Hj[:, pos]],
+            [self._H[pos, pre], Hi[pos, :], self._H[pos, pos]],
+        ])
 
         if self._xprev is None:
             xnew = self.extrapolate(nd)
@@ -138,8 +149,7 @@ class DIIS(diis.DIIS):
         if self._H is None:
             raise RuntimeError("DIIS object not initialised.")
         h = self._H[: nd + 1, : nd + 1]
-        g = np.zeros(nd + 1, h.dtype)
-        g[0] = 1
+        g = np.concatenate([np.ones((1,), h.dtype), np.zeros((nd,), h.dtype)])
 
         # Solve the linear problem
         w, v = np.linalg.eigh(h)
