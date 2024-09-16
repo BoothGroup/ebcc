@@ -180,7 +180,7 @@ class Util_Tests(unittest.TestCase):
         b = util.einsum("ijkl,lkab->ijab", x, y)
         self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
-        b[:] = 0
+        b = np.zeros_like(b)
         b = util.einsum("ijkl,lkab->ijab", x, y, out=b, alpha=1.0, beta=0.0)
         self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
