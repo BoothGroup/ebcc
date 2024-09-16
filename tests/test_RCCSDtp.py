@@ -10,6 +10,7 @@ import pytest
 import scipy
 from pyscf import gto, lib, scf, fci
 
+from ebcc import BACKEND
 from ebcc import GEBCC, REBCC, Space, NullLogger, util
 
 
