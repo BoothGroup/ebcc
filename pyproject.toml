@@ -192,7 +192,7 @@ exclude_lines = [
 directory = "cov_html"
 
 [tool.pytest.ini_options]
-addopts = "-m 'not slow'"
+addopts = "-m 'not slow' --durations=0"
 testpaths = [
     "tests",
 ]
