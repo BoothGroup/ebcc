@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+import numpy
 from pyscf import lib
 
 from ebcc import util
@@ -23,6 +24,8 @@ if TYPE_CHECKING:
     from ebcc.util import Namespace
 
     T = float64
+
+# FIXME Custom versions of PySCF functions
 
 
 @dataclass
@@ -147,7 +150,7 @@ class BaseBruecknerEBCC(ABC):
             mo_coeff_new = self.update_coefficients(u_tot, mo_coeff_new, mo_coeff_ref)
 
             # Transform mean-field and amplitudes:
-            self.mf.mo_coeff = mo_coeff_new
+            self.mf.mo_coeff = numpy.asarray(mo_coeff_new)
             self.mf.e_tot = self.mf.energy_tot()
             amplitudes = self.transform_amplitudes(u)
 
