@@ -14,6 +14,7 @@ https://github.com/obackhouse/albert
 
 from ebcc import numpy as np
 from ebcc.util import pack_2e, einsum, dirsum, Namespace
+from ebcc.backend import _put
 
 
 def energy(t2=None, v=None, **kwargs):
@@ -114,17 +115,14 @@ def make_rdm2_f(l2=None, t2=None, **kwargs):
     rdm2 = pack_2e(rdm2.oooo, rdm2.ooov, rdm2.oovo, rdm2.ovoo, rdm2.vooo, rdm2.oovv, rdm2.ovov, rdm2.ovvo, rdm2.voov, rdm2.vovo, rdm2.vvoo, rdm2.ovvv, rdm2.vovv, rdm2.vvov, rdm2.vvvo, rdm2.vvvv)
     rdm2 = rdm2.swapaxes(1, 2)
     rdm1 = make_rdm1_f(t2=t2, l2=l2)
-    nocc = t2.shape[0]
-    rdm1[np.diag_indices(nocc)] -= 2
-    for i in range(nocc):
-        rdm2[i, i, :, :] += rdm1.T * 2
-        rdm2[:, :, i, i] += rdm1.T * 2
-        rdm2[:, i, i, :] -= rdm1.T
-        rdm2[i, :, :, i] -= rdm1
-    for i in range(nocc):
-        for j in range(nocc):
-            rdm2[i, i, j, j] += 4
-            rdm2[i, j, j, i] -= 2
+    delta = np.diag(np.concatenate([np.ones(t2.shape[0]), np.zeros(t2.shape[-1])]))
+    rdm1 -= delta * 2
+    rdm2 += einsum(delta, (0, 1), rdm1, (3, 2), (0, 1, 2, 3)) * 2
+    rdm2 += einsum(rdm1, (1, 0), delta, (2, 3), (0, 1, 2, 3)) * 2
+    rdm2 -= einsum(delta, (0, 3), rdm1, (2, 1), (0, 1, 2, 3))
+    rdm2 -= einsum(rdm1, (0, 3), delta, (1, 2), (0, 1, 2, 3))
+    rdm2 += einsum(delta, (0, 1), delta, (2, 3), (0, 1, 2, 3)) * 4
+    rdm2 -= einsum(delta, (0, 3), delta, (1, 2), (0, 1, 2, 3)) * 2
 
     return rdm2
 

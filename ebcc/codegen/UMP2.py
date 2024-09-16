@@ -160,32 +160,27 @@ def make_rdm2_f(l2=None, t2=None, **kwargs):
         bbbb=rdm2.bbbb.swapaxes(1, 2),
     )
     rdm1 = make_rdm1_f(t2=t2, l2=l2)
-    nocc = Namespace(a=t2.aaaa.shape[0], b=t2.bbbb.shape[0])
-    rdm1.aa[np.diag_indices(nocc.a)] -= 1
-    rdm1.bb[np.diag_indices(nocc.b)] -= 1
-    for i in range(nocc.a):
-        rdm2.aaaa[i, i, :, :] += rdm1.aa.T
-        rdm2.aaaa[:, :, i, i] += rdm1.aa.T
-        rdm2.aaaa[:, i, i, :] -= rdm1.aa.T
-        rdm2.aaaa[i, :, :, i] -= rdm1.aa
-        rdm2.aabb[i, i, :, :] += rdm1.bb.T
-    for i in range(nocc.b):
-        rdm2.bbbb[i, i, :, :] += rdm1.bb.T
-        rdm2.bbbb[:, :, i, i] += rdm1.bb.T
-        rdm2.bbbb[:, i, i, :] -= rdm1.bb.T
-        rdm2.bbbb[i, :, :, i] -= rdm1.bb
-        rdm2.aabb[:, :, i, i] += rdm1.aa.T
-    for i in range(nocc.a):
-        for j in range(nocc.a):
-            rdm2.aaaa[i, i, j, j] += 1
-            rdm2.aaaa[i, j, j, i] -= 1
-    for i in range(nocc.b):
-        for j in range(nocc.b):
-            rdm2.bbbb[i, i, j, j] += 1
-            rdm2.bbbb[i, j, j, i] -= 1
-    for i in range(nocc.a):
-        for j in range(nocc.b):
-            rdm2.aabb[i, i, j, j] += 1
+    delta = Namespace(
+        aa=np.diag(np.concatenate([np.ones(t2.aaaa.shape[0]), np.zeros(t2.aaaa.shape[-1])])),
+        bb=np.diag(np.concatenate([np.ones(t2.bbbb.shape[0]), np.zeros(t2.bbbb.shape[-1])])),
+    )
+    rdm1.aa -= delta.aa
+    rdm1.bb -= delta.bb
+    rdm2.aaaa += einsum(delta.aa, (0, 1), rdm1.aa, (3, 2), (0, 1, 2, 3))
+    rdm2.aaaa += einsum(rdm1.aa, (1, 0), delta.aa, (2, 3), (0, 1, 2, 3))
+    rdm2.aaaa -= einsum(delta.aa, (0, 3), rdm1.aa, (2, 1), (0, 1, 2, 3))
+    rdm2.aaaa -= einsum(rdm1.aa, (0, 3), delta.aa, (1, 2), (0, 1, 2, 3))
+    rdm2.aaaa += einsum(delta.aa, (0, 1), delta.aa, (2, 3), (0, 1, 2, 3))
+    rdm2.aaaa -= einsum(delta.aa, (0, 3), delta.aa, (1, 2), (0, 1, 2, 3))
+    rdm2.bbbb += einsum(delta.bb, (0, 1), rdm1.bb, (3, 2), (0, 1, 2, 3))
+    rdm2.bbbb += einsum(rdm1.bb, (1, 0), delta.bb, (2, 3), (0, 1, 2, 3))
+    rdm2.bbbb -= einsum(delta.bb, (0, 3), rdm1.bb, (2, 1), (0, 1, 2, 3))
+    rdm2.bbbb -= einsum(rdm1.bb, (0, 3), delta.bb, (1, 2), (0, 1, 2, 3))
+    rdm2.bbbb += einsum(delta.bb, (0, 1), delta.bb, (2, 3), (0, 1, 2, 3))
+    rdm2.bbbb -= einsum(delta.bb, (0, 3), delta.bb, (1, 2), (0, 1, 2, 3))
+    rdm2.aabb += einsum(delta.aa, (0, 1), rdm1.bb, (3, 2), (0, 1, 2, 3))
+    rdm2.aabb += einsum(rdm1.aa, (1, 0), delta.bb, (2, 3), (0, 1, 2, 3))
+    rdm2.aabb += einsum(delta.aa, (0, 1), delta.bb, (2, 3), (0, 1, 2, 3))
 
     return rdm2
 
