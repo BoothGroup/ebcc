@@ -74,9 +74,9 @@ def _put(
     elif BACKEND == "jax":
         if isinstance(indices, tuple):
             indices_flat = np.ravel_multi_index(indices, array.shape)
-            array = np.put(array, indices_flat, values, inplace=True)  # type: ignore
+            array = np.put(array, indices_flat, values, inplace=False)  # type: ignore
         else:
-            array = np.put(array, indices, values, inplace=True)  # type: ignore
+            array = np.put(array, indices, values, inplace=False)  # type: ignore
         return array
     elif BACKEND == "tensorflow":
         if isinstance(indices, (tuple, list)):
