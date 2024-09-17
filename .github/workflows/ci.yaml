@@ -49,17 +49,17 @@ jobs:
         run: |
           python -m pip install pytest
           EBCC_BACKEND=${{ matrix.backend }} pytest tests/test_minimal.py
-        if: matrix.minimal
+        if: ${{ matrix.minimal }}
       - name: Run unit tests with coverage
         run: |
           python -m pip install pytest pytest-cov
           EBCC_BACKEND=${{ matrix.backend }} pytest --cov ebcc/
-        if: matrix.coverage && ! matrix.minimal
+        if: $${{ matrix.coverage && ! matrix.minimal }}
       - name: Run unit tests
         run: |
           python -m pip install pytest
           EBCC_BACKEND=${{ matrix.backend }} pytest
-        if: ! matrix.coverage && ! matrix.minimal
+        if: ${{ ! matrix.coverage && ! matrix.minimal }}
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
