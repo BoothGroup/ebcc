@@ -20,6 +20,8 @@ if BACKEND == "numpy":  # type: ignore
     import numpy as np
 elif BACKEND == "tensorflow":  # type: ignore
     import tensorflow as tf  # type: ignore
+elif BACKEND == "jax":  # type: ignore
+    import jax  # type: ignore
 
 
 def __getattr__(name: str) -> ModuleType:
@@ -45,7 +47,7 @@ def _put(
     Notes:
         This function does not guarantee a copy of the array.
     """
-    if BACKEND == "numpy":
+    if BACKEND == "numpy" or BACKEND == "jax":
         if isinstance(indices, tuple):
             indices_flat = np.ravel_multi_index(indices, array.shape)
             array.put(indices_flat, values)

@@ -121,7 +121,7 @@ class DIIS(diis.DIIS):
         self._H = np.block(
             [
                 [self._H[pre, pre], Hi[pre, :], self._H[pre, pos]],
-                [Hj[:, pre], Hi[[self._head]].reshape(1, 1), Hj[:, pos]],
+                [Hj[:, pre], Hi[self._head, :].reshape(1, 1), Hj[:, pos]],
                 [self._H[pos, pre], Hi[pos, :], self._H[pos, pos]],
             ]
         )
