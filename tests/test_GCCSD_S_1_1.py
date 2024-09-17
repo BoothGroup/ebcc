@@ -160,7 +160,7 @@ class GCCSD_S_1_1_Tests(unittest.TestCase):
         self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm_eb(self):
-        a = self.data[self.shift]["rdm_eb"]
+        a = np.asarray(self.data[self.shift]["rdm_eb"])
         b = self.ccsd.make_eb_coup_rdm()
         self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 

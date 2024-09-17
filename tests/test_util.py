@@ -9,7 +9,7 @@ import pytest
 from pyscf import gto, scf
 
 import ebcc
-from ebcc import util
+from ebcc import util, BACKEND
 
 
 @pytest.mark.regression
@@ -36,6 +36,7 @@ class Util_Tests(unittest.TestCase):
         self.assertEqual(util.permute_string("god", (2, 1, 0)), "dog")
         self.assertEqual(util.permute_string("ebcc", (2, 0, 3, 1)), "cecb")
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="Requires mutable array backend")
     def test_tril_indices_ndim(self):
         for n in (1, 2, 3, 4):
             for ndim in (1, 2, 3, 4):

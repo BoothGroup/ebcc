@@ -120,7 +120,7 @@ def _swapaxes(tensor, axis1, axis2):
 tf.Tensor.swapaxes = _swapaxes
 
 
-def einsum_path(*args, **kwargs):  # type: ignore
+def einsum_path(*args, **kwargs):
     """Evaluate the lowest cost contraction order for an einsum expression."""
     kwargs = dict(kwargs)
     if kwargs.get("optimize", True) is True:

@@ -1,4 +1,16 @@
-"""Backend for NumPy operations."""
+"""Backend for NumPy operations.
+
+Notes:
+    Currently, the following backends are supported:
+        - NumPy
+        - TensorFlow
+        - JAX
+
+    Non-NumPy backends are only lightly supported. Some functionality may not be available, and only
+    minimal tests are performed. Some operations that require interaction with NumPy such as the
+    PySCF interfaces may not be efficient, due to the need to convert between NumPy and the backend
+    array types.
+"""
 
 from __future__ import annotations
 
@@ -20,8 +32,10 @@ if BACKEND == "numpy":  # type: ignore
     import numpy as np
 elif BACKEND == "tensorflow":  # type: ignore
     import tensorflow as tf  # type: ignore
+    import tensorflow.experimental.numpy as np  # type: ignore
 elif BACKEND == "jax":  # type: ignore
     import jax  # type: ignore
+    import jax.numpy as np  # type: ignore
 
 
 def __getattr__(name: str) -> ModuleType:
@@ -47,12 +61,19 @@ def _put(
     Notes:
         This function does not guarantee a copy of the array.
     """
-    if BACKEND == "numpy" or BACKEND == "jax":
+    if BACKEND == "numpy":
         if isinstance(indices, tuple):
             indices_flat = np.ravel_multi_index(indices, array.shape)
-            array.put(indices_flat, values)
+            np.put(array, indices_flat, values)
         else:
-            array.put(indices, values)
+            np.put(array, indices, values)
+        return array
+    elif BACKEND == "jax":
+        if isinstance(indices, tuple):
+            indices_flat = np.ravel_multi_index(indices, array.shape)
+            array = np.put(array, indices_flat, values, inplace=True)  # type: ignore
+        else:
+            array = np.put(array, indices, values, inplace=True)  # type: ignore
         return array
     elif BACKEND == "tensorflow":
         if isinstance(indices, (tuple, list)):
