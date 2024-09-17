@@ -166,6 +166,18 @@ ignore_missing_imports = true
 module = "h5py.*"
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "cupy.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "jax.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tensorflow.*"
+ignore_missing_imports = true
+
 [tool.coverage.run]
 branch = true
 source = [

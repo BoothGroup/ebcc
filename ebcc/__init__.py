@@ -48,7 +48,7 @@ import sys
 from typing import TYPE_CHECKING
 
 """Backend to use for NumPy operations."""
-BACKEND = os.environ.get("EBCC_BACKEND", "numpy")
+BACKEND: str = os.environ.get("EBCC_BACKEND", "numpy")
 
 if TYPE_CHECKING:
     # Import NumPy directly for type-checking purposes

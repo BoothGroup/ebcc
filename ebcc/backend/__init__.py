@@ -3,6 +3,7 @@
 Notes:
     Currently, the following backends are supported:
         - NumPy
+        - CuPy
         - TensorFlow
         - JAX
 
@@ -28,14 +29,16 @@ if TYPE_CHECKING:
 
     T = TypeVar("T", bound=generic)
 
-if BACKEND == "numpy":  # type: ignore
+if BACKEND == "numpy":
     import numpy as np
-elif BACKEND == "tensorflow":  # type: ignore
-    import tensorflow as tf  # type: ignore
-    import tensorflow.experimental.numpy as np  # type: ignore
-elif BACKEND == "jax":  # type: ignore
-    import jax  # type: ignore
-    import jax.numpy as np  # type: ignore
+elif BACKEND == "cupy":
+    import cupy as np  # type: ignore[no-redef]
+elif BACKEND == "tensorflow":
+    import tensorflow as tf
+    import tensorflow.experimental.numpy as np  # type: ignore[no-redef]
+elif BACKEND == "jax":
+    import jax
+    import jax.numpy as np  # type: ignore[no-redef]
 
 
 def __getattr__(name: str) -> ModuleType:
@@ -61,7 +64,7 @@ def _put(
     Notes:
         This function does not guarantee a copy of the array.
     """
-    if BACKEND == "numpy":
+    if BACKEND == "numpy" or BACKEND == "cupy":
         if isinstance(indices, tuple):
             indices_flat = np.ravel_multi_index(indices, array.shape)
             np.put(array, indices_flat, values)
