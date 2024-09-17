@@ -44,6 +44,14 @@ tensorflow = [
     "tensorflow>=2.0.0",
     "opt_einsum>=3.3.0",
 ]
+jax = [
+    "jax>=0.2.0",
+    "opt_einsum>=3.3.0",
+]
+cupy = [
+    "cupy>=9.0.0",
+    "opt_einsum>=3.3.0",
+]
 dev = [
     "black>=22.6.0",
     "isort>=5.10.1",
@@ -64,6 +72,8 @@ dev = [
     "mkdocstrings-python>=1.10.0",
     "tensorflow>=2.0.0",
     "opt_einsum>=3.3.0",
+    "jax>=0.2.0",
+    "cupy>=9.0.0",
 ]
 
 [tool.black]
