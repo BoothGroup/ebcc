@@ -38,7 +38,7 @@ jobs:
       - name: Install ebcc
         run: |
           python -m pip install wheel
-          python -m pip install .[dev]
+          python -m pip install .[dev,numpy,jax,tensorflow]
       - name: Linting
         run: |
           python -m black ebcc/ --diff --check --verbose
