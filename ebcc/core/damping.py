@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from pyscf.lib import diis
-
 from ebcc import numpy as np
 from ebcc import util
 
@@ -60,7 +58,7 @@ class DIIS:
             xerr: The error vector to push into the DIIS subspace.
         """
         if len(self._indices) >= self.space:
-            self._indices = self._indices[1 - self.space:]
+            self._indices = self._indices[1 - self.space :]
 
         if xerr is not None:
             if self._index >= self.space:
