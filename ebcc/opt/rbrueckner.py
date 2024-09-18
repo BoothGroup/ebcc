@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 
     from ebcc.cc.rebcc import REBCC, SpinArrayType
-    from ebcc.core.damping import DIIS
+    from ebcc.core.damping import BaseDamping
     from ebcc.util import Namespace
 
     T = float64
@@ -34,7 +34,7 @@ class BruecknerREBCC(BaseBruecknerEBCC):
     def get_rotation_matrix(
         self,
         u_tot: Optional[SpinArrayType] = None,
-        diis: Optional[DIIS] = None,
+        damping: Optional[BaseDamping] = None,
         t1: Optional[SpinArrayType] = None,
     ) -> tuple[SpinArrayType, SpinArrayType]:
         """Update the rotation matrix.
@@ -43,7 +43,7 @@ class BruecknerREBCC(BaseBruecknerEBCC):
 
         Args:
             u_tot: Total rotation matrix.
-            diis: DIIS object.
+            damping: Damping object.
             t1: T1 amplitude.
 
         Returns:
@@ -66,8 +66,8 @@ class BruecknerREBCC(BaseBruecknerEBCC):
 
         a = scipy.linalg.logm(u_tot)
         a = a.real.astype(types[float])
-        if diis is not None:
-            a = diis.update(a, xerr=t1)
+        if damping is not None:
+            a = damping(a, error=t1)
 
         u_tot = scipy.linalg.expm(a)
 

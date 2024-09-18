@@ -22,10 +22,11 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
     from pyscf.scf.hf import SCF
 
+    from ebcc.core.damping import BaseDamping
     from ebcc.core.logging import Logger
     from ebcc.ham.base import BaseElectronBoson, BaseERIs, BaseFock
     from ebcc.opt.base import BaseBruecknerEBCC
-    from ebcc.util import Namespace
+    from ebcc.util import Namespace, _BaseOptions
 
     T = float64
 
@@ -40,7 +41,7 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class BaseOptions:
+class BaseOptions(_BaseOptions):
     """Options for EBCC calculations.
 
     Args:
@@ -48,6 +49,7 @@ class BaseOptions:
         t_tol: Threshold for convergence in the amplitude norm.
         max_iter: Maximum number of iterations.
         diis_space: Number of amplitudes to use in DIIS extrapolation.
+        diis_min_space: Minimum number of amplitudes to use in DIIS extrapolation.
         damping: Damping factor for DIIS extrapolation.
         shift: Shift the boson operators such that the Hamiltonian is normal-ordered with respect
             to a coherent state. This removes the bosonic coupling to the static mean-field
@@ -57,7 +59,8 @@ class BaseOptions:
     e_tol: float = 1e-8
     t_tol: float = 1e-8
     max_iter: int = 200
-    diis_space: int = 12
+    diis_space: int = 9
+    diis_min_space: int = 1
     damping: float = 0.0
     shift: bool = True
 
@@ -67,6 +70,7 @@ class BaseEBCC(ABC):
 
     # Types
     Options: type[BaseOptions] = BaseOptions
+    Damping: type[BaseDamping] = DIIS
     ERIs: type[BaseERIs]
     Fock: type[BaseFock]
     CDERIs: type[BaseERIs]
@@ -194,6 +198,7 @@ class BaseEBCC(ABC):
         self.log.info(f" > t_tol:  {ANSI.y}{self.options.t_tol}{ANSI.R}")
         self.log.info(f" > max_iter:  {ANSI.y}{self.options.max_iter}{ANSI.R}")
         self.log.info(f" > diis_space:  {ANSI.y}{self.options.diis_space}{ANSI.R}")
+        self.log.info(f" > diis_min_space:  {ANSI.y}{self.options.diis_min_space}{ANSI.R}")
         self.log.info(f" > damping:  {ANSI.y}{self.options.damping}{ANSI.R}")
         self.log.debug("")
         self.log.info(f"{ANSI.B}Ansatz{ANSI.R}: {ANSI.m}{self.ansatz}{ANSI.R}")
@@ -243,10 +248,8 @@ class BaseEBCC(ABC):
         self.log.info(f"{0:4d} {e_cc:16.10f} {e_cc + self.mf.e_tot:18.10f}")
 
         if not self.ansatz.is_one_shot:
-            # Set up DIIS:
-            diis = DIIS()
-            diis.space = self.options.diis_space
-            diis.damping = self.options.damping
+            # Set up damping:
+            damping = self.Damping(options=self.options)
 
             converged = False
             for niter in range(1, self.options.max_iter + 1):
@@ -254,7 +257,7 @@ class BaseEBCC(ABC):
                 amplitudes_prev = amplitudes
                 amplitudes = self.update_amps(amplitudes=amplitudes, eris=eris)
                 vector = self.amplitudes_to_vector(amplitudes)
-                vector = diis.update(vector)
+                vector = damping(vector)
                 amplitudes = self.vector_to_amplitudes(vector)
                 dt = np.max(np.abs(vector - self.amplitudes_to_vector(amplitudes_prev)))
 
@@ -342,10 +345,8 @@ class BaseEBCC(ABC):
         self.log.debug("")
         self.log.info(f"{ANSI.B}{'Iter':>4s} {'Δ(Ampl.)':>13s}{ANSI.R}")
 
-        # Set up DIIS:
-        diis = DIIS()
-        diis.space = self.options.diis_space
-        diis.damping = self.options.damping
+        # Set up damping:
+        damping = self.Damping(options=self.options)
 
         converged = False
         for niter in range(1, self.options.max_iter + 1):
@@ -358,7 +359,7 @@ class BaseEBCC(ABC):
                 eris=eris,
             )
             vector = self.lambdas_to_vector(lambdas)
-            vector = diis.update(vector)
+            vector = damping(vector)
             lambdas = self.vector_to_lambdas(vector)
             dl = np.max(np.abs(vector - self.lambdas_to_vector(lambdas_prev)))
 

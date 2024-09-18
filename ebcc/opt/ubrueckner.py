@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 
     from ebcc.cc.uebcc import UEBCC, SpinArrayType
-    from ebcc.core.damping import DIIS
+    from ebcc.core.damping import BaseDamping
     from ebcc.util import Namespace
 
     T = float64
@@ -34,7 +34,7 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
     def get_rotation_matrix(
         self,
         u_tot: Optional[SpinArrayType] = None,
-        diis: Optional[DIIS] = None,
+        damping: Optional[BaseDamping] = None,
         t1: Optional[SpinArrayType] = None,
     ) -> tuple[SpinArrayType, SpinArrayType]:
         """Update the rotation matrix.
@@ -43,7 +43,7 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
 
         Args:
             u_tot: Total rotation matrix.
-            diis: DIIS object.
+            damping: Damping object.
             t1: T1 amplitude.
 
         Returns:
@@ -82,9 +82,9 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
             [scipy.linalg.logm(u_tot.aa).ravel(), scipy.linalg.logm(u_tot.bb).ravel()], axis=0
         )
         a = a.real.astype(types[float])
-        if diis is not None:
+        if damping is not None:
             xerr = np.concatenate([t1.aa.ravel(), t1.bb.ravel()])
-            a = diis.update(a, xerr=xerr)
+            a = damping(a, error=xerr)
 
         u_tot.aa = scipy.linalg.expm(a[: u_tot.aa.size].reshape(u_tot.aa.shape))
         u_tot.bb = scipy.linalg.expm(a[u_tot.aa.size :].reshape(u_tot.bb.shape))
