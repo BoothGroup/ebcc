@@ -2506,9 +2506,9 @@ def make_rdm2_f(l1=None, l2=None, t1=None, t2=None, **kwargs):
     rdm2.abab = pack_2e(rdm2.abab.oooo, rdm2.abab.ooov, rdm2.abab.oovo, rdm2.abab.ovoo, rdm2.abab.vooo, rdm2.abab.oovv, rdm2.abab.ovov, rdm2.abab.ovvo, rdm2.abab.voov, rdm2.abab.vovo, rdm2.abab.vvoo, rdm2.abab.ovvv, rdm2.abab.vovv, rdm2.abab.vvov, rdm2.abab.vvvo, rdm2.abab.vvvv)
     rdm2.bbbb = pack_2e(rdm2.bbbb.oooo, rdm2.bbbb.ooov, rdm2.bbbb.oovo, rdm2.bbbb.ovoo, rdm2.bbbb.vooo, rdm2.bbbb.oovv, rdm2.bbbb.ovov, rdm2.bbbb.ovvo, rdm2.bbbb.voov, rdm2.bbbb.vovo, rdm2.bbbb.vvoo, rdm2.bbbb.ovvv, rdm2.bbbb.vovv, rdm2.bbbb.vvov, rdm2.bbbb.vvvo, rdm2.bbbb.vvvv)
     rdm2 = Namespace(
-        aaaa=rdm2.aaaa.swapaxes(1, 2),
-        aabb=rdm2.abab.swapaxes(1, 2),
-        bbbb=rdm2.bbbb.swapaxes(1, 2),
+        aaaa=rdm2.aaaa.transpose(0, 2, 1, 3),
+        aabb=rdm2.abab.transpose(0, 2, 1, 3),
+        bbbb=rdm2.bbbb.transpose(0, 2, 1, 3),
     )
 
     return rdm2

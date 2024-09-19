@@ -243,10 +243,10 @@ class UEBCC(BaseEBCC):
                 elif n == 2:
                     comb_t = comb[0] + comb[2] + comb[1] + comb[3]
                     key_t = key[0] + key[2] + key[1] + key[3]
-                    tn[comb] = eris[comb_t][key_t].swapaxes(1, 2) / self.energy_sum(key, comb)
+                    tn[comb] = eris[comb_t][key_t].transpose(0, 2, 1, 3) / self.energy_sum(key, comb)
                     if comb in ("aaaa", "bbbb"):
                         # TODO generalise:
-                        tn[comb] = 0.5 * (tn[comb] - tn[comb].swapaxes(0, 1))
+                        tn[comb] = 0.5 * (tn[comb] - tn[comb].transpose(1, 0, 2, 3))
                 else:
                     shape = tuple(self.space["ab".index(s)].size(k) for s, k in zip(comb, key))
                     tn[comb] = np.zeros(shape, dtype=types[float])

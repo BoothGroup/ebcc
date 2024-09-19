@@ -9138,9 +9138,9 @@ def make_rdm2_f(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, t3=None,
     rdm2_f_abab = pack_2e(rdm2_f_abab_oooo, rdm2_f_abab_ooov, rdm2_f_abab_oovo, rdm2_f_abab_ovoo, rdm2_f_abab_vooo, rdm2_f_abab_oovv, rdm2_f_abab_ovov, rdm2_f_abab_ovvo, rdm2_f_abab_voov, rdm2_f_abab_vovo, rdm2_f_abab_vvoo, rdm2_f_abab_ovvv, rdm2_f_abab_vovv, rdm2_f_abab_vvov, rdm2_f_abab_vvvo, rdm2_f_abab_vvvv)
     rdm2_f_bbbb = pack_2e(rdm2_f_bbbb_oooo, rdm2_f_bbbb_ooov, rdm2_f_bbbb_oovo, rdm2_f_bbbb_ovoo, rdm2_f_bbbb_vooo, rdm2_f_bbbb_oovv, rdm2_f_bbbb_ovov, rdm2_f_bbbb_ovvo, rdm2_f_bbbb_voov, rdm2_f_bbbb_vovo, rdm2_f_bbbb_vvoo, rdm2_f_bbbb_ovvv, rdm2_f_bbbb_vovv, rdm2_f_bbbb_vvov, rdm2_f_bbbb_vvvo, rdm2_f_bbbb_vvvv)
 
-    rdm2_f_aaaa = rdm2_f_aaaa.swapaxes(1, 2)
-    rdm2_f_aabb = rdm2_f_abab.swapaxes(1, 2)
-    rdm2_f_bbbb = rdm2_f_bbbb.swapaxes(1, 2)
+    rdm2_f_aaaa = rdm2_f_aaaa.transpose(0, 2, 1, 3)
+    rdm2_f_aabb = rdm2_f_abab.transpose(0, 2, 1, 3)
+    rdm2_f_bbbb = rdm2_f_bbbb.transpose(0, 2, 1, 3)
 
     rdm2_f.aaaa = rdm2_f_aaaa
     rdm2_f.aabb = rdm2_f_aabb

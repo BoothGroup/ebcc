@@ -725,7 +725,7 @@ def make_rdm2_f(l1=None, l2=None, t1=None, t2=None, **kwargs):
     rdm2.oooo += einsum(delta.oo, (0, 1), tmp4, (2, 3), (0, 3, 1, 2)) * -1
     del tmp4, delta
     rdm2 = pack_2e(rdm2.oooo, rdm2.ooov, rdm2.oovo, rdm2.ovoo, rdm2.vooo, rdm2.oovv, rdm2.ovov, rdm2.ovvo, rdm2.voov, rdm2.vovo, rdm2.vvoo, rdm2.ovvv, rdm2.vovv, rdm2.vvov, rdm2.vvvo, rdm2.vvvv)
-    rdm2 = rdm2.swapaxes(1, 2)
+    rdm2 = rdm2.transpose(0, 2, 1, 3)
 
     return rdm2
 

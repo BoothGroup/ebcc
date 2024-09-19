@@ -106,20 +106,6 @@ def _transpose(tensor, *axes):
 tf.Tensor.transpose = _transpose
 
 
-def _swapaxes(tensor, axis1, axis2):
-    # Get the current shape of the tensor
-    shape = tf.range(tf.rank(tensor))
-
-    # Swap the specified axes
-    perm = tf.tensor_scatter_nd_update(shape, [[axis1], [axis2]], [axis2, axis1])
-
-    # Transpose the tensor with the new permutation
-    return tf.transpose(tensor, perm)
-
-
-tf.Tensor.swapaxes = _swapaxes
-
-
 def einsum_path(*args, **kwargs):
     """Evaluate the lowest cost contraction order for an einsum expression."""
     kwargs = dict(kwargs)
