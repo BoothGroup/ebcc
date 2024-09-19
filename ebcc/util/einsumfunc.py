@@ -35,10 +35,10 @@ except ImportError:
 CONTRACTION_METHOD = "backend"
 
 """The size of the contraction to fall back on the backend."""
-BACKEND_EINSUM_SIZE = 2000
+BACKEND_EINSUM_SIZE = 1000
 
 """The size of the contraction to let the backend optimize."""
-BACKEND_OPTIMIZE_SIZE = 1000
+BACKEND_OPTIMIZE_SIZE = 100
 
 """Symbols used in einsum-like functions."""
 EINSUM_SYMBOLS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -226,7 +226,7 @@ def _contract_backend(
     return res
 
 
-def _contract_ttdt(
+def _contract_ttgt(
     subscript: str,
     a: NDArray[T],
     b: NDArray[T],
@@ -490,7 +490,7 @@ def einsum(
     if contract is None:
         contract = {
             "backend": _contract_backend,
-            "ttdt": _contract_ttdt,
+            "ttgt": _contract_ttgt,
             "tblis": _contract_tblis,
         }[CONTRACTION_METHOD.lower()]
 
