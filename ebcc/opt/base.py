@@ -13,6 +13,7 @@ from ebcc import util
 from ebcc.core.damping import DIIS
 from ebcc.core.logging import ANSI, NullLogger, init_logging
 from ebcc.core.precision import types
+from ebcc.util import _BaseOptions
 
 if TYPE_CHECKING:
     from typing import Any, Optional
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
 
     from ebcc.cc.base import BaseEBCC, SpinArrayType
     from ebcc.core.damping import BaseDamping
-    from ebcc.util import Namespace, _BaseOptions
+    from ebcc.util import Namespace
 
     T = float64
 

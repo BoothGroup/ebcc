@@ -14,6 +14,7 @@ from ebcc.core.damping import DIIS
 from ebcc.core.dump import Dump
 from ebcc.core.logging import ANSI
 from ebcc.core.precision import astype, types
+from ebcc.util import _BaseOptions
 
 if TYPE_CHECKING:
     from typing import Any, Callable, Literal, Optional, Union
@@ -26,7 +27,7 @@ if TYPE_CHECKING:
     from ebcc.core.logging import Logger
     from ebcc.ham.base import BaseElectronBoson, BaseERIs, BaseFock
     from ebcc.opt.base import BaseBruecknerEBCC
-    from ebcc.util import Namespace, _BaseOptions
+    from ebcc.util import Namespace
 
     T = float64
 

@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, cast
 
 from ebcc import numpy as np
 from ebcc import util
+from ebcc.core.precision import astype
 
 if TYPE_CHECKING:
     from typing import Any, Optional
@@ -188,21 +189,24 @@ class DIIS(BaseDamping):
             min_space = getattr(options, "diis_min_space", 1)
         self.space = space
         self.min_space = min_space
+        self._norm_cache = {}
 
-    @functools.lru_cache(maxsize=None)  # noqa: B019
-    def _error_norm(self, counter_i: int, counter_j: int) -> T:
+    def _error_norm(self, i: int, j: int) -> T:
         """Calculate the error norm between two arrays.
 
         Args:
-            counter_i: The first counter.
-            counter_j: The second counter.
+            i: The first counter.
+            j: The second counter.
 
         Returns:
             The error norm.
         """
-        return cast(
-            T, np.dot(self._errors[counter_i].conj().ravel(), self._errors[counter_j].ravel())
-        )
+        if (i, j) not in self._norm_cache:
+            self._norm_cache[i, j] = astype(
+                np.dot(self._errors[i].conj().ravel(), self._errors[j].ravel()), float
+            )
+            self._norm_cache[j, i] = self._norm_cache[i, j].conjugate()
+        return self._norm_cache[i, j]
 
     def push(self, array: NDArray[T], error: Optional[NDArray[T]] = None) -> None:
         """Push the array and error into the damping object.
@@ -251,17 +255,14 @@ class DIIS(BaseDamping):
                 for counter_i in counters
             ]
         )
-        matrix = np.block(
-            [
-                [errors, -np.ones((size, 1), dtype=errors.dtype)],
-                [-np.ones((1, size), dtype=errors.dtype), np.zeros((1, 1), dtype=errors.dtype)],
-            ]
-        )
+        zeros = np.zeros((1, 1), dtype=errors.dtype)
+        ones = np.ones((size, 1), dtype=errors.dtype)
+        matrix = np.block([[errors, -ones], [-ones.T, zeros]])
 
         # Build the right-hand side
-        residual = np.block(
-            [np.zeros((size,), dtype=errors.dtype), -np.ones((1,), dtype=errors.dtype)]
-        )
+        zeros = np.zeros((size,), dtype=errors.dtype)
+        ones = np.ones((1,), dtype=errors.dtype)
+        residual = np.block([zeros, -ones])
 
         # Solve the linear problem
         try:
@@ -285,3 +286,8 @@ class DIIS(BaseDamping):
         self._errors[self._counter] = error
 
         return array
+
+    def reset(self) -> None:
+        """Reset the damping object."""
+        super().reset()
+        self._norm_cache = {}
