@@ -25,7 +25,8 @@ if TYPE_CHECKING:
 
 # Development note: multiplication of boolean arrays is used in place of logical or bitwise
 # AND functions. This is because backends are not guaranteed to support logical or bitwise
-# operations via overloaded operators.
+# operations via overloaded operators. Similarly, subtraction of boolean arrays is used in
+# place of logical or bitwise NOT functions.
 
 
 class Space:
@@ -154,7 +155,7 @@ class Space:
     @property
     def virtual(self) -> NDArray[B]:
         """Get a boolean mask of virtual orbitals."""
-        return ~self.occupied
+        return np.ones_like(self.occupied) - self.occupied
 
     @property
     def nmo(self) -> int:
@@ -176,7 +177,7 @@ class Space:
     @property
     def correlated(self) -> NDArray[B]:
         """Get a boolean mask of correlated orbitals."""
-        return ~self.frozen
+        return np.ones_like(self.frozen) - self.frozen
 
     @property
     def correlated_occupied(self) -> NDArray[B]:
@@ -208,7 +209,7 @@ class Space:
     @property
     def inactive(self) -> NDArray[B]:
         """Get a boolean mask of inactive orbitals."""
-        return ~self.active
+        return np.ones_like(self.active) - self.active
 
     @property
     def inactive_occupied(self) -> NDArray[B]:

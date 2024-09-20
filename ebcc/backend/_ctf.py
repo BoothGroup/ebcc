@@ -19,6 +19,14 @@ def astype(obj, dtype):
     return obj.astype(dtype)
 
 
+def zeros_like(obj):
+    return ctf.zeros(obj.shape, dtype=obj.dtype)
+
+
+def ones_like(obj):
+    return ctf.ones(obj.shape, dtype=obj.dtype)
+
+
 def einsum(*args, optimize=True, **kwargs):
     """Evaluate an einsum expression."""
     # FIXME This shouldn't be called, except via `util.einsum`, which should have already
