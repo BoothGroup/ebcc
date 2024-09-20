@@ -79,15 +79,15 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
             )
 
         a = np.concatenate(
-            [scipy.linalg.logm(u_tot.aa).ravel(), scipy.linalg.logm(u_tot.bb).ravel()], axis=0
+            [np.ravel(scipy.linalg.logm(u_tot.aa)), np.ravel(scipy.linalg.logm(u_tot.bb))], axis=0
         )
-        a = a.real.astype(types[float])
+        a = np.astype(np.real(a), types[float])
         if diis is not None:
-            xerr = np.concatenate([t1.aa.ravel(), t1.bb.ravel()])
+            xerr = np.concatenate([np.ravel(t1.aa), np.ravel(t1.bb)])
             a = diis.update(a, xerr=xerr)
 
-        u_tot.aa = scipy.linalg.expm(a[: u_tot.aa.size].reshape(u_tot.aa.shape))
-        u_tot.bb = scipy.linalg.expm(a[u_tot.aa.size :].reshape(u_tot.bb.shape))
+        u_tot.aa = scipy.linalg.expm(np.reshape(a[: u_tot.aa.size], u_tot.aa.shape))
+        u_tot.bb = scipy.linalg.expm(np.reshape(a[u_tot.aa.size :], u_tot.bb.shape))
 
         return u, u_tot
 

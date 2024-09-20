@@ -129,10 +129,10 @@ class BaseEBCC(ABC):
         self.log = default_log if log is None else log
         self.mf = self._convert_mf(mf)
         self._mo_coeff: Optional[NDArray[T]] = (
-            mo_coeff.astype(types[float]) if mo_coeff is not None else None
+            np.astype(mo_coeff, types[float]) if mo_coeff is not None else None
         )
         self._mo_occ: Optional[NDArray[T]] = (
-            mo_occ.astype(types[float]) if mo_occ is not None else None
+            np.astype(mo_occ, types[float]) if mo_occ is not None else None
         )
 
         # Ansatz:
@@ -157,9 +157,9 @@ class BaseEBCC(ABC):
             raise ValueError(
                 "Fermionic and bosonic coupling ranks must both be zero, or both non-zero."
             )
-        self.omega = omega.astype(types[float]) if omega is not None else None
-        self.bare_g = g.astype(types[float]) if g is not None else None
-        self.bare_G = G.astype(types[float]) if G is not None else None
+        self.omega = np.astype(omega, types[float]) if omega is not None else None
+        self.bare_g = np.astype(g, types[float]) if g is not None else None
+        self.bare_G = np.astype(G, types[float]) if G is not None else None
         if self.boson_ansatz != "":
             self.g = self.get_g()
             self.G = self.get_mean_field_G()
@@ -583,7 +583,7 @@ class BaseEBCC(ABC):
             eris=eris,
             amplitudes=amplitudes,
         )
-        res: float = func(**kwargs).real.item()
+        res: float = np.ravel(np.real(func(**kwargs)))[0]
         return astype(res, float)
 
     def energy_perturbative(
@@ -608,7 +608,7 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        res: float = func(**kwargs).real.item()
+        res: float = np.ravel(np.real(func(**kwargs)))[0]
         return astype(res, float)
 
     @abstractmethod
@@ -951,7 +951,7 @@ class BaseEBCC(ABC):
         """
         if self.options.shift:
             assert self.omega is not None
-            return util.einsum("I,I->", self.omega, self.xi**2.0).item()
+            return np.ravel(util.einsum("I,I->", self.omega, self.xi**2.0))[0]
         return 0.0
 
     @property
@@ -962,7 +962,7 @@ class BaseEBCC(ABC):
             Molecular orbital coefficients.
         """
         if self._mo_coeff is None:
-            return self.mf.mo_coeff.astype(types[float])  # type: ignore
+            return np.astype(self.mf.mo_coeff, types[float])  # type: ignore
         return self._mo_coeff
 
     @property
@@ -973,7 +973,7 @@ class BaseEBCC(ABC):
             Molecular orbital occupation numbers.
         """
         if self._mo_occ is None:
-            return self.mf.mo_occ.astype(types[float])  # type: ignore
+            return np.astype(self.mf.mo_occ, types[float])  # type: ignore
         return self._mo_occ
 
     @property

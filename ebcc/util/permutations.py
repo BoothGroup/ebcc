@@ -221,7 +221,7 @@ def antisymmetrise_array(v: NDArray[T], axes: Optional[tuple[int, ...]] = None) 
             if ax in axes:
                 j = axes.index(ax)
                 transpose[i] = perm[j]
-        v_as += sign * v.transpose(transpose).copy()
+        v_as += sign * np.copy(np.transpose(v, transpose))
 
     return v_as
 
@@ -314,7 +314,7 @@ def compress_axes(
 
     # Reshape array so that all axes of the same character are adjacent:
     arg = tuple(np.argsort(list(subscript)))
-    array = array.transpose(arg)
+    array = np.transpose(array, arg)
     subscript = permute_string(subscript, arg)
 
     # Reshape array so that all axes of the same character are flattened:
@@ -324,7 +324,7 @@ def compress_axes(
             assert sizes[char] == n
         else:
             sizes[char] = n
-    array = array.reshape([sizes[char] ** subscript.count(char) for char in sorted(set(subscript))])
+    array = np.reshape(array, [sizes[char] ** subscript.count(char) for char in sorted(set(subscript))])
 
     # For each axis type, get the necessary lower-triangular indices:
     indices_ndim = [
@@ -399,7 +399,7 @@ def decompress_axes(
 
     # Reshape array so that all axes of the same character are adjacent:
     arg = tuple(np.argsort(list(subscript)))
-    array = array.transpose(arg)
+    array = np.transpose(array, arg)
     subscript = permute_string(subscript, arg)
 
     # Reshape array so that all axes of the same character are flattened:
@@ -409,7 +409,7 @@ def decompress_axes(
             assert sizes[char] == n
         else:
             sizes[char] = n
-    array = array.reshape([sizes[char] ** subscript.count(char) for char in sorted(set(subscript))])
+    array = np.reshape(array, [sizes[char] ** subscript.count(char) for char in sorted(set(subscript))])
 
     # Check the symmetry string, and compress it:
     n = 0
@@ -442,13 +442,13 @@ def decompress_axes(
         array = _put(array, indices_perm, array_flat * util.prod(signs))
 
     # Reshape array to non-flattened format
-    array = array.reshape(
+    array = np.reshape(array, (
         sum([(sizes[char],) * subscript.count(char) for char in sorted(set(subscript))], tuple())
-    )
+    ))
 
     # Undo transpose:
     arg = tuple(np.argsort(arg))
-    array = array.transpose(arg)
+    array = np.transpose(array, arg)
 
     return array
 
@@ -522,7 +522,7 @@ def symmetrise(
             for i, p in zip(inds_part, perms_part):
                 perm[i] = p
         sign = util.prod(signs) if symmetry[perm[0]] == "-" else 1
-        array_as = array_as + sign * array.transpose(perm)
+        array_as = array_as + sign * np.transpose(array, perm)
 
     if apply_factor:
         # Apply factor

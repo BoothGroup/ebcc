@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ebcc.ham.base import BaseElectronBoson, BaseGHamiltonian, BaseRHamiltonian, BaseUHamiltonian
+from ebcc import numpy as np
 
 if TYPE_CHECKING:
     from numpy import float64
@@ -31,7 +32,7 @@ class RElectronBoson(BaseElectronBoson, BaseRHamiltonian):
             assert key[0] == "b"
             i = self.space[0].mask(key[1])
             j = self.space[1].mask(key[2])
-            self._members[key] = self.array[:, i][:, :, j].copy()
+            self._members[key] = np.copy(self.array[:, i][:, :, j])
         return self._members[key]
 
     def _get_g(self) -> NDArray[T]:
@@ -89,7 +90,7 @@ class GElectronBoson(BaseElectronBoson, BaseGHamiltonian):
             assert key[0] == "b"
             i = self.space[0].mask(key[1])
             j = self.space[1].mask(key[2])
-            self._members[key] = self.array[:, i][:, :, j].copy()
+            self._members[key] = np.copy(self.array[:, i][:, :, j])
         return self._members[key]
 
     def _get_g(self) -> NDArray[T]:

@@ -44,7 +44,7 @@ class GCCSD_SD_1_2_Tests(unittest.TestCase):
         nbos = 5
         np.random.seed(12345)
         g_ = np.random.random((nbos, nmo, nmo)) * 0.02
-        g_ = 0.5 * (g_ + g_.transpose(0, 2, 1).conj())
+        g_ = 0.5 * (g_ + np.conj(np.transpose(g_, (0, 2, 1))))
         omega = np.random.random((nbos,)) * 5.0
 
         orbspin = scf.addons.get_ghf_orbspin(mf.mo_energy, mf.mo_occ, True)
@@ -150,8 +150,8 @@ class GCCSD_SD_1_2_Tests(unittest.TestCase):
         orbspin = scf.addons.get_ghf_orbspin(uhf.mo_energy, uhf.mo_occ, False)
         nmo = self.mf.mo_occ.size
         g = np.zeros((self.omega.size, nmo*2, nmo*2))
-        g[np.ix_(range(self.omega.size), orbspin==0, orbspin==0)] = self.g_rhf.copy()
-        g[np.ix_(range(self.omega.size), orbspin==1, orbspin==1)] = self.g_rhf.copy()
+        g[np.ix_(range(self.omega.size), orbspin==0, orbspin==0)] = np.copy(self.g_rhf)
+        g[np.ix_(range(self.omega.size), orbspin==1, orbspin==1)] = np.copy(self.g_rhf)
 
         gebcc1 = GEBCC(
                 mf,
@@ -199,8 +199,8 @@ class GCCSD_SD_1_2_Tests(unittest.TestCase):
         orbspin = scf.addons.get_ghf_orbspin(mf.mo_energy, mf.mo_occ, False)
         nmo = self.mf.mo_occ.size
         g = np.zeros((self.omega.size, nmo*2, nmo*2))
-        g[np.ix_(range(self.omega.size), orbspin==0, orbspin==0)] = self.g_rhf.copy()
-        g[np.ix_(range(self.omega.size), orbspin==1, orbspin==1)] = self.g_rhf.copy()
+        g[np.ix_(range(self.omega.size), orbspin==0, orbspin==0)] = np.copy(self.g_rhf)
+        g[np.ix_(range(self.omega.size), orbspin==1, orbspin==1)] = np.copy(self.g_rhf)
 
         gebcc1 = GEBCC(
                 mf,

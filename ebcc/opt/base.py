@@ -10,6 +10,7 @@ import numpy
 from pyscf import lib
 
 from ebcc import util
+from ebcc import numpy as np
 from ebcc.core.damping import DIIS
 from ebcc.core.logging import ANSI, NullLogger, init_logging
 from ebcc.core.precision import types
@@ -125,8 +126,8 @@ class BaseBruecknerEBCC(ABC):
         diis.damping = self.options.damping
 
         # Initialise coefficients:
-        mo_coeff_new: NDArray[T] = self.cc.mo_coeff.astype(types[float]).copy()
-        mo_coeff_ref: NDArray[T] = self.cc.mo_coeff.astype(types[float]).copy()
+        mo_coeff_new: NDArray[T] = np.copy(np.astype(self.cc.mo_coeff, types[float]))
+        mo_coeff_ref: NDArray[T] = np.copy(np.astype(self.cc.mo_coeff, types[float]))
         mo_coeff_ref = self.mo_to_correlated(mo_coeff_ref)
         u_tot = None
 

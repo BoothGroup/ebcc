@@ -112,16 +112,16 @@ class DIIS:
         # this looks crazy, but it's just updating the `self._index`th row and
         # column with the new errors, it's just done this way to avoid using
         # calls to `__setitem__` in immutable backends
-        m_i = np.array([np.dot(x1.ravel().conj(), self._errors[i].ravel()) for i in range(nd)])
+        m_i = np.array([np.dot(np.conj(np.ravel(x1)), np.ravel(self._errors[i])) for i in range(nd)])
         m_i = np.concatenate([np.array([1.0]), m_i, np.zeros(self.space - nd)])
-        m_i = m_i.reshape(-1, 1)
-        m_j = m_i.T.conj()
+        m_i = np.reshape(m_i, (-1, 1))
+        m_j = np.conj(m_i.T)
         pre = slice(0, self._index)
         pos = slice(self._index + 1, self.space + 1)
         self._matrix = np.block(
             [
                 [self._matrix[pre, pre], m_i[pre, :], self._matrix[pre, pos]],
-                [m_j[:, pre], m_i[self._index, :].reshape(1, 1), m_j[:, pos]],
+                [m_j[:, pre], np.reshape(m_i[self._index, :], (1, 1)), m_j[:, pos]],
                 [self._matrix[pos, pre], m_i[pos, :], self._matrix[pos, pos]],
             ]
         )
@@ -161,7 +161,7 @@ class DIIS:
         # Solve the linear problem
         w, v = np.linalg.eigh(h)
         mask = np.abs(w) > 1e-14
-        c = util.einsum("pi,qi,i,q->p", v[:, mask], v[:, mask].conj(), 1 / w[mask], g)
+        c = util.einsum("pi,qi,i,q->p", v[:, mask], np.conj(v[:, mask]), 1 / w[mask], g)
 
         # Construct the new vector
         xnew: NDArray[T] = np.zeros_like(self._arrays[0])

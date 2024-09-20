@@ -65,7 +65,7 @@ class BruecknerREBCC(BaseBruecknerEBCC):
             u_tot = _put(u_tot, np.ix_(np.arange(u_tot.shape[0]), np.array([0])), -u_tot[:, 0])
 
         a = scipy.linalg.logm(u_tot)
-        a = a.real.astype(types[float])
+        a = np.astype(np.real(a), types[float])
         if diis is not None:
             a = diis.update(a, xerr=t1)
 

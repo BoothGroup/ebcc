@@ -217,8 +217,8 @@ class BaseEOM(ABC):
             ) -> tuple[NDArray[T], NDArray[T], int]:
                 """Pick the eigenvalues."""
                 x0 = numpy.asarray(lib.linalg_helper._gen_x0(env["v"], env["xs"]))
-                s = numpy.asarray(guesses).conj() @ x0.T
-                s = numpy.einsum("pi,pi->i", s.conj(), s)
+                s = numpy.conj(numpy.asarray(guesses)) @ x0.T
+                s = numpy.einsum("pi,pi->i", numpy.conj(s), s)
                 arg = numpy.argsort(-s)[:nroots]
                 w, v, idx = lib.linalg_helper._eigs_cmplx2real(
                     numpy.asarray(w),
@@ -234,7 +234,7 @@ class BaseEOM(ABC):
                 w: NDArray[T], v: NDArray[T], nroots: int, env: dict[str, Any]
             ) -> tuple[NDArray[T], NDArray[T], int]:
                 """Pick the eigenvalues."""
-                real_idx = numpy.where(abs(w.imag) < 1e-3)[0]
+                real_idx = numpy.where(abs(numpy.imag(w)) < 1e-3)[0]
                 w, v, idx = lib.linalg_helper._eigs_cmplx2real(
                     numpy.asarray(w),
                     numpy.asarray(v),
@@ -344,8 +344,8 @@ class BaseEOM(ABC):
 
         # Update attributes:
         self.converged = converged
-        self.e = e.astype(types[float])
-        self.v = np.asarray(v).T.astype(types[float])
+        self.e = np.astype(e, types[float])
+        self.v = np.astype(np.asarray(v).T, types[float])
 
         self.log.debug("")
         self.log.output(
@@ -355,7 +355,7 @@ class BaseEOM(ABC):
             r1n = self.vector_to_amplitudes(vn)["r1"]
             qpwt = self._quasiparticle_weight(r1n)
             self.log.output(
-                f"{n:>4d} {en.item():>16.10f} {qpwt:>13.5g} "
+                f"{n:>4d} {np.ravel(en)[0]:>16.10f} {qpwt:>13.5g} "
                 f"{[ANSI.r, ANSI.g][bool(cn)]}{cn!r:>8s}{ANSI.R}"
             )
 

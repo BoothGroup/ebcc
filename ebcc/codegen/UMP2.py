@@ -103,12 +103,12 @@ def make_rdm2_f(l2=None, t2=None, **kwargs):
     rdm2.aaaa = Namespace()
     rdm2.abab = Namespace()
     rdm2.bbbb = Namespace()
-    rdm2.bbbb.vvoo = l2.bbbb.copy() * 2
-    rdm2.abab.vvoo = l2.abab.copy()
-    rdm2.aaaa.vvoo = l2.aaaa.copy() * 2
-    rdm2.bbbb.oovv = t2.bbbb.copy() * 2
-    rdm2.abab.oovv = t2.abab.copy()
-    rdm2.aaaa.oovv = t2.aaaa.copy() * 2
+    rdm2.bbbb.vvoo = np.copy(l2.bbbb) * 2
+    rdm2.abab.vvoo = np.copy(l2.abab)
+    rdm2.aaaa.vvoo = np.copy(l2.aaaa) * 2
+    rdm2.bbbb.oovv = np.copy(t2.bbbb) * 2
+    rdm2.abab.oovv = np.copy(t2.abab)
+    rdm2.aaaa.oovv = np.copy(t2.aaaa) * 2
     rdm2.aaaa.oooo = np.zeros((t2.aaaa.shape[0], t2.aaaa.shape[0], t2.aaaa.shape[0], t2.aaaa.shape[0]))
     rdm2.aaaa.ooov = np.zeros((t2.aaaa.shape[0], t2.aaaa.shape[0], t2.aaaa.shape[0], t2.aaaa.shape[-1]))
     rdm2.aaaa.oovo = np.zeros((t2.aaaa.shape[0], t2.aaaa.shape[0], t2.aaaa.shape[-1], t2.aaaa.shape[0]))
@@ -155,9 +155,9 @@ def make_rdm2_f(l2=None, t2=None, **kwargs):
     rdm2.abab = pack_2e(rdm2.abab.oooo, rdm2.abab.ooov, rdm2.abab.oovo, rdm2.abab.ovoo, rdm2.abab.vooo, rdm2.abab.oovv, rdm2.abab.ovov, rdm2.abab.ovvo, rdm2.abab.voov, rdm2.abab.vovo, rdm2.abab.vvoo, rdm2.abab.ovvv, rdm2.abab.vovv, rdm2.abab.vvov, rdm2.abab.vvvo, rdm2.abab.vvvv)
     rdm2.bbbb = pack_2e(rdm2.bbbb.oooo, rdm2.bbbb.ooov, rdm2.bbbb.oovo, rdm2.bbbb.ovoo, rdm2.bbbb.vooo, rdm2.bbbb.oovv, rdm2.bbbb.ovov, rdm2.bbbb.ovvo, rdm2.bbbb.voov, rdm2.bbbb.vovo, rdm2.bbbb.vvoo, rdm2.bbbb.ovvv, rdm2.bbbb.vovv, rdm2.bbbb.vvov, rdm2.bbbb.vvvo, rdm2.bbbb.vvvv)
     rdm2 = Namespace(
-        aaaa=rdm2.aaaa.transpose(0, 2, 1, 3),
-        aabb=rdm2.abab.transpose(0, 2, 1, 3),
-        bbbb=rdm2.bbbb.transpose(0, 2, 1, 3),
+        aaaa=np.transpose(rdm2.aaaa, (0, 2, 1, 3)),
+        aabb=np.transpose(rdm2.abab, (0, 2, 1, 3)),
+        bbbb=np.transpose(rdm2.bbbb, (0, 2, 1, 3)),
     )
     rdm1 = make_rdm1_f(t2=t2, l2=l2)
     delta = Namespace(
@@ -236,11 +236,11 @@ def hbar_matvec_ip(f=None, r1=None, r2=None, v=None, **kwargs):
     ints = kwargs["ints"]
     r1new = Namespace()
     r2new = Namespace()
-    tmp2 = ints.tmp10.copy() * 2
+    tmp2 = np.copy(ints.tmp10) * 2
     del ints.tmp10
     tmp2 += ints.tmp12
     del ints.tmp12
-    tmp0 = ints.tmp2.copy() * 2
+    tmp0 = np.copy(ints.tmp2) * 2
     del ints.tmp2
     tmp0 += ints.tmp4
     del ints.tmp4
@@ -248,20 +248,20 @@ def hbar_matvec_ip(f=None, r1=None, r2=None, v=None, **kwargs):
     tmp7 = einsum(f.bb.oo, (0, 1), r2.bbb, (2, 1, 3), (0, 2, 3))
     tmp4 = einsum(v.aaaa.ooov, (0, 1, 2, 3), r1.a, (1,), (0, 2, 3))
     tmp5 = einsum(f.aa.oo, (0, 1), r2.aaa, (2, 1, 3), (0, 2, 3))
-    tmp3 = f.bb.oo.copy() * 2
+    tmp3 = np.copy(f.bb.oo) * 2
     tmp3 += tmp2
-    tmp3 += tmp2.transpose((1, 0))
+    tmp3 += np.transpose(tmp2, (1, 0))
     del tmp2
-    tmp1 = f.aa.oo.copy() * 2
+    tmp1 = np.copy(f.aa.oo) * 2
     tmp1 += tmp0
-    tmp1 += tmp0.transpose((1, 0))
+    tmp1 += np.transpose(tmp0, (1, 0))
     del tmp0
     r2new.bbb = einsum(f.bb.vv, (0, 1), r2.bbb, (2, 3, 1), (2, 3, 0)) * 2
     r2new.bbb += tmp6 * -1
-    r2new.bbb += tmp6.transpose((1, 0, 2))
+    r2new.bbb += np.transpose(tmp6, (1, 0, 2))
     del tmp6
     r2new.bbb += tmp7 * 2
-    r2new.bbb += tmp7.transpose((1, 0, 2)) * -2
+    r2new.bbb += np.transpose(tmp7, (1, 0, 2)) * -2
     del tmp7
     r2new.bab = einsum(r2.bab, (0, 1, 2), f.bb.vv, (3, 2), (0, 1, 3))
     r2new.bab += einsum(f.bb.oo, (0, 1), r2.bab, (1, 2, 3), (0, 2, 3)) * -1
@@ -273,10 +273,10 @@ def hbar_matvec_ip(f=None, r1=None, r2=None, v=None, **kwargs):
     r2new.aba += einsum(f.aa.oo, (0, 1), r2.aba, (1, 2, 3), (0, 2, 3)) * -1
     r2new.aaa = einsum(r2.aaa, (0, 1, 2), f.aa.vv, (3, 2), (0, 1, 3)) * 2
     r2new.aaa += tmp4 * -1
-    r2new.aaa += tmp4.transpose((1, 0, 2))
+    r2new.aaa += np.transpose(tmp4, (1, 0, 2))
     del tmp4
     r2new.aaa += tmp5 * 2
-    r2new.aaa += tmp5.transpose((1, 0, 2)) * -2
+    r2new.aaa += np.transpose(tmp5, (1, 0, 2)) * -2
     del tmp5
     r1new.b = einsum(v.aabb.ovoo, (0, 1, 2, 3), r2.aba, (0, 3, 1), (2,))
     r1new.b += einsum(v.bbbb.ooov, (0, 1, 2, 3), r2.bbb, (1, 2, 3), (0,)) * -2
@@ -345,33 +345,33 @@ def hbar_matvec_ea(f=None, r1=None, r2=None, v=None, **kwargs):
     tmp7 = einsum(f.bb.vv, (0, 1), r2.bbb, (2, 1, 3), (3, 0, 2))
     tmp5 = einsum(v.aaaa.ovvv, (0, 1, 2, 3), r1.a, (3,), (0, 1, 2))
     tmp4 = einsum(f.aa.vv, (0, 1), r2.aaa, (2, 1, 3), (3, 0, 2))
-    tmp2 = ints.tmp10.copy()
+    tmp2 = np.copy(ints.tmp10)
     del ints.tmp10
     tmp2 += ints.tmp12 * 0.5
     del ints.tmp12
-    tmp0 = ints.tmp2.copy()
+    tmp0 = np.copy(ints.tmp2)
     del ints.tmp2
     tmp0 += ints.tmp4 * 0.5
     del ints.tmp4
-    tmp9 = tmp7.copy() * 2
+    tmp9 = np.copy(tmp7) * 2
     del tmp7
     tmp9 += tmp8
     del tmp8
-    tmp6 = tmp4.copy() * 2
+    tmp6 = np.copy(tmp4) * 2
     del tmp4
     tmp6 += tmp5
     del tmp5
-    tmp3 = f.bb.vv.copy() * -1
+    tmp3 = np.copy(f.bb.vv) * -1
     tmp3 += tmp2
-    tmp3 += tmp2.transpose((1, 0))
+    tmp3 += np.transpose(tmp2, (1, 0))
     del tmp2
-    tmp1 = f.aa.vv.copy() * -1
+    tmp1 = np.copy(f.aa.vv) * -1
     tmp1 += tmp0
-    tmp1 += tmp0.transpose((1, 0))
+    tmp1 += np.transpose(tmp0, (1, 0))
     del tmp0
     r2new.bbb = einsum(f.bb.oo, (0, 1), r2.bbb, (2, 3, 1), (2, 3, 0)) * -2
-    r2new.bbb += tmp9.transpose((1, 2, 0)) * -1
-    r2new.bbb += tmp9.transpose((2, 1, 0))
+    r2new.bbb += np.transpose(tmp9, (1, 2, 0)) * -1
+    r2new.bbb += np.transpose(tmp9, (2, 1, 0))
     del tmp9
     r2new.bab = einsum(r2.bab, (0, 1, 2), f.bb.vv, (3, 0), (3, 1, 2))
     r2new.bab += einsum(f.aa.vv, (0, 1), r2.bab, (2, 1, 3), (2, 0, 3))
@@ -382,8 +382,8 @@ def hbar_matvec_ea(f=None, r1=None, r2=None, v=None, **kwargs):
     r2new.aba += einsum(r1.b, (0,), v.aabb.ovvv, (1, 2, 3, 0), (2, 3, 1)) * -1
     r2new.aba += einsum(f.aa.oo, (0, 1), r2.aba, (2, 3, 1), (2, 3, 0)) * -1
     r2new.aaa = einsum(f.aa.oo, (0, 1), r2.aaa, (2, 3, 1), (2, 3, 0)) * -2
-    r2new.aaa += tmp6.transpose((1, 2, 0)) * -1
-    r2new.aaa += tmp6.transpose((2, 1, 0))
+    r2new.aaa += np.transpose(tmp6, (1, 2, 0)) * -1
+    r2new.aaa += np.transpose(tmp6, (2, 1, 0))
     del tmp6
     r1new.b = einsum(v.bbbb.ovvv, (0, 1, 2, 3), r2.bbb, (3, 1, 0), (2,)) * 2
     r1new.b += einsum(r2.aba, (0, 1, 2), v.aabb.ovvv, (2, 0, 3, 1), (3,)) * -1
@@ -458,10 +458,10 @@ def hbar_matvec_ee(f=None, r1=None, r2=None, t2=None, v=None, **kwargs):
     ints = kwargs["ints"]
     r1new = Namespace()
     r2new = Namespace()
-    tmp5 = v.bbbb.ovov.transpose((0, 2, 3, 1)).copy()
-    tmp5 += v.bbbb.ovov.transpose((0, 2, 1, 3)) * -1
-    tmp1 = v.aaaa.ovov.transpose((0, 2, 3, 1)).copy() * -1
-    tmp1 += v.aaaa.ovov.transpose((0, 2, 1, 3))
+    tmp5 = np.copy(np.transpose(v.bbbb.ovov, (0, 2, 3, 1)))
+    tmp5 += np.transpose(v.bbbb.ovov, (0, 2, 1, 3)) * -1
+    tmp1 = np.copy(np.transpose(v.aaaa.ovov, (0, 2, 3, 1))) * -1
+    tmp1 += np.transpose(v.aaaa.ovov, (0, 2, 1, 3))
     tmp20 = einsum(v.bbbb.ovvv, (0, 1, 2, 3), r1.bb, (4, 3), (4, 0, 1, 2))
     tmp19 = einsum(r1.bb, (0, 1), v.bbbb.ooov, (2, 0, 3, 4), (2, 3, 1, 4))
     tmp15 = einsum(v.aaaa.ovvv, (0, 1, 2, 3), r1.aa, (4, 3), (4, 0, 1, 2))
@@ -474,56 +474,56 @@ def hbar_matvec_ee(f=None, r1=None, r2=None, t2=None, v=None, **kwargs):
     del tmp1
     tmp23 = einsum(f.bb.vv, (0, 1), r2.bbbb, (2, 3, 4, 1), (2, 3, 0, 4))
     tmp22 = einsum(f.bb.oo, (0, 1), r2.bbbb, (2, 1, 3, 4), (0, 2, 3, 4))
-    tmp21 = tmp19.copy()
+    tmp21 = np.copy(tmp19)
     del tmp19
     tmp21 += tmp20
     del tmp20
-    tmp16 = tmp14.copy()
+    tmp16 = np.copy(tmp14)
     del tmp14
     tmp16 += tmp15
     del tmp15
     tmp18 = einsum(r2.aaaa, (0, 1, 2, 3), f.aa.vv, (4, 3), (0, 1, 4, 2))
     tmp17 = einsum(r2.aaaa, (0, 1, 2, 3), f.aa.oo, (4, 1), (4, 0, 2, 3))
-    tmp13 = f.bb.oo.copy()
-    tmp13 += ints.tmp32.transpose((1, 0)) * 2
+    tmp13 = np.copy(f.bb.oo)
+    tmp13 += np.transpose(ints.tmp32, (1, 0)) * 2
     del ints.tmp32
-    tmp13 += ints.tmp34.transpose((1, 0))
+    tmp13 += np.transpose(ints.tmp34, (1, 0))
     del ints.tmp34
-    tmp7 = tmp4.copy()
+    tmp7 = np.copy(tmp4)
     tmp7 += tmp6 * -1
     del tmp6
-    tmp11 = v.bbbb.ovov.transpose((0, 2, 1, 3)).copy()
+    tmp11 = np.copy(np.transpose(v.bbbb.ovov, (0, 2, 1, 3)))
     tmp11 += v.bbbb.oovv * -1
-    tmp3 = tmp0.copy()
+    tmp3 = np.copy(tmp0)
     tmp3 += tmp2 * -1
     del tmp2
-    tmp12 = ints.tmp23.transpose((1, 0)).copy() * 2
+    tmp12 = np.copy(np.transpose(ints.tmp23, (1, 0))) * 2
     del ints.tmp23
-    tmp12 += ints.tmp25.transpose((1, 0))
+    tmp12 += np.transpose(ints.tmp25, (1, 0))
     del ints.tmp25
     tmp12 += f.bb.vv * -1
-    tmp9 = ints.tmp2.transpose((1, 0)).copy() * 2
+    tmp9 = np.copy(np.transpose(ints.tmp2, (1, 0))) * 2
     del ints.tmp2
-    tmp9 += ints.tmp4.transpose((1, 0))
+    tmp9 += np.transpose(ints.tmp4, (1, 0))
     del ints.tmp4
     tmp9 += f.aa.vv * -1
-    tmp10 = f.aa.oo.copy()
-    tmp10 += ints.tmp17.transpose((1, 0)) * 2
+    tmp10 = np.copy(f.aa.oo)
+    tmp10 += np.transpose(ints.tmp17, (1, 0)) * 2
     del ints.tmp17
-    tmp10 += ints.tmp19.transpose((1, 0))
+    tmp10 += np.transpose(ints.tmp19, (1, 0))
     del ints.tmp19
-    tmp8 = v.aaaa.ovov.transpose((0, 2, 1, 3)).copy()
+    tmp8 = np.copy(np.transpose(v.aaaa.ovov, (0, 2, 1, 3)))
     tmp8 += v.aaaa.oovv * -1
-    r2new.bbbb = tmp21.copy() * -1
-    r2new.bbbb += tmp21.transpose((0, 1, 3, 2))
-    r2new.bbbb += tmp21.transpose((1, 0, 2, 3))
-    r2new.bbbb += tmp21.transpose((1, 0, 3, 2)) * -1
+    r2new.bbbb = np.copy(tmp21) * -1
+    r2new.bbbb += np.transpose(tmp21, (0, 1, 3, 2))
+    r2new.bbbb += np.transpose(tmp21, (1, 0, 2, 3))
+    r2new.bbbb += np.transpose(tmp21, (1, 0, 3, 2)) * -1
     del tmp21
-    r2new.bbbb += tmp22.transpose((0, 1, 3, 2)) * -2
-    r2new.bbbb += tmp22.transpose((1, 0, 3, 2)) * 2
+    r2new.bbbb += np.transpose(tmp22, (0, 1, 3, 2)) * -2
+    r2new.bbbb += np.transpose(tmp22, (1, 0, 3, 2)) * 2
     del tmp22
-    r2new.bbbb += tmp23.transpose((1, 0, 2, 3)) * 2
-    r2new.bbbb += tmp23.transpose((1, 0, 3, 2)) * -2
+    r2new.bbbb += np.transpose(tmp23, (1, 0, 2, 3)) * 2
+    r2new.bbbb += np.transpose(tmp23, (1, 0, 3, 2)) * -2
     del tmp23
     r2new.abab = einsum(r1.aa, (0, 1), v.aabb.vvov, (2, 1, 3, 4), (0, 3, 2, 4))
     r2new.abab += einsum(f.aa.vv, (0, 1), r2.abab, (2, 3, 1, 4), (2, 3, 0, 4))
@@ -533,16 +533,16 @@ def hbar_matvec_ee(f=None, r1=None, r2=None, t2=None, v=None, **kwargs):
     r2new.abab += einsum(v.aabb.ooov, (0, 1, 2, 3), r1.aa, (1, 4), (0, 2, 4, 3)) * -1
     r2new.abab += einsum(f.bb.oo, (0, 1), r2.abab, (2, 1, 3, 4), (2, 0, 3, 4)) * -1
     r2new.abab += einsum(v.aabb.ovoo, (0, 1, 2, 3), r1.bb, (3, 4), (0, 2, 1, 4)) * -1
-    r2new.aaaa = tmp16.copy() * -1
-    r2new.aaaa += tmp16.transpose((0, 1, 3, 2))
-    r2new.aaaa += tmp16.transpose((1, 0, 2, 3))
-    r2new.aaaa += tmp16.transpose((1, 0, 3, 2)) * -1
+    r2new.aaaa = np.copy(tmp16) * -1
+    r2new.aaaa += np.transpose(tmp16, (0, 1, 3, 2))
+    r2new.aaaa += np.transpose(tmp16, (1, 0, 2, 3))
+    r2new.aaaa += np.transpose(tmp16, (1, 0, 3, 2)) * -1
     del tmp16
-    r2new.aaaa += tmp17.transpose((0, 1, 3, 2)) * -2
-    r2new.aaaa += tmp17.transpose((1, 0, 3, 2)) * 2
+    r2new.aaaa += np.transpose(tmp17, (0, 1, 3, 2)) * -2
+    r2new.aaaa += np.transpose(tmp17, (1, 0, 3, 2)) * 2
     del tmp17
-    r2new.aaaa += tmp18.transpose((1, 0, 2, 3)) * 2
-    r2new.aaaa += tmp18.transpose((1, 0, 3, 2)) * -2
+    r2new.aaaa += np.transpose(tmp18, (1, 0, 2, 3)) * 2
+    r2new.aaaa += np.transpose(tmp18, (1, 0, 3, 2)) * -2
     del tmp18
     r1new.bb = einsum(r2.bbbb, (0, 1, 2, 3), v.bbbb.ovvv, (1, 3, 4, 2), (0, 4)) * 2
     r1new.bb += einsum(v.aabb.ovoo, (0, 1, 2, 3), r2.abab, (0, 3, 1, 4), (2, 4)) * -1
@@ -574,7 +574,7 @@ def hbar_matvec_ee(f=None, r1=None, r2=None, t2=None, v=None, **kwargs):
     del tmp9
     r1new.aa += einsum(r1.aa, (0, 1), tmp10, (0, 2), (2, 1)) * -1
     del tmp10
-    r2new.baba = r2new.abab.transpose(1, 0, 3, 2)
+    r2new.baba = np.transpose(r2new.abab, (1, 0, 3, 2))
 
     return {f"r1new": r1new, f"r2new": r2new}
 

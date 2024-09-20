@@ -33,7 +33,7 @@ def energy(t2=None, v=None, **kwargs):
         Coupled cluster energy.
     """
 
-    tmp0 = t2.transpose((0, 1, 3, 2)).copy() * 2
+    tmp0 = np.copy(np.transpose(t2, (0, 1, 3, 2))) * 2
     tmp0 += t2 * -1
     tmp1 = einsum(v.xov, (0, 1, 2), tmp0, (1, 3, 4, 2), (3, 4, 0)) * 0.5
     del tmp0
@@ -61,9 +61,9 @@ def update_amps(f=None, t2=None, v=None, **kwargs):
         Updated T2 residuals.
     """
 
-    tmp15 = t2.transpose((0, 1, 3, 2)).copy() * 2
+    tmp15 = np.copy(np.transpose(t2, (0, 1, 3, 2))) * 2
     tmp15 += t2 * -1
-    tmp7 = t2.transpose((0, 1, 3, 2)).copy() * 2
+    tmp7 = np.copy(np.transpose(t2, (0, 1, 3, 2))) * 2
     tmp7 += t2 * -1
     tmp16 = einsum(v.xov, (0, 1, 2), tmp15, (1, 3, 4, 2), (3, 4, 0))
     del tmp15
@@ -90,36 +90,36 @@ def update_amps(f=None, t2=None, v=None, **kwargs):
     tmp14 = einsum(tmp3, (0, 1, 2), tmp2, (3, 4, 2), (0, 3, 1, 4))
     del tmp3, tmp2
     tmp4 = einsum(f.oo, (0, 1), t2, (2, 1, 3, 4), (0, 2, 3, 4))
-    t2new += tmp4.transpose((1, 0, 2, 3)) * -1
-    t2new += tmp4.transpose((0, 1, 3, 2)) * -1
+    t2new += np.transpose(tmp4, (1, 0, 2, 3)) * -1
+    t2new += np.transpose(tmp4, (0, 1, 3, 2)) * -1
     del tmp4
     tmp1 = einsum(v.xvv, (0, 1, 2), v.xvv, (0, 3, 4), (3, 1, 2, 4))
     t2new += einsum(tmp1, (0, 1, 2, 3), t2, (4, 5, 3, 1), (4, 5, 0, 2))
     del tmp1
-    tmp10 = tmp6.copy()
+    tmp10 = np.copy(tmp6)
     del tmp6
-    tmp10 += tmp9.transpose((1, 0, 3, 2)) * -1
+    tmp10 += np.transpose(tmp9, (1, 0, 3, 2)) * -1
     del tmp9
-    t2new += tmp10.transpose((1, 0, 3, 2)) * -1
+    t2new += np.transpose(tmp10, (1, 0, 3, 2)) * -1
     t2new += tmp10 * -1
     del tmp10
     tmp0 = einsum(v.xoo, (0, 1, 2), v.xoo, (0, 3, 4), (1, 3, 4, 2))
     t2new += einsum(t2, (0, 1, 2, 3), tmp0, (4, 0, 5, 1), (5, 4, 2, 3))
     del tmp0
-    tmp13 = tmp11.copy()
+    tmp13 = np.copy(tmp11)
     del tmp11
     tmp13 += tmp12 * -1
     del tmp12
-    t2new += tmp13.transpose((1, 0, 2, 3))
-    t2new += tmp13.transpose((0, 1, 3, 2))
+    t2new += np.transpose(tmp13, (1, 0, 2, 3))
+    t2new += np.transpose(tmp13, (0, 1, 3, 2))
     del tmp13
-    tmp21 = tmp14.copy() * 2
+    tmp21 = np.copy(tmp14) * 2
     del tmp14
-    tmp21 += tmp18.transpose((1, 0, 2, 3))
+    tmp21 += np.transpose(tmp18, (1, 0, 2, 3))
     del tmp18
-    tmp21 += tmp20.transpose((0, 1, 3, 2))
+    tmp21 += np.transpose(tmp20, (0, 1, 3, 2))
     del tmp20
-    t2new += tmp21.transpose((1, 0, 3, 2)) * -1
+    t2new += np.transpose(tmp21, (1, 0, 3, 2)) * -1
     t2new += tmp21 * -1
     del tmp21
     t2new += einsum(v.xov, (0, 1, 2), v.xov, (0, 3, 4), (3, 1, 4, 2))

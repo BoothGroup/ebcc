@@ -310,24 +310,24 @@ def _contract_ttgt(
     if a.size == 0 or b.size == 0:
         shape_c = [shape_ct[i] for i in order_ct]
         if out is not None:
-            return out.reshape(shape_c) * beta if beta != 1.0 else out.reshape(shape_c)
+            return np.reshape(out, shape_c) * beta if beta != 1.0 else np.reshape(out, shape_c)
         else:
             return np.zeros(shape_c, dtype=np.result_type(a, b))
 
     # Apply transposes
-    at = a.transpose(order_a)
-    bt = b.transpose(order_b)
+    at = np.transpose(a, order_a)
+    bt = np.transpose(b, order_b)
 
     # Reshape the inner dimensions
-    at = at.reshape(-1, inner_shape)
-    bt = bt.reshape(inner_shape, -1)
+    at = np.reshape(at, (-1, inner_shape))
+    bt = np.reshape(bt, (inner_shape, -1))
 
     # Get the output buffer
     if out is not None:
         shape_ct_flat = (at.shape[0], bt.shape[1])
         order_c = [outs.index(idx) for idx in inp_ct]
-        out = out.transpose(order_c)
-        out = out.reshape(shape_ct_flat)
+        out = np.transpose(out, order_c)
+        out = np.reshape(out, shape_ct_flat)
 
     # Perform the contraction
     ct: NDArray[T]
@@ -339,8 +339,8 @@ def _contract_ttgt(
             ct += beta * out
 
     # Reshape and transpose
-    ct = ct.reshape(shape_ct)
-    c = ct.transpose(order_ct)
+    ct = np.reshape(ct, shape_ct)
+    c = np.transpose(ct, order_ct)
 
     return c
 
@@ -412,7 +412,7 @@ def _contract_tblis(
     # If any dimension has size zero, return here
     if a.size == 0 or b.size == 0:
         if out is not None:
-            return out.reshape(shape_c) * beta
+            return np.reshape(out, shape_c) * beta
         else:
             return np.zeros(shape_c, dtype=dtype)
 
@@ -422,7 +422,7 @@ def _contract_tblis(
     else:
         assert out.dtype == dtype
         assert out.size == np.prod(shape_c)
-        c = out.reshape(shape_c)
+        c = np.reshape(out, shape_c)
 
     # Perform the contraction
     tblis_einsum.libtblis.as_einsum(
@@ -554,7 +554,7 @@ def dirsum(*operands: Union[str, tuple[int, ...], NDArray[T]]) -> NDArray[T]:
             res = array
         else:
             shape = res.shape + (1,) * array.ndim
-            res = res.reshape(shape) + array
+            res = np.reshape(res, shape) + array
 
     # Reshape the output
     res = einsum(f"{''.join(input_chars)}->{output_str}", res)

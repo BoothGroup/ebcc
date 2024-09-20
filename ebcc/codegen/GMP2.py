@@ -59,7 +59,7 @@ def make_rdm1_f(l2=None, t2=None, **kwargs):
         vv=np.eye(t2.shape[-1]),
     )
     rdm1.vv = einsum(t2, (0, 1, 2, 3), l2, (4, 3, 0, 1), (4, 2)) * 0.5
-    rdm1.oo = delta.oo.copy()
+    rdm1.oo = np.copy(delta.oo)
     del delta
     rdm1.oo += einsum(l2, (0, 1, 2, 3), t2, (4, 3, 0, 1), (4, 2)) * -0.5
     rdm1.ov = np.zeros((t2.shape[0], t2.shape[-1]))
@@ -86,8 +86,8 @@ def make_rdm2_f(l2=None, t2=None, **kwargs):
     """
 
     rdm2 = Namespace()
-    rdm2.vvoo = l2.copy()
-    rdm2.oovv = t2.copy()
+    rdm2.vvoo = np.copy(l2)
+    rdm2.oovv = np.copy(t2)
     rdm2.oooo = np.zeros((t2.shape[0], t2.shape[0], t2.shape[0], t2.shape[0]))
     rdm2.ooov = np.zeros((t2.shape[0], t2.shape[0], t2.shape[0], t2.shape[-1]))
     rdm2.oovo = np.zeros((t2.shape[0], t2.shape[0], t2.shape[-1], t2.shape[0]))
@@ -103,7 +103,7 @@ def make_rdm2_f(l2=None, t2=None, **kwargs):
     rdm2.vvvo = np.zeros((t2.shape[-1], t2.shape[-1], t2.shape[-1], t2.shape[0]))
     rdm2.vvvv = np.zeros((t2.shape[-1], t2.shape[-1], t2.shape[-1], t2.shape[-1]))
     rdm2 = pack_2e(rdm2.oooo, rdm2.ooov, rdm2.oovo, rdm2.ovoo, rdm2.vooo, rdm2.oovv, rdm2.ovov, rdm2.ovvo, rdm2.voov, rdm2.vovo, rdm2.vvoo, rdm2.ovvv, rdm2.vovv, rdm2.vvov, rdm2.vvvo, rdm2.vvvv)
-    rdm2 = rdm2.transpose(0, 2, 1, 3)
+    rdm2 = np.transpose(rdm2, (0, 2, 1, 3))
     rdm1 = make_rdm1_f(t2=t2, l2=l2)
     delta = np.diag(np.concatenate([np.ones(t2.shape[0]), np.zeros(t2.shape[-1])]))
     rdm1 -= delta
@@ -161,14 +161,14 @@ def hbar_matvec_ip(f=None, r1=None, r2=None, v=None, **kwargs):
 
     ints = kwargs["ints"]
     tmp1 = einsum(r2, (0, 1, 2), f.oo, (3, 1), (3, 0, 2))
-    tmp0 = f.oo.copy() * 4
+    tmp0 = np.copy(f.oo) * 4
     tmp0 += ints.tmp0
-    tmp0 += ints.tmp0.transpose((1, 0))
+    tmp0 += np.transpose(ints.tmp0, (1, 0))
     del ints.tmp0
     r2new = einsum(f.vv, (0, 1), r2, (2, 3, 1), (2, 3, 0))
     r2new += einsum(v.ooov, (0, 1, 2, 3), r1, (2,), (0, 1, 3)) * -1
     r2new += tmp1
-    r2new += tmp1.transpose((1, 0, 2)) * -1
+    r2new += np.transpose(tmp1, (1, 0, 2)) * -1
     del tmp1
     r1new = einsum(r2, (0, 1, 2), v.ovoo, (3, 2, 0, 1), (3,)) * -0.5
     r1new += einsum(r1, (0,), tmp0, (0, 1), (1,)) * -0.25
@@ -221,14 +221,14 @@ def hbar_matvec_ea(f=None, r1=None, r2=None, v=None, **kwargs):
 
     ints = kwargs["ints"]
     tmp1 = einsum(f.vv, (0, 1), r2, (2, 1, 3), (3, 0, 2))
-    tmp0 = f.vv.copy() * -1
+    tmp0 = np.copy(f.vv) * -1
     tmp0 += ints.tmp0 * 0.25
-    tmp0 += ints.tmp0.transpose((1, 0)) * 0.25
+    tmp0 += np.transpose(ints.tmp0, (1, 0)) * 0.25
     del ints.tmp0
     r2new = einsum(r1, (0,), v.ovvv, (1, 0, 2, 3), (2, 3, 1)) * -1
     r2new += einsum(f.oo, (0, 1), r2, (2, 3, 1), (2, 3, 0)) * -1
-    r2new += tmp1.transpose((1, 2, 0)) * -1
-    r2new += tmp1.transpose((2, 1, 0))
+    r2new += np.transpose(tmp1, (1, 2, 0)) * -1
+    r2new += np.transpose(tmp1, (2, 1, 0))
     del tmp1
     r1new = einsum(r2, (0, 1, 2), v.ovvv, (2, 3, 0, 1), (3,)) * -0.5
     r1new += einsum(tmp0, (0, 1), r1, (0,), (1,)) * -1
@@ -288,26 +288,26 @@ def hbar_matvec_ee(f=None, r1=None, r2=None, t2=None, v=None, **kwargs):
     tmp4 = einsum(f.vv, (0, 1), r2, (2, 3, 4, 1), (2, 3, 0, 4))
     tmp7 = einsum(r1, (0, 1), v.ovvv, (2, 1, 3, 4), (0, 2, 3, 4))
     tmp6 = einsum(r2, (0, 1, 2, 3), f.oo, (4, 1), (4, 0, 2, 3))
-    tmp5 = tmp3.transpose((1, 0, 2, 3)).copy() * -1
+    tmp5 = np.copy(np.transpose(tmp3, (1, 0, 2, 3))) * -1
     del tmp3
-    tmp5 += tmp4.transpose((1, 0, 2, 3)) * -1
+    tmp5 += np.transpose(tmp4, (1, 0, 2, 3)) * -1
     del tmp4
-    tmp8 = tmp6.transpose((0, 1, 3, 2)).copy() * -1
+    tmp8 = np.copy(np.transpose(tmp6, (0, 1, 3, 2))) * -1
     del tmp6
-    tmp8 += tmp7.transpose((0, 1, 3, 2))
+    tmp8 += np.transpose(tmp7, (0, 1, 3, 2))
     del tmp7
-    tmp2 = f.oo.copy()
-    tmp2 += ints.tmp0.transpose((1, 0)) * 0.5
+    tmp2 = np.copy(f.oo)
+    tmp2 += np.transpose(ints.tmp0, (1, 0)) * 0.5
     del ints.tmp0
-    tmp1 = f.vv.copy()
-    tmp1 += ints.tmp1.transpose((1, 0)) * -0.5
+    tmp1 = np.copy(f.vv)
+    tmp1 += np.transpose(ints.tmp1, (1, 0)) * -0.5
     del ints.tmp1
     tmp0 = einsum(v.oovv, (0, 1, 2, 3), r1, (1, 3), (0, 2))
-    r2new = tmp5.copy() * -1
-    r2new += tmp5.transpose((0, 1, 3, 2))
+    r2new = np.copy(tmp5) * -1
+    r2new += np.transpose(tmp5, (0, 1, 3, 2))
     del tmp5
     r2new += tmp8
-    r2new += tmp8.transpose((1, 0, 2, 3)) * -1
+    r2new += np.transpose(tmp8, (1, 0, 2, 3)) * -1
     del tmp8
     r1new = einsum(tmp0, (0, 1), t2, (2, 0, 3, 1), (2, 3))
     del tmp0

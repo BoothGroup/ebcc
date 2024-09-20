@@ -36,23 +36,23 @@ def energy(t2=None, v=None, **kwargs):
     tmp3 = einsum(t2, (0, 1, 2, 3), v.vvvv, (4, 2, 5, 3), (0, 1, 4, 5))
     tmp0 = einsum(t2, (0, 1, 2, 3), v.oovv, (4, 1, 5, 2), (0, 4, 3, 5))
     e_mp = einsum(t2, (0, 1, 2, 3), tmp0, (0, 1, 3, 2), ()) * -4
-    tmp1 = t2.transpose((0, 1, 3, 2)).copy() * -0.25
+    tmp1 = np.copy(np.transpose(t2, (0, 1, 3, 2))) * -0.25
     tmp1 += t2
-    tmp6 = tmp5.transpose((3, 1, 2, 0)).copy() * -0.5
-    tmp6 += tmp5.transpose((3, 2, 1, 0))
+    tmp6 = np.copy(np.transpose(tmp5, (3, 1, 2, 0))) * -0.5
+    tmp6 += np.transpose(tmp5, (3, 2, 1, 0))
     del tmp5
     e_mp += einsum(tmp6, (0, 1, 2, 3), v.oooo, (0, 1, 2, 3), ()) * 2
     del tmp6
-    tmp4 = v.ovov.transpose((0, 2, 1, 3)).copy()
+    tmp4 = np.copy(np.transpose(v.ovov, (0, 2, 1, 3)))
     tmp4 += einsum(v.oovv, (0, 1, 2, 3), t2, (4, 1, 5, 3), (0, 4, 5, 2)) * 4
-    tmp4 += tmp0.transpose((0, 1, 3, 2)) * -4
+    tmp4 += np.transpose(tmp0, (0, 1, 3, 2)) * -4
     del tmp0
-    tmp4 += tmp3.transpose((1, 0, 2, 3)) * -2
-    tmp4 += tmp3.transpose((1, 0, 3, 2))
+    tmp4 += np.transpose(tmp3, (1, 0, 2, 3)) * -2
+    tmp4 += np.transpose(tmp3, (1, 0, 3, 2))
     del tmp3
     e_mp += einsum(tmp4, (0, 1, 2, 3), t2, (0, 1, 3, 2), ()) * -1
     del tmp4
-    tmp2 = t2.copy()
+    tmp2 = np.copy(t2)
     tmp2 += einsum(t2, (0, 1, 2, 3), t2, (4, 1, 5, 3), (4, 0, 5, 2)) * 4
     tmp2 += einsum(t2, (0, 1, 2, 3), tmp1, (1, 4, 2, 5), (0, 4, 3, 5)) * -4
     del tmp1

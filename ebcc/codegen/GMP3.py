@@ -35,7 +35,7 @@ def energy(t2=None, v=None, **kwargs):
     tmp0 = einsum(t2, (0, 1, 2, 3), t2, (4, 5, 2, 3), (0, 4, 5, 1))
     e_mp = einsum(v.oooo, (0, 1, 2, 3), tmp0, (3, 0, 1, 2), ()) * -0.125
     del tmp0
-    tmp1 = v.oovv.copy() * 2
+    tmp1 = np.copy(v.oovv) * 2
     tmp1 += einsum(v.ovov, (0, 1, 2, 3), t2, (4, 2, 5, 1), (0, 4, 3, 5)) * -8
     tmp1 += einsum(v.vvvv, (0, 1, 2, 3), t2, (4, 5, 2, 3), (4, 5, 0, 1))
     e_mp += einsum(tmp1, (0, 1, 2, 3), t2, (0, 1, 2, 3), ()) * 0.125

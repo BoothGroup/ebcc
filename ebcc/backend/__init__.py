@@ -81,11 +81,11 @@ def _put(
     elif BACKEND == "tensorflow":
         if isinstance(indices, (tuple, list)):
             indices_grid = tf.meshgrid(*indices, indexing="ij")
-            indices = tf.stack([tf.cast(idx, tf.int32).ravel() for idx in indices_grid], axis=1)
+            indices = tf.stack([np.ravel(tf.cast(idx, tf.int32)) for idx in indices_grid], axis=1)
         else:
             indices = tf.cast(tf.convert_to_tensor(indices), tf.int32)
             indices = tf.expand_dims(indices, axis=-1)
-        values = tf.convert_to_tensor(values, dtype=array.dtype).ravel()
+        values = np.ravel(tf.convert_to_tensor(values, dtype=array.dtype))
         return tf.tensor_scatter_nd_update(array, indices, values)  # type: ignore
     else:
         raise NotImplementedError(f"Backend {BACKEND} _put not implemented.")

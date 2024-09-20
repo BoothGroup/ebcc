@@ -46,7 +46,7 @@ class RCCSD_SD_1_2_Tests(unittest.TestCase):
         nbos = 5
         np.random.seed(12345)
         g = np.random.random((nbos, nmo, nmo)) * 0.02
-        g = 0.5 * (g + g.transpose(0, 2, 1).conj())
+        g = 0.5 * (g + np.conj(np.transpose(g, (0, 2, 1))))
         omega = np.random.random((nbos,)) * 5.0
 
         ccsd = REBCC(
@@ -177,7 +177,7 @@ class RCCSD_SD_1_2_Dump_Tests(RCCSD_SD_1_2_Tests):
         nbos = 5
         np.random.seed(12345)
         g = np.random.random((nbos, nmo, nmo)) * 0.02
-        g = 0.5 * (g + g.transpose(0, 2, 1).conj())
+        g = 0.5 * (g + np.conj(np.transpose(g, (0, 2, 1))))
         omega = np.random.random((nbos,)) * 5.0
 
         ccsd = REBCC(

@@ -80,7 +80,7 @@ class IP_REOM(REOM, BaseIP_EOM):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(
             spin_type=self.spin_type, which="ip"
         ):
-            vectors.append(amplitudes[name].ravel())
+            vectors.append(np.ravel(amplitudes[name]))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ip"):
             raise util.ModelNotImplemented
@@ -109,7 +109,7 @@ class IP_REOM(REOM, BaseIP_EOM):
         ):
             shape = tuple(self.space.size(k) for k in key)
             size = util.prod(shape)
-            amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[name] = np.reshape(vector[i0 : i0 + size], shape)
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ip"):
@@ -174,7 +174,7 @@ class EA_REOM(REOM, BaseEA_EOM):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(
             spin_type=self.spin_type, which="ea"
         ):
-            vectors.append(amplitudes[name].ravel())
+            vectors.append(np.ravel(amplitudes[name]))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ea"):
             raise util.ModelNotImplemented
@@ -203,7 +203,7 @@ class EA_REOM(REOM, BaseEA_EOM):
         ):
             shape = tuple(self.space.size(k) for k in key)
             size = util.prod(shape)
-            amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[name] = np.reshape(vector[i0 : i0 + size], shape)
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ea"):
@@ -268,7 +268,7 @@ class EE_REOM(REOM, BaseEE_EOM):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(
             spin_type=self.spin_type, which="ee"
         ):
-            vectors.append(amplitudes[name].ravel())
+            vectors.append(np.ravel(amplitudes[name]))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ee"):
             raise util.ModelNotImplemented
@@ -297,7 +297,7 @@ class EE_REOM(REOM, BaseEE_EOM):
         ):
             shape = tuple(self.space.size(k) for k in key)
             size = util.prod(shape)
-            amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[name] = np.reshape(vector[i0 : i0 + size], shape)
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ee"):

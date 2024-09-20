@@ -86,7 +86,7 @@ class RCCSD_Tests(unittest.TestCase):
     # def test_ip_moments(self):
     #    eom = self.ccsd.ip_eom()
     #    ip_moms = eom.moments(4)
-    #    a = self.data[True]["ip_moms"].transpose(2, 0, 1)
+    #    a = np.transpose(self.data[True]["ip_moms"], (2, 0, 1))
     #    b = np.array([scipy.linalg.block_diag(x, x) for x in ip_moms])
     #    b = b[:, self.fsort][:, :, self.fsort]
     #    for x, y in zip(a, b):
@@ -112,7 +112,7 @@ class RCCSD_Tests(unittest.TestCase):
     # def test_ea_moments(self):
     #    eom = self.ccsd.ea_eom()
     #    ea_moms = eom.moments(4)
-    #    a = self.data[True]["ea_moms"].transpose(2, 0, 1)
+    #    a = np.transpose(self.data[True]["ea_moms"], (2, 0, 1))
     #    b = np.array([scipy.linalg.block_diag(x, x) for x in ea_moms])
     #    b = b[:, self.fsort][:, :, self.fsort]
     #    for x, y in zip(a, b):
@@ -207,7 +207,7 @@ class RCCSD_PySCF_Tests(unittest.TestCase):
 
     def test_l2_amplitudes(self):
         a = self.ccsd_ref.l2
-        b = self.ccsd.l2.transpose(2, 3, 0, 1)
+        b = np.transpose(self.ccsd.l2, (2, 3, 0, 1))
         self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm1(self):
@@ -383,7 +383,7 @@ class RCCSD_PySCF_Frozen_Tests(unittest.TestCase):
 
     def test_l2_amplitudes(self):
         a = self.ccsd_ref.l2
-        b = self.ccsd.l2.transpose(2, 3, 0, 1)
+        b = np.transpose(self.ccsd.l2, (2, 3, 0, 1))
         self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm1(self):

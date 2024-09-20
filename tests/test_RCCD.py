@@ -75,7 +75,7 @@ class RCCD_PySCF_Tests(unittest.TestCase):
 
     def test_l2_amplitudes(self):
         a = self.ccd_ref.l2
-        b = self.ccd.l2.transpose(2, 3, 0, 1)
+        b = np.transpose(self.ccd.l2, (2, 3, 0, 1))
         self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm1(self):
@@ -160,7 +160,7 @@ class RCCD_PySCF_Frozen_Tests(unittest.TestCase):
 
     def test_l2_amplitudes(self):
         a = self.ccd_ref.l2
-        b = self.ccd.l2.transpose(2, 3, 0, 1)
+        b = np.transpose(self.ccd.l2, (2, 3, 0, 1))
         self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm1(self):

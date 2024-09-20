@@ -86,7 +86,7 @@ class IP_UEOM(UEOM, BaseIP_EOM):
             for spin in util.generate_spin_combinations(n, excited=True, unique=True):
                 vn = amplitudes[name][spin]
                 subscript, _ = util.combine_subscripts(key, spin)
-                vectors.append(util.compress_axes(subscript, vn).ravel())
+                vectors.append(np.ravel(util.compress_axes(subscript, vn)))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ip"):
             raise util.ModelNotImplemented
@@ -201,7 +201,7 @@ class EA_UEOM(UEOM, BaseEA_EOM):
             for spin in util.generate_spin_combinations(n, excited=True, unique=True):
                 vn = amplitudes[name][spin]
                 subscript, _ = util.combine_subscripts(key, spin)
-                vectors.append(util.compress_axes(subscript, vn).ravel())
+                vectors.append(np.ravel(util.compress_axes(subscript, vn)))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ea"):
             raise util.ModelNotImplemented
@@ -316,7 +316,7 @@ class EE_UEOM(UEOM, BaseEE_EOM):
             for spin in util.generate_spin_combinations(n, unique=True):
                 vn = amplitudes[name][spin]
                 subscript, _ = util.combine_subscripts(key, spin)
-                vectors.append(util.compress_axes(subscript, vn).ravel())
+                vectors.append(np.ravel(util.compress_axes(subscript, vn)))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ee"):
             raise util.ModelNotImplemented

@@ -80,7 +80,7 @@ class IP_GEOM(GEOM, BaseIP_EOM):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(
             spin_type=self.spin_type, which="ip"
         ):
-            vectors.append(util.compress_axes(key, amplitudes[name]).ravel())
+            vectors.append(np.ravel(util.compress_axes(key, amplitudes[name])))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ip"):
             raise util.ModelNotImplemented
@@ -176,7 +176,7 @@ class EA_GEOM(GEOM, BaseEA_EOM):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(
             spin_type=self.spin_type, which="ea"
         ):
-            vectors.append(util.compress_axes(key, amplitudes[name]).ravel())
+            vectors.append(np.ravel(util.compress_axes(key, amplitudes[name])))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ea"):
             raise util.ModelNotImplemented
@@ -272,7 +272,7 @@ class EE_GEOM(GEOM, BaseEE_EOM):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(
             spin_type=self.spin_type, which="ee"
         ):
-            vectors.append(util.compress_axes(key, amplitudes[name]).ravel())
+            vectors.append(np.ravel(util.compress_axes(key, amplitudes[name])))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ee"):
             raise util.ModelNotImplemented

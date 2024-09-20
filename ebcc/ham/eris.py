@@ -45,8 +45,8 @@ class RERIs(BaseERIs, BaseRHamiltonian):
                     block = ao2mo.incore.general(self.cc.mf._eri, coeffs, compact=False)
                 else:
                     block = ao2mo.kernel(self.cc.mf.mol, coeffs, compact=False)
-                block = block.reshape([c.shape[-1] for c in coeffs])
-                self._members[key] = np.asarray(block.astype(types[float]))
+                block = np.reshape(block, [c.shape[-1] for c in coeffs])
+                self._members[key] = np.asarray(np.astype(block, types[float]))
             return self._members[key]
         else:
             i, j, k, l = [self.space[i].mask(k) for i, k in enumerate(key)]
@@ -78,7 +78,7 @@ class UERIs(BaseERIs, BaseUHamiltonian):
             if self.array is not None:
                 array = self.array[ij]
                 if key == "bbaa":
-                    array = array.transpose(2, 3, 0, 1)
+                    array = np.transpose(array, (2, 3, 0, 1))
             elif isinstance(self.cc.mf._eri, tuple):
                 # Support spin-dependent integrals in the mean-field
                 coeffs = [
@@ -90,7 +90,7 @@ class UERIs(BaseERIs, BaseUHamiltonian):
                 else:
                     array = ao2mo.kernel(self.cc.mf.mol, coeffs, compact=False)
                 if key == "bbaa":
-                    array = array.transpose(2, 3, 0, 1)
+                    array = np.transpose(array, (2, 3, 0, 1))
                 array = np.asarray(array, dtype=types[float])
             else:
                 array = None
@@ -135,9 +135,9 @@ class GERIs(BaseERIs, BaseGHamiltonian):
                 array += ao2mo.kernel(self.cc.mf.mol, mo_b)
                 array += ao2mo.kernel(self.cc.mf.mol, mo_a[:2] + mo_b[2:])
                 array += ao2mo.kernel(self.cc.mf.mol, mo_b[:2] + mo_a[2:])
-            array = ao2mo.addons.restore(1, array, self.cc.nmo).reshape((self.cc.nmo,) * 4)
+            array = np.reshape(ao2mo.addons.restore(1, array, self.cc.nmo), (self.cc.nmo,) * 4)
             array = np.asarray(array, dtype=types[float])
-            array = array.transpose(0, 2, 1, 3) - array.transpose(0, 2, 3, 1)
+            array = np.transpose(array, (0, 2, 1, 3)) - np.transpose(array, (0, 2, 3, 1))
             self.__dict__["array"] = array
 
     def __getitem__(self, key: str) -> NDArray[T]:

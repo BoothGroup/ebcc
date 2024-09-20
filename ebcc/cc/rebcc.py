@@ -153,7 +153,7 @@ class REBCC(BaseEBCC):
                 amplitudes[name] = self.fock[key] / self.energy_sum(key)
             elif n == 2:
                 key_t = key[0] + key[2] + key[1] + key[3]
-                amplitudes[name] = eris[key_t].transpose(0, 2, 1, 3) / self.energy_sum(key)
+                amplitudes[name] = np.transpose(eris[key_t], (0, 2, 1, 3)) / self.energy_sum(key)
             else:
                 shape = tuple(self.space.size(k) for k in key)
                 amplitudes[name] = np.zeros(shape, dtype=types[float])
@@ -201,7 +201,7 @@ class REBCC(BaseEBCC):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             lname = name.replace("t", "l")
             perm = list(range(n, 2 * n)) + list(range(n))
-            lambdas[lname] = amplitudes[name].transpose(perm)
+            lambdas[lname] = np.transpose(amplitudes[name], perm)
 
         # Build LS amplitudes:
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
@@ -214,7 +214,7 @@ class REBCC(BaseEBCC):
                 raise util.ModelNotImplemented
             lname = "l" + name
             perm = list(range(nb)) + [nb + 1, nb]
-            lambdas[lname] = amplitudes[name].transpose(perm)
+            lambdas[lname] = np.transpose(amplitudes[name], perm)
 
         return lambdas
 
@@ -382,8 +382,8 @@ class REBCC(BaseEBCC):
         dm: NDArray[T] = func(**kwargs)
 
         if hermitise:
-            dm = 0.5 * (dm.transpose(0, 1, 2, 3) + dm.transpose(2, 3, 0, 1))
-            dm = 0.5 * (dm.transpose(0, 1, 2, 3) + dm.transpose(1, 0, 3, 2))
+            dm = 0.5 * (np.transpose(dm, (0, 1, 2, 3)) + np.transpose(dm, (2, 3, 0, 1)))
+            dm = 0.5 * (np.transpose(dm, (0, 1, 2, 3)) + np.transpose(dm, (1, 0, 3, 2)))
 
         return dm
 
@@ -427,8 +427,8 @@ class REBCC(BaseEBCC):
         if hermitise:
             dm_eb = np.array(
                 [
-                    0.5 * (dm_eb[0] + dm_eb[1].transpose(0, 2, 1)),
-                    0.5 * (dm_eb[1] + dm_eb[0].transpose(0, 2, 1)),
+                    0.5 * (dm_eb[0] + np.transpose(dm_eb[1], (0, 2, 1))),
+                    0.5 * (dm_eb[1] + np.transpose(dm_eb[0], (0, 2, 1))),
                 ]
             )
 
@@ -494,13 +494,13 @@ class REBCC(BaseEBCC):
         vectors = []
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            vectors.append(amplitudes[name].ravel())
+            vectors.append(np.ravel(amplitudes[name]))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
-            vectors.append(amplitudes[name].ravel())
+            vectors.append(np.ravel(amplitudes[name]))
 
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
-            vectors.append(amplitudes[name].ravel())
+            vectors.append(np.ravel(amplitudes[name]))
 
         return np.concatenate(vectors)
 
@@ -519,19 +519,19 @@ class REBCC(BaseEBCC):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             shape = tuple(self.space.size(k) for k in key)
             size = util.prod(shape)
-            amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[name] = np.reshape(vector[i0 : i0 + size], shape)
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * n
             size = util.prod(shape)
-            amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[name] = np.reshape(vector[i0 : i0 + size], shape)
             i0 += size
 
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
             size = util.prod(shape)
-            amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[name] = np.reshape(vector[i0 : i0 + size], shape)
             i0 += size
 
         return amplitudes
@@ -550,15 +550,15 @@ class REBCC(BaseEBCC):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(
             spin_type=self.spin_type, which="l"
         ):
-            vectors.append(lambdas[name].ravel())
+            vectors.append(np.ravel(lambdas[name]))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="l"):
-            vectors.append(lambdas[name].ravel())
+            vectors.append(np.ravel(lambdas[name]))
 
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
             spin_type=self.spin_type, which="l"
         ):
-            vectors.append(lambdas[name].ravel())
+            vectors.append(np.ravel(lambdas[name]))
 
         return np.concatenate(vectors)
 
@@ -579,13 +579,13 @@ class REBCC(BaseEBCC):
         ):
             shape = tuple(self.space.size(k) for k in key)
             size = util.prod(shape)
-            lambdas[name] = vector[i0 : i0 + size].reshape(shape)
+            lambdas[name] = np.reshape(vector[i0 : i0 + size], shape)
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="l"):
             shape = (self.nbos,) * n
             size = util.prod(shape)
-            lambdas[name] = vector[i0 : i0 + size].reshape(shape)
+            lambdas[name] = np.reshape(vector[i0 : i0 + size], shape)
             i0 += size
 
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
@@ -593,7 +593,7 @@ class REBCC(BaseEBCC):
         ):
             shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
             size = util.prod(shape)
-            lambdas[name] = vector[i0 : i0 + size].reshape(shape)
+            lambdas[name] = np.reshape(vector[i0 : i0 + size], shape)
             i0 += size
 
         return lambdas

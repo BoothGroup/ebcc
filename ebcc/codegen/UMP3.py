@@ -32,32 +32,32 @@ def energy(t2=None, v=None, **kwargs):
     e_mp : array
     """
 
-    tmp5 = v.bbbb.ovov.transpose((0, 2, 1, 3)).copy()
+    tmp5 = np.copy(np.transpose(v.bbbb.ovov, (0, 2, 1, 3)))
     tmp5 += v.bbbb.oovv * -1
-    tmp3 = v.aaaa.ovov.transpose((0, 2, 1, 3)).copy()
+    tmp3 = np.copy(np.transpose(v.aaaa.ovov, (0, 2, 1, 3)))
     tmp3 += v.aaaa.oovv * -1
-    tmp9 = v.aabb.ovov.transpose((0, 2, 1, 3)).copy()
+    tmp9 = np.copy(np.transpose(v.aabb.ovov, (0, 2, 1, 3)))
     tmp9 += einsum(v.aabb.oovv, (0, 1, 2, 3), t2.abab, (1, 4, 5, 3), (0, 4, 5, 2)) * -1
     tmp9 += einsum(t2.abab, (0, 1, 2, 3), v.aabb.vvoo, (4, 2, 5, 1), (0, 5, 4, 3)) * -1
     tmp9 += einsum(v.aabb.vvvv, (0, 1, 2, 3), t2.abab, (4, 5, 1, 3), (4, 5, 0, 2))
     tmp9 += einsum(tmp5, (0, 1, 2, 3), t2.abab, (4, 0, 5, 2), (4, 1, 5, 3))
     e_mp = einsum(t2.abab, (0, 1, 2, 3), tmp9, (0, 1, 2, 3), ())
     del tmp9
-    tmp4 = v.aaaa.ovov.transpose((0, 2, 1, 3)).copy() * -0.25
+    tmp4 = np.copy(np.transpose(v.aaaa.ovov, (0, 2, 1, 3))) * -0.25
     tmp4 += einsum(v.aabb.ovov, (0, 1, 2, 3), t2.abab, (4, 2, 5, 3), (0, 4, 5, 1))
     tmp4 += einsum(v.aaaa.vvvv, (0, 1, 2, 3), t2.aaaa, (4, 5, 3, 1), (4, 5, 0, 2)) * 0.25
     tmp4 += einsum(t2.aaaa, (0, 1, 2, 3), tmp3, (1, 4, 3, 5), (4, 0, 2, 5))
     del tmp3
     e_mp += einsum(t2.aaaa, (0, 1, 2, 3), tmp4, (0, 1, 3, 2), ()) * 4
     del tmp4
-    tmp6 = v.bbbb.ovov.transpose((0, 2, 1, 3)).copy() * -1
+    tmp6 = np.copy(np.transpose(v.bbbb.ovov, (0, 2, 1, 3))) * -1
     tmp6 += einsum(v.aabb.ovov, (0, 1, 2, 3), t2.abab, (0, 4, 1, 5), (2, 4, 5, 3)) * 4
     tmp6 += einsum(v.bbbb.vvvv, (0, 1, 2, 3), t2.bbbb, (4, 5, 1, 3), (4, 5, 0, 2)) * -1
     tmp6 += einsum(t2.bbbb, (0, 1, 2, 3), tmp5, (1, 4, 3, 5), (4, 0, 2, 5)) * 4
     del tmp5
     e_mp += einsum(t2.bbbb, (0, 1, 2, 3), tmp6, (0, 1, 3, 2), ())
     del tmp6
-    tmp8 = v.aaaa.ovov.transpose((0, 2, 1, 3)).copy()
+    tmp8 = np.copy(np.transpose(v.aaaa.ovov, (0, 2, 1, 3)))
     tmp8 += v.aaaa.oovv * -1
     tmp0 = einsum(t2.aaaa, (0, 1, 2, 3), t2.aaaa, (4, 5, 2, 3), (0, 4, 5, 1))
     e_mp += einsum(v.aaaa.oooo, (0, 1, 2, 3), tmp0, (1, 0, 2, 3), ())
