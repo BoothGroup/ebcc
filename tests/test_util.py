@@ -237,8 +237,8 @@ class Util_Tests(unittest.TestCase):
     def test_einsum_backend(self):
         self._test_einsum("backend")
 
-    def test_einsum_ttdt(self):
-        self._test_einsum("ttdt")
+    def test_einsum_ttgt(self):
+        self._test_einsum("ttgt")
 
     @pytest.mark.skipif(util.einsumfunc.FOUND_TBLIS is False, reason="TBLIS not found")
     def test_einsum_tblis(self):
