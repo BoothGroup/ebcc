@@ -246,7 +246,7 @@ class UEBCC(BaseEBCC):
                     tn[comb] = np.transpose(eris[comb_t][key_t], (0, 2, 1, 3)) / self.energy_sum(key, comb)
                     if comb in ("aaaa", "bbbb"):
                         # TODO generalise:
-                        tn[comb] = 0.5 * (tn[comb] - np.transpose(tn[comb], (1, 0, 2, 3)))
+                        tn[comb] = (tn[comb] - np.transpose(tn[comb], (1, 0, 2, 3))) * 0.5
                 else:
                     shape = tuple(self.space["ab".index(s)].size(k) for s, k in zip(comb, key))
                     tn[comb] = np.zeros(shape, dtype=types[float])
@@ -476,8 +476,8 @@ class UEBCC(BaseEBCC):
         dm: SpinArrayType = func(**kwargs)
 
         if hermitise:
-            dm.aa = 0.5 * (dm.aa + dm.aa.T)
-            dm.bb = 0.5 * (dm.bb + dm.bb.T)
+            dm.aa = (dm.aa + np.transpose(dm.aa)) * 0.5
+            dm.bb = (dm.bb + np.transpose(dm.bb)) * 0.5
 
         return dm
 
@@ -510,11 +510,11 @@ class UEBCC(BaseEBCC):
         if hermitise:
 
             def transpose1(dm: NDArray[T]) -> NDArray[T]:
-                dm = 0.5 * (np.transpose(dm, (0, 1, 2, 3)) + np.transpose(dm, (2, 3, 0, 1)))
+                dm = (np.transpose(dm, (0, 1, 2, 3)) + np.transpose(dm, (2, 3, 0, 1))) * 0.5
                 return dm
 
             def transpose2(dm: NDArray[T]) -> NDArray[T]:
-                dm = 0.5 * (np.transpose(dm, (0, 1, 2, 3)) + np.transpose(dm, (1, 0, 3, 2)))
+                dm = (np.transpose(dm, (0, 1, 2, 3)) + np.transpose(dm, (1, 0, 3, 2))) * 0.5
                 return dm
 
             dm.aaaa = transpose2(transpose1(dm.aaaa))
@@ -563,14 +563,14 @@ class UEBCC(BaseEBCC):
         if hermitise:
             dm_eb.aa = np.array(
                 [
-                    0.5 * (dm_eb.aa[0] + np.transpose(dm_eb.aa[1], (0, 2, 1))),
-                    0.5 * (dm_eb.aa[1] + np.transpose(dm_eb.aa[0], (0, 2, 1))),
+                    (dm_eb.aa[0] + np.transpose(dm_eb.aa[1], (0, 2, 1))) * 0.5,
+                    (dm_eb.aa[1] + np.transpose(dm_eb.aa[0], (0, 2, 1))) * 0.5,
                 ]
             )
             dm_eb.bb = np.array(
                 [
-                    0.5 * (dm_eb.bb[0] + np.transpose(dm_eb.bb[1], (0, 2, 1))),
-                    0.5 * (dm_eb.bb[1] + np.transpose(dm_eb.bb[0], (0, 2, 1))),
+                    (dm_eb.bb[0] + np.transpose(dm_eb.bb[1], (0, 2, 1))) * 0.5,
+                    (dm_eb.bb[1] + np.transpose(dm_eb.bb[0], (0, 2, 1))) * 0.5,
                 ]
             )
 
@@ -617,9 +617,9 @@ class UEBCC(BaseEBCC):
             factor = 1 if signs_dict[key] == "+" else -1
             if key == "b":
                 assert self.omega is not None
-                energies.append(factor * self.omega)
+                energies.append(self.omega * types[float](factor))
             else:
-                energies.append(factor * np.diag(self.fock[spin + spin][key + key]))
+                energies.append(np.diag(self.fock[spin + spin][key + key]) * types[float](factor))
 
         subscript = ",".join([next_char() for k in subscript])
         energy_sum = util.dirsum(subscript, *energies)

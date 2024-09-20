@@ -591,7 +591,7 @@ class GEBCC(BaseEBCC):
         dm: SpinArrayType = func(**kwargs)
 
         if hermitise:
-            dm = 0.5 * (dm + dm.T)
+            dm = (dm + np.transpose(dm)) * 0.5
 
         return dm
 
@@ -622,8 +622,8 @@ class GEBCC(BaseEBCC):
         dm: SpinArrayType = func(**kwargs)
 
         if hermitise:
-            dm = 0.5 * (np.transpose(dm, (0, 1, 2, 3)) + np.transpose(dm, (2, 3, 0, 1)))
-            dm = 0.5 * (np.transpose(dm, (0, 1, 2, 3)) + np.transpose(dm, (1, 0, 3, 2)))
+            dm = (np.transpose(dm, (0, 1, 2, 3)) + np.transpose(dm, (2, 3, 0, 1))) * 0.5
+            dm = (np.transpose(dm, (0, 1, 2, 3)) + np.transpose(dm, (1, 0, 3, 2))) * 0.5
 
         return dm
 
@@ -667,8 +667,8 @@ class GEBCC(BaseEBCC):
         if hermitise:
             dm_eb = np.array(
                 [
-                    0.5 * (dm_eb[0] + np.transpose(dm_eb[1], (0, 2, 1))),
-                    0.5 * (dm_eb[1] + np.transpose(dm_eb[0], (0, 2, 1))),
+                    (dm_eb[0] + np.transpose(dm_eb[1], (0, 2, 1))) * 0.5,
+                    (dm_eb[1] + np.transpose(dm_eb[0], (0, 2, 1))) * 0.5,
                 ]
             )
 
@@ -713,9 +713,9 @@ class GEBCC(BaseEBCC):
             factor = 1 if signs_dict[key] == "+" else -1
             if key == "b":
                 assert self.omega is not None
-                energies.append(factor * self.omega)
+                energies.append(self.omega * types[float](factor))
             else:
-                energies.append(factor * np.diag(self.fock[key + key]))
+                energies.append(np.diag(self.fock[key + key]) * types[float](factor))
 
         subscript = ",".join([next_char() for k in subscript])
         energy_sum = util.dirsum(subscript, *energies)

@@ -36,9 +36,9 @@ class IP_UEOM(UEOM, BaseIP_EOM):
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]
-            arg = np.argsort(np.abs(diag[: r1.a.size + r1.b.size]))
+            arg = util.argsort(np.abs(diag[: r1.a.size + r1.b.size]))
         else:
-            arg = np.argsort(np.abs(diag))
+            arg = util.argsort(np.abs(diag))
         return arg
 
     def _quasiparticle_weight(self, r1: SpinArrayType) -> T:
@@ -151,9 +151,9 @@ class EA_UEOM(UEOM, BaseEA_EOM):
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]
-            arg = np.argsort(np.abs(diag[: r1.a.size + r1.b.size]))
+            arg = util.argsort(np.abs(diag[: r1.a.size + r1.b.size]))
         else:
-            arg = np.argsort(np.abs(diag))
+            arg = util.argsort(np.abs(diag))
         return arg
 
     def _quasiparticle_weight(self, r1: SpinArrayType) -> T:
@@ -266,9 +266,9 @@ class EE_UEOM(UEOM, BaseEE_EOM):
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]
-            arg = np.argsort(diag[: r1.aa.size + r1.bb.size])
+            arg = util.argsort(diag[: r1.aa.size + r1.bb.size])
         else:
-            arg = np.argsort(diag)
+            arg = util.argsort(diag)
         return arg
 
     def _quasiparticle_weight(self, r1: SpinArrayType) -> T:

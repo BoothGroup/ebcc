@@ -35,9 +35,9 @@ class RFock(BaseFock, BaseRHamiltonian):
             Fock matrix for the given spaces.
         """
         if key not in self._members:
-            i = self.space[0].mask(key[0])
-            j = self.space[1].mask(key[1])
-            self._members[key] = np.copy(self.array[i][:, j])
+            i = self.space[0].slice(key[0])
+            j = self.space[1].slice(key[1])
+            self._members[key] = np.copy(self.array[i, j])
 
             if self.shift:
                 xi = self.xi
@@ -102,9 +102,9 @@ class GFock(BaseFock, BaseGHamiltonian):
             Fock matrix for the given spin.
         """
         if key not in self._members:
-            i = self.space[0].mask(key[0])
-            j = self.space[1].mask(key[1])
-            self._members[key] = np.copy(self.array[i][:, j])
+            i = self.space[0].slice(key[0])
+            j = self.space[1].slice(key[1])
+            self._members[key] = np.copy(self.array[i, j])
 
             if self.shift:
                 xi = self.xi

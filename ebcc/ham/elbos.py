@@ -30,9 +30,9 @@ class RElectronBoson(BaseElectronBoson, BaseRHamiltonian):
         """
         if key not in self._members:
             assert key[0] == "b"
-            i = self.space[0].mask(key[1])
-            j = self.space[1].mask(key[2])
-            self._members[key] = np.copy(self.array[:, i][:, :, j])
+            i = self.space[0].slice(key[1])
+            j = self.space[1].slice(key[2])
+            self._members[key] = np.copy(self.array[:, i, j])
         return self._members[key]
 
     def _get_g(self) -> NDArray[T]:
@@ -88,9 +88,9 @@ class GElectronBoson(BaseElectronBoson, BaseGHamiltonian):
         """
         if key not in self._members:
             assert key[0] == "b"
-            i = self.space[0].mask(key[1])
-            j = self.space[1].mask(key[2])
-            self._members[key] = np.copy(self.array[:, i][:, :, j])
+            i = self.space[0].slice(key[1])
+            j = self.space[1].slice(key[2])
+            self._members[key] = np.copy(self.array[:, i, j])
         return self._members[key]
 
     def _get_g(self) -> NDArray[T]:

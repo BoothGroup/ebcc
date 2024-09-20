@@ -13,18 +13,6 @@ def __getattr__(name):
     return getattr(jax.numpy, name)
 
 
-def _argsort(strings, **kwargs):
-    if not isinstance(strings, jax.numpy.ndarray):
-        return jax.numpy.asarray(
-            sorted(range(len(strings)), key=lambda i: strings[i]), dtype=jax.numpy.int32
-        )
-    return _jax_argsort(strings, **kwargs)
-
-
-_jax_argsort = jax.numpy.argsort
-jax.numpy.argsort = _argsort
-
-
 def _ix_(*args):
     args_ = []
     for arg in args:

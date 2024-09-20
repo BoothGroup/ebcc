@@ -4,6 +4,7 @@
 import ctf
 import numpy
 import opt_einsum
+import warnings
 
 
 def __getattr__(name):
@@ -11,8 +12,38 @@ def __getattr__(name):
     return getattr(ctf, name)
 
 
+class FakeLinalg:
+    """Fake linalg module for CTF."""
+
+    def __getattr__(self, name):
+        return getattr(ctf.linalg, name)
+
+    def eigh(self, a):
+        # TODO Need to determine if SCALAPACK is available
+        w, v = numpy.linalg.eigh(a.to_nparray())
+        w = ctf.astensor(w)
+        v = ctf.astensor(v)
+        return w, v
+
+    #norm = ctf.norm
+    def norm(self, a, ord=None):
+        return ctf.norm(a, ord=ord)
+
+
+linalg = FakeLinalg()
+
+
 bool_ = numpy.bool_
+inf = numpy.inf
 asarray = ctf.astensor
+
+
+_array = ctf.array
+
+def array(obj, **kwargs):
+    if isinstance(obj, ctf.tensor):
+        return obj
+    return _array(numpy.asarray(obj), **kwargs)
 
 
 def astype(obj, dtype):
@@ -20,11 +51,76 @@ def astype(obj, dtype):
 
 
 def zeros_like(obj):
-    return ctf.zeros(obj.shape, dtype=obj.dtype)
+    return ctf.zeros(obj.shape).astype(obj.dtype)
 
 
 def ones_like(obj):
-    return ctf.ones(obj.shape, dtype=obj.dtype)
+    return ctf.ones(obj.shape).astype(obj.dtype)
+
+
+def arange(start, stop=None, step=1, dtype=None):
+    if stop is None:
+        stop = start
+        start = 0
+    return ctf.arange(start, stop, step=step, dtype=dtype)
+
+
+def argmin(obj):
+    return ctf.to_nparray(obj).argmin()
+
+
+def argmax(obj):
+    return ctf.to_nparray(obj).argmax()
+
+
+def bitwise_and(a, b):
+    return a * b
+
+
+def bitwise_not(a):
+    return ones_like(a) - a
+
+
+def concatenate(arrays, axis=None):
+    if axis is None:
+        axis = 0
+    if axis < 0:
+        axis += arrays[0].ndim
+    shape = list(arrays[0].shape)
+    for arr in arrays[1:]:
+        for i, (a, b) in enumerate(zip(shape, arr.shape)):
+            if i == axis:
+                shape[i] += b
+            elif a != b:
+                raise ValueError("All arrays must have the same shape")
+
+    result = ctf.zeros(shape, dtype=arrays[0].dtype)
+    start = 0
+    for arr in arrays:
+        end = start + arr.shape[axis]
+        slices = [slice(None)] * result.ndim
+        slices[axis] = slice(start, end)
+        result[tuple(slices)] = arr
+        start = end
+
+    return result
+
+
+def _block_recursive(arrays, max_depth, depth=0):
+    if depth < max_depth:
+        arrs = [_block_recursive(arr, max_depth, depth + 1) for arr in arrays]
+        return concatenate(arrs, axis=-(max_depth - depth))
+    else:
+        return arrays
+
+
+def block(arrays):
+    def _get_max_depth(arrays):
+        if isinstance(arrays, list):
+            return 1 + max([_get_max_depth(arr) for arr in arrays])
+        return 0
+
+    return _block_recursive(arrays, _get_max_depth(arrays))
 
 
 def einsum(*args, optimize=True, **kwargs):

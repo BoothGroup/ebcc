@@ -36,9 +36,9 @@ class IP_GEOM(GEOM, BaseIP_EOM):
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]
-            arg = np.argsort(np.abs(diag[: r1.size]))
+            arg = util.argsort(np.abs(diag[: r1.size]))
         else:
-            arg = np.argsort(np.abs(diag))
+            arg = util.argsort(np.abs(diag))
         return arg
 
     def _quasiparticle_weight(self, r1: SpinArrayType) -> T:
@@ -132,9 +132,9 @@ class EA_GEOM(GEOM, BaseEA_EOM):
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]
-            arg = np.argsort(np.abs(diag[: r1.size]))
+            arg = util.argsort(np.abs(diag[: r1.size]))
         else:
-            arg = np.argsort(np.abs(diag))
+            arg = util.argsort(np.abs(diag))
         return arg
 
     def _quasiparticle_weight(self, r1: SpinArrayType) -> T:
@@ -228,9 +228,9 @@ class EE_GEOM(GEOM, BaseEE_EOM):
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]
-            arg = np.argsort(diag[: r1.size])
+            arg = util.argsort(diag[: r1.size])
         else:
-            arg = np.argsort(diag)
+            arg = util.argsort(diag)
         return arg
 
     def _quasiparticle_weight(self, r1: SpinArrayType) -> T:

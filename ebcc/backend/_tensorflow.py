@@ -19,18 +19,6 @@ def astype(obj, dtype):
     return obj.astype(dtype)
 
 
-def _argsort(strings, **kwargs):
-    if not isinstance(strings, tf.Tensor):
-        return tf.convert_to_tensor(
-            sorted(range(len(strings)), key=lambda i: strings[i]), dtype=tf.int32
-        )
-    return _tf_argsort(strings, **kwargs)
-
-
-_tf_argsort = tf.experimental.numpy.argsort
-tf.experimental.numpy.argsort = _argsort
-
-
 def _block_recursive(arrays, max_depth, depth=0):
     if depth < max_depth:
         arrs = [_block_recursive(arr, max_depth, depth + 1) for arr in arrays]

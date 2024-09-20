@@ -246,7 +246,7 @@ class BaseEOM(ABC):
         return pick
 
     @abstractmethod
-    def _argsort_guesses(self, diag: NDArray[T]) -> NDArray[int64]:
+    def _argsort_guesses(self, diag: NDArray[T]) -> list[int]:
         """Sort the diagonal to inform the initial guesses."""
         pass
 
@@ -344,14 +344,14 @@ class BaseEOM(ABC):
 
         # Update attributes:
         self.converged = converged
-        self.e = np.astype(e, types[float])
-        self.v = np.astype(np.asarray(v).T, types[float])
+        self.e = np.asarray(e, dtype=types[float])
+        self.v = np.transpose(np.asarray(v, dtype=types[float]))
 
         self.log.debug("")
         self.log.output(
             f"{ANSI.B}{'Root':>4s} {'Energy':>16s} {'Weight':>13s} {'Conv.':>8s}{ANSI.R}"
         )
-        for n, (en, vn, cn) in enumerate(zip(self.e, self.v.T, converged)):
+        for n, (en, vn, cn) in enumerate(zip(self.e, np.transpose(self.v), converged)):
             r1n = self.vector_to_amplitudes(vn)["r1"]
             qpwt = self._quasiparticle_weight(r1n)
             self.log.output(

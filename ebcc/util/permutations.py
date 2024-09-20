@@ -221,7 +221,7 @@ def antisymmetrise_array(v: NDArray[T], axes: Optional[tuple[int, ...]] = None) 
             if ax in axes:
                 j = axes.index(ax)
                 transpose[i] = perm[j]
-        v_as += sign * np.copy(np.transpose(v, transpose))
+        v_as += np.copy(np.transpose(v, transpose)) * sign
 
     return v_as
 
@@ -313,7 +313,7 @@ def compress_axes(
     subscript = "".join([subs[s] for s in subscript])
 
     # Reshape array so that all axes of the same character are adjacent:
-    arg = tuple(np.argsort(list(subscript)))
+    arg = tuple(util.argsort(list(subscript)))
     array = np.transpose(array, arg)
     subscript = permute_string(subscript, arg)
 
@@ -398,7 +398,7 @@ def decompress_axes(
     subscript = "".join([subs[s] for s in subscript])
 
     # Reshape array so that all axes of the same character are adjacent:
-    arg = tuple(np.argsort(list(subscript)))
+    arg = tuple(util.argsort(list(subscript)))
     array = np.transpose(array, arg)
     subscript = permute_string(subscript, arg)
 
@@ -447,7 +447,7 @@ def decompress_axes(
     ))
 
     # Undo transpose:
-    arg = tuple(np.argsort(arg))
+    arg = tuple(util.argsort(arg))
     array = np.transpose(array, arg)
 
     return array
@@ -522,7 +522,7 @@ def symmetrise(
             for i, p in zip(inds_part, perms_part):
                 perm[i] = p
         sign = util.prod(signs) if symmetry[perm[0]] == "-" else 1
-        array_as = array_as + sign * np.transpose(array, perm)
+        array_as = array_as + np.transpose(array, perm) * sign
 
     if apply_factor:
         # Apply factor

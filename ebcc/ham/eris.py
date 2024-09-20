@@ -38,7 +38,7 @@ class RERIs(BaseERIs, BaseRHamiltonian):
         if self.array is None:
             if key not in self._members.keys():
                 coeffs = [
-                    numpy.asarray(self.mo_coeff[i][:, self.space[i].mask(k)], dtype=numpy.float64)
+                    numpy.asarray(self.mo_coeff[i][:, self.space[i].slice(k)], dtype=numpy.float64)
                     for i, k in enumerate(key)
                 ]
                 if getattr(self.cc.mf, "_eri", None) is not None:
@@ -49,8 +49,8 @@ class RERIs(BaseERIs, BaseRHamiltonian):
                 self._members[key] = np.asarray(np.astype(block, types[float]))
             return self._members[key]
         else:
-            i, j, k, l = [self.space[i].mask(k) for i, k in enumerate(key)]
-            return self.array[i][:, j][:, :, k][:, :, :, l]  # type: ignore
+            ijkl = tuple(self.space[i].slice(k) for i, k in enumerate(key))
+            return self.array[ijkl]  # type: ignore
 
 
 class UERIs(BaseERIs, BaseUHamiltonian):
@@ -149,5 +149,5 @@ class GERIs(BaseERIs, BaseGHamiltonian):
         Returns:
             ERIs for the given spaces.
         """
-        i, j, k, l = [self.space[i].mask(k) for i, k in enumerate(key)]
-        return self.array[i][:, j][:, :, k][:, :, :, l]  # type: ignore
+        ijkl = tuple(self.space[i].slice(k) for i, k in enumerate(key))
+        return self.array[ijkl]  # type: ignore

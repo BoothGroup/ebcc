@@ -56,7 +56,7 @@ class BruecknerGEBCC(BaseBruecknerEBCC):
 
         zocc = np.zeros((self.cc.space.ncocc, self.cc.space.ncocc))
         zvir = np.zeros((self.cc.space.ncvir, self.cc.space.ncvir))
-        t1_block: NDArray[T] = np.block([[zocc, -t1], [t1.T, zvir]])
+        t1_block: NDArray[T] = np.block([[zocc, -t1], [np.transpose(t1), zvir]])
 
         u = scipy.linalg.expm(t1_block)
 

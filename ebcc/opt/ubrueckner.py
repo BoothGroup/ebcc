@@ -60,10 +60,10 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
         t1_block: Namespace[NDArray[T]] = util.Namespace()
         zocc = np.zeros((self.cc.space[0].ncocc, self.cc.space[0].ncocc))
         zvir = np.zeros((self.cc.space[0].ncvir, self.cc.space[0].ncvir))
-        t1_block.aa = np.block([[zocc, -t1.aa], [t1.aa.T, zvir]])
+        t1_block.aa = np.block([[zocc, -t1.aa], [np.transpose(t1.aa), zvir]])
         zocc = np.zeros((self.cc.space[1].ncocc, self.cc.space[1].ncocc))
         zvir = np.zeros((self.cc.space[1].ncvir, self.cc.space[1].ncvir))
-        t1_block.bb = np.block([[zocc, -t1.bb], [t1.bb.T, zvir]])
+        t1_block.bb = np.block([[zocc, -t1.bb], [np.transpose(t1.bb), zvir]])
 
         u = util.Namespace(aa=scipy.linalg.expm(t1_block.aa), bb=scipy.linalg.expm(t1_block.bb))
 

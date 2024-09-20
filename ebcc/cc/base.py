@@ -256,7 +256,7 @@ class BaseEBCC(ABC):
                 vector = self.amplitudes_to_vector(amplitudes)
                 vector = diis.update(vector)
                 amplitudes = self.vector_to_amplitudes(vector)
-                dt = np.max(np.abs(vector - self.amplitudes_to_vector(amplitudes_prev)))
+                dt = np.linalg.norm(np.abs(vector - self.amplitudes_to_vector(amplitudes_prev)), ord=np.inf)
 
                 # Update the energy and calculate change:
                 e_prev = e_cc
@@ -360,7 +360,7 @@ class BaseEBCC(ABC):
             vector = self.lambdas_to_vector(lambdas)
             vector = diis.update(vector)
             lambdas = self.vector_to_lambdas(vector)
-            dl = np.max(np.abs(vector - self.lambdas_to_vector(lambdas_prev)))
+            dl = np.linalg.norm(np.abs(vector - self.lambdas_to_vector(lambdas_prev)), ord=np.inf)
 
             # Log the iteration:
             converged = bool(dl < self.options.t_tol)
@@ -583,7 +583,7 @@ class BaseEBCC(ABC):
             eris=eris,
             amplitudes=amplitudes,
         )
-        res: float = np.ravel(np.real(func(**kwargs)))[0]
+        res: float = np.ravel(func(**kwargs))[0].real
         return astype(res, float)
 
     def energy_perturbative(
@@ -608,7 +608,7 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        res: float = np.ravel(np.real(func(**kwargs)))[0]
+        res: float = np.ravel(func(**kwargs))[0].real
         return astype(res, float)
 
     @abstractmethod
@@ -706,7 +706,7 @@ class BaseEBCC(ABC):
         dm: NDArray[T] = func(**kwargs)
 
         if hermitise:
-            dm = 0.5 * (dm + dm.T)
+            dm = (dm + np.transpose(dm)) * 0.5
 
         if unshifted and self.options.shift:
             xi = self.xi
