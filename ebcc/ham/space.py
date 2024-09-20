@@ -23,6 +23,10 @@ if TYPE_CHECKING:
     T = float64
     B = bool_
 
+# Development note: multiplication of boolean arrays is used in place of logical or bitwise
+# AND functions. This is because backends are not guaranteed to support logical or bitwise
+# operations via overloaded operators.
+
 
 class Space:
     """Space class.
@@ -65,7 +69,7 @@ class Space:
         # Checks:
         if not (self._occupied.size == self._frozen.size == self._active.size):
             raise ValueError("The sizes of the space arrays must match.")
-        if np.any(self._frozen & self._active):
+        if np.any(self._frozen * self._active):
             raise ValueError("Frozen and active orbitals must be mutually exclusive.")
 
     def __repr__(self) -> str:
@@ -177,12 +181,12 @@ class Space:
     @property
     def correlated_occupied(self) -> NDArray[B]:
         """Get a boolean mask of occupied correlated orbitals."""
-        return self.correlated & self.occupied
+        return self.correlated * self.occupied
 
     @property
     def correlated_virtual(self) -> NDArray[B]:
         """Get a boolean mask of virtual correlated orbitals."""
-        return self.correlated & self.virtual
+        return self.correlated * self.virtual
 
     @property
     def ncorr(self) -> int:
@@ -209,12 +213,12 @@ class Space:
     @property
     def inactive_occupied(self) -> NDArray[B]:
         """Get a boolean mask of occupied inactive orbitals."""
-        return self.inactive & self.occupied
+        return self.inactive * self.occupied
 
     @property
     def inactive_virtual(self) -> NDArray[B]:
         """Get a boolean mask of virtual inactive orbitals."""
-        return self.inactive & self.virtual
+        return self.inactive * self.virtual
 
     @property
     def ninact(self) -> int:
@@ -241,12 +245,12 @@ class Space:
     @property
     def frozen_occupied(self) -> NDArray[B]:
         """Get a boolean mask of occupied frozen orbitals."""
-        return self.frozen & self.occupied
+        return self.frozen * self.occupied
 
     @property
     def frozen_virtual(self) -> NDArray[B]:
         """Get a boolean mask of virtual frozen orbitals."""
-        return self.frozen & self.virtual
+        return self.frozen * self.virtual
 
     @property
     def nfroz(self) -> int:
@@ -273,12 +277,12 @@ class Space:
     @property
     def active_occupied(self) -> NDArray[B]:
         """Get a boolean mask of occupied active orbitals."""
-        return self.active & self.occupied
+        return self.active * self.occupied
 
     @property
     def active_virtual(self) -> NDArray[B]:
         """Get a boolean mask of virtual active orbitals."""
-        return self.active & self.virtual
+        return self.active * self.virtual
 
     @property
     def nact(self) -> int:
