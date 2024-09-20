@@ -2,12 +2,17 @@
 """Cyclops Tensor Framework backend."""
 
 import ctf
+import numpy
 import opt_einsum
 
 
 def __getattr__(name):
     """Get the attribute from CTF."""
     return getattr(ctf, name)
+
+
+bool_ = numpy.bool_
+asarray = ctf.astensor
 
 
 def astype(obj, dtype):

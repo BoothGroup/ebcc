@@ -186,13 +186,13 @@ class UEBCC(BaseEBCC):
         space = (
             Space(
                 self.mo_occ[0] > 0,
-                np.zeros(self.mo_occ[0].shape, dtype=bool),
-                np.zeros(self.mo_occ[0].shape, dtype=bool),
+                np.zeros(self.mo_occ[0].shape, dtype=np.bool_),
+                np.zeros(self.mo_occ[0].shape, dtype=np.bool_),
             ),
             Space(
                 self.mo_occ[1] > 0,
-                np.zeros(self.mo_occ[1].shape, dtype=bool),
-                np.zeros(self.mo_occ[1].shape, dtype=bool),
+                np.zeros(self.mo_occ[1].shape, dtype=np.bool_),
+                np.zeros(self.mo_occ[1].shape, dtype=np.bool_),
             ),
         )
         return space

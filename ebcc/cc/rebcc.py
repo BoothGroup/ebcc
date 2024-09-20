@@ -105,8 +105,8 @@ class REBCC(BaseEBCC):
         """
         space = Space(
             self.mo_occ > 0,
-            np.zeros(self.mo_occ.shape, dtype=bool),
-            np.zeros(self.mo_occ.shape, dtype=bool),
+            np.zeros(self.mo_occ.shape, dtype=np.bool_),
+            np.zeros(self.mo_occ.shape, dtype=np.bool_),
         )
         return space
 

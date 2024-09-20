@@ -58,9 +58,9 @@ class Space:
             frozen: Array containing boolean flags indicating whether or not each orbital is frozen.
             active: Array containing boolean flags indicating whether or not each orbital is active.
         """
-        self._occupied = np.asarray(occupied, dtype=bool)
-        self._frozen = np.asarray(frozen, dtype=bool)
-        self._active = np.asarray(active, dtype=bool)
+        self._occupied = np.asarray(occupied, dtype=np.bool_)
+        self._frozen = np.asarray(frozen, dtype=np.bool_)
+        self._active = np.asarray(active, dtype=np.bool_)
 
         # Checks:
         if not (self._occupied.size == self._frozen.size == self._active.size):
@@ -319,8 +319,8 @@ def construct_default_space(mf: SCF) -> Union[RConstructSpaceReturnType, UConstr
 
     def _construct(mo_occ: NDArray[T]) -> Space:
         """Build the default space."""
-        frozen = np.zeros(mo_occ.shape, dtype=bool)
-        active = np.zeros(mo_occ.shape, dtype=bool)
+        frozen = np.zeros(mo_occ.shape, dtype=np.bool_)
+        active = np.zeros(mo_occ.shape, dtype=np.bool_)
         space = Space(
             occupied=mo_occ > 0,
             frozen=frozen,
@@ -404,11 +404,11 @@ def construct_fno_space(
         no_coeff = np.concatenate((no_coeff_occ, no_coeff_avir, no_coeff_fvir), axis=1)
 
         # Build the natural orbital space
-        active = np.zeros(mo_occ.shape, dtype=bool)
+        active = np.zeros(mo_occ.shape, dtype=np.bool_)
         frozen = np.concatenate(
             (
-                np.zeros((nocc + num_active_vir,), dtype=bool),
-                np.ones((mo_occ.size - nocc - num_active_vir,), dtype=bool),
+                np.zeros((nocc + num_active_vir,), dtype=np.bool_),
+                np.ones((mo_occ.size - nocc - num_active_vir,), dtype=np.bool_),
             )
         )
         no_space = Space(

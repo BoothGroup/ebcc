@@ -121,13 +121,13 @@ class GEBCC(BaseEBCC):
         sa = np.where(orbspin == 0)[0]
         sb = np.where(orbspin == 1)[0]
 
-        occupied = np.zeros((nocc + nvir,), dtype=bool)
+        occupied = np.zeros((nocc + nvir,), dtype=np.bool_)
         occupied = _put(occupied, sa, np.copy(ucc.space[0]._occupied))
         occupied = _put(occupied, sb, np.copy(ucc.space[1]._occupied))
-        frozen = np.zeros((nocc + nvir,), dtype=bool)
+        frozen = np.zeros((nocc + nvir,), dtype=np.bool_)
         frozen = _put(frozen, sa, np.copy(ucc.space[0]._frozen))
         frozen = _put(frozen, sb, np.copy(ucc.space[1]._frozen))
-        active = np.zeros((nocc + nvir,), dtype=bool)
+        active = np.zeros((nocc + nvir,), dtype=np.bool_)
         active = _put(active, sa, np.copy(ucc.space[0]._active))
         active = _put(active, sb, np.copy(ucc.space[1]._active))
         space = Space(occupied, frozen, active)
@@ -349,8 +349,8 @@ class GEBCC(BaseEBCC):
         """
         space = Space(
             self.mo_occ > 0,
-            np.zeros(self.mo_occ.shape, dtype=bool),
-            np.zeros(self.mo_occ.shape, dtype=bool),
+            np.zeros(self.mo_occ.shape, dtype=np.bool_),
+            np.zeros(self.mo_occ.shape, dtype=np.bool_),
         )
         return space
 
