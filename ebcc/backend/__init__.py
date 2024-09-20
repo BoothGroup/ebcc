@@ -6,6 +6,7 @@ Notes:
         - CuPy
         - TensorFlow
         - JAX
+        - CTF (Cyclops Tensor Framework)
 
     Non-NumPy backends are only lightly supported. Some functionality may not be available, and only
     minimal tests are performed. Some operations that require interaction with NumPy such as the
@@ -39,6 +40,8 @@ elif BACKEND == "tensorflow":
 elif BACKEND == "jax":
     import jax
     import jax.numpy as np  # type: ignore[no-redef]
+elif BACKEND in ("ctf", "cyclops"):
+    import ctf
 
 
 def __getattr__(name: str) -> ModuleType:
@@ -87,5 +90,13 @@ def _put(
             indices = tf.expand_dims(indices, axis=-1)
         values = np.ravel(tf.convert_to_tensor(values, dtype=array.dtype))
         return tf.tensor_scatter_nd_update(array, indices, values)  # type: ignore
+    elif BACKEND in ("ctf", "cyclops"):
+        # TODO MPI has to be manually managed here
+        if isinstance(indices, tuple):
+            indices_flat = np.ravel_multi_index(indices, array.shape)
+            array.write(indices_flat, values)
+        else:
+            array.write(indices, values)
+        return array
     else:
         raise NotImplementedError(f"Backend {BACKEND} _put not implemented.")
