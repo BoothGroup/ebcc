@@ -15,13 +15,6 @@ def __getattr__(name):
     return getattr(tensorflow.experimental.numpy, name)
 
 
-tf.Tensor.item = lambda self: self.numpy().item()
-tf.Tensor.copy = lambda self: tf.identity(self)
-tf.Tensor.real = property(lambda self: tensorflow.experimental.numpy.real(self))
-tf.Tensor.imag = property(lambda self: tensorflow.experimental.numpy.imag(self))
-tf.Tensor.conj = lambda self: tensorflow.experimental.numpy.conj(self)
-
-
 def _argsort(strings, **kwargs):
     if not isinstance(strings, tf.Tensor):
         return tf.convert_to_tensor(
@@ -92,18 +85,6 @@ def _indices(dimensions, dtype=tf.int32, sparse=False):
 
 
 tf.experimental.numpy.indices = _indices
-
-
-def _transpose(tensor, *axes):
-    # If axes are provided as separate arguments, convert them to a tuple
-    if len(axes) == 1 and isinstance(axes[0], (tuple, list)):
-        axes = axes[0]
-    if len(axes) == 0:
-        axes = tuple(reversed(range(tf.rank(tensor))))
-    return tf.transpose(tensor, perm=axes)
-
-
-tf.Tensor.transpose = _transpose
 
 
 def einsum_path(*args, **kwargs):
