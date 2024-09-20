@@ -13,17 +13,15 @@ def __getattr__(name):
     return getattr(jax.numpy, name)
 
 
-def _ix_(*args):
+_jax_ix_ = jax.numpy.ix_
+
+def ix_(*args):
     args_ = []
     for arg in args:
         if isinstance(arg, jax.numpy.ndarray) and arg.dtype == jax.numpy.bool_:
             arg = jax.numpy.where(arg)[0]
         args_.append(arg)
     return _jax_ix_(*args_)
-
-
-_jax_ix_ = jax.numpy.ix_
-jax.numpy.ix_ = _ix_
 
 
 def einsum_path(*args, **kwargs):

@@ -27,7 +27,7 @@ def _block_recursive(arrays, max_depth, depth=0):
         return arrays
 
 
-def _block(arrays):
+def block(arrays):
     def _get_max_depth(arrays):
         if isinstance(arrays, list):
             return 1 + max([_get_max_depth(arr) for arr in arrays])
@@ -36,10 +36,7 @@ def _block(arrays):
     return _block_recursive(arrays, _get_max_depth(arrays))
 
 
-tf.experimental.numpy.block = _block
-
-
-def _ravel_multi_index(multi_index, dims, mode="raise", order="C"):
+def ravel_multi_index(multi_index, dims, mode="raise", order="C"):
     if mode != "raise":
         raise NotImplementedError("Only 'raise' mode is implemented")
     if order != "C":
@@ -54,10 +51,7 @@ def _ravel_multi_index(multi_index, dims, mode="raise", order="C"):
     return flat_index
 
 
-tf.experimental.numpy.ravel_multi_index = _ravel_multi_index
-
-
-def _indices(dimensions, dtype=tf.int32, sparse=False):
+def indices(dimensions, dtype=tf.int32, sparse=False):
     # Generate a range of indices for each dimension
     ranges = [tf.range(dim, dtype=dtype) for dim in dimensions]
 
@@ -74,9 +68,6 @@ def _indices(dimensions, dtype=tf.int32, sparse=False):
         # Stack the grids together to form the final result
         indices = tf.stack(grids, axis=0)
         return indices
-
-
-tf.experimental.numpy.indices = _indices
 
 
 def einsum_path(*args, **kwargs):
