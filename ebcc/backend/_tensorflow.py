@@ -15,6 +15,10 @@ def __getattr__(name):
     return getattr(tensorflow.experimental.numpy, name)
 
 
+def astype(obj, dtype):
+    return obj.astype(dtype)
+
+
 def _argsort(strings, **kwargs):
     if not isinstance(strings, tf.Tensor):
         return tf.convert_to_tensor(
