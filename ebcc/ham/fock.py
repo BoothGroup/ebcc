@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from ebcc import numpy as np
 from ebcc import util
 from ebcc.core.precision import types
 from ebcc.ham.base import BaseFock, BaseGHamiltonian, BaseRHamiltonian, BaseUHamiltonian
@@ -21,7 +22,7 @@ class RFock(BaseFock, BaseRHamiltonian):
     _members: dict[str, NDArray[T]]
 
     def _get_fock(self) -> NDArray[T]:
-        fock_ao = self.cc.mf.get_fock().astype(types[float])
+        fock_ao: NDArray[T] = np.asarray(self.cc.mf.get_fock(), dtype=types[float])
         return util.einsum("pq,pi,qj->ij", fock_ao, self.mo_coeff[0], self.mo_coeff[1])
 
     def __getitem__(self, key: str) -> NDArray[T]:
@@ -34,14 +35,14 @@ class RFock(BaseFock, BaseRHamiltonian):
             Fock matrix for the given spaces.
         """
         if key not in self._members:
-            i = self.space[0].mask(key[0])
-            j = self.space[1].mask(key[1])
-            self._members[key] = self.array[i][:, j].copy()
+            i = self.space[0].slice(key[0])
+            j = self.space[1].slice(key[1])
+            self._members[key] = np.copy(self.array[i, j])
 
             if self.shift:
                 xi = self.xi
-                g = self.g.__getattr__(f"b{key}").copy()
-                g += self.g.__getattr__(f"b{key[::-1]}").transpose(0, 2, 1)
+                g = np.copy(self.g.__getattr__(f"b{key}"))
+                g += np.transpose(self.g.__getattr__(f"b{key[::-1]}"), (0, 2, 1))
                 self._members[key] -= util.einsum("I,Ipq->pq", xi, g)
 
         return self._members[key]
@@ -53,7 +54,7 @@ class UFock(BaseFock, BaseUHamiltonian):
     _members: dict[str, RFock]
 
     def _get_fock(self) -> tuple[NDArray[T], NDArray[T]]:
-        fock_ao = self.cc.mf.get_fock().astype(types[float])
+        fock_ao: NDArray[T] = np.asarray(self.cc.mf.get_fock(), dtype=types[float])
         return (
             util.einsum("pq,pi,qj->ij", fock_ao[0], self.mo_coeff[0][0], self.mo_coeff[1][0]),
             util.einsum("pq,pi,qj->ij", fock_ao[1], self.mo_coeff[0][1], self.mo_coeff[1][1]),
@@ -88,7 +89,7 @@ class GFock(BaseFock, BaseGHamiltonian):
     _members: dict[str, NDArray[T]]
 
     def _get_fock(self) -> NDArray[T]:
-        fock_ao = self.cc.mf.get_fock().astype(types[float])
+        fock_ao: NDArray[T] = np.asarray(self.cc.mf.get_fock(), dtype=types[float])
         return util.einsum("pq,pi,qj->ij", fock_ao, self.mo_coeff[0], self.mo_coeff[1])
 
     def __getitem__(self, key: str) -> NDArray[T]:
@@ -101,14 +102,14 @@ class GFock(BaseFock, BaseGHamiltonian):
             Fock matrix for the given spin.
         """
         if key not in self._members:
-            i = self.space[0].mask(key[0])
-            j = self.space[1].mask(key[1])
-            self._members[key] = self.array[i][:, j].copy()
+            i = self.space[0].slice(key[0])
+            j = self.space[1].slice(key[1])
+            self._members[key] = np.copy(self.array[i, j])
 
             if self.shift:
                 xi = self.xi
-                g = self.g.__getattr__(f"b{key}").copy()
-                g += self.g.__getattr__(f"b{key[::-1]}").transpose(0, 2, 1)
+                g = np.copy(self.g.__getattr__(f"b{key}"))
+                g += np.transpose(self.g.__getattr__(f"b{key[::-1]}"), (0, 2, 1))
                 self._members[key] -= util.einsum("I,Ipq->pq", xi, g)
 
         return self._members[key]

@@ -65,12 +65,12 @@ class UDFCC2_Tests(unittest.TestCase):
     def test_t1_amplitudes(self):
         a = self.cc2_ref.t1.aa
         b = self.cc2.t1.aa
-        np.testing.assert_almost_equal(a, b, 4)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 4)
 
     def test_t2_amplitudes(self):
         a = self.cc2_ref.t2.aaaa
         b = self.cc2.t2.aaaa
-        np.testing.assert_almost_equal(a, b, 4)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 4)
 
 
 if __name__ == "__main__":

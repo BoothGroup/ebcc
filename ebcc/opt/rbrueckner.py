@@ -8,6 +8,7 @@ import scipy.linalg
 
 from ebcc import numpy as np
 from ebcc import util
+from ebcc.backend import _put
 from ebcc.core.precision import types
 from ebcc.opt.base import BaseBruecknerEBCC
 
@@ -53,20 +54,17 @@ class BruecknerREBCC(BaseBruecknerEBCC):
         if u_tot is None:
             u_tot = np.eye(self.cc.space.ncorr, dtype=types[float])
 
-        t1_block: NDArray[T] = np.zeros(
-            (self.cc.space.ncorr, self.cc.space.ncorr), dtype=types[float]
-        )
-        t1_block[: self.cc.space.ncocc, self.cc.space.ncocc :] = -t1
-        t1_block[self.cc.space.ncocc :, : self.cc.space.ncocc] = t1.T
+        zocc = np.zeros((self.cc.space.ncocc, self.cc.space.ncocc))
+        zvir = np.zeros((self.cc.space.ncvir, self.cc.space.ncvir))
+        t1_block: NDArray[T] = np.block([[zocc, -t1], [np.transpose(t1), zvir]])
 
         u = scipy.linalg.expm(t1_block)
 
         u_tot = u_tot @ u
         if np.linalg.det(u_tot) < 0:
-            u_tot[:, 0] *= -1
+            u_tot = _put(u_tot, np.ix_(np.arange(u_tot.shape[0]), np.array([0])), -u_tot[:, 0])
 
-        a = scipy.linalg.logm(u_tot)
-        a = a.real.astype(types[float])
+        a: NDArray[T] = np.asarray(np.real(scipy.linalg.logm(u_tot)), dtype=types[float])
         if diis is not None:
             a = diis.update(a, xerr=t1)
 
@@ -151,7 +149,11 @@ class BruecknerREBCC(BaseBruecknerEBCC):
         Returns:
             Updated MO coefficients.
         """
-        mo_coeff[:, self.cc.space.correlated] = mo_coeff_corr
+        mo_coeff = _put(
+            mo_coeff,
+            np.ix_(np.arange(mo_coeff.shape[0]), self.cc.space.correlated),  # type: ignore
+            mo_coeff_corr,
+        )
         return mo_coeff
 
     def update_coefficients(

@@ -65,12 +65,12 @@ class UDFQCISD_Tests(unittest.TestCase):
     def test_t1_amplitudes(self):
         a = self.qcisd_ref.t1.aa
         b = self.qcisd.t1.aa
-        np.testing.assert_almost_equal(a, b, 4)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 4)
 
     def test_t2_amplitudes(self):
         a = self.qcisd_ref.t2.aaaa
         b = self.qcisd.t2.aaaa
-        np.testing.assert_almost_equal(a, b, 4)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 4)
 
 
 if __name__ == "__main__":

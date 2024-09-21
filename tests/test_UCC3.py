@@ -66,7 +66,7 @@ class UCC3_Tests(unittest.TestCase):
     def test_t1(self):
         a = scipy.linalg.block_diag(self.ucc3.t1.aa, self.ucc3.t1.bb)[self.osort][:, self.vsort]
         b = self.gcc3.t1
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
 
 if __name__ == "__main__":

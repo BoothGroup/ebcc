@@ -11,7 +11,7 @@ import pytest
 import scipy.linalg
 from pyscf import mp, gto, lib, scf, adc
 
-from ebcc import REBCC, NullLogger, Space
+from ebcc import REBCC, NullLogger, Space, BACKEND
 
 
 @pytest.mark.reference
@@ -52,6 +52,7 @@ class RMP2_PySCF_Tests(unittest.TestCase):
         b = self.mp2.e_tot
         self.assertAlmostEqual(a, b, 7)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ip(self):
         eom = self.mp2.ip_eom(nroots=5, e_tol=1e-10)
         e1 = eom.kernel()
@@ -60,6 +61,7 @@ class RMP2_PySCF_Tests(unittest.TestCase):
         e2, v2 = adc2.ip_adc(nroots=5)[:2]
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ea(self):
         eom = self.mp2.ea_eom(nroots=5, e_tol=1e-10)
         e1 = eom.kernel()

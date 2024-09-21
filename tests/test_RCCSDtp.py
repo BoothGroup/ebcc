@@ -10,10 +10,12 @@ import pytest
 import scipy
 from pyscf import gto, lib, scf, fci
 
+from ebcc import BACKEND
 from ebcc import GEBCC, REBCC, Space, NullLogger, util
 
 
 @pytest.mark.regression
+@pytest.mark.skipif(BACKEND != "numpy", reason="Currently requires mutable backend.")
 class RCCSDtp_Tests(unittest.TestCase):
     """Test RCCSDt' against GCCSDt'.
     """
@@ -89,10 +91,11 @@ class RCCSDtp_Tests(unittest.TestCase):
     def test_t1(self):
         a = scipy.linalg.block_diag(self.rccsdt.t1, self.rccsdt.t1)[self.osort][:, self.vsort]
         b = self.gccsdt.t1
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
 
 @pytest.mark.regression
+@pytest.mark.skipif(BACKEND != "numpy", reason="Currently requires mutable backend.")
 class RCCSDtp_Frozen_Tests(unittest.TestCase):
     """Test RCCSDt' against GCCSDt' with a frozen core approximation.
     """

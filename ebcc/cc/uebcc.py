@@ -140,7 +140,7 @@ class UEBCC(BaseEBCC):
                     amplitudes[name][comb] = tn
 
             for name, key, n in ucc.ansatz.bosonic_cluster_ranks(spin_type=ucc.spin_type):
-                amplitudes[name] = rcc.amplitudes[name].copy()  # type: ignore
+                amplitudes[name] = np.copy(rcc.amplitudes[name])  # type: ignore
 
             for name, key, nf, nb in ucc.ansatz.coupling_cluster_ranks(spin_type=ucc.spin_type):
                 amplitudes[name] = util.Namespace()
@@ -164,7 +164,7 @@ class UEBCC(BaseEBCC):
 
             for name, key, n in ucc.ansatz.bosonic_cluster_ranks(spin_type=ucc.spin_type):
                 lname = "l" + name
-                lambdas[lname] = rcc.lambdas[lname].copy()  # type: ignore
+                lambdas[lname] = np.copy(rcc.lambdas[lname])  # type: ignore
 
             for name, key, nf, nb in ucc.ansatz.coupling_cluster_ranks(spin_type=ucc.spin_type):
                 lname = "l" + name
@@ -186,13 +186,13 @@ class UEBCC(BaseEBCC):
         space = (
             Space(
                 self.mo_occ[0] > 0,
-                np.zeros(self.mo_occ[0].shape, dtype=bool),
-                np.zeros(self.mo_occ[0].shape, dtype=bool),
+                np.zeros(self.mo_occ[0].shape, dtype=np.bool_),
+                np.zeros(self.mo_occ[0].shape, dtype=np.bool_),
             ),
             Space(
                 self.mo_occ[1] > 0,
-                np.zeros(self.mo_occ[1].shape, dtype=bool),
-                np.zeros(self.mo_occ[1].shape, dtype=bool),
+                np.zeros(self.mo_occ[1].shape, dtype=np.bool_),
+                np.zeros(self.mo_occ[1].shape, dtype=np.bool_),
             ),
         )
         return space
@@ -243,10 +243,12 @@ class UEBCC(BaseEBCC):
                 elif n == 2:
                     comb_t = comb[0] + comb[2] + comb[1] + comb[3]
                     key_t = key[0] + key[2] + key[1] + key[3]
-                    tn[comb] = eris[comb_t][key_t].swapaxes(1, 2) / self.energy_sum(key, comb)
+                    tn[comb] = np.transpose(eris[comb_t][key_t], (0, 2, 1, 3)) / self.energy_sum(
+                        key, comb
+                    )
                     if comb in ("aaaa", "bbbb"):
                         # TODO generalise:
-                        tn[comb] = 0.5 * (tn[comb] - tn[comb].swapaxes(0, 1))
+                        tn[comb] = (tn[comb] - np.transpose(tn[comb], (1, 0, 2, 3))) * 0.5
                 else:
                     shape = tuple(self.space["ab".index(s)].size(k) for s, k in zip(comb, key))
                     tn[comb] = np.zeros(shape, dtype=types[float])
@@ -310,7 +312,7 @@ class UEBCC(BaseEBCC):
             perm = list(range(n, 2 * n)) + list(range(n))
             lambdas[lname] = util.Namespace()
             for key in dict(amplitudes[name]).keys():
-                ln = amplitudes[name][key].transpose(perm)
+                ln = np.transpose(amplitudes[name][key], perm)
                 lambdas[lname][key] = ln
 
         # Build LS amplitudes:
@@ -324,7 +326,7 @@ class UEBCC(BaseEBCC):
             perm = list(range(nb)) + [nb + 1, nb]
             lambdas["l" + name] = util.Namespace()
             for key in dict(amplitudes[name]).keys():
-                ln = amplitudes[name][key].transpose(perm)
+                ln = np.transpose(amplitudes[name][key], perm)
                 lambdas["l" + name][key] = ln
 
         return lambdas
@@ -476,8 +478,8 @@ class UEBCC(BaseEBCC):
         dm: SpinArrayType = func(**kwargs)
 
         if hermitise:
-            dm.aa = 0.5 * (dm.aa + dm.aa.T)
-            dm.bb = 0.5 * (dm.bb + dm.bb.T)
+            dm.aa = (dm.aa + np.transpose(dm.aa)) * 0.5
+            dm.bb = (dm.bb + np.transpose(dm.bb)) * 0.5
 
         return dm
 
@@ -510,11 +512,11 @@ class UEBCC(BaseEBCC):
         if hermitise:
 
             def transpose1(dm: NDArray[T]) -> NDArray[T]:
-                dm = 0.5 * (dm.transpose(0, 1, 2, 3) + dm.transpose(2, 3, 0, 1))
+                dm = (np.transpose(dm, (0, 1, 2, 3)) + np.transpose(dm, (2, 3, 0, 1))) * 0.5
                 return dm
 
             def transpose2(dm: NDArray[T]) -> NDArray[T]:
-                dm = 0.5 * (dm.transpose(0, 1, 2, 3) + dm.transpose(1, 0, 3, 2))
+                dm = (np.transpose(dm, (0, 1, 2, 3)) + np.transpose(dm, (1, 0, 3, 2))) * 0.5
                 return dm
 
             dm.aaaa = transpose2(transpose1(dm.aaaa))
@@ -561,10 +563,18 @@ class UEBCC(BaseEBCC):
         dm_eb: SpinArrayType = func(**kwargs)
 
         if hermitise:
-            dm_eb.aa[0] = 0.5 * (dm_eb.aa[0] + dm_eb.aa[1].transpose(0, 2, 1))
-            dm_eb.bb[0] = 0.5 * (dm_eb.bb[0] + dm_eb.bb[1].transpose(0, 2, 1))
-            dm_eb.aa[1] = dm_eb.aa[0].transpose(0, 2, 1).copy()
-            dm_eb.bb[1] = dm_eb.bb[0].transpose(0, 2, 1).copy()
+            dm_eb.aa = np.array(
+                [
+                    (dm_eb.aa[0] + np.transpose(dm_eb.aa[1], (0, 2, 1))) * 0.5,
+                    (dm_eb.aa[1] + np.transpose(dm_eb.aa[0], (0, 2, 1))) * 0.5,
+                ]
+            )
+            dm_eb.bb = np.array(
+                [
+                    (dm_eb.bb[0] + np.transpose(dm_eb.bb[1], (0, 2, 1))) * 0.5,
+                    (dm_eb.bb[1] + np.transpose(dm_eb.bb[0], (0, 2, 1))) * 0.5,
+                ]
+            )
 
         if unshifted and self.options.shift:
             rdm1_f = self.make_rdm1_f(hermitise=hermitise)
@@ -609,9 +619,9 @@ class UEBCC(BaseEBCC):
             factor = 1 if signs_dict[key] == "+" else -1
             if key == "b":
                 assert self.omega is not None
-                energies.append(factor * self.omega)
+                energies.append(self.omega * types[float](factor))
             else:
-                energies.append(factor * np.diag(self.fock[spin + spin][key + key]))
+                energies.append(np.diag(self.fock[spin + spin][key + key]) * types[float](factor))
 
         subscript = ",".join([next_char() for k in subscript])
         energy_sum = util.dirsum(subscript, *energies)
@@ -633,16 +643,16 @@ class UEBCC(BaseEBCC):
             for spin in util.generate_spin_combinations(n, unique=True):
                 tn = amplitudes[name][spin]
                 subscript, _ = util.combine_subscripts(key, spin)
-                vectors.append(util.compress_axes(subscript, tn).ravel())
+                vectors.append(np.ravel(util.compress_axes(subscript, tn)))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
-            vectors.append(amplitudes[name].ravel())  # type: ignore
+            vectors.append(np.ravel(amplitudes[name]))  # type: ignore
 
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             if nf != 1:
                 raise util.ModelNotImplemented
-            vectors.append(amplitudes[name].aa.ravel())
-            vectors.append(amplitudes[name].bb.ravel())
+            vectors.append(np.ravel(amplitudes[name].aa))
+            vectors.append(np.ravel(amplitudes[name].bb))
 
         return np.concatenate(vectors)
 
@@ -675,7 +685,7 @@ class UEBCC(BaseEBCC):
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * n
             size = self.nbos**n
-            amplitudes[name] = vector[i0 : i0 + size].reshape(shape)  # type: ignore
+            amplitudes[name] = np.reshape(vector[i0 : i0 + size], shape)  # type: ignore
             i0 += size
 
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
@@ -684,11 +694,11 @@ class UEBCC(BaseEBCC):
             amplitudes[name] = util.Namespace()
             shape = (self.nbos,) * nb + tuple(self.space[0].size(k) for k in key[nb:])
             size = util.prod(shape)
-            amplitudes[name].aa = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[name].aa = np.reshape(vector[i0 : i0 + size], shape)
             i0 += size
             shape = (self.nbos,) * nb + tuple(self.space[1].size(k) for k in key[nb:])
             size = util.prod(shape)
-            amplitudes[name].bb = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[name].bb = np.reshape(vector[i0 : i0 + size], shape)
             i0 += size
 
         assert i0 == len(vector)
@@ -712,18 +722,18 @@ class UEBCC(BaseEBCC):
             for spin in util.generate_spin_combinations(n, unique=True):
                 tn = lambdas[name][spin]
                 subscript, _ = util.combine_subscripts(key, spin)
-                vectors.append(util.compress_axes(subscript, tn).ravel())
+                vectors.append(np.ravel(util.compress_axes(subscript, tn)))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="l"):
-            vectors.append(lambdas[name].ravel())  # type: ignore
+            vectors.append(np.ravel(lambdas[name]))  # type: ignore
 
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
             spin_type=self.spin_type, which="l"
         ):
             if nf != 1:
                 raise util.ModelNotImplemented
-            vectors.append(lambdas[name].aa.ravel())
-            vectors.append(lambdas[name].bb.ravel())
+            vectors.append(np.ravel(lambdas[name].aa))
+            vectors.append(np.ravel(lambdas[name].bb))
 
         return np.concatenate(vectors)
 
@@ -758,7 +768,7 @@ class UEBCC(BaseEBCC):
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="l"):
             shape = (self.nbos,) * n
             size = self.nbos**n
-            lambdas[name] = vector[i0 : i0 + size].reshape(shape)  # type: ignore
+            lambdas[name] = np.reshape(vector[i0 : i0 + size], shape)  # type: ignore
             i0 += size
 
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
@@ -769,11 +779,11 @@ class UEBCC(BaseEBCC):
             lambdas[name] = util.Namespace()
             shape = (self.nbos,) * nb + tuple(self.space[0].size(k) for k in key[nb:])
             size = util.prod(shape)
-            lambdas[name].aa = vector[i0 : i0 + size].reshape(shape)
+            lambdas[name].aa = np.reshape(vector[i0 : i0 + size], shape)
             i0 += size
             shape = (self.nbos,) * nb + tuple(self.space[1].size(k) for k in key[nb:])
             size = util.prod(shape)
-            lambdas[name].bb = vector[i0 : i0 + size].reshape(shape)
+            lambdas[name].bb = np.reshape(vector[i0 : i0 + size], shape)
             i0 += size
 
         assert i0 == len(vector)
@@ -810,7 +820,7 @@ class UEBCC(BaseEBCC):
         """
         fock_array = util.einsum(
             "npq,npi,nqj->nij",
-            self.mf.get_fock().astype(types[float]),
+            np.asarray(self.mf.get_fock(), dtype=types[float]),
             self.mo_coeff,
             self.mo_coeff,
         )
@@ -882,7 +892,8 @@ class UEBCC(BaseEBCC):
             Number of occupied molecular orbitals for each spin.
         """
         return cast(
-            tuple[int, int], tuple((mo_occ > 0).astype(int).sum() for mo_occ in self.mo_occ)
+            tuple[int, int],
+            tuple(np.sum(np.asarray(mo_occ > 0, dtype=int)) for mo_occ in self.mo_occ),
         )
 
     @property

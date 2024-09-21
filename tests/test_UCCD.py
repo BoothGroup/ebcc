@@ -9,7 +9,7 @@ from pyscf import cc, gto, lib, scf
 from pyscf.cc import ccd as pyscf_ccd
 from pyscf.cc import ccsd_rdm
 
-from ebcc import REBCC, UEBCC, NullLogger, Space
+from ebcc import REBCC, UEBCC, NullLogger, Space, BACKEND
 
 
 @pytest.mark.reference
@@ -66,24 +66,24 @@ class UCCD_PySCF_Tests(unittest.TestCase):
     def test_t2_amplitudes(self):
         a = self.ccd_ref.t2
         b = self.ccd.t2.abab
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_l2_amplitudes(self):
         a = self.ccd_ref.l2
-        b = self.ccd.l2.abab.transpose(2, 3, 0, 1)
-        np.testing.assert_almost_equal(a, b, 6)
+        b = np.transpose(self.ccd.l2.abab, (2, 3, 0, 1))
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm1(self):
         a = self.ccd_ref.make_rdm1()
         b = self.ccd.make_rdm1_f(eris=self.eris)
         b = b.aa + b.bb
-        np.testing.assert_almost_equal(a, b, 6, verbose=True)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm2(self):
         a = self.ccd_ref.make_rdm2()
         b = self.ccd.make_rdm2_f(eris=self.eris)
         b = 2 * b.aabb + b.aaaa + b.bbbb
-        np.testing.assert_almost_equal(a, b, 6, verbose=True)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
 
 @pytest.mark.regression
@@ -120,10 +120,12 @@ class UCCD_Tests(unittest.TestCase):
     def tearDownClass(cls):
         del cls.mf, cls.ccd, cls.eris
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ip(self):
         e1 = self.ccd.ip_eom(nroots=5).kernel()
         self.assertAlmostEqual(e1[0], 0.3054216876546247)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ea(self):
         e1 = self.ccd.ea_eom(nroots=5).kernel()
         self.assertAlmostEqual(e1[0], 0.002154489320978545)

@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING
 
 from ebcc import numpy as np
 from ebcc import util
+from ebcc.backend import _put
 
 if TYPE_CHECKING:
     from typing import Any, Generator, Hashable, Iterable, Optional
@@ -220,7 +221,7 @@ def antisymmetrise_array(v: NDArray[T], axes: Optional[tuple[int, ...]] = None) 
             if ax in axes:
                 j = axes.index(ax)
                 transpose[i] = perm[j]
-        v_as += sign * v.transpose(transpose).copy()
+        v_as += np.copy(np.transpose(v, transpose)) * sign
 
     return v_as
 
@@ -312,8 +313,8 @@ def compress_axes(
     subscript = "".join([subs[s] for s in subscript])
 
     # Reshape array so that all axes of the same character are adjacent:
-    arg = tuple(np.argsort(list(subscript)))
-    array = array.transpose(arg)
+    arg = tuple(util.argsort(list(subscript)))
+    array = np.transpose(array, arg)
     subscript = permute_string(subscript, arg)
 
     # Reshape array so that all axes of the same character are flattened:
@@ -323,7 +324,9 @@ def compress_axes(
             assert sizes[char] == n
         else:
             sizes[char] = n
-    array = array.reshape([sizes[char] ** subscript.count(char) for char in sorted(set(subscript))])
+    array = np.reshape(
+        array, [sizes[char] ** subscript.count(char) for char in sorted(set(subscript))]
+    )
 
     # For each axis type, get the necessary lower-triangular indices:
     indices_ndim = [
@@ -397,8 +400,8 @@ def decompress_axes(
     subscript = "".join([subs[s] for s in subscript])
 
     # Reshape array so that all axes of the same character are adjacent:
-    arg = tuple(np.argsort(list(subscript)))
-    array = array.transpose(arg)
+    arg = tuple(util.argsort(list(subscript)))
+    array = np.transpose(array, arg)
     subscript = permute_string(subscript, arg)
 
     # Reshape array so that all axes of the same character are flattened:
@@ -408,7 +411,9 @@ def decompress_axes(
             assert sizes[char] == n
         else:
             sizes[char] = n
-    array = array.reshape([sizes[char] ** subscript.count(char) for char in sorted(set(subscript))])
+    array = np.reshape(
+        array, [sizes[char] ** subscript.count(char) for char in sorted(set(subscript))]
+    )
 
     # Check the symmetry string, and compress it:
     n = 0
@@ -438,16 +443,17 @@ def decompress_axes(
             ind[tuple(None if i != j else slice(None) for i in range(len(indices_perm)))]
             for j, ind in enumerate(indices_perm)
         )
-        array[indices_perm] = array_flat.reshape(array[indices_perm].shape) * util.prod(signs)
+        array = _put(array, indices_perm, array_flat * util.prod(signs))
 
     # Reshape array to non-flattened format
-    array = array.reshape(
-        sum([(sizes[char],) * subscript.count(char) for char in sorted(set(subscript))], tuple())
+    array = np.reshape(
+        array,
+        (sum([(sizes[char],) * subscript.count(char) for char in sorted(set(subscript))], tuple())),
     )
 
     # Undo transpose:
-    arg = tuple(np.argsort(arg))
-    array = array.transpose(arg)
+    arg = tuple(util.argsort(list(arg)))
+    array = np.transpose(array, arg)
 
     return array
 
@@ -521,7 +527,7 @@ def symmetrise(
             for i, p in zip(inds_part, perms_part):
                 perm[i] = p
         sign = util.prod(signs) if symmetry[perm[0]] == "-" else 1
-        array_as = array_as + sign * array.transpose(perm)
+        array_as = array_as + np.transpose(array, perm) * sign
 
     if apply_factor:
         # Apply factor
@@ -554,19 +560,14 @@ def pack_2e(*args):  # type: ignore  # noqa
         "vvvv",
     ]
 
-    assert len(args) == len(ov_2e)
+    assert len(args) == 16
+    blocks = [[[[None, None] for _ in range(2)] for _ in range(2)] for _ in range(2)]
 
-    nocc = args[0].shape
-    nvir = args[-1].shape
-    occ = [slice(None, n) for n in nocc]
-    vir = [slice(n, None) for n in nocc]
-    out = np.zeros(tuple(no + nv for no, nv in zip(nocc, nvir)))
+    for n in range(16):
+        i, j, k, l = ["ov".index(x) for x in ov_2e[n]]
+        blocks[i][j][k][l] = args[n]
 
-    for key, arg in zip(ov_2e, args):
-        slices = [occ[i] if x == "o" else vir[i] for i, x in enumerate(key)]
-        out[tuple(slices)] = arg
-
-    return out
+    return np.block(blocks)  # type: ignore
 
 
 def unique(lst: list[Hashable]) -> list[Hashable]:

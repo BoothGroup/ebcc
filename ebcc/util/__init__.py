@@ -1,6 +1,14 @@
 """Utilities."""
 
-from ebcc.util.misc import Inherited, ModelNotImplemented, Namespace, Timer, regularise_tuple, prod
+from ebcc.util.misc import (
+    Inherited,
+    ModelNotImplemented,
+    Namespace,
+    Timer,
+    regularise_tuple,
+    prod,
+    argsort,
+)
 from ebcc.util.einsumfunc import einsum, dirsum
 from ebcc.util.permutations import (
     antisymmetrise_array,

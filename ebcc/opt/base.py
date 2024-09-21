@@ -6,8 +6,10 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+import numpy
 from pyscf import lib
 
+from ebcc import numpy as np
 from ebcc import util
 from ebcc.core.damping import DIIS
 from ebcc.core.logging import ANSI, NullLogger, init_logging
@@ -23,6 +25,8 @@ if TYPE_CHECKING:
     from ebcc.util import Namespace
 
     T = float64
+
+# FIXME Custom versions of PySCF functions
 
 
 @dataclass
@@ -122,8 +126,8 @@ class BaseBruecknerEBCC(ABC):
         diis.damping = self.options.damping
 
         # Initialise coefficients:
-        mo_coeff_new: NDArray[T] = self.cc.mo_coeff.astype(types[float]).copy()
-        mo_coeff_ref: NDArray[T] = self.cc.mo_coeff.astype(types[float]).copy()
+        mo_coeff_new: NDArray[T] = np.copy(np.asarray(self.cc.mo_coeff, dtype=types[float]))
+        mo_coeff_ref: NDArray[T] = np.copy(np.asarray(self.cc.mo_coeff, dtype=types[float]))
         mo_coeff_ref = self.mo_to_correlated(mo_coeff_ref)
         u_tot = None
 
@@ -147,7 +151,7 @@ class BaseBruecknerEBCC(ABC):
             mo_coeff_new = self.update_coefficients(u_tot, mo_coeff_new, mo_coeff_ref)
 
             # Transform mean-field and amplitudes:
-            self.mf.mo_coeff = mo_coeff_new
+            self.mf.mo_coeff = numpy.asarray(mo_coeff_new)
             self.mf.e_tot = self.mf.energy_tot()
             amplitudes = self.transform_amplitudes(u)
 

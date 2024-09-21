@@ -9,7 +9,7 @@ import numpy as np
 import scipy.linalg
 import pytest
 
-from ebcc import GEBCC, NullLogger, util
+from ebcc import GEBCC, NullLogger, util, BACKEND
 
 
 @pytest.mark.reference
@@ -74,7 +74,7 @@ class GCC2_PySCF_Tests(unittest.TestCase):
     def test_t1_amplitudes(self):
         a = scipy.linalg.block_diag(self.ccsd_ref.t1, self.ccsd_ref.t1)[self.osort][:, self.vsort]
         b = self.ccsd.t1
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     # This fails:
     #def test_rdm_energy(self):
@@ -135,14 +135,17 @@ class GCC2_Tests(unittest.TestCase):
         dm = util.einsum("ijkl,pi,qj,rk,sl->pqrs", dm, c, c, c, c)
         self.assertAlmostEqual(lib.fp(dm), 2.491733293012602, 6)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ip(self):
         e1 = self.ccsd.ip_eom(nroots=5).kernel()
         self.assertAlmostEqual(e1[0], 0.4334082808900563)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ea(self):
         e1 = self.ccsd.ea_eom(nroots=5).kernel()
         self.assertAlmostEqual(e1[0], 0.1663724198593271)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ee(self):
         e1 = self.ccsd.ee_eom(nroots=5).kernel()
         self.assertAlmostEqual(e1[0], 0.27385429984532744)

@@ -5,9 +5,9 @@ from __future__ import annotations
 import ctypes
 from typing import TYPE_CHECKING
 
-from pyscf.lib import direct_sum, dot  # noqa: F401
-from pyscf.lib import einsum as pyscf_einsum  # noqa: F401
+from pyscf.lib import dot  # noqa: F401
 
+from ebcc import BACKEND
 from ebcc import numpy as np
 from ebcc.core.precision import types
 
@@ -32,13 +32,13 @@ except ImportError:
     FOUND_TBLIS = False
 
 """The contraction function to use."""
-EINSUM_BACKEND = "tblis" if FOUND_TBLIS else "ttdt"
+CONTRACTION_METHOD = "backend"
 
-"""The size of the contraction to fall back on NumPy."""
-NUMPY_EINSUM_SIZE = 2000
+"""The size of the contraction to fall back on the backend."""
+BACKEND_EINSUM_SIZE = 1000
 
-"""The size of the contraction to let NumPy optimize."""
-NUMPY_OPTIMIZE_SIZE = 1000
+"""The size of the contraction to let the backend optimize."""
+BACKEND_OPTIMIZE_SIZE = 100
 
 """Symbols used in einsum-like functions."""
 EINSUM_SYMBOLS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -64,8 +64,6 @@ def _parse_einsum_input(operands: list[OperandType]) -> tuple[str, str, list[NDA
         raise ValueError("No input operands")
 
     if isinstance(operands[0], str):
-        if not all(isinstance(op, np.ndarray) for op in operands[1:]):
-            raise EinsumOperandError("Invalid operands for einsum")
         subscripts = operands[0].replace(" ", "")
         operand_list: list[NDArray[T]] = operands[1:]  # type: ignore
 
@@ -90,10 +88,6 @@ def _parse_einsum_input(operands: list[OperandType]) -> tuple[str, str, list[NDA
                 raise ValueError(f"Character {s} is not a valid symbol.")
 
     else:
-        if not all(isinstance(op, np.ndarray) for op in operands[:-1:2]):
-            raise EinsumOperandError("Invalid operands for einsum")
-        if not all(isinstance(op, tuple) for op in operands[1::2]):
-            raise EinsumOperandError("Invalid subscripts for einsum")
         operand_list: list[NDArray[T]] = operands[:-1:2]  # type: ignore
         subscript_list: list[tuple[int, ...]] = operands[1::2]  # type: ignore
         output_list: Optional[tuple[int, ...]] = (
@@ -202,7 +196,7 @@ def _parse_einsum_input(operands: list[OperandType]) -> tuple[str, str, list[NDA
     return (input_subscripts, output_subscript, operand_list)
 
 
-def _transpose_numpy(
+def _transpose_backend(
     subscript: str,
     a: NDArray[T],
     alpha: T = 1.0,  # type: ignore[assignment]
@@ -216,7 +210,7 @@ def _transpose_numpy(
     return res
 
 
-def _contract_numpy(
+def _contract_backend(
     subscript: str,
     a: NDArray[T],
     b: NDArray[T],
@@ -225,14 +219,14 @@ def _contract_numpy(
     out: Optional[NDArray[T]] = None,
 ) -> NDArray[T]:
     """Contract two arrays using `numpy.einsum`."""
-    optimize = (a.size * b.size) > NUMPY_OPTIMIZE_SIZE
+    optimize = (a.size * b.size) > BACKEND_OPTIMIZE_SIZE
     res: NDArray[T] = np.einsum(subscript, a, b, optimize=optimize) * alpha
     if out is not None:
         res += beta * out
     return res
 
 
-def _contract_ttdt(
+def _contract_ttgt(
     subscript: str,
     a: NDArray[T],
     b: NDArray[T],
@@ -244,10 +238,10 @@ def _contract_ttdt(
 
     def _fallback() -> NDArray[T]:
         """Fallback to `numpy.einsum`."""
-        return _contract_numpy(subscript, a, b, alpha=alpha, beta=beta, out=out)
+        return _contract_backend(subscript, a, b, alpha=alpha, beta=beta, out=out)
 
     # Check if we should use NumPy
-    if min(a.size, b.size) < NUMPY_EINSUM_SIZE:
+    if min(a.size, b.size) < BACKEND_EINSUM_SIZE:
         return _fallback()
 
     # Make sure it can be done via DGEMM
@@ -316,31 +310,37 @@ def _contract_ttdt(
     if a.size == 0 or b.size == 0:
         shape_c = [shape_ct[i] for i in order_ct]
         if out is not None:
-            return out.reshape(shape_c) * beta if beta != 1.0 else out.reshape(shape_c)
+            return np.reshape(out, shape_c) * beta if beta != 1.0 else np.reshape(out, shape_c)
         else:
             return np.zeros(shape_c, dtype=np.result_type(a, b))
 
     # Apply transposes
-    at = a.transpose(order_a)
-    bt = b.transpose(order_b)
+    at = np.transpose(a, order_a)
+    bt = np.transpose(b, order_b)
 
-    # Find the optimal memory alignment
-    at = np.asarray(at.reshape(-1, inner_shape), order="F" if at.flags.f_contiguous else "C")
-    bt = np.asarray(bt.reshape(inner_shape, -1), order="F" if bt.flags.f_contiguous else "C")
+    # Reshape the inner dimensions
+    at = np.reshape(at, (-1, inner_shape))
+    bt = np.reshape(bt, (inner_shape, -1))
 
     # Get the output buffer
     if out is not None:
         shape_ct_flat = (at.shape[0], bt.shape[1])
         order_c = [outs.index(idx) for idx in inp_ct]
-        out = out.transpose(order_c)
-        out = np.asarray(out.reshape(shape_ct_flat), order="F" if out.flags.f_contiguous else "C")
+        out = np.transpose(out, order_c)
+        out = np.reshape(out, shape_ct_flat)
 
     # Perform the contraction
-    ct: NDArray[T] = dot(at, bt, alpha=alpha, beta=beta, c=out)
+    ct: NDArray[T]
+    if BACKEND == "numpy":
+        ct = dot(at, bt, alpha=alpha, beta=beta, c=out)
+    else:
+        ct = np.dot(at, bt) * alpha
+        if out is not None:
+            ct += beta * out
 
     # Reshape and transpose
-    ct = ct.reshape(shape_ct, order="A")
-    c = ct.transpose(order_ct)
+    ct = np.reshape(ct, shape_ct)
+    c = np.transpose(ct, order_ct)
 
     return c
 
@@ -359,10 +359,10 @@ def _contract_tblis(
 
     def _fallback() -> NDArray[T]:
         """Fallback to `numpy.einsum`."""
-        return _contract_numpy(subscript, a, b, alpha=alpha, beta=beta, out=out)
+        return _contract_backend(subscript, a, b, alpha=alpha, beta=beta, out=out)
 
     # Check if we should use NumPy
-    if min(a.size, b.size) < NUMPY_EINSUM_SIZE:
+    if min(a.size, b.size) < BACKEND_EINSUM_SIZE:
         return _fallback()
 
     # Make sure it can be done via DGEMM
@@ -412,7 +412,7 @@ def _contract_tblis(
     # If any dimension has size zero, return here
     if a.size == 0 or b.size == 0:
         if out is not None:
-            return out.reshape(shape_c) * beta
+            return np.reshape(out, shape_c) * beta
         else:
             return np.zeros(shape_c, dtype=dtype)
 
@@ -422,7 +422,7 @@ def _contract_tblis(
     else:
         assert out.dtype == dtype
         assert out.size == np.prod(shape_c)
-        c = out.reshape(shape_c)
+        c = np.reshape(out, shape_c)
 
     # Perform the contraction
     tblis_einsum.libtblis.as_einsum(
@@ -489,17 +489,17 @@ def einsum(
     # Get the contraction function
     if contract is None:
         contract = {
-            "numpy": _contract_numpy,
-            "ttdt": _contract_ttdt,
+            "backend": _contract_backend,
+            "ttgt": _contract_ttgt,
             "tblis": _contract_tblis,
-        }[EINSUM_BACKEND.lower()]
+        }[CONTRACTION_METHOD.lower()]
 
     # Perform the contraction
     if not len(args):
         raise ValueError("No input operands")
     elif len(args) == 1:
         # If it's just a transpose, use numpy
-        res = _transpose_numpy(subscript, args[0], alpha=alpha, beta=beta, out=out)
+        res = _transpose_backend(subscript, args[0], alpha=alpha, beta=beta, out=out)
     elif len(args) == 2:
         # If it's a single contraction, call the backend directly
         res = contract(subscript, args[0], args[1], alpha=alpha, beta=beta, out=out)
@@ -515,7 +515,7 @@ def einsum(
                 raise NotImplementedError("Scaling factors not supported for >2 arguments")
             if len(contraction_args) == 1:
                 a = contraction_args[0]
-                res = _transpose_numpy(
+                res = _transpose_backend(
                     einsum_str, a, alpha=types[float](1.0), beta=types[float](0.0), out=None
                 )
             else:
@@ -554,10 +554,9 @@ def dirsum(*operands: Union[str, tuple[int, ...], NDArray[T]]) -> NDArray[T]:
             res = array
         else:
             shape = res.shape + (1,) * array.ndim
-            res = res.reshape(shape) + array
+            res = np.reshape(res, shape) + array
 
     # Reshape the output
     res = einsum(f"{''.join(input_chars)}->{output_str}", res)
-    res.flags.writeable = True
 
     return res

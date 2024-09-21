@@ -9,12 +9,14 @@ import pytest
 from pyscf import gto, lib, scf, fci
 import scipy.linalg
 
+from ebcc import BACKEND
 from ebcc import UEBCC, GEBCC, Space, NullLogger, util
 
 # TODO from http://dx.doi.org/10.1021/acs.jpca.7b10892
 
 
 @pytest.mark.regression
+@pytest.mark.skipif(BACKEND != "numpy", reason="Currently requires mutable backend.")
 class UCCSDtp_Tests(unittest.TestCase):
     """Test UCCSDt' against GCCSDt'.
     """

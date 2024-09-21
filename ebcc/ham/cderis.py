@@ -9,6 +9,7 @@ from pyscf import ao2mo, lib
 
 from ebcc import numpy as np
 from ebcc import util
+from ebcc.backend import to_numpy
 from ebcc.core.precision import types
 from ebcc.ham.base import BaseERIs, BaseRHamiltonian, BaseUHamiltonian
 
@@ -57,7 +58,7 @@ class RCDERIs(BaseERIs, BaseRHamiltonian):
         if key_e2 not in self._members:
             s = 0 if not e2 else 2
             coeffs = [
-                self.mo_coeff[i + s][:, self.space[i + s].mask(k)].astype(numpy.float64)
+                to_numpy(self.mo_coeff[i + s][:, self.space[i + s].slice(k)], dtype=numpy.float64)
                 for i, k in enumerate(key)
             ]
             ijslice = (
@@ -70,8 +71,8 @@ class RCDERIs(BaseERIs, BaseRHamiltonian):
             block = ao2mo._ao2mo.nr_e2(
                 self.cc.mf.with_df._cderi, coeffs, ijslice, aosym="s2", mosym="s1"
             )
-            block = block.reshape(-1, ijslice[1] - ijslice[0], ijslice[3] - ijslice[2])
-            self._members[key_e2] = block.astype(types[float])
+            block = np.reshape(block, (-1, ijslice[1] - ijslice[0], ijslice[3] - ijslice[2]))
+            self._members[key_e2] = np.asarray(block, dtype=types[float])
 
         return self._members[key_e2]
 

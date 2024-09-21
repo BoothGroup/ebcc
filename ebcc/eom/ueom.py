@@ -11,7 +11,7 @@ from ebcc.eom.base import BaseEA_EOM, BaseEE_EOM, BaseEOM, BaseIP_EOM
 if TYPE_CHECKING:
     from typing import Optional
 
-    from numpy import float64, int64
+    from numpy import float64
     from numpy.typing import NDArray
 
     from ebcc.cc.uebcc import UEBCC, ERIsInputType, SpinArrayType
@@ -32,13 +32,13 @@ class UEOM(BaseEOM):
 class IP_UEOM(UEOM, BaseIP_EOM):
     """Unrestricted ionisation potential equation-of-motion coupled cluster."""
 
-    def _argsort_guesses(self, diag: NDArray[T]) -> NDArray[int64]:
+    def _argsort_guesses(self, diag: NDArray[T]) -> list[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]
-            arg = np.argsort(np.abs(diag[: r1.a.size + r1.b.size]))
+            arg = util.argsort(np.abs(diag[: r1.a.size + r1.b.size]))
         else:
-            arg = np.argsort(np.abs(diag))
+            arg = util.argsort(np.abs(diag))
         return arg
 
     def _quasiparticle_weight(self, r1: SpinArrayType) -> T:
@@ -86,7 +86,7 @@ class IP_UEOM(UEOM, BaseIP_EOM):
             for spin in util.generate_spin_combinations(n, excited=True, unique=True):
                 vn = amplitudes[name][spin]
                 subscript, _ = util.combine_subscripts(key, spin)
-                vectors.append(util.compress_axes(subscript, vn).ravel())
+                vectors.append(np.ravel(util.compress_axes(subscript, vn)))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ip"):
             raise util.ModelNotImplemented
@@ -147,13 +147,13 @@ class IP_UEOM(UEOM, BaseIP_EOM):
 class EA_UEOM(UEOM, BaseEA_EOM):
     """Unrestricted electron affinity equation-of-motion coupled cluster."""
 
-    def _argsort_guesses(self, diag: NDArray[T]) -> NDArray[int64]:
+    def _argsort_guesses(self, diag: NDArray[T]) -> list[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]
-            arg = np.argsort(np.abs(diag[: r1.a.size + r1.b.size]))
+            arg = util.argsort(np.abs(diag[: r1.a.size + r1.b.size]))
         else:
-            arg = np.argsort(np.abs(diag))
+            arg = util.argsort(np.abs(diag))
         return arg
 
     def _quasiparticle_weight(self, r1: SpinArrayType) -> T:
@@ -201,7 +201,7 @@ class EA_UEOM(UEOM, BaseEA_EOM):
             for spin in util.generate_spin_combinations(n, excited=True, unique=True):
                 vn = amplitudes[name][spin]
                 subscript, _ = util.combine_subscripts(key, spin)
-                vectors.append(util.compress_axes(subscript, vn).ravel())
+                vectors.append(np.ravel(util.compress_axes(subscript, vn)))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ea"):
             raise util.ModelNotImplemented
@@ -262,13 +262,13 @@ class EA_UEOM(UEOM, BaseEA_EOM):
 class EE_UEOM(UEOM, BaseEE_EOM):
     """Unrestricted electron-electron equation-of-motion coupled cluster."""
 
-    def _argsort_guesses(self, diag: NDArray[T]) -> NDArray[int64]:
+    def _argsort_guesses(self, diag: NDArray[T]) -> list[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]
-            arg = np.argsort(diag[: r1.aa.size + r1.bb.size])
+            arg = util.argsort(diag[: r1.aa.size + r1.bb.size])
         else:
-            arg = np.argsort(diag)
+            arg = util.argsort(diag)
         return arg
 
     def _quasiparticle_weight(self, r1: SpinArrayType) -> T:
@@ -316,7 +316,7 @@ class EE_UEOM(UEOM, BaseEE_EOM):
             for spin in util.generate_spin_combinations(n, unique=True):
                 vn = amplitudes[name][spin]
                 subscript, _ = util.combine_subscripts(key, spin)
-                vectors.append(util.compress_axes(subscript, vn).ravel())
+                vectors.append(np.ravel(util.compress_axes(subscript, vn)))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ee"):
             raise util.ModelNotImplemented

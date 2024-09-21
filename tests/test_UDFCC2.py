@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 from pyscf import gto, scf, lib
 
-from ebcc import UEBCC, NullLogger, Space
+from ebcc import UEBCC, NullLogger, Space, BACKEND
 
 
 @pytest.mark.regression
@@ -69,38 +69,40 @@ class UDFCC2_Tests(unittest.TestCase):
     def test_t1_amplitudes(self):
         a = self.cc2_ref.t1.aa
         b = self.cc2.t1.aa
-        np.testing.assert_almost_equal(a, b, 4)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 4)
 
     def test_t2_amplitudes(self):
         a = self.cc2_ref.t2.aaaa
         b = self.cc2.t2.aaaa
-        np.testing.assert_almost_equal(a, b, 4)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 4)
 
     def test_l1_amplitudes(self):
         a = self.cc2_ref.l1.aa
         b = self.cc2.l1.aa
-        np.testing.assert_almost_equal(a, b, 4)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 4)
 
     def test_l2_amplitudes(self):
         a = self.cc2_ref.l2.aaaa
         b = self.cc2.l2.aaaa
-        np.testing.assert_almost_equal(a, b, 4)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 4)
 
     def test_rdm1(self):
         a = self.cc2_ref.make_rdm1_f().aa
         b = self.cc2.make_rdm1_f().aa
-        np.testing.assert_almost_equal(a, b, 4, verbose=True)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 4)
 
     def test_rdm2(self):
         a = self.cc2_ref.make_rdm2_f().aaaa
         b = self.cc2.make_rdm2_f().aaaa
-        np.testing.assert_almost_equal(a, b, 4, verbose=True)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 4)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ip(self):
         e1 = self.cc2.ip_eom(nroots=5).kernel()
         e2 = self.cc2_ref.ip_eom(nroots=5).kernel()
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ea(self):
         e1 = self.cc2.ea_eom(nroots=5).kernel()
         e2 = self.cc2_ref.ea_eom(nroots=5).kernel()

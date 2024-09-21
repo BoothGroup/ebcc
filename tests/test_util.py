@@ -9,7 +9,7 @@ import pytest
 from pyscf import gto, scf
 
 import ebcc
-from ebcc import util
+from ebcc import util, BACKEND
 
 
 @pytest.mark.regression
@@ -36,6 +36,7 @@ class Util_Tests(unittest.TestCase):
         self.assertEqual(util.permute_string("god", (2, 1, 0)), "dog")
         self.assertEqual(util.permute_string("ebcc", (2, 0, 3, 1)), "cecb")
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="Requires mutable array backend")
     def test_tril_indices_ndim(self):
         for n in (1, 2, 3, 4):
             for ndim in (1, 2, 3, 4):
@@ -110,10 +111,10 @@ class Util_Tests(unittest.TestCase):
     def test_antisymmetrise_array(self):
         for n in (1, 2, 3, 4):
             for ndim in (1, 2, 3, 4, 5, 6):
-                array = np.cos(np.arange(1, n**ndim + 1).reshape((n,) * ndim))
+                array = np.cos(np.reshape(np.arange(1, n**ndim + 1), (n,) * ndim))
                 array = util.antisymmetrise_array(array, axes=range(ndim))
                 for perm, sign in util.permutations_with_signs(range(ndim)):
-                    np.testing.assert_almost_equal(array, sign * array.transpose(perm))
+                    self.assertAlmostEqual(np.max(np.abs(array - sign * np.transpose(array, perm))), 0.0, 7)
 
     def test_is_mixed(self):
         self.assertEqual(util.is_mixed_spin("aa"), False)
@@ -136,13 +137,13 @@ class Util_Tests(unittest.TestCase):
         for n in (1, 2, 3, 4):
             for ndim in (2, 4, 6):
                 subscript = "i" * (ndim // 2) + "a" * (ndim // 2)
-                array = np.cos(np.arange(n**ndim).reshape((n,) * ndim))
+                array = np.cos(np.reshape(np.arange(n**ndim), (n,) * ndim))
                 array = util.symmetrise(subscript, array)
                 for p1, s1 in util.permutations_with_signs(range(ndim // 2)):
                     for p2, s2 in util.permutations_with_signs(range(ndim // 2, ndim)):
                         perm = tuple(p1) + tuple(p2)
                         sign = s1 * s2
-                        np.testing.assert_almost_equal(array, sign * array.transpose(perm))
+                        self.assertAlmostEqual(np.max(np.abs(array - sign * np.transpose(array, perm))), 0.0, 7)
 
     def test_constructors(self):
         # Tests the constructors in the main __init__.py
@@ -167,10 +168,10 @@ class Util_Tests(unittest.TestCase):
         self.assertAlmostEqual(ebcc.CC2(uhf, e_tol=1e-10, log=log).kernel(), e_cc2_u, 8)
         self.assertAlmostEqual(ebcc.CC2(ghf, e_tol=1e-10, log=log).kernel(), e_cc2_g, 8)
 
-    def test_einsum(self):
+    def _test_einsum(self, contract):
         # Tests the einsum implementation
-        _size = util.einsumfunc.NUMPY_EINSUM_SIZE
-        util.einsumfunc.NUMPY_EINSUM_SIZE = 0
+        _contract = util.einsumfunc.CONTRACTION_METHOD
+        util.einsumfunc.CONTRACTION_METHOD = contract
 
         x = np.random.random((10, 11, 12, 13))
         y = np.random.random((13, 12, 5, 6))
@@ -178,21 +179,21 @@ class Util_Tests(unittest.TestCase):
 
         a = np.einsum("ijkl,lkab->ijab", x, y)
         b = util.einsum("ijkl,lkab->ijab", x, y)
-        np.testing.assert_almost_equal(a, b)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
-        b[:] = 0
+        b = np.zeros_like(b)
         b = util.einsum("ijkl,lkab->ijab", x, y, out=b, alpha=1.0, beta=0.0)
-        np.testing.assert_almost_equal(a, b)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
         b = util.einsum("ijkl,lkab->ijab", x, y, out=b, alpha=1.0, beta=1.0)
-        np.testing.assert_almost_equal(a * 2, b)
+        self.assertAlmostEqual(np.max(np.abs(a * 2 - b)), 0.0, 7)
 
         b = util.einsum("ijkl,lkab->ijab", x, y, out=b, alpha=2.0, beta=0.0)
-        np.testing.assert_almost_equal(a * 2, b)
+        self.assertAlmostEqual(np.max(np.abs(a * 2 - b)), 0.0, 7)
 
         a = np.einsum("ijkl,lkab,bacd->ijcd", x, y, z)
         b = util.einsum("ijkl,lkab,bacd->ijcd", x, y, z)
-        np.testing.assert_almost_equal(a, b)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
         x = np.asfortranarray(np.random.random((5, 5, 5)))
         y = np.asfortranarray(np.random.random((5, 5, 5)))
@@ -200,7 +201,7 @@ class Util_Tests(unittest.TestCase):
 
         a = np.einsum("ijk,jki,kji->ik", x, y, z)
         b = util.einsum("ijk,jki,kji->ik", x, y, z)
-        np.testing.assert_almost_equal(a, b)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
         with pytest.raises(NotImplementedError):
             b = util.einsum("ijk,jki,kji->ik", x, y, z, alpha=0.5)
@@ -209,29 +210,39 @@ class Util_Tests(unittest.TestCase):
 
         a = np.einsum("iik,kjj->ij", x, y)
         b = util.einsum("iik,kjj->ij", x, y)
-        np.testing.assert_almost_equal(a, b)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
         a = np.einsum("ijk,ijk->", x, y)
         b = util.einsum("ijk,ijk->", x, y)
-        np.testing.assert_almost_equal(a, b)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
         z = np.random.random((5, 5))
 
         a = np.einsum("ijk,jk->", x, z)
         b = util.einsum("ijk,jk->", x, z)
-        np.testing.assert_almost_equal(a, b)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
         a = np.einsum("ijk,kl->il", x, z)
         b = util.einsum("ijk,kl->il", x, z)
-        np.testing.assert_almost_equal(a, b)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
         x = np.random.random((5, 5, 0))
 
         a = np.einsum("ikl,jkl->ij", x, x)
         b = util.einsum("ikl,jkl->ij", x, x)
-        np.testing.assert_almost_equal(a, b)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
-        util.einsumfunc.NUMPY_EINSUM_SIZE = _size
+        util.einsumfunc.CONTRACTION_METHOD = _contract
+
+    def test_einsum_backend(self):
+        self._test_einsum("backend")
+
+    def test_einsum_ttgt(self):
+        self._test_einsum("ttgt")
+
+    @pytest.mark.skipif(util.einsumfunc.FOUND_TBLIS is False, reason="TBLIS not found")
+    def test_einsum_tblis(self):
+        self._test_einsum("tblis")
 
 
 if __name__ == "__main__":

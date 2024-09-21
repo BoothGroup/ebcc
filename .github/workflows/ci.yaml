@@ -8,17 +8,19 @@ on:
 
 jobs:
   build:
-    name: python ${{ matrix.python-version }} on ${{matrix.os}}
+    name: python ${{ matrix.python-version }} on ${{ matrix.os }} with ${{ matrix.backend }} backend
     runs-on: ${{ matrix.os }}
 
     strategy:
       fail-fast: false
       matrix:
         include:
-          - {python-version: "3.9", os: ubuntu-latest, documentation: True, coverage: True}
-          - {python-version: "3.10", os: ubuntu-latest, documentation: False, coverage: True}
-          - {python-version: "3.11", os: ubuntu-latest, documentation: False, coverage: True}
-          - {python-version: "3.12", os: ubuntu-latest, documentation: False, coverage: False}
+          - {python-version: "3.9",  backend: "numpy",      os: ubuntu-latest, documentation: True,  coverage: True,  minimal: True, full: True}
+          - {python-version: "3.10", backend: "numpy",      os: ubuntu-latest, documentation: False, coverage: True,  minimal: True, full: True}
+          - {python-version: "3.11", backend: "numpy",      os: ubuntu-latest, documentation: False, coverage: True,  minimal: True, full: True}
+          - {python-version: "3.12", backend: "numpy",      os: ubuntu-latest, documentation: False, coverage: False, minimal: True, full: True}
+          - {python-version: "3.12", backend: "tensorflow", os: ubuntu-latest, documentation: False, coverage: False, minimal: True, full: False}
+          - {python-version: "3.12", backend: "jax",        os: ubuntu-latest, documentation: False, coverage: False, minimal: True, full: False}
 
     steps:
       - uses: actions/checkout@v2
@@ -36,23 +38,28 @@ jobs:
       - name: Install ebcc
         run: |
           python -m pip install wheel
-          python -m pip install .[dev]
+          python -m pip install .[dev,numpy,jax,tensorflow]
       - name: Linting
         run: |
           python -m black ebcc/ --diff --check --verbose
           python -m isort ebcc/ --diff --check-only --verbose
           python -m flake8 ebcc/ --verbose
           python -m mypy ebcc/ --verbose
-      - name: Run unit tests with coverage
+      - name: Run minimal unit tests
         run: |
-          python -m pip install pytest pytest-cov
-          pytest --cov ebcc/
-        if: matrix.coverage
+          python -m pip install pytest
+          EBCC_BACKEND=${{ matrix.backend }} pytest tests/test_minimal.py
+        if: matrix.minimal
       - name: Run unit tests
         run: |
           python -m pip install pytest
-          pytest
-        if: ${{ ! matrix.coverage }}
+          EBCC_BACKEND=${{ matrix.backend }} pytest
+        if: matrix.full && ! matrix.coverage
+      - name: Run unit tests with coverage
+        run: |
+          python -m pip install pytest pytest-cov
+          EBCC_BACKEND=${{ matrix.backend }} pytest --cov ebcc/
+        if: matrix.full && matrix.coverage
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
