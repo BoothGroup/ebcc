@@ -14,6 +14,7 @@ from ebcc import util
 from ebcc.core.damping import DIIS
 from ebcc.core.logging import ANSI, NullLogger, init_logging
 from ebcc.core.precision import types
+from ebcc.util import _BaseOptions
 
 if TYPE_CHECKING:
     from typing import Any, Optional
@@ -22,6 +23,7 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 
     from ebcc.cc.base import BaseEBCC, SpinArrayType
+    from ebcc.core.damping import BaseDamping
     from ebcc.util import Namespace
 
     T = float64
@@ -30,7 +32,7 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class BaseOptions:
+class BaseOptions(_BaseOptions):
     """Options for Brueckner-orbital calculations.
 
     Args:
@@ -38,13 +40,15 @@ class BaseOptions:
         t_tol: Threshold for converged in the amplitude norm.
         max_iter: Maximum number of iterations.
         diis_space: Number of amplitudes to use in DIIS extrapolation.
+        diis_min_space: Minimum number of amplitudes to use in DIIS extrapolation.
         damping: Damping factor for DIIS extrapolation.
     """
 
     e_tol: float = 1e-8
     t_tol: float = 1e-8
     max_iter: int = 20
-    diis_space: int = 12
+    diis_space: int = 9
+    diis_min_space: int = 1
     damping: float = 0.0
 
 
@@ -53,6 +57,7 @@ class BaseBruecknerEBCC(ABC):
 
     # Types
     Options: type[BaseOptions] = BaseOptions
+    Damping: type[BaseDamping] = DIIS
 
     # Attributes
     cc: BaseEBCC
@@ -94,6 +99,7 @@ class BaseBruecknerEBCC(ABC):
         cc.log.info(f" > t_tol:  {ANSI.y}{self.options.t_tol}{ANSI.R}")
         cc.log.info(f" > max_iter:  {ANSI.y}{self.options.max_iter}{ANSI.R}")
         cc.log.info(f" > diis_space:  {ANSI.y}{self.options.diis_space}{ANSI.R}")
+        cc.log.info(f" > diis_min_space:  {ANSI.y}{self.options.diis_min_space}{ANSI.R}")
         cc.log.info(f" > damping:  {ANSI.y}{self.options.damping}{ANSI.R}")
         cc.log.debug("")
 
@@ -121,9 +127,7 @@ class BaseBruecknerEBCC(ABC):
                 self.cc.kernel()
 
         # Set up DIIS:
-        diis = DIIS()
-        diis.space = self.options.diis_space
-        diis.damping = self.options.damping
+        damping = self.Damping(options=self.options)
 
         # Initialise coefficients:
         mo_coeff_new: NDArray[T] = np.copy(np.asarray(self.cc.mo_coeff, dtype=types[float]))
@@ -145,7 +149,7 @@ class BaseBruecknerEBCC(ABC):
         converged = False
         for niter in range(1, self.options.max_iter + 1):
             # Update rotation matrix:
-            u, u_tot = self.get_rotation_matrix(u_tot=u_tot, diis=diis)
+            u, u_tot = self.get_rotation_matrix(u_tot=u_tot, damping=damping)
 
             # Update MO coefficients:
             mo_coeff_new = self.update_coefficients(u_tot, mo_coeff_new, mo_coeff_ref)
@@ -207,7 +211,7 @@ class BaseBruecknerEBCC(ABC):
     def get_rotation_matrix(
         self,
         u_tot: Optional[SpinArrayType] = None,
-        diis: Optional[DIIS] = None,
+        damping: Optional[BaseDamping] = None,
         t1: Optional[SpinArrayType] = None,
     ) -> tuple[SpinArrayType, SpinArrayType]:
         """Update the rotation matrix.
@@ -216,7 +220,7 @@ class BaseBruecknerEBCC(ABC):
 
         Args:
             u_tot: Total rotation matrix.
-            diis: DIIS object.
+            damping: Damping object.
             t1: T1 amplitude.
 
         Returns:

@@ -7,6 +7,7 @@ from ebcc.util.misc import (
     Timer,
     regularise_tuple,
     prod,
+    _BaseOptions,
     argsort,
 )
 from ebcc.util.einsumfunc import einsum, dirsum
