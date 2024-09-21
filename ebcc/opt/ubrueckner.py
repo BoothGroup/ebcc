@@ -81,7 +81,7 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
         a = np.concatenate(
             [np.ravel(scipy.linalg.logm(u_tot.aa)), np.ravel(scipy.linalg.logm(u_tot.bb))], axis=0
         )
-        a = np.astype(np.real(a), types[float])
+        a: NDArray[T] = np.astype(np.real(a), types[float])
         if diis is not None:
             xerr = np.concatenate([np.ravel(t1.aa), np.ravel(t1.bb)])
             a = diis.update(a, xerr=xerr)

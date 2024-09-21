@@ -11,7 +11,7 @@ from ebcc.eom.base import BaseEA_EOM, BaseEE_EOM, BaseEOM, BaseIP_EOM
 if TYPE_CHECKING:
     from typing import Optional
 
-    from numpy import float64, int64
+    from numpy import float64
     from numpy.typing import NDArray
 
     from ebcc.cc.rebcc import REBCC, ERIsInputType, SpinArrayType
@@ -220,7 +220,7 @@ class EA_REOM(REOM, BaseEA_EOM):
 class EE_REOM(REOM, BaseEE_EOM):
     """Restricted electron-electron equation-of-motion coupled cluster."""
 
-    def _argsort_guesses(self, diag: NDArray[T]) -> NDArray[int64]:
+    def _argsort_guesses(self, diag: NDArray[T]) -> list[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]

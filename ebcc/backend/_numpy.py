@@ -8,7 +8,7 @@ import numpy
 
 if TYPE_CHECKING:
     from numpy import generic
-    from numpy.typing import DType, NDArray
+    from numpy.typing import NDArray
 
 
 def __getattr__(name: str) -> object:
@@ -16,7 +16,7 @@ def __getattr__(name: str) -> object:
     return getattr(numpy, name)
 
 
-def astype(obj: NDArray[generic], dtype: DType) -> NDArray[generic]:
+def astype(obj: NDArray[generic], dtype: type[generic]) -> NDArray[generic]:
     """Cast the array to the specified type.
 
     Args:

@@ -17,7 +17,7 @@ from ebcc.core.precision import types
 if TYPE_CHECKING:
     from typing import Any, Callable, Optional
 
-    from numpy import float64, int64
+    from numpy import float64
     from numpy.typing import NDArray
 
     from ebcc.cc.base import BaseEBCC, ERIsInputType, SpaceType, SpinArrayType

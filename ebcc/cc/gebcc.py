@@ -192,7 +192,8 @@ class GEBCC(BaseEBCC):
                                     amplitudes[name] = _put(
                                         amplitudes[name],
                                         mask,
-                                        amplitudes[name][mask] + np.transpose(amp, transpose) * sign,
+                                        amplitudes[name][mask]
+                                        + np.transpose(amp, transpose) * sign,
                                     )
                             done.add(combn)
 
@@ -234,7 +235,8 @@ class GEBCC(BaseEBCC):
                                     amplitudes[name] = _put(
                                         amplitudes[name],
                                         mask,
-                                        amplitudes[name][mask] + np.transpose(amp, transpose) * sign,
+                                        amplitudes[name][mask]
+                                        + np.transpose(amp, transpose) * sign,
                                     )
                             done.add(combn)
 

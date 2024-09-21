@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING
 import numpy
 from pyscf import lib
 
-from ebcc import util
 from ebcc import numpy as np
+from ebcc import util
 from ebcc.core.damping import DIIS
 from ebcc.core.logging import ANSI, NullLogger, init_logging
 from ebcc.core.precision import types

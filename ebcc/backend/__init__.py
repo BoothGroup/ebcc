@@ -94,9 +94,9 @@ def _put(
         # TODO MPI has to be manually managed here
         if isinstance(indices, tuple):
             indices_flat = np.ravel_multi_index(indices, array.shape)
-            array.write(indices_flat, values)
+            array.write(indices_flat, values)  # type: ignore
         else:
-            array.write(indices, values)
+            array.write(indices, values)  # type: ignore
         return array
     else:
         raise NotImplementedError(f"Backend {BACKEND} _put not implemented.")

@@ -112,10 +112,12 @@ class DIIS:
         # this looks crazy, but it's just updating the `self._index`th row and
         # column with the new errors, it's just done this way to avoid using
         # calls to `__setitem__` in immutable backends
-        m_i = np.array([
-            np.ravel(np.dot(np.conj(np.ravel(x1)), np.ravel(self._errors[i])))[0]
-            for i in range(nd)
-        ])
+        m_i = np.array(
+            [
+                np.ravel(np.dot(np.conj(np.ravel(x1)), np.ravel(self._errors[i])))[0]
+                for i in range(nd)
+            ]
+        )
         m_i = np.concatenate([np.array([1.0]), m_i, np.zeros(self.space - nd)])
         m_i = np.reshape(m_i, (-1, 1))
         m_j = np.conj(np.transpose(m_i))
@@ -166,7 +168,7 @@ class DIIS:
         if np.any(np.abs(w) < 1e-14):
             mask = np.abs(w) > 1e-14
             w, v = w[mask], v[:, mask]
-        c = util.einsum("pi,qi,i,q->p", v, np.conj(v), w ** -1, g)
+        c = util.einsum("pi,qi,i,q->p", v, np.conj(v), w**-1.0, g)
 
         # Construct the new vector
         xnew: NDArray[T] = np.zeros_like(self._arrays[0])

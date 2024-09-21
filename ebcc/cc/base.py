@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from ebcc import default_log, init_logging
 from ebcc import numpy as np
@@ -256,7 +256,9 @@ class BaseEBCC(ABC):
                 vector = self.amplitudes_to_vector(amplitudes)
                 vector = diis.update(vector)
                 amplitudes = self.vector_to_amplitudes(vector)
-                dt = np.linalg.norm(np.abs(vector - self.amplitudes_to_vector(amplitudes_prev)), ord=np.inf)
+                dt = np.linalg.norm(
+                    np.abs(vector - self.amplitudes_to_vector(amplitudes_prev)), ord=np.inf
+                )
 
                 # Update the energy and calculate change:
                 e_prev = e_cc
@@ -951,7 +953,7 @@ class BaseEBCC(ABC):
         """
         if self.options.shift:
             assert self.omega is not None
-            return np.ravel(util.einsum("I,I->", self.omega, self.xi**2.0))[0]
+            return cast(float, np.ravel(util.einsum("I,I->", self.omega, self.xi**2.0))[0])
         return 0.0
 
     @property

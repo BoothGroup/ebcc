@@ -324,7 +324,9 @@ def compress_axes(
             assert sizes[char] == n
         else:
             sizes[char] = n
-    array = np.reshape(array, [sizes[char] ** subscript.count(char) for char in sorted(set(subscript))])
+    array = np.reshape(
+        array, [sizes[char] ** subscript.count(char) for char in sorted(set(subscript))]
+    )
 
     # For each axis type, get the necessary lower-triangular indices:
     indices_ndim = [
@@ -409,7 +411,9 @@ def decompress_axes(
             assert sizes[char] == n
         else:
             sizes[char] = n
-    array = np.reshape(array, [sizes[char] ** subscript.count(char) for char in sorted(set(subscript))])
+    array = np.reshape(
+        array, [sizes[char] ** subscript.count(char) for char in sorted(set(subscript))]
+    )
 
     # Check the symmetry string, and compress it:
     n = 0
@@ -442,12 +446,13 @@ def decompress_axes(
         array = _put(array, indices_perm, array_flat * util.prod(signs))
 
     # Reshape array to non-flattened format
-    array = np.reshape(array, (
-        sum([(sizes[char],) * subscript.count(char) for char in sorted(set(subscript))], tuple())
-    ))
+    array = np.reshape(
+        array,
+        (sum([(sizes[char],) * subscript.count(char) for char in sorted(set(subscript))], tuple())),
+    )
 
     # Undo transpose:
-    arg = tuple(util.argsort(arg))
+    arg = tuple(util.argsort(list(arg)))
     array = np.transpose(array, arg)
 
     return array

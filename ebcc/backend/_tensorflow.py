@@ -15,11 +15,11 @@ def __getattr__(name):
     return getattr(tensorflow.experimental.numpy, name)
 
 
-def astype(obj, dtype):
+def astype(obj, dtype):  # noqa: D103
     return obj.astype(dtype)
 
 
-def _block_recursive(arrays, max_depth, depth=0):
+def _block_recursive(arrays, max_depth, depth=0):  # noqa: D103
     if depth < max_depth:
         arrs = [_block_recursive(arr, max_depth, depth + 1) for arr in arrays]
         return tensorflow.experimental.numpy.concatenate(arrs, axis=-(max_depth - depth))
@@ -27,7 +27,7 @@ def _block_recursive(arrays, max_depth, depth=0):
         return arrays
 
 
-def block(arrays):
+def block(arrays):  # noqa: D103
     def _get_max_depth(arrays):
         if isinstance(arrays, list):
             return 1 + max([_get_max_depth(arr) for arr in arrays])
@@ -36,7 +36,7 @@ def block(arrays):
     return _block_recursive(arrays, _get_max_depth(arrays))
 
 
-def ravel_multi_index(multi_index, dims, mode="raise", order="C"):
+def ravel_multi_index(multi_index, dims, mode="raise", order="C"):  # noqa: D103
     if mode != "raise":
         raise NotImplementedError("Only 'raise' mode is implemented")
     if order != "C":
@@ -51,7 +51,7 @@ def ravel_multi_index(multi_index, dims, mode="raise", order="C"):
     return flat_index
 
 
-def indices(dimensions, dtype=tf.int32, sparse=False):
+def indices(dimensions, dtype=tf.int32, sparse=False):  # noqa: D103
     # Generate a range of indices for each dimension
     ranges = [tf.range(dim, dtype=dtype) for dim in dimensions]
 

@@ -243,7 +243,9 @@ class UEBCC(BaseEBCC):
                 elif n == 2:
                     comb_t = comb[0] + comb[2] + comb[1] + comb[3]
                     key_t = key[0] + key[2] + key[1] + key[3]
-                    tn[comb] = np.transpose(eris[comb_t][key_t], (0, 2, 1, 3)) / self.energy_sum(key, comb)
+                    tn[comb] = np.transpose(eris[comb_t][key_t], (0, 2, 1, 3)) / self.energy_sum(
+                        key, comb
+                    )
                     if comb in ("aaaa", "bbbb"):
                         # TODO generalise:
                         tn[comb] = (tn[comb] - np.transpose(tn[comb], (1, 0, 2, 3))) * 0.5

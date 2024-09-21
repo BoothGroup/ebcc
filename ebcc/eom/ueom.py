@@ -11,7 +11,7 @@ from ebcc.eom.base import BaseEA_EOM, BaseEE_EOM, BaseEOM, BaseIP_EOM
 if TYPE_CHECKING:
     from typing import Optional
 
-    from numpy import float64, int64
+    from numpy import float64
     from numpy.typing import NDArray
 
     from ebcc.cc.uebcc import UEBCC, ERIsInputType, SpinArrayType
@@ -32,7 +32,7 @@ class UEOM(BaseEOM):
 class IP_UEOM(UEOM, BaseIP_EOM):
     """Unrestricted ionisation potential equation-of-motion coupled cluster."""
 
-    def _argsort_guesses(self, diag: NDArray[T]) -> NDArray[int64]:
+    def _argsort_guesses(self, diag: NDArray[T]) -> list[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]
@@ -147,7 +147,7 @@ class IP_UEOM(UEOM, BaseIP_EOM):
 class EA_UEOM(UEOM, BaseEA_EOM):
     """Unrestricted electron affinity equation-of-motion coupled cluster."""
 
-    def _argsort_guesses(self, diag: NDArray[T]) -> NDArray[int64]:
+    def _argsort_guesses(self, diag: NDArray[T]) -> list[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]
@@ -262,7 +262,7 @@ class EA_UEOM(UEOM, BaseEA_EOM):
 class EE_UEOM(UEOM, BaseEE_EOM):
     """Unrestricted electron-electron equation-of-motion coupled cluster."""
 
-    def _argsort_guesses(self, diag: NDArray[T]) -> NDArray[int64]:
+    def _argsort_guesses(self, diag: NDArray[T]) -> list[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]

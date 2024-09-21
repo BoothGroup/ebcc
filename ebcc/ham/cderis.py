@@ -57,7 +57,9 @@ class RCDERIs(BaseERIs, BaseRHamiltonian):
         if key_e2 not in self._members:
             s = 0 if not e2 else 2
             coeffs = [
-                numpy.asarray(self.mo_coeff[i + s][:, self.space[i + s].slice(k)], dtype=numpy.float64)
+                numpy.asarray(
+                    self.mo_coeff[i + s][:, self.space[i + s].slice(k)], dtype=numpy.float64
+                )
                 for i, k in enumerate(key)
             ]
             ijslice = (

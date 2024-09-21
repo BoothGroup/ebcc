@@ -15,7 +15,8 @@ def __getattr__(name):
 
 _jax_ix_ = jax.numpy.ix_
 
-def ix_(*args):
+
+def ix_(*args):  # noqa: D103
     args_ = []
     for arg in args:
         if isinstance(arg, jax.numpy.ndarray) and arg.dtype == jax.numpy.bool_:

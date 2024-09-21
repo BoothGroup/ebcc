@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 
     T = float64
     B = bool_
+    _slice = slice
 
 # Development note: multiplication of boolean arrays is used in place of logical or bitwise
 # AND functions. This is because backends are not guaranteed to support logical or bitwise
@@ -124,8 +125,8 @@ class Space:
             "a": self.inactive_virtual,
         }[char]
 
-    @functools.lru_cache(maxsize=128)
-    def slice(self, char: str) -> slice:
+    @functools.lru_cache(maxsize=128)  # noqa: B019
+    def slice(self, char: str) -> _slice:
         """Convert a character corresponding to a space to a slice of that space.
 
         Args:
@@ -169,7 +170,7 @@ class Space:
         """
         return self.mask(char)[self.virtual]
 
-    def oslice(self, char: str) -> slice:
+    def oslice(self, char: str) -> _slice:
         """Like `slice`, but returns only a slice into only the occupied sector.
 
         Args:
@@ -182,7 +183,7 @@ class Space:
         nocc = self.nocc
         return slice(s.start, min(s.stop, nocc))
 
-    def vslice(self, char: str) -> slice:
+    def vslice(self, char: str) -> _slice:
         """Like `slice`, but returns only a slice into only the virtual sector.
 
         Args:
@@ -414,6 +415,7 @@ def construct_fno_space(
     """
     # Get the MP2 1RDM
     solver = MP2(mf)
+    dm1: NDArray[T]
     if not amplitudes:
         solver.kernel()
         dm1 = np.astype(solver.make_rdm1(), types[float])

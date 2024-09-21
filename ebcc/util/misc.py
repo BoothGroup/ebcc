@@ -8,16 +8,21 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 
 if TYPE_CHECKING:
     from abc import abstractmethod
-    from typing import Any, ItemsView, Iterator, KeysView, Union, ValuesView, Protocol
+    from typing import Any, ItemsView, Iterator, KeysView, Protocol, Union, ValuesView
+
+    from numpy import generic
+    from numpy.typing import NDArray
 
     class Comparable(Protocol):
         """Protocol for comparable objects."""
 
         @abstractmethod
-        def __lt__(self, other: C) -> bool:
+        def __lt__(self, other: C) -> Any:
+            """Check if the object is less than another."""
             pass
 
     C = TypeVar("C", bound=Comparable)
+
 
 T = TypeVar("T")
 
@@ -174,7 +179,7 @@ def prod(values: Union[list[int], tuple[int, ...]]) -> int:
     return out
 
 
-def argsort(values: list[C]) -> list[int]:
+def argsort(values: Union[list[Union[float, str]], NDArray[generic]]) -> list[int]:
     """Return the indices that would sort the values.
 
     Args:
