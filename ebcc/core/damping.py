@@ -223,7 +223,7 @@ class DIIS(BaseDamping):
         # Get the error if not provided
         if error is None and -1 in self._arrays:
             error = array - self._arrays[-1]
-        elif error is None:
+        elif error is None or len(self) == 0:
             self._arrays[-1] = array
             return
 
@@ -282,10 +282,10 @@ class DIIS(BaseDamping):
             c = util.einsum("pi,qi,i,q->p", v, np.conj(v), w**-1.0, residual)
 
         # Construct the new array
-        array = np.zeros_like(self._arrays[-1])
+        array = np.zeros_like(self._arrays[next(iter(self._arrays))])
         for counter, coefficient in zip(counters, c):
             array += self._arrays[counter] * coefficient
-        error = np.zeros_like(self._arrays[-1])
+        error = np.zeros_like(self._errors[next(iter(self._errors))])
         for counter, coefficient in zip(counters, c):
             error += self._errors[counter] * coefficient
 
