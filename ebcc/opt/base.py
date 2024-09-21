@@ -126,8 +126,8 @@ class BaseBruecknerEBCC(ABC):
         diis.damping = self.options.damping
 
         # Initialise coefficients:
-        mo_coeff_new: NDArray[T] = np.copy(np.astype(self.cc.mo_coeff, types[float]))
-        mo_coeff_ref: NDArray[T] = np.copy(np.astype(self.cc.mo_coeff, types[float]))
+        mo_coeff_new: NDArray[T] = np.copy(np.asarray(self.cc.mo_coeff, dtype=types[float]))
+        mo_coeff_ref: NDArray[T] = np.copy(np.asarray(self.cc.mo_coeff, dtype=types[float]))
         mo_coeff_ref = self.mo_to_correlated(mo_coeff_ref)
         u_tot = None
 

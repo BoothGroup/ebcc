@@ -418,13 +418,13 @@ def construct_fno_space(
     dm1: NDArray[T]
     if not amplitudes:
         solver.kernel()
-        dm1 = np.astype(solver.make_rdm1(), types[float])
+        dm1 = np.asarray(solver.make_rdm1(), dtype=types[float])
     else:
         if isinstance(amplitudes.t2, util.Namespace):
             t2 = (amplitudes.t2.aaaa, amplitudes.t2.abab, amplitudes.t2.bbbb)
-            dm1 = np.astype(solver.make_rdm1(t2=t2), types[float])
+            dm1 = np.asarray(solver.make_rdm1(t2=t2), dtype=types[float])
         else:
-            dm1 = np.astype(solver.make_rdm1(t2=amplitudes.t2), types[float])
+            dm1 = np.asarray(solver.make_rdm1(t2=amplitudes.t2), dtype=types[float])
 
     # def _construct(dm1, mo_energy, mo_coeff, mo_occ):
     def _construct(
@@ -479,22 +479,22 @@ def construct_fno_space(
     # Construct the natural orbitals
     if mf.mo_occ.ndim == 2:
         coeff_a, occ_a, space_a = _construct(
-            np.astype(dm1[0], types[float]),
-            np.astype(mf.mo_energy[0], types[float]),
-            np.astype(mf.mo_coeff[0], types[float]),
-            np.astype(mf.mo_occ[0], types[float]),
+            np.asarray(dm1[0], dtype=types[float]),
+            np.asarray(mf.mo_energy[0], dtype=types[float]),
+            np.asarray(mf.mo_coeff[0], dtype=types[float]),
+            np.asarray(mf.mo_occ[0], dtype=types[float]),
         )
         coeff_b, occ_b, space_b = _construct(
-            np.astype(dm1[1], types[float]),
-            np.astype(mf.mo_energy[1], types[float]),
-            np.astype(mf.mo_coeff[1], types[float]),
-            np.astype(mf.mo_occ[1], types[float]),
+            np.asarray(dm1[1], dtype=types[float]),
+            np.asarray(mf.mo_energy[1], dtype=types[float]),
+            np.asarray(mf.mo_coeff[1], dtype=types[float]),
+            np.asarray(mf.mo_occ[1], dtype=types[float]),
         )
         return (coeff_a, coeff_b), (occ_a, occ_b), (space_a, space_b)
     else:
         return _construct(
-            np.astype(dm1, types[float]),
-            np.astype(mf.mo_energy, types[float]),
-            np.astype(mf.mo_coeff, types[float]),
-            np.astype(mf.mo_occ, types[float]),
+            np.asarray(dm1, dtype=types[float]),
+            np.asarray(mf.mo_energy, dtype=types[float]),
+            np.asarray(mf.mo_coeff, dtype=types[float]),
+            np.asarray(mf.mo_occ, dtype=types[float]),
         )

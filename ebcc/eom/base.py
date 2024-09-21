@@ -11,6 +11,7 @@ from pyscf import lib
 
 from ebcc import numpy as np
 from ebcc import util
+from ebcc.backend import to_numpy
 from ebcc.core.logging import ANSI
 from ebcc.core.precision import types
 
@@ -216,13 +217,13 @@ class BaseEOM(ABC):
                 w: NDArray[T], v: NDArray[T], nroots: int, env: dict[str, Any]
             ) -> tuple[NDArray[T], NDArray[T], int]:
                 """Pick the eigenvalues."""
-                x0 = numpy.asarray(lib.linalg_helper._gen_x0(env["v"], env["xs"]))
-                s = numpy.conj(numpy.asarray(guesses)) @ x0.T
-                s = numpy.einsum("pi,pi->i", numpy.conj(s), s)
+                x0 = to_numpy(lib.linalg_helper._gen_x0(env["v"], env["xs"]))
+                s = to_numpy(guesses).conj() @ x0.T
+                s = numpy.einsum("pi,pi->i", s.conj(), s)
                 arg = numpy.argsort(-s)[:nroots]
                 w, v, idx = lib.linalg_helper._eigs_cmplx2real(
-                    numpy.asarray(w),
-                    numpy.asarray(v),
+                    to_numpy(w),
+                    to_numpy(v),
                     arg,
                     real_system,
                 )
@@ -236,8 +237,8 @@ class BaseEOM(ABC):
                 """Pick the eigenvalues."""
                 real_idx = numpy.where(abs(numpy.imag(w)) < 1e-3)[0]
                 w, v, idx = lib.linalg_helper._eigs_cmplx2real(
-                    numpy.asarray(w),
-                    numpy.asarray(v),
+                    to_numpy(w),
+                    to_numpy(v),
                     real_idx,
                     real_system,
                 )
@@ -305,7 +306,7 @@ class BaseEOM(ABC):
         # Get the matrix-vector products and the diagonal:
         ints = self.matvec_intermediates(eris=eris, left=self.options.left)
         matvecs = lambda vs: [
-            numpy.asarray(self.matvec(np.asarray(v), eris=eris, ints=ints, left=self.options.left))
+            to_numpy(self.matvec(np.asarray(v), eris=eris, ints=ints, left=self.options.left))
             for v in vs
         ]
         diag = self.diag(eris=eris)
@@ -319,8 +320,8 @@ class BaseEOM(ABC):
         pick = self.get_pick(guesses=np.stack(guesses))
         converged, e, v = lib.davidson_nosym1(
             matvecs,
-            [numpy.asarray(g) for g in guesses],
-            numpy.asarray(diag),
+            [to_numpy(g) for g in guesses],
+            to_numpy(diag),
             tol=self.options.e_tol,
             nroots=nroots,
             pick=pick,

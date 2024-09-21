@@ -8,6 +8,7 @@ import numpy  # PySCF uses true numpy, no backend stuff here
 from pyscf import ao2mo
 
 from ebcc import numpy as np
+from ebcc.backend import to_numpy
 from ebcc.core.precision import types
 from ebcc.ham.base import BaseERIs, BaseGHamiltonian, BaseRHamiltonian, BaseUHamiltonian
 
@@ -38,7 +39,7 @@ class RERIs(BaseERIs, BaseRHamiltonian):
         if self.array is None:
             if key not in self._members.keys():
                 coeffs = [
-                    numpy.asarray(self.mo_coeff[i][:, self.space[i].slice(k)], dtype=numpy.float64)
+                    to_numpy(self.mo_coeff[i][:, self.space[i].slice(k)], dtype=numpy.float64)
                     for i, k in enumerate(key)
                 ]
                 if getattr(self.cc.mf, "_eri", None) is not None:
@@ -46,7 +47,7 @@ class RERIs(BaseERIs, BaseRHamiltonian):
                 else:
                     block = ao2mo.kernel(self.cc.mf.mol, coeffs, compact=False)
                 block = np.reshape(block, [c.shape[-1] for c in coeffs])
-                self._members[key] = np.asarray(np.astype(block, types[float]))
+                self._members[key] = np.asarray(block, dtype=types[float])
             return self._members[key]
         else:
             ijkl = tuple(self.space[i].slice(k) for i, k in enumerate(key))
@@ -82,7 +83,7 @@ class UERIs(BaseERIs, BaseUHamiltonian):
             elif isinstance(self.cc.mf._eri, tuple):
                 # Support spin-dependent integrals in the mean-field
                 coeffs = [
-                    numpy.asarray(self.mo_coeff[x][y], dtype=numpy.float64)
+                    to_numpy(self.mo_coeff[x][y], dtype=numpy.float64)
                     for y, x in enumerate(sorted((i, i, j, j)))
                 ]
                 if getattr(self.cc.mf, "_eri", None) is not None:
@@ -119,12 +120,8 @@ class GERIs(BaseERIs, BaseGHamiltonian):
         """Initialise the class."""
         super().__init__(*args, **kwargs)
         if self.array is None:
-            mo_a = [
-                numpy.asarray(mo[: self.cc.mf.mol.nao], dtype=numpy.float64) for mo in self.mo_coeff
-            ]
-            mo_b = [
-                numpy.asarray(mo[self.cc.mf.mol.nao :], dtype=numpy.float64) for mo in self.mo_coeff
-            ]
+            mo_a = [to_numpy(mo[: self.cc.mf.mol.nao], dtype=numpy.float64) for mo in self.mo_coeff]
+            mo_b = [to_numpy(mo[self.cc.mf.mol.nao :], dtype=numpy.float64) for mo in self.mo_coeff]
             if getattr(self.cc.mf, "_eri", None) is not None:
                 array = ao2mo.incore.general(self.cc.mf._eri, mo_a)
                 array += ao2mo.incore.general(self.cc.mf._eri, mo_b)

@@ -23,7 +23,7 @@ from ebcc import BACKEND
 
 if TYPE_CHECKING:
     from types import ModuleType
-    from typing import Union, TypeVar
+    from typing import Union, TypeVar, Optional
 
     from numpy import int64, generic
     from numpy.typing import NDArray
@@ -47,6 +47,36 @@ elif BACKEND in ("ctf", "cyclops"):
 def __getattr__(name: str) -> ModuleType:
     """Get the backend module."""
     return importlib.import_module(f"ebcc.backend._{BACKEND.lower()}")
+
+
+def to_numpy(array: NDArray[T], dtype: Optional[type[generic]] = None) -> NDArray[T]:
+    """Convert an array to NumPy.
+
+    Args:
+        array: Array to convert.
+        dtype: Data type to convert to.
+
+    Returns:
+        Array in NumPy format.
+
+    Notes:
+        This function does not guarantee a copy of the array.
+    """
+    if BACKEND == "numpy":
+        ndarray = array
+    elif BACKEND == "cupy":
+        ndarray = np.asnumpy(array)  # type: ignore
+    elif BACKEND == "jax":
+        ndarray = np.array(array)  # type: ignore
+    elif BACKEND == "tensorflow":
+        ndarray = array.numpy()  # type: ignore
+    elif BACKEND in ("ctf", "cyclops"):
+        ndarray = array.to_nparray()  # type: ignore
+    else:
+        raise NotImplementedError(f"Backend {BACKEND} to_numpy not implemented.")
+    if dtype is not None:
+        ndarray = ndarray.astype(dtype)
+    return ndarray
 
 
 def _put(

@@ -892,7 +892,8 @@ class UEBCC(BaseEBCC):
             Number of occupied molecular orbitals for each spin.
         """
         return cast(
-            tuple[int, int], tuple(np.sum(np.astype((mo_occ > 0), int)) for mo_occ in self.mo_occ)
+            tuple[int, int],
+            tuple(np.sum(np.asarray(mo_occ > 0, dtype=int)) for mo_occ in self.mo_occ),
         )
 
     @property

@@ -129,10 +129,10 @@ class BaseEBCC(ABC):
         self.log = default_log if log is None else log
         self.mf = self._convert_mf(mf)
         self._mo_coeff: Optional[NDArray[T]] = (
-            np.astype(mo_coeff, types[float]) if mo_coeff is not None else None
+            np.asarray(mo_coeff, dtype=types[float]) if mo_coeff is not None else None
         )
         self._mo_occ: Optional[NDArray[T]] = (
-            np.astype(mo_occ, types[float]) if mo_occ is not None else None
+            np.asarray(mo_occ, dtype=types[float]) if mo_occ is not None else None
         )
 
         # Ansatz:
@@ -157,9 +157,9 @@ class BaseEBCC(ABC):
             raise ValueError(
                 "Fermionic and bosonic coupling ranks must both be zero, or both non-zero."
             )
-        self.omega = np.astype(omega, types[float]) if omega is not None else None
-        self.bare_g = np.astype(g, types[float]) if g is not None else None
-        self.bare_G = np.astype(G, types[float]) if G is not None else None
+        self.omega = np.asarray(omega, dtype=types[float]) if omega is not None else None
+        self.bare_g = np.asarray(g, dtype=types[float]) if g is not None else None
+        self.bare_G = np.asarray(G, dtype=types[float]) if G is not None else None
         if self.boson_ansatz != "":
             self.g = self.get_g()
             self.G = self.get_mean_field_G()
@@ -964,7 +964,7 @@ class BaseEBCC(ABC):
             Molecular orbital coefficients.
         """
         if self._mo_coeff is None:
-            return np.astype(self.mf.mo_coeff, types[float])  # type: ignore
+            return np.asarray(self.mf.mo_coeff, dtype=types[float])
         return self._mo_coeff
 
     @property
@@ -975,7 +975,7 @@ class BaseEBCC(ABC):
             Molecular orbital occupation numbers.
         """
         if self._mo_occ is None:
-            return np.astype(self.mf.mo_occ, types[float])  # type: ignore
+            return np.asarray(self.mf.mo_occ, dtype=types[float])
         return self._mo_occ
 
     @property
