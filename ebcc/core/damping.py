@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 from ebcc import numpy as np
 from ebcc import util
+from ebcc.backend import ensure_scalar
 
 if TYPE_CHECKING:
     from typing import Optional
@@ -114,7 +115,7 @@ class DIIS:
         # calls to `__setitem__` in immutable backends
         m_i = np.array(
             [
-                np.ravel(np.dot(np.conj(np.ravel(x1)), np.ravel(self._errors[i])))[0]
+                ensure_scalar(np.dot(np.conj(np.ravel(x1)), np.ravel(self._errors[i])))
                 for i in range(nd)
             ]
         )
@@ -166,8 +167,10 @@ class DIIS:
         # Solve the linear problem
         w, v = np.linalg.eigh(h)
         if np.any(np.abs(w) < 1e-14):
-            mask = np.abs(w) > 1e-14
-            w, v = w[mask], v[:, mask]
+            # avoiding fancy indexing for compatibility
+            for i in range(nd):
+                if np.abs(w[i]) < 1e-14:
+                    v[:, i] = 0.0
         c = util.einsum("pi,qi,i,q->p", v, np.conj(v), w**-1.0, g)
 
         # Construct the new vector

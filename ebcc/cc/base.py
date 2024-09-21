@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, cast
 from ebcc import default_log, init_logging
 from ebcc import numpy as np
 from ebcc import util
+from ebcc.backend import ensure_scalar
 from ebcc.core.ansatz import Ansatz
 from ebcc.core.damping import DIIS
 from ebcc.core.dump import Dump
@@ -585,7 +586,7 @@ class BaseEBCC(ABC):
             eris=eris,
             amplitudes=amplitudes,
         )
-        res: float = np.ravel(func(**kwargs))[0].real
+        res: float = ensure_scalar(func(**kwargs)).real
         return astype(res, float)
 
     def energy_perturbative(
@@ -610,8 +611,8 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        res: float = np.ravel(func(**kwargs))[0].real
-        return astype(res, float)
+        res: float = ensure_scalar(func(**kwargs)).real
+        return res
 
     @abstractmethod
     def update_amps(
@@ -953,7 +954,7 @@ class BaseEBCC(ABC):
         """
         if self.options.shift:
             assert self.omega is not None
-            return cast(float, np.ravel(util.einsum("I,I->", self.omega, self.xi**2.0))[0])
+            return cast(float, ensure_scalar(util.einsum("I,I->", self.omega, self.xi**2.0)))
         return 0.0
 
     @property

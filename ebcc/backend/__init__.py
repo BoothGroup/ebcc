@@ -49,6 +49,29 @@ def __getattr__(name: str) -> ModuleType:
     return importlib.import_module(f"ebcc.backend._{BACKEND.lower()}")
 
 
+def ensure_scalar(obj: Union[T, NDArray[T]]) -> T:
+    """Ensure that an object is a scalar.
+
+    Args:
+        obj: Object to ensure is a scalar.
+
+    Returns:
+        Scalar object.
+    """
+    if BACKEND in ("numpy", "cupy", "jax"):
+        return np.asarray(obj).item()  # type: ignore
+    elif BACKEND == "tensorflow":
+        if isinstance(obj, tf.Tensor):
+            return obj.numpy().item()  # type: ignore
+        return obj  # type: ignore
+    elif BACKEND in ("ctf", "cyclops"):
+        if isinstance(obj, ctf.tensor):
+            return obj.to_nparray().item()  # type: ignore
+        return obj  # type: ignore
+    else:
+        raise NotImplementedError(f"`ensure_scalar` not implemented for backend {BACKEND}.")
+
+
 def to_numpy(array: NDArray[T], dtype: Optional[type[generic]] = None) -> NDArray[T]:
     """Convert an array to NumPy.
 
@@ -73,8 +96,8 @@ def to_numpy(array: NDArray[T], dtype: Optional[type[generic]] = None) -> NDArra
     elif BACKEND in ("ctf", "cyclops"):
         ndarray = array.to_nparray()  # type: ignore
     else:
-        raise NotImplementedError(f"Backend {BACKEND} to_numpy not implemented.")
-    if dtype is not None:
+        raise NotImplementedError(f"`to_numpy` not implemented for backend {BACKEND}.")
+    if dtype is not None and ndarray.dtype != dtype:
         ndarray = ndarray.astype(dtype)
     return ndarray
 
@@ -129,4 +152,4 @@ def _put(
             array.write(indices, values)  # type: ignore
         return array
     else:
-        raise NotImplementedError(f"Backend {BACKEND} _put not implemented.")
+        raise NotImplementedError(f"`_put` not implemented for backend {BACKEND}.")
