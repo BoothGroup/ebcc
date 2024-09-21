@@ -520,7 +520,7 @@ if spin == "ghf":  # FIXME
                     preamble += "\nr1new = Namespace()\nr2new = Namespace()"
                 kwargs = {
                     "preamble": preamble,
-                    "postamble": "r2new.baba = r2new.abab.transpose(1, 0, 3, 2)" if spin == "uhf" else None,  # FIXME
+                    "postamble": "r2new.baba = np.transpose(r2new.abab, (1, 0, 3, 2))" if spin == "uhf" else None,  # FIXME
                     "as_dict": True,
                 }
             else:
@@ -756,7 +756,7 @@ if spin == "ghf":  # FIXME
                     preamble += "\nr1new = Namespace()\nr2new = Namespace()"
                 kwargs = {
                     "preamble": preamble,
-                    "postamble": "r2new.baba = r2new.abab.transpose(1, 0, 3, 2)" if spin == "uhf" else None,  # FIXME
+                    "postamble": "r2new.baba = np.transpose(r2new.abab, (1, 0, 3, 2))" if spin == "uhf" else None,  # FIXME
                     "as_dict": True,
                 }
             else:
