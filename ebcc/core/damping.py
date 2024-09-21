@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from ebcc import numpy as np
 from ebcc import util
-from ebcc.backend import ensure_scalar
+from ebcc.backend import _put, ensure_scalar
 
 if TYPE_CHECKING:
     from typing import Optional
@@ -168,9 +168,9 @@ class DIIS:
         w, v = np.linalg.eigh(h)
         if np.any(np.abs(w) < 1e-14):
             # avoiding fancy indexing for compatibility
-            for i in range(nd):
+            for i in range(nd + 1):
                 if np.abs(w[i]) < 1e-14:
-                    v[:, i] = 0.0
+                    _put(v, np.ix_(np.arange(nd + 1), np.array([i])), np.zeros_like(v[:, i]))
         c = util.einsum("pi,qi,i,q->p", v, np.conj(v), w**-1.0, g)
 
         # Construct the new vector
