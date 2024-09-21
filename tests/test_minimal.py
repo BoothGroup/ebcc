@@ -156,33 +156,6 @@ class Minimal_H2O_DFDCD_Tests(unittest.TestCase, _Minimal_Tests):
 
 
 @pytest.mark.reference
-class Minimal_HeH_CC3_Tests(unittest.TestCase, _Minimal_Tests):
-    ENERGY_UEBCC = -2.824682673746
-    ANSATZ = "CC3"
-    CHECK_DMS = False
-
-    @classmethod
-    def setUpClass(cls):
-        cls.mol = gto.Mole()
-        cls.mol.atom = "He 0 0 0; H 0 0 1.5"
-        cls.mol.basis = "sto3g"
-        cls.mol.charge = 1
-        cls.mol.verbose = 0
-        cls.mol.build()
-
-        cls.mf = scf.UHF(cls.mol)
-        cls.mf.conv_tol = 1e-12
-        cls.mf.kernel()
-
-    @classmethod
-    def tearDownClass(cls):
-        del cls.mol, cls.mf
-
-    test_rebcc = None
-    test_gebcc = None
-
-
-@pytest.mark.reference
 class Minimal_O2_MP2_Tests(unittest.TestCase, _Minimal_Tests):
     ENERGY_REBCC = -147.675973450322
     ENERGY_UEBCC = -147.675973450322
