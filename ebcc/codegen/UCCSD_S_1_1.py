@@ -51,16 +51,16 @@ def update_amps(f=None, v=None, w=None, g=None, G=None, nocc=None, nvir=None, nb
     # Get boson coupling creation array:
     gc = Namespace(
         aa = Namespace(
-            boo=g.aa.boo.transpose(0, 2, 1),
-            bov=g.aa.bvo.transpose(0, 2, 1),
-            bvo=g.aa.bov.transpose(0, 2, 1),
-            bvv=g.aa.bvv.transpose(0, 2, 1),
+            boo=np.transpose(g.aa.boo, (0, 2, 1)),
+            bov=np.transpose(g.aa.bvo, (0, 2, 1)),
+            bvo=np.transpose(g.aa.bov, (0, 2, 1)),
+            bvv=np.transpose(g.aa.bvv, (0, 2, 1)),
         ),
         bb = Namespace(
-            boo=g.bb.boo.transpose(0, 2, 1),
-            bov=g.bb.bvo.transpose(0, 2, 1),
-            bvo=g.bb.bov.transpose(0, 2, 1),
-            bvv=g.bb.bvv.transpose(0, 2, 1),
+            boo=np.transpose(g.bb.boo, (0, 2, 1)),
+            bov=np.transpose(g.bb.bvo, (0, 2, 1)),
+            bvo=np.transpose(g.bb.bov, (0, 2, 1)),
+            bvv=np.transpose(g.bb.bvv, (0, 2, 1)),
         ),
     )
 
@@ -1444,16 +1444,16 @@ def update_lams(f=None, v=None, w=None, g=None, G=None, nocc=None, nvir=None, nb
     # Get boson coupling creation array:
     gc = Namespace(
         aa = Namespace(
-            boo=g.aa.boo.transpose(0, 2, 1),
-            bov=g.aa.bvo.transpose(0, 2, 1),
-            bvo=g.aa.bov.transpose(0, 2, 1),
-            bvv=g.aa.bvv.transpose(0, 2, 1),
+            boo=np.transpose(g.aa.boo, (0, 2, 1)),
+            bov=np.transpose(g.aa.bvo, (0, 2, 1)),
+            bvo=np.transpose(g.aa.bov, (0, 2, 1)),
+            bvv=np.transpose(g.aa.bvv, (0, 2, 1)),
         ),
         bb = Namespace(
-            boo=g.bb.boo.transpose(0, 2, 1),
-            bov=g.bb.bvo.transpose(0, 2, 1),
-            bvo=g.bb.bov.transpose(0, 2, 1),
-            bvv=g.bb.bvv.transpose(0, 2, 1),
+            boo=np.transpose(g.bb.boo, (0, 2, 1)),
+            bov=np.transpose(g.bb.bvo, (0, 2, 1)),
+            bvo=np.transpose(g.bb.bov, (0, 2, 1)),
+            bvv=np.transpose(g.bb.bvv, (0, 2, 1)),
         ),
     )
 
@@ -3792,16 +3792,16 @@ def make_rdm1_f(f=None, v=None, w=None, g=None, G=None, nocc=None, nvir=None, nb
     # Get boson coupling creation array:
     gc = Namespace(
         aa = Namespace(
-            boo=g.aa.boo.transpose(0, 2, 1),
-            bov=g.aa.bvo.transpose(0, 2, 1),
-            bvo=g.aa.bov.transpose(0, 2, 1),
-            bvv=g.aa.bvv.transpose(0, 2, 1),
+            boo=np.transpose(g.aa.boo, (0, 2, 1)),
+            bov=np.transpose(g.aa.bvo, (0, 2, 1)),
+            bvo=np.transpose(g.aa.bov, (0, 2, 1)),
+            bvv=np.transpose(g.aa.bvv, (0, 2, 1)),
         ),
         bb = Namespace(
-            boo=g.bb.boo.transpose(0, 2, 1),
-            bov=g.bb.bvo.transpose(0, 2, 1),
-            bvo=g.bb.bov.transpose(0, 2, 1),
-            bvv=g.bb.bvv.transpose(0, 2, 1),
+            boo=np.transpose(g.bb.boo, (0, 2, 1)),
+            bov=np.transpose(g.bb.bvo, (0, 2, 1)),
+            bvo=np.transpose(g.bb.bov, (0, 2, 1)),
+            bvv=np.transpose(g.bb.bvv, (0, 2, 1)),
         ),
     )
 
@@ -3960,16 +3960,16 @@ def make_rdm2_f(f=None, v=None, w=None, g=None, G=None, nocc=None, nvir=None, nb
     # Get boson coupling creation array:
     gc = Namespace(
         aa = Namespace(
-            boo=g.aa.boo.transpose(0, 2, 1),
-            bov=g.aa.bvo.transpose(0, 2, 1),
-            bvo=g.aa.bov.transpose(0, 2, 1),
-            bvv=g.aa.bvv.transpose(0, 2, 1),
+            boo=np.transpose(g.aa.boo, (0, 2, 1)),
+            bov=np.transpose(g.aa.bvo, (0, 2, 1)),
+            bvo=np.transpose(g.aa.bov, (0, 2, 1)),
+            bvv=np.transpose(g.aa.bvv, (0, 2, 1)),
         ),
         bb = Namespace(
-            boo=g.bb.boo.transpose(0, 2, 1),
-            bov=g.bb.bvo.transpose(0, 2, 1),
-            bvo=g.bb.bov.transpose(0, 2, 1),
-            bvv=g.bb.bvv.transpose(0, 2, 1),
+            boo=np.transpose(g.bb.boo, (0, 2, 1)),
+            bov=np.transpose(g.bb.bvo, (0, 2, 1)),
+            bvo=np.transpose(g.bb.bov, (0, 2, 1)),
+            bvv=np.transpose(g.bb.bvv, (0, 2, 1)),
         ),
     )
 
@@ -5546,16 +5546,16 @@ def make_sing_b_dm(f=None, v=None, w=None, g=None, G=None, nocc=None, nvir=None,
     # Get boson coupling creation array:
     gc = Namespace(
         aa = Namespace(
-            boo=g.aa.boo.transpose(0, 2, 1),
-            bov=g.aa.bvo.transpose(0, 2, 1),
-            bvo=g.aa.bov.transpose(0, 2, 1),
-            bvv=g.aa.bvv.transpose(0, 2, 1),
+            boo=np.transpose(g.aa.boo, (0, 2, 1)),
+            bov=np.transpose(g.aa.bvo, (0, 2, 1)),
+            bvo=np.transpose(g.aa.bov, (0, 2, 1)),
+            bvv=np.transpose(g.aa.bvv, (0, 2, 1)),
         ),
         bb = Namespace(
-            boo=g.bb.boo.transpose(0, 2, 1),
-            bov=g.bb.bvo.transpose(0, 2, 1),
-            bvo=g.bb.bov.transpose(0, 2, 1),
-            bvv=g.bb.bvv.transpose(0, 2, 1),
+            boo=np.transpose(g.bb.boo, (0, 2, 1)),
+            bov=np.transpose(g.bb.bvo, (0, 2, 1)),
+            bvo=np.transpose(g.bb.bov, (0, 2, 1)),
+            bvv=np.transpose(g.bb.bvv, (0, 2, 1)),
         ),
     )
 
@@ -5575,16 +5575,16 @@ def make_rdm1_b(f=None, v=None, w=None, g=None, G=None, nocc=None, nvir=None, nb
     # Get boson coupling creation array:
     gc = Namespace(
         aa = Namespace(
-            boo=g.aa.boo.transpose(0, 2, 1),
-            bov=g.aa.bvo.transpose(0, 2, 1),
-            bvo=g.aa.bov.transpose(0, 2, 1),
-            bvv=g.aa.bvv.transpose(0, 2, 1),
+            boo=np.transpose(g.aa.boo, (0, 2, 1)),
+            bov=np.transpose(g.aa.bvo, (0, 2, 1)),
+            bvo=np.transpose(g.aa.bov, (0, 2, 1)),
+            bvv=np.transpose(g.aa.bvv, (0, 2, 1)),
         ),
         bb = Namespace(
-            boo=g.bb.boo.transpose(0, 2, 1),
-            bov=g.bb.bvo.transpose(0, 2, 1),
-            bvo=g.bb.bov.transpose(0, 2, 1),
-            bvv=g.bb.bvv.transpose(0, 2, 1),
+            boo=np.transpose(g.bb.boo, (0, 2, 1)),
+            bov=np.transpose(g.bb.bvo, (0, 2, 1)),
+            bvo=np.transpose(g.bb.bov, (0, 2, 1)),
+            bvv=np.transpose(g.bb.bvv, (0, 2, 1)),
         ),
     )
 
@@ -5602,16 +5602,16 @@ def make_eb_coup_rdm(f=None, v=None, w=None, g=None, G=None, nocc=None, nvir=Non
     # Get boson coupling creation array:
     gc = Namespace(
         aa = Namespace(
-            boo=g.aa.boo.transpose(0, 2, 1),
-            bov=g.aa.bvo.transpose(0, 2, 1),
-            bvo=g.aa.bov.transpose(0, 2, 1),
-            bvv=g.aa.bvv.transpose(0, 2, 1),
+            boo=np.transpose(g.aa.boo, (0, 2, 1)),
+            bov=np.transpose(g.aa.bvo, (0, 2, 1)),
+            bvo=np.transpose(g.aa.bov, (0, 2, 1)),
+            bvv=np.transpose(g.aa.bvv, (0, 2, 1)),
         ),
         bb = Namespace(
-            boo=g.bb.boo.transpose(0, 2, 1),
-            bov=g.bb.bvo.transpose(0, 2, 1),
-            bvo=g.bb.bov.transpose(0, 2, 1),
-            bvv=g.bb.bvv.transpose(0, 2, 1),
+            boo=np.transpose(g.bb.boo, (0, 2, 1)),
+            bov=np.transpose(g.bb.bvo, (0, 2, 1)),
+            bvo=np.transpose(g.bb.bov, (0, 2, 1)),
+            bvv=np.transpose(g.bb.bvv, (0, 2, 1)),
         ),
     )
 

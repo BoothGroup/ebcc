@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, cast
 from ebcc import numpy as np
 from ebcc import util
 from ebcc.core.precision import astype
+from ebcc.backend import _put, ensure_scalar
 
 if TYPE_CHECKING:
     from typing import Any, Optional
@@ -202,8 +203,8 @@ class DIIS(BaseDamping):
             The error norm.
         """
         if (i, j) not in self._norm_cache:
-            self._norm_cache[i, j] = astype(
-                np.dot(self._errors[i].conj().ravel(), self._errors[j].ravel()), float
+            self._norm_cache[i, j] = ensure_scalar(
+                np.dot(np.conj(np.ravel(self._errors[i])), np.ravel(self._errors[j]))
             )
             self._norm_cache[j, i] = self._norm_cache[i, j].conjugate()
         return self._norm_cache[i, j]
@@ -257,7 +258,7 @@ class DIIS(BaseDamping):
         )
         zeros = np.zeros((1, 1), dtype=errors.dtype)
         ones = np.ones((size, 1), dtype=errors.dtype)
-        matrix = np.block([[errors, -ones], [-ones.T, zeros]])
+        matrix = np.block([[errors, -ones], [-np.transpose(ones), zeros]])
 
         # Build the right-hand side
         zeros = np.zeros((size,), dtype=errors.dtype)
@@ -267,10 +268,14 @@ class DIIS(BaseDamping):
         # Solve the linear problem
         try:
             c = np.linalg.solve(matrix, residual)
-        except np.linalg.LinAlgError:
+        except Exception:
             w, v = np.linalg.eigh(matrix)
-            mask = np.abs(w) > 1e-14
-            c = util.einsum("pi,qi,i,q->p", v[:, mask], v[:, mask].conj(), 1 / w[mask], residual)
+            if np.any(np.abs(w) < 1e-14):
+                # avoiding fancy indexing for compatibility
+                for i in range(size + 1):
+                    if np.abs(w[i]) < 1e-14:
+                        _put(v, np.ix_(np.arange(size + 1), np.array([i])), np.zeros_like(v[:, i]))
+            c = util.einsum("pi,qi,i,q->p", v, np.conj(v), w**-1.0, residual)
 
         # Construct the new array
         array = np.zeros_like(self._arrays[-1])

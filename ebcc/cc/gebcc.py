@@ -121,15 +121,15 @@ class GEBCC(BaseEBCC):
         sa = np.where(orbspin == 0)[0]
         sb = np.where(orbspin == 1)[0]
 
-        occupied = np.zeros((nocc + nvir,), dtype=bool)
-        occupied = _put(occupied, sa, ucc.space[0]._occupied.copy())
-        occupied = _put(occupied, sb, ucc.space[1]._occupied.copy())
-        frozen = np.zeros((nocc + nvir,), dtype=bool)
-        frozen = _put(frozen, sa, ucc.space[0]._frozen.copy())
-        frozen = _put(frozen, sb, ucc.space[1]._frozen.copy())
-        active = np.zeros((nocc + nvir,), dtype=bool)
-        active = _put(active, sa, ucc.space[0]._active.copy())
-        active = _put(active, sb, ucc.space[1]._active.copy())
+        occupied = np.zeros((nocc + nvir,), dtype=np.bool_)
+        occupied = _put(occupied, sa, np.copy(ucc.space[0]._occupied))
+        occupied = _put(occupied, sb, np.copy(ucc.space[1]._occupied))
+        frozen = np.zeros((nocc + nvir,), dtype=np.bool_)
+        frozen = _put(frozen, sa, np.copy(ucc.space[0]._frozen))
+        frozen = _put(frozen, sb, np.copy(ucc.space[1]._frozen))
+        active = np.zeros((nocc + nvir,), dtype=np.bool_)
+        active = _put(active, sa, np.copy(ucc.space[0]._active))
+        active = _put(active, sb, np.copy(ucc.space[1]._active))
         space = Space(occupied, frozen, active)
 
         slices = util.Namespace(
@@ -144,8 +144,8 @@ class GEBCC(BaseEBCC):
             else:
                 bare_g_a, bare_g_b = ucc.bare_g
             g = np.zeros((ucc.nbos, ucc.nmo * 2, ucc.nmo * 2), dtype=types[float])
-            g = _put(g, np.ix_(np.arange(ucc.nbos), sa, sa), bare_g_a.copy())
-            g = _put(g, np.ix_(np.arange(ucc.nbos), sb, sb), bare_g_b.copy())
+            g = _put(g, np.ix_(np.arange(ucc.nbos), sa, sa), np.copy(bare_g_a))
+            g = _put(g, np.ix_(np.arange(ucc.nbos), sb, sb), np.copy(bare_g_b))
 
         gcc = cls(
             ucc.mf,
@@ -182,7 +182,7 @@ class GEBCC(BaseEBCC):
                             mask = np.ix_(*[slices[s][k] for s, k in zip(combn, key)])
                             transpose = tuple(lperm) + tuple(p + n for p in uperm)
                             amp = (
-                                getattr(ucc.amplitudes[name], comb).transpose(transpose)
+                                np.transpose(getattr(ucc.amplitudes[name], comb), transpose)
                                 * lsign
                                 * usign
                             )
@@ -192,12 +192,13 @@ class GEBCC(BaseEBCC):
                                     amplitudes[name] = _put(
                                         amplitudes[name],
                                         mask,
-                                        amplitudes[name][mask] + amp.transpose(transpose) * sign,
+                                        amplitudes[name][mask]
+                                        + np.transpose(amp, transpose) * sign,
                                     )
                             done.add(combn)
 
             for name, key, n in ucc.ansatz.bosonic_cluster_ranks(spin_type=ucc.spin_type):
-                amplitudes[name] = ucc.amplitudes[name].copy()  # type: ignore
+                amplitudes[name] = np.copy(ucc.amplitudes[name])  # type: ignore
 
             for name, key, nf, nb in ucc.ansatz.coupling_cluster_ranks(spin_type=ucc.spin_type):
                 shape = (nbos,) * nb + tuple(space.size(k) for k in key[nb:])
@@ -220,7 +221,7 @@ class GEBCC(BaseEBCC):
                                 + tuple(p + nb + nf for p in uperm)
                             )
                             amp = (
-                                getattr(ucc.amplitudes[name], comb).transpose(transpose)
+                                np.transpose(getattr(ucc.amplitudes[name], comb), transpose)
                                 * lsign
                                 * usign
                             )
@@ -234,7 +235,8 @@ class GEBCC(BaseEBCC):
                                     amplitudes[name] = _put(
                                         amplitudes[name],
                                         mask,
-                                        amplitudes[name][mask] + amp.transpose(transpose) * sign,
+                                        amplitudes[name][mask]
+                                        + np.transpose(amp, transpose) * sign,
                                     )
                             done.add(combn)
 
@@ -258,7 +260,7 @@ class GEBCC(BaseEBCC):
                             mask = np.ix_(*[slices[s][k] for s, k in zip(combn, key[n:] + key[:n])])
                             transpose = tuple(lperm) + tuple(p + n for p in uperm)
                             amp = (
-                                getattr(ucc.lambdas[lname], comb).transpose(transpose)
+                                np.transpose(getattr(ucc.lambdas[lname], comb), transpose)
                                 * lsign
                                 * usign
                             )
@@ -268,13 +270,13 @@ class GEBCC(BaseEBCC):
                                     lambdas[lname] = _put(
                                         lambdas[lname],
                                         mask,
-                                        lambdas[lname][mask] + amp.transpose(transpose) * sign,
+                                        lambdas[lname][mask] + np.transpose(amp, transpose) * sign,
                                     )
                             done.add(combn)
 
             for name, key, n in ucc.ansatz.bosonic_cluster_ranks(spin_type=ucc.spin_type):
                 lname = "l" + name
-                lambdas[lname] = ucc.lambdas[lname].copy()  # type: ignore
+                lambdas[lname] = np.copy(ucc.lambdas[lname])  # type: ignore
 
             for name, key, nf, nb in ucc.ansatz.coupling_cluster_ranks(spin_type=ucc.spin_type):
                 lname = "l" + name
@@ -303,7 +305,7 @@ class GEBCC(BaseEBCC):
                                 + tuple(p + nb + nf for p in uperm)
                             )
                             amp = (
-                                getattr(ucc.lambdas[lname], comb).transpose(transpose)
+                                np.transpose(getattr(ucc.lambdas[lname], comb), transpose)
                                 * lsign
                                 * usign
                             )
@@ -317,7 +319,7 @@ class GEBCC(BaseEBCC):
                                     lambdas[lname] = _put(
                                         lambdas[lname],
                                         mask,
-                                        lambdas[lname][mask] + amp.transpose(transpose) * sign,
+                                        lambdas[lname][mask] + np.transpose(amp, transpose) * sign,
                                     )
                             done.add(combn)
 
@@ -349,8 +351,8 @@ class GEBCC(BaseEBCC):
         """
         space = Space(
             self.mo_occ > 0,
-            np.zeros(self.mo_occ.shape, dtype=bool),
-            np.zeros(self.mo_occ.shape, dtype=bool),
+            np.zeros(self.mo_occ.shape, dtype=np.bool_),
+            np.zeros(self.mo_occ.shape, dtype=np.bool_),
         )
         return space
 
@@ -441,7 +443,7 @@ class GEBCC(BaseEBCC):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             lname = name.replace("t", "l")
             perm = list(range(n, 2 * n)) + list(range(n))
-            lambdas[lname] = amplitudes[name].transpose(perm)
+            lambdas[lname] = np.transpose(amplitudes[name], perm)
 
         # Build LS amplitudes:
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
@@ -454,7 +456,7 @@ class GEBCC(BaseEBCC):
                 raise util.ModelNotImplemented
             lname = "l" + name
             perm = list(range(nb)) + [nb + 1, nb]
-            lambdas[lname] = amplitudes[name].transpose(perm)
+            lambdas[lname] = np.transpose(amplitudes[name], perm)
 
         return lambdas
 
@@ -591,7 +593,7 @@ class GEBCC(BaseEBCC):
         dm: SpinArrayType = func(**kwargs)
 
         if hermitise:
-            dm = 0.5 * (dm + dm.T)
+            dm = (dm + np.transpose(dm)) * 0.5
 
         return dm
 
@@ -622,8 +624,8 @@ class GEBCC(BaseEBCC):
         dm: SpinArrayType = func(**kwargs)
 
         if hermitise:
-            dm = 0.5 * (dm.transpose(0, 1, 2, 3) + dm.transpose(2, 3, 0, 1))
-            dm = 0.5 * (dm.transpose(0, 1, 2, 3) + dm.transpose(1, 0, 3, 2))
+            dm = (np.transpose(dm, (0, 1, 2, 3)) + np.transpose(dm, (2, 3, 0, 1))) * 0.5
+            dm = (np.transpose(dm, (0, 1, 2, 3)) + np.transpose(dm, (1, 0, 3, 2))) * 0.5
 
         return dm
 
@@ -667,8 +669,8 @@ class GEBCC(BaseEBCC):
         if hermitise:
             dm_eb = np.array(
                 [
-                    0.5 * (dm_eb[0] + dm_eb[1].transpose(0, 2, 1)),
-                    0.5 * (dm_eb[1] + dm_eb[0].transpose(0, 2, 1)),
+                    (dm_eb[0] + np.transpose(dm_eb[1], (0, 2, 1))) * 0.5,
+                    (dm_eb[1] + np.transpose(dm_eb[0], (0, 2, 1))) * 0.5,
                 ]
             )
 
@@ -713,9 +715,9 @@ class GEBCC(BaseEBCC):
             factor = 1 if signs_dict[key] == "+" else -1
             if key == "b":
                 assert self.omega is not None
-                energies.append(factor * self.omega)
+                energies.append(self.omega * types[float](factor))
             else:
-                energies.append(factor * np.diag(self.fock[key + key]))
+                energies.append(np.diag(self.fock[key + key]) * types[float](factor))
 
         subscript = ",".join([next_char() for k in subscript])
         energy_sum = util.dirsum(subscript, *energies)
@@ -734,13 +736,13 @@ class GEBCC(BaseEBCC):
         vectors = []
 
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            vectors.append(amplitudes[name].ravel())
+            vectors.append(np.ravel(amplitudes[name]))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
-            vectors.append(amplitudes[name].ravel())
+            vectors.append(np.ravel(amplitudes[name]))
 
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
-            vectors.append(amplitudes[name].ravel())
+            vectors.append(np.ravel(amplitudes[name]))
 
         return np.concatenate(vectors)
 
@@ -759,19 +761,19 @@ class GEBCC(BaseEBCC):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
             shape = tuple(self.space.size(k) for k in key)
             size = util.prod(shape)
-            amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[name] = np.reshape(vector[i0 : i0 + size], shape)
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * n
             size = util.prod(shape)
-            amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[name] = np.reshape(vector[i0 : i0 + size], shape)
             i0 += size
 
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
             shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
             size = util.prod(shape)
-            amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[name] = np.reshape(vector[i0 : i0 + size], shape)
             i0 += size
 
         return amplitudes
@@ -790,15 +792,15 @@ class GEBCC(BaseEBCC):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(
             spin_type=self.spin_type, which="l"
         ):
-            vectors.append(lambdas[name].ravel())
+            vectors.append(np.ravel(lambdas[name]))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="l"):
-            vectors.append(lambdas[name].ravel())
+            vectors.append(np.ravel(lambdas[name]))
 
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
             spin_type=self.spin_type, which="l"
         ):
-            vectors.append(lambdas[name].ravel())
+            vectors.append(np.ravel(lambdas[name]))
 
         return np.concatenate(vectors)
 
@@ -819,13 +821,13 @@ class GEBCC(BaseEBCC):
         ):
             shape = tuple(self.space.size(k) for k in key)
             size = util.prod(shape)
-            lambdas[name] = vector[i0 : i0 + size].reshape(shape)
+            lambdas[name] = np.reshape(vector[i0 : i0 + size], shape)
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="l"):
             shape = (self.nbos,) * n
             size = util.prod(shape)
-            lambdas[name] = vector[i0 : i0 + size].reshape(shape)
+            lambdas[name] = np.reshape(vector[i0 : i0 + size], shape)
             i0 += size
 
         for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
@@ -833,7 +835,7 @@ class GEBCC(BaseEBCC):
         ):
             shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
             size = util.prod(shape)
-            lambdas[name] = vector[i0 : i0 + size].reshape(shape)
+            lambdas[name] = np.reshape(vector[i0 : i0 + size], shape)
             i0 += size
 
         return lambdas

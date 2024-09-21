@@ -8,6 +8,7 @@ from ebcc.util.misc import (
     regularise_tuple,
     prod,
     _BaseOptions,
+    argsort,
 )
 from ebcc.util.einsumfunc import einsum, dirsum
 from ebcc.util.permutations import (

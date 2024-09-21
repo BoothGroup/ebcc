@@ -111,10 +111,10 @@ class Util_Tests(unittest.TestCase):
     def test_antisymmetrise_array(self):
         for n in (1, 2, 3, 4):
             for ndim in (1, 2, 3, 4, 5, 6):
-                array = np.cos(np.arange(1, n**ndim + 1).reshape((n,) * ndim))
+                array = np.cos(np.reshape(np.arange(1, n**ndim + 1), (n,) * ndim))
                 array = util.antisymmetrise_array(array, axes=range(ndim))
                 for perm, sign in util.permutations_with_signs(range(ndim)):
-                    self.assertAlmostEqual(np.max(np.abs(array - sign * array.transpose(perm))), 0.0, 7)
+                    self.assertAlmostEqual(np.max(np.abs(array - sign * np.transpose(array, perm))), 0.0, 7)
 
     def test_is_mixed(self):
         self.assertEqual(util.is_mixed_spin("aa"), False)
@@ -137,13 +137,13 @@ class Util_Tests(unittest.TestCase):
         for n in (1, 2, 3, 4):
             for ndim in (2, 4, 6):
                 subscript = "i" * (ndim // 2) + "a" * (ndim // 2)
-                array = np.cos(np.arange(n**ndim).reshape((n,) * ndim))
+                array = np.cos(np.reshape(np.arange(n**ndim), (n,) * ndim))
                 array = util.symmetrise(subscript, array)
                 for p1, s1 in util.permutations_with_signs(range(ndim // 2)):
                     for p2, s2 in util.permutations_with_signs(range(ndim // 2, ndim)):
                         perm = tuple(p1) + tuple(p2)
                         sign = s1 * s2
-                        self.assertAlmostEqual(np.max(np.abs(array - sign * array.transpose(perm))), 0.0, 7)
+                        self.assertAlmostEqual(np.max(np.abs(array - sign * np.transpose(array, perm))), 0.0, 7)
 
     def test_constructors(self):
         # Tests the constructors in the main __init__.py
@@ -237,8 +237,8 @@ class Util_Tests(unittest.TestCase):
     def test_einsum_backend(self):
         self._test_einsum("backend")
 
-    def test_einsum_ttdt(self):
-        self._test_einsum("ttdt")
+    def test_einsum_ttgt(self):
+        self._test_einsum("ttgt")
 
     @pytest.mark.skipif(util.einsumfunc.FOUND_TBLIS is False, reason="TBLIS not found")
     def test_einsum_tblis(self):

@@ -35,14 +35,14 @@ class RFock(BaseFock, BaseRHamiltonian):
             Fock matrix for the given spaces.
         """
         if key not in self._members:
-            i = self.space[0].mask(key[0])
-            j = self.space[1].mask(key[1])
-            self._members[key] = self.array[i][:, j].copy()
+            i = self.space[0].slice(key[0])
+            j = self.space[1].slice(key[1])
+            self._members[key] = np.copy(self.array[i, j])
 
             if self.shift:
                 xi = self.xi
-                g = self.g.__getattr__(f"b{key}").copy()
-                g += self.g.__getattr__(f"b{key[::-1]}").transpose(0, 2, 1)
+                g = np.copy(self.g.__getattr__(f"b{key}"))
+                g += np.transpose(self.g.__getattr__(f"b{key[::-1]}"), (0, 2, 1))
                 self._members[key] -= util.einsum("I,Ipq->pq", xi, g)
 
         return self._members[key]
@@ -102,14 +102,14 @@ class GFock(BaseFock, BaseGHamiltonian):
             Fock matrix for the given spin.
         """
         if key not in self._members:
-            i = self.space[0].mask(key[0])
-            j = self.space[1].mask(key[1])
-            self._members[key] = self.array[i][:, j].copy()
+            i = self.space[0].slice(key[0])
+            j = self.space[1].slice(key[1])
+            self._members[key] = np.copy(self.array[i, j])
 
             if self.shift:
                 xi = self.xi
-                g = self.g.__getattr__(f"b{key}").copy()
-                g += self.g.__getattr__(f"b{key[::-1]}").transpose(0, 2, 1)
+                g = np.copy(self.g.__getattr__(f"b{key}"))
+                g += np.transpose(self.g.__getattr__(f"b{key[::-1]}"), (0, 2, 1))
                 self._members[key] -= util.einsum("I,Ipq->pq", xi, g)
 
         return self._members[key]

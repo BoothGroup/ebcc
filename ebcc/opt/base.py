@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 import numpy
 from pyscf import lib
 
+from ebcc import numpy as np
 from ebcc import util
 from ebcc.core.damping import DIIS
 from ebcc.core.logging import ANSI, NullLogger, init_logging
@@ -129,8 +130,8 @@ class BaseBruecknerEBCC(ABC):
         damping = self.Damping(options=self.options)
 
         # Initialise coefficients:
-        mo_coeff_new: NDArray[T] = self.cc.mo_coeff.astype(types[float]).copy()
-        mo_coeff_ref: NDArray[T] = self.cc.mo_coeff.astype(types[float]).copy()
+        mo_coeff_new: NDArray[T] = np.copy(np.asarray(self.cc.mo_coeff, dtype=types[float]))
+        mo_coeff_ref: NDArray[T] = np.copy(np.asarray(self.cc.mo_coeff, dtype=types[float]))
         mo_coeff_ref = self.mo_to_correlated(mo_coeff_ref)
         u_tot = None
 

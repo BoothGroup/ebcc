@@ -11,13 +11,14 @@ from pyscf import lib
 
 from ebcc import numpy as np
 from ebcc import util
+from ebcc.backend import to_numpy
 from ebcc.core.logging import ANSI
 from ebcc.core.precision import types
 
 if TYPE_CHECKING:
     from typing import Any, Callable, Optional
 
-    from numpy import float64, int64
+    from numpy import float64
     from numpy.typing import NDArray
 
     from ebcc.cc.base import BaseEBCC, ERIsInputType, SpaceType, SpinArrayType
@@ -216,13 +217,13 @@ class BaseEOM(ABC):
                 w: NDArray[T], v: NDArray[T], nroots: int, env: dict[str, Any]
             ) -> tuple[NDArray[T], NDArray[T], int]:
                 """Pick the eigenvalues."""
-                x0 = numpy.asarray(lib.linalg_helper._gen_x0(env["v"], env["xs"]))
-                s = numpy.asarray(guesses).conj() @ x0.T
+                x0 = to_numpy(lib.linalg_helper._gen_x0(env["v"], env["xs"]))
+                s = to_numpy(guesses).conj() @ x0.T
                 s = numpy.einsum("pi,pi->i", s.conj(), s)
                 arg = numpy.argsort(-s)[:nroots]
                 w, v, idx = lib.linalg_helper._eigs_cmplx2real(
-                    numpy.asarray(w),
-                    numpy.asarray(v),
+                    to_numpy(w),
+                    to_numpy(v),
                     arg,
                     real_system,
                 )
@@ -234,10 +235,10 @@ class BaseEOM(ABC):
                 w: NDArray[T], v: NDArray[T], nroots: int, env: dict[str, Any]
             ) -> tuple[NDArray[T], NDArray[T], int]:
                 """Pick the eigenvalues."""
-                real_idx = numpy.where(abs(w.imag) < 1e-3)[0]
+                real_idx = numpy.where(abs(numpy.imag(w)) < 1e-3)[0]
                 w, v, idx = lib.linalg_helper._eigs_cmplx2real(
-                    numpy.asarray(w),
-                    numpy.asarray(v),
+                    to_numpy(w),
+                    to_numpy(v),
                     real_idx,
                     real_system,
                 )
@@ -246,7 +247,7 @@ class BaseEOM(ABC):
         return pick
 
     @abstractmethod
-    def _argsort_guesses(self, diag: NDArray[T]) -> NDArray[int64]:
+    def _argsort_guesses(self, diag: NDArray[T]) -> list[int]:
         """Sort the diagonal to inform the initial guesses."""
         pass
 
@@ -305,7 +306,7 @@ class BaseEOM(ABC):
         # Get the matrix-vector products and the diagonal:
         ints = self.matvec_intermediates(eris=eris, left=self.options.left)
         matvecs = lambda vs: [
-            numpy.asarray(self.matvec(np.asarray(v), eris=eris, ints=ints, left=self.options.left))
+            to_numpy(self.matvec(np.asarray(v), eris=eris, ints=ints, left=self.options.left))
             for v in vs
         ]
         diag = self.diag(eris=eris)
@@ -319,8 +320,8 @@ class BaseEOM(ABC):
         pick = self.get_pick(guesses=np.stack(guesses))
         converged, e, v = lib.davidson_nosym1(
             matvecs,
-            [numpy.asarray(g) for g in guesses],
-            numpy.asarray(diag),
+            [to_numpy(g) for g in guesses],
+            to_numpy(diag),
             tol=self.options.e_tol,
             nroots=nroots,
             pick=pick,
@@ -344,18 +345,18 @@ class BaseEOM(ABC):
 
         # Update attributes:
         self.converged = converged
-        self.e = e.astype(types[float])
-        self.v = np.asarray(v).T.astype(types[float])
+        self.e = np.asarray(e, dtype=types[float])
+        self.v = np.transpose(np.asarray(v, dtype=types[float]))
 
         self.log.debug("")
         self.log.output(
             f"{ANSI.B}{'Root':>4s} {'Energy':>16s} {'Weight':>13s} {'Conv.':>8s}{ANSI.R}"
         )
-        for n, (en, vn, cn) in enumerate(zip(self.e, self.v.T, converged)):
+        for n, (en, vn, cn) in enumerate(zip(self.e, np.transpose(self.v), converged)):
             r1n = self.vector_to_amplitudes(vn)["r1"]
             qpwt = self._quasiparticle_weight(r1n)
             self.log.output(
-                f"{n:>4d} {en.item():>16.10f} {qpwt:>13.5g} "
+                f"{n:>4d} {np.ravel(en)[0]:>16.10f} {qpwt:>13.5g} "
                 f"{[ANSI.r, ANSI.g][bool(cn)]}{cn!r:>8s}{ANSI.R}"
             )
 

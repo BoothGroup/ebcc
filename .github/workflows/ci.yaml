@@ -15,12 +15,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {python-version: "3.9",  backend: "numpy",      os: ubuntu-latest, documentation: True,  coverage: True,  minimal: False}
-          - {python-version: "3.10", backend: "numpy",      os: ubuntu-latest, documentation: False, coverage: True,  minimal: False}
-          - {python-version: "3.11", backend: "numpy",      os: ubuntu-latest, documentation: False, coverage: True,  minimal: False}
-          - {python-version: "3.12", backend: "numpy",      os: ubuntu-latest, documentation: False, coverage: False, minimal: False}
-          - {python-version: "3.12", backend: "tensorflow", os: ubuntu-latest, documentation: False, coverage: False, minimal: True}
-          - {python-version: "3.12", backend: "jax",        os: ubuntu-latest, documentation: False, coverage: False, minimal: True}
+          - {python-version: "3.9",  backend: "numpy",      os: ubuntu-latest, documentation: True,  coverage: True,  minimal: True, full: True}
+          - {python-version: "3.10", backend: "numpy",      os: ubuntu-latest, documentation: False, coverage: True,  minimal: True, full: True}
+          - {python-version: "3.11", backend: "numpy",      os: ubuntu-latest, documentation: False, coverage: True,  minimal: True, full: True}
+          - {python-version: "3.12", backend: "numpy",      os: ubuntu-latest, documentation: False, coverage: False, minimal: True, full: True}
+          - {python-version: "3.12", backend: "tensorflow", os: ubuntu-latest, documentation: False, coverage: False, minimal: True, full: False}
+          - {python-version: "3.12", backend: "jax",        os: ubuntu-latest, documentation: False, coverage: False, minimal: True, full: False}
 
     steps:
       - uses: actions/checkout@v2
@@ -52,9 +52,14 @@ jobs:
         if: matrix.minimal
       - name: Run unit tests
         run: |
-          python -m pip install pytest ${{ 'pytest-cov' if matrix.coverage else '' }}
-          EBCC_BACKEND=${{ matrix.backend }} pytest ${{ '--cov ebcc/' if matrix.coverage else '' }}
-        if: ${{ ! matrix.minimal }}
+          python -m pip install pytest
+          EBCC_BACKEND=${{ matrix.backend }} pytest
+        if: matrix.full && ! matrix.coverage
+      - name: Run unit tests with coverage
+        run: |
+          python -m pip install pytest pytest-cov
+          EBCC_BACKEND=${{ matrix.backend }} pytest --cov ebcc/
+        if: matrix.full && matrix.coverage
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:

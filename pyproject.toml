@@ -184,6 +184,10 @@ ignore_missing_imports = true
 module = "tensorflow.*"
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "ctf.*"
+ignore_missing_imports = true
+
 [tool.coverage.run]
 branch = true
 source = [

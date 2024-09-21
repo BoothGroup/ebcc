@@ -6757,7 +6757,7 @@ def make_rdm2_f(f=None, v=None, nocc=None, nvir=None, t1=None, t2=None, t3=None,
 
     rdm2_f = pack_2e(rdm2_f_oooo, rdm2_f_ooov, rdm2_f_oovo, rdm2_f_ovoo, rdm2_f_vooo, rdm2_f_oovv, rdm2_f_ovov, rdm2_f_ovvo, rdm2_f_voov, rdm2_f_vovo, rdm2_f_vvoo, rdm2_f_ovvv, rdm2_f_vovv, rdm2_f_vvov, rdm2_f_vvvo, rdm2_f_vvvv)
 
-    rdm2_f = rdm2_f.swapaxes(1, 2)
+    rdm2_f = np.transpose(rdm2_f, (0, 2, 1, 3))
 
     return rdm2_f
 

@@ -11,7 +11,7 @@ from ebcc.eom.base import BaseEA_EOM, BaseEE_EOM, BaseEOM, BaseIP_EOM
 if TYPE_CHECKING:
     from typing import Optional
 
-    from numpy import float64, int64
+    from numpy import float64
     from numpy.typing import NDArray
 
     from ebcc.cc.gebcc import GEBCC, ERIsInputType, SpinArrayType
@@ -32,13 +32,13 @@ class GEOM(BaseEOM):
 class IP_GEOM(GEOM, BaseIP_EOM):
     """Generalised ionisation potential equation-of-motion coupled cluster."""
 
-    def _argsort_guesses(self, diag: NDArray[T]) -> NDArray[int64]:
+    def _argsort_guesses(self, diag: NDArray[T]) -> list[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]
-            arg = np.argsort(np.abs(diag[: r1.size]))
+            arg = util.argsort(np.abs(diag[: r1.size]))
         else:
-            arg = np.argsort(np.abs(diag))
+            arg = util.argsort(np.abs(diag))
         return arg
 
     def _quasiparticle_weight(self, r1: SpinArrayType) -> T:
@@ -80,7 +80,7 @@ class IP_GEOM(GEOM, BaseIP_EOM):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(
             spin_type=self.spin_type, which="ip"
         ):
-            vectors.append(util.compress_axes(key, amplitudes[name]).ravel())
+            vectors.append(np.ravel(util.compress_axes(key, amplitudes[name])))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ip"):
             raise util.ModelNotImplemented
@@ -128,13 +128,13 @@ class IP_GEOM(GEOM, BaseIP_EOM):
 class EA_GEOM(GEOM, BaseEA_EOM):
     """Generalised electron affinity equation-of-motion coupled cluster."""
 
-    def _argsort_guesses(self, diag: NDArray[T]) -> NDArray[int64]:
+    def _argsort_guesses(self, diag: NDArray[T]) -> list[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]
-            arg = np.argsort(np.abs(diag[: r1.size]))
+            arg = util.argsort(np.abs(diag[: r1.size]))
         else:
-            arg = np.argsort(np.abs(diag))
+            arg = util.argsort(np.abs(diag))
         return arg
 
     def _quasiparticle_weight(self, r1: SpinArrayType) -> T:
@@ -176,7 +176,7 @@ class EA_GEOM(GEOM, BaseEA_EOM):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(
             spin_type=self.spin_type, which="ea"
         ):
-            vectors.append(util.compress_axes(key, amplitudes[name]).ravel())
+            vectors.append(np.ravel(util.compress_axes(key, amplitudes[name])))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ea"):
             raise util.ModelNotImplemented
@@ -224,13 +224,13 @@ class EA_GEOM(GEOM, BaseEA_EOM):
 class EE_GEOM(GEOM, BaseEE_EOM):
     """Generalised electron-electron equation-of-motion coupled cluster."""
 
-    def _argsort_guesses(self, diag: NDArray[T]) -> NDArray[int64]:
+    def _argsort_guesses(self, diag: NDArray[T]) -> list[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]
-            arg = np.argsort(diag[: r1.size])
+            arg = util.argsort(diag[: r1.size])
         else:
-            arg = np.argsort(diag)
+            arg = util.argsort(diag)
         return arg
 
     def _quasiparticle_weight(self, r1: SpinArrayType) -> T:
@@ -272,7 +272,7 @@ class EE_GEOM(GEOM, BaseEE_EOM):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(
             spin_type=self.spin_type, which="ee"
         ):
-            vectors.append(util.compress_axes(key, amplitudes[name]).ravel())
+            vectors.append(np.ravel(util.compress_axes(key, amplitudes[name])))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ee"):
             raise util.ModelNotImplemented

@@ -8,7 +8,22 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generic, TypeVar
 
 if TYPE_CHECKING:
-    from typing import Any, ItemsView, Iterator, KeysView, Union, ValuesView
+    from abc import abstractmethod
+    from typing import Any, ItemsView, Iterator, KeysView, Protocol, Union, ValuesView
+
+    from numpy import generic
+    from numpy.typing import NDArray
+
+    class Comparable(Protocol):
+        """Protocol for comparable objects."""
+
+        @abstractmethod
+        def __lt__(self, other: C) -> Any:
+            """Check if the object is less than another."""
+            pass
+
+    C = TypeVar("C", bound=Comparable)
+
 
 T = TypeVar("T")
 
@@ -170,6 +185,18 @@ def prod(values: Union[list[int], tuple[int, ...]]) -> int:
     for value in values:
         out *= value
     return out
+
+
+def argsort(values: Union[list[Union[float, str]], NDArray[generic]]) -> list[int]:
+    """Return the indices that would sort the values.
+
+    Args:
+        values: The values to sort.
+
+    Returns:
+        The indices that would sort the values.
+    """
+    return sorted(range(len(values)), key=values.__getitem__)
 
 
 def regularise_tuple(*_items: Union[Any, tuple[Any, ...], list[Any]]) -> tuple[Any, ...]:

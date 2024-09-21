@@ -60,10 +60,10 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
         t1_block: Namespace[NDArray[T]] = util.Namespace()
         zocc = np.zeros((self.cc.space[0].ncocc, self.cc.space[0].ncocc))
         zvir = np.zeros((self.cc.space[0].ncvir, self.cc.space[0].ncvir))
-        t1_block.aa = np.block([[zocc, -t1.aa], [t1.aa.T, zvir]])
+        t1_block.aa = np.block([[zocc, -t1.aa], [np.transpose(t1.aa), zvir]])
         zocc = np.zeros((self.cc.space[1].ncocc, self.cc.space[1].ncocc))
         zvir = np.zeros((self.cc.space[1].ncvir, self.cc.space[1].ncvir))
-        t1_block.bb = np.block([[zocc, -t1.bb], [t1.bb.T, zvir]])
+        t1_block.bb = np.block([[zocc, -t1.bb], [np.transpose(t1.bb), zvir]])
 
         u = util.Namespace(aa=scipy.linalg.expm(t1_block.aa), bb=scipy.linalg.expm(t1_block.bb))
 
@@ -79,15 +79,15 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
             )
 
         a = np.concatenate(
-            [scipy.linalg.logm(u_tot.aa).ravel(), scipy.linalg.logm(u_tot.bb).ravel()], axis=0
+            [np.ravel(scipy.linalg.logm(u_tot.aa)), np.ravel(scipy.linalg.logm(u_tot.bb))], axis=0
         )
-        a = a.real.astype(types[float])
+        a: NDArray[T] = np.asarray(np.real(a), dtype=types[float])
         if damping is not None:
             xerr = np.concatenate([t1.aa.ravel(), t1.bb.ravel()])
             a = damping(a, error=xerr)
 
-        u_tot.aa = scipy.linalg.expm(a[: u_tot.aa.size].reshape(u_tot.aa.shape))
-        u_tot.bb = scipy.linalg.expm(a[u_tot.aa.size :].reshape(u_tot.bb.shape))
+        u_tot.aa = scipy.linalg.expm(np.reshape(a[: u_tot.aa.size], u_tot.aa.shape))
+        u_tot.bb = scipy.linalg.expm(np.reshape(a[u_tot.aa.size :], u_tot.bb.shape))
 
         return u, u_tot
 

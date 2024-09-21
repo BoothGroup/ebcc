@@ -66,54 +66,54 @@ def update_amps(f=None, t1=None, t2=None, v=None, **kwargs):
     tmp4 = einsum(t2, (0, 1, 2, 3), v.oovv, (4, 1, 5, 3), (0, 4, 2, 5))
     tmp6 = einsum(t2, (0, 1, 2, 3), v.oovv, (0, 1, 4, 3), (2, 4))
     tmp8 = einsum(tmp2, (0, 1), t2, (2, 1, 3, 4), (2, 0, 3, 4))
-    t2new = tmp8.transpose((1, 0, 3, 2)).copy() * -0.5
-    t2new += tmp8.transpose((0, 1, 3, 2)) * 0.5
+    t2new = np.copy(np.transpose(tmp8, (1, 0, 3, 2))) * -0.5
+    t2new += np.transpose(tmp8, (0, 1, 3, 2)) * 0.5
     del tmp8
-    tmp15 = v.oooo.copy() * 2
+    tmp15 = np.copy(v.oooo) * 2
     tmp15 += einsum(v.oovv, (0, 1, 2, 3), t2, (4, 5, 2, 3), (0, 1, 4, 5))
     t2new += einsum(t2, (0, 1, 2, 3), tmp15, (0, 1, 4, 5), (4, 5, 2, 3)) * 0.25
     del tmp15
-    tmp11 = tmp9.transpose((1, 0, 2, 3)).copy() * -1
+    tmp11 = np.copy(np.transpose(tmp9, (1, 0, 2, 3))) * -1
     del tmp9
-    tmp11 += tmp10.transpose((1, 0, 2, 3)) * -1
+    tmp11 += np.transpose(tmp10, (1, 0, 2, 3)) * -1
     del tmp10
-    t2new += tmp11.transpose((0, 1, 3, 2))
+    t2new += np.transpose(tmp11, (0, 1, 3, 2))
     t2new += tmp11 * -1
     del tmp11
     tmp5 = einsum(t2, (0, 1, 2, 3), tmp4, (4, 1, 5, 3), (0, 4, 2, 5))
     del tmp4
-    t2new += tmp5.transpose((0, 1, 3, 2)) * -1
+    t2new += np.transpose(tmp5, (0, 1, 3, 2)) * -1
     t2new += tmp5
     del tmp5
     tmp14 = einsum(t2, (0, 1, 2, 3), v.ovov, (4, 3, 1, 5), (0, 4, 2, 5))
-    t2new += tmp14.transpose((1, 0, 3, 2)) * -1
-    t2new += tmp14.transpose((1, 0, 2, 3))
-    t2new += tmp14.transpose((0, 1, 3, 2))
+    t2new += np.transpose(tmp14, (1, 0, 3, 2)) * -1
+    t2new += np.transpose(tmp14, (1, 0, 2, 3))
+    t2new += np.transpose(tmp14, (0, 1, 3, 2))
     t2new += tmp14 * -1
     del tmp14
     tmp13 = einsum(t2, (0, 1, 2, 3), f.oo, (4, 1), (4, 0, 2, 3))
-    t2new += tmp13.transpose((1, 0, 3, 2))
-    t2new += tmp13.transpose((0, 1, 3, 2)) * -1
+    t2new += np.transpose(tmp13, (1, 0, 3, 2))
+    t2new += np.transpose(tmp13, (0, 1, 3, 2)) * -1
     del tmp13
     tmp7 = einsum(tmp6, (0, 1), t2, (2, 3, 4, 1), (2, 3, 4, 0))
     del tmp6
-    t2new += tmp7.transpose((0, 1, 3, 2)) * 0.5
+    t2new += np.transpose(tmp7, (0, 1, 3, 2)) * 0.5
     t2new += tmp7 * -0.5
     del tmp7
     tmp12 = einsum(t1, (0, 1), v.ovvv, (2, 1, 3, 4), (0, 2, 3, 4))
-    t2new += tmp12.transpose((1, 0, 3, 2)) * -1
-    t2new += tmp12.transpose((0, 1, 3, 2))
+    t2new += np.transpose(tmp12, (1, 0, 3, 2)) * -1
+    t2new += np.transpose(tmp12, (0, 1, 3, 2))
     del tmp12
-    tmp0 = v.ovoo.transpose((0, 2, 3, 1)).copy() * -1
+    tmp0 = np.copy(np.transpose(v.ovoo, (0, 2, 3, 1))) * -1
     tmp0 += einsum(v.oovv, (0, 1, 2, 3), t1, (4, 3), (4, 0, 1, 2))
     t1new = einsum(t2, (0, 1, 2, 3), tmp0, (4, 0, 1, 3), (4, 2)) * 0.5
     del tmp0
-    tmp3 = f.oo.copy() * 2
-    tmp3 += tmp2.transpose((1, 0))
+    tmp3 = np.copy(f.oo) * 2
+    tmp3 += np.transpose(tmp2, (1, 0))
     del tmp2
     t1new += einsum(tmp3, (0, 1), t1, (0, 2), (1, 2)) * -0.5
     del tmp3
-    tmp1 = f.ov.copy()
+    tmp1 = np.copy(f.ov)
     tmp1 += einsum(v.oovv, (0, 1, 2, 3), t1, (1, 3), (0, 2))
     t1new += einsum(t2, (0, 1, 2, 3), tmp1, (1, 3), (0, 2))
     del tmp1

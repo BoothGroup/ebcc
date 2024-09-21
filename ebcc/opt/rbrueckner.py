@@ -56,7 +56,7 @@ class BruecknerREBCC(BaseBruecknerEBCC):
 
         zocc = np.zeros((self.cc.space.ncocc, self.cc.space.ncocc))
         zvir = np.zeros((self.cc.space.ncvir, self.cc.space.ncvir))
-        t1_block: NDArray[T] = np.block([[zocc, -t1], [t1.T, zvir]])
+        t1_block: NDArray[T] = np.block([[zocc, -t1], [np.transpose(t1), zvir]])
 
         u = scipy.linalg.expm(t1_block)
 
@@ -64,8 +64,7 @@ class BruecknerREBCC(BaseBruecknerEBCC):
         if np.linalg.det(u_tot) < 0:
             u_tot = _put(u_tot, np.ix_(np.arange(u_tot.shape[0]), np.array([0])), -u_tot[:, 0])
 
-        a = scipy.linalg.logm(u_tot)
-        a = a.real.astype(types[float])
+        a: NDArray[T] = np.asarray(np.real(scipy.linalg.logm(u_tot)), dtype=types[float])
         if damping is not None:
             a = damping(a, error=t1)
 

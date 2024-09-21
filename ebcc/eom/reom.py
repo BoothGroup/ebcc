@@ -11,7 +11,7 @@ from ebcc.eom.base import BaseEA_EOM, BaseEE_EOM, BaseEOM, BaseIP_EOM
 if TYPE_CHECKING:
     from typing import Optional
 
-    from numpy import float64, int64
+    from numpy import float64
     from numpy.typing import NDArray
 
     from ebcc.cc.rebcc import REBCC, ERIsInputType, SpinArrayType
@@ -32,13 +32,13 @@ class REOM(BaseEOM):
 class IP_REOM(REOM, BaseIP_EOM):
     """Restricted ionisation potential equation-of-motion coupled cluster."""
 
-    def _argsort_guesses(self, diag: NDArray[T]) -> NDArray[int64]:
+    def _argsort_guesses(self, diag: NDArray[T]) -> list[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]
-            arg = np.argsort(np.abs(diag[: r1.size]))
+            arg = util.argsort(np.abs(diag[: r1.size]))
         else:
-            arg = np.argsort(np.abs(diag))
+            arg = util.argsort(np.abs(diag))
         return arg
 
     def _quasiparticle_weight(self, r1: SpinArrayType) -> T:
@@ -80,7 +80,7 @@ class IP_REOM(REOM, BaseIP_EOM):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(
             spin_type=self.spin_type, which="ip"
         ):
-            vectors.append(amplitudes[name].ravel())
+            vectors.append(np.ravel(amplitudes[name]))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ip"):
             raise util.ModelNotImplemented
@@ -109,7 +109,7 @@ class IP_REOM(REOM, BaseIP_EOM):
         ):
             shape = tuple(self.space.size(k) for k in key)
             size = util.prod(shape)
-            amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[name] = np.reshape(vector[i0 : i0 + size], shape)
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ip"):
@@ -126,13 +126,13 @@ class IP_REOM(REOM, BaseIP_EOM):
 class EA_REOM(REOM, BaseEA_EOM):
     """Restricted electron affinity equation-of-motion coupled cluster."""
 
-    def _argsort_guesses(self, diag: NDArray[T]) -> NDArray[int64]:
+    def _argsort_guesses(self, diag: NDArray[T]) -> list[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]
-            arg = np.argsort(np.abs(diag[: r1.size]))
+            arg = util.argsort(np.abs(diag[: r1.size]))
         else:
-            arg = np.argsort(np.abs(diag))
+            arg = util.argsort(np.abs(diag))
         return arg
 
     def _quasiparticle_weight(self, r1: SpinArrayType) -> T:
@@ -174,7 +174,7 @@ class EA_REOM(REOM, BaseEA_EOM):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(
             spin_type=self.spin_type, which="ea"
         ):
-            vectors.append(amplitudes[name].ravel())
+            vectors.append(np.ravel(amplitudes[name]))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ea"):
             raise util.ModelNotImplemented
@@ -203,7 +203,7 @@ class EA_REOM(REOM, BaseEA_EOM):
         ):
             shape = tuple(self.space.size(k) for k in key)
             size = util.prod(shape)
-            amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[name] = np.reshape(vector[i0 : i0 + size], shape)
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ea"):
@@ -220,13 +220,13 @@ class EA_REOM(REOM, BaseEA_EOM):
 class EE_REOM(REOM, BaseEE_EOM):
     """Restricted electron-electron equation-of-motion coupled cluster."""
 
-    def _argsort_guesses(self, diag: NDArray[T]) -> NDArray[int64]:
+    def _argsort_guesses(self, diag: NDArray[T]) -> list[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]
-            arg = np.argsort(diag[: r1.size])
+            arg = util.argsort(diag[: r1.size])
         else:
-            arg = np.argsort(diag)
+            arg = util.argsort(diag)
         return arg
 
     def _quasiparticle_weight(self, r1: SpinArrayType) -> T:
@@ -268,7 +268,7 @@ class EE_REOM(REOM, BaseEE_EOM):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(
             spin_type=self.spin_type, which="ee"
         ):
-            vectors.append(amplitudes[name].ravel())
+            vectors.append(np.ravel(amplitudes[name]))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ee"):
             raise util.ModelNotImplemented
@@ -297,7 +297,7 @@ class EE_REOM(REOM, BaseEE_EOM):
         ):
             shape = tuple(self.space.size(k) for k in key)
             size = util.prod(shape)
-            amplitudes[name] = vector[i0 : i0 + size].reshape(shape)
+            amplitudes[name] = np.reshape(vector[i0 : i0 + size], shape)
             i0 += size
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ee"):
