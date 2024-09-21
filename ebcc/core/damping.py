@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import functools
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from ebcc import numpy as np
 from ebcc import util
-from ebcc.core.precision import astype
 from ebcc.backend import _put, ensure_scalar
 
 if TYPE_CHECKING:
@@ -162,7 +160,7 @@ class LinearDamping(BaseDamping):
         if len(self) < 2:
             return next(iter(self._arrays.values()))
         (_, previous), (_, current) = sorted(self._arrays.items())
-        return self.factor * previous + (1.0 - self.factor) * current
+        return current * (1.0 - self.factor) + previous * self.factor
 
 
 class DIIS(BaseDamping):
@@ -172,6 +170,7 @@ class DIIS(BaseDamping):
         self,
         space: Optional[int] = None,
         min_space: Optional[int] = None,
+        factor: Optional[float] = None,
         options: Optional[_BaseOptions] = None,
     ) -> None:
         """Initialize the DIIS object.
@@ -181,6 +180,8 @@ class DIIS(BaseDamping):
                 `options.diis_space`, if available. Otherwise, use `6`.
             min_space: The minimum number of vectors to store in the DIIS space. If `None`, use
                 `options.diis_min_space`, if available. Otherwise, use `1`.
+            factor: The damping factor. If `None`, use `options.damping`, if available. Otherwise,
+                use `0.5`.
             options: The options object.
         """
         super().__init__()
@@ -188,9 +189,12 @@ class DIIS(BaseDamping):
             space = getattr(options, "diis_space", 6)
         if min_space is None:
             min_space = getattr(options, "diis_min_space", 1)
+        if factor is None:
+            factor = getattr(options, "damping", 0.5)
         self.space = space
         self.min_space = min_space
-        self._norm_cache = {}
+        self.factor = factor
+        self._norm_cache: dict[tuple[int, int], T] = {}
 
     def _error_norm(self, i: int, j: int) -> T:
         """Calculate the error norm between two arrays.
@@ -284,6 +288,10 @@ class DIIS(BaseDamping):
         error = np.zeros_like(self._arrays[-1])
         for counter, coefficient in zip(counters, c):
             error += self._errors[counter] * coefficient
+
+        # Apply the damping factor
+        if self.factor:
+            array = array * (1.0 - self.factor) + self._arrays[-1] * self.factor
 
         # Replace the previous array with the extrapolated array
         self._arrays[-1] = array
