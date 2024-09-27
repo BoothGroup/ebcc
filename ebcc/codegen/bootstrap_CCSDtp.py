@@ -119,7 +119,6 @@ with Stopwatch("T amplitudes"):
             expr.extend(expr_n)
             output.extend(output_n)
             returns.extend(returns_n)
-    output, expr = optimise(output, expr, spin, strategy="exhaust")
 
     # Make the T3 indices active
     new_expr = []
@@ -136,7 +135,7 @@ with Stopwatch("T amplitudes"):
                     indices_a = indices_a.union(set(t.indices))
 
             # Substitute the indices
-            subs = {i: i.to_space(i.space.upper()) for i in indices_a}
+            subs = {i: Index(i.name.upper(), spin=i.spin, space=i.space.upper()) for i in indices_a}
             new_args = []
             for t in a:
                 if isinstance(t, Tensor):
@@ -147,6 +146,9 @@ with Stopwatch("T amplitudes"):
             new_expr.append(Mul(*new_args))
     output = new_output
     expr = new_expr
+
+    # Optimise
+    output, expr = optimise(output, expr, spin, strategy="exhaust" if spin != "uhf" else "greedy")
 
     # Generate the T amplitude code
     for name, codegen in code_generators.items():
@@ -167,40 +169,54 @@ with Stopwatch("T amplitudes"):
                 preamble += "\nsVb = space[1].active[space[1].correlated][space[1].virtual[space[1].correlated]]"
                 preamble += "\n"
                 postamble = ""
-                inp_keys_t1 = ("oV", "Ov")
-                inp_keys_t2_aaaa = (        "ooVv",         "Oovv", "ooVV",                                 "OoVv", "OOvv",         "OoVV",         "OOVv")
-                inp_keys_t2_abab = ("oovV", "ooVv", "oOvv", "Oovv", "ooVV", "oOvV", "oOVv", "OovV", "OOvv", "OoVv",         "oOVV", "OoVV", "OOvV", "OOVv")
-                inp_keys_t2_bbbb = (        "ooVv",         "Oovv", "ooVV",                         "OOvv", "OoVv",                 "OoVV",         "OOVv")
-                out_keys_t1 = ("OV",)
-                out_keys_t2 = ("oOVV", "OoVV", "OOvV", "OOVv", "OOVV")
-                for inp_keys, spins in (
-                    (inp_keys_t1, "aa"), (inp_keys_t1, "bb"), (inp_keys_t2_aaaa, "aaaa"), (inp_keys_t2_abab, "abab"), (inp_keys_t2_bbbb, "bbbb")
-                ):
+                inp_keys = {"aa": set(), "bb": set(), "aaaa": set(), "abab": set(), "bbbb": set()}
+                out_keys = {"aa": set(), "bb": set(), "aaaa": set(), "abab": set(), "bbbb": set()}
+                for o, e in zip(output, expr):
+                    if o.name.startswith("t") and not (o.name.startswith("tmp") or o.name.startswith("t3")):
+                        spaces = "".join(tuple(i.space for i in o.indices))
+                        spins = "".join(tuple(i.spin for i in o.indices))
+                        if set(spaces) != {"o", "v"}:
+                            inp_keys[spins].add(spaces)
+                    for a in e.nested_view():
+                        for t in a:
+                            if isinstance(t, Tensor) and t.name.startswith("t") and not (t.name.startswith("tmp") or t.name.startswith("t3")):
+                                spaces = "".join(tuple(i.space for i in t.indices))
+                                spins = "".join(tuple(i.spin for i in t.indices))
+                                inp_keys[spins].add(spaces)
+                for spins, inp_keys in inp_keys.items():
                     for key in inp_keys:
                         slices = ", ".join(f"s{c}{s}" for c, s in zip(key, spins))
-                        preamble += f"\nt{len(key)//2}_{spins}_{key} = t{len(key)//2}.{spins}[np.ix_({slices})].copy(order=\"A\")"
+                        preamble += f"\nt{len(key)//2}_{spins}_{key} = np.copy(t{len(key)//2}.{spins}[np.ix_({slices})])"
                         ignore_arguments.append(f"t{len(key)//2}_{spins}_{key}")
-                for out_keys, spins in ((out_keys_t1, "aa"), (out_keys_t1, "bb"), (out_keys_t2, "aaaa"), (out_keys_t2, "abab"), (out_keys_t2, "bbbb")):
+                for spins, out_keys in out_keys.items():
                     for key in out_keys:
                         slices = ", ".join(f"s{c}{s}" for c, s in zip(key, spins))
-                        postamble += f"\nt{len(key)//2}new.{spins}[np.ix_({slices})] += t{len(key)//2}new_{spins}_{key}"
+                        postamble += f"\nt{len(key)//2}new.{spins} = _put(t{len(key)//2}new.{spins}, np.ix_({slices}), t{len(key)//2}new_{spins}_{key})"
             else:
                 preamble += "\nso = np.ones((t1.shape[0],), dtype=bool)"
                 preamble += "\nsv = np.ones((t1.shape[1],), dtype=bool)"
                 preamble += "\nsO = space.active[space.correlated][space.occupied[space.correlated]]"
                 preamble += "\nsV = space.active[space.correlated][space.virtual[space.correlated]]"
                 postamble = ""
-                inp_keys = ("OV", "Ov", "oV", "oovV", "ooVv", "oOvv", "Oovv", "OOvv", "ooVV", "OovV", "OOvV", "OoVV", "OOVV")
-                out_keys = ("OV", "oOVV", "OoVV", "OOvV", "OOVv", "OOVV")
-                if spin == "rhf":
-                    inp_keys += ("oOVV", "OOVv", "OoVv", "oOVv", "oOvV")
+                inp_keys = set()
+                out_keys = set()
+                for o, e in zip(output, expr):
+                    if o.name.startswith("t") and not (o.name.startswith("tmp") or o.name.startswith("t3")):
+                        spaces = "".join(tuple(i.space for i in o.indices))
+                        if set(spaces) != {"o", "v"}:
+                            out_keys.add(spaces)
+                    for a in e.nested_view():
+                        for t in a:
+                            if isinstance(t, Tensor) and t.name.startswith("t") and not (t.name.startswith("tmp") or t.name.startswith("t3")):
+                                spaces = "".join(tuple(i.space for i in t.indices))
+                                inp_keys.add(spaces)
                 for key in inp_keys:
                     slices = ", ".join(f"s{c}" for c in key)
-                    preamble += f"\nt{len(key)//2}_{key} = t{len(key)//2}[np.ix_({slices})].copy(order=\"A\")"
+                    preamble += f"\nt{len(key)//2}_{key} = np.copy(t{len(key)//2}[np.ix_({slices})])"
                     ignore_arguments.append(f"t{len(key)//2}_{key}")
                 for key in out_keys:
                     slices = ", ".join(f"s{c}" for c in key)
-                    postamble += f"\nt{len(key)//2}new[np.ix_({slices})] += t{len(key)//2}new_{key}"
+                    postamble += f"\nt{len(key)//2}new = _put(t{len(key)//2}new, np.ix_({slices}), t{len(key)//2}new_{key})"
                 preamble += "\n"
             kwargs = {
                 "preamble": preamble,
