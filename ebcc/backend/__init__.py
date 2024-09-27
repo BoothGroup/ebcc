@@ -153,3 +153,22 @@ def _put(
         return array
     else:
         raise NotImplementedError(f"`_put` not implemented for backend {BACKEND}.")
+
+
+def _inflate(
+    shape: tuple[int, ...],
+    indices: Union[NDArray[int64], tuple[NDArray[int64], ...]],
+    values: NDArray[T],
+) -> NDArray[T]:
+    """Inflate values into an array at specified indices.
+
+    Args:
+        shape: Shape of the array.
+        indices: Indices to inflate values at.
+        values: Values to inflate into the array.
+
+    Returns:
+        Array with values inflated at specified indices.
+    """
+    array = np.zeros(shape, dtype=values.dtype)
+    return _put(array, indices, values)
