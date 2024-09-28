@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Einstein summations - ebcc</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Einstein summations";
+        var mkdocs_page_input_path = "reference/util/einsumfunc.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> ebcc
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../features/">Features</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Code Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" >Coupled cluster</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/rebcc/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/uebcc/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/gebcc/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Equation of motion</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/reom/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/ueom/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/geom/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Orbital optimisation</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" >Brueckner</a>
+    <ul>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/rbrueckner/">Restricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/ubrueckner/">Unrestricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/gbrueckner/">Generalised</a>
+                </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../opt/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Core</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/ansatz/">Ansatz</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/damping/">Damping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/dump/">Dumping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/logging/">Logging</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/precision/">Precision</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Hamiltonian</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/space/">Space</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/fock/">Fock</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/eris/">ERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/cderis/">CDERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/elbos/">Bosonic</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >Utility</a>
+    <ul class="current">
+                <li class="toctree-l2"><a class="reference internal" href="../permutations/">Permutations</a>
+                </li>
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">Einstein summations</a>
+    <ul class="current">
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../misc/">Miscellaneous</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">ebcc</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Code Reference</li>
+          <li class="breadcrumb-item">Utility</li>
+      <li class="breadcrumb-item active">Einstein summations</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="ebcc.util.einsumfunc"></a>
+    <div class="doc doc-contents first">
+
+        <p>Einstein summation convention.</p>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="ebcc.util.einsumfunc.CONTRACTION_METHOD" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">einsumfunc</span><span class="o">.</span><span class="n">CONTRACTION_METHOD</span> <span class="o">=</span> <span class="s1">&#39;backend&#39;</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>The size of the contraction to fall back on the backend.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="ebcc.util.einsumfunc.BACKEND_EINSUM_SIZE" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">einsumfunc</span><span class="o">.</span><span class="n">BACKEND_EINSUM_SIZE</span> <span class="o">=</span> <span class="mi">1000</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>The size of the contraction to let the backend optimize.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="ebcc.util.einsumfunc.BACKEND_OPTIMIZE_SIZE" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">einsumfunc</span><span class="o">.</span><span class="n">BACKEND_OPTIMIZE_SIZE</span> <span class="o">=</span> <span class="mi">100</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Symbols used in einsum-like functions.</p>
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.util.einsumfunc.EinsumOperandError" class="doc doc-heading">
+            <code>ebcc.util.einsumfunc.EinsumOperandError</code>
+
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code>ValueError</code></p>
+
+
+        <p>Exception for invalid inputs to <code>einsum</code>.</p>
+
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="ebcc.util.einsumfunc.einsum" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">einsumfunc</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="o">*</span><span class="n">operands</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">contract</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">optimize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Evaluate an Einstein summation convention on the operands.</p>
+<p>Using the Einstein summation convention, many common
+multi-dimensional, linear algebraic array operations can be
+represented in a simple fashion. In <em>implicit</em> mode <code>einsum</code>
+computes these values.</p>
+<p>In <em>explicit</em> mode, <code>einsum</code> provides further flexibility to compute
+other array operations that might not be considered classical
+Einstein summation operations, by disabling, or forcing summation
+over specified subscript labels.</p>
+<p>See the <code>numpy.einsum</code> documentation for clarification.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>operands</code></b>
+                  (<code><span title="ebcc.util.einsumfunc.OperandType">OperandType</span></code>, default:
+                      <code>()</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Any valid input to <code>numpy.einsum</code>.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>alpha</code></b>
+                  (<code><span title="ebcc.util.einsumfunc.T">T</span></code>, default:
+                      <code>1.0</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Scaling factor for the contraction.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>beta</code></b>
+                  (<code><span title="ebcc.util.einsumfunc.T">T</span></code>, default:
+                      <code>0.0</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Scaling factor for the output.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>out</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.util.einsumfunc.T">T</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>If provided, the calculation is done into this array.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>contract</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="typing.Callable">Callable</span>[..., <span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.util.einsumfunc.T">T</span>]]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>The function to use for contraction.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>optimize</code></b>
+                  (<code>bool</code>, default:
+                      <code>True</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>If <code>True</code>, use the <code>numpy.einsum_path</code> to optimize the contraction.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.util.einsumfunc.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>The calculation based on the Einstein summation convention.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/einsumfunc.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span>
+<span class="normal">459</span>
+<span class="normal">460</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span>
+<span class="normal">471</span>
+<span class="normal">472</span>
+<span class="normal">473</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span>
+<span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
+<span class="normal">485</span>
+<span class="normal">486</span>
+<span class="normal">487</span>
+<span class="normal">488</span>
+<span class="normal">489</span>
+<span class="normal">490</span>
+<span class="normal">491</span>
+<span class="normal">492</span>
+<span class="normal">493</span>
+<span class="normal">494</span>
+<span class="normal">495</span>
+<span class="normal">496</span>
+<span class="normal">497</span>
+<span class="normal">498</span>
+<span class="normal">499</span>
+<span class="normal">500</span>
+<span class="normal">501</span>
+<span class="normal">502</span>
+<span class="normal">503</span>
+<span class="normal">504</span>
+<span class="normal">505</span>
+<span class="normal">506</span>
+<span class="normal">507</span>
+<span class="normal">508</span>
+<span class="normal">509</span>
+<span class="normal">510</span>
+<span class="normal">511</span>
+<span class="normal">512</span>
+<span class="normal">513</span>
+<span class="normal">514</span>
+<span class="normal">515</span>
+<span class="normal">516</span>
+<span class="normal">517</span>
+<span class="normal">518</span>
+<span class="normal">519</span>
+<span class="normal">520</span>
+<span class="normal">521</span>
+<span class="normal">522</span>
+<span class="normal">523</span>
+<span class="normal">524</span>
+<span class="normal">525</span>
+<span class="normal">526</span>
+<span class="normal">527</span>
+<span class="normal">528</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">einsum</span><span class="p">(</span>
+    <span class="o">*</span><span class="n">operands</span><span class="p">:</span> <span class="n">OperandType</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="p">:</span> <span class="n">T</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>  <span class="c1"># type: ignore[assignment]</span>
+    <span class="n">beta</span><span class="p">:</span> <span class="n">T</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>  <span class="c1"># type: ignore[assignment]</span>
+    <span class="n">out</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">NDArray</span><span class="p">[</span><span class="n">T</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">contract</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">T</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">optimize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate an Einstein summation convention on the operands.</span>
+
+<span class="sd">    Using the Einstein summation convention, many common</span>
+<span class="sd">    multi-dimensional, linear algebraic array operations can be</span>
+<span class="sd">    represented in a simple fashion. In *implicit* mode `einsum`</span>
+<span class="sd">    computes these values.</span>
+
+<span class="sd">    In *explicit* mode, `einsum` provides further flexibility to compute</span>
+<span class="sd">    other array operations that might not be considered classical</span>
+<span class="sd">    Einstein summation operations, by disabling, or forcing summation</span>
+<span class="sd">    over specified subscript labels.</span>
+
+<span class="sd">    See the `numpy.einsum` documentation for clarification.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        operands: Any valid input to `numpy.einsum`.</span>
+<span class="sd">        alpha: Scaling factor for the contraction.</span>
+<span class="sd">        beta: Scaling factor for the output.</span>
+<span class="sd">        out: If provided, the calculation is done into this array.</span>
+<span class="sd">        contract: The function to use for contraction.</span>
+<span class="sd">        optimize: If `True`, use the `numpy.einsum_path` to optimize the contraction.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The calculation based on the Einstein summation convention.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Parse the kwargs</span>
+    <span class="n">inp</span><span class="p">,</span> <span class="n">outs</span><span class="p">,</span> <span class="n">args</span> <span class="o">=</span> <span class="n">_parse_einsum_input</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">operands</span><span class="p">))</span>  <span class="c1"># type: ignore</span>
+    <span class="n">subscript</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">-&gt;</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">outs</span><span class="p">)</span>
+
+    <span class="c1"># Get the contraction function</span>
+    <span class="k">if</span> <span class="n">contract</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">contract</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;backend&quot;</span><span class="p">:</span> <span class="n">_contract_backend</span><span class="p">,</span>
+            <span class="s2">&quot;ttgt&quot;</span><span class="p">:</span> <span class="n">_contract_ttgt</span><span class="p">,</span>
+            <span class="s2">&quot;tblis&quot;</span><span class="p">:</span> <span class="n">_contract_tblis</span><span class="p">,</span>
+        <span class="p">}[</span><span class="n">CONTRACTION_METHOD</span><span class="o">.</span><span class="n">lower</span><span class="p">()]</span>
+
+    <span class="c1"># Perform the contraction</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No input operands&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="c1"># If it&#39;s just a transpose, use numpy</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">_transpose_backend</span><span class="p">(</span><span class="n">subscript</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="c1"># If it&#39;s a single contraction, call the backend directly</span>
+        <span class="n">res</span> <span class="o">=</span> <span class="n">contract</span><span class="p">(</span><span class="n">subscript</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">args</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">out</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># If it&#39;s a chain of contractions, use the path optimizer</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+        <span class="n">path_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">optimize</span><span class="o">=</span><span class="n">optimize</span><span class="p">,</span> <span class="n">einsum_call</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">contractions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum_path</span><span class="p">(</span><span class="n">subscript</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">path_kwargs</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">contraction</span> <span class="ow">in</span> <span class="n">contractions</span><span class="p">:</span>
+            <span class="n">inds</span><span class="p">,</span> <span class="n">idx_rm</span><span class="p">,</span> <span class="n">einsum_str</span><span class="p">,</span> <span class="n">remain</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">contraction</span><span class="p">[:</span><span class="mi">4</span><span class="p">])</span>
+            <span class="n">contraction_args</span> <span class="o">=</span> <span class="p">[</span><span class="n">args</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">inds</span><span class="p">]</span>  <span class="c1"># type: ignore</span>
+            <span class="k">if</span> <span class="n">alpha</span> <span class="o">!=</span> <span class="mf">1.0</span> <span class="ow">or</span> <span class="n">beta</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Scaling factors not supported for &gt;2 arguments&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">contraction_args</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">a</span> <span class="o">=</span> <span class="n">contraction_args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="n">_transpose_backend</span><span class="p">(</span>
+                    <span class="n">einsum_str</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">types</span><span class="p">[</span><span class="nb">float</span><span class="p">](</span><span class="mf">1.0</span><span class="p">),</span> <span class="n">beta</span><span class="o">=</span><span class="n">types</span><span class="p">[</span><span class="nb">float</span><span class="p">](</span><span class="mf">0.0</span><span class="p">),</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">contraction_args</span>
+                <span class="n">res</span> <span class="o">=</span> <span class="n">contract</span><span class="p">(</span>
+                    <span class="n">einsum_str</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="n">types</span><span class="p">[</span><span class="nb">float</span><span class="p">](</span><span class="mf">1.0</span><span class="p">),</span> <span class="n">beta</span><span class="o">=</span><span class="n">types</span><span class="p">[</span><span class="nb">float</span><span class="p">](</span><span class="mf">0.0</span><span class="p">),</span> <span class="n">out</span><span class="o">=</span><span class="kc">None</span>
+                <span class="p">)</span>
+            <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">res</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="ebcc.util.einsumfunc.dirsum" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">einsumfunc</span><span class="o">.</span><span class="n">dirsum</span><span class="p">(</span><span class="o">*</span><span class="n">operands</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Direct sum of arrays.</p>
+<p>Follows the <code>numpy.einsum</code> input conventions.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>operands</code></b>
+                  (<code><span title="typing.Union">Union</span>[str, tuple[int, ...], <span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.util.einsumfunc.T">T</span>]]</code>, default:
+                      <code>()</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Any valid input to <code>numpy.einsum</code>.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.util.einsumfunc.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>The direct sum of the arrays.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/einsumfunc.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">531</span>
+<span class="normal">532</span>
+<span class="normal">533</span>
+<span class="normal">534</span>
+<span class="normal">535</span>
+<span class="normal">536</span>
+<span class="normal">537</span>
+<span class="normal">538</span>
+<span class="normal">539</span>
+<span class="normal">540</span>
+<span class="normal">541</span>
+<span class="normal">542</span>
+<span class="normal">543</span>
+<span class="normal">544</span>
+<span class="normal">545</span>
+<span class="normal">546</span>
+<span class="normal">547</span>
+<span class="normal">548</span>
+<span class="normal">549</span>
+<span class="normal">550</span>
+<span class="normal">551</span>
+<span class="normal">552</span>
+<span class="normal">553</span>
+<span class="normal">554</span>
+<span class="normal">555</span>
+<span class="normal">556</span>
+<span class="normal">557</span>
+<span class="normal">558</span>
+<span class="normal">559</span>
+<span class="normal">560</span>
+<span class="normal">561</span>
+<span class="normal">562</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dirsum</span><span class="p">(</span><span class="o">*</span><span class="n">operands</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">T</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Direct sum of arrays.</span>
+
+<span class="sd">    Follows the `numpy.einsum` input conventions.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        operands: Any valid input to `numpy.einsum`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        The direct sum of the arrays.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Parse the input</span>
+    <span class="n">input_str</span><span class="p">,</span> <span class="n">output_str</span><span class="p">,</span> <span class="n">input_arrays</span> <span class="o">=</span> <span class="n">_parse_einsum_input</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">operands</span><span class="p">))</span>
+    <span class="n">input_chars</span> <span class="o">=</span> <span class="n">input_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">chars</span><span class="p">,</span> <span class="n">array</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">input_chars</span><span class="p">,</span> <span class="n">input_arrays</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">chars</span><span class="p">)</span> <span class="o">!=</span> <span class="n">array</span><span class="o">.</span><span class="n">ndim</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Dimension mismatch for array </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">chars</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">chars</span><span class="p">):</span>
+            <span class="n">unique_chars</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">chars</span><span class="p">))</span>
+            <span class="n">array</span> <span class="o">=</span> <span class="n">einsum</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">chars</span><span class="si">}</span><span class="s2">-&gt;</span><span class="si">{</span><span class="n">unique_chars</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">array</span><span class="p">)</span>
+            <span class="n">input_chars</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">unique_chars</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">array</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">shape</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="p">,)</span> <span class="o">*</span> <span class="n">array</span><span class="o">.</span><span class="n">ndim</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">res</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span> <span class="o">+</span> <span class="n">array</span>
+
+    <span class="c1"># Reshape the output</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">einsum</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">input_chars</span><span class="p">)</span><span class="si">}</span><span class="s2">-&gt;</span><span class="si">{</span><span class="n">output_str</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">res</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">res</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../permutations/" class="btn btn-neutral float-left" title="Permutations"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../misc/" class="btn btn-neutral float-right" title="Miscellaneous">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../permutations/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../misc/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

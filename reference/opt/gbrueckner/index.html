@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Generalised - ebcc</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Generalised";
+        var mkdocs_page_input_path = "reference/opt/gbrueckner.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> ebcc
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../features/">Features</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Code Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" >Coupled cluster</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/rebcc/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/uebcc/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/gebcc/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Equation of motion</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/reom/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/ueom/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/geom/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >Orbital optimisation</a>
+    <ul class="current">
+                <li class="toctree-l2 current"><a class="reference internal current" >Brueckner</a>
+    <ul class="current">
+                <li class="toctree-l3"><a class="reference internal" href="../rbrueckner/">Restricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../ubrueckner/">Unrestricted</a>
+                </li>
+                <li class="toctree-l3 current"><a class="reference internal current" href="#">Generalised</a>
+    <ul class="current">
+    </ul>
+                </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Core</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/ansatz/">Ansatz</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/damping/">Damping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/dump/">Dumping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/logging/">Logging</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/precision/">Precision</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Hamiltonian</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/space/">Space</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/fock/">Fock</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/eris/">ERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/cderis/">CDERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/elbos/">Bosonic</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Utility</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/permutations/">Permutations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/einsumfunc/">Einstein summations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/misc/">Miscellaneous</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">ebcc</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Code Reference</li>
+          <li class="breadcrumb-item">Orbital optimisation</li>
+          <li class="breadcrumb-item">Brueckner</li>
+      <li class="breadcrumb-item active">Generalised</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="ebcc.opt.gbrueckner"></a>
+    <div class="doc doc-contents first">
+
+        <p>Generalised Brueckner-orbital coupled cluster.</p>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.opt.gbrueckner.BruecknerGEBCC" class="doc doc-heading">
+              <code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">gbrueckner</span><span class="o">.</span><span class="n">BruecknerGEBCC</span><span class="p">(</span><span class="n">cc</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="ebcc.opt.base.BaseBruecknerEBCC" href="../base/#ebcc.opt.base.BaseBruecknerEBCC">BaseBruecknerEBCC</a></code></p>
+
+
+        <p>Generalised Brueckner-orbital coupled cluster.</p>
+
+        <p>Initialise the Brueckner EBCC object.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>cc</code></b>
+                  (<code><a class="autorefs autorefs-internal" title="ebcc.cc.base.BaseEBCC" href="../../cc/base/#ebcc.cc.base.BaseEBCC">BaseEBCC</a></code>)
+              –
+              <div class="doc-md-description">
+                <p>Parent <code>EBCC</code> object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>options</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.opt.base.BaseOptions" href="../base/#ebcc.opt.base.BaseOptions">BaseOptions</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Options for the EOM calculation.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>**kwargs</code></b>
+                  (<code><span title="typing.Any">Any</span></code>, default:
+                      <code>{}</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Additional keyword arguments used to update <code>options</code>.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/opt/base.py</code></summary>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">cc</span><span class="p">:</span> <span class="n">BaseEBCC</span><span class="p">,</span>
+    <span class="n">options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">BaseOptions</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Initialise the Brueckner EBCC object.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cc: Parent `EBCC` object.</span>
+<span class="sd">        options: Options for the EOM calculation.</span>
+<span class="sd">        **kwargs: Additional keyword arguments used to update `options`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Options:</span>
+    <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">options</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Options</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">options</span> <span class="o">=</span> <span class="n">options</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+
+    <span class="c1"># Parameters:</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">cc</span> <span class="o">=</span> <span class="n">cc</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">mf</span> <span class="o">=</span> <span class="n">cc</span><span class="o">.</span><span class="n">mf</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">space</span> <span class="o">=</span> <span class="n">cc</span><span class="o">.</span><span class="n">space</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">cc</span><span class="o">.</span><span class="n">log</span>
+
+    <span class="c1"># Attributes:</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">converged</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="c1"># Logging:</span>
+    <span class="n">init_logging</span><span class="p">(</span><span class="n">cc</span><span class="o">.</span><span class="n">log</span><span class="p">)</span>
+    <span class="n">cc</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">ANSI</span><span class="o">.</span><span class="n">B</span><span class="si">}{</span><span class="n">ANSI</span><span class="o">.</span><span class="n">U</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}{</span><span class="n">ANSI</span><span class="o">.</span><span class="n">R</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">cc</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ANSI</span><span class="o">.</span><span class="n">B</span><span class="si">}</span><span class="s2">Options</span><span class="si">{</span><span class="n">ANSI</span><span class="o">.</span><span class="n">R</span><span class="si">}</span><span class="s2">:&quot;</span><span class="p">)</span>
+    <span class="n">cc</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot; &gt; e_tol:  </span><span class="si">{</span><span class="n">ANSI</span><span class="o">.</span><span class="n">y</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">e_tol</span><span class="si">}{</span><span class="n">ANSI</span><span class="o">.</span><span class="n">R</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">cc</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot; &gt; t_tol:  </span><span class="si">{</span><span class="n">ANSI</span><span class="o">.</span><span class="n">y</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">t_tol</span><span class="si">}{</span><span class="n">ANSI</span><span class="o">.</span><span class="n">R</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">cc</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot; &gt; max_iter:  </span><span class="si">{</span><span class="n">ANSI</span><span class="o">.</span><span class="n">y</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">max_iter</span><span class="si">}{</span><span class="n">ANSI</span><span class="o">.</span><span class="n">R</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">cc</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot; &gt; diis_space:  </span><span class="si">{</span><span class="n">ANSI</span><span class="o">.</span><span class="n">y</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">diis_space</span><span class="si">}{</span><span class="n">ANSI</span><span class="o">.</span><span class="n">R</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">cc</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot; &gt; diis_min_space:  </span><span class="si">{</span><span class="n">ANSI</span><span class="o">.</span><span class="n">y</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">diis_min_space</span><span class="si">}{</span><span class="n">ANSI</span><span class="o">.</span><span class="n">R</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">cc</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot; &gt; damping:  </span><span class="si">{</span><span class="n">ANSI</span><span class="o">.</span><span class="n">y</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">options</span><span class="o">.</span><span class="n">damping</span><span class="si">}{</span><span class="n">ANSI</span><span class="o">.</span><span class="n">R</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">cc</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.opt.gbrueckner.BruecknerGEBCC.get_rotation_matrix" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">gbrueckner</span><span class="o">.</span><span class="n">BruecknerGEBCC</span><span class="o">.</span><span class="n">get_rotation_matrix</span><span class="p">(</span><span class="n">u_tot</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">damping</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">t1</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Update the rotation matrix.</p>
+<p>Also returns the total rotation matrix.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>u_tot</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="ebcc.cc.gebcc.SpinArrayType">SpinArrayType</span>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Total rotation matrix.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>damping</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.core.damping.BaseDamping" href="../../core/damping/#ebcc.core.damping.BaseDamping">BaseDamping</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Damping object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>t1</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="ebcc.cc.gebcc.SpinArrayType">SpinArrayType</span>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>T1 amplitude.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code>tuple[<span title="ebcc.cc.gebcc.SpinArrayType">SpinArrayType</span>, <span title="ebcc.cc.gebcc.SpinArrayType">SpinArrayType</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Rotation matrix and total rotation matrix.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/opt/gbrueckner.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span>
+<span class="normal">73</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_rotation_matrix</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">u_tot</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SpinArrayType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">damping</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">BaseDamping</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">t1</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SpinArrayType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">SpinArrayType</span><span class="p">,</span> <span class="n">SpinArrayType</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the rotation matrix.</span>
+
+<span class="sd">    Also returns the total rotation matrix.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        u_tot: Total rotation matrix.</span>
+<span class="sd">        damping: Damping object.</span>
+<span class="sd">        t1: T1 amplitude.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Rotation matrix and total rotation matrix.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">t1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">t1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cc</span><span class="o">.</span><span class="n">t1</span>
+    <span class="k">if</span> <span class="n">u_tot</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">u_tot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cc</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">ncorr</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">types</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span>
+
+    <span class="n">zocc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">cc</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">ncocc</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cc</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">ncocc</span><span class="p">))</span>
+    <span class="n">zvir</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">cc</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">ncvir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cc</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">ncvir</span><span class="p">))</span>
+    <span class="n">t1_block</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">block</span><span class="p">([[</span><span class="n">zocc</span><span class="p">,</span> <span class="o">-</span><span class="n">t1</span><span class="p">],</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">t1</span><span class="p">),</span> <span class="n">zvir</span><span class="p">]])</span>
+
+    <span class="n">u</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">expm</span><span class="p">(</span><span class="n">t1_block</span><span class="p">)</span>
+
+    <span class="n">u_tot</span> <span class="o">=</span> <span class="n">u_tot</span> <span class="o">@</span> <span class="n">u</span>
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">u_tot</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">u_tot</span> <span class="o">=</span> <span class="n">_put</span><span class="p">(</span><span class="n">u_tot</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">u_tot</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">])),</span> <span class="o">-</span><span class="n">u_tot</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">a</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">T</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">logm</span><span class="p">(</span><span class="n">u_tot</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">types</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">damping</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">damping</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">t1</span><span class="p">)</span>
+
+    <span class="n">u_tot</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">expm</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">u</span><span class="p">,</span> <span class="n">u_tot</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.opt.gbrueckner.BruecknerGEBCC.transform_amplitudes" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">gbrueckner</span><span class="o">.</span><span class="n">BruecknerGEBCC</span><span class="o">.</span><span class="n">transform_amplitudes</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">amplitudes</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Transform the amplitudes into the Brueckner orbital basis.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>u</code></b>
+                  (<code><span title="ebcc.cc.gebcc.SpinArrayType">SpinArrayType</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Rotation matrix.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>amplitudes</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.gebcc.SpinArrayType">SpinArrayType</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Cluster amplitudes.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.gebcc.SpinArrayType">SpinArrayType</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Transformed cluster amplitudes.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/opt/gbrueckner.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">transform_amplitudes</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span> <span class="n">u</span><span class="p">:</span> <span class="n">SpinArrayType</span><span class="p">,</span> <span class="n">amplitudes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Namespace</span><span class="p">[</span><span class="n">SpinArrayType</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Namespace</span><span class="p">[</span><span class="n">SpinArrayType</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Transform the amplitudes into the Brueckner orbital basis.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        u: Rotation matrix.</span>
+<span class="sd">        amplitudes: Cluster amplitudes.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Transformed cluster amplitudes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">amplitudes</span><span class="p">:</span>
+        <span class="n">amplitudes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cc</span><span class="o">.</span><span class="n">amplitudes</span>
+
+    <span class="n">nocc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cc</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">ncocc</span>
+    <span class="n">ci</span> <span class="o">=</span> <span class="n">u</span><span class="p">[:</span><span class="n">nocc</span><span class="p">,</span> <span class="p">:</span><span class="n">nocc</span><span class="p">]</span>
+    <span class="n">ca</span> <span class="o">=</span> <span class="n">u</span><span class="p">[</span><span class="n">nocc</span><span class="p">:,</span> <span class="n">nocc</span><span class="p">:]</span>
+
+    <span class="c1"># Transform T amplitudes:</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cc</span><span class="o">.</span><span class="n">ansatz</span><span class="o">.</span><span class="n">fermionic_cluster_ranks</span><span class="p">(</span><span class="n">spin_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spin_type</span><span class="p">):</span>
+        <span class="n">args</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">T</span><span class="p">]]]</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cc</span><span class="o">.</span><span class="n">amplitudes</span><span class="p">[</span><span class="n">name</span><span class="p">],</span>
+            <span class="nb">tuple</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)),</span>
+        <span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">args</span> <span class="o">+=</span> <span class="p">[</span><span class="n">ci</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="n">n</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">args</span> <span class="o">+=</span> <span class="p">[</span><span class="n">ca</span><span class="p">,</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="n">n</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="n">n</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)]</span>
+        <span class="n">args</span> <span class="o">+=</span> <span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">n</span> <span class="o">*</span> <span class="mi">4</span><span class="p">))]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cc</span><span class="o">.</span><span class="n">amplitudes</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+
+    <span class="c1"># Transform S amplitudes:</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cc</span><span class="o">.</span><span class="n">ansatz</span><span class="o">.</span><span class="n">bosonic_cluster_ranks</span><span class="p">(</span><span class="n">spin_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spin_type</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">util</span><span class="o">.</span><span class="n">ModelNotImplemented</span>  <span class="c1"># TODO</span>
+
+    <span class="c1"># Transform U amplitudes:</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">nf</span><span class="p">,</span> <span class="n">nb</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cc</span><span class="o">.</span><span class="n">ansatz</span><span class="o">.</span><span class="n">coupling_cluster_ranks</span><span class="p">(</span><span class="n">spin_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">spin_type</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">util</span><span class="o">.</span><span class="n">ModelNotImplemented</span>  <span class="c1"># TODO</span>
+
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cc</span><span class="o">.</span><span class="n">amplitudes</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.opt.gbrueckner.BruecknerGEBCC.get_t1_norm" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">gbrueckner</span><span class="o">.</span><span class="n">BruecknerGEBCC</span><span class="o">.</span><span class="n">get_t1_norm</span><span class="p">(</span><span class="n">amplitudes</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the norm of the T1 amplitude.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>amplitudes</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.gebcc.SpinArrayType">SpinArrayType</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Cluster amplitudes.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="ebcc.opt.gbrueckner.T">T</span></code>
+              –
+              <div class="doc-md-description">
+                <p>Norm of the T1 amplitude.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/opt/gbrueckner.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_t1_norm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">amplitudes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Namespace</span><span class="p">[</span><span class="n">SpinArrayType</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the norm of the T1 amplitude.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        amplitudes: Cluster amplitudes.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Norm of the T1 amplitude.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">amplitudes</span><span class="p">:</span>
+        <span class="n">amplitudes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cc</span><span class="o">.</span><span class="n">amplitudes</span>
+    <span class="n">weight</span><span class="p">:</span> <span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">amplitudes</span><span class="p">[</span><span class="s2">&quot;t1&quot;</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">weight</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.opt.gbrueckner.BruecknerGEBCC.mo_to_correlated" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">gbrueckner</span><span class="o">.</span><span class="n">BruecknerGEBCC</span><span class="o">.</span><span class="n">mo_to_correlated</span><span class="p">(</span><span class="n">mo_coeff</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Transform the MO coefficients into the correlated basis.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>mo_coeff</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.opt.gbrueckner.T">T</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>MO coefficients.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.opt.gbrueckner.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Correlated slice of MO coefficients.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/opt/gbrueckner.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">mo_to_correlated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mo_coeff</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">T</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Transform the MO coefficients into the correlated basis.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        mo_coeff: MO coefficients.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Correlated slice of MO coefficients.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">mo_coeff</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cc</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">correlated</span><span class="p">]</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.opt.gbrueckner.BruecknerGEBCC.mo_update_correlated" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">gbrueckner</span><span class="o">.</span><span class="n">BruecknerGEBCC</span><span class="o">.</span><span class="n">mo_update_correlated</span><span class="p">(</span><span class="n">mo_coeff</span><span class="p">,</span> <span class="n">mo_coeff_corr</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Update the correlated slice of a set of MO coefficients.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>mo_coeff</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.opt.gbrueckner.T">T</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>MO coefficients.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>mo_coeff_corr</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.opt.gbrueckner.T">T</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>Correlated slice of MO coefficients.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.opt.gbrueckner.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Updated MO coefficients.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/opt/gbrueckner.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">mo_update_correlated</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mo_coeff</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">mo_coeff_corr</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">T</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the correlated slice of a set of MO coefficients.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        mo_coeff: MO coefficients.</span>
+<span class="sd">        mo_coeff_corr: Correlated slice of MO coefficients.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Updated MO coefficients.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mo_coeff</span> <span class="o">=</span> <span class="n">_put</span><span class="p">(</span>
+        <span class="n">mo_coeff</span><span class="p">,</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">ix_</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">mo_coeff</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="bp">self</span><span class="o">.</span><span class="n">cc</span><span class="o">.</span><span class="n">space</span><span class="o">.</span><span class="n">correlated</span><span class="p">),</span>  <span class="c1"># type: ignore</span>
+        <span class="n">mo_coeff_corr</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">mo_coeff</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.opt.gbrueckner.BruecknerGEBCC.update_coefficients" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">opt</span><span class="o">.</span><span class="n">gbrueckner</span><span class="o">.</span><span class="n">BruecknerGEBCC</span><span class="o">.</span><span class="n">update_coefficients</span><span class="p">(</span><span class="n">u_tot</span><span class="p">,</span> <span class="n">mo_coeff</span><span class="p">,</span> <span class="n">mo_coeff_ref</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Update the MO coefficients.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>u_tot</code></b>
+                  (<code><span title="ebcc.cc.gebcc.SpinArrayType">SpinArrayType</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Total rotation matrix.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>mo_coeff</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.opt.gbrueckner.T">T</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>New MO coefficients.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>mo_coeff_ref</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.opt.gbrueckner.T">T</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>Reference MO coefficients.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.opt.gbrueckner.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Updated MO coefficients.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/opt/gbrueckner.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">update_coefficients</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span> <span class="n">u_tot</span><span class="p">:</span> <span class="n">SpinArrayType</span><span class="p">,</span> <span class="n">mo_coeff</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">mo_coeff_ref</span><span class="p">:</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">T</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Update the MO coefficients.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        u_tot: Total rotation matrix.</span>
+<span class="sd">        mo_coeff: New MO coefficients.</span>
+<span class="sd">        mo_coeff_ref: Reference MO coefficients.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Updated MO coefficients.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">mo_coeff_new_corr</span> <span class="o">=</span> <span class="n">util</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;pi,ij-&gt;pj&quot;</span><span class="p">,</span> <span class="n">mo_coeff_ref</span><span class="p">,</span> <span class="n">u_tot</span><span class="p">)</span>
+    <span class="n">mo_coeff_new</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mo_update_correlated</span><span class="p">(</span><span class="n">mo_coeff</span><span class="p">,</span> <span class="n">mo_coeff_new_corr</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mo_coeff_new</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../ubrueckner/" class="btn btn-neutral float-left" title="Unrestricted"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../base/" class="btn btn-neutral float-right" title="Base">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../ubrueckner/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../base/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
