@@ -9,12 +9,14 @@ import pytest
 from pyscf import gto, lib, scf, fci
 import scipy.linalg
 
+from ebcc import BACKEND
 from ebcc import UEBCC, GEBCC, Space, NullLogger, util
 
 # TODO from http://dx.doi.org/10.1021/acs.jpca.7b10892
 
 
 @pytest.mark.regression
+@pytest.mark.skipif(BACKEND != "numpy", reason="Currently requires mutable backend.")
 class UCCSDtp_Tests(unittest.TestCase):
     """Test UCCSDt' against GCCSDt'.
     """
@@ -87,6 +89,7 @@ class UCCSDtp_Tests(unittest.TestCase):
         assert mol.nelectron == 3
 
         mf = scf.UHF(mol)
+        mf.conv_tol = 1e-12
         mf.kernel()
 
         space = tuple(Space(o > 0, np.zeros_like(o), np.ones_like(o)) for o in mf.mo_occ)
@@ -97,6 +100,8 @@ class UCCSDtp_Tests(unittest.TestCase):
                 space=space,
                 log=NullLogger(),
         )
+        ccsdt.options.e_tol = 1e-8
+        ccsdt.options.t_tol = 1e-7
         ccsdt.kernel()
         e1 = ccsdt.e_tot
 
@@ -104,7 +109,7 @@ class UCCSDtp_Tests(unittest.TestCase):
         ci.conv_tol = 1e-10
         e2 = ci.kernel()[0]
 
-        self.assertAlmostEqual(e1, e2, 6)
+        self.assertAlmostEqual(e1, e2, 8)
 
 
 if __name__ == "__main__":

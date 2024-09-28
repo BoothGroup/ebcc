@@ -12,7 +12,7 @@ import scipy.linalg
 from types import SimpleNamespace
 from pyscf import cc, gto, lib, scf
 
-from ebcc import REBCC, UEBCC, GEBCC, Space, NullLogger, util
+from ebcc import REBCC, UEBCC, GEBCC, Space, NullLogger, util, BACKEND
 
 # TODO test more excitations in EOM
 
@@ -61,7 +61,7 @@ class GCCSD_Tests(unittest.TestCase):
         for tag in ("oo", "ov", "vo", "vv"):
             a = self.data[True]["f"+tag]
             b = getattr(self.ccsd.fock, tag)
-            np.testing.assert_almost_equal(a, b, 7)
+            self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
     def test_energy(self):
         a = self.data[True]["e_corr"]
@@ -71,32 +71,32 @@ class GCCSD_Tests(unittest.TestCase):
     def test_t1_amplitudes(self):
         a = self.data[True]["t1"]
         b = self.ccsd.t1
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_t2_amplitudes(self):
         a = self.data[True]["t2"]
         b = self.ccsd.t2
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm1_f(self):
         a = self.data[True]["rdm1_f"]
         b = self.ccsd.make_rdm1_f()
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm2_f(self):
         a = self.data[True]["rdm2_f"]
         b = self.ccsd.make_rdm2_f()
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_l1_amplitudes(self):
         a = self.data[True]["l1"]
         b = self.ccsd.l1
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_l2_amplitudes(self):
         a = self.data[True]["l2"]
         b = self.ccsd.l2
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     @pytest.mark.regression
     def test_from_rebcc(self):
@@ -124,12 +124,12 @@ class GCCSD_Tests(unittest.TestCase):
         gebcc2 = GEBCC.from_rebcc(rebcc)
 
         self.assertAlmostEqual(gebcc1.energy(), gebcc2.energy())
-        np.testing.assert_almost_equal(gebcc1.t1, gebcc2.t1, 6)
-        np.testing.assert_almost_equal(gebcc1.t2, gebcc2.t2, 6)
-        np.testing.assert_almost_equal(gebcc1.l1, gebcc2.l1, 5)
-        np.testing.assert_almost_equal(gebcc1.l2, gebcc2.l2, 5)
-        np.testing.assert_almost_equal(gebcc1.make_rdm1_f(), gebcc2.make_rdm1_f(), 6)
-        np.testing.assert_almost_equal(gebcc1.make_rdm2_f(), gebcc2.make_rdm2_f(), 6)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.t1 - gebcc2.t1)), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.t2 - gebcc2.t2)), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.l1 - gebcc2.l1)), 0.0, 5)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.l2 - gebcc2.l2)), 0.0, 5)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.make_rdm1_f() - gebcc2.make_rdm1_f())), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.make_rdm2_f() - gebcc2.make_rdm2_f())), 0.0, 6)
 
     @pytest.mark.regression
     def test_from_uebcc(self):
@@ -157,12 +157,12 @@ class GCCSD_Tests(unittest.TestCase):
         gebcc2 = GEBCC.from_uebcc(uebcc)
 
         self.assertAlmostEqual(gebcc1.energy(), gebcc2.energy())
-        np.testing.assert_almost_equal(gebcc1.t1, gebcc2.t1, 6)
-        np.testing.assert_almost_equal(gebcc1.t2, gebcc2.t2, 6)
-        np.testing.assert_almost_equal(gebcc1.l1, gebcc2.l1, 5)
-        np.testing.assert_almost_equal(gebcc1.l2, gebcc2.l2, 5)
-        np.testing.assert_almost_equal(gebcc1.make_rdm1_f(), gebcc2.make_rdm1_f(), 6)
-        np.testing.assert_almost_equal(gebcc1.make_rdm2_f(), gebcc2.make_rdm2_f(), 6)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.t1 - gebcc2.t1)), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.t2 - gebcc2.t2)), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.l1 - gebcc2.l1)), 0.0, 5)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.l2 - gebcc2.l2)), 0.0, 5)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.make_rdm1_f() - gebcc2.make_rdm1_f())), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.make_rdm2_f() - gebcc2.make_rdm2_f())), 0.0, 6)
 
     @pytest.mark.regression
     def test_from_rebcc_frozen(self):
@@ -205,12 +205,12 @@ class GCCSD_Tests(unittest.TestCase):
         gebcc2 = GEBCC.from_rebcc(rebcc)
 
         self.assertAlmostEqual(gebcc1.energy(), gebcc2.energy())
-        np.testing.assert_almost_equal(gebcc1.t1, gebcc2.t1, 6)
-        np.testing.assert_almost_equal(gebcc1.t2, gebcc2.t2, 6)
-        np.testing.assert_almost_equal(gebcc1.l1, gebcc2.l1, 5)
-        np.testing.assert_almost_equal(gebcc1.l2, gebcc2.l2, 5)
-        np.testing.assert_almost_equal(gebcc1.make_rdm1_f(), gebcc2.make_rdm1_f(), 6)
-        np.testing.assert_almost_equal(gebcc1.make_rdm2_f(), gebcc2.make_rdm2_f(), 6)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.t1 - gebcc2.t1)), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.t2 - gebcc2.t2)), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.l1 - gebcc2.l1)), 0.0, 5)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.l2 - gebcc2.l2)), 0.0, 5)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.make_rdm1_f() - gebcc2.make_rdm1_f())), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.make_rdm2_f() - gebcc2.make_rdm2_f())), 0.0, 6)
 
     @pytest.mark.regression
     def test_from_uebcc_frozen(self):
@@ -258,12 +258,12 @@ class GCCSD_Tests(unittest.TestCase):
         gebcc2 = GEBCC.from_uebcc(uebcc)
 
         self.assertAlmostEqual(gebcc1.energy(), gebcc2.energy())
-        np.testing.assert_almost_equal(gebcc1.t1, gebcc2.t1, 6)
-        np.testing.assert_almost_equal(gebcc1.t2, gebcc2.t2, 6)
-        np.testing.assert_almost_equal(gebcc1.l1, gebcc2.l1, 5)
-        np.testing.assert_almost_equal(gebcc1.l2, gebcc2.l2, 5)
-        np.testing.assert_almost_equal(gebcc1.make_rdm1_f(), gebcc2.make_rdm1_f(), 6)
-        np.testing.assert_almost_equal(gebcc1.make_rdm2_f(), gebcc2.make_rdm2_f(), 6)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.t1 - gebcc2.t1)), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.t2 - gebcc2.t2)), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.l1 - gebcc2.l1)), 0.0, 5)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.l2 - gebcc2.l2)), 0.0, 5)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.make_rdm1_f() - gebcc2.make_rdm1_f())), 0.0, 6)
+        self.assertAlmostEqual(np.max(np.abs(gebcc1.make_rdm2_f() - gebcc2.make_rdm2_f())), 0.0, 6)
 
 
 @pytest.mark.reference
@@ -316,70 +316,78 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
     def test_ccsd_t1_amplitudes(self):
         a = self.ccsd_ref.t1
         b = self.ccsd.t1
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_ccsd_t2_amplitudes(self):
         a = self.ccsd_ref.t2
         b = self.ccsd.t2
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_ccsd_l1_amplitudes(self):
         a = self.ccsd_ref.l1
         b = self.ccsd.l1.T
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_ccsd_l2_amplitudes(self):
         a = self.ccsd_ref.l2
-        b = self.ccsd.l2.transpose(2, 3, 0, 1)
-        np.testing.assert_almost_equal(a, b, 6)
+        b = np.transpose(self.ccsd.l2, (2, 3, 0, 1))
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm1(self):
         a = self.ccsd_ref.make_rdm1()
         b = self.ccsd.make_rdm1_f(eris=self.eris)
-        np.testing.assert_almost_equal(a, b, 6, verbose=True)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm2(self):
         a = self.ccsd_ref.make_rdm2()
         b = self.ccsd.make_rdm2_f(eris=self.eris)
-        np.testing.assert_almost_equal(a, b, 6, verbose=True)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ip(self):
-        e1 = self.ccsd.ip_eom(nroots=5).kernel()
+        e1 = np.asarray(self.ccsd.ip_eom(nroots=5).kernel())
         e2, v2 = self.ccsd_ref.ipccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ea(self):
-        e1 = self.ccsd.ea_eom(nroots=5).kernel()
+        e1 = np.asarray(self.ccsd.ea_eom(nroots=5).kernel())
         e2, v2 = self.ccsd_ref.eaccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ee(self):
-        e1 = self.ccsd.ee_eom(nroots=5).kernel()
+        e1 = np.asarray(self.ccsd.ee_eom(nroots=5).kernel())
         e2, v2 = self.ccsd_ref.eeccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ip_koopmans(self):
-        e1 = self.ccsd.ip_eom(nroots=5, koopmans=True).kernel()
+        e1 = np.asarray(self.ccsd.ip_eom(nroots=5, koopmans=True).kernel())
         e2, v2 = self.ccsd_ref.ipccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ea_koopmans(self):
-        e1 = self.ccsd.ea_eom(nroots=5, koopmans=True).kernel()
+        e1 = np.asarray(self.ccsd.ea_eom(nroots=5, koopmans=True).kernel())
         e2, v2 = self.ccsd_ref.eaccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ip_left(self):
-        e1 = self.ccsd.ip_eom(nroots=5, left=True).kernel()
+        e1 = np.asarray(self.ccsd.ip_eom(nroots=5, left=True).kernel())
         e2, v2 = self.ccsd_ref.ipccsd(nroots=5, left=True)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ea_left(self):
-        e1 = self.ccsd.ea_eom(nroots=5, left=True).kernel()
+        e1 = np.asarray(self.ccsd.ea_eom(nroots=5, left=True).kernel())
         e2, v2 = self.ccsd_ref.eaccsd(nroots=5, left=True)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ee_left(self):
-        e1 = self.ccsd.ee_eom(nroots=5, left=True).kernel()
+        e1 = np.asarray(self.ccsd.ee_eom(nroots=5, left=True).kernel())
         e2, v2 = self.ccsd_ref.eeccsd(nroots=5)  # No left EE-EOM in PySCF
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
@@ -390,8 +398,8 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
         h = self.mf.to_ghf().get_hcore()
         h = np.linalg.multi_dot((c.T, h, c))
         v = self.ccsd.get_eris().array
-        e_rdm = util.einsum("pq,pq->", h, dm1)
-        e_rdm += util.einsum("pqrs,pqrs->", v, dm2) * 0.5
+        e_rdm = np.einsum("pq,pq->", h, dm1)
+        e_rdm += np.einsum("pqrs,pqrs->", v, dm2) * 0.5
         e_rdm += self.mf.mol.energy_nuc()
         self.assertAlmostEqual(e_rdm, self.ccsd_ref.e_tot)
 

@@ -39,6 +39,19 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project.optional-dependencies]
+numpy = []
+tensorflow = [
+    "tensorflow>=2.0.0",
+    "opt_einsum>=3.3.0",
+]
+jax = [
+    "jax>=0.2.0",
+    "opt_einsum>=3.3.0",
+]
+cupy = [
+    "cupy>=9.0.0",
+    "opt_einsum>=3.3.0",
+]
 dev = [
     "black>=22.6.0",
     "isort>=5.10.1",
@@ -138,10 +151,10 @@ exclude = """
 module = "ebcc.*"
 strict = true
 ignore_missing_imports = true
-#implicit_optional = true
 disallow_subclassing_any = false
 implicit_reexport = true
 warn_unused_ignores = false
+allow_redefinition = true
 
 [[tool.mypy.overrides]]
 module = "ebcc.codegen.*"
@@ -157,6 +170,22 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "h5py.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "cupy.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "jax.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tensorflow.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "ctf.*"
 ignore_missing_imports = true
 
 [tool.coverage.run]
@@ -185,7 +214,7 @@ exclude_lines = [
 directory = "cov_html"
 
 [tool.pytest.ini_options]
-addopts = "-m 'not slow'"
+addopts = "--durations=0"
 testpaths = [
     "tests",
 ]

@@ -8,10 +8,11 @@ import numpy as np
 import pytest
 from pyscf import gto, lib, scf, fci
 
-from ebcc import GEBCC, REBCC, Space, NullLogger, util
+from ebcc import GEBCC, REBCC, Space, NullLogger, util, BACKEND
 
 
 @pytest.mark.regression
+@pytest.mark.skipif(BACKEND != "numpy", reason="Currently requires mutable backend.")
 class GCCSDtp_Tests(unittest.TestCase):
     """Test GCCSDt' against regression.
     """
@@ -40,9 +41,10 @@ class GCCSDtp_Tests(unittest.TestCase):
                 gmf,
                 ansatz="CCSDt'",
                 space=space,
-                conv_tol=1e-10,
                 log=NullLogger(),
         )
+        ccsdt.options.e_tol = 1e-8
+        ccsdt.options.t_tol = 1e-7
         ccsdt.kernel()
         e1 = ccsdt.e_tot
 
@@ -50,7 +52,7 @@ class GCCSDtp_Tests(unittest.TestCase):
         ci.conv_tol = 1e-10
         e2 = ci.kernel()[0]
 
-        self.assertAlmostEqual(e1, e2, 6)
+        self.assertAlmostEqual(e1, e2, 8)
 
     def test_fully_active(self):
         mol = gto.M(

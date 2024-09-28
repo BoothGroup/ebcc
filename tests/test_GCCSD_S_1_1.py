@@ -44,7 +44,7 @@ class GCCSD_S_1_1_Tests(unittest.TestCase):
         nbos = 5
         np.random.seed(12345)
         g_ = np.random.random((nbos, nmo, nmo)) * 0.02
-        g_ = 0.5 * (g_ + g_.transpose(0, 2, 1).conj())
+        g_ = 0.5 * (g_ + np.conj(np.transpose(g_, (0, 2, 1))))
         omega = np.random.random((nbos,)) * 5.0
 
         orbspin = scf.addons.get_ghf_orbspin(mf.mo_energy, mf.mo_occ, True)
@@ -80,19 +80,19 @@ class GCCSD_S_1_1_Tests(unittest.TestCase):
     def test_xi(self):
         a = self.data[self.shift]["xi"]
         b = self.ccsd.xi
-        np.testing.assert_almost_equal(a, b, 7)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
     def test_fock(self):
         for tag in ("oo", "ov", "vo", "vv"):
             a = self.data[self.shift]["f"+tag]
             b = getattr(self.ccsd.fock, tag)
-            np.testing.assert_almost_equal(a, b, 7)
+            self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
     def test_g(self):
         for tag in ("oo", "ov", "vo", "vv"):
             a = self.data[self.shift]["gb"+tag]
             b = getattr(self.ccsd.g, "b"+tag)
-            np.testing.assert_almost_equal(a, b, 7)
+            self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 7)
 
     def test_energy(self):
         a = self.data[self.shift]["e_corr"]
@@ -102,67 +102,67 @@ class GCCSD_S_1_1_Tests(unittest.TestCase):
     def test_t1_amplitudes(self):
         a = self.data[self.shift]["t1"]
         b = self.ccsd.t1
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_t2_amplitudes(self):
         a = self.data[self.shift]["t2"]
         b = self.ccsd.t2
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_s1_amplitudes(self):
         a = self.data[self.shift]["s1"]
         b = self.ccsd.amplitudes["s1"]
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_u11_amplitudes(self):
         a = self.data[self.shift]["u11"]
         b = self.ccsd.amplitudes["u11"]
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_l1_amplitudes(self):
         a = self.data[self.shift]["l1"]
         b = self.ccsd.l1
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_l2_amplitudes(self):
         a = self.data[self.shift]["l2"]
         b = self.ccsd.l2
-        np.testing.assert_almost_equal(a, b, 5)  # FIXME low tol
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 5)  # FIXME low tol
 
     def test_ls1_amplitudes(self):
         a = self.data[self.shift]["ls1"]
         b = self.ccsd.lambdas["ls1"]
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_lu11_amplitudes(self):
         a = self.data[self.shift]["lu11"]
         b = self.ccsd.lambdas["lu11"]
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm1_f(self):
         a = self.data[self.shift]["rdm1_f"]
         b = self.ccsd.make_rdm1_f()
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm2_f(self):
         a = self.data[self.shift]["rdm2_f"]
         b = self.ccsd.make_rdm2_f()
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm1_b(self):
         a = self.data[self.shift]["rdm1_b"]
         b = self.ccsd.make_rdm1_b()
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_dm_b(self):
         a = self.data[self.shift]["dm_b"]
         b = np.array(self.ccsd.make_sing_b_dm())
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm_eb(self):
-        a = self.data[self.shift]["rdm_eb"]
+        a = np.asarray(self.data[self.shift]["rdm_eb"])
         b = self.ccsd.make_eb_coup_rdm()
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
 
 @pytest.mark.reference

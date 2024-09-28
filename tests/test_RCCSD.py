@@ -12,7 +12,7 @@ import pytest
 import scipy.linalg
 from pyscf import cc, dft, gto, lib, scf
 
-from ebcc import REBCC, NullLogger, Space
+from ebcc import REBCC, NullLogger, Space, BACKEND
 from ebcc.ham.space import construct_fno_space
 
 
@@ -69,24 +69,24 @@ class RCCSD_Tests(unittest.TestCase):
     def test_t1_amplitudes(self):
         a = self.data[True]["t1"]
         b = scipy.linalg.block_diag(self.ccsd.t1, self.ccsd.t1)[self.osort][:, self.vsort]
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm1_f(self):
         rdm1_f = self.ccsd.make_rdm1_f()
         a = self.data[True]["rdm1_f"]
         b = scipy.linalg.block_diag(rdm1_f, rdm1_f) / 2
         b = b[self.fsort][:, self.fsort]
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_l1_amplitudes(self):
         a = self.data[True]["l1"]
         b = scipy.linalg.block_diag(self.ccsd.l1, self.ccsd.l1)[self.vsort][:, self.osort]
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     # def test_ip_moments(self):
     #    eom = self.ccsd.ip_eom()
     #    ip_moms = eom.moments(4)
-    #    a = self.data[True]["ip_moms"].transpose(2, 0, 1)
+    #    a = np.transpose(self.data[True]["ip_moms"], (2, 0, 1))
     #    b = np.array([scipy.linalg.block_diag(x, x) for x in ip_moms])
     #    b = b[:, self.fsort][:, :, self.fsort]
     #    for x, y in zip(a, b):
@@ -107,12 +107,12 @@ class RCCSD_Tests(unittest.TestCase):
     #        print(y[:self.ccsd.nocc*2, :self.ccsd.nocc*2])
     #        x /= np.max(np.abs(x))
     #        y /= np.max(np.abs(y))
-    #        np.testing.assert_almost_equal(x, y, 6)
+    #        self.assertAlmostEqual(np.max(np.abs(x - y)), 0.0, 6)
 
     # def test_ea_moments(self):
     #    eom = self.ccsd.ea_eom()
     #    ea_moms = eom.moments(4)
-    #    a = self.data[True]["ea_moms"].transpose(2, 0, 1)
+    #    a = np.transpose(self.data[True]["ea_moms"], (2, 0, 1))
     #    b = np.array([scipy.linalg.block_diag(x, x) for x in ea_moms])
     #    b = b[:, self.fsort][:, :, self.fsort]
     #    for x, y in zip(a, b):
@@ -124,19 +124,19 @@ class RCCSD_Tests(unittest.TestCase):
     #        )
     #        x /= np.max(np.abs(x))
     #        y /= np.max(np.abs(y))
-    #        np.testing.assert_almost_equal(x, y, 6)
+    #        self.assertAlmostEqual(np.max(np.abs(x - y)), 0.0, 6)
 
     # def test_ip_1mom(self):
     #    ip_1mom = self.ccsd.make_ip_1mom()
     #    a = self.data[True]["ip_1mom"]
     #    b = scipy.linalg.block_diag(ip_1mom, ip_1mom)
-    #    np.testing.assert_almost_equal(a, b, 6)
+    #    self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     # def test_ea_1mom(self):
     #    ea_1mom = self.ccsd.make_ea_1mom()
     #    a = self.data[True]["ea_1mom"]
     #    b = sceay.linalg.block_diag(ea_1mom, ea_1mom)
-    #    np.testing.assert_almost_equal(a, b, 6)
+    #    self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
 
 @pytest.mark.reference
@@ -193,54 +193,58 @@ class RCCSD_PySCF_Tests(unittest.TestCase):
     def test_t1_amplitudes(self):
         a = self.ccsd_ref.t1
         b = self.ccsd.t1
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_t2_amplitudes(self):
         a = self.ccsd_ref.t2
         b = self.ccsd.t2
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_l1_amplitudes(self):
         a = self.ccsd_ref.l1
         b = self.ccsd.l1.T
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_l2_amplitudes(self):
         a = self.ccsd_ref.l2
-        b = self.ccsd.l2.transpose(2, 3, 0, 1)
-        np.testing.assert_almost_equal(a, b, 6)
+        b = np.transpose(self.ccsd.l2, (2, 3, 0, 1))
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm1(self):
         a = self.ccsd_ref.make_rdm1()
         b = self.ccsd.make_rdm1_f(eris=self.eris)
-        np.testing.assert_almost_equal(a, b, 6, verbose=True)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm2(self):
         a = self.ccsd_ref.make_rdm2()
         b = self.ccsd.make_rdm2_f(eris=self.eris)
-        np.testing.assert_almost_equal(a, b, 6, verbose=True)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ip(self):
         eom = self.ccsd.ip_eom(nroots=5)
-        e1 = eom.kernel()
+        e1 = np.asarray(eom.kernel())
         e2, v2 = self.ccsd_ref.ipccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ea(self):
         eom = self.ccsd.ea_eom(nroots=5)
-        e1 = eom.kernel()
+        e1 = np.asarray(eom.kernel())
         e2, v2 = self.ccsd_ref.eaccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ip_left(self):
         eom = self.ccsd.ip_eom(nroots=5, left=True)
-        e1 = eom.kernel()
+        e1 = np.asarray(eom.kernel())
         e2, v2 = self.ccsd_ref.ipccsd(nroots=5, left=True)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ea_left(self):
         eom = self.ccsd.ea_eom(nroots=5, left=True)
-        e1 = eom.kernel()
+        e1 = np.asarray(eom.kernel())
         e2, v2 = self.ccsd_ref.eaccsd(nroots=5, left=True)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
@@ -291,12 +295,12 @@ class FNORCCSD_PySCF_Tests(RCCSD_PySCF_Tests):
     def test_rdm1(self):
         a = self.ccsd_ref.make_rdm1(with_frozen=False)
         b = self.ccsd.make_rdm1_f(eris=self.eris)
-        np.testing.assert_almost_equal(a, b, 6, verbose=True)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm2(self):
         a = self.ccsd_ref.make_rdm2(with_frozen=False)
         b = self.ccsd.make_rdm2_f(eris=self.eris)
-        np.testing.assert_almost_equal(a, b, 6, verbose=True)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
 
 @pytest.mark.reference
@@ -365,54 +369,58 @@ class RCCSD_PySCF_Frozen_Tests(unittest.TestCase):
     def test_t1_amplitudes(self):
         a = self.ccsd_ref.t1
         b = self.ccsd.t1
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_t2_amplitudes(self):
         a = self.ccsd_ref.t2
         b = self.ccsd.t2
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_l1_amplitudes(self):
         a = self.ccsd_ref.l1
         b = self.ccsd.l1.T
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_l2_amplitudes(self):
         a = self.ccsd_ref.l2
-        b = self.ccsd.l2.transpose(2, 3, 0, 1)
-        np.testing.assert_almost_equal(a, b, 6)
+        b = np.transpose(self.ccsd.l2, (2, 3, 0, 1))
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm1(self):
         a = self.ccsd_ref.make_rdm1(with_frozen=False)
         b = self.ccsd.make_rdm1_f(eris=self.eris)
-        np.testing.assert_almost_equal(a, b, 6, verbose=True)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm2(self):
         a = self.ccsd_ref.make_rdm2(with_frozen=False)
         b = self.ccsd.make_rdm2_f(eris=self.eris)
-        np.testing.assert_almost_equal(a, b, 6, verbose=True)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ip(self):
         eom = self.ccsd.ip_eom(nroots=5)
-        e1 = eom.kernel()
+        e1 = np.asarray(eom.kernel())
         e2, v2 = self.ccsd_ref.ipccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ea(self):
         eom = self.ccsd.ea_eom(nroots=5)
-        e1 = eom.kernel()
+        e1 = np.asarray(eom.kernel())
         e2, v2 = self.ccsd_ref.eaccsd(nroots=5)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ip_left(self):
         eom = self.ccsd.ip_eom(nroots=5, left=True)
-        e1 = eom.kernel()
+        e1 = np.asarray(eom.kernel())
         e2, v2 = self.ccsd_ref.ipccsd(nroots=5, left=True)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
+    @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ea_left(self):
         eom = self.ccsd.ea_eom(nroots=5, left=True)
-        e1 = eom.kernel()
+        e1 = np.asarray(eom.kernel())
         e2, v2 = self.ccsd_ref.eaccsd(nroots=5, left=True)
         self.assertAlmostEqual(e1[0], e2[0], 5)
 
@@ -514,7 +522,7 @@ class RCCSD_PySCF_DFT_Tests(unittest.TestCase):
     def test_t1_amplitudes(self):
         a = self.ccsd_ref.t1
         b = self.ccsd.t1
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
 
 if __name__ == "__main__":

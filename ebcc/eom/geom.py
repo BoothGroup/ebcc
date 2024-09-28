@@ -6,16 +6,19 @@ from typing import TYPE_CHECKING
 
 from ebcc import numpy as np
 from ebcc import util
-from ebcc.core.precision import astype
 from ebcc.eom.base import BaseEA_EOM, BaseEE_EOM, BaseEOM, BaseIP_EOM
 
 if TYPE_CHECKING:
     from typing import Optional
 
+    from numpy import float64
+    from numpy.typing import NDArray
+
     from ebcc.cc.gebcc import GEBCC, ERIsInputType, SpinArrayType
     from ebcc.ham.space import Space
-    from ebcc.numpy.typing import NDArray
     from ebcc.util import Namespace
+
+    T = float64
 
 
 class GEOM(BaseEOM):
@@ -29,21 +32,20 @@ class GEOM(BaseEOM):
 class IP_GEOM(GEOM, BaseIP_EOM):
     """Generalised ionisation potential equation-of-motion coupled cluster."""
 
-    def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
+    def _argsort_guesses(self, diag: NDArray[T]) -> list[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]
-            arg = np.argsort(np.abs(diag[: r1.size]))
+            arg = util.argsort(np.abs(diag[: r1.size]))
         else:
-            arg = np.argsort(np.abs(diag))
+            arg = util.argsort(np.abs(diag))
         return arg
 
-    def _quasiparticle_weight(self, r1: SpinArrayType) -> float:
+    def _quasiparticle_weight(self, r1: SpinArrayType) -> T:
         """Get the quasiparticle weight."""
-        weight: float = np.dot(r1.ravel(), r1.ravel())
-        return astype(weight, float)
+        return np.vdot(r1, r1)
 
-    def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
+    def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[T]:
         """Get the diagonal of the Hamiltonian.
 
         Args:
@@ -64,7 +66,7 @@ class IP_GEOM(GEOM, BaseIP_EOM):
 
         return self.amplitudes_to_vector(parts)
 
-    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[float]:
+    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[T]:
         """Construct a vector containing all of the IP-EOM amplitudes.
 
         Args:
@@ -78,7 +80,7 @@ class IP_GEOM(GEOM, BaseIP_EOM):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(
             spin_type=self.spin_type, which="ip"
         ):
-            vectors.append(util.compress_axes(key, amplitudes[name]).ravel())
+            vectors.append(np.ravel(util.compress_axes(key, amplitudes[name])))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ip"):
             raise util.ModelNotImplemented
@@ -90,7 +92,7 @@ class IP_GEOM(GEOM, BaseIP_EOM):
 
         return np.concatenate(vectors)
 
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
+    def vector_to_amplitudes(self, vector: NDArray[T]) -> Namespace[SpinArrayType]:
         """Construct a namespace of IP-EOM amplitudes from a vector.
 
         Args:
@@ -126,21 +128,20 @@ class IP_GEOM(GEOM, BaseIP_EOM):
 class EA_GEOM(GEOM, BaseEA_EOM):
     """Generalised electron affinity equation-of-motion coupled cluster."""
 
-    def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
+    def _argsort_guesses(self, diag: NDArray[T]) -> list[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]
-            arg = np.argsort(np.abs(diag[: r1.size]))
+            arg = util.argsort(np.abs(diag[: r1.size]))
         else:
-            arg = np.argsort(np.abs(diag))
+            arg = util.argsort(np.abs(diag))
         return arg
 
-    def _quasiparticle_weight(self, r1: SpinArrayType) -> float:
+    def _quasiparticle_weight(self, r1: SpinArrayType) -> T:
         """Get the quasiparticle weight."""
-        weight: float = np.dot(r1.ravel(), r1.ravel())
-        return astype(weight, float)
+        return np.vdot(r1, r1)
 
-    def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
+    def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[T]:
         """Get the diagonal of the Hamiltonian.
 
         Args:
@@ -161,7 +162,7 @@ class EA_GEOM(GEOM, BaseEA_EOM):
 
         return self.amplitudes_to_vector(parts)
 
-    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[float]:
+    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[T]:
         """Construct a vector containing all of the EA-EOM amplitudes.
 
         Args:
@@ -175,7 +176,7 @@ class EA_GEOM(GEOM, BaseEA_EOM):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(
             spin_type=self.spin_type, which="ea"
         ):
-            vectors.append(util.compress_axes(key, amplitudes[name]).ravel())
+            vectors.append(np.ravel(util.compress_axes(key, amplitudes[name])))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ea"):
             raise util.ModelNotImplemented
@@ -187,7 +188,7 @@ class EA_GEOM(GEOM, BaseEA_EOM):
 
         return np.concatenate(vectors)
 
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
+    def vector_to_amplitudes(self, vector: NDArray[T]) -> Namespace[SpinArrayType]:
         """Construct a namespace of EA-EOM amplitudes from a vector.
 
         Args:
@@ -223,21 +224,20 @@ class EA_GEOM(GEOM, BaseEA_EOM):
 class EE_GEOM(GEOM, BaseEE_EOM):
     """Generalised electron-electron equation-of-motion coupled cluster."""
 
-    def _argsort_guesses(self, diag: NDArray[float]) -> NDArray[int]:
+    def _argsort_guesses(self, diag: NDArray[T]) -> list[int]:
         """Sort the diagonal to inform the initial guesses."""
         if self.options.koopmans:
             r1 = self.vector_to_amplitudes(diag)["r1"]
-            arg = np.argsort(diag[: r1.size])
+            arg = util.argsort(diag[: r1.size])
         else:
-            arg = np.argsort(diag)
+            arg = util.argsort(diag)
         return arg
 
-    def _quasiparticle_weight(self, r1: SpinArrayType) -> float:
+    def _quasiparticle_weight(self, r1: SpinArrayType) -> T:
         """Get the quasiparticle weight."""
-        weight: float = np.dot(r1.ravel(), r1.ravel())
-        return astype(weight, float)
+        return np.vdot(r1, r1)
 
-    def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[float]:
+    def diag(self, eris: Optional[ERIsInputType] = None) -> NDArray[T]:
         """Get the diagonal of the Hamiltonian.
 
         Args:
@@ -258,7 +258,7 @@ class EE_GEOM(GEOM, BaseEE_EOM):
 
         return self.amplitudes_to_vector(parts)
 
-    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[float]:
+    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[T]:
         """Construct a vector containing all of the EE-EOM amplitudes.
 
         Args:
@@ -272,7 +272,7 @@ class EE_GEOM(GEOM, BaseEE_EOM):
         for name, key, n in self.ansatz.fermionic_cluster_ranks(
             spin_type=self.spin_type, which="ee"
         ):
-            vectors.append(util.compress_axes(key, amplitudes[name]).ravel())
+            vectors.append(np.ravel(util.compress_axes(key, amplitudes[name])))
 
         for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ee"):
             raise util.ModelNotImplemented
@@ -284,7 +284,7 @@ class EE_GEOM(GEOM, BaseEE_EOM):
 
         return np.concatenate(vectors)
 
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
+    def vector_to_amplitudes(self, vector: NDArray[T]) -> Namespace[SpinArrayType]:
         """Construct a namespace of EE-EOM amplitudes from a vector.
 
         Args:

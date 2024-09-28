@@ -8,16 +8,21 @@ import scipy.linalg
 
 from ebcc import numpy as np
 from ebcc import util
+from ebcc.backend import _put
 from ebcc.core.precision import types
 from ebcc.opt.base import BaseBruecknerEBCC
 
 if TYPE_CHECKING:
     from typing import Optional
 
+    from numpy import float64
+    from numpy.typing import NDArray
+
     from ebcc.cc.uebcc import UEBCC, SpinArrayType
-    from ebcc.core.damping import DIIS
-    from ebcc.numpy.typing import NDArray
+    from ebcc.core.damping import BaseDamping
     from ebcc.util import Namespace
+
+    T = float64
 
 
 class BruecknerUEBCC(BaseBruecknerEBCC):
@@ -29,7 +34,7 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
     def get_rotation_matrix(
         self,
         u_tot: Optional[SpinArrayType] = None,
-        diis: Optional[DIIS] = None,
+        damping: Optional[BaseDamping] = None,
         t1: Optional[SpinArrayType] = None,
     ) -> tuple[SpinArrayType, SpinArrayType]:
         """Update the rotation matrix.
@@ -38,7 +43,7 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
 
         Args:
             u_tot: Total rotation matrix.
-            diis: DIIS object.
+            damping: Damping object.
             t1: T1 amplitude.
 
         Returns:
@@ -52,41 +57,37 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
                 bb=np.eye(self.cc.space[1].ncorr, dtype=types[float]),
             )
 
-        t1_block: Namespace[NDArray[float]] = util.Namespace(
-            aa=np.zeros((self.cc.space[0].ncorr, self.cc.space[0].ncorr), dtype=types[float]),
-            bb=np.zeros((self.cc.space[1].ncorr, self.cc.space[1].ncorr), dtype=types[float]),
-        )
-        t1_block.aa[: self.cc.space[0].ncocc, self.cc.space[0].ncocc :] = -t1.aa
-        t1_block.aa[self.cc.space[0].ncocc :, : self.cc.space[0].ncocc] = t1.aa.T
-        t1_block.bb[: self.cc.space[1].ncocc, self.cc.space[1].ncocc :] = -t1.bb
-        t1_block.bb[self.cc.space[1].ncocc :, : self.cc.space[1].ncocc] = t1.bb.T
+        t1_block: Namespace[NDArray[T]] = util.Namespace()
+        zocc = np.zeros((self.cc.space[0].ncocc, self.cc.space[0].ncocc))
+        zvir = np.zeros((self.cc.space[0].ncvir, self.cc.space[0].ncvir))
+        t1_block.aa = np.block([[zocc, -t1.aa], [np.transpose(t1.aa), zvir]])
+        zocc = np.zeros((self.cc.space[1].ncocc, self.cc.space[1].ncocc))
+        zvir = np.zeros((self.cc.space[1].ncvir, self.cc.space[1].ncvir))
+        t1_block.bb = np.block([[zocc, -t1.bb], [np.transpose(t1.bb), zvir]])
 
-        u = util.Namespace(
-            aa=scipy.linalg.expm(t1_block.aa),
-            bb=scipy.linalg.expm(t1_block.bb),
-        )
+        u = util.Namespace(aa=scipy.linalg.expm(t1_block.aa), bb=scipy.linalg.expm(t1_block.bb))
 
-        u_tot.aa = np.dot(u_tot.aa, u.aa)
-        u_tot.bb = np.dot(u_tot.bb, u.bb)
-        if scipy.linalg.det(u_tot.aa) < 0:
-            u_tot.aa[:, 0] *= -1
-        if scipy.linalg.det(u_tot.bb) < 0:
-            u_tot.bb[:, 0] *= -1
+        u_tot.aa = u_tot.aa @ u.aa
+        u_tot.bb = u_tot.bb @ u.bb
+        if np.linalg.det(u_tot.aa) < 0:
+            u_tot.aa = _put(
+                u_tot.aa, np.ix_(np.arange(u_tot.aa.shape[0]), np.array([0])), -u_tot.aa[:, 0]
+            )
+        if np.linalg.det(u_tot.bb) < 0:
+            u_tot.bb = _put(
+                u_tot.bb, np.ix_(np.arange(u_tot.aa.shape[0]), np.array([0])), -u_tot.bb[:, 0]
+            )
 
         a = np.concatenate(
-            [
-                scipy.linalg.logm(u_tot.aa).ravel(),
-                scipy.linalg.logm(u_tot.bb).ravel(),
-            ],
-            axis=0,
+            [np.ravel(scipy.linalg.logm(u_tot.aa)), np.ravel(scipy.linalg.logm(u_tot.bb))], axis=0
         )
-        a = a.real.astype(types[float])
-        if diis is not None:
+        a: NDArray[T] = np.asarray(np.real(a), dtype=types[float])
+        if damping is not None:
             xerr = np.concatenate([t1.aa.ravel(), t1.bb.ravel()])
-            a = diis.update(a, xerr=xerr)
+            a = damping(a, error=xerr)
 
-        u_tot.aa = scipy.linalg.expm(a[: u_tot.aa.size].reshape(u_tot.aa.shape))
-        u_tot.bb = scipy.linalg.expm(a[u_tot.aa.size :].reshape(u_tot.bb.shape))
+        u_tot.aa = scipy.linalg.expm(np.reshape(a[: u_tot.aa.size], u_tot.aa.shape))
+        u_tot.bb = scipy.linalg.expm(np.reshape(a[u_tot.aa.size :], u_tot.bb.shape))
 
         return u, u_tot
 
@@ -130,7 +131,7 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
 
         return self.cc.amplitudes
 
-    def get_t1_norm(self, amplitudes: Optional[Namespace[SpinArrayType]] = None) -> float:
+    def get_t1_norm(self, amplitudes: Optional[Namespace[SpinArrayType]] = None) -> T:
         """Get the norm of the T1 amplitude.
 
         Args:
@@ -141,14 +142,14 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
         """
         if not amplitudes:
             amplitudes = self.cc.amplitudes
-        weight_a: float = types[float](np.linalg.norm(amplitudes["t1"].aa))
-        weight_b: float = types[float](np.linalg.norm(amplitudes["t1"].bb))
-        weight: float = types[float](np.linalg.norm([weight_a, weight_b]))
+        weight_a = np.linalg.norm(amplitudes["t1"].aa)
+        weight_b = np.linalg.norm(amplitudes["t1"].bb)
+        weight: T = (weight_a**2 + weight_b**2) ** 0.5
         return weight
 
     def mo_to_correlated(
-        self, mo_coeff: tuple[NDArray[float], NDArray[float]]
-    ) -> tuple[NDArray[float], NDArray[float]]:
+        self, mo_coeff: tuple[NDArray[T], NDArray[T]]
+    ) -> tuple[NDArray[T], NDArray[T]]:
         """Transform the MO coefficients into the correlated basis.
 
         Args:
@@ -164,9 +165,9 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
 
     def mo_update_correlated(
         self,
-        mo_coeff: tuple[NDArray[float], NDArray[float]],
-        mo_coeff_corr: tuple[NDArray[float], NDArray[float]],
-    ) -> tuple[NDArray[float], NDArray[float]]:
+        mo_coeff: tuple[NDArray[T], NDArray[T]],
+        mo_coeff_corr: tuple[NDArray[T], NDArray[T]],
+    ) -> tuple[NDArray[T], NDArray[T]]:
         """Update the correlated slice of a set of MO coefficients.
 
         Args:
@@ -176,16 +177,27 @@ class BruecknerUEBCC(BaseBruecknerEBCC):
         Returns:
             Updated MO coefficients.
         """
-        mo_coeff[0][:, self.cc.space[0].correlated] = mo_coeff_corr[0]
-        mo_coeff[1][:, self.cc.space[1].correlated] = mo_coeff_corr[1]
+        space = self.cc.space
+        mo_coeff = (
+            _put(
+                mo_coeff[0],
+                np.ix_(np.arange(mo_coeff[0].shape[0]), space[0].correlated),  # type: ignore
+                mo_coeff_corr[0],
+            ),
+            _put(
+                mo_coeff[1],
+                np.ix_(np.arange(mo_coeff[1].shape[0]), space[1].correlated),  # type: ignore
+                mo_coeff_corr[1],
+            ),
+        )
         return mo_coeff
 
     def update_coefficients(
         self,
         u_tot: SpinArrayType,
-        mo_coeff: tuple[NDArray[float], NDArray[float]],
-        mo_coeff_ref: tuple[NDArray[float], NDArray[float]],
-    ) -> tuple[NDArray[float], NDArray[float]]:
+        mo_coeff: tuple[NDArray[T], NDArray[T]],
+        mo_coeff_ref: tuple[NDArray[T], NDArray[T]],
+    ) -> tuple[NDArray[T], NDArray[T]]:
         """Update the MO coefficients.
 
         Args:

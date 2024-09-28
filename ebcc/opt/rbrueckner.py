@@ -8,16 +8,21 @@ import scipy.linalg
 
 from ebcc import numpy as np
 from ebcc import util
+from ebcc.backend import _put
 from ebcc.core.precision import types
 from ebcc.opt.base import BaseBruecknerEBCC
 
 if TYPE_CHECKING:
-    from typing import Optional
+    from typing import Optional, Union
+
+    from numpy import float64
+    from numpy.typing import NDArray
 
     from ebcc.cc.rebcc import REBCC, SpinArrayType
-    from ebcc.core.damping import DIIS
-    from ebcc.numpy.typing import NDArray
+    from ebcc.core.damping import BaseDamping
     from ebcc.util import Namespace
+
+    T = float64
 
 
 class BruecknerREBCC(BaseBruecknerEBCC):
@@ -29,7 +34,7 @@ class BruecknerREBCC(BaseBruecknerEBCC):
     def get_rotation_matrix(
         self,
         u_tot: Optional[SpinArrayType] = None,
-        diis: Optional[DIIS] = None,
+        damping: Optional[BaseDamping] = None,
         t1: Optional[SpinArrayType] = None,
     ) -> tuple[SpinArrayType, SpinArrayType]:
         """Update the rotation matrix.
@@ -38,7 +43,7 @@ class BruecknerREBCC(BaseBruecknerEBCC):
 
         Args:
             u_tot: Total rotation matrix.
-            diis: DIIS object.
+            damping: Damping object.
             t1: T1 amplitude.
 
         Returns:
@@ -49,22 +54,19 @@ class BruecknerREBCC(BaseBruecknerEBCC):
         if u_tot is None:
             u_tot = np.eye(self.cc.space.ncorr, dtype=types[float])
 
-        t1_block: NDArray[float] = np.zeros(
-            (self.cc.space.ncorr, self.cc.space.ncorr), dtype=types[float]
-        )
-        t1_block[: self.cc.space.ncocc, self.cc.space.ncocc :] = -t1
-        t1_block[self.cc.space.ncocc :, : self.cc.space.ncocc] = t1.T
+        zocc = np.zeros((self.cc.space.ncocc, self.cc.space.ncocc))
+        zvir = np.zeros((self.cc.space.ncvir, self.cc.space.ncvir))
+        t1_block: NDArray[T] = np.block([[zocc, -t1], [np.transpose(t1), zvir]])
 
         u = scipy.linalg.expm(t1_block)
 
-        u_tot = np.dot(u_tot, u)
-        if scipy.linalg.det(u_tot) < 0:
-            u_tot[:, 0] *= -1
+        u_tot = u_tot @ u
+        if np.linalg.det(u_tot) < 0:
+            u_tot = _put(u_tot, np.ix_(np.arange(u_tot.shape[0]), np.array([0])), -u_tot[:, 0])
 
-        a = scipy.linalg.logm(u_tot)
-        a = a.real.astype(types[float])
-        if diis is not None:
-            a = diis.update(a, xerr=t1)
+        a: NDArray[T] = np.asarray(np.real(scipy.linalg.logm(u_tot)), dtype=types[float])
+        if damping is not None:
+            a = damping(a, error=t1)
 
         u_tot = scipy.linalg.expm(a)
 
@@ -91,7 +93,10 @@ class BruecknerREBCC(BaseBruecknerEBCC):
 
         # Transform T amplitudes:
         for name, key, n in self.cc.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
-            args = [self.cc.amplitudes[name], tuple(range(n * 2))]
+            args: list[Union[SpinArrayType, tuple[int, ...]]] = [
+                self.cc.amplitudes[name],
+                tuple(range(n * 2)),
+            ]
             for i in range(n):
                 args += [ci, (i, i + n * 2)]
             for i in range(n):
@@ -109,7 +114,7 @@ class BruecknerREBCC(BaseBruecknerEBCC):
 
         return self.cc.amplitudes
 
-    def get_t1_norm(self, amplitudes: Optional[Namespace[SpinArrayType]] = None) -> float:
+    def get_t1_norm(self, amplitudes: Optional[Namespace[SpinArrayType]] = None) -> T:
         """Get the norm of the T1 amplitude.
 
         Args:
@@ -120,10 +125,10 @@ class BruecknerREBCC(BaseBruecknerEBCC):
         """
         if not amplitudes:
             amplitudes = self.cc.amplitudes
-        weight: float = types[float](np.linalg.norm(amplitudes["t1"]))
+        weight: T = np.linalg.norm(amplitudes["t1"])
         return weight
 
-    def mo_to_correlated(self, mo_coeff: NDArray[float]) -> NDArray[float]:
+    def mo_to_correlated(self, mo_coeff: NDArray[T]) -> NDArray[T]:
         """Transform the MO coefficients into the correlated basis.
 
         Args:
@@ -134,9 +139,7 @@ class BruecknerREBCC(BaseBruecknerEBCC):
         """
         return mo_coeff[:, self.cc.space.correlated]
 
-    def mo_update_correlated(
-        self, mo_coeff: NDArray[float], mo_coeff_corr: NDArray[float]
-    ) -> NDArray[float]:
+    def mo_update_correlated(self, mo_coeff: NDArray[T], mo_coeff_corr: NDArray[T]) -> NDArray[T]:
         """Update the correlated slice of a set of MO coefficients.
 
         Args:
@@ -146,12 +149,16 @@ class BruecknerREBCC(BaseBruecknerEBCC):
         Returns:
             Updated MO coefficients.
         """
-        mo_coeff[:, self.cc.space.correlated] = mo_coeff_corr
+        mo_coeff = _put(
+            mo_coeff,
+            np.ix_(np.arange(mo_coeff.shape[0]), self.cc.space.correlated),  # type: ignore
+            mo_coeff_corr,
+        )
         return mo_coeff
 
     def update_coefficients(
-        self, u_tot: SpinArrayType, mo_coeff: NDArray[float], mo_coeff_ref: NDArray[float]
-    ) -> NDArray[float]:
+        self, u_tot: SpinArrayType, mo_coeff: NDArray[T], mo_coeff_ref: NDArray[T]
+    ) -> NDArray[T]:
         """Update the MO coefficients.
 
         Args:

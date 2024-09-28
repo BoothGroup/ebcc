@@ -4,27 +4,33 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from ebcc import default_log, init_logging
 from ebcc import numpy as np
 from ebcc import util
+from ebcc.backend import ensure_scalar
 from ebcc.core.ansatz import Ansatz
 from ebcc.core.damping import DIIS
 from ebcc.core.dump import Dump
 from ebcc.core.logging import ANSI
 from ebcc.core.precision import astype, types
+from ebcc.util import _BaseOptions
 
 if TYPE_CHECKING:
     from typing import Any, Callable, Literal, Optional, Union
 
+    from numpy import float64
+    from numpy.typing import NDArray
     from pyscf.scf.hf import SCF
 
+    from ebcc.core.damping import BaseDamping
     from ebcc.core.logging import Logger
     from ebcc.ham.base import BaseElectronBoson, BaseERIs, BaseFock
-    from ebcc.numpy.typing import NDArray
     from ebcc.opt.base import BaseBruecknerEBCC
     from ebcc.util import Namespace
+
+    T = float64
 
     """Defines the type for the `eris` argument in functions."""
     ERIsInputType = Any
@@ -37,7 +43,7 @@ if TYPE_CHECKING:
 
 
 @dataclass
-class BaseOptions:
+class BaseOptions(_BaseOptions):
     """Options for EBCC calculations.
 
     Args:
@@ -45,6 +51,7 @@ class BaseOptions:
         t_tol: Threshold for convergence in the amplitude norm.
         max_iter: Maximum number of iterations.
         diis_space: Number of amplitudes to use in DIIS extrapolation.
+        diis_min_space: Minimum number of amplitudes to use in DIIS extrapolation.
         damping: Damping factor for DIIS extrapolation.
         shift: Shift the boson operators such that the Hamiltonian is normal-ordered with respect
             to a coherent state. This removes the bosonic coupling to the static mean-field
@@ -54,7 +61,8 @@ class BaseOptions:
     e_tol: float = 1e-8
     t_tol: float = 1e-8
     max_iter: int = 200
-    diis_space: int = 12
+    diis_space: int = 9
+    diis_min_space: int = 1
     damping: float = 0.0
     shift: bool = True
 
@@ -64,6 +72,7 @@ class BaseEBCC(ABC):
 
     # Types
     Options: type[BaseOptions] = BaseOptions
+    Damping: type[BaseDamping] = DIIS
     ERIs: type[BaseERIs]
     Fock: type[BaseFock]
     CDERIs: type[BaseERIs]
@@ -74,8 +83,12 @@ class BaseEBCC(ABC):
     space: SpaceType
     amplitudes: Namespace[SpinArrayType]
     lambdas: Namespace[SpinArrayType]
+    fock: BaseFock
     g: Optional[BaseElectronBoson]
-    G: Optional[NDArray[float]]
+    G: Optional[NDArray[T]]
+    omega: Optional[NDArray[T]]
+    bare_g: Optional[NDArray[T]]
+    bare_G: Optional[NDArray[T]]
 
     def __init__(
         self,
@@ -84,11 +97,11 @@ class BaseEBCC(ABC):
         ansatz: Optional[Union[Ansatz, str]] = "CCSD",
         options: Optional[BaseOptions] = None,
         space: Optional[SpaceType] = None,
-        omega: Optional[NDArray[float]] = None,
-        g: Optional[NDArray[float]] = None,
-        G: Optional[NDArray[float]] = None,
-        mo_coeff: Optional[NDArray[float]] = None,
-        mo_occ: Optional[NDArray[float]] = None,
+        omega: Optional[NDArray[T]] = None,
+        g: Optional[NDArray[T]] = None,
+        G: Optional[NDArray[T]] = None,
+        mo_coeff: Optional[NDArray[T]] = None,
+        mo_occ: Optional[NDArray[T]] = None,
         fock: Optional[BaseFock] = None,
         **kwargs: Any,
     ) -> None:
@@ -121,11 +134,11 @@ class BaseEBCC(ABC):
         # Parameters:
         self.log = default_log if log is None else log
         self.mf = self._convert_mf(mf)
-        self._mo_coeff: Optional[NDArray[float]] = (
-            np.asarray(mo_coeff).astype(types[float]) if mo_coeff is not None else None
+        self._mo_coeff: Optional[NDArray[T]] = (
+            np.asarray(mo_coeff, dtype=types[float]) if mo_coeff is not None else None
         )
-        self._mo_occ: Optional[NDArray[float]] = (
-            np.asarray(mo_occ).astype(types[float]) if mo_occ is not None else None
+        self._mo_occ: Optional[NDArray[T]] = (
+            np.asarray(mo_occ, dtype=types[float]) if mo_occ is not None else None
         )
 
         # Ansatz:
@@ -150,9 +163,9 @@ class BaseEBCC(ABC):
             raise ValueError(
                 "Fermionic and bosonic coupling ranks must both be zero, or both non-zero."
             )
-        self.omega = omega.astype(types[float]) if omega is not None else None
-        self.bare_g = g.astype(types[float]) if g is not None else None
-        self.bare_G = G.astype(types[float]) if G is not None else None
+        self.omega = np.asarray(omega, dtype=types[float]) if omega is not None else None
+        self.bare_g = np.asarray(g, dtype=types[float]) if g is not None else None
+        self.bare_G = np.asarray(G, dtype=types[float]) if G is not None else None
         if self.boson_ansatz != "":
             self.g = self.get_g()
             self.G = self.get_mean_field_G()
@@ -187,6 +200,7 @@ class BaseEBCC(ABC):
         self.log.info(f" > t_tol:  {ANSI.y}{self.options.t_tol}{ANSI.R}")
         self.log.info(f" > max_iter:  {ANSI.y}{self.options.max_iter}{ANSI.R}")
         self.log.info(f" > diis_space:  {ANSI.y}{self.options.diis_space}{ANSI.R}")
+        self.log.info(f" > diis_min_space:  {ANSI.y}{self.options.diis_min_space}{ANSI.R}")
         self.log.info(f" > damping:  {ANSI.y}{self.options.damping}{ANSI.R}")
         self.log.debug("")
         self.log.info(f"{ANSI.B}Ansatz{ANSI.R}: {ANSI.m}{self.ansatz}{ANSI.R}")
@@ -236,10 +250,8 @@ class BaseEBCC(ABC):
         self.log.info(f"{0:4d} {e_cc:16.10f} {e_cc + self.mf.e_tot:18.10f}")
 
         if not self.ansatz.is_one_shot:
-            # Set up DIIS:
-            diis = DIIS()
-            diis.space = self.options.diis_space
-            diis.damping = self.options.damping
+            # Set up damping:
+            damping = self.Damping(options=self.options)
 
             converged = False
             for niter in range(1, self.options.max_iter + 1):
@@ -247,9 +259,11 @@ class BaseEBCC(ABC):
                 amplitudes_prev = amplitudes
                 amplitudes = self.update_amps(amplitudes=amplitudes, eris=eris)
                 vector = self.amplitudes_to_vector(amplitudes)
-                vector = diis.update(vector)
+                vector = damping(vector)
                 amplitudes = self.vector_to_amplitudes(vector)
-                dt = np.linalg.norm(vector - self.amplitudes_to_vector(amplitudes_prev), ord=np.inf)
+                dt = np.linalg.norm(
+                    np.abs(vector - self.amplitudes_to_vector(amplitudes_prev)), ord=np.inf
+                )
 
                 # Update the energy and calculate change:
                 e_prev = e_cc
@@ -335,10 +349,8 @@ class BaseEBCC(ABC):
         self.log.debug("")
         self.log.info(f"{ANSI.B}{'Iter':>4s} {'Δ(Ampl.)':>13s}{ANSI.R}")
 
-        # Set up DIIS:
-        diis = DIIS()
-        diis.space = self.options.diis_space
-        diis.damping = self.options.damping
+        # Set up damping:
+        damping = self.Damping(options=self.options)
 
         converged = False
         for niter in range(1, self.options.max_iter + 1):
@@ -351,9 +363,9 @@ class BaseEBCC(ABC):
                 eris=eris,
             )
             vector = self.lambdas_to_vector(lambdas)
-            vector = diis.update(vector)
+            vector = damping(vector)
             lambdas = self.vector_to_lambdas(vector)
-            dl = np.linalg.norm(vector - self.lambdas_to_vector(lambdas_prev), ord=np.inf)
+            dl = np.linalg.norm(np.abs(vector - self.lambdas_to_vector(lambdas_prev)), ord=np.inf)
 
             # Log the iteration:
             converged = bool(dl < self.options.t_tol)
@@ -576,7 +588,7 @@ class BaseEBCC(ABC):
             eris=eris,
             amplitudes=amplitudes,
         )
-        res: float = func(**kwargs).real
+        res: float = ensure_scalar(func(**kwargs)).real
         return astype(res, float)
 
     def energy_perturbative(
@@ -601,8 +613,8 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        res: float = func(**kwargs).real
-        return astype(res, float)
+        res: float = ensure_scalar(func(**kwargs)).real
+        return res
 
     @abstractmethod
     def update_amps(
@@ -649,7 +661,7 @@ class BaseEBCC(ABC):
         eris: Optional[ERIsInputType] = None,
         amplitudes: Optional[Namespace[SpinArrayType]] = None,
         lambdas: Optional[Namespace[SpinArrayType]] = None,
-    ) -> NDArray[float]:
+    ) -> NDArray[T]:
         r"""Make the single boson density matrix :math:`\langle b \rangle`.
 
         Args:
@@ -666,7 +678,7 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        res: NDArray[float] = func(**kwargs)
+        res: NDArray[T] = func(**kwargs)
         return res
 
     def make_rdm1_b(
@@ -676,7 +688,7 @@ class BaseEBCC(ABC):
         lambdas: Optional[Namespace[SpinArrayType]] = None,
         unshifted: bool = True,
         hermitise: bool = True,
-    ) -> NDArray[float]:
+    ) -> NDArray[T]:
         r"""Make the one-particle boson reduced density matrix :math:`\langle b^+ c \rangle`.
 
         Args:
@@ -696,15 +708,15 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        dm: NDArray[float] = func(**kwargs)
+        dm: NDArray[T] = func(**kwargs)
 
         if hermitise:
-            dm = 0.5 * (dm + dm.T)
+            dm = (dm + np.transpose(dm)) * 0.5
 
         if unshifted and self.options.shift:
-            dm_cre, dm_ann = self.make_sing_b_dm()
             xi = self.xi
-            dm[np.diag_indices_from(dm)] -= xi * (dm_cre + dm_ann) - xi**2
+            dm_b = util.einsum("ni->i", self.make_sing_b_dm())
+            dm -= util.einsum("ij,i->ij", np.eye(dm.shape[0]), xi * dm_b - xi**2.0)
 
         return dm
 
@@ -783,7 +795,7 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def energy_sum(self, *args: str, signs_dict: Optional[dict[str, str]] = None) -> NDArray[float]:
+    def energy_sum(self, *args: str, signs_dict: Optional[dict[str, str]] = None) -> NDArray[T]:
         """Get a direct sum of energies.
 
         Args:
@@ -797,7 +809,7 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[float]:
+    def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -> NDArray[T]:
         """Construct a vector containing all of the amplitudes used in the given ansatz.
 
         Args:
@@ -809,7 +821,7 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def vector_to_amplitudes(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
+    def vector_to_amplitudes(self, vector: NDArray[T]) -> Namespace[SpinArrayType]:
         """Construct a namespace of amplitudes from a vector.
 
         Args:
@@ -821,7 +833,7 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def lambdas_to_vector(self, lambdas: Namespace[SpinArrayType]) -> NDArray[float]:
+    def lambdas_to_vector(self, lambdas: Namespace[SpinArrayType]) -> NDArray[T]:
         """Construct a vector containing all of the lambda amplitudes used in the given ansatz.
 
         Args:
@@ -833,7 +845,7 @@ class BaseEBCC(ABC):
         pass
 
     @abstractmethod
-    def vector_to_lambdas(self, vector: NDArray[float]) -> Namespace[SpinArrayType]:
+    def vector_to_lambdas(self, vector: NDArray[T]) -> Namespace[SpinArrayType]:
         """Construct a namespace of lambda amplitudes from a vector.
 
         Args:
@@ -865,7 +877,7 @@ class BaseEBCC(ABC):
         return self.ansatz.boson_coupling_rank
 
     @abstractmethod
-    def init_space(self) -> Any:
+    def init_space(self) -> SpaceType:
         """Initialise the fermionic space.
 
         Returns:
@@ -927,7 +939,7 @@ class BaseEBCC(ABC):
 
     @property
     @abstractmethod
-    def xi(self) -> NDArray[float]:
+    def xi(self) -> NDArray[T]:
         """Get the shift in the bosonic operators to diagonalise the photon Hamiltonian.
 
         Returns:
@@ -943,29 +955,30 @@ class BaseEBCC(ABC):
             Constant energy shift due to the polaritonic basis.
         """
         if self.options.shift:
-            return util.einsum("I,I->", self.omega, self.xi**2)
+            assert self.omega is not None
+            return cast(float, ensure_scalar(util.einsum("I,I->", self.omega, self.xi**2.0)))
         return 0.0
 
     @property
-    def mo_coeff(self) -> NDArray[float]:
+    def mo_coeff(self) -> NDArray[T]:
         """Get the molecular orbital coefficients.
 
         Returns:
             Molecular orbital coefficients.
         """
         if self._mo_coeff is None:
-            return np.asarray(self.mf.mo_coeff).astype(types[float])
+            return np.asarray(self.mf.mo_coeff, dtype=types[float])
         return self._mo_coeff
 
     @property
-    def mo_occ(self) -> NDArray[float]:
+    def mo_occ(self) -> NDArray[T]:
         """Get the molecular orbital occupation numbers.
 
         Returns:
             Molecular orbital occupation numbers.
         """
         if self._mo_occ is None:
-            return np.asarray(self.mf.mo_occ).astype(types[float])
+            return np.asarray(self.mf.mo_occ, dtype=types[float])
         return self._mo_occ
 
     @property

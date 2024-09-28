@@ -4,23 +4,30 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import numpy  # PySCF uses true numpy, no backend stuff here
 from pyscf import ao2mo, lib
 
 from ebcc import numpy as np
 from ebcc import util
+from ebcc.backend import to_numpy
 from ebcc.core.precision import types
-from ebcc.ham.base import BaseERIs
+from ebcc.ham.base import BaseERIs, BaseRHamiltonian, BaseUHamiltonian
 
 if TYPE_CHECKING:
     from typing import Optional
 
-    from ebcc.numpy.typing import NDArray
+    from numpy import float64
+    from numpy.typing import NDArray
+
+    T = float64
 
 
-class RCDERIs(BaseERIs):
+class RCDERIs(BaseERIs, BaseRHamiltonian):
     """Restricted Cholesky-decomposed ERIs container class."""
 
-    def __getitem__(self, key: str, e2: Optional[bool] = False) -> NDArray[float]:
+    _members: dict[str, NDArray[T]]
+
+    def __getitem__(self, key: str, e2: Optional[bool] = False) -> NDArray[T]:
         """Just-in-time getter.
 
         Args:
@@ -34,9 +41,9 @@ class RCDERIs(BaseERIs):
             raise NotImplementedError("`array` is not supported for CDERIs.")
 
         if len(key) == 4:
-            e1 = self.__getitem__("Q" + key[:2])
-            e2 = self.__getitem__("Q" + key[2:], e2=True)  # type: ignore
-            return util.einsum("Qij,Qkl->ijkl", e1, e2)
+            v1 = self.__getitem__("Q" + key[:2])
+            v2 = self.__getitem__("Q" + key[2:], e2=True)  # type: ignore
+            return util.einsum("Qij,Qkl->ijkl", v1, v2)
         elif len(key) == 3:
             key = key[1:]
         else:
@@ -51,41 +58,26 @@ class RCDERIs(BaseERIs):
         if key_e2 not in self._members:
             s = 0 if not e2 else 2
             coeffs = [
-                self.mo_coeff[i + s][:, self.space[i + s].mask(k)].astype(np.float64)
+                to_numpy(self.mo_coeff[i + s][:, self.space[i + s].slice(k)], dtype=numpy.float64)
                 for i, k in enumerate(key)
             ]
-            if types[float] == np.float64:
-                ijslice = (
-                    0,
-                    coeffs[0].shape[-1],
-                    coeffs[0].shape[-1],
-                    coeffs[0].shape[-1] + coeffs[1].shape[-1],
-                )
-                coeffs = np.concatenate(coeffs, axis=1)
-                block = ao2mo._ao2mo.nr_e2(
-                    self.cc.mf.with_df._cderi, coeffs, ijslice, aosym="s2", mosym="s1"
-                )
-                block = block.reshape(-1, ijslice[1] - ijslice[0], ijslice[3] - ijslice[2])
-            else:
-                shape = (
-                    self.cc.mf.with_df.get_naoaux(),
-                    self.cc.mf.with_df.mol.nao_nr(),
-                    self.cc.mf.with_df.mol.nao_nr(),
-                )
-                block = util.decompress_axes(
-                    "Qpp",
-                    self.cc.mf.with_df._cderi.astype(types[float]),
-                    include_diagonal=True,
-                    symmetry="+++",
-                    shape=shape,
-                )
-                block = util.einsum("Qpq,pi,qj->Qij", block, coeffs[s].conj(), coeffs[s + 1])
-            self._members[key_e2] = block
+            ijslice = (
+                0,
+                coeffs[0].shape[-1],
+                coeffs[0].shape[-1],
+                coeffs[0].shape[-1] + coeffs[1].shape[-1],
+            )
+            coeffs = numpy.concatenate(coeffs, axis=1)
+            block = ao2mo._ao2mo.nr_e2(
+                self.cc.mf.with_df._cderi, coeffs, ijslice, aosym="s2", mosym="s1"
+            )
+            block = np.reshape(block, (-1, ijslice[1] - ijslice[0], ijslice[3] - ijslice[2]))
+            self._members[key_e2] = np.asarray(block, dtype=types[float])
 
         return self._members[key_e2]
 
 
-class UCDERIs(BaseERIs):
+class UCDERIs(BaseERIs, BaseUHamiltonian):
     """Unrestricted Cholesky-decomposed ERIs container class."""
 
     _members: dict[str, RCDERIs]

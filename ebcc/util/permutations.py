@@ -6,14 +6,17 @@ import functools
 import itertools
 from typing import TYPE_CHECKING
 
-import numpy as np
+from ebcc import numpy as np
+from ebcc import util
+from ebcc.backend import _put
 
 if TYPE_CHECKING:
-    from typing import Any, Generator, Hashable, Iterable, Optional, TypeVar
+    from typing import Any, Generator, Hashable, Iterable, Optional
 
-    from ebcc.numpy.typing import NDArray
+    from numpy import float64, int64
+    from numpy.typing import NDArray
 
-    T = TypeVar("T")
+    T = float64
 
 
 def factorial(n: int) -> int:
@@ -43,7 +46,7 @@ def permute_string(string: str, permutation: tuple[int, ...]) -> str:
 
 def tril_indices_ndim(
     n: int, dims: int, include_diagonal: Optional[bool] = False
-) -> tuple[NDArray[int]]:
+) -> tuple[NDArray[int64], ...]:
     """Return lower triangular indices for a multidimensional array.
 
     Args:
@@ -59,15 +62,17 @@ def tril_indices_ndim(
         return (ranges[0],)
     # func: Callable[[Any, ...], Any] = np.greater_equal if include_diagonal else np.greater
 
-    slices = [
-        tuple(slice(None) if i == j else np.newaxis for i in range(dims)) for j in range(dims)
-    ]
+    slices = [tuple(slice(None) if i == j else None for i in range(dims)) for j in range(dims)]
 
     casted = [rng[ind] for rng, ind in zip(ranges, slices)]
     if include_diagonal:
-        mask = functools.reduce(np.logical_and, map(np.greater_equal, casted[:-1], casted[1:]))
+        mask = functools.reduce(
+            lambda x, y: x & y, map(lambda x, y: x >= y, casted[:-1], casted[1:])
+        )
     else:
-        mask = functools.reduce(np.logical_and, map(np.greater, casted[:-1], casted[1:]))
+        mask = functools.reduce(
+            lambda x, y: x & y, map(lambda x, y: x > y, casted[:-1], casted[1:])
+        )
 
     tril = tuple(
         np.broadcast_to(inds, mask.shape)[mask] for inds in np.indices(mask.shape, sparse=True)
@@ -208,7 +213,7 @@ def antisymmetrise_array(v: NDArray[T], axes: Optional[tuple[int, ...]] = None) 
     """
     if axes is None:
         axes = tuple(range(v.ndim))
-    v_as = np.zeros_like(v)
+    v_as = np.zeros(v.shape, dtype=v.dtype)
 
     for perm, sign in permutations_with_signs(axes):
         transpose = list(range(v.ndim))
@@ -216,7 +221,7 @@ def antisymmetrise_array(v: NDArray[T], axes: Optional[tuple[int, ...]] = None) 
             if ax in axes:
                 j = axes.index(ax)
                 transpose[i] = perm[j]
-        v_as += sign * v.transpose(transpose).copy()
+        v_as += np.copy(np.transpose(v, transpose)) * sign
 
     return v_as
 
@@ -308,8 +313,8 @@ def compress_axes(
     subscript = "".join([subs[s] for s in subscript])
 
     # Reshape array so that all axes of the same character are adjacent:
-    arg = tuple(np.argsort(list(subscript)))
-    array = array.transpose(arg)
+    arg = tuple(util.argsort(list(subscript)))
+    array = np.transpose(array, arg)
     subscript = permute_string(subscript, arg)
 
     # Reshape array so that all axes of the same character are flattened:
@@ -319,7 +324,9 @@ def compress_axes(
             assert sizes[char] == n
         else:
             sizes[char] = n
-    array = array.reshape([sizes[char] ** subscript.count(char) for char in sorted(set(subscript))])
+    array = np.reshape(
+        array, [sizes[char] ** subscript.count(char) for char in sorted(set(subscript))]
+    )
 
     # For each axis type, get the necessary lower-triangular indices:
     indices_ndim = [
@@ -333,10 +340,10 @@ def compress_axes(
 
     # Apply the indices:
     indices = [
-        ind[tuple(np.newaxis if i != j else slice(None) for i in range(len(indices)))]
+        ind[tuple(None if i != j else slice(None) for i in range(len(indices)))]
         for j, ind in enumerate(indices)
     ]
-    array_flat = array[tuple(indices)]
+    array_flat: NDArray[T] = array[tuple(indices)]
 
     return array_flat
 
@@ -393,8 +400,8 @@ def decompress_axes(
     subscript = "".join([subs[s] for s in subscript])
 
     # Reshape array so that all axes of the same character are adjacent:
-    arg = tuple(np.argsort(list(subscript)))
-    array = array.transpose(arg)
+    arg = tuple(util.argsort(list(subscript)))
+    array = np.transpose(array, arg)
     subscript = permute_string(subscript, arg)
 
     # Reshape array so that all axes of the same character are flattened:
@@ -404,7 +411,9 @@ def decompress_axes(
             assert sizes[char] == n
         else:
             sizes[char] = n
-    array = array.reshape([sizes[char] ** subscript.count(char) for char in sorted(set(subscript))])
+    array = np.reshape(
+        array, [sizes[char] ** subscript.count(char) for char in sorted(set(subscript))]
+    )
 
     # Check the symmetry string, and compress it:
     n = 0
@@ -431,20 +440,20 @@ def decompress_axes(
             for ind, char in zip(indices_perm, sorted(set(subscript)))
         )
         indices_perm = tuple(
-            ind[tuple(np.newaxis if i != j else slice(None) for i in range(len(indices_perm)))]
+            ind[tuple(None if i != j else slice(None) for i in range(len(indices_perm)))]
             for j, ind in enumerate(indices_perm)
         )
-        shape = array[indices_perm].shape
-        array[indices_perm] = array_flat.reshape(shape) * np.prod(signs)
+        array = _put(array, indices_perm, array_flat * util.prod(signs))
 
     # Reshape array to non-flattened format
-    array = array.reshape(
-        sum([(sizes[char],) * subscript.count(char) for char in sorted(set(subscript))], tuple())
+    array = np.reshape(
+        array,
+        (sum([(sizes[char],) * subscript.count(char) for char in sorted(set(subscript))], tuple())),
     )
 
     # Undo transpose:
-    arg = tuple(np.argsort(arg))
-    array = array.transpose(arg)
+    arg = tuple(util.argsort(list(arg)))
+    array = np.transpose(array, arg)
 
     return array
 
@@ -508,7 +517,7 @@ def symmetrise(
         n += subscript.count(char)
 
     # Iterate over permutations and signs:
-    array_as = np.zeros_like(array)
+    array_as = np.zeros(array.shape, dtype=array.dtype)
     groups = tuple(sorted(set(zip(sorted(set(subscript)), symmetry_compressed))))  # don't ask
     inds = [tuple(i for i, s in enumerate(subscript) if s == char) for char, symm in groups]
     for tup in itertools.product(*(permutations_with_signs(ind) for ind in inds)):
@@ -517,8 +526,8 @@ def symmetrise(
         for inds_part, perms_part in zip(inds, perms):
             for i, p in zip(inds_part, perms_part):
                 perm[i] = p
-        sign = np.prod(signs) if symmetry[perm[0]] == "-" else 1
-        array_as = array_as + sign * array.transpose(perm)
+        sign = util.prod(signs) if symmetry[perm[0]] == "-" else 1
+        array_as = array_as + np.transpose(array, perm) * sign
 
     if apply_factor:
         # Apply factor
@@ -551,19 +560,14 @@ def pack_2e(*args):  # type: ignore  # noqa
         "vvvv",
     ]
 
-    assert len(args) == len(ov_2e)
+    assert len(args) == 16
+    blocks = [[[[None, None] for _ in range(2)] for _ in range(2)] for _ in range(2)]
 
-    nocc = args[0].shape
-    nvir = args[-1].shape
-    occ = [slice(None, n) for n in nocc]
-    vir = [slice(n, None) for n in nocc]
-    out = np.zeros(tuple(no + nv for no, nv in zip(nocc, nvir)))
+    for n in range(16):
+        i, j, k, l = ["ov".index(x) for x in ov_2e[n]]
+        blocks[i][j][k][l] = args[n]
 
-    for key, arg in zip(ov_2e, args):
-        slices = [occ[i] if x == "o" else vir[i] for i, x in enumerate(key)]
-        out[tuple(slices)] = arg
-
-    return out
+    return np.block(blocks)  # type: ignore
 
 
 def unique(lst: list[Hashable]) -> list[Hashable]:

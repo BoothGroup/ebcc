@@ -70,7 +70,7 @@ class RCCSDT_Tests(unittest.TestCase):
     def test_t1(self):
         a = scipy.linalg.block_diag(self.rccsdt.t1, self.rccsdt.t1)[self.osort][:, self.vsort]
         b = self.gccsdt.t1
-        np.testing.assert_almost_equal(a, b, 6)
+        self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
 
     def test_rdm_energy(self):
         dm1 = self.rccsdt.make_rdm1_f()
