@@ -48,8 +48,11 @@ def name_to_identifier(name: str) -> str:
         'CCSDxTx'
         >>> name_to_identifier("CCSD-SD-1-2")
         'CCSD_SD_1_2'
+        >>> name_to_identifier("CCSDt'")
+        'CCSDwtwp'
     """
-    iden = name.replace("(", "x").replace(")", "x")
+    iden = "".join([f"w{c}w" if c.isalpha() and c.islower() else c for c in name])
+    iden = iden.replace("(", "x").replace(")", "x")
     iden = iden.replace("[", "y").replace("]", "y")
     iden = iden.replace("-", "_")
     iden = iden.replace("'", "p")
@@ -72,8 +75,11 @@ def identifity_to_name(iden: str) -> str:
         'CCSD(T)'
         >>> identifier_to_name("CCSD_SD_1_2")
         'CCSD-SD-1-2'
+        >>> identifier_to_name("CCSDwtwp")
+        "CCSDt'"
     """
     name = iden.replace("-", "_")
+    name = name.replace("w", "")
     while "x" in name:
         name = name.replace("x", "(", 1).replace("x", ")", 1)
     while "y" in name:
