@@ -52,7 +52,7 @@ def name_to_identifier(name: str) -> str:
         'CCSDwtwp'
     """
     iden = "".join([f"w{c}w" if c.isalpha() and c.islower() else c for c in name])
-    iden = name.replace("(", "x").replace(")", "x")
+    iden = iden.replace("(", "x").replace(")", "x")
     iden = iden.replace("[", "y").replace("]", "y")
     iden = iden.replace("-", "_")
     iden = iden.replace("'", "p")
