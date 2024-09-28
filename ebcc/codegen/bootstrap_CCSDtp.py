@@ -37,6 +37,13 @@ class _EinsumCodeGen(EinsumCodeGen):
         args = tuple(arg for arg in args if "_" not in arg)
         return super().tensor_cleanup(*args)
 
+    def preamble(self, imports=None):
+        if imports is None:
+            imports = "from ebcc import numpy as np\n"
+            imports += "from ebcc.util import pack_2e, einsum, dirsum, Namespace\n"
+            imports += "from ebcc.backend import _inflate"
+        super().preamble(imports=imports)
+
 code_generators = {
     "einsum": _EinsumCodeGen(
         stdout=open(f"{spin[0].upper()}CCSDtp.py", "w"),
@@ -174,14 +181,14 @@ with Stopwatch("T amplitudes"):
                 for o, e in zip(output, expr):
                     if o.name.startswith("t") and not (o.name.startswith("tmp") or o.name.startswith("t3")):
                         spaces = "".join(tuple(i.space for i in o.indices))
-                        spins = "".join(tuple(i.spin for i in o.indices))
+                        spins = "".join(tuple({"α": "a", "β": "b"}[i.spin] for i in o.indices))
                         if set(spaces) != {"o", "v"}:
                             inp_keys[spins].add(spaces)
                     for a in e.nested_view():
                         for t in a:
                             if isinstance(t, Tensor) and t.name.startswith("t") and not (t.name.startswith("tmp") or t.name.startswith("t3")):
                                 spaces = "".join(tuple(i.space for i in t.indices))
-                                spins = "".join(tuple(i.spin for i in t.indices))
+                                spins = "".join(tuple({"α": "a", "β": "b"}[i.spin] for i in t.indices))
                                 inp_keys[spins].add(spaces)
                 for spins, inp_keys in inp_keys.items():
                     for key in inp_keys:
@@ -191,7 +198,7 @@ with Stopwatch("T amplitudes"):
                 for spins, out_keys in out_keys.items():
                     for key in out_keys:
                         slices = ", ".join(f"s{c}{s}" for c, s in zip(key, spins))
-                        postamble += f"\nt{len(key)//2}new.{spins} = _put(t{len(key)//2}new.{spins}, np.ix_({slices}), t{len(key)//2}new_{spins}_{key})"
+                        postamble += f"\nt{len(key)//2}new.{spins} += _inflate(t{len(key)//2}new.{spins}.shape, np.ix_({slices}), t{len(key)//2}new_{spins}_{key})"
             else:
                 preamble += "\nso = np.ones((t1.shape[0],), dtype=bool)"
                 preamble += "\nsv = np.ones((t1.shape[1],), dtype=bool)"
@@ -216,7 +223,7 @@ with Stopwatch("T amplitudes"):
                     ignore_arguments.append(f"t{len(key)//2}_{key}")
                 for key in out_keys:
                     slices = ", ".join(f"s{c}" for c in key)
-                    postamble += f"\nt{len(key)//2}new = _put(t{len(key)//2}new, np.ix_({slices}), t{len(key)//2}new_{key})"
+                    postamble += f"\nt{len(key)//2}new += _inflate(t{len(key)//2}new.shape, np.ix_({slices}), t{len(key)//2}new_{key})"
                 preamble += "\n"
             kwargs = {
                 "preamble": preamble,

@@ -90,10 +90,11 @@ class EinsumCodeGen(_EinsumCodeGen):
             **kwargs,
         )
 
-    def preamble(self):
-        preamble = "from ebcc import numpy as np\n"
-        preamble += "from ebcc.util import pack_2e, einsum, direct_sum, Namespace"
-        super().preamble(preamble)
+    def preamble(self, imports=None):
+        if imports is None:
+            imports = "from ebcc import numpy as np\n"
+            imports += "from ebcc.util import pack_2e, einsum, dirsum, Namespace"
+        super().preamble(imports=imports)
 
     def ignore_argument(self, arg):
         """
