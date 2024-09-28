@@ -46,7 +46,7 @@ class _EinsumCodeGen(EinsumCodeGen):
 
 code_generators = {
     "einsum": _EinsumCodeGen(
-        stdout=open(f"{spin[0].upper()}CCSDtp.py", "w"),
+        stdout=open(f"{spin[0].upper()}CCSDwtwp.py", "w"),
         name_generator=name_generator,
         spin=spin,
     ),
