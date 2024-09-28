@@ -26,3 +26,10 @@ for method in CC3; do
         python -W ignore bootstrap_${method}.py $i
     done
 done
+
+for method in CCSDwtwp; do
+    for i in rhf ghf; do
+        echo "Bootstrapping $method ($i)"
+        python -W ignore bootstrap_${method}.py $i
+    done
+done
