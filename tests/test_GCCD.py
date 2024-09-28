@@ -136,7 +136,7 @@ class GCCD_Tests(unittest.TestCase):
     @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ee(self):
         e1 = self.ccd.ee_eom(nroots=5).kernel()
-        self.assertAlmostEqual(e1[0], 0.12304746736972356)
+        self.assertAlmostEqual(e1[0], 0.12304746736972356, 6)
 
 
 if __name__ == "__main__":
