@@ -80,7 +80,7 @@ class UCCSDtp_Tests(unittest.TestCase):
 
     def test_3_electron_exact(self):
         mol = gto.M(
-                atom="H 0 0 0; H 0 0 1",
+                atom="H 0 0 0; H 0 0 2",
                 basis="6-31g",
                 spin=1,
                 charge=-1,
@@ -89,6 +89,7 @@ class UCCSDtp_Tests(unittest.TestCase):
         assert mol.nelectron == 3
 
         mf = scf.UHF(mol)
+        mf.conv_tol = 1e-12
         mf.kernel()
 
         space = tuple(Space(o > 0, np.zeros_like(o), np.ones_like(o)) for o in mf.mo_occ)
@@ -99,6 +100,8 @@ class UCCSDtp_Tests(unittest.TestCase):
                 space=space,
                 log=NullLogger(),
         )
+        ccsdt.options.e_tol = 1e-8
+        ccsdt.options.t_tol = 1e-7
         ccsdt.kernel()
         e1 = ccsdt.e_tot
 
