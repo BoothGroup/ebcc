@@ -80,7 +80,7 @@ class UCCSDtp_Tests(unittest.TestCase):
 
     def test_3_electron_exact(self):
         mol = gto.M(
-                atom="H 0 0 0; H 0 0 2",
+                atom="H 0 0 0; H 0 0 1",
                 basis="6-31g",
                 spin=1,
                 charge=-1,
@@ -109,7 +109,7 @@ class UCCSDtp_Tests(unittest.TestCase):
         ci.conv_tol = 1e-10
         e2 = ci.kernel()[0]
 
-        self.assertAlmostEqual(e1, e2, 6)
+        self.assertAlmostEqual(e1, e2, 8)
 
 
 if __name__ == "__main__":
