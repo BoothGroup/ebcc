@@ -7,6 +7,7 @@ sys.setrecursionlimit(100000)
 
 import pdaggerq
 from albert.qc._pdaggerq import import_from_pdaggerq
+from albert.base import Base
 from albert.tensor import Tensor
 from albert.algebra import Mul, Add
 
@@ -119,10 +120,9 @@ with Stopwatch("T amplitudes"):
     for n in range(3):
         for index_spins in get_amplitude_spins(n + 1, spin):
             indices = default_indices["o"][: n + 1] + default_indices["v"][: n + 1]
-            expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins)
-            expr_n = spin_integrate(expr_n, spin)
+            expr_n = (import_from_pdaggerq(terms[n], index_spins=index_spins),)
             output_n = get_t_amplitude_outputs(expr_n, f"t{n+1}new", indices=indices)
-            returns_n = (Tensor(*tuple(Index(i, index_spins[i]) for i in indices), name=f"t{n+1}new"),)
+            returns_n = (Tensor(*tuple(Index(i) for i in indices), name=f"t{n+1}new"),)
             expr.extend(expr_n)
             output.extend(output_n)
             returns.extend(returns_n)
@@ -154,8 +154,23 @@ with Stopwatch("T amplitudes"):
     output = new_output
     expr = new_expr
 
+    # Spin integrate
+    new_output = []
+    new_expr = []
+    for o, e in zip(output, expr):
+        new_expr_spin = spin_integrate(e, spin)
+        for ee in new_expr_spin:
+            if isinstance(ee, Base) and len(ee.without_coefficient().args):
+                new_expr.append(ee)
+                new_output.append(get_t_amplitude_outputs((ee,), o.name, indices=[i.name for i in sorted(ee.external_indices)])[0])
+    expr = new_expr
+    output = new_output
+    for o, e in zip(output, expr):
+        for a in e.nested_view():
+            print(o, "=", Mul(*a))
+
     # Optimise
-    output, expr = optimise(output, expr, spin, strategy="exhaust" if spin != "uhf" else "greedy")
+    #output, expr = optimise(output, expr, spin, strategy="exhaust" if spin != "uhf" else "greedy")
 
     # Generate the T amplitude code
     for name, codegen in code_generators.items():
@@ -220,14 +235,14 @@ with Stopwatch("T amplitudes"):
                                 spaces = "".join(tuple(i.space for i in t.indices))
                                 if set(spaces) != {"o", "v"} and spaces != "ooOvvV":
                                     inp_keys.add(spaces)
-                for key in sorted(inp_keys):
+                for key in sorted(inp_keys, key=lambda x: (len(x), x)):
                     if len(key) == 6:
                         slices = ", ".join(f"s{c}" for c in key[:2]) + ", si, " + ", ".join(f"s{c}" for c in key[3:5]) + ", sa"
                     else:
                         slices = ", ".join(f"s{c}" for c in key)
                     preamble += f"\nt{len(key)//2}_{key} = np.copy(t{len(key)//2}[np.ix_({slices})])"
                     ignore_arguments.append(f"t{len(key)//2}_{key}")
-                for key in sorted(out_keys):
+                for key in sorted(out_keys, key=lambda x: (len(x), x)):
                     if len(key) == 6:
                         slices = ", ".join(f"s{c}" for c in key[:2]) + ", si, " + ", ".join(f"s{c}" for c in key[3:5]) + ", sa"
                     else:
