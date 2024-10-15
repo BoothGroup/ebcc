@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title> ctf - ebcc</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = " ctf";
+        var mkdocs_page_input_path = "reference/backend/_ctf.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> ebcc
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../features/">Features</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Code Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" >Coupled cluster</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/rebcc/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/uebcc/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/gebcc/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Equation of motion</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/reom/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/ueom/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/geom/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Orbital optimisation</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" >Brueckner</a>
+    <ul>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/rbrueckner/">Restricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/ubrueckner/">Unrestricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/gbrueckner/">Generalised</a>
+                </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../opt/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Core</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/ansatz/">Ansatz</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/damping/">Damping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/dump/">Dumping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/logging/">Logging</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/precision/">Precision</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Hamiltonian</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/space/">Space</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/fock/">Fock</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/eris/">ERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/cderis/">CDERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/elbos/">Bosonic</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Utility</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/permutations/">Permutations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/einsumfunc/">Einstein summations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/misc/">Miscellaneous</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">ebcc</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active"> ctf</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="ebcc.backend._ctf"></a>
+    <div class="doc doc-contents first">
+
+        <p>Cyclops Tensor Framework backend.</p>
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.backend._ctf.FakeLinalg" class="doc doc-heading">
+            <code>ebcc.backend._ctf.FakeLinalg</code>
+
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+
+        <p>Fake linalg module for CTF.</p>
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.backend._ctf.FakeLinalg.__getattr__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">_ctf</span><span class="o">.</span><span class="n">FakeLinalg</span><span class="o">.</span><span class="fm">__getattr__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the attribute from CTF's linalg module.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/backend/_ctf.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the attribute from CTF&#39;s linalg module.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ctf</span><span class="o">.</span><span class="n">linalg</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="ebcc.backend._ctf.__getattr__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">_ctf</span><span class="o">.</span><span class="fm">__getattr__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the attribute from CTF.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/backend/_ctf.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__getattr__</span><span class="p">(</span><span class="n">name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the attribute from CTF.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ctf</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="ebcc.backend._ctf.einsum" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">_ctf</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">optimize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Evaluate an einsum expression.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/backend/_ctf.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">einsum</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">optimize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate an einsum expression.&quot;&quot;&quot;</span>
+    <span class="c1"># FIXME This shouldn&#39;t be called, except via `util.einsum`, which should have already</span>
+    <span class="c1">#       optimised the expression. We should check if this contraction has more than</span>
+    <span class="c1">#       two tensors and if so, raise an error.</span>
+    <span class="k">return</span> <span class="n">ctf</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="ebcc.backend._ctf.einsum_path" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">_ctf</span><span class="o">.</span><span class="n">einsum_path</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Evaluate the lowest cost contraction order for an einsum expression.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/backend/_ctf.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">einsum_path</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate the lowest cost contraction order for an einsum expression.&quot;&quot;&quot;</span>
+    <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;optimize&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;optimize&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;optimal&quot;</span>
+    <span class="k">return</span> <span class="n">opt_einsum</span><span class="o">.</span><span class="n">contract_path</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

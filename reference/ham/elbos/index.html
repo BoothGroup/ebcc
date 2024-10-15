@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Bosonic - ebcc</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Bosonic";
+        var mkdocs_page_input_path = "reference/ham/elbos.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> ebcc
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../features/">Features</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Code Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" >Coupled cluster</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/rebcc/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/uebcc/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/gebcc/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Equation of motion</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/reom/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/ueom/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/geom/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Orbital optimisation</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" >Brueckner</a>
+    <ul>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/rbrueckner/">Restricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/ubrueckner/">Unrestricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/gbrueckner/">Generalised</a>
+                </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../opt/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Core</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/ansatz/">Ansatz</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/damping/">Damping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/dump/">Dumping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/logging/">Logging</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/precision/">Precision</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >Hamiltonian</a>
+    <ul class="current">
+                <li class="toctree-l2"><a class="reference internal" href="../space/">Space</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../fock/">Fock</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../eris/">ERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../cderis/">CDERIs</a>
+                </li>
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">Bosonic</a>
+    <ul class="current">
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Utility</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/permutations/">Permutations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/einsumfunc/">Einstein summations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/misc/">Miscellaneous</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">ebcc</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Code Reference</li>
+          <li class="breadcrumb-item">Hamiltonian</li>
+      <li class="breadcrumb-item active">Bosonic</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="ebcc.ham.elbos"></a>
+    <div class="doc doc-contents first">
+
+        <p>Electron-boson coupling matrix containers.</p>
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.ham.elbos.RElectronBoson" class="doc doc-heading">
+              <code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">ham</span><span class="o">.</span><span class="n">elbos</span><span class="o">.</span><span class="n">RElectronBoson</span><span class="p">(</span><span class="n">cc</span><span class="p">,</span> <span class="n">array</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">space</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code>BaseElectronBoson</code>, <code>BaseRHamiltonian</code></p>
+
+
+        <p>Restricted electron-boson coupling matrices.</p>
+
+        <p>Initialise the electron-boson coupling matrix.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>cc</code></b>
+                  (<code>BaseEBCC</code>)
+              –
+              <div class="doc-md-description">
+                <p>Coupled cluster object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>array</code></b>
+                  (<code>Optional[Any]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Electron-boson coupling matrix in the MO basis.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>space</code></b>
+                  (<code>Optional[tuple[Any, ...]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Space object for each index.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/ham/base.py</code></summary>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">cc</span><span class="p">:</span> <span class="n">BaseEBCC</span><span class="p">,</span>
+    <span class="n">array</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">space</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialise the electron-boson coupling matrix.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cc: Coupled cluster object.</span>
+<span class="sd">        array: Electron-boson coupling matrix in the MO basis.</span>
+<span class="sd">        space: Space object for each index.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">Namespace</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="c1"># Parameters:</span>
+    <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s2">&quot;cc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cc</span>
+    <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s2">&quot;space&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">space</span> <span class="k">if</span> <span class="n">space</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span><span class="n">cc</span><span class="o">.</span><span class="n">space</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">2</span>
+    <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s2">&quot;array&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">array</span> <span class="k">if</span> <span class="n">array</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_g</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.ham.elbos.RElectronBoson.__getitem__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">ham</span><span class="o">.</span><span class="n">elbos</span><span class="o">.</span><span class="n">RElectronBoson</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Just-in-time getter.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>key</code></b>
+                  (<code>str</code>)
+              –
+              <div class="doc-md-description">
+                <p>Key to get.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code>NDArray[T]</code>
+              –
+              <div class="doc-md-description">
+                <p>Electron-boson coupling matrix for the given spaces.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/ham/elbos.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Just-in-time getter.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        key: Key to get.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Electron-boson coupling matrix for the given spaces.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_members</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;b&quot;</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="n">key</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="n">key</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_members</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="p">[:,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">])</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_members</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.ham.elbos.UElectronBoson" class="doc doc-heading">
+              <code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">ham</span><span class="o">.</span><span class="n">elbos</span><span class="o">.</span><span class="n">UElectronBoson</span><span class="p">(</span><span class="n">cc</span><span class="p">,</span> <span class="n">array</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">space</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code>BaseElectronBoson</code>, <code>BaseUHamiltonian</code></p>
+
+
+        <p>Unrestricted electron-boson coupling matrices.</p>
+
+        <p>Initialise the electron-boson coupling matrix.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>cc</code></b>
+                  (<code>BaseEBCC</code>)
+              –
+              <div class="doc-md-description">
+                <p>Coupled cluster object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>array</code></b>
+                  (<code>Optional[Any]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Electron-boson coupling matrix in the MO basis.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>space</code></b>
+                  (<code>Optional[tuple[Any, ...]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Space object for each index.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/ham/base.py</code></summary>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">cc</span><span class="p">:</span> <span class="n">BaseEBCC</span><span class="p">,</span>
+    <span class="n">array</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">space</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialise the electron-boson coupling matrix.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cc: Coupled cluster object.</span>
+<span class="sd">        array: Electron-boson coupling matrix in the MO basis.</span>
+<span class="sd">        space: Space object for each index.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">Namespace</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="c1"># Parameters:</span>
+    <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s2">&quot;cc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cc</span>
+    <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s2">&quot;space&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">space</span> <span class="k">if</span> <span class="n">space</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span><span class="n">cc</span><span class="o">.</span><span class="n">space</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">2</span>
+    <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s2">&quot;array&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">array</span> <span class="k">if</span> <span class="n">array</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_g</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.ham.elbos.UElectronBoson.__getitem__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">ham</span><span class="o">.</span><span class="n">elbos</span><span class="o">.</span><span class="n">UElectronBoson</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Just-in-time getter.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>key</code></b>
+                  (<code>str</code>)
+              –
+              <div class="doc-md-description">
+                <p>Key to get.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code>RElectronBoson</code>
+              –
+              <div class="doc-md-description">
+                <p>Electron-boson coupling matrix for the given spin.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/ham/elbos.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RElectronBoson</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Just-in-time getter.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        key: Key to get.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Electron-boson coupling matrix for the given spin.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;aa&quot;</span><span class="p">,</span> <span class="s2">&quot;bb&quot;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid key: </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_members</span><span class="p">:</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="s2">&quot;ab&quot;</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_members</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">RElectronBoson</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cc</span><span class="p">,</span>
+            <span class="n">array</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">4</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="p">,</span>
+            <span class="n">space</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]),</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_members</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.ham.elbos.GElectronBoson" class="doc doc-heading">
+              <code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">ham</span><span class="o">.</span><span class="n">elbos</span><span class="o">.</span><span class="n">GElectronBoson</span><span class="p">(</span><span class="n">cc</span><span class="p">,</span> <span class="n">array</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">space</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code>BaseElectronBoson</code>, <code>BaseGHamiltonian</code></p>
+
+
+        <p>Generalised electron-boson coupling matrices.</p>
+
+        <p>Initialise the electron-boson coupling matrix.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>cc</code></b>
+                  (<code>BaseEBCC</code>)
+              –
+              <div class="doc-md-description">
+                <p>Coupled cluster object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>array</code></b>
+                  (<code>Optional[Any]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Electron-boson coupling matrix in the MO basis.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>space</code></b>
+                  (<code>Optional[tuple[Any, ...]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Space object for each index.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/ham/base.py</code></summary>
+                    <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">cc</span><span class="p">:</span> <span class="n">BaseEBCC</span><span class="p">,</span>
+    <span class="n">array</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">space</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initialise the electron-boson coupling matrix.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        cc: Coupled cluster object.</span>
+<span class="sd">        array: Electron-boson coupling matrix in the MO basis.</span>
+<span class="sd">        space: Space object for each index.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">Namespace</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+    <span class="c1"># Parameters:</span>
+    <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s2">&quot;cc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cc</span>
+    <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s2">&quot;space&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">space</span> <span class="k">if</span> <span class="n">space</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span><span class="n">cc</span><span class="o">.</span><span class="n">space</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">2</span>
+    <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">[</span><span class="s2">&quot;array&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">array</span> <span class="k">if</span> <span class="n">array</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_g</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.ham.elbos.GElectronBoson.__getitem__" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">ebcc</span><span class="o">.</span><span class="n">ham</span><span class="o">.</span><span class="n">elbos</span><span class="o">.</span><span class="n">GElectronBoson</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">)</span></code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Just-in-time getter.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>key</code></b>
+                  (<code>str</code>)
+              –
+              <div class="doc-md-description">
+                <p>Key to get.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code>NDArray[T]</code>
+              –
+              <div class="doc-md-description">
+                <p>Electron-boson coupling matrix for the given spaces.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/ham/elbos.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">80</span>
+<span class="normal">81</span>
+<span class="normal">82</span>
+<span class="normal">83</span>
+<span class="normal">84</span>
+<span class="normal">85</span>
+<span class="normal">86</span>
+<span class="normal">87</span>
+<span class="normal">88</span>
+<span class="normal">89</span>
+<span class="normal">90</span>
+<span class="normal">91</span>
+<span class="normal">92</span>
+<span class="normal">93</span>
+<span class="normal">94</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">T</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Just-in-time getter.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        key: Key to get.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Electron-boson coupling matrix for the given spaces.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_members</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;b&quot;</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="n">key</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">j</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">space</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="n">key</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_members</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">array</span><span class="p">[:,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">])</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_members</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../cderis/" class="btn btn-neutral float-left" title="CDERIs"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../base/" class="btn btn-neutral float-right" title="Base">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../cderis/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../base/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
