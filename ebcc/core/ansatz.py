@@ -24,6 +24,7 @@ named_ansatzes = {
     "QCISD": ("QCISD", "", 0, 0),
     "DCD": ("DCD", "", 0, 0),
     "DCSD": ("DCSD", "", 0, 0),
+    "CCSDt": ("CCSDt", "", 0, 0),
     "CCSDt'": ("CCSDt'", "", 0, 0),
     "CCSD-S-1-1": ("CCSD", "S", 1, 1),
     "CCSD-SD-1-1": ("CCSD", "SD", 1, 1),
