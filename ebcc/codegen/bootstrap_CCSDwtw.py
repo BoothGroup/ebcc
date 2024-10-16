@@ -120,7 +120,8 @@ with Stopwatch("T amplitudes"):
     for n in range(3):
         for index_spins in get_amplitude_spins(n + 1, spin):
             indices = default_indices["o"][: n + 1] + default_indices["v"][: n + 1]
-            expr_n = (import_from_pdaggerq(terms[n], index_spins=index_spins),)
+            expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins)
+            expr_n = spin_integrate(expr_n, spin)
             output_n = get_t_amplitude_outputs(expr_n, f"t{n+1}new", indices=indices)
             returns_n = (Tensor(*tuple(Index(i) for i in indices), name=f"t{n+1}new"),)
             expr.extend(expr_n)
@@ -154,20 +155,17 @@ with Stopwatch("T amplitudes"):
     output = new_output
     expr = new_expr
 
-    # Spin integrate
-    new_output = []
-    new_expr = []
-    for o, e in zip(output, expr):
-        new_expr_spin = spin_integrate(e, spin)
-        for ee in new_expr_spin:
-            if isinstance(ee, Base) and len(ee.without_coefficient().args):
-                new_expr.append(ee)
-                new_output.append(get_t_amplitude_outputs((ee,), o.name, indices=[i.name for i in sorted(ee.external_indices)])[0])
-    expr = new_expr
-    output = new_output
-    for o, e in zip(output, expr):
-        for a in e.nested_view():
-            print(o, "=", Mul(*a))
+    ## Spin integrate
+    #new_output = []
+    #new_expr = []
+    #for o, e in zip(output, expr):
+    #    new_expr_spin = spin_integrate(e, spin)
+    #    for ee in new_expr_spin:
+    #        if isinstance(ee, Base) and len(ee.without_coefficient().args):
+    #            new_expr.append(ee)
+    #            new_output.append(get_t_amplitude_outputs((ee,), o.name, indices=[i.name for i in sorted(ee.external_indices)])[0])
+    #expr = new_expr
+    #output = new_output
 
     # Optimise
     #output, expr = optimise(output, expr, spin, strategy="exhaust" if spin != "uhf" else "greedy")
