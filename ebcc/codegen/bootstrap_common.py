@@ -3,6 +3,7 @@
 
 import itertools
 import time
+import re
 from collections import defaultdict
 
 from albert.codegen.einsum import EinsumCodeGen as _EinsumCodeGen
@@ -46,6 +47,8 @@ default_indices = {
     "v": VIRT_INDICES,
     "O": [i.upper() for i in OCC_INDICES],
     "V": [i.upper() for i in VIRT_INDICES],
+    "i": [f"{i}_" for i in OCC_INDICES],
+    "a": [f"{i}_" for i in VIRT_INDICES],
     "b": ["x", "y", "z", "b0", "b1", "b2", "b3"],
     "x": ["P", "Q", "R", "S", "x0", "x1", "x2", "x3", "x4", "x5", "x7"],
     "d": ["DUMMY1", "DUMMY2", "DUMMY3", "DUMMY4"],
@@ -61,6 +64,8 @@ default_sizes = {
     "v": 1000,
     "O": 8,
     "V": 16,
+    "i": 192,
+    "a": 984,
     "b": 10,
     "x": 3000,
     "d": 100000,
@@ -240,9 +245,22 @@ def spin_integrate(expr, spin):
 
 def remove_hf_energy(terms):
     """Remove the HF energy from the terms."""
-    terms = [term for term in terms if set(term) != {"+1.00000000000000", "f(i,i)"}]
-    terms = [term for term in terms if set(term) != {"-0.50000000000000", "<j,i||j,i>"}]
-    return terms
+    new_terms = []
+    for term in terms:
+        if len(term) == 2:
+            factor, tensor = term
+            if tensor.startswith("f_"):
+                tensor = "f" + tensor[4:]
+            if tensor.startswith("<") and "_" in tensor:
+                tensor = tensor[:-5]
+            if (factor, tensor) == ("+1.00000000000000", "f(i,i)"):
+                continue
+            if (factor, tensor) == ("-0.50000000000000", "<j,i||j,i>"):
+                continue
+            if (factor, tensor) == ("-0.50000000000000", "<i,j||i,j>"):
+                continue
+        new_terms.append(term)
+    return new_terms
 
 
 def remove_e0_eom(terms):

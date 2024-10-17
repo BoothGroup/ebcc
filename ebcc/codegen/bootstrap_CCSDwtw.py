@@ -22,7 +22,7 @@ def name_generator(tensor, add_spaces=True):
     if isinstance(tensor, Tensor) and tensor.name.startswith("t") and not tensor.name.startswith("tmp"):
         spaces = tuple(i.space for i in tensor.indices)
         if not any(s is None for s in spaces):  # Otherwise, it's a "return" tensor
-            if spaces not in (("o", "v"), ("o", "o", "v", "v"), ("o", "o", "O", "v", "v", "V")):
+            if spaces not in (("o", "v"), ("o", "o", "v", "v"), ("O", "o", "o", "v", "v", "V")):
                 name = name.replace(".", "_")
                 name = f"{name}_{''.join(spaces)}"
     return name
@@ -135,12 +135,12 @@ with Stopwatch("T amplitudes"):
         # Get the indices
         indices = set()
         if o.name.startswith("t3"):
-            indices = indices.union({o.indices[2], o.indices[5]})
+            indices = indices.union({o.indices[0], o.indices[5]})
         for a in e.nested_view():
             indices_a = indices.copy()
             for t in a:
                 if isinstance(t, Tensor) and t.name.startswith("t3"):
-                    indices_a = indices_a.union({t.indices[2], t.indices[5]})
+                    indices_a = indices_a.union({t.indices[0], t.indices[5]})
 
             # Substitute the indices
             subs = {i: Index(i.name.upper(), spin=i.spin, space=i.space.upper()) for i in indices_a}
@@ -215,7 +215,7 @@ with Stopwatch("T amplitudes"):
             else:
                 preamble += "\nso = np.ones((t1.shape[0],), dtype=bool)"
                 preamble += "\nsv = np.ones((t1.shape[1],), dtype=bool)"
-                preamble += "\nsi = np.ones((t3.shape[2],), dtype=bool)"
+                preamble += "\nsi = np.ones((t3.shape[0],), dtype=bool)"
                 preamble += "\nsa = np.ones((t3.shape[5],), dtype=bool)"
                 preamble += "\nsO = space.active[space.correlated][space.occupied[space.correlated]]"
                 preamble += "\nsV = space.active[space.correlated][space.virtual[space.correlated]]"
@@ -225,24 +225,26 @@ with Stopwatch("T amplitudes"):
                 for o, e in zip(output, expr):
                     if o.name.startswith("t") and not o.name.startswith("tmp"):
                         spaces = "".join(tuple(i.space for i in o.indices))
-                        if set(spaces) != {"o", "v"} and spaces != "ooOvvV":
+                        if set(spaces) != {"o", "v"} and spaces != "OoovvV":
                             out_keys.add(spaces)
                     for a in e.nested_view():
                         for t in a:
                             if isinstance(t, Tensor) and t.name.startswith("t") and not t.name.startswith("tmp"):
                                 spaces = "".join(tuple(i.space for i in t.indices))
-                                if set(spaces) != {"o", "v"} and spaces != "ooOvvV":
+                                if set(spaces) != {"o", "v"} and spaces != "OoovvV":
                                     inp_keys.add(spaces)
                 for key in sorted(inp_keys, key=lambda x: (len(x), x)):
                     if len(key) == 6:
-                        slices = ", ".join(f"s{c}" for c in key[:2]) + ", si, " + ", ".join(f"s{c}" for c in key[3:5]) + ", sa"
+                        #slices = ", ".join(f"s{c}" for c in key[:2]) + ", si, " + ", ".join(f"s{c}" for c in key[3:5]) + ", sa"
+                        slices = "si, " + ", ".join(f"s{c}" for c in key[1:5]) + ", sa"
                     else:
                         slices = ", ".join(f"s{c}" for c in key)
                     preamble += f"\nt{len(key)//2}_{key} = np.copy(t{len(key)//2}[np.ix_({slices})])"
                     ignore_arguments.append(f"t{len(key)//2}_{key}")
                 for key in sorted(out_keys, key=lambda x: (len(x), x)):
                     if len(key) == 6:
-                        slices = ", ".join(f"s{c}" for c in key[:2]) + ", si, " + ", ".join(f"s{c}" for c in key[3:5]) + ", sa"
+                        #slices = ", ".join(f"s{c}" for c in key[:2]) + ", si, " + ", ".join(f"s{c}" for c in key[3:5]) + ", sa"
+                        slices = "si, " + ", ".join(f"s{c}" for c in key[1:5]) + ", sa"
                     else:
                         slices = ", ".join(f"s{c}" for c in key)
                     postamble += f"\nt{len(key)//2}new += _inflate(t{len(key)//2}new.shape, np.ix_({slices}), t{len(key)//2}new_{key})"
