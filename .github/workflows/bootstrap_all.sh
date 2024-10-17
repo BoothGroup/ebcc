@@ -20,15 +20,15 @@ for method in CCD CCSD QCISD CC2 DCD DCSD; do
     done
 done
 
-for method in CC3; do
-    for i in rhf uhf ghf; do
+for method in CCSDwtwp; do
+    for i in rhf ghf; do
         echo "Bootstrapping $method ($i)"
         python -W ignore bootstrap_${method}.py $i
     done
 done
 
-for method in CCSDwtwp; do
-    for i in rhf ghf; do
+for method in CC3, CCSDT; do
+    for i in rhf uhf ghf; do
         echo "Bootstrapping $method ($i)"
         python -W ignore bootstrap_${method}.py $i
     done
