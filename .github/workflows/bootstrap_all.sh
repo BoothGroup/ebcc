@@ -33,3 +33,5 @@ for method in CC3 CCSDT; do
         python -W ignore bootstrap_${method}.py $i &
     done
 done
+
+wait
