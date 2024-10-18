@@ -235,12 +235,21 @@ name_generators = {
 
 def spin_integrate(expr, spin):
     """Perform the spin integration."""
-    if spin == "rhf":
-        return (generalised_to_restricted(expr),)
-    elif spin == "uhf":
-        return generalised_to_unrestricted(expr)
+    if isinstance(expr, Add):
+        args = expr.args
     else:
-        return (expr,)
+        args = [expr]
+    out = tuple()
+    for p0 in range(0, len(args), 1000):
+        # Batch expressions to avoid deep recursion
+        p1 = min(p0 + 1000, len(args))
+        if spin == "rhf":
+            out += (generalised_to_restricted(Add(*args[p0:p1])),)
+        elif spin == "uhf":
+            out += generalised_to_unrestricted(Add(*args[p0:p1]))
+        else:
+            out += (Add(*args[p0:p1]),)
+    return out
 
 
 def remove_hf_energy(terms):

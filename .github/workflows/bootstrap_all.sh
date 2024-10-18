@@ -27,7 +27,7 @@ for method in CCSDwtwp; do
     done
 done
 
-for method in CC3, CCSDT; do
+for method in CC3 CCSDT; do
     for i in rhf uhf ghf; do
         echo "Bootstrapping $method ($i)"
         python -W ignore bootstrap_${method}.py $i
