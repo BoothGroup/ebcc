@@ -36,7 +36,36 @@ done
 
 wait
 
-for file in output_*.dat; do
-    echo "Output file: $file"
-    cat $file
+for method in MPn; do
+    for n in 2 3; do
+        for i in rhf uhf ghf; do
+            echo "Output for $method ($i) (order=$n)"
+            cat output_${method}_${i}_${n}.dat
+        done
+    done
+done
+
+for method in CCD CCSD QCISD CC2 DCD DCSD; do
+    for i in rhf uhf ghf; do
+        echo "Output for $method ($i)"
+        cat output_${method}_${i}.dat
+    done
+    for i in rhf uhf; do
+        echo "Output for DF-$method ($i)"
+        cat output_DF${method}_${i}.dat
+    done
+done
+
+for method in CCSDwtwp; do
+    for i in rhf ghf; do
+        echo "Output for $method ($i)"
+        cat output_${method}_${i}.dat
+    done
+done
+
+for method in CC3; do
+    for i in rhf uhf ghf; do
+        echo "Output for $method ($i)"
+        cat output_${method}_${i}.dat
+    done
 done
