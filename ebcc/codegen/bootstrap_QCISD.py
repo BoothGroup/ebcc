@@ -356,7 +356,7 @@ with Stopwatch("IP-EOM"):
             output.extend(output_n)
             returns.extend(returns_n)
 
-    (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="exhaust")
+    (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="opt")
 
     # Generate the R amplitude intermediates code
     for name, codegen in code_generators.items():
@@ -438,7 +438,7 @@ with Stopwatch("EA-EOM"):
             output.extend(output_n)
             returns.extend(returns_n)
 
-    (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="exhaust")
+    (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="opt")
 
     # Generate the R amplitude intermediates code
     for name, codegen in code_generators.items():
@@ -604,7 +604,7 @@ with Stopwatch("L-IP-EOM"):
             output.extend(output_n)
             returns.extend(returns_n)
 
-    (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="exhaust")
+    (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="opt")
 
     # Generate the L amplitude intermediates code
     for name, codegen in code_generators.items():
@@ -686,7 +686,7 @@ with Stopwatch("L-EA-EOM"):
             output.extend(output_n)
             returns.extend(returns_n)
 
-    (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="exhaust")
+    (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="opt")
 
     # Generate the L amplitude intermediates code
     for name, codegen in code_generators.items():
