@@ -64,7 +64,6 @@ with Stopwatch("T amplitudes"):
     pq.clear()
     pq.set_left_operators([["e1(i,a)"]])
     for ham in ("f", "v"):
-        pq.add_operator_product(1.0, [ham])
         pq.add_commutator(1.0, [ham], ["t1"])
         pq.add_commutator(1.0, [ham], ["t2"])
         pq.add_double_commutator(1.0, [ham], ["t1"], ["t2"])
@@ -123,17 +122,14 @@ with Stopwatch("L amplitudes"):
     pq.set_left_operators([["1"]])
     pq.set_right_operators([["1"]])
     for ham in ("f", "v"):
-        pq.add_operator_product(1.0, [ham, "e1(a,i)"])
         pq.add_commutator(1.0, [ham, "e1(a,i)"], ["t1"])
         pq.add_commutator(1.0, [ham, "e1(a,i)"], ["t2"])
         pq.add_double_commutator(1.0, [ham, "e1(a,i)"], ["t1"], ["t2"])
     pq.set_left_operators([["l1"], ["l2"]])
     for ham in ("f", "v"):
-        pq.add_operator_product(1.0, [ham, "e1(a,i)"])
         pq.add_commutator(1.0, [ham, "e1(a,i)"], ["t1"])
         pq.add_commutator(1.0, [ham, "e1(a,i)"], ["t2"])
         pq.add_double_commutator(1.0, [ham, "e1(a,i)"], ["t1"], ["t2"])
-        pq.add_operator_product(-1.0, ["e1(a,i)", ham])
         pq.add_commutator(-1.0, ["e1(a,i)", ham], ["t1"])
         pq.add_commutator(-1.0, ["e1(a,i)", ham], ["t2"])
         pq.add_double_commutator(-1.0, ["e1(a,i)", ham], ["t1"], ["t2"])
@@ -323,7 +319,6 @@ with Stopwatch("IP-EOM"):
     pq.set_left_operators([["a*(i)"]])
     pq.set_right_operators([["r1"], ["r2"]])
     for ham in ("f", "v"):
-        pq.add_operator_product(1.0, [ham])
         pq.add_commutator(1.0, [ham], ["t1"])
         pq.add_commutator(1.0, [ham], ["t2"])
         pq.add_double_commutator(1.0, [ham], ["t1"], ["t2"])
@@ -406,7 +401,6 @@ with Stopwatch("EA-EOM"):
     pq.set_left_operators([["a(a)"]])
     pq.set_right_operators([["r1"], ["r2"]])
     for ham in ("f", "v"):
-        pq.add_operator_product(1.0, [ham])
         pq.add_commutator(1.0, [ham], ["t1"])
         pq.add_commutator(1.0, [ham], ["t2"])
         pq.add_double_commutator(1.0, [ham], ["t1"], ["t2"])
@@ -490,7 +484,6 @@ if spin == "ghf":  # FIXME
         pq.set_left_operators([["e1(i,a)"]])
         pq.set_right_operators([["r1"], ["r2"]])
         for ham in ("f", "v"):
-            pq.add_operator_product(1.0, [ham])
             pq.add_commutator(1.0, [ham], ["t1"])
             pq.add_commutator(1.0, [ham], ["t2"])
             pq.add_double_commutator(1.0, [ham], ["t1"], ["t2"])
@@ -574,7 +567,6 @@ with Stopwatch("L-IP-EOM"):
     pq.set_left_operators([["l1"], ["l2"]])
     pq.set_right_operators([["a(i)"]])
     for ham in ("f", "v"):
-        pq.add_operator_product(1.0, [ham])
         pq.add_commutator(1.0, [ham], ["t1"])
         pq.add_commutator(1.0, [ham], ["t2"])
         pq.add_double_commutator(1.0, [ham], ["t1"], ["t2"])
@@ -657,7 +649,6 @@ with Stopwatch("L-EA-EOM"):
     pq.set_left_operators([["l1"], ["l2"]])
     pq.set_right_operators([["a*(a)"]])
     for ham in ("f", "v"):
-        pq.add_operator_product(1.0, [ham])
         pq.add_commutator(1.0, [ham], ["t1"])
         pq.add_commutator(1.0, [ham], ["t2"])
         pq.add_double_commutator(1.0, [ham], ["t1"], ["t2"])
@@ -741,7 +732,6 @@ if spin == "ghf":  # FIXME
         pq.set_left_operators([["l1"], ["l2"]])
         pq.set_right_operators([["e1(a,i)"]])
         for ham in ("f", "v"):
-            pq.add_operator_product(1.0, [ham])
             pq.add_commutator(1.0, [ham], ["t1"])
             pq.add_commutator(1.0, [ham], ["t2"])
             pq.add_double_commutator(1.0, [ham], ["t1"], ["t2"])
