@@ -121,6 +121,8 @@ with Stopwatch("T amplitudes"):
             **kwargs,
         )
 
+# NOTE: The rest is broken
+
 with Stopwatch("L amplitudes"):
     # Get the L1 contractions in pdaggerq format
     pq.clear()
