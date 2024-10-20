@@ -144,12 +144,12 @@ if 0:
         pq.add_commutator(1.0, ["v", "e1(a,i)"], ["t2"])
         pq.add_double_commutator(1.0, ["f", "e1(a,i)"], ["t1"], ["t2"])
         pq.add_double_commutator(1.0, ["v", "e1(a,i)"], ["t1"], ["t2"])
-        pq.add_commutator(1.0, ["e1(a,i)", "f"], ["t1"])
-        pq.add_commutator(1.0, ["e1(a,i)", "v"], ["t1"])
-        pq.add_commutator(1.0, ["e1(a,i)", "f"], ["t2"])
-        pq.add_commutator(1.0, ["e1(a,i)", "v"], ["t2"])
-        pq.add_double_commutator(1.0, ["e1(a,i)", "f"], ["t1"], ["t2"])
-        pq.add_double_commutator(1.0, ["e1(a,i)", "v"], ["t1"], ["t2"])
+        pq.add_commutator(-1.0, ["e1(a,i)", "f"], ["t1"])
+        pq.add_commutator(-1.0, ["e1(a,i)", "v"], ["t1"])
+        pq.add_commutator(-1.0, ["e1(a,i)", "f"], ["t2"])
+        pq.add_commutator(-1.0, ["e1(a,i)", "v"], ["t2"])
+        pq.add_double_commutator(-1.0, ["e1(a,i)", "f"], ["t1"], ["t2"])
+        pq.add_double_commutator(-1.0, ["e1(a,i)", "v"], ["t1"], ["t2"])
         pq.simplify()
         terms_l1 = pq.fully_contracted_strings()
 
@@ -170,12 +170,12 @@ if 0:
         pq.add_commutator(1.0, ["v", "e2(a,b,j,i)"], ["t2"])
         pq.add_double_commutator(1.0, ["f", "e2(a,b,j,i)"], ["t1"], ["t2"])
         pq.add_double_commutator(1.0, ["v", "e2(a,b,j,i)"], ["t1"], ["t2"])
-        pq.add_commutator(1.0, ["e2(a,b,j,i)", "f"], ["t1"])
-        pq.add_commutator(1.0, ["e2(a,b,j,i)", "v"], ["t1"])
-        pq.add_commutator(1.0, ["e2(a,b,j,i)", "f"], ["t2"])
-        pq.add_commutator(1.0, ["e2(a,b,j,i)", "v"], ["t2"])
-        pq.add_double_commutator(1.0, ["e2(a,b,j,i)", "f"], ["t1"], ["t2"])
-        pq.add_double_commutator(1.0, ["e2(a,b,j,i)", "v"], ["t1"], ["t2"])
+        pq.add_commutator(-1.0, ["e2(a,b,j,i)", "f"], ["t1"])
+        pq.add_commutator(-1.0, ["e2(a,b,j,i)", "v"], ["t1"])
+        pq.add_commutator(-1.0, ["e2(a,b,j,i)", "f"], ["t2"])
+        pq.add_commutator(-1.0, ["e2(a,b,j,i)", "v"], ["t2"])
+        pq.add_double_commutator(-1.0, ["e2(a,b,j,i)", "f"], ["t1"], ["t2"])
+        pq.add_double_commutator(-1.0, ["e2(a,b,j,i)", "v"], ["t1"], ["t2"])
         pq.simplify()
         terms_l2 = pq.fully_contracted_strings()
 
@@ -194,7 +194,7 @@ if 0:
                 expr.extend(expr_n)
                 output.extend(output_n)
                 returns.extend(returns_n)
-        output, expr = optimise(output, expr, spin, strategy="opt")
+        #output, expr = optimise(output, expr, spin, strategy="opt")
 
         # Generate the L amplitude code
         for name, codegen in code_generators.items():
@@ -333,6 +333,7 @@ if 0:
                 **kwargs,
             )
 
+if 0:
     with Stopwatch("IP-EOM"):
         # Get the R1 contractions in pdaggerq format
         pq.clear()
