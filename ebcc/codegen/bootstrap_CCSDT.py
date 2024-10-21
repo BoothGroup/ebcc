@@ -174,7 +174,7 @@ with Stopwatch("L amplitudes"):
             expr.extend(expr_n)
             output.extend(output_n)
             returns.extend(returns_n)
-    output, expr = optimise(output, expr, spin, strategy="opt" if spin != "uhf" else "greedy")
+    output, expr = optimise(output, expr, spin, strategy="greedy")
 
     # Generate the L amplitude code
     for name, codegen in code_generators.items():
@@ -296,7 +296,7 @@ with Stopwatch("2RDM"):
             expr.extend(expr_n)
             output.extend(output_n)
             returns.extend(returns_n)
-    output, expr = optimise(output, expr, spin, strategy="trav")
+    output, expr = optimise(output, expr, spin, strategy="greedy")
 
     # Generate the 2RDM code
     for name, codegen in code_generators.items():
@@ -363,7 +363,7 @@ with Stopwatch("IP-EOM"):
             output.extend(output_n)
             returns.extend(returns_n)
 
-    (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="trav" if spin != "uhf" else "greedy")
+    (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="greedy")
 
     # Generate the R amplitude intermediates code
     for name, codegen in code_generators.items():
@@ -451,7 +451,7 @@ with Stopwatch("EA-EOM"):
             output.extend(output_n)
             returns.extend(returns_n)
 
-    (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="trav" if spin != "uhf" else "greedy")
+    (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="greedy")
 
     # Generate the R amplitude intermediates code
     for name, codegen in code_generators.items():
@@ -540,7 +540,7 @@ if spin == "ghf":  # FIXME
                 output.extend(output_n)
                 returns.extend(returns_n)
 
-        (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="trav" if spin != "uhf" else "greedy")
+        (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="greedy")
 
         # Generate the R amplitude intermediates code
         for name, codegen in code_generators.items():
@@ -629,7 +629,7 @@ with Stopwatch("L-IP-EOM"):
             output.extend(output_n)
             returns.extend(returns_n)
 
-    (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="trav" if spin != "uhf" else "greedy")
+    (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="greedy")
 
     # Generate the L amplitude intermediates code
     for name, codegen in code_generators.items():
@@ -717,7 +717,7 @@ with Stopwatch("L-EA-EOM"):
             output.extend(output_n)
             returns.extend(returns_n)
 
-    (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="trav" if spin != "uhf" else "greedy")
+    (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="greedy")
 
     # Generate the L amplitude intermediates code
     for name, codegen in code_generators.items():
@@ -806,7 +806,7 @@ if spin == "ghf":  # FIXME
                 output.extend(output_n)
                 returns.extend(returns_n)
 
-        (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="trav" if spin != "uhf" else "greedy")
+        (returns_nr, output_nr, expr_nr), (returns_r, output_r, expr_r) = optimise_eom(returns, output, expr, spin, strategy="greedy")
 
         # Generate the L amplitude intermediates code
         for name, codegen in code_generators.items():
