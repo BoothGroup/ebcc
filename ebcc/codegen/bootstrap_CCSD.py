@@ -5,25 +5,32 @@ Generate the CCSD code.
 import sys
 
 import pdaggerq
-from albert.qc._pdaggerq import import_from_pdaggerq
+from albert.qc._pdaggerq import import_from_pdaggerq, remove_reference_energy
+from albert.qc.spin import ghf_to_uhf, ghf_to_rhf, get_amplitude_spins, get_density_spins
+from albert.qc import ghf, uhf, rhf
 from albert.tensor import Tensor
-from albert.qc.index import Index
-
-from ebcc.codegen.bootstrap_common import *
+from albert.index import Index
+from albert.code._ebcc import EBCCCodeGenerator
+from albert.misc import Stopwatch
+from albert.opt import optimise
 
 # Get the spin case
 spin = sys.argv[1]
+spin_integrate = {
+    "ghf": lambda *args, **kwargs: args,
+    "uhf": ghf_to_uhf,
+    "rhf": lambda *args, **kwargs: (ghf_to_rhf(*args, **kwargs),),
+}[spin]
+spin_module = {
+    "ghf": ghf,
+    "uhf": uhf,
+    "rhf": rhf,
+}[spin]
 
 # Set up the code generators
-class _EinsumCodeGen(EinsumCodeGen):
-    def tensor_cleanup(self, *args):
-        args = [a for a in args if not a.startswith("ints.")]
-        return super().tensor_cleanup(*args)
 code_generators = {
-    "einsum": _EinsumCodeGen(
-        stdout=open(f"{spin[0].upper()}CCSD.py", "w"),
-        name_generator=name_generators[spin],
-        spin=spin,
+    "einsum": EBCCCodeGenerator(
+        #stdout=open(f"{spin[0].upper()}CCSD.py", "w"),
     ),
 }
 
@@ -43,13 +50,13 @@ with Stopwatch("Energy"):
     pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
     pq.simplify()
     terms = pq.fully_contracted_strings()
-    terms = remove_hf_energy(terms)
+    terms = remove_reference_energy(terms)
 
     # Get the energy in albert format
     expr = import_from_pdaggerq(terms)
-    expr = spin_integrate(expr, spin)
+    expr = spin_integrate(expr)
     output = tuple(Tensor(name="e_cc") for _ in range(len(expr)))
-    output, expr = optimise(output, expr, spin, strategy="exhaust")
+    output_expr = optimise(output, expr, strategy="exhaust")
     returns = (Tensor(name="e_cc"),)
 
     # Generate the energy code
@@ -57,123 +64,106 @@ with Stopwatch("Energy"):
         codegen(
             "energy",
             returns,
-            output,
-            expr,
+            output_expr,
         )
 
-with Stopwatch("T amplitudes"):
-    # Get the T1 contractions in pdaggerq format
-    pq.clear()
-    pq.set_left_operators([["e1(i,a)"]])
-    pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
-    pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
-    pq.simplify()
-    terms_t1 = pq.fully_contracted_strings()
-
-    # Get the T2 contractions in pdaggerq format
-    pq.clear()
-    pq.set_left_operators([["e2(i,j,b,a)"]])
-    pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
-    pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
-    pq.simplify()
-    terms_t2 = pq.fully_contracted_strings()
-
-    # Get the T amplitudes in albert format
-    terms = [terms_t1, terms_t2]
-    expr = []
-    output = []
-    returns = []
-    for n in range(2):
-        for index_spins in get_amplitude_spins(n + 1, spin):
-            indices = default_indices["o"][: n + 1] + default_indices["v"][: n + 1]
-            expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins)
-            expr_n = spin_integrate(expr_n, spin)
-            output_n = get_t_amplitude_outputs(expr_n, f"t{n+1}new")
-            returns_n = (Tensor(*tuple(Index(i, index_spins[i]) for i in indices), name=f"t{n+1}new"),)
-            expr.extend(expr_n)
-            output.extend(output_n)
-            returns.extend(returns_n)
-    output, expr = optimise(output, expr, spin, strategy="exhaust")
-
-    # Generate the T amplitude code
-    for name, codegen in code_generators.items():
-        if name == "einsum":
-            kwargs = {
-                "preamble": "t1new = Namespace()\nt2new = Namespace()" if spin == "uhf" else None,
-                "as_dict": True,
-            }
-        else:
-            kwargs = {}
-        codegen(
-            "update_amps",
-            returns,
-            output,
-            expr,
-            **kwargs,
-        )
-
-with Stopwatch("L amplitudes"):
-    # Get the L1 contractions in pdaggerq format
-    pq.clear()
-    pq.set_left_operators([["1"]])
-    pq.set_right_operators([["1"]])
-    pq.add_st_operator(1.0, ["f", "e1(a,i)"], ["t1", "t2"])
-    pq.add_st_operator(1.0, ["v", "e1(a,i)"], ["t1", "t2"])
-    pq.set_left_operators([["l1"], ["l2"]])
-    pq.add_st_operator(1.0, ["f", "e1(a,i)"], ["t1", "t2"])
-    pq.add_st_operator(1.0, ["v", "e1(a,i)"], ["t1", "t2"])
-    pq.add_st_operator(-1.0, ["e1(a,i)", "f"], ["t1", "t2"])
-    pq.add_st_operator(-1.0, ["e1(a,i)", "v"], ["t1", "t2"])
-    pq.simplify()
-    terms_l1 = pq.fully_contracted_strings()
-
-    # Get the L2 contractions in pdaggerq format
-    pq.clear()
-    pq.set_left_operators([["1"]])
-    pq.set_right_operators([["1"]])
-    pq.add_st_operator(1.0, ["f", "e2(a,b,j,i)"], ["t1", "t2"])
-    pq.add_st_operator(1.0, ["v", "e2(a,b,j,i)"], ["t1", "t2"])
-    pq.set_left_operators([["l1"], ["l2"]])
-    pq.add_st_operator(1.0, ["f", "e2(a,b,j,i)"], ["t1", "t2"])
-    pq.add_st_operator(1.0, ["v", "e2(a,b,j,i)"], ["t1", "t2"])
-    pq.add_st_operator(-1.0, ["e2(a,b,j,i)", "f"], ["t1", "t2"])
-    pq.add_st_operator(-1.0, ["e2(a,b,j,i)", "v"], ["t1", "t2"])
-    pq.simplify()
-    terms_l2 = pq.fully_contracted_strings()
-
-    # Get the L amplitudes in albert format
-    terms = [terms_l1, terms_l2]
-    expr = []
-    output = []
-    returns = []
-    for n in range(2):
-        for index_spins in get_amplitude_spins(n + 1, spin):
-            indices = default_indices["v"][: n + 1] + default_indices["o"][: n + 1]
-            expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins)
-            expr_n = spin_integrate(expr_n, spin)
-            output_n = get_l_amplitude_outputs(expr_n, f"l{n+1}new")
-            returns_n = (Tensor(*tuple(Index(i, index_spins[i]) for i in indices), name=f"l{n+1}new"),)
-            expr.extend(expr_n)
-            output.extend(output_n)
-            returns.extend(returns_n)
-    output, expr = optimise(output, expr, spin, strategy="opt")
-
-    # Generate the L amplitude code
-    for name, codegen in code_generators.items():
-        if name == "einsum":
-            kwargs = {
-                "preamble": "l1new = Namespace()\nl2new = Namespace()" if spin == "uhf" else None,
-                "as_dict": True,
-            }
-        else:
-            kwargs = {}
-        codegen(
-            "update_lams",
-            returns,
-            output,
-            expr,
-            **kwargs,
-        )
+#with Stopwatch("T amplitudes"):
+#    # Get the T1 contractions in pdaggerq format
+#    pq.clear()
+#    pq.set_left_operators([["e1(i,a)"]])
+#    pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
+#    pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
+#    pq.simplify()
+#    terms_t1 = pq.fully_contracted_strings()
+#
+#    # Get the T2 contractions in pdaggerq format
+#    pq.clear()
+#    pq.set_left_operators([["e2(i,j,b,a)"]])
+#    pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
+#    pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
+#    pq.simplify()
+#    terms_t2 = pq.fully_contracted_strings()
+#
+#    # Get the T amplitudes in albert format
+#    terms = [terms_t1, terms_t2]
+#    expr = []
+#    output = []
+#    returns = []
+#    for n in range(2):
+#        indices = "ijkl"[: n + 1] + "abcd"[: n + 1]
+#        for index_spins in get_amplitude_spins(indices[: n + 1], indices[n + 1 :], spin):
+#            expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins)
+#            expr_n = spin_integrate(expr_n)
+#            output_n = [Tensor(*tuple(sorted(e.external_indices, key=lambda i: indices.index(i.name))), name=f"t{n+1}new") for e in expr_n]
+#            returns_n = (output_n[0],)
+#            expr.extend(expr_n)
+#            output.extend(output_n)
+#            returns.extend(returns_n)
+#    output_expr = optimise(output, expr, strategy="exhaust")
+#
+#    # Generate the T amplitude code
+#    for name, codegen in code_generators.items():
+#        codegen(
+#            "update_amps",
+#            returns,
+#            output_expr,
+#            as_dict=True,
+#        )
+#
+#with Stopwatch("L amplitudes"):
+#    # Get the L1 contractions in pdaggerq format
+#    pq.clear()
+#    pq.set_left_operators([["1"]])
+#    pq.set_right_operators([["1"]])
+#    pq.add_st_operator(1.0, ["f", "e1(a,i)"], ["t1", "t2"])
+#    pq.add_st_operator(1.0, ["v", "e1(a,i)"], ["t1", "t2"])
+#    pq.set_left_operators([["l1"], ["l2"]])
+#    pq.add_st_operator(1.0, ["f", "e1(a,i)"], ["t1", "t2"])
+#    pq.add_st_operator(1.0, ["v", "e1(a,i)"], ["t1", "t2"])
+#    pq.add_st_operator(-1.0, ["e1(a,i)", "f"], ["t1", "t2"])
+#    pq.add_st_operator(-1.0, ["e1(a,i)", "v"], ["t1", "t2"])
+#    pq.simplify()
+#    terms_l1 = pq.fully_contracted_strings()
+#
+#    # Get the L2 contractions in pdaggerq format
+#    pq.clear()
+#    pq.set_left_operators([["1"]])
+#    pq.set_right_operators([["1"]])
+#    pq.add_st_operator(1.0, ["f", "e2(a,b,j,i)"], ["t1", "t2"])
+#    pq.add_st_operator(1.0, ["v", "e2(a,b,j,i)"], ["t1", "t2"])
+#    pq.set_left_operators([["l1"], ["l2"]])
+#    pq.add_st_operator(1.0, ["f", "e2(a,b,j,i)"], ["t1", "t2"])
+#    pq.add_st_operator(1.0, ["v", "e2(a,b,j,i)"], ["t1", "t2"])
+#    pq.add_st_operator(-1.0, ["e2(a,b,j,i)", "f"], ["t1", "t2"])
+#    pq.add_st_operator(-1.0, ["e2(a,b,j,i)", "v"], ["t1", "t2"])
+#    pq.simplify()
+#    terms_l2 = pq.fully_contracted_strings()
+#
+#    # Get the L amplitudes in albert format
+#    terms = [terms_l1, terms_l2]
+#    expr = []
+#    output = []
+#    returns = []
+#    for n in range(2):
+#        indices = "abcd"[: n + 1] + "ijkl"[: n + 1]
+#        for index_spins in get_amplitude_spins(indices[: n + 1], indices[n + 1 :], spin):
+#            expr_n = import_from_pdaggerq(terms[n], index_spins=index_spins)
+#            expr_n = spin_integrate(expr_n)
+#            output_n = [Tensor(*tuple(sorted(e.external_indices, key=lambda i: indices.index(i.name))), name=f"l{n+1}new") for e in expr_n]
+#            returns_n = (output_n[0],)
+#            expr.extend(expr_n)
+#            output.extend(output_n)
+#            returns.extend(returns_n)
+#    output_expr = optimise(output, expr, strategy="opt")
+#
+#    # Generate the L amplitude code
+#    for name, codegen in code_generators.items():
+#        codegen(
+#            "update_lams",
+#            returns,
+#            output_expr,
+#            as_dict=True,
+#        )
 
 with Stopwatch("1RDM"):
     # Get the 1RDM contractions in pdaggerq format
@@ -189,34 +179,35 @@ with Stopwatch("1RDM"):
     expr = []
     output = []
     returns = []
+    deltas = []
+    deltas_sources = []
     for sectors, indices in [("oo", "ij"), ("ov", "ia"), ("vo", "ai"), ("vv", "ab")]:
-        for index_spins in get_density_spins(1, spin, indices):
+        for index_spins in get_density_spins(indices, spin):
             expr_n = import_from_pdaggerq(terms[sectors, indices], index_spins=index_spins)
-            expr_n = spin_integrate(expr_n, spin)
+            expr_n = spin_integrate(expr_n)
             if spin == "rhf":
                 expr_n = tuple(e * 2 for e in expr_n)
-            output_n = get_density_outputs(expr_n, f"d", indices)
-            returns_n = (Tensor(*tuple(Index(i, index_spins[i], space=s) for i, s in zip(indices, sectors)), name=f"d"),)
+            output_n = [Tensor(*tuple(sorted(e.external_indices, key=lambda i: indices.index(i.name))), name=f"d") for e in expr_n]
+            returns_n = (output_n[0],)
             expr.extend(expr_n)
             output.extend(output_n)
             returns.extend(returns_n)
-    output, expr = optimise(output, expr, spin, strategy="exhaust")
+            if len(set(sectors)) == 1:
+                delta = spin_module.Delta(*tuple(sorted(expr_n[0].external_indices, key=lambda i: indices.index(i.name))))
+                deltas.append(delta)
+                deltas_sources.append(next(expr_n[0].search_leaves(spin_module.T1)))
+    output_expr = optimise(output, expr, strategy="exhaust")
 
     # Generate the 1RDM code
     for name, codegen in code_generators.items():
-        if name == "einsum":
-            kwargs = {
-                "preamble": get_density_einsum_preamble(1, spin),
-                "postamble": get_density_einsum_postamble(1, spin),
-            }
-        else:
-            kwargs = {}
+        for delta, delta_source in zip(deltas, deltas_sources):
+            codegen.tensor_declaration(
+                delta, is_identity=True, shape_source=delta_source, shape_source_index=0
+            )
         codegen(
             "make_rdm1_f",
             returns,
-            output,
-            expr,
-            **kwargs,
+            output_expr,
         )
 
 with Stopwatch("2RDM"):
@@ -252,6 +243,8 @@ with Stopwatch("2RDM"):
     expr = []
     output = []
     returns = []
+    deltas = []
+    deltas_sources = []
     for sectors, indices in [
         ("oooo", "ijkl"),
         ("ooov", "ijka"),
@@ -270,29 +263,30 @@ with Stopwatch("2RDM"):
         ("vvvo", "abci"),
         ("vvvv", "abcd"),
     ]:
-        for index_spins in get_density_spins(2, spin, indices):
+        for index_spins in get_density_spins(indices):
             expr_n = import_from_pdaggerq(terms[sectors, indices], index_spins=index_spins)
-            expr_n = spin_integrate(expr_n, spin)
-            output_n = get_density_outputs(expr_n, f"Γ", indices)
-            returns_n = (Tensor(*tuple(Index(i, index_spins[i], space=s) for i, s in zip(indices, sectors)), name=f"Γ"),)
+            expr_n = spin_integrate(expr_n)
+            output_n = [Tensor(*tuple(sorted(e.external_indices, key=lambda i: indices.index(i.name))), name=f"Γ") for e in expr_n]
+            returns_n = (output_n[0],)
             expr.extend(expr_n)
             output.extend(output_n)
             returns.extend(returns_n)
-    output, expr = optimise(output, expr, spin, strategy="trav")
+            if len(set(sectors)) == 1:
+                delta = spin_module.Delta(*tuple(sorted(expr_n[0].external_indices, key=lambda i: indices.index(i.name))))
+                deltas.append(delta)
+                deltas_sources.append(next(expr_n[0].search_leaves(spin_module.T1)))
+    output_expr = optimise(output, expr, strategy="trav")
 
     # Generate the 2RDM code
     for name, codegen in code_generators.items():
-        if name == "einsum":
-            kwargs = {
-                "preamble": get_density_einsum_preamble(2, spin),
-                "postamble": get_density_einsum_postamble(2, spin),
-            }
+        for delta, delta_source in zip(deltas, deltas_sources):
+            codegen.tensor_declaration(
+                delta, is_identity=True, shape_source=delta_source, shape_source_index=0
+            )
         codegen(
             "make_rdm2_f",
             returns,
-            output,
-            expr,
-            **kwargs,
+            output_expr,
         )
 
 with Stopwatch("IP-EOM"):
