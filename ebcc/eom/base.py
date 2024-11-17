@@ -7,8 +7,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 import numpy
-from pyscf import lib
 
+from ebcc import pyscf
 from ebcc import numpy as np
 from ebcc import util
 from ebcc.backend import to_numpy
@@ -217,11 +217,11 @@ class BaseEOM(ABC):
                 w: NDArray[T], v: NDArray[T], nroots: int, env: dict[str, Any]
             ) -> tuple[NDArray[T], NDArray[T], int]:
                 """Pick the eigenvalues."""
-                x0 = to_numpy(lib.linalg_helper._gen_x0(env["v"], env["xs"]))
+                x0 = to_numpy(pyscf.lib.linalg_helper._gen_x0(env["v"], env["xs"]))
                 s = to_numpy(guesses).conj() @ x0.T
                 s = numpy.einsum("pi,pi->i", s.conj(), s)
                 arg = numpy.argsort(-s)[:nroots]
-                w, v, idx = lib.linalg_helper._eigs_cmplx2real(
+                w, v, idx = pyscf.lib.linalg_helper._eigs_cmplx2real(
                     to_numpy(w),
                     to_numpy(v),
                     arg,
@@ -236,7 +236,7 @@ class BaseEOM(ABC):
             ) -> tuple[NDArray[T], NDArray[T], int]:
                 """Pick the eigenvalues."""
                 real_idx = numpy.where(abs(numpy.imag(w)) < 1e-3)[0]
-                w, v, idx = lib.linalg_helper._eigs_cmplx2real(
+                w, v, idx = pyscf.lib.linalg_helper._eigs_cmplx2real(
                     to_numpy(w),
                     to_numpy(v),
                     real_idx,
@@ -318,7 +318,7 @@ class BaseEOM(ABC):
         # Solve the EOM Hamiltonian:
         nroots = min(len(guesses), self.options.nroots)
         pick = self.get_pick(guesses=np.stack(guesses))
-        converged, e, v = lib.davidson_nosym1(
+        converged, e, v = pyscf.lib.davidson_nosym1(
             matvecs,
             [to_numpy(g) for g in guesses],
             to_numpy(diag),

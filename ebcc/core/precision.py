@@ -37,7 +37,11 @@ def astype(value: T, dtype: Type[T]) -> T:
     Returns:
         The value cast to the current floating point type.
     """
-    out: T = types[dtype](value)
+    try:
+        out: T = types[dtype](value)
+    except:
+        # Might be traced by JAX
+        out = value
     return out
 
 
