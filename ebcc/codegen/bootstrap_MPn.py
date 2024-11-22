@@ -72,7 +72,7 @@ if order == 2:
                 for delta, delta_source in zip(deltas, deltas_sources):
                     if delta in done:
                         continue
-                    shape_source_index = 0 if delta.external_indices[0].space == "o" else 1
+                    shape_source_index = 0 if delta.external_indices[0].space == "o" else -1
                     codegen.tensor_declaration(
                         delta,
                         is_identity=True,
@@ -122,7 +122,7 @@ if order == 2:
                 for delta, delta_source in zip(deltas, deltas_sources):
                     if delta in done:
                         continue
-                    shape_source_index = 0 if delta.external_indices[0].space == "o" else 1
+                    shape_source_index = 0 if delta.external_indices[0].space == "o" else -1
                     codegen.tensor_declaration(
                         delta,
                         is_identity=True,
@@ -176,7 +176,7 @@ if order == 2:
                     codegen.write("rdm2.bbbb -= einsum(delta.bb, (0, 3), delta.bb, (1, 2), (0, 1, 2, 3))")
                     codegen.write("rdm2.aabb += einsum(delta.aa, (0, 1), rdm1.bb, (3, 2), (0, 1, 2, 3))")
                     codegen.write("rdm2.aabb += einsum(rdm1.aa, (1, 0), delta.bb, (2, 3), (0, 1, 2, 3))")
-                    codegen.write("rdm2.aabb += einsum(delta.aa, (0, 1), delta.bb, (2, 3), (0, 1, 2, 3))"
+                    codegen.write("rdm2.aabb += einsum(delta.aa, (0, 1), delta.bb, (2, 3), (0, 1, 2, 3))")
                 elif spin == "ghf":
                     codegen.write("delta = np.diag(np.concatenate([np.ones(t2.shape[0]), np.zeros(t2.shape[-1])]))")
                     codegen.write("rdm1 -= delta")
@@ -185,7 +185,7 @@ if order == 2:
                     codegen.write("rdm2 -= einsum(delta, (0, 3), rdm1, (2, 1), (0, 1, 2, 3))")
                     codegen.write("rdm2 -= einsum(rdm1, (0, 3), delta, (1, 2), (0, 1, 2, 3))")
                     codegen.write("rdm2 += einsum(delta, (0, 1), delta, (2, 3), (0, 1, 2, 3))")
-                    codegen.write("rdm2 -= einsum(delta, (0, 3), delta, (1, 2), (0, 1, 2, 3))"
+                    codegen.write("rdm2 -= einsum(delta, (0, 3), delta, (1, 2), (0, 1, 2, 3))")
                 elif spin == "rhf":
                     codegen.write("delta = np.diag(np.concatenate([np.ones(t2.shape[0]), np.zeros(t2.shape[-1])]))")
                     codegen.write("rdm1 -= delta * 2")
@@ -301,7 +301,7 @@ if order == 2:
             ]
 
             # Get the R amplitudes in albert format
-            returns_nr, output_expr_nr, returns_r, output_expr_r = get_eom([terms_r1, terms_r2], spin, strategy="trav", which="ee")
+            output_expr_nr, returns_nr, output_expr_r, returns_r = get_eom([terms_r1, terms_r2], spin, strategy="trav", which="ee")
 
             # Generate the R amplitude intermediates code
             for name, codegen in code_generators.items():

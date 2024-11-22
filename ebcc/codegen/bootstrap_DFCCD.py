@@ -123,7 +123,7 @@ with Stopwatch("1RDM"):
             for delta, delta_source in zip(deltas, deltas_sources):
                 if delta in done:
                     continue
-                shape_source_index = 0 if delta.external_indices[0].space == "o" else 1
+                shape_source_index = 0 if delta.external_indices[0].space == "o" else -1
                 codegen.tensor_declaration(
                     delta,
                     is_identity=True,
@@ -189,7 +189,7 @@ with Stopwatch("2RDM"):
             for delta, delta_source in zip(deltas, deltas_sources):
                 if delta in done:
                     continue
-                shape_source_index = 0 if delta.external_indices[0].space == "o" else 1
+                shape_source_index = 0 if delta.external_indices[0].space == "o" else -1
                 codegen.tensor_declaration(
                     delta,
                     is_identity=True,
@@ -331,7 +331,7 @@ if spin == "ghf":  # FIXME
         terms_r2 = remove_reference_energy_eom(terms_r2)
 
         # Get the R amplitudes in albert format
-        returns_nr, output_expr_nr, returns_r, output_expr_r = get_eom([terms_r1, terms_r2], spin, strategy="trav", which="ee", density_fit=True)
+        output_expr_nr, returns_nr, output_expr_r, returns_r = get_eom([terms_r1, terms_r2], spin, strategy="trav", which="ee", density_fit=True)
 
         # Generate the R amplitude intermediates code
         for name, codegen in code_generators.items():
@@ -394,7 +394,7 @@ with Stopwatch("L-IP-EOM"):
     terms_r2 = remove_reference_energy_eom(terms_r2)
 
     # Get the L amplitudes in albert format
-    returns_nr, output_expr_nr, returns_r, output_expr_r = get_eom([terms_r1, terms_r2], spin, strategy="exhaust", which="ip", density_fit=True)
+    output_expr_nr, returns_nr, output_expr_r, returns_r = get_eom([terms_r1, terms_r2], spin, strategy="exhaust", which="ip", density_fit=True)
 
     # Generate the L amplitude intermediates code
     for name, codegen in code_generators.items():
@@ -438,7 +438,7 @@ with Stopwatch("L-EA-EOM"):
     terms_r2 = remove_reference_energy_eom(terms_r2)
 
     # Get the L amplitudes in albert format
-    returns_nr, output_expr_nr, returns_r, output_expr_r = get_eom([terms_r1, terms_r2], spin, strategy="exhaust", which="ea", density_fit=True)
+    output_expr_nr, returns_nr, output_expr_r, returns_r = get_eom([terms_r1, terms_r2], spin, strategy="exhaust", which="ea", density_fit=True)
 
     # Generate the L amplitude intermediates code
     for name, codegen in code_generators.items():
@@ -483,7 +483,7 @@ if spin == "ghf":  # FIXME
         terms_r2 = remove_reference_energy_eom(terms_r2)
 
         # Get the L amplitudes in albert format
-        returns_nr, output_expr_nr, returns_r, output_expr_r = get_eom([terms_r1, terms_r2], spin, strategy="trav", which="ee", density_fit=True)
+        output_expr_nr, returns_nr, output_expr_r, returns_r = get_eom([terms_r1, terms_r2], spin, strategy="trav", which="ee", density_fit=True)
 
         # Generate the L amplitude intermediates code
         for name, codegen in code_generators.items():

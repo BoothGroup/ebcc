@@ -3,20 +3,20 @@
 
 from albert.qc._pdaggerq import import_from_pdaggerq
 from albert.qc.spin import ghf_to_rhf, ghf_to_uhf, get_amplitude_spins, get_density_spins
-from albert.qc.decomp import density_fit
+from albert.qc.decomp import density_fit as _density_fit
 from albert.opt import optimise
 from albert.opt.tools import optimise_eom
 from albert.tensor import Tensor
 
 
-def spin_integrate(exprs, spin):
+def spin_integrate(expr, spin):
     """Perform the spin integration on the given expressions."""
     if spin == "ghf":
-        return exprs
+        return (expr,)
     elif spin == "uhf":
-        return ghf_to_uhf(exprs)
+        return ghf_to_uhf(expr)
     else:
-        return (ghf_to_rhf(exprs),)
+        return (ghf_to_rhf(expr),)
 
 
 def get_energy(terms, spin, strategy="exhaust", density_fit=False):
@@ -24,7 +24,7 @@ def get_energy(terms, spin, strategy="exhaust", density_fit=False):
     expr = import_from_pdaggerq(terms)
     expr = spin_integrate(expr, spin)
     if density_fit:
-        expr = tuple(density_fit(e) for e in expr)
+        expr = tuple(_density_fit(e) for e in expr)
     output = tuple(Tensor(name="e_cc") for _ in range(len(expr)))
     output_expr = optimise(output, expr, strategy=strategy)
     returns = (Tensor(name="e_cc"),)
@@ -59,14 +59,14 @@ def get_amplitudes(terms_grouped, spin, strategy="exhaust", which="t", orders=No
     return output_expr, returns
 
 
-def get_rdm1(terms_sectors, spin, strategy="exhaust"):
+def get_rdm1(terms_sectors, spin, strategy="exhaust", density_fit=False):
     """Get the one-body reduced density matrix expressions from `pdaggerq` terms."""
     if spin == "ghf":
-        from albert.qc.ghf import Delta, T1
+        from albert.qc.ghf import Delta, T1, T2
     elif spin == "uhf":
-        from albert.qc.uhf import Delta, T1
+        from albert.qc.uhf import Delta, T1, T2
     else:
-        from albert.qc.rhf import Delta, T1
+        from albert.qc.rhf import Delta, T1, T2
     expr = []
     output = []
     returns = []
@@ -79,7 +79,7 @@ def get_rdm1(terms_sectors, spin, strategy="exhaust"):
             if spin == "rhf":
                 expr_n = tuple(e * 2 for e in expr_n)
             if density_fit:
-                expr_n = tuple(density_fit(e) for e in expr_n)
+                expr_n = tuple(_density_fit(e) for e in expr_n)
             output_n = [Tensor(*tuple(sorted(e.external_indices, key=lambda i: indices.index(i.name))), name=f"rdm1") for e in expr_n]
             returns_n = (output_n[0],)
             expr.extend(expr_n)
@@ -88,7 +88,10 @@ def get_rdm1(terms_sectors, spin, strategy="exhaust"):
             if len(set(sectors)) == 1:
                 delta = Delta(*tuple(sorted(expr_n[0].external_indices, key=lambda i: indices.index(i.name))))
                 deltas.append(delta)
-                deltas_sources.append(next(expr_n[0].search_leaves(T1)))
+                try:
+                    deltas_sources.append(next(expr_n[0].search_leaves(T1)))
+                except StopIteration:
+                    deltas_sources.append(next(expr_n[0].search_leaves(T2)))
     output_expr = optimise(output, expr, strategy=strategy)
     return output_expr, returns, deltas, deltas_sources
 
@@ -128,7 +131,7 @@ def get_rdm2(terms_sectors, spin, strategy="exhaust", density_fit=False):
             expr_n = import_from_pdaggerq(terms_sectors[sectors, indices], index_spins=index_spins)
             expr_n = spin_integrate(expr_n, spin)
             if density_fit:
-                expr_n = tuple(density_fit(e) for e in expr_n)
+                expr_n = tuple(_density_fit(e) for e in expr_n)
             output_n = [Tensor(*tuple(sorted(e.external_indices, key=lambda i: indices.index(i.name))), name=f"rdm2") for e in expr_n]
             returns_n = (output_n[0],)
             expr.extend(expr_n)
@@ -161,7 +164,7 @@ def get_eom(terms_grouped, spin, strategy="exhaust", which="ip", orders=None, de
             expr_n = import_from_pdaggerq(terms, index_spins=index_spins, l_is_lambda=False)
             expr_n = spin_integrate(expr_n, spin)
             if density_fit:
-                expr_n = tuple(density_fit(e) for e in expr_n)
+                expr_n = tuple(_density_fit(e) for e in expr_n)
             output_n = [Tensor(*sorted(e.external_indices, key=lambda i: indices.index(i.name)), name=f"r{order}new") for e in expr_n]
             returns_n = (output_n[0],)
             expr.extend(expr_n)
