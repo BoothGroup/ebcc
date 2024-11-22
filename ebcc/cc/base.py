@@ -241,21 +241,13 @@ class BaseEBCC(ABC):
         # Get the initial energy:
         e_cc = self.energy(amplitudes=amplitudes, eris=eris)
 
-        def _format(value, fmt="{:.10f}"):
-            try:
-                out = fmt.format(value)
-            except:
-                out = str(value)
-                if len(out) > len(fmt.format(0.0)):
-                    out = out[: len(fmt.format(0.0)) - 3] + "..."
-            return out
         self.log.output("Solving for excitation amplitudes.")
         self.log.debug("")
         self.log.info(
             f"{ANSI.B}{'Iter':>4s} {'Energy (corr.)':>16s} {'Energy (tot.)':>18s} "
             f"{'Δ(Energy)':>13s} {'Δ(Ampl.)':>13s}{ANSI.R}"
         )
-        self.log.info(f"{0:4d} {_format(e_cc, '{:16.10f}')} {_format(e_cc + self.mf.e_tot, '{:18.10f}')}")
+        self.log.info("%4d %16.10f %18.10f", 0, e_cc, e_cc + self.mf.e_tot)
 
         if not self.ansatz.is_one_shot:
             # Set up damping:
@@ -281,15 +273,14 @@ class BaseEBCC(ABC):
                 # Log the iteration:
                 converged_e = bool(de < self.options.e_tol)
                 converged_t = bool(dt < self.options.t_tol)
-                #self.log.info(
-                #    f"{niter:4d} {e_cc:16.10f} {e_cc + self.mf.e_tot:18.10f}"
-                #    f" {[ANSI.r, ANSI.g][bool(converged_e)]}{de:13.3e}{ANSI.R}"
-                #    f" {[ANSI.r, ANSI.g][bool(converged_t)]}{dt:13.3e}{ANSI.R}"
-                #)
                 self.log.info(
-                    f"{niter:4d} {_format(e_cc, '{:16.10f}')} {_format(e_cc + self.mf.e_tot, '{:18.10f}')}"
-                    f" {[ANSI.r, ANSI.g][bool(converged_e)]}{_format(de, '{:13.3e}')}{ANSI.R}"
-                    f" {[ANSI.r, ANSI.g][bool(converged_t)]}{_format(dt, '{:13.3e}')}{ANSI.R}"
+                    f"%4d %16.10f %18.10f {[ANSI.r, ANSI.g][converged_e]}%13.3e{ANSI.R}"
+                    f" {[ANSI.r, ANSI.g][converged_t]}%13.3e{ANSI.R}",
+                    niter,
+                    e_cc,
+                    e_cc + self.mf.e_tot,
+                    de,
+                    dt,
                 )
 
                 # Check for convergence:
@@ -308,7 +299,7 @@ class BaseEBCC(ABC):
                 self.log.info("Computing perturbative energy correction.")
                 e_pert = self.energy_perturbative(amplitudes=amplitudes, eris=eris)
                 e_cc += e_pert
-                self.log.info(f"E(pert) = {e_pert:.10f}")
+                self.log.info("E(pert) = %.10f", e_pert)
 
         else:
             converged = True
@@ -319,10 +310,8 @@ class BaseEBCC(ABC):
         self.converged = converged
 
         self.log.debug("")
-        #self.log.output(f"E(corr) = {self.e_corr:.10f}")
-        #self.log.output(f"E(tot)  = {self.e_tot:.10f}")
-        self.log.output(f"E(corr) = {_format(self.e_corr, '{:.10f}')}")
-        self.log.output(f"E(tot)  = {_format(self.e_corr + self.mf.e_tot, '{:.10f}')}")
+        self.log.output("E(corr) = %.10f", self.e_corr)
+        self.log.output("E(tot)  = %.10f", self.e_corr + self.mf.e_tot)
         self.log.debug("")
         self.log.debug("Time elapsed: %s", timer.format_time(timer()))
         self.log.debug("")
@@ -384,7 +373,7 @@ class BaseEBCC(ABC):
 
             # Log the iteration:
             converged = bool(dl < self.options.t_tol)
-            self.log.info(f"{niter:4d} {[ANSI.r, ANSI.g][converged]}{dl:13.3e}{ANSI.R}")
+            self.log.info(f"%4d {[ANSI.r, ANSI.g][converged]}%13.3e{ANSI.R}", niter, dl)
 
             # Check for convergence:
             if converged:
