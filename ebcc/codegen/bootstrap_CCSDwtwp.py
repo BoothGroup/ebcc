@@ -167,13 +167,13 @@ with Stopwatch("T amplitudes"):
             for o, e in output_expr:
                 if o.name.startswith("t") and not (o.name.startswith("tmp") or o.name.startswith("t3")):
                     spaces = "".join(tuple(i.space for i in o.indices))
-                    spins = "".join(tuple({"α": "a", "β": "b"}[i.spin] for i in o.indices))
+                    spins = "".join(tuple(i.spin for i in o.indices))
                     if set(spaces) != {"o", "v"}:
                         inp_keys[spins].add(spaces)
                 for t in e.search_leaves(Tensor):
                     if isinstance(t, Tensor) and t.name.startswith("t") and not (t.name.startswith("tmp") or t.name.startswith("t3")):
                         spaces = "".join(tuple(i.space for i in t.indices))
-                        spins = "".join(tuple({"α": "a", "β": "b"}[i.spin] for i in t.indices))
+                        spins = "".join(tuple(i.spin for i in t.indices))
                         inp_keys[spins].add(spaces)
             for spins, inp_keys in inp_keys.items():
                 for key in inp_keys:
