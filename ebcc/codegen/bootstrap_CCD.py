@@ -92,7 +92,7 @@ with Stopwatch("L amplitudes"):
     terms = pq.fully_contracted_strings()
 
     # Get the L amplitudes in albert format
-    get_amplitudes([terms], spin, strategy="opt" if spin == "uhf" else "exhaust", which="l", orders=[2])
+    output_expr, returns = get_amplitudes([terms], spin, strategy="opt" if spin == "uhf" else "exhaust", which="l", orders=[2])
 
     # Generate the L amplitude code
     for name, codegen in code_generators.items():

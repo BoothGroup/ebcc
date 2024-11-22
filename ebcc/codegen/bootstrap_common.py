@@ -73,6 +73,8 @@ def get_rdm1(terms_sectors, spin, strategy="exhaust", density_fit=False):
     deltas = []
     deltas_sources = []
     for sectors, indices in [("oo", "ij"), ("ov", "ia"), ("vo", "ai"), ("vv", "ab")]:
+        if not terms_sectors.get((sectors, indices)):
+            continue
         for index_spins in get_density_spins(indices, spin):
             expr_n = import_from_pdaggerq(terms_sectors[sectors, indices], index_spins=index_spins)
             expr_n = spin_integrate(expr_n, spin)
@@ -99,11 +101,11 @@ def get_rdm1(terms_sectors, spin, strategy="exhaust", density_fit=False):
 def get_rdm2(terms_sectors, spin, strategy="exhaust", density_fit=False):
     """Get the two-body reduced density matrix expressions from `pdaggerq` terms."""
     if spin == "ghf":
-        from albert.qc.ghf import Delta, T1
+        from albert.qc.ghf import Delta, T1, T2
     elif spin == "uhf":
-        from albert.qc.uhf import Delta, T1
+        from albert.qc.uhf import Delta, T1, T2
     else:
-        from albert.qc.rhf import Delta, T1
+        from albert.qc.rhf import Delta, T1, T2
     expr = []
     output = []
     returns = []
@@ -127,6 +129,8 @@ def get_rdm2(terms_sectors, spin, strategy="exhaust", density_fit=False):
         ("vvvo", "abci"),
         ("vvvv", "abcd"),
     ]:
+        if not terms_sectors.get((sectors, indices)):
+            continue
         for index_spins in get_density_spins(indices, spin):
             expr_n = import_from_pdaggerq(terms_sectors[sectors, indices], index_spins=index_spins)
             expr_n = spin_integrate(expr_n, spin)
@@ -140,7 +144,10 @@ def get_rdm2(terms_sectors, spin, strategy="exhaust", density_fit=False):
             if len(set(sectors)) == 1:
                 delta = Delta(*tuple(sorted(expr_n[0].external_indices, key=lambda i: indices.index(i.name))[:2]))
                 deltas.append(delta)
-                deltas_sources.append(next(expr_n[0].search_leaves(T1)))
+                try:
+                    deltas_sources.append(next(expr_n[0].search_leaves(T1)))
+                except StopIteration:
+                    deltas_sources.append(next(expr_n[0].search_leaves(T2)))
     output_expr = optimise(output, expr, strategy=strategy)
     return output_expr, returns, deltas, deltas_sources
 
