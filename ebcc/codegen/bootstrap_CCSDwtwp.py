@@ -141,6 +141,7 @@ with Stopwatch("T amplitudes"):
 
     # Optimise
     output_expr = optimise(new_output, new_expr, strategy="exhaust" if spin != "uhf" else "greedy")
+    output_expr = [(o, e.apply(lambda tensor: tensor.canonicalise(), Tensor)) for o, e in output_expr]
 
     # Generate the T amplitude code
     for name, codegen in code_generators.items():
