@@ -25,7 +25,7 @@ order = int(sys.argv[2])
 # Set up the code generators
 code_generators = {
     "einsum": EBCCCodeGenerator(
-        stdout=open(f"{spin[0].upper()}CCSD.py", "w"),
+        stdout=open(f"{spin[0].upper()}MP{order}.py", "w"),
     ),
 }
 
@@ -143,13 +143,13 @@ if order == 2:
                         codegen.write(f"rdm2.{key} = np.zeros((t1.shape[{i}], t1.shape[{j}], t1.shape[{k}], t1.shape[{l}]))")
                     codegen.write("rdm2 = pack_2e(rdm2.oooo, rdm2.ooov, rdm2.oovo, rdm2.ovoo, rdm2.vooo, rdm2.oovv, rdm2.ovov, rdm2.ovvo, rdm2.voov, rdm2.vovo, rdm2.vvoo, rdm2.ovvv, rdm2.vovv, rdm2.vvov, rdm2.vvvo, rdm2.vvvv).transpose((0, 2, 1, 3))")
                 else:
-                    for spin in ("aaaa", "aabb", "bbbb"):
+                    for s in ("aaaa", "aabb", "bbbb"):
                         for key in itertools.product("ov", repeat=4):
                             if tuple(key) in {("o", "o", "v", "v") , ("v", "v", "o", "o")}:
                                 continue
                             i, j, k, l = ["ov".index(k) for k in key]
-                            si, sj, sk, sl = spin
-                            codegen.write(f"rdm2.{spin}.{key} = np.zeros((t1.{si}.shape[{i}], t1.{sj}.shape[{j}], t1.{sk}.shape[{k}], t1.{sl}.shape[{l}]))")
+                            si, sj, sk, sl = s
+                            codegen.write(f"rdm2.{si+sj+sk+sl}.{key} = np.zeros((t1.{si}.shape[{i}], t1.{sj}.shape[{j}], t1.{sk}.shape[{k}], t1.{sl}.shape[{l}]))")
                     codegen.write("rdm2.aaaa = pack_2e(rdm2.aaaa.oooo, rdm2.aaaa.ooov, rdm2.aaaa.oovo, rdm2.aaaa.ovoo, rdm2.aaaa.vooo, rdm2.aaaa.oovv, rdm2.aaaa.ovov, rdm2.aaaa.ovvo, rdm2.aaaa.voov, rdm2.aaaa.vovo, rdm2.aaaa.vvoo, rdm2.aaaa.ovvv, rdm2.aaaa.vovv, rdm2.aaaa.vvov, rdm2.aaaa.vvvo, rdm2.aaaa.vvvv).transpose((0, 2, 1, 3))")
                     codegen.write("rdm2.aabb = pack_2e(rdm2.abab.oooo, rdm2.abab.ooov, rdm2.abab.oovo, rdm2.abab.ovoo, rdm2.abab.vooo, rdm2.abab.oovv, rdm2.abab.ovov, rdm2.abab.ovvo, rdm2.abab.voov, rdm2.abab.vovo, rdm2.abab.vvoo, rdm2.abab.ovvv, rdm2.abab.vovv, rdm2.abab.vvov, rdm2.abab.vvvo, rdm2.abab.vvvv).transpose((0, 2, 1, 3))")
                     codegen.write("rdm2.bbbb = pack_2e(rdm2.bbbb.oooo, rdm2.bbbb.ooov, rdm2.bbbb.oovo, rdm2.bbbb.ovoo, rdm2.bbbb.vooo, rdm2.bbbb.oovv, rdm2.bbbb.ovov, rdm2.bbbb.ovvo, rdm2.bbbb.voov, rdm2.bbbb.vovo, rdm2.bbbb.vvoo, rdm2.bbbb.ovvv, rdm2.bbbb.vovv, rdm2.bbbb.vvov, rdm2.bbbb.vvvo, rdm2.bbbb.vvvv).transpose((0, 2, 1, 3))")

@@ -2,6 +2,7 @@
 Generate the CCD code.
 """
 
+import itertools
 import sys
 
 import pdaggerq
@@ -137,8 +138,14 @@ with Stopwatch("1RDM"):
             if name != "einsum":
                 raise NotImplementedError  # FIXME remove packing
             if spin != "uhf":
+                codegen.write("rdm1.ov = np.zeros((t2.shape[0], t2.shape[-1]))")
+                codegen.write("rdm1.vo = np.zeros((t2.shape[-1], t2.shape[0]))")
                 codegen.write("rdm1 = np.block([[rdm1.oo, rdm1.ov], [rdm1.vo, rdm1.vv]])")
             else:
+                codegen.write("rdm1.aa.ov = np.zeros((t2.aaaa.shape[0], t2.aaaa.shape[-1]))")
+                codegen.write("rdm1.aa.vo = np.zeros((t2.aaaa.shape[-1], t2.aaaa.shape[0]))")
+                codegen.write("rdm1.bb.ov = np.zeros((t2.bbbb.shape[0], t2.bbbb.shape[-1]))")
+                codegen.write("rdm1.bb.vo = np.zeros((t2.bbbb.shape[-1], t2.bbbb.shape[0]))")
                 codegen.write("rdm1.aa = np.block([[rdm1.aa.oo, rdm1.aa.ov], [rdm1.aa.vo, rdm1.aa.vv]])")
                 codegen.write("rdm1.bb = np.block([[rdm1.bb.oo, rdm1.bb.ov], [rdm1.bb.vo, rdm1.bb.vv]])")
 
@@ -203,8 +210,17 @@ with Stopwatch("2RDM"):
             if name != "einsum":
                 raise NotImplementedError  # FIXME remove packing, handle transpose
             if spin != "uhf":
+                for spaces in itertools.product("ov", repeat=4):
+                    if not any(o.name == "rdm2" and all(s == i.space for s, i in zip(spaces, o.external_indices)) for o, _ in output_expr):
+                        shape = [f"t2.shape[{0 if s == 'o' else -1}]" for s in spaces]
+                        codegen.write(f"rdm2.{''.join(spaces)} = np.zeros(({', '.join(shape)}))")
                 codegen.write("rdm2 = pack_2e(rdm2.oooo, rdm2.ooov, rdm2.oovo, rdm2.ovoo, rdm2.vooo, rdm2.oovv, rdm2.ovov, rdm2.ovvo, rdm2.voov, rdm2.vovo, rdm2.vvoo, rdm2.ovvv, rdm2.vovv, rdm2.vvov, rdm2.vvvo, rdm2.vvvv).transpose((0, 2, 1, 3))")
             else:
+                for spins in ("aaaa", "aabb", "bbbb"):
+                    for spaces in itertools.product("ov", repeat=4):
+                        if not any(o.name == "rdm2" and all(s == i.space and t == i.spin for s, t, i in zip(spaces, spins, o.external_indices)) for o, _ in output_expr):
+                            shape = [f"t2.{t * 4}.shape[{0 if s == 'o' else -1}]" for s, t in zip(spaces, spins)]
+                            codegen.write(f"rdm2.{spins}.{''.join(spaces)} = np.zeros(({', '.join(shape)}))")
                 codegen.write("rdm2.aaaa = pack_2e(rdm2.aaaa.oooo, rdm2.aaaa.ooov, rdm2.aaaa.oovo, rdm2.aaaa.ovoo, rdm2.aaaa.vooo, rdm2.aaaa.oovv, rdm2.aaaa.ovov, rdm2.aaaa.ovvo, rdm2.aaaa.voov, rdm2.aaaa.vovo, rdm2.aaaa.vvoo, rdm2.aaaa.ovvv, rdm2.aaaa.vovv, rdm2.aaaa.vvov, rdm2.aaaa.vvvo, rdm2.aaaa.vvvv).transpose((0, 2, 1, 3))")
                 codegen.write("rdm2.aabb = pack_2e(rdm2.abab.oooo, rdm2.abab.ooov, rdm2.abab.oovo, rdm2.abab.ovoo, rdm2.abab.vooo, rdm2.abab.oovv, rdm2.abab.ovov, rdm2.abab.ovvo, rdm2.abab.voov, rdm2.abab.vovo, rdm2.abab.vvoo, rdm2.abab.ovvv, rdm2.abab.vovv, rdm2.abab.vvov, rdm2.abab.vvvo, rdm2.abab.vvvv).transpose((0, 2, 1, 3))")
                 codegen.write("rdm2.bbbb = pack_2e(rdm2.bbbb.oooo, rdm2.bbbb.ooov, rdm2.bbbb.oovo, rdm2.bbbb.ovoo, rdm2.bbbb.vooo, rdm2.bbbb.oovv, rdm2.bbbb.ovov, rdm2.bbbb.ovvo, rdm2.bbbb.voov, rdm2.bbbb.vovo, rdm2.bbbb.vvoo, rdm2.bbbb.ovvv, rdm2.bbbb.vovv, rdm2.bbbb.vvov, rdm2.bbbb.vvvo, rdm2.bbbb.vvvv).transpose((0, 2, 1, 3))")

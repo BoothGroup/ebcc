@@ -56,6 +56,7 @@ def get_amplitudes(terms_grouped, spin, strategy="exhaust", which="t", orders=No
         output_expr = optimise(output, expr, strategy="exhaust")
     else:
         output_expr = list(zip(output, expr))
+    output_expr = [(o, e.apply(lambda tensor: tensor.canonicalise(), Tensor)) for o, e in output_expr]
     return output_expr, returns
 
 

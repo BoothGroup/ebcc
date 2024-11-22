@@ -38,8 +38,8 @@ with Stopwatch("Energy"):
     # Get the energy contractions in pdaggerq format
     pq.clear()
     pq.set_left_operators([["1"]])
-    pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
-    pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
+    pq.add_st_operator(1.0, ["f"], ["t2"])
+    pq.add_st_operator(1.0, ["v"], ["t2"])
     pq.simplify()
     terms = pq.fully_contracted_strings()
     terms = remove_reference_energy(terms)
