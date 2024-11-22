@@ -20,7 +20,7 @@ for method in CCD CCSD QCISD CC2 DCD DCSD; do
     done
 done
 
-for method in CC3 CCSDT; do
+for method in CCSDwtwp CC3 CCSDT; do
     for i in rhf uhf ghf; do
         echo "Bootstrapping $method ($i)"
         python -W ignore bootstrap_${method}.py $i &> output_${method}_${i}.dat &
@@ -49,7 +49,7 @@ for method in CCD CCSD QCISD CC2 DCD DCSD; do
     done
 done
 
-for method in CC3 CCSDT; do
+for method in CCSDwtwp CC3 CCSDT; do
     for i in rhf uhf ghf; do
         echo "Output for $method ($i)"
         cat output_${method}_${i}.dat
