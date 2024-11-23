@@ -61,8 +61,7 @@ def ensure_scalar(obj: Union[T, NDArray[T]]) -> T:
     if BACKEND in ("numpy", "cupy"):
         return np.asarray(obj).item()  # type: ignore
     elif BACKEND == "jax":
-        # Can't return an item for traced objects, so make this function a no-op for JAX
-        return obj  # type: ignore
+        return np.ravel(obj)[0]  # type: ignore
     elif BACKEND == "tensorflow":
         if isinstance(obj, tf.Tensor):
             return obj.numpy().item()  # type: ignore
