@@ -123,6 +123,8 @@ def available_models(
     path = os.path.join(cd, "codegen")
     _, _, files = list(os.walk(path))[0]
 
+    from ebcc.core.ansatz import identifier_to_name
+
     rhf = []
     uhf = []
     ghf = []
@@ -131,11 +133,12 @@ def available_models(
         if f.endswith(".py"):
             f = f.rstrip(".py")
             f = f.replace("_", "-")
-            if f.startswith("RCC"):
+            f = identifier_to_name(f)
+            if f.startswith("R"):
                 rhf.append(f)
-            elif f.startswith("UCC"):
+            elif f.startswith("U"):
                 uhf.append(f)
-            elif f.startswith("GCC"):
+            elif f.startswith("G"):
                 ghf.append(f)
 
     rhf = sorted(rhf)
