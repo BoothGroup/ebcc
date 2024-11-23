@@ -412,7 +412,7 @@ def construct_fno_space(
         natural orbital space.
     """
     # Get the MP2 1RDM
-    solver = pyscf.mp2.MP2(mf)
+    solver = pyscf.mp.mp2.MP2(mf)
     dm1: NDArray[T]
     if not amplitudes:
         solver.kernel()
