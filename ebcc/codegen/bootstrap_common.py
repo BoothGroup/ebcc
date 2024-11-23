@@ -47,6 +47,8 @@ def get_amplitudes(terms_grouped, spin, strategy="exhaust", which="t", orders=No
         for index_spins in get_amplitude_spins(indices[: n + 1], indices[n + 1 :], spin):
             expr_n = import_from_pdaggerq(terms, index_spins=index_spins)
             expr_n = spin_integrate(expr_n, spin)
+            if density_fit:
+                expr_n = tuple(_density_fit(e) for e in expr_n)
             output_n = [Tensor(*tuple(sorted(e.external_indices, key=lambda i: indices.index(i.name))), name=f"{which}{order}new") for e in expr_n]
             returns_n = (output_n[0],)
             expr.extend(expr_n)

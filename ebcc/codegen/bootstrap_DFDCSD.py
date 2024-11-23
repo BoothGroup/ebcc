@@ -81,7 +81,7 @@ with Stopwatch("T amplitudes"):
     ]
 
     # Get the T amplitudes in albert format
-    output_expr, returns = get_amplitudes([terms], spin, orders=[2], density_fit=True)
+    output_expr, returns = get_amplitudes([terms_t1, terms_t2], spin, density_fit=True)
 
     # Generate the T amplitude code
     for name, codegen in code_generators.items():
