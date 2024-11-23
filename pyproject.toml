@@ -43,11 +43,11 @@ numpy = []
 tensorflow = [
     "tensorflow>=2.0.0",
     "opt_einsum>=3.3.0",
-    "pyscfad>=0.1.7",
 ]
 jax = [
     "jax>=0.2.0",
     "opt_einsum>=3.3.0",
+    "pyscfad>=0.1.8",
 ]
 cupy = [
     "cupy>=9.0.0",
