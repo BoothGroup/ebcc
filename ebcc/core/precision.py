@@ -39,9 +39,9 @@ def astype(value: T, dtype: Type[T]) -> T:
     Returns:
         The value cast to the current floating point type.
     """
-    if BACKEND == "jax":
+    if BACKEND == "jax" and not TYPE_CHECKING:
         # Value may be traced, can't cast directly to the type
-        return value.astype(types[dtype])
+        return value.astype(types[dtype])  # type: ignore
     else:
         out: T = types[dtype](value)
         return out
