@@ -274,8 +274,8 @@ class BaseEBCC(ABC):
                 converged_e = bool(de < self.options.e_tol)
                 converged_t = bool(dt < self.options.t_tol)
                 self.log.info(
-                    f"%4d %16.10f %18.10f {[ANSI.r, ANSI.g][converged_e]}%13.3e{ANSI.R}"
-                    f" {[ANSI.r, ANSI.g][converged_t]}%13.3e{ANSI.R}",
+                    f"%4d %16.10f %18.10f {[ANSI.r, ANSI.g][int(converged_e)]}%13.3e{ANSI.R}"
+                    f" {[ANSI.r, ANSI.g][int(converged_t)]}%13.3e{ANSI.R}",
                     niter,
                     e_cc,
                     e_cc + self.mf.e_tot,
@@ -373,7 +373,7 @@ class BaseEBCC(ABC):
 
             # Log the iteration:
             converged = bool(dl < self.options.t_tol)
-            self.log.info(f"%4d {[ANSI.r, ANSI.g][converged]}%13.3e{ANSI.R}", niter, dl)
+            self.log.info(f"%4d {[ANSI.r, ANSI.g][int(converged)]}%13.3e{ANSI.R}", niter, dl)
 
             # Check for convergence:
             if converged:
