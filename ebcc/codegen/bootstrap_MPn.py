@@ -86,14 +86,14 @@ if order == 2:
                 if name != "einsum":
                     raise NotImplementedError  # FIXME remove packing
                 if spin != "uhf":
-                    codegen.write("rdm1.ov = np.zeros((t1.shape[0], t1.shape[1]))")
-                    codegen.write("rdm1.vo = np.zeros((t1.shape[1], t1.shape[0]))")
+                    codegen.write("rdm1.ov = np.zeros((t2.shape[0], t2.shape[-1]))")
+                    codegen.write("rdm1.vo = np.zeros((t2.shape[-1], t2.shape[0]))")
                     codegen.write("rdm1 = np.block([[rdm1.oo, rdm1.ov], [rdm1.vo, rdm1.vv]])")
                 else:
-                    codegen.write("rdm1.aa.ov = np.zeros((t1.aa.shape[0], t1.aa.shape[1]))")
-                    codegen.write("rdm1.aa.vo = np.zeros((t1.aa.shape[1], t1.aa.shape[0]))")
-                    codegen.write("rdm1.bb.ov = np.zeros((t1.bb.shape[0], t1.bb.shape[1]))")
-                    codegen.write("rdm1.bb.vo = np.zeros((t1.bb.shape[1], t1.bb.shape[0]))")
+                    codegen.write("rdm1.aa.ov = np.zeros((t2.aa.shape[0], t2.aa.shape[-1]))")
+                    codegen.write("rdm1.aa.vo = np.zeros((t2.aa.shape[-1], t2.aa.shape[0]))")
+                    codegen.write("rdm1.bb.ov = np.zeros((t2.bb.shape[0], t2.bb.shape[-1]))")
+                    codegen.write("rdm1.bb.vo = np.zeros((t2.bb.shape[-1], t2.bb.shape[0]))")
                     codegen.write("rdm1.aa = np.block([[rdm1.aa.oo, rdm1.aa.ov], [rdm1.aa.vo, rdm1.aa.vv]])")
                     codegen.write("rdm1.bb = np.block([[rdm1.bb.oo, rdm1.bb.ov], [rdm1.bb.vo, rdm1.bb.vv]])")
 
@@ -143,7 +143,7 @@ if order == 2:
                         codegen.write(f"rdm2.{''.join(key)} = np.zeros((t1.shape[{i}], t1.shape[{j}], t1.shape[{k}], t1.shape[{l}]))")
                     codegen.write("rdm2 = pack_2e(rdm2.oooo, rdm2.ooov, rdm2.oovo, rdm2.ovoo, rdm2.vooo, rdm2.oovv, rdm2.ovov, rdm2.ovvo, rdm2.voov, rdm2.vovo, rdm2.vvoo, rdm2.ovvv, rdm2.vovv, rdm2.vvov, rdm2.vvvo, rdm2.vvvv).transpose((0, 2, 1, 3))")
                 else:
-                    for s in ("aaaa", "aabb", "bbbb"):
+                    for s in ("aaaa", "abab", "bbbb"):
                         for key in itertools.product("ov", repeat=4):
                             if tuple(key) in {("o", "o", "v", "v") , ("v", "v", "o", "o")}:
                                 continue
