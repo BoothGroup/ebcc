@@ -5,10 +5,8 @@ from __future__ import annotations
 import functools
 from typing import TYPE_CHECKING, cast
 
-from pyscf.mp import MP2
-
 from ebcc import numpy as np
-from ebcc import util
+from ebcc import pyscf, util
 from ebcc.core.precision import types
 
 if TYPE_CHECKING:
@@ -414,7 +412,7 @@ def construct_fno_space(
         natural orbital space.
     """
     # Get the MP2 1RDM
-    solver = MP2(mf)
+    solver = pyscf.mp.mp2.MP2(mf)
     dm1: NDArray[T]
     if not amplitudes:
         solver.kernel()

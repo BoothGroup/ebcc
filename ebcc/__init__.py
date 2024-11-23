@@ -56,6 +56,15 @@ if TYPE_CHECKING:
 else:
     numpy = importlib.import_module(f"ebcc.backend._{BACKEND}")
 
+if BACKEND == "jax" and not TYPE_CHECKING:
+    # Try to import pyscfad if JAX is used so we can use automatic differentiation
+    try:
+        import pyscfad as pyscf
+    except ImportError:
+        import pyscf
+else:
+    import pyscf
+
 from ebcc.core.logging import NullLogger, default_log, init_logging
 from ebcc.cc import GEBCC, REBCC, UEBCC
 from ebcc.core import precision

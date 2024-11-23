@@ -356,8 +356,11 @@ class BaseEOM(ABC):
             r1n = self.vector_to_amplitudes(vn)["r1"]
             qpwt = self._quasiparticle_weight(r1n)
             self.log.output(
-                f"{n:>4d} {np.ravel(en)[0]:>16.10f} {qpwt:>13.5g} "
-                f"{[ANSI.r, ANSI.g][bool(cn)]}{cn!r:>8s}{ANSI.R}"
+                f"%4d %16.10f %13.5g {[ANSI.r, ANSI.g][bool(cn)]}%8s{ANSI.R}",
+                n,
+                np.ravel(en)[0],
+                qpwt,
+                bool(cn),
             )
 
         self.log.debug("")

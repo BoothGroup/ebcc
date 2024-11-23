@@ -5,10 +5,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy  # PySCF uses true numpy, no backend stuff here
-from pyscf import ao2mo, lib
+from pyscf import lib
 
 from ebcc import numpy as np
-from ebcc import util
+from ebcc import pyscf, util
 from ebcc.backend import to_numpy
 from ebcc.core.precision import types
 from ebcc.ham.base import BaseERIs, BaseRHamiltonian, BaseUHamiltonian
@@ -68,7 +68,7 @@ class RCDERIs(BaseERIs, BaseRHamiltonian):
                 coeffs[0].shape[-1] + coeffs[1].shape[-1],
             )
             coeffs = numpy.concatenate(coeffs, axis=1)
-            block = ao2mo._ao2mo.nr_e2(
+            block = pyscf.ao2mo._ao2mo.nr_e2(
                 self.cc.mf.with_df._cderi, coeffs, ijslice, aosym="s2", mosym="s1"
             )
             block = np.reshape(block, (-1, ijslice[1] - ijslice[0], ijslice[3] - ijslice[2]))
