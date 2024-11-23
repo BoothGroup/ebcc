@@ -60,7 +60,7 @@ if BACKEND == "jax" and not TYPE_CHECKING:
     # Try to import pyscfad if JAX is used so we can use automatic differentiation
     try:
         import pyscfad as pyscf
-    except:
+    except ImportError:
         import pyscf
 else:
     import pyscf
