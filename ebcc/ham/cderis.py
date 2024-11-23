@@ -7,9 +7,8 @@ from typing import TYPE_CHECKING
 import numpy  # PySCF uses true numpy, no backend stuff here
 from pyscf import lib
 
-from ebcc import pyscf
 from ebcc import numpy as np
-from ebcc import util
+from ebcc import pyscf, util
 from ebcc.backend import to_numpy
 from ebcc.core.precision import types
 from ebcc.ham.base import BaseERIs, BaseRHamiltonian, BaseUHamiltonian

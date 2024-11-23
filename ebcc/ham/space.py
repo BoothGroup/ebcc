@@ -5,9 +5,8 @@ from __future__ import annotations
 import functools
 from typing import TYPE_CHECKING, cast
 
-from ebcc import pyscf
 from ebcc import numpy as np
-from ebcc import util
+from ebcc import pyscf, util
 from ebcc.core.precision import types
 
 if TYPE_CHECKING:

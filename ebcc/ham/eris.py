@@ -6,8 +6,8 @@ from typing import TYPE_CHECKING
 
 import numpy  # PySCF uses true numpy, no backend stuff here
 
-from ebcc import pyscf
 from ebcc import numpy as np
+from ebcc import pyscf
 from ebcc.backend import to_numpy
 from ebcc.core.precision import types
 from ebcc.ham.base import BaseERIs, BaseGHamiltonian, BaseRHamiltonian, BaseUHamiltonian
@@ -132,7 +132,9 @@ class GERIs(BaseERIs, BaseGHamiltonian):
                 array += pyscf.ao2mo.kernel(self.cc.mf.mol, mo_b)
                 array += pyscf.ao2mo.kernel(self.cc.mf.mol, mo_a[:2] + mo_b[2:])
                 array += pyscf.ao2mo.kernel(self.cc.mf.mol, mo_b[:2] + mo_a[2:])
-            array = np.reshape(pyscf.ao2mo.addons.restore(1, array, self.cc.nmo), (self.cc.nmo,) * 4)
+            array = np.reshape(
+                pyscf.ao2mo.addons.restore(1, array, self.cc.nmo), (self.cc.nmo,) * 4
+            )
             array = np.asarray(array, dtype=types[float])
             array = np.transpose(array, (0, 2, 1, 3)) - np.transpose(array, (0, 2, 3, 1))
             self.__dict__["array"] = array

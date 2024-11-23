@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import ctypes
-import scipy.linalg
 from typing import TYPE_CHECKING
+
+import scipy.linalg
 
 from ebcc import BACKEND
 from ebcc import numpy as np
