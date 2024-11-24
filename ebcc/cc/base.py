@@ -169,8 +169,6 @@ class BaseEBCC(ABC):
         if self.boson_ansatz != "":
             self.g = self.get_g()
             self.G = self.get_mean_field_G()
-            if self.options.shift:
-                self.log.info(" > Energy shift due to polaritonic basis:  %.10f", self.const)
         else:
             assert self.nbos == 0
             self.options.shift = False
@@ -207,6 +205,10 @@ class BaseEBCC(ABC):
         self.log.debug("")
         self.log.info(f"{ANSI.B}Space{ANSI.R}: {ANSI.m}{self.space}{ANSI.R}")
         self.log.debug("")
+        if self.boson_ansatz != "":
+            self.log.info(f"{ANSI.B}Bosons{ANSI.R}: {ANSI.m}{self.nbos}{ANSI.R}")
+            self.log.info(" > Energy shift due to polaritonic basis:  %.10f", self.const)
+            self.log.debug("")
 
     @property
     @abstractmethod
