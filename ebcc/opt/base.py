@@ -94,6 +94,8 @@ class BaseBruecknerEBCC(ABC):
         # Logging:
         init_logging(cc.log)
         cc.log.info(f"\n{ANSI.B}{ANSI.U}{self.name}{ANSI.R}")
+        cc.log.debug(f"{ANSI.B}{'*' * len(self.name)}{ANSI.R}")
+        cc.log.debug("")
         cc.log.info(f"{ANSI.B}Options{ANSI.R}:")
         cc.log.info(f" > e_tol:  {ANSI.y}{self.options.e_tol}{ANSI.R}")
         cc.log.info(f" > t_tol:  {ANSI.y}{self.options.t_tol}{ANSI.R}")

@@ -115,7 +115,7 @@ def _check_output(*args: Any, **kwargs: Any) -> bytes:
 ANSI = Namespace(
     B="\x1b[1m",
     H="\x1b[3m",
-    R="\x1b[m\x0f",
+    R="\x1b[m",
     U="\x1b[4m",
     b="\x1b[34m",
     c="\x1b[36m",

@@ -59,7 +59,7 @@ def name_to_identifier(name: str) -> str:
     return iden
 
 
-def identifity_to_name(iden: str) -> str:
+def identifier_to_name(iden: str) -> str:
     """Convert an ansatz identifier to a name.
 
     Inverse operation of `name_to_identifier`.
