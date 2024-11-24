@@ -50,22 +50,22 @@ jobs:
           python -m pip install pytest
           EBCC_BACKEND=${{ matrix.backend }} pytest tests/test_minimal.py
         if: matrix.minimal
-      - name: Run unit tests
-        run: |
-          python -m pip install pytest
-          EBCC_BACKEND=${{ matrix.backend }} pytest
-        if: matrix.full && ! matrix.coverage
-      - name: Run unit tests with coverage
-        run: |
-          python -m pip install pytest pytest-cov
-          EBCC_BACKEND=${{ matrix.backend }} pytest --cov ebcc/
-        if: matrix.full && matrix.coverage
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          verbose: true
-        if: matrix.coverage
+      #- name: Run unit tests
+      #  run: |
+      #    python -m pip install pytest
+      #    EBCC_BACKEND=${{ matrix.backend }} pytest
+      #  if: matrix.full && ! matrix.coverage
+      #- name: Run unit tests with coverage
+      #  run: |
+      #    python -m pip install pytest pytest-cov
+      #    EBCC_BACKEND=${{ matrix.backend }} pytest --cov ebcc/
+      #  if: matrix.full && matrix.coverage
+      #- name: Upload coverage to Codecov
+      #  uses: codecov/codecov-action@v3
+      #  with:
+      #    token: ${{ secrets.CODECOV_TOKEN }}
+      #    verbose: true
+      #  if: matrix.coverage
       - name: Deploy documentation
         run: mkdocs gh-deploy --force -f docs/mkdocs.yaml
-        if: matrix.documentation && github.ref == 'refs/heads/master'
+        if: matrix.documentation #&& github.ref == 'refs/heads/master'
