@@ -216,7 +216,7 @@ with Stopwatch("2RDM"):
                         codegen.write(f"rdm2.{''.join(spaces)} = np.zeros(({', '.join(shape)}))")
                 codegen.write("rdm2 = pack_2e(rdm2.oooo, rdm2.ooov, rdm2.oovo, rdm2.ovoo, rdm2.vooo, rdm2.oovv, rdm2.ovov, rdm2.ovvo, rdm2.voov, rdm2.vovo, rdm2.vvoo, rdm2.ovvv, rdm2.vovv, rdm2.vvov, rdm2.vvvo, rdm2.vvvv).transpose((0, 2, 1, 3))")
             else:
-                for spins in ("aaaa", "aabb", "bbbb"):
+                for spins in ("aaaa", "abab", "bbbb"):
                     for spaces in itertools.product("ov", repeat=4):
                         if not any(o.name == "rdm2" and all(s == i.space and t == i.spin for s, t, i in zip(spaces, spins, o.external_indices)) for o, _ in output_expr):
                             shape = [f"t2.{t * 4}.shape[{0 if s == 'o' else -1}]" for s, t in zip(spaces, spins)]
