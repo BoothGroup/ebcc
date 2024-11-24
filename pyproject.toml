@@ -39,7 +39,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-py-modules = ["ebcc"]
+packages = ["ebcc"]
 
 [project.optional-dependencies]
 numpy = []
