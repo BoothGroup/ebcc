@@ -37,7 +37,7 @@ jobs:
 
   test:
     needs: lint
-    name: Tests (${{ matrix.os }}, python ${{ matrix.python-version }}, ${{ matrix.backend }})
+    name: Tests for ${{ matrix.os }}, python ${{ matrix.python-version }}, ${{ matrix.backend }}
     runs-on: ${{ matrix.os }}
 
     strategy:
