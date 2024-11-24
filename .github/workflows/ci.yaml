@@ -90,4 +90,4 @@ jobs:
           python -m pip install -e .[dev]
       - name: Deploy documentation
         run: mkdocs gh-deploy --force -f docs/mkdocs.yaml
-        if: matrix.documentation #&& github.ref == 'refs/heads/master'
+        #if: github.ref == 'refs/heads/master'
