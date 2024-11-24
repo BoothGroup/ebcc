@@ -60,6 +60,17 @@ if BACKEND == "jax" and not TYPE_CHECKING:
     # Try to import pyscfad if JAX is used so we can use automatic differentiation
     try:
         import pyscfad as pyscf
+
+        # See https://github.com/fishjojo/pyscfad/issues/60
+        from pyscfad import scf, ao2mo, mp
+        from pyscfad.ao2mo import _ao2mo, addons
+
+        pyscf.scf = scf
+        pyscf.ao2mo = ao2mo
+        pyscf.ao2mo._ao2mo = _ao2mo
+        pyscf.ao2mo.addons = addons
+        pyscf.mp = mp
+
     except ImportError:
         import pyscf
 else:
