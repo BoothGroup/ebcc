@@ -237,7 +237,7 @@ class DIIS(BaseDamping):
             errors = {
                 counter: self._error_norm(counter, counter) for counter in self._errors.keys()
             }
-            counter = max(errors, key=errors.__getitem__)
+            counter = max(errors, key=errors.__getitem__)  # type: ignore[arg-type]
             self._arrays.pop(counter)
             self._errors.pop(counter)
 
