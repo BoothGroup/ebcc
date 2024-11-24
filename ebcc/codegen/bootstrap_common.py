@@ -93,10 +93,16 @@ def get_rdm1(terms_sectors, spin, strategy="exhaust", density_fit=False):
             if len(set(sectors)) == 1:
                 delta = Delta(*tuple(sorted(expr_n[0].external_indices, key=lambda i: indices.index(i.name))))
                 deltas.append(delta)
-                try:
-                    deltas_sources.append(next(expr_n[0].search_leaves(T1)))
-                except StopIteration:
-                    deltas_sources.append(next(expr_n[0].search_leaves(T2)))
+                # FIXME improve:
+                for tensor in expr_n[0].search_leaves(T1):
+                    if spin != "uhf" or len(set(i.spin for i in tensor.external_indices)) == 1:
+                        deltas_sources.append(tensor)
+                        break
+                else:
+                    for tensor in expr_n[0].search_leaves(T2):
+                        if spin != "uhf" or len(set(i.spin for i in tensor.external_indices)) == 1:
+                            deltas_sources.append(tensor)
+                            break
     output_expr = optimise(output, expr, strategy=strategy)
     return output_expr, returns, deltas, deltas_sources
 
@@ -147,10 +153,16 @@ def get_rdm2(terms_sectors, spin, strategy="exhaust", density_fit=False):
             if len(set(sectors)) == 1:
                 delta = Delta(*tuple(sorted(expr_n[0].external_indices, key=lambda i: indices.index(i.name))[:2]))
                 deltas.append(delta)
-                try:
-                    deltas_sources.append(next(expr_n[0].search_leaves(T1)))
-                except StopIteration:
-                    deltas_sources.append(next(expr_n[0].search_leaves(T2)))
+                # FIXME improve:
+                for tensor in expr_n[0].search_leaves(T1):
+                    if spin != "uhf" or len(set(i.spin for i in tensor.external_indices)) == 1:
+                        deltas_sources.append(tensor)
+                        break
+                else:
+                    for tensor in expr_n[0].search_leaves(T2):
+                        if spin != "uhf" or len(set(i.spin for i in tensor.external_indices)) == 1:
+                            deltas_sources.append(tensor)
+                            break
     output_expr = optimise(output, expr, strategy=strategy)
     return output_expr, returns, deltas, deltas_sources
 
