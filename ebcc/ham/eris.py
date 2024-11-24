@@ -5,9 +5,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy  # PySCF uses true numpy, no backend stuff here
-from pyscf import ao2mo
 
 from ebcc import numpy as np
+from ebcc import pyscf
 from ebcc.backend import to_numpy
 from ebcc.core.precision import types
 from ebcc.ham.base import BaseERIs, BaseGHamiltonian, BaseRHamiltonian, BaseUHamiltonian
@@ -43,9 +43,9 @@ class RERIs(BaseERIs, BaseRHamiltonian):
                     for i, k in enumerate(key)
                 ]
                 if getattr(self.cc.mf, "_eri", None) is not None:
-                    block = ao2mo.incore.general(self.cc.mf._eri, coeffs, compact=False)
+                    block = pyscf.ao2mo.incore.general(self.cc.mf._eri, coeffs, compact=False)
                 else:
-                    block = ao2mo.kernel(self.cc.mf.mol, coeffs, compact=False)
+                    block = pyscf.ao2mo.kernel(self.cc.mf.mol, coeffs, compact=False)
                 block = np.reshape(block, [c.shape[-1] for c in coeffs])
                 self._members[key] = np.asarray(block, dtype=types[float])
             return self._members[key]
@@ -87,9 +87,9 @@ class UERIs(BaseERIs, BaseUHamiltonian):
                     for y, x in enumerate(sorted((i, i, j, j)))
                 ]
                 if getattr(self.cc.mf, "_eri", None) is not None:
-                    array = ao2mo.incore.general(self.cc.mf.mol, coeffs, compact=False)
+                    array = pyscf.ao2mo.incore.general(self.cc.mf.mol, coeffs, compact=False)
                 else:
-                    array = ao2mo.kernel(self.cc.mf.mol, coeffs, compact=False)
+                    array = pyscf.ao2mo.kernel(self.cc.mf.mol, coeffs, compact=False)
                 if key == "bbaa":
                     array = np.transpose(array, (2, 3, 0, 1))
                 array = np.asarray(array, dtype=types[float])
@@ -123,16 +123,18 @@ class GERIs(BaseERIs, BaseGHamiltonian):
             mo_a = [to_numpy(mo[: self.cc.mf.mol.nao], dtype=numpy.float64) for mo in self.mo_coeff]
             mo_b = [to_numpy(mo[self.cc.mf.mol.nao :], dtype=numpy.float64) for mo in self.mo_coeff]
             if getattr(self.cc.mf, "_eri", None) is not None:
-                array = ao2mo.incore.general(self.cc.mf._eri, mo_a)
-                array += ao2mo.incore.general(self.cc.mf._eri, mo_b)
-                array += ao2mo.incore.general(self.cc.mf._eri, mo_a[:2] + mo_b[2:])
-                array += ao2mo.incore.general(self.cc.mf._eri, mo_b[:2] + mo_a[2:])
+                array = pyscf.ao2mo.incore.general(self.cc.mf._eri, mo_a)
+                array += pyscf.ao2mo.incore.general(self.cc.mf._eri, mo_b)
+                array += pyscf.ao2mo.incore.general(self.cc.mf._eri, mo_a[:2] + mo_b[2:])
+                array += pyscf.ao2mo.incore.general(self.cc.mf._eri, mo_b[:2] + mo_a[2:])
             else:
-                array = ao2mo.kernel(self.cc.mf.mol, mo_a)
-                array += ao2mo.kernel(self.cc.mf.mol, mo_b)
-                array += ao2mo.kernel(self.cc.mf.mol, mo_a[:2] + mo_b[2:])
-                array += ao2mo.kernel(self.cc.mf.mol, mo_b[:2] + mo_a[2:])
-            array = np.reshape(ao2mo.addons.restore(1, array, self.cc.nmo), (self.cc.nmo,) * 4)
+                array = pyscf.ao2mo.kernel(self.cc.mf.mol, mo_a)
+                array += pyscf.ao2mo.kernel(self.cc.mf.mol, mo_b)
+                array += pyscf.ao2mo.kernel(self.cc.mf.mol, mo_a[:2] + mo_b[2:])
+                array += pyscf.ao2mo.kernel(self.cc.mf.mol, mo_b[:2] + mo_a[2:])
+            array = np.reshape(
+                pyscf.ao2mo.addons.restore(1, array, self.cc.nmo), (self.cc.nmo,) * 4
+            )
             array = np.asarray(array, dtype=types[float])
             array = np.transpose(array, (0, 2, 1, 3)) - np.transpose(array, (0, 2, 3, 1))
             self.__dict__["array"] = array

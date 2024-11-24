@@ -58,8 +58,10 @@ def ensure_scalar(obj: Union[T, NDArray[T]]) -> T:
     Returns:
         Scalar object.
     """
-    if BACKEND in ("numpy", "cupy", "jax"):
+    if BACKEND in ("numpy", "cupy"):
         return np.asarray(obj).item()  # type: ignore
+    elif BACKEND == "jax":
+        return np.ravel(obj)[0]  # type: ignore
     elif BACKEND == "tensorflow":
         if isinstance(obj, tf.Tensor):
             return obj.numpy().item()  # type: ignore

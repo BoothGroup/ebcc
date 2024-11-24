@@ -142,8 +142,11 @@ class BaseBruecknerEBCC(ABC):
             f"{'Conv.':>8s} {'Δ(Energy)':>13s} {'|T1|':>13s}{ANSI.R}"
         )
         self.log.info(
-            f"{0:4d} {self.cc.e_corr:16.10f} {self.cc.e_tot:18.10f} "
-            f"{[ANSI.r, ANSI.g][self.cc.converged]}{self.cc.converged!r:>8}{ANSI.R}"
+            f"%4d %16.10f %18.10f {[ANSI.r, ANSI.g][self.cc.converged]}%8r{ANSI.R}",
+            0,
+            self.cc.e_corr,
+            self.cc.e_tot,
+            self.cc.converged,
         )
 
         converged = False
@@ -182,10 +185,15 @@ class BaseBruecknerEBCC(ABC):
             converged_e = bool(de < self.options.e_tol)
             converged_t = bool(dt < self.options.t_tol)
             self.log.info(
-                f"{niter:4d} {self.cc.e_corr:16.10f} {self.cc.e_tot:18.10f}"
-                f" {[ANSI.r, ANSI.g][int(self.cc.converged)]}{self.cc.converged!r:>8}{ANSI.R}"
-                f" {[ANSI.r, ANSI.g][int(converged_e)]}{de:13.3e}{ANSI.R}"
-                f" {[ANSI.r, ANSI.g][int(converged_t)]}{dt:13.3e}{ANSI.R}"
+                f"%4s %16.10f %18.10f {[ANSI.r, ANSI.g][int(converged)]}%8r{ANSI.R}"
+                f" {[ANSI.r, ANSI.g][int(converged_e)]}%13.3e{ANSI.R}"
+                f" {[ANSI.r, ANSI.g][int(converged_t)]}%13.3e{ANSI.R}",
+                niter,
+                self.cc.e_corr,
+                self.cc.e_tot,
+                self.cc.converged,
+                de,
+                dt,
             )
 
             # Check for convergence:

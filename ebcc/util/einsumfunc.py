@@ -5,7 +5,7 @@ from __future__ import annotations
 import ctypes
 from typing import TYPE_CHECKING
 
-from pyscf.lib import dot  # noqa: F401
+import scipy.linalg
 
 from ebcc import BACKEND
 from ebcc import numpy as np
@@ -332,7 +332,7 @@ def _contract_ttgt(
     # Perform the contraction
     ct: NDArray[T]
     if BACKEND == "numpy":
-        ct = dot(at, bt, alpha=alpha, beta=beta, c=out)
+        ct = scipy.linalg.blas.dgemm(alpha, at, bt, beta=beta, c=out)
     else:
         ct = np.dot(at, bt) * alpha
         if out is not None:
