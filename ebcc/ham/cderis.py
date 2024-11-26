@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+
 from pyscf import lib
 
 from ebcc import numpy as np
