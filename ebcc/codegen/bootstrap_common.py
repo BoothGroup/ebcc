@@ -31,7 +31,7 @@ def get_energy(terms, spin, strategy="exhaust", density_fit=False):
     return output_expr, returns
 
 
-def get_amplitudes(terms_grouped, spin, strategy="exhaust", which="t", orders=None, density_fit=False):
+def get_amplitudes(terms_grouped, spin, strategy="exhaust", which="t", orders=None, density_fit=False, optimise_kwargs={}):
     """Get the amplitude expressions from `pdaggerq` terms."""
     expr = []
     output = []
@@ -55,7 +55,7 @@ def get_amplitudes(terms_grouped, spin, strategy="exhaust", which="t", orders=No
             output.extend(output_n)
             returns.extend(returns_n)
     if strategy is not None:
-        output_expr = optimise(output, expr, strategy="exhaust")
+        output_expr = optimise(output, expr, strategy="exhaust", **optimise_kwargs)
     else:
         output_expr = list(zip(output, expr))
     output_expr = [(o, e.apply(lambda tensor: tensor.canonicalise(), Tensor)) for o, e in output_expr]
@@ -167,7 +167,7 @@ def get_rdm2(terms_sectors, spin, strategy="exhaust", density_fit=False):
     return output_expr, returns, deltas, deltas_sources
 
 
-def get_eom(terms_grouped, spin, strategy="exhaust", which="ip", orders=None, density_fit=False):
+def get_eom(terms_grouped, spin, strategy="exhaust", which="ip", orders=None, density_fit=False, optimise_kwargs={}):
     """Get the EOM expressions from `pdaggerq` terms."""
     expr = []
     output = []
@@ -192,7 +192,7 @@ def get_eom(terms_grouped, spin, strategy="exhaust", which="ip", orders=None, de
             expr.extend(expr_n)
             output.extend(output_n)
             returns.extend(returns_n)
-    (returns_nr, output_expr_nr), (returns_r, output_expr_r) = optimise_eom(returns, output, expr, strategy=strategy)
+    (returns_nr, output_expr_nr), (returns_r, output_expr_r) = optimise_eom(returns, output, expr, strategy=strategy, **optimise_kwargs)
     if spin == "uhf":
         # R amplitudes may get wrong spins
         output_expr_nr = [(output, expr.canonicalise()) for output, expr in output_expr_nr]
