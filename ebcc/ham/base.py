@@ -104,9 +104,11 @@ class BaseHamiltonian(Namespace[Any], ABC):
             Coefficients for the given key.
         """
         coeffs = tuple(
-            self.mo_coeff[i + offset][:, self.space[i + offset].slice(k)]
-            if k != "p"
-            else np.eye(self.mo_coeff[i + offset].shape[0])
+            (
+                self.mo_coeff[i + offset][:, self.space[i + offset].slice(k)]
+                if k != "p"
+                else np.eye(self.mo_coeff[i + offset].shape[0])
+            )
             for i, k in enumerate(key)
         )
         return coeffs
