@@ -30,15 +30,16 @@ class RElectronBoson(BaseElectronBoson, BaseRHamiltonian):
         """
         if key not in self._members:
             assert key[0] == "b"
-            i = self.space[0].slice(key[1])
-            j = self.space[1].slice(key[2])
-            self._members[key] = np.copy(self.array[:, i, j])
-        return self._members[key]
+            if "p" in key:
+                raise NotImplementedError(f"AO basis not supported in {self.__class__.__name__}.")
 
-    def _get_g(self) -> NDArray[T]:
-        """Get the electron-boson coupling matrix."""
-        assert self.cc.bare_g is not None
-        return self.cc.bare_g
+            # Get the slices
+            slices = (slice(None),) + self._get_slices(key[1:])
+
+            # Store the block
+            self._members[key] = np.copy(self.g[slices])
+
+        return self._members[key]
 
 
 class UElectronBoson(BaseElectronBoson, BaseUHamiltonian):
@@ -57,19 +58,17 @@ class UElectronBoson(BaseElectronBoson, BaseUHamiltonian):
         """
         if key not in ("aa", "bb"):
             raise KeyError(f"Invalid key: {key}")
+
         if key not in self._members:
             i = "ab".index(key[0])
             self._members[key] = RElectronBoson(
-                self.cc,
-                array=self.array[i] if self.array.ndim == 4 else self.array,
+                self.mf,
+                self.g[i] if self.g.ndim == 4 else self.g,
                 space=(self.space[0][i], self.space[1][i]),
             )
-        return self._members[key]
+            self._members[key]._spin_index = i
 
-    def _get_g(self) -> NDArray[T]:
-        """Get the electron-boson coupling matrix."""
-        assert self.cc.bare_g is not None
-        return self.cc.bare_g
+        return self._members[key]
 
 
 class GElectronBoson(BaseElectronBoson, BaseGHamiltonian):
@@ -88,12 +87,13 @@ class GElectronBoson(BaseElectronBoson, BaseGHamiltonian):
         """
         if key not in self._members:
             assert key[0] == "b"
-            i = self.space[0].slice(key[1])
-            j = self.space[1].slice(key[2])
-            self._members[key] = np.copy(self.array[:, i, j])
-        return self._members[key]
+            if "p" in key:
+                raise NotImplementedError(f"AO basis not supported in {self.__class__.__name__}.")
 
-    def _get_g(self) -> NDArray[T]:
-        """Get the electron-boson coupling matrix."""
-        assert self.cc.bare_g is not None
-        return self.cc.bare_g
+            # Get the slices
+            slices = (slice(None),) + self._get_slices(key[1:])
+
+            # Store the block
+            self._members[key] = np.copy(self.g[slices])
+
+        return self._members[key]

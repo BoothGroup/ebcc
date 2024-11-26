@@ -15,6 +15,7 @@ from ebcc.core.damping import DIIS
 from ebcc.core.dump import Dump
 from ebcc.core.logging import ANSI
 from ebcc.core.precision import astype, types
+from ebcc.ham.base import BaseERIs
 from ebcc.util import _BaseOptions
 
 if TYPE_CHECKING:
@@ -26,7 +27,7 @@ if TYPE_CHECKING:
 
     from ebcc.core.damping import BaseDamping
     from ebcc.core.logging import Logger
-    from ebcc.ham.base import BaseElectronBoson, BaseERIs, BaseFock
+    from ebcc.ham.base import BaseElectronBoson, BaseFock
     from ebcc.opt.base import BaseBruecknerEBCC
     from ebcc.util import Namespace
 
@@ -891,16 +892,21 @@ class BaseEBCC(ABC):
         """
         pass
 
-    @abstractmethod
     def get_fock(self) -> BaseFock:
         """Get the Fock matrix.
 
         Returns:
             Fock matrix.
         """
-        pass
+        return self.Fock(
+            self.mf,
+            space=(self.space, self.space),
+            mo_coeff=(self.mo_coeff, self.mo_coeff),
+            g=self.g,
+            shift=self.options.shift,
+            xi=self.xi if self.boson_ansatz else None,
+        )
 
-    @abstractmethod
     def get_eris(self, eris: Optional[ERIsInputType] = None) -> BaseERIs:
         """Get the electron repulsion integrals.
 
@@ -910,7 +916,23 @@ class BaseEBCC(ABC):
         Returns:
             Electron repulsion integrals.
         """
-        pass
+        use_df = getattr(self.mf, "with_df", None) is not None
+        if isinstance(eris, BaseERIs):
+            return eris
+        elif eris is not None:
+            raise TypeError(f"`eris` must be an `BaseERIs` object, got {eris.__class__.__name__}.")
+        elif use_df:
+            return self.CDERIs(
+                self.mf,
+                space=(self.space, self.space, self.space, self.space),
+                mo_coeff=(self.mo_coeff, self.mo_coeff, self.mo_coeff, self.mo_coeff),
+            )
+        else:
+            return self.ERIs(
+                self.mf,
+                space=(self.space, self.space, self.space, self.space),
+                mo_coeff=(self.mo_coeff, self.mo_coeff, self.mo_coeff, self.mo_coeff),
+            )
 
     def get_g(self) -> BaseElectronBoson:
         """Get the blocks of the electron-boson coupling matrix.
@@ -920,7 +942,14 @@ class BaseEBCC(ABC):
         Returns:
             Electron-boson coupling matrix.
         """
-        return self.ElectronBoson(self, array=self.bare_g)
+        if self.bare_g is None:
+            raise ValueError("Bare electron-boson coupling matrix not provided.")
+        return self.ElectronBoson(
+            self.mf,
+            self.bare_g,
+            (self.space, self.space),
+            (self.mo_coeff, self.mo_coeff),
+        )
 
     @abstractmethod
     def get_mean_field_G(self) -> Any:
@@ -928,18 +957,6 @@ class BaseEBCC(ABC):
 
         Returns:
             Mean-field boson non-conserving term.
-        """
-        pass
-
-    @property
-    @abstractmethod
-    def bare_fock(self) -> Any:
-        """Get the mean-field Fock matrix in the MO basis, including frozen parts.
-
-        Returns an array and not a `BaseFock` object.
-
-        Returns:
-            Mean-field Fock matrix.
         """
         pass
 

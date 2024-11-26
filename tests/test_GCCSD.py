@@ -397,7 +397,7 @@ class GCCSD_PySCF_Tests(unittest.TestCase):
         c = self.mf.to_ghf().mo_coeff
         h = self.mf.to_ghf().get_hcore()
         h = np.linalg.multi_dot((c.T, h, c))
-        v = self.ccsd.get_eris().array
+        v = self.ccsd.get_eris().xxxx
         e_rdm = np.einsum("pq,pq->", h, dm1)
         e_rdm += np.einsum("pqrs,pqrs->", v, dm2) * 0.5
         e_rdm += self.mf.mol.energy_nuc()
