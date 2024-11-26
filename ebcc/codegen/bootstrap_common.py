@@ -104,6 +104,7 @@ def get_rdm1(terms_sectors, spin, strategy="exhaust", density_fit=False):
                             deltas_sources.append(tensor)
                             break
     output_expr = optimise(output, expr, strategy=strategy)
+    output_expr = [(o, e.apply(lambda tensor: tensor.canonicalise(), Tensor)) for o, e in output_expr]
     return output_expr, returns, deltas, deltas_sources
 
 
@@ -164,6 +165,7 @@ def get_rdm2(terms_sectors, spin, strategy="exhaust", density_fit=False):
                             deltas_sources.append(tensor)
                             break
     output_expr = optimise(output, expr, strategy=strategy)
+    output_expr = [(o, e.apply(lambda tensor: tensor.canonicalise(), Tensor)) for o, e in output_expr]
     return output_expr, returns, deltas, deltas_sources
 
 
