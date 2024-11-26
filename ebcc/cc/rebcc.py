@@ -615,19 +615,6 @@ class REBCC(BaseEBCC):
         return val
 
     @property
-    def bare_fock(self) -> NDArray[T]:
-        """Get the mean-field Fock matrix in the MO basis, including frozen parts.
-
-        Returns an array and not a `BaseFock` object.
-
-        Returns:
-            Mean-field Fock matrix.
-        """
-        fock_ao: NDArray[T] = np.asarray(self.mf.get_fock(), dtype=types[float])
-        fock = util.einsum("pq,pi,qj->ij", fock_ao, self.mo_coeff, self.mo_coeff)
-        return fock
-
-    @property
     def xi(self) -> NDArray[T]:
         """Get the shift in the bosonic operators to diagonalise the photon Hamiltonian.
 
@@ -645,31 +632,6 @@ class REBCC(BaseEBCC):
         else:
             xi = np.zeros(self.omega.shape, dtype=types[float])
         return xi
-
-    def get_fock(self) -> RFock:
-        """Get the Fock matrix.
-
-        Returns:
-            Fock matrix.
-        """
-        return self.Fock(self, array=self.bare_fock, g=self.g)
-
-    def get_eris(self, eris: Optional[ERIsInputType] = None) -> Union[RERIs, RCDERIs]:
-        """Get the electron repulsion integrals.
-
-        Args:
-            eris: Input electron repulsion integrals.
-
-        Returns:
-            Electron repulsion integrals.
-        """
-        use_df = getattr(self.mf, "with_df", None) is not None
-        if isinstance(eris, (RERIs, RCDERIs)):
-            return eris
-        elif (isinstance(eris, np.ndarray) and eris.ndim == 3) or use_df:
-            return self.CDERIs(self, array=eris)
-        else:
-            return self.ERIs(self, array=eris)
 
     @property
     def nmo(self) -> int:

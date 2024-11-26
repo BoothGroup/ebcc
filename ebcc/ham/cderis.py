@@ -4,13 +4,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import numpy  # PySCF uses true numpy, no backend stuff here
 from pyscf import lib
 
 from ebcc import numpy as np
 from ebcc import pyscf, util
-from ebcc.backend import to_numpy
-from ebcc.core.precision import types
 from ebcc.ham.base import BaseERIs, BaseRHamiltonian, BaseUHamiltonian
 
 if TYPE_CHECKING:
@@ -37,9 +34,6 @@ class RCDERIs(BaseERIs, BaseRHamiltonian):
         Returns:
             CDERIs for the given spaces.
         """
-        if self.array is not None:
-            raise NotImplementedError("`array` is not supported for CDERIs.")
-
         if len(key) == 4:
             v1 = self.__getitem__("Q" + key[:2])
             v2 = self.__getitem__("Q" + key[2:], e2=True)  # type: ignore
@@ -51,28 +45,30 @@ class RCDERIs(BaseERIs, BaseRHamiltonian):
         key_e2 = f"{key}_{'e1' if not e2 else 'e2'}"
 
         # Check the DF is built incore
-        if not isinstance(self.cc.mf.with_df._cderi, np.ndarray):
-            with lib.temporary_env(self.cc.mf.with_df, max_memory=1e6):
-                self.cc.mf.with_df.build()
+        if not isinstance(self.mf.with_df._cderi, np.ndarray):
+            with lib.temporary_env(self.mf.with_df, max_memory=1e6):
+                self.mf.with_df.build()
 
         if key_e2 not in self._members:
             s = 0 if not e2 else 2
-            coeffs = [
-                to_numpy(self.mo_coeff[i + s][:, self.space[i + s].slice(k)], dtype=numpy.float64)
-                for i, k in enumerate(key)
-            ]
-            ijslice = (
-                0,
-                coeffs[0].shape[-1],
-                coeffs[0].shape[-1],
-                coeffs[0].shape[-1] + coeffs[1].shape[-1],
-            )
-            coeffs = numpy.concatenate(coeffs, axis=1)
+
+            # Get the coefficients and shape
+            coeffs = self._get_coeffs(key, offset=s)
+            shape = tuple(c.shape[-1] for c in coeffs)
+            ijslice = (0, shape[0], shape[0], shape[0] + shape[1])
+            coeffs = np.concatenate(coeffs, axis=1)
+            coeffs = self._to_pyscf_backend(coeffs)
+
+            # Transform the block
+            # TODO: Optimise for (L|pp)
             block = pyscf.ao2mo._ao2mo.nr_e2(
-                self.cc.mf.with_df._cderi, coeffs, ijslice, aosym="s2", mosym="s1"
+                self.mf.with_df._cderi, coeffs, ijslice, aosym="s2", mosym="s1"
             )
-            block = np.reshape(block, (-1, ijslice[1] - ijslice[0], ijslice[3] - ijslice[2]))
-            self._members[key_e2] = np.asarray(block, dtype=types[float])
+            block = self._to_ebcc_backend(block)
+            block = np.reshape(block, (-1, *shape))
+
+            # Store the block
+            self._members[key_e2] = block
 
         return self._members[key_e2]
 
@@ -102,7 +98,7 @@ class UCDERIs(BaseERIs, BaseUHamiltonian):
 
         if key not in self._members:
             self._members[key] = RCDERIs(
-                self.cc,
+                self.mf,
                 space=(self.space[0][i], self.space[1][i], self.space[2][j], self.space[3][j]),
                 mo_coeff=(
                     self.mo_coeff[0][i],
