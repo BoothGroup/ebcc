@@ -41,7 +41,7 @@ with Stopwatch("Energy"):
     pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
     pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
     pq.simplify()
-    terms = pq.fully_contracted_strings()
+    terms = pq.strings()
     terms = remove_reference_energy(terms)
 
     # Get the energy in albert format
@@ -62,7 +62,7 @@ with Stopwatch("T amplitudes"):
     pq.add_st_operator(1.0, ["f"], ["t1", "t2", "t3"])
     pq.add_st_operator(1.0, ["v"], ["t1", "t2", "t3"])
     pq.simplify()
-    terms_t1 = pq.fully_contracted_strings()
+    terms_t1 = pq.strings()
 
     # Get the T2 contractions in pdaggerq format
     pq.clear()
@@ -70,7 +70,7 @@ with Stopwatch("T amplitudes"):
     pq.add_st_operator(1.0, ["f"], ["t1", "t2", "t3"])
     pq.add_st_operator(1.0, ["v"], ["t1", "t2", "t3"])
     pq.simplify()
-    terms_t2 = pq.fully_contracted_strings()
+    terms_t2 = pq.strings()
 
     # Get the T3 contractions in pdaggerq format
     pq.clear()
@@ -78,7 +78,7 @@ with Stopwatch("T amplitudes"):
     pq.add_st_operator(1.0, ["f"], ["t1", "t2", "t3"])
     pq.add_st_operator(1.0, ["v"], ["t1", "t2", "t3"])
     pq.simplify()
-    terms_t3 = pq.fully_contracted_strings()
+    terms_t3 = pq.strings()
 
     # Get the T amplitudes in albert format
     output_expr, returns = get_amplitudes([terms_t1, terms_t2, terms_t3], spin, strategy="greedy")
@@ -105,7 +105,7 @@ with Stopwatch("L amplitudes"):
     pq.add_st_operator(-1.0, ["e1(a,i)", "f"], ["t1", "t2", "t3"])
     pq.add_st_operator(-1.0, ["e1(a,i)", "v"], ["t1", "t2", "t3"])
     pq.simplify()
-    terms_l1 = pq.fully_contracted_strings()
+    terms_l1 = pq.strings()
 
     # Get the L2 contractions in pdaggerq format
     pq.clear()
@@ -119,7 +119,7 @@ with Stopwatch("L amplitudes"):
     pq.add_st_operator(-1.0, ["e2(a,b,j,i)", "f"], ["t1", "t2", "t3"])
     pq.add_st_operator(-1.0, ["e2(a,b,j,i)", "v"], ["t1", "t2", "t3"])
     pq.simplify()
-    terms_l2 = pq.fully_contracted_strings()
+    terms_l2 = pq.strings()
 
     # Get the L3 contractions in pdaggerq format
     pq.clear()
@@ -133,7 +133,7 @@ with Stopwatch("L amplitudes"):
     pq.add_st_operator(-1.0, ["e3(a,b,c,k,j,i)", "f"], ["t1", "t2", "t3"])
     pq.add_st_operator(-1.0, ["e3(a,b,c,k,j,i)", "v"], ["t1", "t2", "t3"])
     pq.simplify()
-    terms_l3 = pq.fully_contracted_strings()
+    terms_l3 = pq.strings()
 
     # Get the L amplitudes in albert format
     output_expr, returns = get_amplitudes([terms_l1, terms_l2, terms_l3], spin, strategy="greedy", which="l")
@@ -155,7 +155,7 @@ with Stopwatch("1RDM"):
         pq.set_left_operators([["1"], ["l1"], ["l2"], ["l3"]])
         pq.add_st_operator(1.0, [f"e1({','.join(indices)})"], ["t1", "t2", "t3"])
         pq.simplify()
-        terms[sectors, indices] = pq.fully_contracted_strings()
+        terms[sectors, indices] = pq.strings()
 
     # Get the 1RDM in albert format
     output_expr, returns, deltas, deltas_sources = get_rdm1(terms, spin)
@@ -221,7 +221,7 @@ with Stopwatch("2RDM"):
             1.0, [f"e2({indices[0]},{indices[1]},{indices[3]},{indices[2]})"], ["t1", "t2", "t3"]
         )
         pq.simplify()
-        terms[sectors, indices] = pq.fully_contracted_strings()
+        terms[sectors, indices] = pq.strings()
 
     # Get the 2RDM in albert format
     output_expr, returns, deltas, deltas_sources = get_rdm2(terms, spin, strategy="trav" if spin == "uhf" else "exhaust")
@@ -271,7 +271,7 @@ with Stopwatch("IP-EOM"):
     pq.add_st_operator(1.0, ["f"], ["t1", "t2", "t3"])
     pq.add_st_operator(1.0, ["v"], ["t1", "t2", "t3"])
     pq.simplify()
-    terms_r1 = pq.fully_contracted_strings()
+    terms_r1 = pq.strings()
     terms_r1 = remove_reference_energy_eom(terms_r1)
 
     # Get the R2 contractions in pdaggerq format
@@ -282,7 +282,7 @@ with Stopwatch("IP-EOM"):
     pq.add_st_operator(1.0, ["f"], ["t1", "t2", "t3"])
     pq.add_st_operator(1.0, ["v"], ["t1", "t2", "t3"])
     pq.simplify()
-    terms_r2 = pq.fully_contracted_strings()
+    terms_r2 = pq.strings()
     terms_r2 = remove_reference_energy_eom(terms_r2)
 
     # Get the R3 contractions in pdaggerq format
@@ -293,7 +293,7 @@ with Stopwatch("IP-EOM"):
     pq.add_st_operator(1.0, ["f"], ["t1", "t2", "t3"])
     pq.add_st_operator(1.0, ["v"], ["t1", "t2", "t3"])
     pq.simplify()
-    terms_r3 = pq.fully_contracted_strings()
+    terms_r3 = pq.strings()
     terms_r3 = remove_reference_energy_eom(terms_r3)
 
     # Get the R amplitudes in albert format
@@ -326,7 +326,7 @@ with Stopwatch("EA-EOM"):
     pq.add_st_operator(1.0, ["f"], ["t1", "t2", "t3"])
     pq.add_st_operator(1.0, ["v"], ["t1", "t2", "t3"])
     pq.simplify()
-    terms_r1 = pq.fully_contracted_strings()
+    terms_r1 = pq.strings()
     terms_r1 = remove_reference_energy_eom(terms_r1)
 
     # Get the R2 contractions in pdaggerq format
@@ -337,7 +337,7 @@ with Stopwatch("EA-EOM"):
     pq.add_st_operator(1.0, ["f"], ["t1", "t2", "t3"])
     pq.add_st_operator(1.0, ["v"], ["t1", "t2", "t3"])
     pq.simplify()
-    terms_r2 = pq.fully_contracted_strings()
+    terms_r2 = pq.strings()
     terms_r2 = remove_reference_energy_eom(terms_r2)
 
     # Get the R3 contractions in pdaggerq format
@@ -348,7 +348,7 @@ with Stopwatch("EA-EOM"):
     pq.add_st_operator(1.0, ["f"], ["t1", "t2", "t3"])
     pq.add_st_operator(1.0, ["v"], ["t1", "t2", "t3"])
     pq.simplify()
-    terms_r3 = pq.fully_contracted_strings()
+    terms_r3 = pq.strings()
     terms_r3 = remove_reference_energy_eom(terms_r3)
 
     # Get the R amplitudes in albert format
@@ -382,7 +382,7 @@ if spin == "ghf":  # FIXME
         pq.add_st_operator(1.0, ["f"], ["t1", "t2", "t3"])
         pq.add_st_operator(1.0, ["v"], ["t1", "t2", "t3"])
         pq.simplify()
-        terms_r1 = pq.fully_contracted_strings()
+        terms_r1 = pq.strings()
         terms_r1 = remove_reference_energy_eom(terms_r1)
 
         # Get the R2 contractions in pdaggerq format
@@ -393,7 +393,7 @@ if spin == "ghf":  # FIXME
         pq.add_st_operator(1.0, ["f"], ["t1", "t2", "t3"])
         pq.add_st_operator(1.0, ["v"], ["t1", "t2", "t3"])
         pq.simplify()
-        terms_r2 = pq.fully_contracted_strings()
+        terms_r2 = pq.strings()
         terms_r2 = remove_reference_energy_eom(terms_r2)
 
         # Get the R3 contractions in pdaggerq format
@@ -404,7 +404,7 @@ if spin == "ghf":  # FIXME
         pq.add_st_operator(1.0, ["f"], ["t1", "t2", "t3"])
         pq.add_st_operator(1.0, ["v"], ["t1", "t2", "t3"])
         pq.simplify()
-        terms_r3 = pq.fully_contracted_strings()
+        terms_r3 = pq.strings()
         terms_r3 = remove_reference_energy_eom(terms_r3)
 
         # Get the R amplitudes in albert format

@@ -41,7 +41,7 @@ with Stopwatch("Energy"):
     pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
     pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
     pq.simplify()
-    terms = pq.fully_contracted_strings()
+    terms = pq.strings()
     terms = remove_reference_energy(terms)
 
     # Get the energy in albert format
@@ -62,7 +62,7 @@ with Stopwatch("T amplitudes"):
     pq.add_st_operator(1.0, ["f"], ["t1", "t2", "t3"])
     pq.add_st_operator(1.0, ["v"], ["t1", "t2", "t3"])
     pq.simplify()
-    terms_t1 = pq.fully_contracted_strings()
+    terms_t1 = pq.strings()
 
     # Get the T2 contractions in pdaggerq format
     pq.clear()
@@ -70,7 +70,7 @@ with Stopwatch("T amplitudes"):
     pq.add_st_operator(1.0, ["f"], ["t1", "t2", "t3"])
     pq.add_st_operator(1.0, ["v"], ["t1", "t2", "t3"])
     pq.simplify()
-    terms_t2 = pq.fully_contracted_strings()
+    terms_t2 = pq.strings()
 
     # Get the T3 contractions in pdaggerq format
     pq.clear()
@@ -83,7 +83,7 @@ with Stopwatch("T amplitudes"):
     pq.add_triple_commutator(0.5, ["v"], ["t1"], ["t1"], ["t2"])
     pq.add_quadruple_commutator(1/6, ["v"], ["t1"], ["t1"], ["t1"], ["t2"])
     pq.simplify()
-    terms_t3 = pq.fully_contracted_strings()
+    terms_t3 = pq.strings()
 
     # Get the T amplitudes in albert format
     output_expr, returns = get_amplitudes([terms_t1, terms_t2, terms_t3], spin)

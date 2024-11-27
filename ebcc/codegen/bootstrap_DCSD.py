@@ -41,7 +41,7 @@ with Stopwatch("Energy"):
     pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
     pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
     pq.simplify()
-    terms = pq.fully_contracted_strings()
+    terms = pq.strings()
     terms = remove_reference_energy(terms)
 
     # Get the energy in albert format
@@ -62,7 +62,7 @@ with Stopwatch("T amplitudes"):
     pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
     pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
     pq.simplify()
-    terms_t1 = pq.fully_contracted_strings()
+    terms_t1 = pq.strings()
 
     # T2 residuals:
     pq.clear()
@@ -70,7 +70,7 @@ with Stopwatch("T amplitudes"):
     pq.add_st_operator(1.0, ["f"], ["t1", "t2"])
     pq.add_st_operator(1.0, ["v"], ["t1", "t2"])
     pq.simplify()
-    terms_t2 = pq.fully_contracted_strings()
+    terms_t2 = pq.strings()
 
     # DCD: 10.1063/1.4944087
     terms_t2 = [term for term in terms_t2 if sum(t.startswith("t2") for t in term) < 2]

@@ -41,7 +41,7 @@ with Stopwatch("Energy"):
     pq.add_st_operator(1.0, ["f"], ["t2"])
     pq.add_st_operator(1.0, ["v"], ["t2"])
     pq.simplify()
-    terms = pq.fully_contracted_strings()
+    terms = pq.strings()
     terms = remove_reference_energy(terms)
 
     # Get the energy in albert format
