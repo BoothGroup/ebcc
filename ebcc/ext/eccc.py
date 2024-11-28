@@ -23,9 +23,9 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
 
     from ebcc.cc import gebcc, rebcc, uebcc
-    from ebcc.cc.base import BaseEBCC, SpinArrayType, ERIsInputType
-    from ebcc.util import Namespace
+    from ebcc.cc.base import BaseEBCC, ERIsInputType, SpinArrayType
     from ebcc.ham import Space
+    from ebcc.util import Namespace
 
 
 @dataclass
