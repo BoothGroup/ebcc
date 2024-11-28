@@ -132,6 +132,10 @@ class Namespace(MutableMapping[str, T], Generic[T]):
         """Get items of the namespace as a dictionary."""
         return self._members.items()
 
+    def copy(self) -> Namespace[T]:
+        """Return a shallow copy."""
+        return Namespace(**self._members)
+
     def __repr__(self) -> str:
         """Return a string representation."""
         return f"Namespace({self._members})"

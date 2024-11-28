@@ -518,11 +518,13 @@ def einsum(
                 res = _transpose_backend(
                     einsum_str, a, alpha=types[float](1.0), beta=types[float](0.0), out=None
                 )
-            else:
+            elif len(contraction_args) == 2:
                 a, b = contraction_args
                 res = contract(
                     einsum_str, a, b, alpha=types[float](1.0), beta=types[float](0.0), out=None
                 )
+            else:
+                res = np.einsum(einsum_str, *contraction_args, optimize=True)
             args.append(res)
 
     return res
