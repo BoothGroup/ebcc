@@ -12,6 +12,7 @@ from ebcc.backend import _put
 from ebcc.cc.base import BaseEBCC
 from ebcc.core.precision import types
 from ebcc.eom import EA_GEOM, EE_GEOM, IP_GEOM
+from ebcc.ext.eccc import ExternalCorrectionGEBCC
 from ebcc.ham.elbos import GElectronBoson
 from ebcc.ham.eris import GERIs
 from ebcc.ham.fock import GFock
@@ -45,6 +46,7 @@ class GEBCC(BaseEBCC):
     Fock = GFock
     ElectronBoson = GElectronBoson
     Brueckner = BruecknerGEBCC
+    ExternalCorrection = ExternalCorrectionGEBCC
 
     # Attributes
     space: SpaceType

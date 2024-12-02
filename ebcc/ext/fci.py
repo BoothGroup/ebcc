@@ -82,7 +82,7 @@ def extract_amplitudes_restricted(fci: FCI, space: Space) -> Namespace[SpinArray
     # C4a amplitudes
     c4a = fci.ci[np.ix_(addr3, addr1)] * sign3[:, None] * sign1[None, :]
     c4a = util.decompress_axes("iiiaaajb", c4a, shape=_shape("OOOVVVOV"))
-    c4a = c4a.transpose(0, 1, 6, 2, 3, 4, 7, 5)
+    c4a = c4a.transpose(0, 6, 2, 1, 3, 7, 5, 4)
 
     # Scale by reference energy
     c1 /= fci.ci[0, 0]
@@ -184,12 +184,12 @@ def extract_amplitudes_unrestricted(
         "iiiiaaaa", c4.aaaaaaaa, shape=_shape("aaaaaaaa", "OOOOVVVV")
     )
 
-    # C4aabaaaba amplitudes
-    c4.aabaaaba = fci.ci[np.ix_(addr3a, addr1b)] * sign3a[:, None] * sign1b[None, :]
-    c4.aabaaaba = util.decompress_axes(
-        "iiiaaajb", c4.aabaaaba, shape=_shape("aaaaaabb", "OOOVVVOV")
+    # C4aaabaaab amplitudes
+    c4.aaabaaab = fci.ci[np.ix_(addr3a, addr1b)] * sign3a[:, None] * sign1b[None, :]
+    c4.aaabaaab = util.decompress_axes(
+        "iiiaaajb", c4.aaabaaab, shape=_shape("aaaaaabb", "OOOVVVOV")
     )
-    c4.aabaaaba = c4.aabaaaba.transpose(0, 1, 6, 2, 3, 4, 7, 5)
+    c4.aaabaaab = c4.aaabaaab.transpose(0, 1, 2, 6, 3, 4, 5, 7)
 
     # C4abababab amplitudes
     c4.abababab = fci.ci[np.ix_(addr2a, addr2b)] * sign2a[:, None] * sign2b[None, :]
@@ -198,12 +198,12 @@ def extract_amplitudes_unrestricted(
     )
     c4.abababab = c4.abababab.transpose(0, 4, 1, 5, 2, 6, 3, 7)
 
-    # C4babbbabb amplitudes
-    c4.babbbabb = fci.ci[np.ix_(addr1a, addr3b)] * sign1a[:, None] * sign3b[None, :]
-    c4.babbbabb = util.decompress_axes(
-        "iajjjbbb", c4.babbbabb, shape=_shape("aabbbbbb", "OVOOOVVV")
+    # C4abbbabbb amplitudes
+    c4.abbbabbb = fci.ci[np.ix_(addr1a, addr3b)] * sign1a[:, None] * sign3b[None, :]
+    c4.abbbabbb = util.decompress_axes(
+        "iajjjbbb", c4.abbbabbb, shape=_shape("aabbbbbb", "OVOOOVVV")
     )
-    c4.babbbabb = c4.babbbabb.transpose(2, 0, 3, 4, 5, 1, 6, 7)
+    c4.abbbabbb = c4.abbbabbb.transpose(0, 2, 3, 4, 1, 5, 6, 7)
 
     # C4bbbbbbbb amplitudes
     c4.bbbbbbbb = fci.ci[0, addr4b] * sign4b

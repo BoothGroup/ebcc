@@ -9,6 +9,7 @@ from ebcc import util
 from ebcc.cc.base import BaseEBCC
 from ebcc.core.precision import types
 from ebcc.eom import EA_REOM, EE_REOM, IP_REOM
+from ebcc.ext.eccc import ExternalCorrectionREBCC
 from ebcc.ham.cderis import RCDERIs
 from ebcc.ham.elbos import RElectronBoson
 from ebcc.ham.eris import RERIs
@@ -41,6 +42,7 @@ class REBCC(BaseEBCC):
     CDERIs = RCDERIs
     ElectronBoson = RElectronBoson
     Brueckner = BruecknerREBCC
+    ExternalCorrection = ExternalCorrectionREBCC
 
     # Attributes
     space: SpaceType
