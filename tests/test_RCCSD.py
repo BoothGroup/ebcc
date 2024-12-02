@@ -10,10 +10,11 @@ import unittest
 import numpy as np
 import pytest
 import scipy.linalg
-from pyscf import cc, dft, gto, lib, scf
+from pyscf import cc, dft, gto, lib, scf, fci
 
 from ebcc import REBCC, NullLogger, Space, BACKEND
 from ebcc.ham.space import construct_fno_space
+from ebcc.ext.fci import extract_amplitudes_restricted
 
 
 @pytest.mark.reference
@@ -523,6 +524,57 @@ class RCCSD_PySCF_DFT_Tests(unittest.TestCase):
         a = self.ccsd_ref.t1
         b = self.ccsd.t1
         self.assertAlmostEqual(np.max(np.abs(a - b)), 0.0, 6)
+
+
+class RCCSD_ExtCorr_Tests(unittest.TestCase):
+    """Test RCCSD with external correction.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        mol = gto.Mole()
+        mol.atom = "Ne 0 0 0"
+        mol.basis = "6-31g"
+        mol.verbose = 0
+        mol.build()
+
+        mf = scf.RHF(mol)
+        mf.conv_tol = 1e-12
+        mf.kernel()
+
+        space = Space(
+            mf.mo_occ > 0,
+            np.zeros_like(mf.mo_occ),
+            np.ones_like(mf.mo_occ),
+        )
+
+        ci = fci.FCI(mf, mo=mf.mo_coeff[:, space.active])
+        ci.kernel()
+        amplitudes = extract_amplitudes_restricted(ci, space)
+
+        ccsd = REBCC(
+            mf,
+            ansatz="CCSD",
+            space=space,
+            log=NullLogger(),
+        )
+        ccsd.options.e_tol = 1e-10
+        eris = ccsd.get_eris()
+        ccsd.external_correction(amplitudes, eris=eris, mixed_term_strategy="update")
+
+        cls.mf, cls.ccsd, cls.ci = mf, ccsd, ci
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.mf, cls.ccsd, cls.ci
+
+    def test_converged(self):
+        self.assertTrue(self.ccsd.converged)
+
+    def test_energy(self):
+        a = self.ci.e_tot
+        b = self.ccsd.e_tot
+        self.assertAlmostEqual(a, b, 7)
 
 
 if __name__ == "__main__":

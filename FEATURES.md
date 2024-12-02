@@ -6,6 +6,7 @@
 - Brueckner orbital calculations
 - Frozen natural orbital calculations
 - Single- and mixed-precision calculations
+- Externally corrected coupled cluster calculations
 
 The following table summarises the available methods and routines for the ansatz currently treated by code generation, in the three spin cases:
 

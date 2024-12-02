@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 
     from ebcc.core.damping import BaseDamping
     from ebcc.core.logging import Logger
+    from ebcc.ext.eccc import BaseExternalCorrection
     from ebcc.ham.base import BaseElectronBoson, BaseFock
     from ebcc.opt.base import BaseBruecknerEBCC
     from ebcc.util import Namespace
@@ -79,6 +80,7 @@ class BaseEBCC(ABC):
     CDERIs: type[BaseERIs]
     ElectronBoson: type[BaseElectronBoson]
     Brueckner: type[BaseBruecknerEBCC]
+    ExternalCorrection: type[BaseExternalCorrection]
 
     # Attributes
     space: SpaceType
@@ -435,7 +437,7 @@ class BaseEBCC(ABC):
     def brueckner(self, *args: Any, **kwargs: Any) -> float:
         """Run a Brueckner orbital coupled cluster calculation.
 
-        The coupled cluster object will be update in-place.
+        The coupled cluster object will be updated in-place.
 
         Args:
             *args: Arguments to pass to the Brueckner object.
@@ -446,6 +448,19 @@ class BaseEBCC(ABC):
         """
         bcc = self.Brueckner(self, *args, **kwargs)
         return bcc.kernel()
+
+    def external_correction(self, *args: Any, **kwargs: Any) -> float:
+        """Run an externally corrected coupled cluster calculation.
+
+        Args:
+            *args: Arguments to pass to the external correction object.
+            **kwargs: Keyword arguments to pass to the external correction object.
+
+        Returns:
+            Correlation energy.
+        """
+        with self.ExternalCorrection(self, *args, **kwargs):
+            return self.kernel()
 
     def write(self, file: str) -> None:
         """Write the EBCC object to a file.

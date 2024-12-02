@@ -10,9 +10,10 @@ import unittest
 import numpy as np
 import pytest
 import scipy.linalg
-from pyscf import cc, gto, scf
+from pyscf import cc, gto, scf, fci
 
 from ebcc import REBCC, UEBCC, GEBCC, NullLogger, Space, BACKEND
+from ebcc.ext.fci import extract_amplitudes_unrestricted
 
 
 @pytest.mark.reference
@@ -480,6 +481,64 @@ class UCCSD_Dump_Tests(UCCSD_PySCF_Tests):
         file = "%s/ebcc.h5" % tempfile.gettempdir()
         cls.ccsd.write(file)
         cls.ccsd = cls.ccsd.__class__.read(file, log=cls.ccsd.log)
+
+
+class UCCSD_ExtCorr_Tests(unittest.TestCase):
+    """Test UCCSD with external correction.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        mol = gto.Mole()
+        mol.atom = "Ne 0 0 0"
+        mol.basis = "6-31g"
+        mol.verbose = 0
+        mol.build()
+
+        mf = scf.UHF(mol)
+        mf.conv_tol = 1e-12
+        mf.kernel()
+
+        space = (
+            Space(
+                mf.mo_occ[0] > 0,
+                np.zeros_like(mf.mo_occ[0]),
+                np.ones_like(mf.mo_occ[0]),
+            ),
+            Space(
+                mf.mo_occ[1] > 0,
+                np.zeros_like(mf.mo_occ[1]),
+                np.ones_like(mf.mo_occ[1]),
+            ),
+        )
+
+        ci = fci.FCI(mf, mo=(mf.mo_coeff[0][:, space[0].active], mf.mo_coeff[1][:, space[1].active]))
+        ci.kernel()
+        amplitudes = extract_amplitudes_unrestricted(ci, space)
+
+        ccsd = UEBCC(
+            mf,
+            ansatz="CCSD",
+            space=space,
+            log=NullLogger(),
+        )
+        ccsd.options.e_tol = 1e-10
+        eris = ccsd.get_eris()
+        ccsd.external_correction(amplitudes, eris=eris, mixed_term_strategy="update")
+
+        cls.mf, cls.ccsd, cls.ci = mf, ccsd, ci
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.mf, cls.ccsd, cls.ci
+
+    def test_converged(self):
+        self.assertTrue(self.ccsd.converged)
+
+    def test_energy(self):
+        a = self.ci.e_tot
+        b = self.ccsd.e_tot
+        self.assertAlmostEqual(a, b, 7)
 
 
 if __name__ == "__main__":
