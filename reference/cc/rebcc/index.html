@@ -1,0 +1,2554 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Restricted - ebcc</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Restricted";
+        var mkdocs_page_input_path = "reference/cc/rebcc.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> ebcc
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../features/">Features</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Code Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1 current"><a class="reference internal current" >Coupled cluster</a>
+    <ul class="current">
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">Restricted</a>
+    <ul class="current">
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../uebcc/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../gebcc/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Equation of motion</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/reom/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/ueom/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/geom/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Orbital optimisation</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" >Brueckner</a>
+    <ul>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/rbrueckner/">Restricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/ubrueckner/">Unrestricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/gbrueckner/">Generalised</a>
+                </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../opt/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Core</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/ansatz/">Ansatz</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/damping/">Damping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/dump/">Dumping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/logging/">Logging</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/precision/">Precision</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Hamiltonian</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/space/">Space</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/fock/">Fock</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/eris/">ERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/cderis/">CDERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/elbos/">Bosonic</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Utility</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/permutations/">Permutations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/einsumfunc/">Einstein summations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/misc/">Miscellaneous</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">ebcc</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Code Reference</li>
+          <li class="breadcrumb-item">Coupled cluster</li>
+      <li class="breadcrumb-item active">Restricted</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="ebcc.cc.rebcc"></a>
+    <div class="doc doc-contents first">
+
+        <p>Restricted electron-boson coupled cluster.</p>
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.cc.rebcc.REBCC" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.cc.rebcc.REBCC(mf, log=None, ansatz='CCSD', options=None, space=None, omega=None, g=None, G=None, mo_coeff=None, mo_occ=None, fock=None, **kwargs)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="ebcc.cc.base.BaseEBCC" href="../base/#ebcc.cc.base.BaseEBCC">BaseEBCC</a></code></p>
+
+
+        <p>Restricted electron-boson coupled cluster.</p>
+
+        <p>Initialise the EBCC object.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>mf</code></b>
+                  (<code><span title="pyscf.scf.hf.SCF">SCF</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>PySCF mean-field object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>log</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.core.logging.Logger" href="../../core/logging/#ebcc.core.logging.Logger">Logger</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Log to write output to. Default is the global logger, outputting to <code>stderr</code>.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>ansatz</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="typing.Union">Union</span>[<a class="autorefs autorefs-internal" title="ebcc.core.ansatz.Ansatz" href="../../core/ansatz/#ebcc.core.ansatz.Ansatz">Ansatz</a>, str]]</code>, default:
+                      <code>&#39;CCSD&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Overall ansatz.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>options</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.cc.base.BaseOptions" href="../base/#ebcc.cc.base.BaseOptions">BaseOptions</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Options for the EBCC calculation.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>space</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="ebcc.cc.base.SpaceType">SpaceType</span>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Space containing the frozen, correlated, and active fermionic spaces. Default
+assumes all electrons are correlated.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>omega</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="numpy.typing.NDArray">NDArray</span>[<a class="autorefs autorefs-internal" title="ebcc.cc.base.T" href="../base/#ebcc.cc.base.T">T</a>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Bosonic frequencies.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>g</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="numpy.typing.NDArray">NDArray</span>[<a class="autorefs autorefs-internal" title="ebcc.cc.base.T" href="../base/#ebcc.cc.base.T">T</a>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Electron-boson coupling matrix corresponding to the bosonic annihilation operator
+:math:<code>g_{bpq} p^\dagger q b</code>. The creation part is assumed to be the fermionic
+conjugate transpose to retain Hermiticity in the Hamiltonian.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>G</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="numpy.typing.NDArray">NDArray</span>[<a class="autorefs autorefs-internal" title="ebcc.cc.base.T" href="../base/#ebcc.cc.base.T">T</a>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Boson non-conserving term :math:<code>G_{b} (b^\dagger + b)</code>.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>mo_coeff</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="numpy.typing.NDArray">NDArray</span>[<a class="autorefs autorefs-internal" title="ebcc.cc.base.T" href="../base/#ebcc.cc.base.T">T</a>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Molecular orbital coefficients. Default is the mean-field coefficients.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>mo_occ</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="numpy.typing.NDArray">NDArray</span>[<a class="autorefs autorefs-internal" title="ebcc.cc.base.T" href="../base/#ebcc.cc.base.T">T</a>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Molecular orbital occupation numbers. Default is the mean-field occupation.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>fock</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.ham.base.BaseFock" href="../../ham/base/#ebcc.ham.base.BaseFock">BaseFock</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Fock matrix. Default is the mean-field Fock matrix.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>**kwargs</code></b>
+                  (<code><span title="typing.Any">Any</span></code>, default:
+                      <code>{}</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Additional keyword arguments used to update <code>options</code>.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/cc/base.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(
+    self,
+    mf: SCF,
+    log: Optional[Logger] = None,
+    ansatz: Optional[Union[Ansatz, str]] = "CCSD",
+    options: Optional[BaseOptions] = None,
+    space: Optional[SpaceType] = None,
+    omega: Optional[NDArray[T]] = None,
+    g: Optional[NDArray[T]] = None,
+    G: Optional[NDArray[T]] = None,
+    mo_coeff: Optional[NDArray[T]] = None,
+    mo_occ: Optional[NDArray[T]] = None,
+    fock: Optional[BaseFock] = None,
+    **kwargs: Any,
+) -&gt; None:
+    r"""Initialise the EBCC object.
+
+    Args:
+        mf: PySCF mean-field object.
+        log: Log to write output to. Default is the global logger, outputting to `stderr`.
+        ansatz: Overall ansatz.
+        options: Options for the EBCC calculation.
+        space: Space containing the frozen, correlated, and active fermionic spaces. Default
+            assumes all electrons are correlated.
+        omega: Bosonic frequencies.
+        g: Electron-boson coupling matrix corresponding to the bosonic annihilation operator
+            :math:`g_{bpq} p^\dagger q b`. The creation part is assumed to be the fermionic
+            conjugate transpose to retain Hermiticity in the Hamiltonian.
+        G: Boson non-conserving term :math:`G_{b} (b^\dagger + b)`.
+        mo_coeff: Molecular orbital coefficients. Default is the mean-field coefficients.
+        mo_occ: Molecular orbital occupation numbers. Default is the mean-field occupation.
+        fock: Fock matrix. Default is the mean-field Fock matrix.
+        **kwargs: Additional keyword arguments used to update `options`.
+    """
+    # Options:
+    if options is None:
+        options = self.Options()
+    self.options = options
+    for key, val in kwargs.items():
+        setattr(self.options, key, val)
+
+    # Parameters:
+    self.log = default_log if log is None else log
+    self.mf = self._convert_mf(mf)
+    self._mo_coeff: Optional[NDArray[T]] = (
+        np.asarray(mo_coeff, dtype=types[float]) if mo_coeff is not None else None
+    )
+    self._mo_occ: Optional[NDArray[T]] = (
+        np.asarray(mo_occ, dtype=types[float]) if mo_occ is not None else None
+    )
+
+    # Ansatz:
+    if isinstance(ansatz, Ansatz):
+        self.ansatz = ansatz
+    elif isinstance(ansatz, str):
+        self.ansatz = Ansatz.from_string(
+            ansatz, density_fitting=getattr(self.mf, "with_df", None) is not None
+        )
+    else:
+        raise TypeError("ansatz must be an Ansatz object or a string.")
+    self._eqns = self.ansatz._get_eqns(self.spin_type)
+
+    # Space:
+    if space is not None:
+        self.space = space
+    else:
+        self.space = self.init_space()
+
+    # Boson parameters:
+    if bool(self.fermion_coupling_rank) != bool(self.boson_coupling_rank):
+        raise ValueError(
+            "Fermionic and bosonic coupling ranks must both be zero, or both non-zero."
+        )
+    self.omega = np.asarray(omega, dtype=types[float]) if omega is not None else None
+    self.bare_g = np.asarray(g, dtype=types[float]) if g is not None else None
+    self.bare_G = np.asarray(G, dtype=types[float]) if G is not None else None
+    if self.boson_ansatz != "":
+        self.g = self.get_g()
+        self.G = self.get_mean_field_G()
+    else:
+        assert self.nbos == 0
+        self.options.shift = False
+        self.g = None
+        self.G = None
+
+    # Fock matrix:
+    if fock is None:
+        self.fock = self.get_fock()
+    else:
+        self.fock = fock
+
+    # Attributes:
+    self.e_corr = 0.0
+    self.amplitudes = util.Namespace()
+    self.converged = False
+    self.lambdas = util.Namespace()
+    self.converged_lambda = False
+
+    # Logging:
+    init_logging(self.log)
+    self.log.info(f"\n{ANSI.B}{ANSI.U}{self.name}{ANSI.R}")
+    self.log.debug(f"{ANSI.B}{'*' * len(self.name)}{ANSI.R}")
+    self.log.debug("")
+    self.log.info(f"{ANSI.B}Options{ANSI.R}:")
+    self.log.info(f" &gt; e_tol:  {ANSI.y}{self.options.e_tol}{ANSI.R}")
+    self.log.info(f" &gt; t_tol:  {ANSI.y}{self.options.t_tol}{ANSI.R}")
+    self.log.info(f" &gt; max_iter:  {ANSI.y}{self.options.max_iter}{ANSI.R}")
+    self.log.info(f" &gt; diis_space:  {ANSI.y}{self.options.diis_space}{ANSI.R}")
+    self.log.info(f" &gt; diis_min_space:  {ANSI.y}{self.options.diis_min_space}{ANSI.R}")
+    self.log.info(f" &gt; damping:  {ANSI.y}{self.options.damping}{ANSI.R}")
+    self.log.debug("")
+    self.log.info(f"{ANSI.B}Ansatz{ANSI.R}: {ANSI.m}{self.ansatz}{ANSI.R}")
+    self.log.debug("")
+    self.log.info(f"{ANSI.B}Space{ANSI.R}: {ANSI.m}{self.space}{ANSI.R}")
+    self.log.debug("")
+    if self.boson_ansatz != "":
+        self.log.info(f"{ANSI.B}Bosons{ANSI.R}: {ANSI.m}{self.nbos}{ANSI.R}")
+        self.log.info(" &gt; Energy shift due to polaritonic basis:  %.10f", self.const)
+        self.log.debug("")</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.cc.rebcc.REBCC.spin_type" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.cc.rebcc.REBCC.spin_type: str</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get a string representation of the spin type.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.cc.rebcc.REBCC.xi" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.cc.rebcc.REBCC.xi: NDArray[T]</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the shift in the bosonic operators to diagonalise the photon Hamiltonian.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.cc.rebcc.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Shift in the bosonic operators.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.cc.rebcc.REBCC.nmo" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.cc.rebcc.REBCC.nmo: int</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the number of molecular orbitals.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code>int</code>
+              –
+              <div class="doc-md-description">
+                <p>Number of molecular orbitals.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.cc.rebcc.REBCC.nocc" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.cc.rebcc.REBCC.nocc: int</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the number of occupied molecular orbitals.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code>int</code>
+              –
+              <div class="doc-md-description">
+                <p>Number of occupied molecular orbitals.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.cc.rebcc.REBCC.nvir" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.cc.rebcc.REBCC.nvir: int</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the number of virtual molecular orbitals.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code>int</code>
+              –
+              <div class="doc-md-description">
+                <p>Number of virtual molecular orbitals.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>    </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.cc.rebcc.REBCC.ip_eom" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.cc.rebcc.REBCC.ip_eom(**kwargs)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the IP-EOM object.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>options</code></b>
+              –
+              <div class="doc-md-description">
+                <p>Options for the IP-EOM calculation.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>**kwargs</code></b>
+                  (<code><span title="typing.Any">Any</span></code>, default:
+                      <code>{}</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Additional keyword arguments.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><a class="autorefs autorefs-internal" title="ebcc.eom.IP_REOM" href="../../eom/reom/#ebcc.eom.reom.IP_REOM">IP_REOM</a></code>
+              –
+              <div class="doc-md-description">
+                <p>IP-EOM object.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/cc/rebcc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def ip_eom(self, **kwargs: Any) -&gt; IP_REOM:
+    """Get the IP-EOM object.
+
+    Args:
+        options: Options for the IP-EOM calculation.
+        **kwargs: Additional keyword arguments.
+
+    Returns:
+        IP-EOM object.
+    """
+    return IP_REOM(self, **kwargs)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.cc.rebcc.REBCC.ea_eom" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.cc.rebcc.REBCC.ea_eom(**kwargs)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the EA-EOM object.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>options</code></b>
+              –
+              <div class="doc-md-description">
+                <p>Options for the EA-EOM calculation.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>**kwargs</code></b>
+                  (<code><span title="typing.Any">Any</span></code>, default:
+                      <code>{}</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Additional keyword arguments.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><a class="autorefs autorefs-internal" title="ebcc.eom.EA_REOM" href="../../eom/reom/#ebcc.eom.reom.EA_REOM">EA_REOM</a></code>
+              –
+              <div class="doc-md-description">
+                <p>EA-EOM object.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/cc/rebcc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def ea_eom(self, **kwargs: Any) -&gt; EA_REOM:
+    """Get the EA-EOM object.
+
+    Args:
+        options: Options for the EA-EOM calculation.
+        **kwargs: Additional keyword arguments.
+
+    Returns:
+        EA-EOM object.
+    """
+    return EA_REOM(self, **kwargs)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.cc.rebcc.REBCC.ee_eom" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.cc.rebcc.REBCC.ee_eom(**kwargs)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the EE-EOM object.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>options</code></b>
+              –
+              <div class="doc-md-description">
+                <p>Options for the EE-EOM calculation.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>**kwargs</code></b>
+                  (<code><span title="typing.Any">Any</span></code>, default:
+                      <code>{}</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Additional keyword arguments.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><a class="autorefs autorefs-internal" title="ebcc.eom.EE_REOM" href="../../eom/reom/#ebcc.eom.reom.EE_REOM">EE_REOM</a></code>
+              –
+              <div class="doc-md-description">
+                <p>EE-EOM object.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/cc/rebcc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def ee_eom(self, **kwargs: Any) -&gt; EE_REOM:
+    """Get the EE-EOM object.
+
+    Args:
+        options: Options for the EE-EOM calculation.
+        **kwargs: Additional keyword arguments.
+
+    Returns:
+        EE-EOM object.
+    """
+    return EE_REOM(self, **kwargs)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.cc.rebcc.REBCC.init_space" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.cc.rebcc.REBCC.init_space()</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Initialise the fermionic space.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="ebcc.cc.rebcc.SpaceType">SpaceType</span></code>
+              –
+              <div class="doc-md-description">
+                <p>Fermionic space. All fermionic degrees of freedom are assumed to be correlated.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/cc/rebcc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def init_space(self) -&gt; SpaceType:
+    """Initialise the fermionic space.
+
+    Returns:
+        Fermionic space. All fermionic degrees of freedom are assumed to be correlated.
+    """
+    space = Space(
+        self.mo_occ &gt; 0,
+        np.zeros(self.mo_occ.shape, dtype=np.bool_),
+        np.zeros(self.mo_occ.shape, dtype=np.bool_),
+    )
+    return space</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.cc.rebcc.REBCC.init_amps" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.cc.rebcc.REBCC.init_amps(eris=None)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Initialise the cluster amplitudes.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>eris</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="ebcc.cc.rebcc.ERIsInputType">ERIsInputType</span>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Electron repulsion integrals.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.rebcc.SpinArrayType">SpinArrayType</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Initial cluster amplitudes.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/cc/rebcc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def init_amps(self, eris: Optional[ERIsInputType] = None) -&gt; Namespace[SpinArrayType]:
+    """Initialise the cluster amplitudes.
+
+    Args:
+        eris: Electron repulsion integrals.
+
+    Returns:
+        Initial cluster amplitudes.
+    """
+    eris = self.get_eris(eris)
+    amplitudes: Namespace[SpinArrayType] = util.Namespace()
+
+    # Build T amplitudes:
+    for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+        if n == 1:
+            amplitudes[name] = self.fock[key] / self.energy_sum(key)
+        elif n == 2:
+            key_t = key[0] + key[2] + key[1] + key[3]
+            amplitudes[name] = np.transpose(eris[key_t], (0, 2, 1, 3)) / self.energy_sum(key)
+        else:
+            shape = tuple(self.space.size(k) for k in key)
+            amplitudes[name] = np.zeros(shape, dtype=types[float])
+
+    # Build S amplitudes:
+    for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
+        if self.omega is None or self.G is None:
+            raise ValueError("Bosonic parameters not set.")
+        if n == 1:
+            amplitudes[name] = -self.G / self.omega
+        else:
+            shape = (self.nbos,) * n
+            amplitudes[name] = np.zeros(shape, dtype=types[float])
+
+    # Build U amplitudes:
+    for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+        if self.omega is None or self.g is None:
+            raise ValueError("Bosonic parameters not set.")
+        if nf != 1:
+            raise util.ModelNotImplemented
+        if nb == 1:
+            amplitudes[name] = self.g[key] / self.energy_sum(key)
+        else:
+            shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
+            amplitudes[name] = np.zeros(shape, dtype=types[float])
+
+    return amplitudes</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.cc.rebcc.REBCC.init_lams" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.cc.rebcc.REBCC.init_lams(amplitudes=None)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Initialise the cluster lambda amplitudes.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>amplitudes</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.rebcc.SpinArrayType">SpinArrayType</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Cluster amplitudes.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.rebcc.SpinArrayType">SpinArrayType</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Initial cluster lambda amplitudes.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/cc/rebcc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def init_lams(
+    self, amplitudes: Optional[Namespace[SpinArrayType]] = None
+) -&gt; Namespace[SpinArrayType]:
+    """Initialise the cluster lambda amplitudes.
+
+    Args:
+        amplitudes: Cluster amplitudes.
+
+    Returns:
+        Initial cluster lambda amplitudes.
+    """
+    if not amplitudes:
+        amplitudes = self.amplitudes
+    lambdas: Namespace[SpinArrayType] = util.Namespace()
+
+    # Build L amplitudes:
+    for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+        lname = name.replace("t", "l")
+        perm = list(range(n, 2 * n)) + list(range(n))
+        lambdas[lname] = np.transpose(amplitudes[name], perm)
+
+    # Build LS amplitudes:
+    for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
+        lname = "l" + name
+        lambdas[lname] = amplitudes[name]
+
+    # Build LU amplitudes:
+    for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+        if nf != 1:
+            raise util.ModelNotImplemented
+        lname = "l" + name
+        perm = list(range(nb)) + [nb + 1, nb]
+        lambdas[lname] = np.transpose(amplitudes[name], perm)
+
+    return lambdas</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.cc.rebcc.REBCC.update_amps" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.cc.rebcc.REBCC.update_amps(eris=None, amplitudes=None)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Update the cluster amplitudes.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>eris</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="ebcc.cc.rebcc.ERIsInputType">ERIsInputType</span>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Electron repulsion integrals.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>amplitudes</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.rebcc.SpinArrayType">SpinArrayType</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Cluster amplitudes.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.rebcc.SpinArrayType">SpinArrayType</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Updated cluster amplitudes.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/cc/rebcc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def update_amps(
+    self,
+    eris: Optional[ERIsInputType] = None,
+    amplitudes: Optional[Namespace[SpinArrayType]] = None,
+) -&gt; Namespace[SpinArrayType]:
+    """Update the cluster amplitudes.
+
+    Args:
+        eris: Electron repulsion integrals.
+        amplitudes: Cluster amplitudes.
+
+    Returns:
+        Updated cluster amplitudes.
+    """
+    amplitudes = self._get_amps(amplitudes=amplitudes)
+    func, kwargs = self._load_function(
+        "update_amps",
+        eris=eris,
+        amplitudes=amplitudes,
+    )
+    res: Namespace[SpinArrayType] = func(**kwargs)
+    res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
+
+    # Divide T amplitudes:
+    for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+        res[name] /= self.energy_sum(key)
+        res[name] += amplitudes[name]
+
+    # Divide S amplitudes:
+    for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
+        res[name] /= self.energy_sum(key)
+        res[name] += amplitudes[name]
+
+    # Divide U amplitudes:
+    for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+        if nf != 1:
+            raise util.ModelNotImplemented
+        res[name] /= self.energy_sum(key)
+        res[name] += amplitudes[name]
+
+    return res</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.cc.rebcc.REBCC.update_lams" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.cc.rebcc.REBCC.update_lams(eris=None, amplitudes=None, lambdas=None, lambdas_pert=None, perturbative=False)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Update the cluster lambda amplitudes.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>eris</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="ebcc.cc.rebcc.ERIsInputType">ERIsInputType</span>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Electron repulsion integrals.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>amplitudes</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.rebcc.SpinArrayType">SpinArrayType</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Cluster amplitudes.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>lambdas</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.rebcc.SpinArrayType">SpinArrayType</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Cluster lambda amplitudes.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>lambdas_pert</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.rebcc.SpinArrayType">SpinArrayType</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Perturbative cluster lambda amplitudes.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>perturbative</code></b>
+                  (<code>bool</code>, default:
+                      <code>False</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Flag to include perturbative correction.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.rebcc.SpinArrayType">SpinArrayType</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Updated cluster lambda amplitudes.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/cc/rebcc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def update_lams(
+    self,
+    eris: Optional[ERIsInputType] = None,
+    amplitudes: Optional[Namespace[SpinArrayType]] = None,
+    lambdas: Optional[Namespace[SpinArrayType]] = None,
+    lambdas_pert: Optional[Namespace[SpinArrayType]] = None,
+    perturbative: bool = False,
+) -&gt; Namespace[SpinArrayType]:
+    """Update the cluster lambda amplitudes.
+
+    Args:
+        eris: Electron repulsion integrals.
+        amplitudes: Cluster amplitudes.
+        lambdas: Cluster lambda amplitudes.
+        lambdas_pert: Perturbative cluster lambda amplitudes.
+        perturbative: Flag to include perturbative correction.
+
+    Returns:
+        Updated cluster lambda amplitudes.
+    """
+    # TODO active
+    amplitudes = self._get_amps(amplitudes=amplitudes)
+    lambdas = self._get_lams(lambdas=lambdas, amplitudes=amplitudes)
+    if lambdas_pert is not None:
+        lambdas.update(lambdas_pert)
+
+    func, kwargs = self._load_function(
+        "update_lams%s" % ("_perturbative" if perturbative else ""),
+        eris=eris,
+        amplitudes=amplitudes,
+        lambdas=lambdas,
+    )
+    res: Namespace[SpinArrayType] = func(**kwargs)
+    res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
+
+    # Divide T amplitudes:
+    for name, key, n in self.ansatz.fermionic_cluster_ranks(
+        spin_type=self.spin_type, which="l"
+    ):
+        res[name] /= self.energy_sum(key)
+        if not perturbative:
+            res[name] += lambdas[name]
+
+    # Divide S amplitudes:
+    for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="l"):
+        res[name] /= self.energy_sum(key)
+        if not perturbative:
+            res[name] += lambdas[name]
+
+    # Divide U amplitudes:
+    for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+        spin_type=self.spin_type, which="l"
+    ):
+        if nf != 1:
+            raise util.ModelNotImplemented
+        res[name] /= self.energy_sum(key)
+        if not perturbative:
+            res[name] += lambdas[name]
+
+    if perturbative:
+        res = util.Namespace(**{key + "pert": val for key, val in res.items()})
+
+    return res</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.cc.rebcc.REBCC.make_rdm1_f" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.cc.rebcc.REBCC.make_rdm1_f(eris=None, amplitudes=None, lambdas=None, hermitise=True)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Make the one-particle fermionic reduced density matrix :math:<code>\langle i^+ j \rangle</code>.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>eris</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="ebcc.cc.rebcc.ERIsInputType">ERIsInputType</span>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Electron repulsion integrals.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>amplitudes</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.rebcc.SpinArrayType">SpinArrayType</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Cluster amplitudes.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>lambdas</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.rebcc.SpinArrayType">SpinArrayType</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Cluster lambda amplitudes.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>hermitise</code></b>
+                  (<code>bool</code>, default:
+                      <code>True</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Hermitise the density matrix.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.cc.rebcc.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>One-particle fermion reduced density matrix.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/cc/rebcc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def make_rdm1_f(
+    self,
+    eris: Optional[ERIsInputType] = None,
+    amplitudes: Optional[Namespace[SpinArrayType]] = None,
+    lambdas: Optional[Namespace[SpinArrayType]] = None,
+    hermitise: bool = True,
+) -&gt; NDArray[T]:
+    r"""Make the one-particle fermionic reduced density matrix :math:`\langle i^+ j \rangle`.
+
+    Args:
+        eris: Electron repulsion integrals.
+        amplitudes: Cluster amplitudes.
+        lambdas: Cluster lambda amplitudes.
+        hermitise: Hermitise the density matrix.
+
+    Returns:
+        One-particle fermion reduced density matrix.
+    """
+    func, kwargs = self._load_function(
+        "make_rdm1_f",
+        eris=eris,
+        amplitudes=amplitudes,
+        lambdas=lambdas,
+    )
+    dm: NDArray[T] = func(**kwargs)
+
+    if hermitise:
+        dm = (dm + np.transpose(dm)) * 0.5
+
+    return dm</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.cc.rebcc.REBCC.make_rdm2_f" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.cc.rebcc.REBCC.make_rdm2_f(eris=None, amplitudes=None, lambdas=None, hermitise=True)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Make the two-particle fermionic reduced density matrix :math:<code>\langle i^+j^+lk \rangle</code>.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>eris</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="ebcc.cc.rebcc.ERIsInputType">ERIsInputType</span>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Electron repulsion integrals.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>amplitudes</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.rebcc.SpinArrayType">SpinArrayType</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Cluster amplitudes.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>lambdas</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.rebcc.SpinArrayType">SpinArrayType</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Cluster lambda amplitudes.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>hermitise</code></b>
+                  (<code>bool</code>, default:
+                      <code>True</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Hermitise the density matrix.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.cc.rebcc.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Two-particle fermion reduced density matrix.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/cc/rebcc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def make_rdm2_f(
+    self,
+    eris: Optional[ERIsInputType] = None,
+    amplitudes: Optional[Namespace[SpinArrayType]] = None,
+    lambdas: Optional[Namespace[SpinArrayType]] = None,
+    hermitise: bool = True,
+) -&gt; NDArray[T]:
+    r"""Make the two-particle fermionic reduced density matrix :math:`\langle i^+j^+lk \rangle`.
+
+    Args:
+        eris: Electron repulsion integrals.
+        amplitudes: Cluster amplitudes.
+        lambdas: Cluster lambda amplitudes.
+        hermitise: Hermitise the density matrix.
+
+    Returns:
+        Two-particle fermion reduced density matrix.
+    """
+    func, kwargs = self._load_function(
+        "make_rdm2_f",
+        eris=eris,
+        amplitudes=amplitudes,
+        lambdas=lambdas,
+    )
+    dm: NDArray[T] = func(**kwargs)
+
+    if hermitise:
+        dm = (np.transpose(dm, (0, 1, 2, 3)) + np.transpose(dm, (2, 3, 0, 1))) * 0.5
+        dm = (np.transpose(dm, (0, 1, 2, 3)) + np.transpose(dm, (1, 0, 3, 2))) * 0.5
+
+    return dm</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.cc.rebcc.REBCC.make_eb_coup_rdm" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.cc.rebcc.REBCC.make_eb_coup_rdm(eris=None, amplitudes=None, lambdas=None, unshifted=True, hermitise=True)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Make the electron-boson coupling reduced density matrix.</p>
+<p>.. math::
+    \langle b^+ i^+ j \rangle</p>
+<p>and</p>
+<p>.. math::
+    \langle b i^+ j \rangle</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>eris</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="ebcc.cc.rebcc.ERIsInputType">ERIsInputType</span>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Electron repulsion integrals.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>amplitudes</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.rebcc.SpinArrayType">SpinArrayType</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Cluster amplitudes.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>lambdas</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.rebcc.SpinArrayType">SpinArrayType</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Cluster lambda amplitudes.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>unshifted</code></b>
+                  (<code>bool</code>, default:
+                      <code>True</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>If <code>self.options.shift</code> is <code>True</code>, return the unshifted density matrix. Has
+no effect if <code>self.options.shift</code> is <code>False</code>.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>hermitise</code></b>
+                  (<code>bool</code>, default:
+                      <code>True</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Hermitise the density matrix.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.cc.rebcc.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Electron-boson coupling reduced density matrix.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/cc/rebcc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def make_eb_coup_rdm(
+    self,
+    eris: Optional[ERIsInputType] = None,
+    amplitudes: Optional[Namespace[SpinArrayType]] = None,
+    lambdas: Optional[Namespace[SpinArrayType]] = None,
+    unshifted: bool = True,
+    hermitise: bool = True,
+) -&gt; NDArray[T]:
+    r"""Make the electron-boson coupling reduced density matrix.
+
+    .. math::
+        \langle b^+ i^+ j \rangle
+
+    and
+
+    .. math::
+        \langle b i^+ j \rangle
+
+    Args:
+        eris: Electron repulsion integrals.
+        amplitudes: Cluster amplitudes.
+        lambdas: Cluster lambda amplitudes.
+        unshifted: If `self.options.shift` is `True`, return the unshifted density matrix. Has
+            no effect if `self.options.shift` is `False`.
+        hermitise: Hermitise the density matrix.
+
+    Returns:
+        Electron-boson coupling reduced density matrix.
+    """
+    func, kwargs = self._load_function(
+        "make_eb_coup_rdm",
+        eris=eris,
+        amplitudes=amplitudes,
+        lambdas=lambdas,
+    )
+    dm_eb: NDArray[T] = func(**kwargs)
+
+    if hermitise:
+        dm_eb = np.array(
+            [
+                (dm_eb[0] + np.transpose(dm_eb[1], (0, 2, 1))) * 0.5,
+                (dm_eb[1] + np.transpose(dm_eb[0], (0, 2, 1))) * 0.5,
+            ]
+        )
+
+    if unshifted and self.options.shift:
+        rdm1_f = self.make_rdm1_f(hermitise=hermitise)
+        shift = util.einsum("x,ij-&gt;xij", self.xi, rdm1_f)
+        dm_eb -= shift[None]
+
+    return dm_eb</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.cc.rebcc.REBCC.energy_sum" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.cc.rebcc.REBCC.energy_sum(*args, signs_dict=None)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get a direct sum of energies.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>*args</code></b>
+                  (<code>str</code>, default:
+                      <code>()</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Energies to sum. Should specify a subscript only.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>signs_dict</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[dict[str, str]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Signs of the energies in the sum. Default sets <code>("o", "O", "i")</code> to be
+positive, and <code>("v", "V", "a", "b")</code> to be negative.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.cc.rebcc.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Sum of energies.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/cc/rebcc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def energy_sum(self, *args: str, signs_dict: Optional[dict[str, str]] = None) -&gt; NDArray[T]:
+    """Get a direct sum of energies.
+
+    Args:
+        *args: Energies to sum. Should specify a subscript only.
+        signs_dict: Signs of the energies in the sum. Default sets `("o", "O", "i")` to be
+            positive, and `("v", "V", "a", "b")` to be negative.
+
+    Returns:
+        Sum of energies.
+    """
+    (subscript,) = args
+    n = 0
+
+    def next_char() -&gt; str:
+        nonlocal n
+        if n &lt; 26:
+            char = chr(ord("a") + n)
+        else:
+            char = chr(ord("A") + n)
+        n += 1
+        return char
+
+    if signs_dict is None:
+        signs_dict = {}
+    for k, s in zip("vVaoOib", "---+++-"):
+        if k not in signs_dict:
+            signs_dict[k] = s
+
+    energies = []
+    for key in subscript:
+        factor = 1 if signs_dict[key] == "+" else -1
+        if key == "b":
+            assert self.omega is not None
+            energies.append(self.omega * types[float](factor))
+        else:
+            energies.append(np.diag(self.fock[key + key]) * types[float](factor))
+
+    subscript = ",".join([next_char() for k in subscript])
+    energy_sum = util.dirsum(subscript, *energies)
+
+    return energy_sum</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.cc.rebcc.REBCC.amplitudes_to_vector" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.cc.rebcc.REBCC.amplitudes_to_vector(amplitudes)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Construct a vector containing all of the amplitudes used in the given ansatz.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>amplitudes</code></b>
+                  (<code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.rebcc.SpinArrayType">SpinArrayType</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>Cluster amplitudes.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.cc.rebcc.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Cluster amplitudes as a vector.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/cc/rebcc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -&gt; NDArray[T]:
+    """Construct a vector containing all of the amplitudes used in the given ansatz.
+
+    Args:
+        amplitudes: Cluster amplitudes.
+
+    Returns:
+        Cluster amplitudes as a vector.
+    """
+    vectors = []
+
+    for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+        vectors.append(np.ravel(amplitudes[name]))
+
+    for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
+        vectors.append(np.ravel(amplitudes[name]))
+
+    for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+        vectors.append(np.ravel(amplitudes[name]))
+
+    return np.concatenate(vectors)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.cc.rebcc.REBCC.vector_to_amplitudes" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.cc.rebcc.REBCC.vector_to_amplitudes(vector)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Construct a namespace of amplitudes from a vector.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>vector</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.cc.rebcc.T">T</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>Cluster amplitudes as a vector.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.rebcc.SpinArrayType">SpinArrayType</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Cluster amplitudes.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/cc/rebcc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def vector_to_amplitudes(self, vector: NDArray[T]) -&gt; Namespace[SpinArrayType]:
+    """Construct a namespace of amplitudes from a vector.
+
+    Args:
+        vector: Cluster amplitudes as a vector.
+
+    Returns:
+        Cluster amplitudes.
+    """
+    amplitudes: Namespace[SpinArrayType] = util.Namespace()
+    i0 = 0
+
+    for name, key, n in self.ansatz.fermionic_cluster_ranks(spin_type=self.spin_type):
+        shape = tuple(self.space.size(k) for k in key)
+        size = util.prod(shape)
+        amplitudes[name] = np.reshape(vector[i0 : i0 + size], shape)
+        i0 += size
+
+    for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type):
+        shape = (self.nbos,) * n
+        size = util.prod(shape)
+        amplitudes[name] = np.reshape(vector[i0 : i0 + size], shape)
+        i0 += size
+
+    for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(spin_type=self.spin_type):
+        shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
+        size = util.prod(shape)
+        amplitudes[name] = np.reshape(vector[i0 : i0 + size], shape)
+        i0 += size
+
+    return amplitudes</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.cc.rebcc.REBCC.lambdas_to_vector" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.cc.rebcc.REBCC.lambdas_to_vector(lambdas)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Construct a vector containing all of the lambda amplitudes used in the given ansatz.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>lambdas</code></b>
+                  (<code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.rebcc.SpinArrayType">SpinArrayType</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>Cluster lambda amplitudes.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.cc.rebcc.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Cluster lambda amplitudes as a vector.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/cc/rebcc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def lambdas_to_vector(self, lambdas: Namespace[SpinArrayType]) -&gt; NDArray[T]:
+    """Construct a vector containing all of the lambda amplitudes used in the given ansatz.
+
+    Args:
+        lambdas: Cluster lambda amplitudes.
+
+    Returns:
+        Cluster lambda amplitudes as a vector.
+    """
+    vectors = []
+
+    for name, key, n in self.ansatz.fermionic_cluster_ranks(
+        spin_type=self.spin_type, which="l"
+    ):
+        vectors.append(np.ravel(lambdas[name]))
+
+    for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="l"):
+        vectors.append(np.ravel(lambdas[name]))
+
+    for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+        spin_type=self.spin_type, which="l"
+    ):
+        vectors.append(np.ravel(lambdas[name]))
+
+    return np.concatenate(vectors)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.cc.rebcc.REBCC.vector_to_lambdas" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.cc.rebcc.REBCC.vector_to_lambdas(vector)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Construct a namespace of lambda amplitudes from a vector.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>vector</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.cc.rebcc.T">T</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>Cluster lambda amplitudes as a vector.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.rebcc.SpinArrayType">SpinArrayType</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Cluster lambda amplitudes.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/cc/rebcc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def vector_to_lambdas(self, vector: NDArray[T]) -&gt; Namespace[SpinArrayType]:
+    """Construct a namespace of lambda amplitudes from a vector.
+
+    Args:
+        vector: Cluster lambda amplitudes as a vector.
+
+    Returns:
+        Cluster lambda amplitudes.
+    """
+    lambdas: Namespace[SpinArrayType] = util.Namespace()
+    i0 = 0
+
+    for name, key, n in self.ansatz.fermionic_cluster_ranks(
+        spin_type=self.spin_type, which="l"
+    ):
+        shape = tuple(self.space.size(k) for k in key)
+        size = util.prod(shape)
+        lambdas[name] = np.reshape(vector[i0 : i0 + size], shape)
+        i0 += size
+
+    for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="l"):
+        shape = (self.nbos,) * n
+        size = util.prod(shape)
+        lambdas[name] = np.reshape(vector[i0 : i0 + size], shape)
+        i0 += size
+
+    for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+        spin_type=self.spin_type, which="l"
+    ):
+        shape = (self.nbos,) * nb + tuple(self.space.size(k) for k in key[nb:])
+        size = util.prod(shape)
+        lambdas[name] = np.reshape(vector[i0 : i0 + size], shape)
+        i0 += size
+
+    return lambdas</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.cc.rebcc.REBCC.get_mean_field_G" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.cc.rebcc.REBCC.get_mean_field_G()</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the mean-field boson non-conserving term.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.cc.rebcc.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Mean-field boson non-conserving term.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/cc/rebcc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def get_mean_field_G(self) -&gt; NDArray[T]:
+    """Get the mean-field boson non-conserving term.
+
+    Returns:
+        Mean-field boson non-conserving term.
+    """
+    # FIXME should this also sum in frozen orbitals?
+    assert self.omega is not None
+    assert self.g is not None
+    boo: NDArray[T] = self.g.boo
+    val = util.einsum("Ipp-&gt;I", boo) * 2.0
+    val -= self.xi * self.omega
+    if self.bare_G is not None:
+        val += self.bare_G
+    return val</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../../../features/" class="btn btn-neutral float-left" title="Features"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../uebcc/" class="btn btn-neutral float-right" title="Unrestricted">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../../../features/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../uebcc/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

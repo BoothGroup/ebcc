@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Ansatz - ebcc</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Ansatz";
+        var mkdocs_page_input_path = "reference/core/ansatz.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> ebcc
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../features/">Features</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Code Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" >Coupled cluster</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/rebcc/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/uebcc/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/gebcc/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Equation of motion</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/reom/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/ueom/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/geom/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Orbital optimisation</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" >Brueckner</a>
+    <ul>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/rbrueckner/">Restricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/ubrueckner/">Unrestricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/gbrueckner/">Generalised</a>
+                </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../opt/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >Core</a>
+    <ul class="current">
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">Ansatz</a>
+    <ul class="current">
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../damping/">Damping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../dump/">Dumping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../logging/">Logging</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../precision/">Precision</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Hamiltonian</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/space/">Space</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/fock/">Fock</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/eris/">ERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/cderis/">CDERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/elbos/">Bosonic</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Utility</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/permutations/">Permutations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/einsumfunc/">Einstein summations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/misc/">Miscellaneous</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">ebcc</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Code Reference</li>
+          <li class="breadcrumb-item">Core</li>
+      <li class="breadcrumb-item active">Ansatz</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="ebcc.core.ansatz"></a>
+    <div class="doc doc-contents first">
+
+        <p>Ansatz definition.</p>
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.core.ansatz.Ansatz" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.core.ansatz.Ansatz(fermion_ansatz='CCSD', boson_ansatz='', fermion_coupling_rank=0, boson_coupling_rank=0, density_fitting=False, module_name=None)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+
+        <p>Ansatz class.</p>
+
+        <p>Initialise the ansatz.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>fermion_ansatz</code></b>
+                  (<code>str</code>, default:
+                      <code>&#39;CCSD&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Fermionic ansatz.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>boson_ansatz</code></b>
+                  (<code>str</code>, default:
+                      <code>&#39;&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Rank of bosonic excitations.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>fermion_coupling_rank</code></b>
+                  (<code>int</code>, default:
+                      <code>0</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Rank of fermionic term in coupling.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>boson_coupling_rank</code></b>
+                  (<code>int</code>, default:
+                      <code>0</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Rank of bosonic term in coupling.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>density_fitting</code></b>
+                  (<code>bool</code>, default:
+                      <code>False</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Use density fitting.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>module_name</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[str]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Name of the module containing the generated equations.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/core/ansatz.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(
+    self,
+    fermion_ansatz: str = "CCSD",
+    boson_ansatz: str = "",
+    fermion_coupling_rank: int = 0,
+    boson_coupling_rank: int = 0,
+    density_fitting: bool = False,
+    module_name: Optional[str] = None,
+) -&gt; None:
+    """Initialise the ansatz.
+
+    Args:
+        fermion_ansatz: Fermionic ansatz.
+        boson_ansatz: Rank of bosonic excitations.
+        fermion_coupling_rank: Rank of fermionic term in coupling.
+        boson_coupling_rank: Rank of bosonic term in coupling.
+        density_fitting: Use density fitting.
+        module_name: Name of the module containing the generated equations.
+    """
+    self.fermion_ansatz = fermion_ansatz
+    self.boson_ansatz = boson_ansatz
+    self.fermion_coupling_rank = fermion_coupling_rank
+    self.boson_coupling_rank = boson_coupling_rank
+    self.density_fitting = density_fitting
+    self.module_name = module_name</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.core.ansatz.Ansatz.name" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.ansatz.Ansatz.name: str</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the name of the ansatz.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.core.ansatz.Ansatz.has_perturbative_correction" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.ansatz.Ansatz.has_perturbative_correction: bool</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get a boolean indicating if the ansatz includes a perturbative correction e.g. CCSD(T).</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+<b><code>perturbative</code></b>(                  <code>bool</code>
+)              –
+              <div class="doc-md-description">
+                <p>Boolean indicating if the ansatz is perturbatively corrected.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.core.ansatz.Ansatz.is_one_shot" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.ansatz.Ansatz.is_one_shot: bool</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get a boolean indicating whether the ansatz is a one-shot energy calculation e.g. MP2.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+<b><code>one_shot</code></b>(                  <code>bool</code>
+)              –
+              <div class="doc-md-description">
+                <p>Boolean indicating if the ansatz is a one-shot energy calculation.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>    </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.core.ansatz.Ansatz.from_string" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.ansatz.Ansatz.from_string(string, density_fitting=False)</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Build an <code>Ansatz</code> from a string for the default ansatzes.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>string</code></b>
+                  (<code>str</code>)
+              –
+              <div class="doc-md-description">
+                <p>Input string.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>density_fitting</code></b>
+                  (<code>bool</code>, default:
+                      <code>False</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Use density fitting.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><a class="autorefs autorefs-internal" title="ebcc.core.ansatz.Ansatz" href="#ebcc.core.ansatz.Ansatz">Ansatz</a></code>
+              –
+              <div class="doc-md-description">
+                <p>Ansatz object.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/core/ansatz.py</code></summary>
+              <pre class="highlight"><code class="language-python">@classmethod
+def from_string(cls, string: str, density_fitting: bool = False) -&gt; Ansatz:
+    """Build an `Ansatz` from a string for the default ansatzes.
+
+    Args:
+        string: Input string.
+        density_fitting: Use density fitting.
+
+    Returns:
+        Ansatz object.
+    """
+    if string not in named_ansatzes:
+        raise util.ModelNotImplemented(string)
+    return cls(*named_ansatzes[string], density_fitting=density_fitting)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.core.ansatz.Ansatz.__repr__" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.ansatz.Ansatz.__repr__()</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get a string with the name of the method.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/core/ansatz.py</code></summary>
+              <pre class="highlight"><code class="language-python">def __repr__(self) -&gt; str:
+    """Get a string with the name of the method."""
+    name = ""
+    if self.density_fitting:
+        name += "DF"
+    name += self.fermion_ansatz
+    if self.boson_ansatz:
+        name += "-%s" % self.boson_ansatz
+    if self.fermion_coupling_rank or self.boson_coupling_rank:
+        name += "-%d" % self.fermion_coupling_rank
+        name += "-%d" % self.boson_coupling_rank
+    return name</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.core.ansatz.Ansatz.fermionic_cluster_ranks" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.ansatz.Ansatz.fermionic_cluster_ranks(spin_type='G', which='t')</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get a list of cluster operator ranks for the fermionic space.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>spin_type</code></b>
+                  (<code>str</code>, default:
+                      <code>&#39;G&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Spin type of the cluster operator.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>which</code></b>
+                  (<code><span title="typing.Literal">Literal</span>[&#39;t&#39;, &#39;l&#39;, &#39;ip&#39;, &#39;ea&#39;, &#39;ee&#39;]</code>, default:
+                      <code>&#39;t&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Type of cluster operator to return.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code>list[tuple[str, str, int]]</code>
+              –
+              <div class="doc-md-description">
+                <p>List of cluster operator ranks, each element is a tuple containing the name, the slices</p>
+              </div>
+            </li>
+            <li>
+                  <code>list[tuple[str, str, int]]</code>
+              –
+              <div class="doc-md-description">
+                <p>and the rank.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/core/ansatz.py</code></summary>
+              <pre class="highlight"><code class="language-python">def fermionic_cluster_ranks(
+    self,
+    spin_type: str = "G",
+    which: Literal["t", "l", "ip", "ea", "ee"] = "t",
+) -&gt; list[tuple[str, str, int]]:
+    """Get a list of cluster operator ranks for the fermionic space.
+
+    Args:
+        spin_type: Spin type of the cluster operator.
+        which: Type of cluster operator to return.
+
+    Returns:
+        List of cluster operator ranks, each element is a tuple containing the name, the slices
+        and the rank.
+    """
+    ranks: list[tuple[str, str, int]] = []
+    if not self.fermion_ansatz:
+        return ranks
+
+    def _adapt_key(key: str) -&gt; str:
+        """Adapt the key to the `which` argument."""
+        if which == "ip":
+            return key[:-1]
+        if which == "ea":
+            n = len(key) // 2
+            key = key[n:] + key[: n - 1]
+        if which == "l":
+            n = len(key) // 2
+            key = key[n:] + key[:n]
+        return key
+
+    symbol = which if which in ("t", "l") else "r"
+    notations = {
+        "S": [(f"{symbol}1", _adapt_key("ov"), 1)],
+        "D": [(f"{symbol}2", _adapt_key("oovv"), 2)],
+        "T": [(f"{symbol}3", _adapt_key("ooovvv"), 3)],
+        "t": [(f"{symbol}3", _adapt_key("ooOvvV"), 3)],
+        "t'": [(f"{symbol}3", _adapt_key("OOOVVV"), 3)],
+    }
+    if spin_type == "R":
+        notations["Q"] = [(f"{symbol}4a", "oooovvvv", 4), (f"{symbol}4b", "oooovvvv", 4)]
+    else:
+        notations["Q"] = [(f"{symbol}4", "oooovvvv", 4)]
+    notations["2"] = notations["S"] + notations["D"]
+    notations["3"] = notations["2"] + notations["T"]
+    notations["4"] = notations["3"] + notations["Q"]
+
+    # Remove any perturbative corrections
+    op = self.fermion_ansatz
+    while "(" in op:
+        start = op.index("(")
+        end = op.index(")")
+        op = op[:start]
+        if (end + 1) &lt; len(op):
+            op += op[end + 1 :]
+
+    # Check in order of longest to shortest string in case one
+    # method name starts with a substring equal to the name of
+    # another method
+    for method_type in sorted(METHOD_TYPES, key=len)[::-1]:
+        if op.startswith(method_type):
+            op = op.replace(method_type, "", 1)
+            break
+
+    # If it's MP we only ever need to initialise second-order
+    # amplitudes
+    if method_type == "MP" and which in ("t", "l"):
+        op = "D"
+
+    # If it's for EOM-CCD we still need the singles
+    if self.fermion_ansatz == "CCD" and which in ("ip", "ea", "ee"):
+        op = "SD"
+
+    # Determine the ranks
+    for key in sorted(notations.keys(), key=len)[::-1]:
+        if key in op:
+            ranks += notations[key]
+            op = op.replace(key, "")
+
+    # Check there are no duplicates
+    if len(ranks) != len(set(ranks)):
+        raise util.ModelNotImplemented("Duplicate ranks in %s" % self.fermion_ansatz)
+
+    # Sort the ranks by the cluster operator dimension
+    ranks = sorted(ranks, key=lambda x: x[2])
+
+    return ranks</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.core.ansatz.Ansatz.bosonic_cluster_ranks" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.ansatz.Ansatz.bosonic_cluster_ranks(spin_type='G', which='t')</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get a list of cluster operator ranks for the bosonic space.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>spin_type</code></b>
+                  (<code>str</code>, default:
+                      <code>&#39;G&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Spin type of the cluster operator.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>which</code></b>
+                  (<code><span title="typing.Literal">Literal</span>[&#39;t&#39;, &#39;l&#39;, &#39;ip&#39;, &#39;ea&#39;, &#39;ee&#39;]</code>, default:
+                      <code>&#39;t&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Type of cluster operator.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code>list[tuple[str, str, int]]</code>
+              –
+              <div class="doc-md-description">
+                <p>List of cluster operator ranks, each element is a tuple containing the name, the slices</p>
+              </div>
+            </li>
+            <li>
+                  <code>list[tuple[str, str, int]]</code>
+              –
+              <div class="doc-md-description">
+                <p>and the rank.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/core/ansatz.py</code></summary>
+              <pre class="highlight"><code class="language-python">def bosonic_cluster_ranks(
+    self,
+    spin_type: str = "G",
+    which: Literal["t", "l", "ip", "ea", "ee"] = "t",
+) -&gt; list[tuple[str, str, int]]:
+    """Get a list of cluster operator ranks for the bosonic space.
+
+    Args:
+        spin_type: Spin type of the cluster operator.
+        which: Type of cluster operator.
+
+    Returns:
+        List of cluster operator ranks, each element is a tuple containing the name, the slices
+        and the rank.
+    """
+    ranks: list[tuple[str, str, int]] = []
+    if not self.boson_ansatz:
+        return ranks
+
+    symbol = "s" if which == "t" else "ls"
+    notations = {
+        "S": [(f"{symbol}1", "b", 1)],
+        "D": [(f"{symbol}2", "bb", 2)],
+        "T": [(f"{symbol}3", "bbb", 3)],
+    }
+    notations["2"] = notations["S"] + notations["D"]
+    notations["3"] = notations["2"] + notations["T"]
+
+    # Remove any perturbative corrections
+    op = self.boson_ansatz
+    while "(" in op:
+        start = op.index("(")
+        end = op.index(")")
+        op = op[:start]
+        if (end + 1) &lt; len(op):
+            op += op[end + 1 :]
+
+    # Determine the ranks
+    for key in sorted(notations.keys(), key=len)[::-1]:
+        if key in op:
+            ranks += notations[key]
+            op = op.replace(key, "")
+
+    # Check there are no duplicates
+    if len(ranks) != len(set(ranks)):
+        raise util.ModelNotImplemented("Duplicate ranks in %s" % self.boson_ansatz)
+
+    # Sort the ranks by the cluster operator dimension
+    ranks = sorted(ranks, key=lambda x: x[2])
+
+    return ranks</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.core.ansatz.Ansatz.coupling_cluster_ranks" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.ansatz.Ansatz.coupling_cluster_ranks(spin_type='G', which='t')</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get a list of cluster operator ranks for the coupling between fermions and bosons.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>spin_type</code></b>
+                  (<code>str</code>, default:
+                      <code>&#39;G&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Spin type of the cluster operator.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>which</code></b>
+                  (<code><span title="typing.Literal">Literal</span>[&#39;t&#39;, &#39;l&#39;, &#39;ip&#39;, &#39;ea&#39;, &#39;ee&#39;]</code>, default:
+                      <code>&#39;t&#39;</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Type of cluster operator to return.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code>list[tuple[str, str, int, int]]</code>
+              –
+              <div class="doc-md-description">
+                <p>List of cluster operator ranks, each element is a tuple containing the name, the slices</p>
+              </div>
+            </li>
+            <li>
+                  <code>list[tuple[str, str, int, int]]</code>
+              –
+              <div class="doc-md-description">
+                <p>and the rank.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/core/ansatz.py</code></summary>
+              <pre class="highlight"><code class="language-python">def coupling_cluster_ranks(
+    self,
+    spin_type: str = "G",
+    which: Literal["t", "l", "ip", "ea", "ee"] = "t",
+) -&gt; list[tuple[str, str, int, int]]:
+    """Get a list of cluster operator ranks for the coupling between fermions and bosons.
+
+    Args:
+        spin_type: Spin type of the cluster operator.
+        which: Type of cluster operator to return.
+
+    Returns:
+        List of cluster operator ranks, each element is a tuple containing the name, the slices
+        and the rank.
+    """
+
+    def _adapt_key(key: str, fermion_rank: int, boson_rank: int) -&gt; str:
+        """Adapt the key to the `which` argument."""
+        if which in ("ip", "ea", "ee"):
+            raise util.ModelNotImplemented(
+                "Cluster ranks for coupling space not implemented for %s" % which
+            )
+        if which == "l":
+            nf = fermion_rank
+            nb = boson_rank
+            key = key[:nb] + key[nb + nf :] + key[nb : nb + nf]
+        return key
+
+    symbol = "u" if which == "t" else "lu"
+
+    ranks = []
+    for fermion_rank in range(1, self.fermion_coupling_rank + 1):
+        for boson_rank in range(1, self.boson_coupling_rank + 1):
+            name = f"{symbol}{fermion_rank}{boson_rank}"
+            key = _adapt_key(
+                "b" * boson_rank + "o" * fermion_rank + "v" * fermion_rank,
+                fermion_rank,
+                boson_rank,
+            )
+            ranks.append((name, key, fermion_rank, boson_rank))
+
+    return ranks</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="ebcc.core.ansatz.name_to_identifier" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.ansatz.name_to_identifier(name)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Convert an ansatz name to an identifier.</p>
+<p>The identifier is used as for the filename of the module containing the generated equations,
+where the name may contain illegal characters.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>name</code></b>
+                  (<code>str</code>)
+              –
+              <div class="doc-md-description">
+                <p>Name of the ansatz.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code>str</code>
+              –
+              <div class="doc-md-description">
+                <p>Identifier for the ansatz.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<p><span class="doc-section-title">Examples:</span></p>
+    <pre class="highlight"><code class="language-pycon">&gt;&gt;&gt; name_to_identifier("CCSD(T)")
+'CCSDxTx'
+&gt;&gt;&gt; name_to_identifier("CCSD-SD-1-2")
+'CCSD_SD_1_2'
+&gt;&gt;&gt; name_to_identifier("CCSDt'")
+'CCSDwtwp'</code></pre>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/core/ansatz.py</code></summary>
+              <pre class="highlight"><code class="language-python">def name_to_identifier(name: str) -&gt; str:
+    """Convert an ansatz name to an identifier.
+
+    The identifier is used as for the filename of the module containing the generated equations,
+    where the name may contain illegal characters.
+
+    Args:
+        name: Name of the ansatz.
+
+    Returns:
+        Identifier for the ansatz.
+
+    Examples:
+        &gt;&gt;&gt; name_to_identifier("CCSD(T)")
+        'CCSDxTx'
+        &gt;&gt;&gt; name_to_identifier("CCSD-SD-1-2")
+        'CCSD_SD_1_2'
+        &gt;&gt;&gt; name_to_identifier("CCSDt'")
+        'CCSDwtwp'
+    """
+    iden = "".join([f"w{c}w" if c.isalpha() and c.islower() else c for c in name])
+    iden = iden.replace("(", "x").replace(")", "x")
+    iden = iden.replace("[", "y").replace("]", "y")
+    iden = iden.replace("-", "_")
+    iden = iden.replace("'", "p")
+    return iden</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="ebcc.core.ansatz.identifier_to_name" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.ansatz.identifier_to_name(iden)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Convert an ansatz identifier to a name.</p>
+<p>Inverse operation of <code>name_to_identifier</code>.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>iden</code></b>
+                  (<code>str</code>)
+              –
+              <div class="doc-md-description">
+                <p>Identifier for the ansatz.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code>str</code>
+              –
+              <div class="doc-md-description">
+                <p>Name of the ansatz.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<p><span class="doc-section-title">Examples:</span></p>
+    <pre class="highlight"><code class="language-pycon">&gt;&gt;&gt; identifier_to_name("CCSDxTx")
+'CCSD(T)'
+&gt;&gt;&gt; identifier_to_name("CCSD_SD_1_2")
+'CCSD-SD-1-2'
+&gt;&gt;&gt; identifier_to_name("CCSDwtwp")
+"CCSDt'"</code></pre>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/core/ansatz.py</code></summary>
+              <pre class="highlight"><code class="language-python">def identifier_to_name(iden: str) -&gt; str:
+    """Convert an ansatz identifier to a name.
+
+    Inverse operation of `name_to_identifier`.
+
+    Args:
+        iden: Identifier for the ansatz.
+
+    Returns:
+        Name of the ansatz.
+
+    Examples:
+        &gt;&gt;&gt; identifier_to_name("CCSDxTx")
+        'CCSD(T)'
+        &gt;&gt;&gt; identifier_to_name("CCSD_SD_1_2")
+        'CCSD-SD-1-2'
+        &gt;&gt;&gt; identifier_to_name("CCSDwtwp")
+        "CCSDt'"
+    """
+    name = iden.replace("-", "_")
+    name = name.replace("w", "")
+    while "x" in name:
+        name = name.replace("x", "(", 1).replace("x", ")", 1)
+    while "y" in name:
+        name = name.replace("y", "(", 1).replace("y", ")", 1)
+    name = name.replace("p", "'")
+    return name</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../../opt/base/" class="btn btn-neutral float-left" title="Base"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../damping/" class="btn btn-neutral float-right" title="Damping">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../../opt/base/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../damping/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
