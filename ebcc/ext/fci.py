@@ -11,6 +11,7 @@ from ebcc import util
 from ebcc.codegen import RecCC, UecCC
 
 if TYPE_CHECKING:
+    from typing import Iterator, Union
 
     from numpy import float64, int64
     from numpy.typing import NDArray
@@ -36,7 +37,9 @@ def _tn_addrs_signs(norb: int, nocc: int, order: int) -> tuple[NDArray[int64], N
     return np.asarray(addrs, dtype=np.int64), np.asarray(signs, dtype=np.int64)
 
 
-def extract_amplitudes_restricted(fci: FCI, space: Space) -> Namespace[SpinArrayType]:
+def extract_amplitudes_restricted(
+    fci: FCI, space: Space, max_order: int = 4
+) -> Namespace[SpinArrayType]:
     """Extract amplitudes from an FCI calculation with restricted symmetry.
 
     The FCI calculatiion should have been performed in the active space according to the given
@@ -45,51 +48,73 @@ def extract_amplitudes_restricted(fci: FCI, space: Space) -> Namespace[SpinArray
     Args:
         fci: PySCF FCI object.
         space: Space containing the frozen, correlated, and active fermionic spaces.
+        max_order: Maximum order of the excitation.
 
     Returns:
         Cluster amplitudes in the active space.
     """
-
-    def _shape(chars: str) -> tuple[int, ...]:
-        """Get a shape from the space."""
-        return tuple(space.size(char) for char in chars)
+    if max_order > 4:
+        # TODO: Just need a rule to generalise the RHF amplitude spins
+        raise NotImplementedError("Only up to 4th order amplitudes are supported.")
 
     # Get the adresses for each order
-    addr1, sign1 = _tn_addrs_signs(space.nact, space.naocc, 1)
-    addr2, sign2 = _tn_addrs_signs(space.nact, space.naocc, 2)
-    addr3, sign3 = _tn_addrs_signs(space.nact, space.naocc, 3)
-    addr4, sign4 = _tn_addrs_signs(space.nact, space.naocc, 4)
+    addrs: dict[int, NDArray[int64]] = {}
+    signs: dict[int, NDArray[int64]] = {}
+    for order in range(1, max_order + 1):
+        addrs[order], signs[order] = _tn_addrs_signs(space.nact, space.naocc, order)
 
-    # C1 amplitudes
-    c1 = fci.ci[0, addr1] * sign1
-    c1 = c1.reshape(_shape("OV"))
+    def _get_c(spins: str) -> NDArray[float64]:
+        """Get the C amplitudes for a given spin configuration."""
+        # Find the spins
+        nalph = spins.count("a")
+        nbeta = spins.count("b")
 
-    # C2 amplitudes
-    c2 = fci.ci[np.ix_(addr1, addr1)] * sign1[:, None] * sign1[None, :]
-    c2 = c2.reshape(_shape("OVOV"))
-    c2 = c2.transpose(0, 2, 1, 3)
+        # Get the addresses and signs
+        addrsi: Union[int, NDArray[int64]] = 0
+        addrsj: Union[int, NDArray[int64]] = 0
+        signsi: Union[int, NDArray[int64]] = 1
+        signsj: Union[int, NDArray[int64]] = 1
+        if nalph != 0:
+            addrsi = addrs[nalph]
+            signsi = signs[nalph]
+        if nbeta != 0:
+            addrsj = addrs[nbeta]
+            signsj = signs[nbeta]
+        if nalph != 0 and nbeta != 0:
+            addrsi, addrsj = np.ix_(addrsi, addrsj)  # type: ignore
+            signsi = signsi[:, None]  # type: ignore
+            signsj = signsj[None, :]  # type: ignore
 
-    # C3 amplitudes
-    c3 = fci.ci[np.ix_(addr2, addr1)] * sign2[:, None] * sign1[None, :]
-    c3 = util.decompress_axes("iiaajb", c3, shape=_shape("OOVVOV"))
-    c3 = c3.transpose(0, 4, 1, 2, 5, 3)
+        # Get the amplitudes
+        cn = fci.ci[addrsi, addrsj] * signsi * signsj
 
-    # C4 amplitudes
-    c4 = fci.ci[np.ix_(addr2, addr2)] * sign2[:, None] * sign2[None, :]
-    c4 = util.decompress_axes("iiaajjbb", c4, shape=_shape("OOVVOOVV"))
-    c4 = c4.transpose(0, 4, 1, 5, 2, 6, 3, 7)
+        # Decompress the axes
+        shape = tuple(
+            space.size(char) for char in ("O" * nalph + "V" * nalph + "O" * nbeta + "V" * nbeta)
+        )
+        subscript = "i" * nalph + "a" * nalph + "j" * nbeta + "b" * nbeta
+        cn = util.decompress_axes(subscript, cn, shape=shape)
 
-    # C4a amplitudes
-    c4a = fci.ci[np.ix_(addr3, addr1)] * sign3[:, None] * sign1[None, :]
-    c4a = util.decompress_axes("iiiaaajb", c4a, shape=_shape("OOOVVVOV"))
-    c4a = c4a.transpose(0, 6, 2, 1, 3, 7, 5, 4)
+        # Transpose the axes
+        subscript_target = ""
+        for spin in spins:
+            subscript_target += "i" if spin == "a" else "j"
+        for spin in spins:
+            subscript_target += spin  # a->a and b->b
+        perm = util.get_string_permutation(subscript, subscript_target)
+        cn = np.transpose(cn, perm)
 
-    # Scale by reference energy
-    c1 /= fci.ci[0, 0]
-    c2 /= fci.ci[0, 0]
-    c3 /= fci.ci[0, 0]
-    c4 /= fci.ci[0, 0]
-    c4a /= fci.ci[0, 0]
+        # Scale by reference energy
+        cn /= fci.ci[0, 0]
+
+        return cn
+
+    # Get the C amplitudes
+    c1 = _get_c("b")
+    c2 = _get_c("ab")
+    c3 = _get_c("aba")
+    c4 = _get_c("abab")
+    c4a = _get_c("abaa")
 
     # Transform to T amplitudes
     t1 = RecCC.convert_c1_to_t1(c1=c1)["t1"]  # type: ignore
@@ -103,7 +128,7 @@ def extract_amplitudes_restricted(fci: FCI, space: Space) -> Namespace[SpinArray
 
 
 def extract_amplitudes_unrestricted(
-    fci: FCI, space: tuple[Space, Space]
+    fci: FCI, space: tuple[Space, Space], max_order: int = 4
 ) -> Namespace[SpinArrayType]:
     """Extract amplitudes from an FCI calculation with unrestricted symmetry.
 
@@ -114,112 +139,81 @@ def extract_amplitudes_unrestricted(
         fci: PySCF FCI object.
         space: Space containing the frozen, correlated, and active fermionic spaces for each spin
             channel.
+        max_order: Maximum order of the excitation.
 
     Returns:
         Cluster amplitudes in the active space.
     """
-
-    def _shape(comb: str, chars: str) -> tuple[int, ...]:
-        """Get a shape from the space."""
-        return tuple(space["ab".index(s)].size(char) for s, char in zip(comb, chars))
+    if max_order > 4:
+        # TODO: Just to match RHF
+        raise NotImplementedError("Only up to 4th order amplitudes are supported.")
 
     # Get the adresses for each order
-    addr1a, sign1a = _tn_addrs_signs(space[0].nact, space[0].naocc, 1)
-    addr2a, sign2a = _tn_addrs_signs(space[0].nact, space[0].naocc, 2)
-    addr3a, sign3a = _tn_addrs_signs(space[0].nact, space[0].naocc, 3)
-    addr4a, sign4a = _tn_addrs_signs(space[0].nact, space[0].naocc, 4)
-    addr1b, sign1b = _tn_addrs_signs(space[1].nact, space[1].naocc, 1)
-    addr2b, sign2b = _tn_addrs_signs(space[1].nact, space[1].naocc, 2)
-    addr3b, sign3b = _tn_addrs_signs(space[1].nact, space[1].naocc, 3)
-    addr4b, sign4b = _tn_addrs_signs(space[1].nact, space[1].naocc, 4)
+    addrsa: dict[int, NDArray[int64]] = {}
+    signsa: dict[int, NDArray[int64]] = {}
+    addrsb: dict[int, NDArray[int64]] = {}
+    signsb: dict[int, NDArray[int64]] = {}
+    for order in range(1, max_order + 1):
+        addrsa[order], signsa[order] = _tn_addrs_signs(space[0].nact, space[0].naocc, order)
+        addrsb[order], signsb[order] = _tn_addrs_signs(space[1].nact, space[1].naocc, order)
 
-    # Amplitude containers
-    c1: Namespace[NDArray[float64]] = util.Namespace()
-    c2: Namespace[NDArray[float64]] = util.Namespace()
-    c3: Namespace[NDArray[float64]] = util.Namespace()
-    c4: Namespace[NDArray[float64]] = util.Namespace()
+    def _get_c(spins: str) -> NDArray[float64]:
+        """Get the C amplitudes for a given spin configuration."""
+        # Find the spins
+        nalph = spins.count("a")
+        nbeta = spins.count("b")
 
-    # C1aa amplitudes
-    c1.aa = fci.ci[addr1a, 0] * sign1a
-    c1.aa = c1.aa.reshape(_shape("aa", "OV"))
+        # Get the addresses and signs
+        addrsi: Union[int, NDArray[int64]] = 0
+        addrsj: Union[int, NDArray[int64]] = 0
+        signsi: Union[int, NDArray[int64]] = 1
+        signsj: Union[int, NDArray[int64]] = 1
+        if nalph != 0:
+            addrsi = addrsa[nalph]
+            signsi = signsa[nalph]
+        if nbeta != 0:
+            addrsj = addrsb[nbeta]
+            signsj = signsb[nbeta]
+        if nalph != 0 and nbeta != 0:
+            addrsi, addrsj = np.ix_(addrsi, addrsj)  # type: ignore
+            signsi = signsi[:, None]  # type: ignore
+            signsj = signsj[None, :]  # type: ignore
 
-    # C1bb amplitudes
-    c1.bb = fci.ci[0, addr1b] * sign1b
-    c1.bb = c1.bb.reshape(_shape("bb", "OV"))
+        # Get the amplitudes
+        cn = fci.ci[addrsi, addrsj] * signsi * signsj
 
-    # C2aaaa amplitudes
-    c2.aaaa = fci.ci[addr2a, 0] * sign2a
-    c2.aaaa = util.decompress_axes("iiaa", c2.aaaa, shape=_shape("aaaa", "OOVV"))
+        # Decompress the axes
+        shape = tuple(
+            space["ab".index(s)].size(char)
+            for char, s in zip("O" * nalph + "V" * nalph + "O" * nbeta + "V" * nbeta, spins + spins)
+        )
+        subscript = "i" * nalph + "a" * nalph + "j" * nbeta + "b" * nbeta
+        cn = util.decompress_axes(subscript, cn, shape=shape)
 
-    # C2abab amplitudes
-    c2.abab = fci.ci[np.ix_(addr1a, addr1b)] * sign1a[:, None] * sign1b[None, :]
-    c2.abab = c2.abab.reshape(_shape("aabb", "OVOV"))
-    c2.abab = c2.abab.transpose(0, 2, 1, 3)
+        # Transpose the axes
+        subscript_target = ""
+        for spin in spins:
+            subscript_target += "i" if spin == "a" else "j"
+        for spin in spins:
+            subscript_target += spin  # a->a and b->b
+        perm = util.get_string_permutation(subscript, subscript_target)
+        cn = np.transpose(cn, perm)
 
-    # C2bbbb amplitudes
-    c2.bbbb = fci.ci[0, addr2b] * sign2b
-    c2.bbbb = util.decompress_axes("iiaa", c2.bbbb, shape=_shape("bbbb", "OOVV"))
+        # Scale by reference energy
+        cn /= fci.ci[0, 0]
 
-    # C3aaaaaa amplitudes
-    c3.aaaaaa = fci.ci[addr3a, 0] * sign3a
-    c3.aaaaaa = util.decompress_axes("iiiaaa", c3.aaaaaa, shape=_shape("aaaaaa", "OOOVVV"))
+        return cn
 
-    # C3abaaba amplitudes
-    c3.abaaba = fci.ci[np.ix_(addr2a, addr1b)] * sign2a[:, None] * sign1b[None, :]
-    c3.abaaba = util.decompress_axes("iiaajb", c3.abaaba, shape=_shape("aaaabb", "OOVVOV"))
-    c3.abaaba = c3.abaaba.transpose(0, 4, 1, 2, 5, 3)
+    def _generator(order: int) -> Iterator[tuple[str, NDArray[float64]]]:
+        """Generate the key-value pairs for the spin cases."""
+        for comb in util.generate_spin_combinations(order, unique=True):
+            yield (comb, _get_c(comb[:order]))
 
-    # C3babbab amplitudes
-    c3.babbab = fci.ci[np.ix_(addr1a, addr2b)] * sign1a[:, None] * sign2b[None, :]
-    c3.babbab = util.decompress_axes("iajjbb", c3.babbab, shape=_shape("aabbbb", "OVOOVV"))
-    c3.babbab = c3.babbab.transpose(2, 0, 3, 4, 1, 5)
-
-    # C3bbbbbb amplitudes
-    c3.bbbbbb = fci.ci[0, addr3b] * sign3b
-    c3.bbbbbb = util.decompress_axes("iiiaaa", c3.bbbbbb, shape=_shape("bbbbbb", "OOOVVV"))
-
-    # C4aaaaaaaa amplitudes
-    c4.aaaaaaaa = fci.ci[addr4a, 0] * sign4a
-    c4.aaaaaaaa = util.decompress_axes(
-        "iiiiaaaa", c4.aaaaaaaa, shape=_shape("aaaaaaaa", "OOOOVVVV")
-    )
-
-    # C4aaabaaab amplitudes
-    c4.aaabaaab = fci.ci[np.ix_(addr3a, addr1b)] * sign3a[:, None] * sign1b[None, :]
-    c4.aaabaaab = util.decompress_axes(
-        "iiiaaajb", c4.aaabaaab, shape=_shape("aaaaaabb", "OOOVVVOV")
-    )
-    c4.aaabaaab = c4.aaabaaab.transpose(0, 1, 2, 6, 3, 4, 5, 7)
-
-    # C4abababab amplitudes
-    c4.abababab = fci.ci[np.ix_(addr2a, addr2b)] * sign2a[:, None] * sign2b[None, :]
-    c4.abababab = util.decompress_axes(
-        "iiaajjbb", c4.abababab, shape=_shape("aaaabbbb", "OOVVOOVV")
-    )
-    c4.abababab = c4.abababab.transpose(0, 4, 1, 5, 2, 6, 3, 7)
-
-    # C4abbbabbb amplitudes
-    c4.abbbabbb = fci.ci[np.ix_(addr1a, addr3b)] * sign1a[:, None] * sign3b[None, :]
-    c4.abbbabbb = util.decompress_axes(
-        "iajjjbbb", c4.abbbabbb, shape=_shape("aabbbbbb", "OVOOOVVV")
-    )
-    c4.abbbabbb = c4.abbbabbb.transpose(0, 2, 3, 4, 1, 5, 6, 7)
-
-    # C4bbbbbbbb amplitudes
-    c4.bbbbbbbb = fci.ci[0, addr4b] * sign4b
-    c4.bbbbbbbb = util.decompress_axes(
-        "iiiiaaaa", c4.bbbbbbbb, shape=_shape("bbbbbbbb", "OOOOVVVV")
-    )
-
-    # Scale by reference energy
-    for key in c1.keys():
-        c1[key] /= fci.ci[0, 0]
-    for key in c2.keys():
-        c2[key] /= fci.ci[0, 0]
-    for key in c3.keys():
-        c3[key] /= fci.ci[0, 0]
-    for key in c4.keys():
-        c4[key] /= fci.ci[0, 0]
+    # Get the C amplitudes
+    c1 = util.Namespace(**dict(_generator(1)))
+    c2 = util.Namespace(**dict(_generator(2)))
+    c3 = util.Namespace(**dict(_generator(3)))
+    c4 = util.Namespace(**dict(_generator(4)))
 
     # Transform to T amplitudes
     t1 = UecCC.convert_c1_to_t1(c1=c1)["t1"]  # type: ignore
