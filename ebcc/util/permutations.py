@@ -44,6 +44,35 @@ def permute_string(string: str, permutation: tuple[int, ...]) -> str:
     return "".join([string[i] for i in permutation])
 
 
+def get_string_permutation(string: str, target: str) -> tuple[int, ...]:
+    """Get the permutation to transform one string into another.
+
+    Args:
+        string: Initial string.
+        target: Target string.
+
+    Returns:
+        Permutation to transform `string` into `target`.
+
+    Examples:
+        >>> get_string_permutation("abcd", "cbda")
+        (2, 0, 3, 1)
+        >>> get_string_permutation("iijj", "jjii")
+        (2, 3, 0, 1)
+    """
+    # Find the indices of each character in the string
+    indices: dict[str, list[int]] = {char: [] for char in set(string)}
+    for i, char in enumerate(string):
+        indices[char].append(i)
+
+    # Get the permutation
+    perm: list[int] = []
+    for char in target:
+        perm.append(indices[char].pop(0))
+
+    return tuple(perm)
+
+
 def tril_indices_ndim(
     n: int, dims: int, include_diagonal: Optional[bool] = False
 ) -> tuple[NDArray[int64], ...]:

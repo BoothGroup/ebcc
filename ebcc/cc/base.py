@@ -28,6 +28,7 @@ if TYPE_CHECKING:
     from ebcc.core.damping import BaseDamping
     from ebcc.core.logging import Logger
     from ebcc.ext.eccc import BaseExternalCorrection
+    from ebcc.ext.tcc import BaseTailor
     from ebcc.ham.base import BaseElectronBoson, BaseFock
     from ebcc.opt.base import BaseBruecknerEBCC
     from ebcc.util import Namespace
@@ -81,6 +82,7 @@ class BaseEBCC(ABC):
     ElectronBoson: type[BaseElectronBoson]
     Brueckner: type[BaseBruecknerEBCC]
     ExternalCorrection: type[BaseExternalCorrection]
+    Tailor: type[BaseTailor]
 
     # Attributes
     space: SpaceType
@@ -460,6 +462,19 @@ class BaseEBCC(ABC):
             Correlation energy.
         """
         with self.ExternalCorrection(self, *args, **kwargs):
+            return self.kernel()
+
+    def tailor(self, *args: Any, **kwargs: Any) -> float:
+        """Run a tailored coupled cluster calculation.
+
+        Args:
+            *args: Arguments to pass to the tailored object.
+            **kwargs: Keyword arguments to pass to the tailored object.
+
+        Returns:
+            Correlation energy.
+        """
+        with self.Tailor(self, *args, **kwargs):
             return self.kernel()
 
     def write(self, file: str) -> None:

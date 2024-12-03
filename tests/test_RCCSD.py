@@ -549,31 +549,50 @@ class RCCSD_ExtCorr_Tests(unittest.TestCase):
         )
 
         ci = fci.FCI(mf, mo=mf.mo_coeff[:, space.active])
+        ci.conv_tol = 1e-12
+        ci.davidson_only = True
         ci.kernel()
-        amplitudes = extract_amplitudes_restricted(ci, space)
 
-        ccsd = REBCC(
-            mf,
-            ansatz="CCSD",
-            space=space,
-            log=NullLogger(),
-        )
-        ccsd.options.e_tol = 1e-10
-        eris = ccsd.get_eris()
-        ccsd.external_correction(amplitudes, eris=eris, mixed_term_strategy="update")
-
-        cls.mf, cls.ccsd, cls.ci = mf, ccsd, ci
+        cls.mf, cls.ci, cls.space = mf, ci, space
 
     @classmethod
     def tearDownClass(cls):
-        del cls.mf, cls.ccsd, cls.ci
+        del cls.mf, cls.ci, cls.space
 
-    def test_converged(self):
-        self.assertTrue(self.ccsd.converged)
+    def test_external_correction(self):
+        amplitudes = extract_amplitudes_restricted(self.ci, self.space)
+        ccsd = REBCC(
+            self.mf,
+            ansatz="CCSD",
+            space=self.space,
+            log=NullLogger(),
+        )
+        ccsd.options.e_tol = 1e-10
+        ccsd.options.t_tol = 1e-8
+        ccsd.external_correction(amplitudes, mixed_term_strategy="update")
 
-    def test_energy(self):
+        self.assertTrue(ccsd.converged)
+
         a = self.ci.e_tot
-        b = self.ccsd.e_tot
+        b = ccsd.e_tot
+        self.assertAlmostEqual(a, b, 7)
+
+    def test_tailor(self):
+        amplitudes = extract_amplitudes_restricted(self.ci, self.space, max_order=2)
+        ccsd = REBCC(
+            self.mf,
+            ansatz="CCSD",
+            space=self.space,
+            log=NullLogger(),
+        )
+        ccsd.options.e_tol = 1e-10
+        ccsd.options.t_tol = 1e-8
+        ccsd.tailor(amplitudes)
+
+        self.assertTrue(ccsd.converged)
+
+        a = self.ci.e_tot
+        b = ccsd.e_tot
         self.assertAlmostEqual(a, b, 7)
 
 

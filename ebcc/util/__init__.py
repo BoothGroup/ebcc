@@ -19,6 +19,7 @@ from ebcc.util.permutations import (
     factorial,
     generate_spin_combinations,
     get_compressed_size,
+    get_string_permutation,
     get_symmetry_factor,
     is_mixed_spin,
     ntril_ndim,
