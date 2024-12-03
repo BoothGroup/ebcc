@@ -237,7 +237,7 @@ def extract_amplitudes_unrestricted(
 
     # FIXME: This is some representational issue to ensure that tCC is correct -- why is it 0.25
     #        and not 0.5, and should we generalise with util.symmetrise?
-    amps.t2.aaaa = (amps.t2.aaaa - amps.t2.aaaa.swapaxes(0, 1)) * 0.25
-    amps.t2.bbbb = (amps.t2.bbbb - amps.t2.bbbb.swapaxes(0, 1)) * 0.25
+    amps.t2.aaaa = (amps.t2.aaaa - amps.t2.aaaa.swapaxes(0, 1)) * 0.25  # type: ignore
+    amps.t2.bbbb = (amps.t2.bbbb - amps.t2.bbbb.swapaxes(0, 1)) * 0.25  # type: ignore
 
     return amps

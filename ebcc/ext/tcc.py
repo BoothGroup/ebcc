@@ -214,7 +214,9 @@ class TailorUEBCC(BaseTailor):
             if name not in amps_active:
                 continue
             for comb in amps[name].keys():
-                masks = tuple(_mask(self.cc.space["ab".index(s)], k.upper()) for s, k in zip(comb, key))
+                masks = tuple(
+                    _mask(self.cc.space["ab".index(s)], k.upper()) for s, k in zip(comb, key)
+                )
                 indices = np.ix_(*masks)
                 _put(amps[name][comb], indices, amps_active[name][comb])  # type: ignore
 
