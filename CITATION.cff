@@ -9,5 +9,5 @@ authors:
   given-names: George H.
 title: "ebcc: Coupled cluster calculations on electron-boson systems"
 version: 1.6.0
-date-released: 2024-07-31
+date-released: 2024-12-03
 url: "https://github.com/BoothGroup/ebcc"
