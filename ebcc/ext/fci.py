@@ -111,20 +111,27 @@ def extract_amplitudes_restricted(
 
     # Get the C amplitudes
     c1 = _get_c("b")
-    c2 = _get_c("ab")
-    c3 = _get_c("aba")
-    c4 = _get_c("abab")
-    c4a = _get_c("abaa")
+    if max_order > 1:
+        c2 = _get_c("ab")
+    if max_order > 2:
+        c3 = _get_c("aba")
+    if max_order > 3:
+        c4 = _get_c("abab")
+        c4a = _get_c("abaa")
 
     # Transform to T amplitudes
-    t1 = RecCC.convert_c1_to_t1(c1=c1)["t1"]  # type: ignore
-    t2 = RecCC.convert_c2_to_t2(c2=c2, t1=t1)["t2"]  # type: ignore
-    t3 = RecCC.convert_c3_to_t3(c3=c3, t1=t1, t2=t2)["t3"]  # type: ignore
-    t4s = RecCC.convert_c4_to_t4(c4=c4, c4a=c4a, t1=t1, t2=t2, t3=t3)  # type: ignore
-    t4 = t4s["t4"]  # type: ignore
-    t4a = t4s["t4a"]  # type: ignore
+    amps: Namespace[SpinArrayType] = util.Namespace()
+    amps.t1 = RecCC.convert_c1_to_t1(c1=c1)["t1"]  # type: ignore
+    if max_order > 1:
+        amps.t2 = RecCC.convert_c2_to_t2(c2=c2, **dict(amps))["t2"]  # type: ignore
+    if max_order > 2:
+        amps.t3 = RecCC.convert_c3_to_t3(c3=c3, **dict(amps))["t3"]  # type: ignore
+    if max_order > 3:
+        t4s = RecCC.convert_c4_to_t4(c4=c4, c4a=c4a, **dict(amps))  # type: ignore
+        amps.t4 = t4s["t4"]  # type: ignore
+        amps.t4a = t4s["t4a"]  # type: ignore
 
-    return util.Namespace(t1=t1, t2=t2, t3=t3, t4=t4, t4a=t4a)
+    return amps
 
 
 def extract_amplitudes_unrestricted(
@@ -211,14 +218,26 @@ def extract_amplitudes_unrestricted(
 
     # Get the C amplitudes
     c1 = util.Namespace(**dict(_generator(1)))
-    c2 = util.Namespace(**dict(_generator(2)))
-    c3 = util.Namespace(**dict(_generator(3)))
-    c4 = util.Namespace(**dict(_generator(4)))
+    if max_order > 1:
+        c2 = util.Namespace(**dict(_generator(2)))
+    if max_order > 2:
+        c3 = util.Namespace(**dict(_generator(3)))
+    if max_order > 3:
+        c4 = util.Namespace(**dict(_generator(4)))
 
     # Transform to T amplitudes
-    t1 = UecCC.convert_c1_to_t1(c1=c1)["t1"]  # type: ignore
-    t2 = UecCC.convert_c2_to_t2(c2=c2, t1=t1)["t2"]  # type: ignore
-    t3 = UecCC.convert_c3_to_t3(c3=c3, t1=t1, t2=t2)["t3"]  # type: ignore
-    t4 = UecCC.convert_c4_to_t4(c4=c4, t1=t1, t2=t2, t3=t3)["t4"]  # type: ignore
+    amps: Namespace[SpinArrayType] = util.Namespace()
+    amps.t1 = UecCC.convert_c1_to_t1(c1=c1)["t1"]  # type: ignore
+    if max_order > 1:
+        amps.t2 = UecCC.convert_c2_to_t2(c2=c2, **dict(amps))["t2"]  # type: ignore
+    if max_order > 2:
+        amps.t3 = UecCC.convert_c3_to_t3(c3=c3, **dict(amps))["t3"]  # type: ignore
+    if max_order > 3:
+        amps.t4 = UecCC.convert_c4_to_t4(c4=c4, **dict(amps))["t4"]  # type: ignore
 
-    return util.Namespace(t1=t1, t2=t2, t3=t3, t4=t4)
+    # FIXME: This is some representational issue to ensure that tCC is correct -- why is it 0.25
+    #        and not 0.5, and should we generalise with util.symmetrise?
+    amps.t2.aaaa = (amps.t2.aaaa - amps.t2.aaaa.swapaxes(0, 1)) * 0.25
+    amps.t2.bbbb = (amps.t2.bbbb - amps.t2.bbbb.swapaxes(0, 1)) * 0.25
+
+    return amps

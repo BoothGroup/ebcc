@@ -10,6 +10,7 @@ from ebcc.cc.base import BaseEBCC
 from ebcc.core.precision import types
 from ebcc.eom import EA_UEOM, EE_UEOM, IP_UEOM
 from ebcc.ext.eccc import ExternalCorrectionUEBCC
+from ebcc.ext.tcc import TailorUEBCC
 from ebcc.ham.cderis import UCDERIs
 from ebcc.ham.elbos import UElectronBoson
 from ebcc.ham.eris import UERIs
@@ -45,6 +46,7 @@ class UEBCC(BaseEBCC):
     ElectronBoson = UElectronBoson
     Brueckner = BruecknerUEBCC
     ExternalCorrection = ExternalCorrectionUEBCC
+    Tailor = TailorUEBCC
 
     # Attributes
     space: SpaceType

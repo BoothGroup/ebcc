@@ -43,3 +43,7 @@ amplitudes = extract_amplitudes_restricted(ci, space)
 # Run an ecCC calculation
 eccc = REBCC(mf, ansatz="CCSD", space=space)
 eccc.external_correction(amplitudes, mixed_term_strategy="update")
+
+# Alternatively, we can use tCC
+tcc = REBCC(mf, ansatz="CCSD", space=space)
+tcc.tailor(amplitudes)
