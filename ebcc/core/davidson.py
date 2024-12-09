@@ -12,13 +12,13 @@ import scipy.linalg
 from ebcc import numpy as np
 from ebcc import util
 from ebcc.backend import _put
-from ebcc.core.precision import types, astype
+from ebcc.core.precision import types
 
 if TYPE_CHECKING:
     from typing import Any, Callable, Optional, TypeVar, Union
 
     from mypy_extensions import DefaultArg
-    from numpy import integer, floating, complexfloating
+    from numpy import complexfloating, floating, integer
     from numpy.typing import NDArray
 
     T = TypeVar("T", floating, complexfloating)

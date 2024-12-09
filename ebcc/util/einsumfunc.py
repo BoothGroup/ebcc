@@ -14,7 +14,7 @@ from ebcc.core.precision import types
 if TYPE_CHECKING:
     from typing import Callable, Optional, TypeVar, Union
 
-    from numpy import floating, complexfloating
+    from numpy import complexfloating, floating
     from numpy.typing import NDArray
 
     T = TypeVar("T", floating, complexfloating)
