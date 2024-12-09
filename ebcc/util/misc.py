@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import time
-from collections.abc import MutableMapping
+from collections.abc import MutableMapping, Sized
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Generic, TypeVar
 
@@ -200,7 +200,11 @@ def argsort(values: Union[list[Union[float, str]], NDArray[generic]]) -> list[in
     Returns:
         The indices that would sort the values.
     """
-    return sorted(range(len(values)), key=values.__getitem__)
+    if isinstance(values, Sized):
+        size = len(values)
+    else:
+        size = values.size
+    return sorted(range(size), key=values.__getitem__)
 
 
 def regularise_tuple(*_items: Union[Any, tuple[Any, ...], list[Any]]) -> tuple[Any, ...]:

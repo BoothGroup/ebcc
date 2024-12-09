@@ -46,16 +46,35 @@ def array(obj, **kwargs):  # noqa: D103
     return _array(numpy.asarray(obj), **kwargs)
 
 
-def astype(obj, dtype):  # noqa: D103
-    return obj.astype(dtype)
-
-
 def zeros_like(obj):  # noqa: D103
     return ctf.zeros(obj.shape).astype(obj.dtype)
 
 
 def ones_like(obj):  # noqa: D103
     return ctf.ones(obj.shape).astype(obj.dtype)
+
+
+_real = ctf.real
+_imag = ctf.imag
+_conj = ctf.conj
+
+
+def real(obj):  # noqa: D103
+    if isinstance(obj, ctf.tensor):
+        return _real(obj)
+    return numpy.real(obj)
+
+
+def imag(obj):  # noqa: D103
+    if isinstance(obj, ctf.tensor):
+        return _imag(obj)
+    return numpy.imag(obj)
+
+
+def conj(obj):  # noqa: D103
+    if isinstance(obj, ctf.tensor):
+        return _conj(obj)
+    return numpy.conj(obj)
 
 
 def arange(start, stop=None, step=1, dtype=None):  # noqa: D103
@@ -81,6 +100,10 @@ def bitwise_not(a):  # noqa: D103
     return ones_like(a) - a
 
 
+def count_nonzero(a):  # noqa: D103
+    return ctf.sum((a != 0).astype(int))
+
+
 def concatenate(arrays, axis=None):  # noqa: D103
     if axis is None:
         axis = 0
@@ -104,6 +127,15 @@ def concatenate(arrays, axis=None):  # noqa: D103
         start = end
 
     return result
+
+
+def stack(arrays, axis=0):  # noqa: D103
+    arrays_expanded = []
+    for array in arrays:
+        shape = list(array.shape)
+        shape.insert(axis, 1)
+        arrays_expanded.append(array.reshape(shape))
+    return concatenate(arrays_expanded, axis=axis)
 
 
 def _block_recursive(arrays, max_depth, depth=0):  # noqa: D103

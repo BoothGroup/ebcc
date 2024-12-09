@@ -143,6 +143,8 @@ def _put(
         else:
             indices = tf.cast(tf.convert_to_tensor(indices), tf.int32)
             indices = tf.expand_dims(indices, axis=-1)
+        if np.iscomplexobj(array) and not np.iscomplexobj(values):
+            values = values + 0j  # type: ignore
         values = np.ravel(tf.convert_to_tensor(values, dtype=array.dtype))
         return tf.tensor_scatter_nd_update(array, indices, values)  # type: ignore
     elif BACKEND in ("ctf", "cyclops"):
