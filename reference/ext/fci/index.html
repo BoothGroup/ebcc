@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Fci - ebcc</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Fci";
+        var mkdocs_page_input_path = "reference/ext/fci.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> ebcc
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../features/">Features</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Code Reference</span></p>
+              <ul>
+                  <li class="toctree-l1"><a class="reference internal" >Coupled cluster</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/rebcc/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/uebcc/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/gebcc/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Equation of motion</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/reom/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/ueom/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/geom/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Orbital optimisation</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" >Brueckner</a>
+    <ul>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/rbrueckner/">Restricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/ubrueckner/">Unrestricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/gbrueckner/">Generalised</a>
+                </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../opt/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Core</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/ansatz/">Ansatz</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/damping/">Damping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/dump/">Dumping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/logging/">Logging</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/precision/">Precision</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Hamiltonian</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/space/">Space</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/fock/">Fock</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/eris/">ERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/cderis/">CDERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/elbos/">Bosonic</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Utility</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/permutations/">Permutations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/einsumfunc/">Einstein summations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/misc/">Miscellaneous</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">ebcc</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+      <li class="breadcrumb-item active">Fci</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="ebcc.ext.fci"></a>
+    <div class="doc doc-contents first">
+
+        <p>Tools for FCI solvers to get amplitudes.</p>
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="ebcc.ext.fci.extract_amplitudes_restricted" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ext.fci.extract_amplitudes_restricted(fci, space, max_order=4)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Extract amplitudes from an FCI calculation with restricted symmetry.</p>
+<p>The FCI calculatiion should have been performed in the active space according to the given
+<code>space</code>, i.e. using <code>mo_coeff[:, space.active]</code>.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>fci</code></b>
+                  (<code><span title="pyscf.fci.FCI">FCI</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>PySCF FCI object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>space</code></b>
+                  (<code><a class="autorefs autorefs-internal" title="ebcc.ham.Space" href="../../ham/space/#ebcc.ham.space.Space">Space</a></code>)
+              –
+              <div class="doc-md-description">
+                <p>Space containing the frozen, correlated, and active fermionic spaces.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>max_order</code></b>
+                  (<code>int</code>, default:
+                      <code>4</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Maximum order of the excitation.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.rebcc.SpinArrayType">SpinArrayType</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Cluster amplitudes in the active space.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/ext/fci.py</code></summary>
+              <pre class="highlight"><code class="language-python">def extract_amplitudes_restricted(
+    fci: FCI, space: Space, max_order: int = 4
+) -&gt; Namespace[SpinArrayType]:
+    """Extract amplitudes from an FCI calculation with restricted symmetry.
+
+    The FCI calculatiion should have been performed in the active space according to the given
+    `space`, i.e. using `mo_coeff[:, space.active]`.
+
+    Args:
+        fci: PySCF FCI object.
+        space: Space containing the frozen, correlated, and active fermionic spaces.
+        max_order: Maximum order of the excitation.
+
+    Returns:
+        Cluster amplitudes in the active space.
+    """
+    if max_order &gt; 4:
+        # TODO: Just need a rule to generalise the RHF amplitude spins
+        raise NotImplementedError("Only up to 4th order amplitudes are supported.")
+
+    # Get the adresses for each order
+    addrs: dict[int, NDArray[integer]] = {}
+    signs: dict[int, NDArray[integer]] = {}
+    for order in range(1, max_order + 1):
+        addrs[order], signs[order] = _tn_addrs_signs(space.nact, space.naocc, order)
+
+    def _get_c(spins: str) -&gt; NDArray[floating]:
+        """Get the C amplitudes for a given spin configuration."""
+        # Find the spins
+        nalph = spins.count("a")
+        nbeta = spins.count("b")
+
+        # Get the addresses and signs
+        addrsi: Union[int, NDArray[integer]] = 0
+        addrsj: Union[int, NDArray[integer]] = 0
+        signsi: Union[int, NDArray[integer]] = 1
+        signsj: Union[int, NDArray[integer]] = 1
+        if nalph != 0:
+            addrsi = addrs[nalph]
+            signsi = signs[nalph]
+        if nbeta != 0:
+            addrsj = addrs[nbeta]
+            signsj = signs[nbeta]
+        if nalph != 0 and nbeta != 0:
+            addrsi, addrsj = np.ix_(addrsi, addrsj)  # type: ignore
+            signsi = signsi[:, None]  # type: ignore
+            signsj = signsj[None, :]  # type: ignore
+
+        # Get the amplitudes
+        cn = fci.ci[addrsi, addrsj] * signsi * signsj
+
+        # Decompress the axes
+        shape = tuple(
+            space.size(char) for char in ("O" * nalph + "V" * nalph + "O" * nbeta + "V" * nbeta)
+        )
+        subscript = "i" * nalph + "a" * nalph + "j" * nbeta + "b" * nbeta
+        cn = util.decompress_axes(subscript, cn, shape=shape)
+
+        # Transpose the axes
+        subscript_target = ""
+        for spin in spins:
+            subscript_target += "i" if spin == "a" else "j"
+        for spin in spins:
+            subscript_target += spin  # a-&gt;a and b-&gt;b
+        perm = util.get_string_permutation(subscript, subscript_target)
+        cn = np.transpose(cn, perm)
+
+        # Scale by reference energy
+        cn /= fci.ci[0, 0]
+
+        return cn
+
+    # Get the C amplitudes
+    c1 = _get_c("b")
+    if max_order &gt; 1:
+        c2 = _get_c("ab")
+    if max_order &gt; 2:
+        c3 = _get_c("aba")
+    if max_order &gt; 3:
+        c4 = _get_c("abab")
+        c4a = _get_c("abaa")
+
+    # Transform to T amplitudes
+    amps: Namespace[SpinArrayType] = util.Namespace()
+    amps.t1 = RecCC.convert_c1_to_t1(c1=c1)["t1"]  # type: ignore
+    if max_order &gt; 1:
+        amps.t2 = RecCC.convert_c2_to_t2(c2=c2, **dict(amps))["t2"]  # type: ignore
+    if max_order &gt; 2:
+        amps.t3 = RecCC.convert_c3_to_t3(c3=c3, **dict(amps))["t3"]  # type: ignore
+    if max_order &gt; 3:
+        t4s = RecCC.convert_c4_to_t4(c4=c4, c4a=c4a, **dict(amps))  # type: ignore
+        amps.t4 = t4s["t4"]  # type: ignore
+        amps.t4a = t4s["t4a"]  # type: ignore
+
+    return amps</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="ebcc.ext.fci.extract_amplitudes_unrestricted" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ext.fci.extract_amplitudes_unrestricted(fci, space, max_order=4)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Extract amplitudes from an FCI calculation with unrestricted symmetry.</p>
+<p>The FCI calculatiion should have been performed in the active space according to the given
+<code>space</code>, i.e. using <code>mo_coeff[:, space.active]</code>.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>fci</code></b>
+                  (<code><span title="pyscf.fci.FCI">FCI</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>PySCF FCI object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>space</code></b>
+                  (<code>tuple[<a class="autorefs autorefs-internal" title="ebcc.ham.Space" href="../../ham/space/#ebcc.ham.space.Space">Space</a>, <a class="autorefs autorefs-internal" title="ebcc.ham.Space" href="../../ham/space/#ebcc.ham.space.Space">Space</a>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>Space containing the frozen, correlated, and active fermionic spaces for each spin
+channel.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>max_order</code></b>
+                  (<code>int</code>, default:
+                      <code>4</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Maximum order of the excitation.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.rebcc.SpinArrayType">SpinArrayType</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Cluster amplitudes in the active space.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/ext/fci.py</code></summary>
+              <pre class="highlight"><code class="language-python">def extract_amplitudes_unrestricted(
+    fci: FCI, space: tuple[Space, Space], max_order: int = 4
+) -&gt; Namespace[SpinArrayType]:
+    """Extract amplitudes from an FCI calculation with unrestricted symmetry.
+
+    The FCI calculatiion should have been performed in the active space according to the given
+    `space`, i.e. using `mo_coeff[:, space.active]`.
+
+    Args:
+        fci: PySCF FCI object.
+        space: Space containing the frozen, correlated, and active fermionic spaces for each spin
+            channel.
+        max_order: Maximum order of the excitation.
+
+    Returns:
+        Cluster amplitudes in the active space.
+    """
+    if max_order &gt; 4:
+        # TODO: Just to match RHF
+        raise NotImplementedError("Only up to 4th order amplitudes are supported.")
+
+    # Get the adresses for each order
+    addrsa: dict[int, NDArray[integer]] = {}
+    signsa: dict[int, NDArray[integer]] = {}
+    addrsb: dict[int, NDArray[integer]] = {}
+    signsb: dict[int, NDArray[integer]] = {}
+    for order in range(1, max_order + 1):
+        addrsa[order], signsa[order] = _tn_addrs_signs(space[0].nact, space[0].naocc, order)
+        addrsb[order], signsb[order] = _tn_addrs_signs(space[1].nact, space[1].naocc, order)
+
+    def _get_c(spins: str) -&gt; NDArray[floating]:
+        """Get the C amplitudes for a given spin configuration."""
+        # Find the spins
+        nalph = spins.count("a")
+        nbeta = spins.count("b")
+
+        # Get the addresses and signs
+        addrsi: Union[int, NDArray[integer]] = 0
+        addrsj: Union[int, NDArray[integer]] = 0
+        signsi: Union[int, NDArray[integer]] = 1
+        signsj: Union[int, NDArray[integer]] = 1
+        if nalph != 0:
+            addrsi = addrsa[nalph]
+            signsi = signsa[nalph]
+        if nbeta != 0:
+            addrsj = addrsb[nbeta]
+            signsj = signsb[nbeta]
+        if nalph != 0 and nbeta != 0:
+            addrsi, addrsj = np.ix_(addrsi, addrsj)  # type: ignore
+            signsi = signsi[:, None]  # type: ignore
+            signsj = signsj[None, :]  # type: ignore
+
+        # Get the amplitudes
+        cn = fci.ci[addrsi, addrsj] * signsi * signsj
+
+        # Decompress the axes
+        shape = tuple(
+            space["ab".index(s)].size(char)
+            for char, s in zip("O" * nalph + "V" * nalph + "O" * nbeta + "V" * nbeta, spins + spins)
+        )
+        subscript = "i" * nalph + "a" * nalph + "j" * nbeta + "b" * nbeta
+        cn = util.decompress_axes(subscript, cn, shape=shape)
+
+        # Transpose the axes
+        subscript_target = ""
+        for spin in spins:
+            subscript_target += "i" if spin == "a" else "j"
+        for spin in spins:
+            subscript_target += spin  # a-&gt;a and b-&gt;b
+        perm = util.get_string_permutation(subscript, subscript_target)
+        cn = np.transpose(cn, perm)
+
+        # Scale by reference energy
+        cn /= fci.ci[0, 0]
+
+        return cn
+
+    def _generator(order: int) -&gt; Iterator[tuple[str, NDArray[floating]]]:
+        """Generate the key-value pairs for the spin cases."""
+        for comb in util.generate_spin_combinations(order, unique=True):
+            yield (comb, _get_c(comb[:order]))
+
+    # Get the C amplitudes
+    c1 = util.Namespace(**dict(_generator(1)))
+    if max_order &gt; 1:
+        c2 = util.Namespace(**dict(_generator(2)))
+    if max_order &gt; 2:
+        c3 = util.Namespace(**dict(_generator(3)))
+    if max_order &gt; 3:
+        c4 = util.Namespace(**dict(_generator(4)))
+
+    # Transform to T amplitudes
+    amps: Namespace[SpinArrayType] = util.Namespace()
+    amps.t1 = UecCC.convert_c1_to_t1(c1=c1)["t1"]  # type: ignore
+    if max_order &gt; 1:
+        amps.t2 = UecCC.convert_c2_to_t2(c2=c2, **dict(amps))["t2"]  # type: ignore
+    if max_order &gt; 2:
+        amps.t3 = UecCC.convert_c3_to_t3(c3=c3, **dict(amps))["t3"]  # type: ignore
+    if max_order &gt; 3:
+        amps.t4 = UecCC.convert_c4_to_t4(c4=c4, **dict(amps))["t4"]  # type: ignore
+
+    # FIXME: This is some representational issue to ensure that tCC is correct -- why is it 0.25
+    #        and not 0.5, and should we generalise with util.symmetrise?
+    amps.t2.aaaa = (amps.t2.aaaa - amps.t2.aaaa.swapaxes(0, 1)) * 0.25  # type: ignore
+    amps.t2.bbbb = (amps.t2.bbbb - amps.t2.bbbb.swapaxes(0, 1)) * 0.25  # type: ignore
+
+    return amps</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

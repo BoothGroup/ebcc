@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Base - ebcc</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Base";
+        var mkdocs_page_input_path = "reference/ham/base.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> ebcc
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../features/">Features</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Code Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" >Coupled cluster</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/rebcc/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/uebcc/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/gebcc/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Equation of motion</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/reom/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/ueom/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/geom/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Orbital optimisation</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" >Brueckner</a>
+    <ul>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/rbrueckner/">Restricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/ubrueckner/">Unrestricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/gbrueckner/">Generalised</a>
+                </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../opt/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Core</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/ansatz/">Ansatz</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/damping/">Damping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/dump/">Dumping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/logging/">Logging</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/precision/">Precision</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >Hamiltonian</a>
+    <ul class="current">
+                <li class="toctree-l2"><a class="reference internal" href="../space/">Space</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../fock/">Fock</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../eris/">ERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../cderis/">CDERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../elbos/">Bosonic</a>
+                </li>
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">Base</a>
+    <ul class="current">
+    </ul>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Utility</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/permutations/">Permutations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/einsumfunc/">Einstein summations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/misc/">Miscellaneous</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">ebcc</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Code Reference</li>
+          <li class="breadcrumb-item">Hamiltonian</li>
+      <li class="breadcrumb-item active">Base</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="ebcc.ham.base"></a>
+    <div class="doc doc-contents first">
+
+        <p>Base classes for <code>ebcc.ham</code>.</p>
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.ham.base.BaseHamiltonian" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.ham.base.BaseHamiltonian(mf, space, mo_coeff=None)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="typing.Any">Any</span>]</code>, <code><span title="abc.ABC">ABC</span></code></p>
+
+
+        <p>Base class for Hamiltonians.</p>
+
+        <p>Initialise the Hamiltonian.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>mf</code></b>
+                  (<code><span title="pyscf.scf.hf.SCF">SCF</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Mean-field object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>space</code></b>
+                  (<code>tuple[<span title="ebcc.cc.base.SpaceType">SpaceType</span>, ...]</code>)
+              –
+              <div class="doc-md-description">
+                <p>Space object for each index.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>mo_coeff</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[tuple[<span title="ebcc.ham.base.CoeffType">CoeffType</span>, ...]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Molecular orbital coefficients for each index.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/ham/base.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(
+    self,
+    mf: SCF,
+    space: tuple[SpaceType, ...],
+    mo_coeff: Optional[tuple[CoeffType, ...]] = None,
+) -&gt; None:
+    """Initialise the Hamiltonian.
+
+    Args:
+        mf: Mean-field object.
+        space: Space object for each index.
+        mo_coeff: Molecular orbital coefficients for each index.
+    """
+    Namespace.__init__(self)
+
+    # Parameters:
+    self.__dict__["mf"] = mf
+    self.__dict__["space"] = space
+    self.__dict__["mo_coeff"] = mo_coeff if mo_coeff is not None else (mf.mo_coeff,) * 4</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.ham.base.BaseHamiltonian.__getitem__" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.base.BaseHamiltonian.__getitem__(key)</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Just-in-time getter.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>key</code></b>
+                  (<code>str</code>)
+              –
+              <div class="doc-md-description">
+                <p>Key to get.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="typing.Any">Any</span></code>
+              –
+              <div class="doc-md-description">
+                <p>Slice of the Hamiltonian.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/ham/base.py</code></summary>
+              <pre class="highlight"><code class="language-python">@abstractmethod
+def __getitem__(self, key: str) -&gt; Any:
+    """Just-in-time getter.
+
+    Args:
+        key: Key to get.
+
+    Returns:
+        Slice of the Hamiltonian.
+    """
+    pass</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.ham.base.BaseRHamiltonian" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.ham.base.BaseRHamiltonian(mf, space, mo_coeff=None)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="ebcc.ham.base.BaseHamiltonian" href="#ebcc.ham.base.BaseHamiltonian">BaseHamiltonian</a></code></p>
+
+
+        <p>Base class for restricted Hamiltonians.</p>
+
+        <p>Initialise the Hamiltonian.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>mf</code></b>
+                  (<code><span title="pyscf.scf.hf.SCF">SCF</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Mean-field object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>space</code></b>
+                  (<code>tuple[<span title="ebcc.cc.base.SpaceType">SpaceType</span>, ...]</code>)
+              –
+              <div class="doc-md-description">
+                <p>Space object for each index.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>mo_coeff</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[tuple[<span title="ebcc.ham.base.CoeffType">CoeffType</span>, ...]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Molecular orbital coefficients for each index.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/ham/base.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(
+    self,
+    mf: SCF,
+    space: tuple[SpaceType, ...],
+    mo_coeff: Optional[tuple[CoeffType, ...]] = None,
+) -&gt; None:
+    """Initialise the Hamiltonian.
+
+    Args:
+        mf: Mean-field object.
+        space: Space object for each index.
+        mo_coeff: Molecular orbital coefficients for each index.
+    """
+    Namespace.__init__(self)
+
+    # Parameters:
+    self.__dict__["mf"] = mf
+    self.__dict__["space"] = space
+    self.__dict__["mo_coeff"] = mo_coeff if mo_coeff is not None else (mf.mo_coeff,) * 4</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.ham.base.BaseUHamiltonian" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.ham.base.BaseUHamiltonian(mf, space, mo_coeff=None)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="ebcc.ham.base.BaseHamiltonian" href="#ebcc.ham.base.BaseHamiltonian">BaseHamiltonian</a></code></p>
+
+
+        <p>Base class for unrestricted Hamiltonians.</p>
+
+        <p>Initialise the Hamiltonian.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>mf</code></b>
+                  (<code><span title="pyscf.scf.hf.SCF">SCF</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Mean-field object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>space</code></b>
+                  (<code>tuple[<span title="ebcc.cc.base.SpaceType">SpaceType</span>, ...]</code>)
+              –
+              <div class="doc-md-description">
+                <p>Space object for each index.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>mo_coeff</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[tuple[<span title="ebcc.ham.base.CoeffType">CoeffType</span>, ...]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Molecular orbital coefficients for each index.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/ham/base.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(
+    self,
+    mf: SCF,
+    space: tuple[SpaceType, ...],
+    mo_coeff: Optional[tuple[CoeffType, ...]] = None,
+) -&gt; None:
+    """Initialise the Hamiltonian.
+
+    Args:
+        mf: Mean-field object.
+        space: Space object for each index.
+        mo_coeff: Molecular orbital coefficients for each index.
+    """
+    Namespace.__init__(self)
+
+    # Parameters:
+    self.__dict__["mf"] = mf
+    self.__dict__["space"] = space
+    self.__dict__["mo_coeff"] = mo_coeff if mo_coeff is not None else (mf.mo_coeff,) * 4</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.ham.base.BaseGHamiltonian" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.ham.base.BaseGHamiltonian(mf, space, mo_coeff=None)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="ebcc.ham.base.BaseHamiltonian" href="#ebcc.ham.base.BaseHamiltonian">BaseHamiltonian</a></code></p>
+
+
+        <p>Base class for general Hamiltonians.</p>
+
+        <p>Initialise the Hamiltonian.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>mf</code></b>
+                  (<code><span title="pyscf.scf.hf.SCF">SCF</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Mean-field object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>space</code></b>
+                  (<code>tuple[<span title="ebcc.cc.base.SpaceType">SpaceType</span>, ...]</code>)
+              –
+              <div class="doc-md-description">
+                <p>Space object for each index.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>mo_coeff</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[tuple[<span title="ebcc.ham.base.CoeffType">CoeffType</span>, ...]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Molecular orbital coefficients for each index.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/ham/base.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(
+    self,
+    mf: SCF,
+    space: tuple[SpaceType, ...],
+    mo_coeff: Optional[tuple[CoeffType, ...]] = None,
+) -&gt; None:
+    """Initialise the Hamiltonian.
+
+    Args:
+        mf: Mean-field object.
+        space: Space object for each index.
+        mo_coeff: Molecular orbital coefficients for each index.
+    """
+    Namespace.__init__(self)
+
+    # Parameters:
+    self.__dict__["mf"] = mf
+    self.__dict__["space"] = space
+    self.__dict__["mo_coeff"] = mo_coeff if mo_coeff is not None else (mf.mo_coeff,) * 4</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.ham.base.BaseFock" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.ham.base.BaseFock(mf, space, mo_coeff=None, g=None, shift=None, xi=None)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="ebcc.ham.base.BaseHamiltonian" href="#ebcc.ham.base.BaseHamiltonian">BaseHamiltonian</a></code></p>
+
+
+        <p>Base class for Fock matrices.</p>
+
+        <p>Initialise the Hamiltonian.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>mf</code></b>
+                  (<code><span title="pyscf.scf.hf.SCF">SCF</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Mean-field object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>space</code></b>
+                  (<code>tuple[<span title="ebcc.cc.base.SpaceType">SpaceType</span>, ...]</code>)
+              –
+              <div class="doc-md-description">
+                <p>Space object for each index.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>mo_coeff</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[tuple[<span title="ebcc.ham.base.CoeffType">CoeffType</span>, ...]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Molecular orbital coefficients for each index.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>g</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="typing.Any">Any</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Namespace containing blocks of the electron-boson coupling matrix.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>shift</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[bool]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Shift the boson operators such that the Hamiltonian is normal-ordered with
+respect to a coherent state. This removes the bosonic coupling to the static
+mean-field density, introducing a constant energy shift.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>xi</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.floating">floating</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Shift in the bosonic operators to diagonalise the photon Hamiltonian.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/ham/base.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(
+    self,
+    mf: SCF,
+    space: tuple[SpaceType, ...],
+    mo_coeff: Optional[tuple[CoeffType, ...]] = None,
+    g: Optional[Namespace[Any]] = None,
+    shift: Optional[bool] = None,
+    xi: Optional[NDArray[floating]] = None,
+) -&gt; None:
+    """Initialise the Hamiltonian.
+
+    Args:
+        mf: Mean-field object.
+        space: Space object for each index.
+        mo_coeff: Molecular orbital coefficients for each index.
+        g: Namespace containing blocks of the electron-boson coupling matrix.
+        shift: Shift the boson operators such that the Hamiltonian is normal-ordered with
+            respect to a coherent state. This removes the bosonic coupling to the static
+            mean-field density, introducing a constant energy shift.
+        xi: Shift in the bosonic operators to diagonalise the photon Hamiltonian.
+    """
+    super().__init__(mf, space, mo_coeff=mo_coeff)
+
+    # Boson parameters:
+    self.__dict__["g"] = g
+    self.__dict__["shift"] = shift
+    self.__dict__["xi"] = xi</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.ham.base.BaseERIs" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.ham.base.BaseERIs(mf, space, mo_coeff=None)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="ebcc.ham.base.BaseHamiltonian" href="#ebcc.ham.base.BaseHamiltonian">BaseHamiltonian</a></code></p>
+
+
+        <p>Base class for electronic repulsion integrals.</p>
+
+        <p>Initialise the Hamiltonian.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>mf</code></b>
+                  (<code><span title="pyscf.scf.hf.SCF">SCF</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Mean-field object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>space</code></b>
+                  (<code>tuple[<span title="ebcc.cc.base.SpaceType">SpaceType</span>, ...]</code>)
+              –
+              <div class="doc-md-description">
+                <p>Space object for each index.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>mo_coeff</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[tuple[<span title="ebcc.ham.base.CoeffType">CoeffType</span>, ...]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Molecular orbital coefficients for each index.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/ham/base.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(
+    self,
+    mf: SCF,
+    space: tuple[SpaceType, ...],
+    mo_coeff: Optional[tuple[CoeffType, ...]] = None,
+) -&gt; None:
+    """Initialise the Hamiltonian.
+
+    Args:
+        mf: Mean-field object.
+        space: Space object for each index.
+        mo_coeff: Molecular orbital coefficients for each index.
+    """
+    Namespace.__init__(self)
+
+    # Parameters:
+    self.__dict__["mf"] = mf
+    self.__dict__["space"] = space
+    self.__dict__["mo_coeff"] = mo_coeff if mo_coeff is not None else (mf.mo_coeff,) * 4</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.ham.base.BaseElectronBoson" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.ham.base.BaseElectronBoson(mf, g, space, mo_coeff=None)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="ebcc.ham.base.BaseHamiltonian" href="#ebcc.ham.base.BaseHamiltonian">BaseHamiltonian</a></code></p>
+
+
+        <p>Base class for electron-boson coupling matrices.</p>
+
+        <p>Initialise the Hamiltonian.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>mf</code></b>
+                  (<code><span title="pyscf.scf.hf.SCF">SCF</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Mean-field object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>g</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.floating">floating</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>The electron-boson coupling matrix array.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>space</code></b>
+                  (<code>tuple[<span title="ebcc.cc.base.SpaceType">SpaceType</span>, ...]</code>)
+              –
+              <div class="doc-md-description">
+                <p>Space object for each index.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>mo_coeff</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[tuple[<span title="ebcc.ham.base.CoeffType">CoeffType</span>, ...]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Molecular orbital coefficients for each index.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/ham/base.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(
+    self,
+    mf: SCF,
+    g: NDArray[floating],
+    space: tuple[SpaceType, ...],
+    mo_coeff: Optional[tuple[CoeffType, ...]] = None,
+) -&gt; None:
+    """Initialise the Hamiltonian.
+
+    Args:
+        mf: Mean-field object.
+        g: The electron-boson coupling matrix array.
+        space: Space object for each index.
+        mo_coeff: Molecular orbital coefficients for each index.
+    """
+    super().__init__(mf, space, mo_coeff=mo_coeff)
+
+    # Boson parameters:
+    self.__dict__["g"] = g</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../elbos/" class="btn btn-neutral float-left" title="Bosonic"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../../util/permutations/" class="btn btn-neutral float-right" title="Permutations">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../elbos/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../../util/permutations/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

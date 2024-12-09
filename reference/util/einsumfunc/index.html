@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Einstein summations - ebcc</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Einstein summations";
+        var mkdocs_page_input_path = "reference/util/einsumfunc.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> ebcc
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../features/">Features</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Code Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" >Coupled cluster</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/rebcc/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/uebcc/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/gebcc/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Equation of motion</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/reom/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/ueom/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/geom/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Orbital optimisation</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" >Brueckner</a>
+    <ul>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/rbrueckner/">Restricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/ubrueckner/">Unrestricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/gbrueckner/">Generalised</a>
+                </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../opt/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Core</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/ansatz/">Ansatz</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/damping/">Damping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/dump/">Dumping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/logging/">Logging</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/precision/">Precision</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Hamiltonian</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/space/">Space</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/fock/">Fock</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/eris/">ERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/cderis/">CDERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/elbos/">Bosonic</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >Utility</a>
+    <ul class="current">
+                <li class="toctree-l2"><a class="reference internal" href="../permutations/">Permutations</a>
+                </li>
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">Einstein summations</a>
+    <ul class="current">
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../misc/">Miscellaneous</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">ebcc</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Code Reference</li>
+          <li class="breadcrumb-item">Utility</li>
+      <li class="breadcrumb-item active">Einstein summations</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="ebcc.util.einsumfunc"></a>
+    <div class="doc doc-contents first">
+
+        <p>Einstein summation convention.</p>
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="ebcc.util.einsumfunc.CONTRACTION_METHOD" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.einsumfunc.CONTRACTION_METHOD = 'backend'</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>The size of the contraction to fall back on the backend.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="ebcc.util.einsumfunc.BACKEND_EINSUM_SIZE" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.einsumfunc.BACKEND_EINSUM_SIZE = 1000</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>The size of the contraction to let the backend optimize.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h2 id="ebcc.util.einsumfunc.BACKEND_OPTIMIZE_SIZE" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.einsumfunc.BACKEND_OPTIMIZE_SIZE = 100</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
+  </span>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Symbols used in einsum-like functions.</p>
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.util.einsumfunc.EinsumOperandError" class="doc doc-heading">
+            <code>ebcc.util.einsumfunc.EinsumOperandError</code>
+
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code>ValueError</code></p>
+
+
+        <p>Exception for invalid inputs to <code>einsum</code>.</p>
+
+
+
+
+
+
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="ebcc.util.einsumfunc.einsum" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.einsumfunc.einsum(*operands, alpha=1.0, beta=0.0, out=None, contract=None, optimize=True)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Evaluate an Einstein summation convention on the operands.</p>
+<p>Using the Einstein summation convention, many common
+multi-dimensional, linear algebraic array operations can be
+represented in a simple fashion. In <em>implicit</em> mode <code>einsum</code>
+computes these values.</p>
+<p>In <em>explicit</em> mode, <code>einsum</code> provides further flexibility to compute
+other array operations that might not be considered classical
+Einstein summation operations, by disabling, or forcing summation
+over specified subscript labels.</p>
+<p>See the <code>numpy.einsum</code> documentation for clarification.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>operands</code></b>
+                  (<code><span title="ebcc.util.einsumfunc.OperandType">OperandType</span>[<span title="ebcc.util.einsumfunc.T">T</span>]</code>, default:
+                      <code>()</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Any valid input to <code>numpy.einsum</code>.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>alpha</code></b>
+                  (<code><span title="ebcc.util.einsumfunc.T">T</span></code>, default:
+                      <code>1.0</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Scaling factor for the contraction.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>beta</code></b>
+                  (<code><span title="ebcc.util.einsumfunc.T">T</span></code>, default:
+                      <code>0.0</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Scaling factor for the output.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>out</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.util.einsumfunc.T">T</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>If provided, the calculation is done into this array.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>contract</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="typing.Callable">Callable</span>[..., <span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.util.einsumfunc.T">T</span>]]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>The function to use for contraction.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>optimize</code></b>
+                  (<code>bool</code>, default:
+                      <code>True</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>If <code>True</code>, use the <code>numpy.einsum_path</code> to optimize the contraction.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.util.einsumfunc.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>The calculation based on the Einstein summation convention.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/einsumfunc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def einsum(
+    *operands: OperandType[T],
+    alpha: T = 1.0,  # type: ignore[assignment]
+    beta: T = 0.0,  # type: ignore[assignment]
+    out: Optional[NDArray[T]] = None,
+    contract: Optional[Callable[..., NDArray[T]]] = None,
+    optimize: bool = True,
+) -&gt; NDArray[T]:
+    """Evaluate an Einstein summation convention on the operands.
+
+    Using the Einstein summation convention, many common
+    multi-dimensional, linear algebraic array operations can be
+    represented in a simple fashion. In *implicit* mode `einsum`
+    computes these values.
+
+    In *explicit* mode, `einsum` provides further flexibility to compute
+    other array operations that might not be considered classical
+    Einstein summation operations, by disabling, or forcing summation
+    over specified subscript labels.
+
+    See the `numpy.einsum` documentation for clarification.
+
+    Args:
+        operands: Any valid input to `numpy.einsum`.
+        alpha: Scaling factor for the contraction.
+        beta: Scaling factor for the output.
+        out: If provided, the calculation is done into this array.
+        contract: The function to use for contraction.
+        optimize: If `True`, use the `numpy.einsum_path` to optimize the contraction.
+
+    Returns:
+        The calculation based on the Einstein summation convention.
+    """
+    # Parse the kwargs
+    inp, outs, args = _parse_einsum_input(list(operands))  # type: ignore
+    subscript = "%s-&gt;%s" % (inp, outs)
+
+    # Get the contraction function
+    if contract is None:
+        contract = {
+            "backend": _contract_backend,
+            "ttgt": _contract_ttgt,
+            "tblis": _contract_tblis,
+        }[CONTRACTION_METHOD.lower()]
+
+    # Perform the contraction
+    if not len(args):
+        raise ValueError("No input operands")
+    elif len(args) == 1:
+        # If it's just a transpose, use numpy
+        res = _transpose_backend(subscript, args[0], alpha=alpha, beta=beta, out=out)
+    elif len(args) == 2:
+        # If it's a single contraction, call the backend directly
+        res = contract(subscript, args[0], args[1], alpha=alpha, beta=beta, out=out)
+    else:
+        # If it's a chain of contractions, use the path optimizer
+        args = list(args)
+        path_kwargs = dict(optimize=optimize, einsum_call=True)
+        contractions = np.einsum_path(subscript, *args, **path_kwargs)[1]
+        for contraction in contractions:
+            inds, idx_rm, einsum_str, remain = list(contraction[:4])
+            contraction_args = [args.pop(x) for x in inds]  # type: ignore
+            if alpha != 1.0 or beta != 0.0:
+                raise NotImplementedError("Scaling factors not supported for &gt;2 arguments")
+            if len(contraction_args) == 1:
+                a = contraction_args[0]
+                res = _transpose_backend(
+                    einsum_str, a, alpha=types[float](1.0), beta=types[float](0.0), out=None
+                )
+            elif len(contraction_args) == 2:
+                a, b = contraction_args
+                res = contract(
+                    einsum_str, a, b, alpha=types[float](1.0), beta=types[float](0.0), out=None
+                )
+            else:
+                res = np.einsum(einsum_str, *contraction_args, optimize=True)
+            args.append(res)
+
+    return res</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="ebcc.util.einsumfunc.dirsum" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.einsumfunc.dirsum(*operands)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Direct sum of arrays.</p>
+<p>Follows the <code>numpy.einsum</code> input conventions.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>operands</code></b>
+                  (<code><span title="typing.Union">Union</span>[str, tuple[int, ...], <span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.util.einsumfunc.T">T</span>]]</code>, default:
+                      <code>()</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Any valid input to <code>numpy.einsum</code>.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.util.einsumfunc.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>The direct sum of the arrays.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/einsumfunc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def dirsum(*operands: Union[str, tuple[int, ...], NDArray[T]]) -&gt; NDArray[T]:
+    """Direct sum of arrays.
+
+    Follows the `numpy.einsum` input conventions.
+
+    Args:
+        operands: Any valid input to `numpy.einsum`.
+
+    Returns:
+        The direct sum of the arrays.
+    """
+    # Parse the input
+    input_str, output_str, input_arrays = _parse_einsum_input(list(operands))
+    input_chars = input_str.split(",")
+
+    for i, (chars, array) in enumerate(zip(input_chars, input_arrays)):
+        if len(chars) != array.ndim:
+            raise ValueError(f"Dimension mismatch for array {i}.")
+        if len(set(chars)) != len(chars):
+            unique_chars = "".join(set(chars))
+            array = einsum(f"{chars}-&gt;{unique_chars}", array)
+            input_chars[i] = unique_chars
+        if i == 0:
+            res = array
+        else:
+            shape = res.shape + (1,) * array.ndim
+            res = np.reshape(res, shape) + array
+
+    # Reshape the output
+    res = einsum(f"{''.join(input_chars)}-&gt;{output_str}", res)
+
+    return res</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../permutations/" class="btn btn-neutral float-left" title="Permutations"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../misc/" class="btn btn-neutral float-right" title="Miscellaneous">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../permutations/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../misc/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
