@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import functools
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 from ebcc import numpy as np
 from ebcc import pyscf, util
@@ -12,14 +12,14 @@ from ebcc.core.precision import types
 if TYPE_CHECKING:
     from typing import Optional, Union
 
-    from numpy import bool_, float64
+    from numpy import bool_, floating
     from numpy.typing import NDArray
     from pyscf.scf.hf import SCF
 
     from ebcc.cc.base import SpinArrayType
     from ebcc.util import Namespace
 
-    T = float64
+    T = floating
     B = bool_
     _slice = slice
 
@@ -214,12 +214,12 @@ class Space:
     @functools.cached_property
     def nocc(self) -> int:
         """Get the number of occupied orbitals."""
-        return cast(int, np.sum(self.occupied))
+        return np.count_nonzero(self.occupied)
 
     @functools.cached_property
     def nvir(self) -> int:
         """Get the number of virtual orbitals."""
-        return cast(int, np.sum(self.virtual))
+        return np.count_nonzero(self.virtual)
 
     # Correlated space:
 
@@ -241,17 +241,17 @@ class Space:
     @functools.cached_property
     def ncorr(self) -> int:
         """Get the number of correlated orbitals."""
-        return cast(int, np.sum(self.correlated))
+        return np.count_nonzero(self.correlated)
 
     @functools.cached_property
     def ncocc(self) -> int:
         """Get the number of occupied correlated orbitals."""
-        return cast(int, np.sum(self.correlated_occupied))
+        return np.count_nonzero(self.correlated_occupied)
 
     @functools.cached_property
     def ncvir(self) -> int:
         """Get the number of virtual correlated orbitals."""
-        return cast(int, np.sum(self.correlated_virtual))
+        return np.count_nonzero(self.correlated_virtual)
 
     # Inactive space:
 
@@ -273,17 +273,17 @@ class Space:
     @functools.cached_property
     def ninact(self) -> int:
         """Get the number of inactive orbitals."""
-        return cast(int, np.sum(self.inactive))
+        return np.count_nonzero(self.inactive)
 
     @functools.cached_property
     def niocc(self) -> int:
         """Get the number of occupied inactive orbitals."""
-        return cast(int, np.sum(self.inactive_occupied))
+        return np.count_nonzero(self.inactive_occupied)
 
     @functools.cached_property
     def nivir(self) -> int:
         """Get the number of virtual inactive orbitals."""
-        return cast(int, np.sum(self.inactive_virtual))
+        return np.count_nonzero(self.inactive_virtual)
 
     # Frozen space:
 
@@ -305,17 +305,17 @@ class Space:
     @functools.cached_property
     def nfroz(self) -> int:
         """Get the number of frozen orbitals."""
-        return cast(int, np.sum(self.frozen))
+        return np.count_nonzero(self.frozen)
 
     @functools.cached_property
     def nfocc(self) -> int:
         """Get the number of occupied frozen orbitals."""
-        return cast(int, np.sum(self.frozen_occupied))
+        return np.count_nonzero(self.frozen_occupied)
 
     @functools.cached_property
     def nfvir(self) -> int:
         """Get the number of virtual frozen orbitals."""
-        return cast(int, np.sum(self.frozen_virtual))
+        return np.count_nonzero(self.frozen_virtual)
 
     # Active space:
 
@@ -337,17 +337,17 @@ class Space:
     @functools.cached_property
     def nact(self) -> int:
         """Get the number of active orbitals."""
-        return cast(int, np.sum(self.active))
+        return np.count_nonzero(self.active)
 
     @functools.cached_property
     def naocc(self) -> int:
         """Get the number of occupied active orbitals."""
-        return cast(int, np.sum(self.active_occupied))
+        return np.count_nonzero(self.active_occupied)
 
     @functools.cached_property
     def navir(self) -> int:
         """Get the number of virtual active orbitals."""
-        return cast(int, np.sum(self.active_virtual))
+        return np.count_nonzero(self.active_virtual)
 
 
 if TYPE_CHECKING:
@@ -432,7 +432,7 @@ def construct_fno_space(
         mo_occ: NDArray[T],
     ) -> RConstructSpaceReturnType:
         # Get the number of occupied orbitals
-        nocc = cast(int, np.sum(mo_occ > 0))
+        nocc = np.count_nonzero(mo_occ > 0)
 
         # Calculate the natural orbitals
         n, c = np.linalg.eigh(dm1[nocc:, nocc:])
@@ -443,7 +443,7 @@ def construct_fno_space(
             active_vir = n > occ_tol
         else:
             active_vir = np.cumsum(n / np.sum(n)) <= occ_frac
-        num_active_vir = cast(int, np.sum(active_vir))
+        num_active_vir = np.count_nonzero(active_vir)
 
         # Canonicalise the natural orbitals
         fock_vv = np.diag(mo_energy[nocc:])

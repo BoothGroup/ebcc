@@ -13,7 +13,7 @@ from ebcc.codegen import RecCC, UecCC
 if TYPE_CHECKING:
     from typing import Iterator, Union
 
-    from numpy import float64, int64
+    from numpy import floating, integer
     from numpy.typing import NDArray
     from pyscf.fci import FCI
 
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from ebcc.util import Namespace
 
 
-def _tn_addrs_signs(norb: int, nocc: int, order: int) -> tuple[NDArray[int64], NDArray[int64]]:
+def _tn_addrs_signs(norb: int, nocc: int, order: int) -> tuple[NDArray[integer], NDArray[integer]]:
     """Get the addresses and signs for the given order.
 
     Args:
@@ -58,22 +58,22 @@ def extract_amplitudes_restricted(
         raise NotImplementedError("Only up to 4th order amplitudes are supported.")
 
     # Get the adresses for each order
-    addrs: dict[int, NDArray[int64]] = {}
-    signs: dict[int, NDArray[int64]] = {}
+    addrs: dict[int, NDArray[integer]] = {}
+    signs: dict[int, NDArray[integer]] = {}
     for order in range(1, max_order + 1):
         addrs[order], signs[order] = _tn_addrs_signs(space.nact, space.naocc, order)
 
-    def _get_c(spins: str) -> NDArray[float64]:
+    def _get_c(spins: str) -> NDArray[floating]:
         """Get the C amplitudes for a given spin configuration."""
         # Find the spins
         nalph = spins.count("a")
         nbeta = spins.count("b")
 
         # Get the addresses and signs
-        addrsi: Union[int, NDArray[int64]] = 0
-        addrsj: Union[int, NDArray[int64]] = 0
-        signsi: Union[int, NDArray[int64]] = 1
-        signsj: Union[int, NDArray[int64]] = 1
+        addrsi: Union[int, NDArray[integer]] = 0
+        addrsj: Union[int, NDArray[integer]] = 0
+        signsi: Union[int, NDArray[integer]] = 1
+        signsj: Union[int, NDArray[integer]] = 1
         if nalph != 0:
             addrsi = addrs[nalph]
             signsi = signs[nalph]
@@ -156,25 +156,25 @@ def extract_amplitudes_unrestricted(
         raise NotImplementedError("Only up to 4th order amplitudes are supported.")
 
     # Get the adresses for each order
-    addrsa: dict[int, NDArray[int64]] = {}
-    signsa: dict[int, NDArray[int64]] = {}
-    addrsb: dict[int, NDArray[int64]] = {}
-    signsb: dict[int, NDArray[int64]] = {}
+    addrsa: dict[int, NDArray[integer]] = {}
+    signsa: dict[int, NDArray[integer]] = {}
+    addrsb: dict[int, NDArray[integer]] = {}
+    signsb: dict[int, NDArray[integer]] = {}
     for order in range(1, max_order + 1):
         addrsa[order], signsa[order] = _tn_addrs_signs(space[0].nact, space[0].naocc, order)
         addrsb[order], signsb[order] = _tn_addrs_signs(space[1].nact, space[1].naocc, order)
 
-    def _get_c(spins: str) -> NDArray[float64]:
+    def _get_c(spins: str) -> NDArray[floating]:
         """Get the C amplitudes for a given spin configuration."""
         # Find the spins
         nalph = spins.count("a")
         nbeta = spins.count("b")
 
         # Get the addresses and signs
-        addrsi: Union[int, NDArray[int64]] = 0
-        addrsj: Union[int, NDArray[int64]] = 0
-        signsi: Union[int, NDArray[int64]] = 1
-        signsj: Union[int, NDArray[int64]] = 1
+        addrsi: Union[int, NDArray[integer]] = 0
+        addrsj: Union[int, NDArray[integer]] = 0
+        signsi: Union[int, NDArray[integer]] = 1
+        signsj: Union[int, NDArray[integer]] = 1
         if nalph != 0:
             addrsi = addrsa[nalph]
             signsi = signsa[nalph]
@@ -211,7 +211,7 @@ def extract_amplitudes_unrestricted(
 
         return cn
 
-    def _generator(order: int) -> Iterator[tuple[str, NDArray[float64]]]:
+    def _generator(order: int) -> Iterator[tuple[str, NDArray[floating]]]:
         """Generate the key-value pairs for the spin cases."""
         for comb in util.generate_spin_combinations(order, unique=True):
             yield (comb, _get_c(comb[:order]))

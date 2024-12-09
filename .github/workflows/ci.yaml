@@ -71,12 +71,12 @@ jobs:
       - name: Run minimal unit tests
         run: |
           python -m pip install pytest
-          EBCC_BACKEND=${{ matrix.backend }} pytest tests/test_minimal.py
+          EBCC_BACKEND=${{ matrix.backend }} pytest -x tests/test_minimal.py
         if: matrix.minimal
       - name: Run unit tests
         run: |
           python -m pip install pytest
-          EBCC_BACKEND=${{ matrix.backend }} pytest
+          EBCC_BACKEND=${{ matrix.backend }} pytest -x
         if: matrix.full && ! matrix.coverage
       - name: Run unit tests with coverage
         run: |

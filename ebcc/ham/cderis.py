@@ -13,10 +13,10 @@ from ebcc.ham.base import BaseERIs, BaseRHamiltonian, BaseUHamiltonian
 if TYPE_CHECKING:
     from typing import Optional
 
-    from numpy import float64
+    from numpy import floating
     from numpy.typing import NDArray
 
-    T = float64
+    T = floating
 
 
 class RCDERIs(BaseERIs, BaseRHamiltonian):

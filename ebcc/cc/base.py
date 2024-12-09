@@ -21,7 +21,7 @@ from ebcc.util import _BaseOptions
 if TYPE_CHECKING:
     from typing import Any, Callable, Literal, Optional, Union
 
-    from numpy import float64
+    from numpy import floating
     from numpy.typing import NDArray
     from pyscf.scf.hf import SCF
 
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from ebcc.opt.base import BaseBruecknerEBCC
     from ebcc.util import Namespace
 
-    T = float64
+    T = floating
 
     """Defines the type for the `eris` argument in functions."""
     ERIsInputType = Any

@@ -13,10 +13,10 @@ from ebcc.backend import _put
 if TYPE_CHECKING:
     from typing import Any, Generator, Hashable, Iterable, Optional
 
-    from numpy import float64, int64
+    from numpy import floating, integer
     from numpy.typing import NDArray
 
-    T = float64
+    T = floating
 
 
 def factorial(n: int) -> int:
@@ -75,7 +75,7 @@ def get_string_permutation(string: str, target: str) -> tuple[int, ...]:
 
 def tril_indices_ndim(
     n: int, dims: int, include_diagonal: Optional[bool] = False
-) -> tuple[NDArray[int64], ...]:
+) -> tuple[NDArray[integer], ...]:
     """Return lower triangular indices for a multidimensional array.
 
     Args:

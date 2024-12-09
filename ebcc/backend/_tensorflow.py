@@ -15,10 +15,6 @@ def __getattr__(name):
     return getattr(tensorflow.experimental.numpy, name)
 
 
-def astype(obj, dtype):  # noqa: D103
-    return obj.astype(dtype)
-
-
 def _block_recursive(arrays, max_depth, depth=0):  # noqa: D103
     if depth < max_depth:
         arrs = [_block_recursive(arr, max_depth, depth + 1) for arr in arrays]

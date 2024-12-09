@@ -21,7 +21,7 @@ from ebcc.opt.ubrueckner import BruecknerUEBCC
 if TYPE_CHECKING:
     from typing import Any, Optional, TypeAlias, Union
 
-    from numpy import float64
+    from numpy import floating
     from numpy.typing import NDArray
     from pyscf.scf.hf import SCF
     from pyscf.scf.uhf import UHF
@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from ebcc.cc.rebcc import REBCC
     from ebcc.util import Namespace
 
-    T = float64
+    T = floating
 
     ERIsInputType: TypeAlias = Union[UERIs, UCDERIs, tuple[NDArray[T], ...]]
     SpinArrayType: TypeAlias = Namespace[NDArray[T]]

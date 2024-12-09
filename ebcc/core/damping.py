@@ -12,12 +12,12 @@ from ebcc.backend import _put, ensure_scalar
 if TYPE_CHECKING:
     from typing import Any, Optional
 
-    from numpy import float64
+    from numpy import floating
     from numpy.typing import NDArray
 
     from ebcc.util import _BaseOptions
 
-    T = float64
+    T = floating
 
 
 class BaseDamping(ABC):
