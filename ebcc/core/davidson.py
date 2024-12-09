@@ -23,7 +23,6 @@ if TYPE_CHECKING:
 
     T = TypeVar("T", float64, complex128)
 
-    OperandType = Union[str, tuple[int, ...], NDArray[T]]
     PreconditionerType = Callable[[NDArray[T], Union[NDArray[T], T]], NDArray[T]]
     PickType = Callable[
         [
@@ -34,26 +33,6 @@ if TYPE_CHECKING:
         ],
         tuple[NDArray[float64], NDArray[T], NDArray[int64]],
     ]
-
-
-def _einsum(
-    *operands: OperandType[T],
-    alpha: complex = 1.0,  # type: ignore[assignment]
-    beta: complex = 0.0,  # type: ignore[assignment]
-    out: Optional[NDArray[T]] = None,
-    contract: Optional[Callable[..., NDArray[T]]] = None,
-    optimize: bool = True,
-) -> NDArray[T]:
-    """Wrapper for `util.einsum` which has static typing hard-coded for real types."""
-    out = util.einsum(
-        *operands,  # type: ignore
-        alpha=alpha,  # type: ignore
-        beta=beta,  # type: ignore
-        out=out,  # type: ignore
-        contract=contract,  # type: ignore
-        optimize=optimize,  # type: ignore
-    )
-    return out  # type: ignore
 
 
 def make_diagonal_preconditioner(
@@ -180,19 +159,19 @@ def _fill_subspace_matrix(
     matrix = _put(
         matrix_prev,
         np.ix_(itrial, itrial),
-        _einsum("ik,jk->ij", np.conj(trial_vectors), matrix_trial_vectors),
+        util.einsum("ik,jk->ij", np.conj(trial_vectors), matrix_trial_vectors),
     )
 
     matrix = _put(
         matrix,
         np.ix_(ibasis, itrial),
-        _einsum("ik,jk->ij", np.conj(basis_vectors[:row0]), matrix_trial_vectors[:num]),
+        util.einsum("ik,jk->ij", np.conj(basis_vectors[:row0]), matrix_trial_vectors[:num]),
     )
 
     matrix = _put(
         matrix,
         np.ix_(itrial, ibasis),
-        _einsum("ik,jk->ij", np.conj(trial_vectors[:num]), matrix_basis_vectors[:row0]),
+        util.einsum("ik,jk->ij", np.conj(trial_vectors[:num]), matrix_basis_vectors[:row0]),
     )
 
     return matrix
@@ -258,7 +237,9 @@ def _project_vectors(
     Returns:
         The projected vectors.
     """
-    projection: NDArray[T] = _einsum("ik,lk,lj->ij", vectors, np.conj(basis_vectors), basis_vectors)
+    projection: NDArray[T] = util.einsum(
+        "ik,lk,lj->ij", vectors, np.conj(basis_vectors), basis_vectors
+    )
     return vectors - projection
 
 
@@ -287,7 +268,7 @@ def _outer_product_to_subspace(vectors: NDArray[T], basis_vectors: NDArray[T]) -
     Returns:
         The outer product of the vectors
     """
-    vectors_out: NDArray[T] = _einsum("xi,xj->ij", vectors, basis_vectors)
+    vectors_out: NDArray[T] = util.einsum("xi,xj->ij", vectors, basis_vectors)
     return vectors_out
 
 
