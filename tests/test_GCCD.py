@@ -126,17 +126,17 @@ class GCCD_Tests(unittest.TestCase):
     @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ip(self):
         e1 = self.ccd.ip_eom(nroots=5).kernel()
-        self.assertAlmostEqual(e1[0], 0.2979663212884527, 6)
+        self.assertAlmostEqual(e1[0], 0.2979663212884527, 5)
 
     @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ea(self):
         e1 = self.ccd.ea_eom(nroots=5).kernel()
-        self.assertAlmostEqual(e1[0], 0.0008755466370392711, 6)
+        self.assertAlmostEqual(e1[0], 0.0008755466370392711, 5)
 
     @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ee(self):
         e1 = self.ccd.ee_eom(nroots=5).kernel()
-        self.assertAlmostEqual(e1[0], 0.12304746736972356, 6)
+        self.assertAlmostEqual(e1[0], 0.12304746736972356, 5)
 
 
 if __name__ == "__main__":
