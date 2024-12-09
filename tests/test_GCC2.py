@@ -138,7 +138,7 @@ class GCC2_Tests(unittest.TestCase):
     @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ip(self):
         e1 = self.ccsd.ip_eom(nroots=5).kernel()
-        self.assertAlmostEqual(e1[0], 0.4334082808900563, 6)
+        self.assertAlmostEqual(e1[0], 0.4334082809484607, 6)
 
     @pytest.mark.skipif(BACKEND != "numpy", reason="EOM is currently too slow with non-NumPy backends")
     def test_eom_ea(self):
