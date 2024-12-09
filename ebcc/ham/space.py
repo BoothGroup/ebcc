@@ -12,14 +12,14 @@ from ebcc.core.precision import types
 if TYPE_CHECKING:
     from typing import Optional, Union
 
-    from numpy import bool_, float64
+    from numpy import bool_, floating
     from numpy.typing import NDArray
     from pyscf.scf.hf import SCF
 
     from ebcc.cc.base import SpinArrayType
     from ebcc.util import Namespace
 
-    T = float64
+    T = floating
     B = bool_
     _slice = slice
 

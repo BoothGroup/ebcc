@@ -12,16 +12,16 @@ import scipy.linalg
 from ebcc import numpy as np
 from ebcc import util
 from ebcc.backend import _put
-from ebcc.core.precision import types
+from ebcc.core.precision import types, astype
 
 if TYPE_CHECKING:
     from typing import Any, Callable, Optional, TypeVar, Union
 
     from mypy_extensions import DefaultArg
-    from numpy import complex128, float64, int64
+    from numpy import integer, floating, complexfloating
     from numpy.typing import NDArray
 
-    T = TypeVar("T", float64, complex128)
+    T = TypeVar("T", floating, complexfloating)
 
     PreconditionerType = Callable[[NDArray[T], Union[NDArray[T], T]], NDArray[T]]
     PickType = Callable[
@@ -31,12 +31,12 @@ if TYPE_CHECKING:
             int,
             DefaultArg(Optional[NDArray[T]], "basis_vectors"),  # noqa: F821
         ],
-        tuple[NDArray[float64], NDArray[T], NDArray[int64]],
+        tuple[NDArray[floating], NDArray[T], NDArray[integer]],
     ]
 
 
 def make_diagonal_preconditioner(
-    diag: NDArray[float64], level_shift: float = 0.0, tol: float = 1e-8
+    diag: NDArray[floating], level_shift: float = 0.0, tol: float = 1e-8
 ) -> PreconditionerType[T]:
     """Generate the preconditioner function.
 
@@ -73,7 +73,7 @@ def pick_real_eigenvalues(
     v: NDArray[T],
     nroots: int,
     basis_vectors: Optional[NDArray[T]] = None,
-) -> tuple[NDArray[float64], NDArray[T], NDArray[int64]]:
+) -> tuple[NDArray[floating], NDArray[T], NDArray[integer]]:
     """Search for eigenvalues that are real or close to real.
 
     Args:
@@ -95,9 +95,9 @@ def pick_real_eigenvalues(
 def make_eigenvectors_real(
     w: NDArray[T],
     v: NDArray[T],
-    real_idx: NDArray[int64],
+    real_idx: NDArray[integer],
     real_eigenvectors: bool = True,
-) -> tuple[NDArray[float64], NDArray[T], NDArray[int64]]:
+) -> tuple[NDArray[floating], NDArray[T], NDArray[integer]]:
     """Transform the eigenvectors to be real-valued.
 
     If a complex eigenvalue has a small imaginary part, both the real and imaginary parts of the
@@ -178,11 +178,11 @@ def _fill_subspace_matrix(
 
 
 def _sort_eigenvalues(
-    w_prev: NDArray[float64],
+    w_prev: NDArray[floating],
     conv_prev: list[bool],
     v_prev: NDArray[T],
     v: NDArray[T],
-) -> tuple[NDArray[float64], list[bool]]:
+) -> tuple[NDArray[floating], list[bool]]:
     """Sort the eigenvalues.
 
     Reorders the eigenvalues of the last iteration to make them comparable to the eigenvalues of
@@ -253,7 +253,7 @@ def _normalise_vectors(vectors: NDArray[T], lindep_tol: float = 1e-14) -> NDArra
     Returns:
         The normalized vectors.
     """
-    norms: NDArray[float64] = np.real(np.linalg.norm(vectors, axis=1, ord=2))
+    norms: NDArray[floating] = np.real(np.linalg.norm(vectors, axis=1, ord=2))
     mask = norms**2 > lindep_tol
     return vectors[mask] / norms[mask][:, None]
 
@@ -275,7 +275,7 @@ def _outer_product_to_subspace(vectors: NDArray[T], basis_vectors: NDArray[T]) -
 def davidson(
     matvec: Callable[[NDArray[T]], NDArray[T]],
     vectors: NDArray[T],
-    diagonal: NDArray[float64],
+    diagonal: NDArray[floating],
     nroots: int = 1,
     max_iter: int = 50,
     max_space: int = 20,
@@ -288,7 +288,7 @@ def davidson(
     follow_state: bool = False,
     level_shift: float = 0.0,
     callback: Optional[Callable[[dict[str, Any]], None]] = None,
-) -> tuple[list[bool], NDArray[float64], NDArray[T]]:
+) -> tuple[list[bool], NDArray[floating], NDArray[T]]:
     """Davidson algorithm for finding eigenvalues and eigenvectors."""
     # Parse arguments
     loose_tol = r_tol if r_tol is not None else e_tol**0.5
@@ -303,7 +303,7 @@ def davidson(
         return np.empty((0, dim), dtype=types[complex])
 
     # Initialise variables
-    w: NDArray[float64] = np.empty(0, dtype=types[float])
+    w: NDArray[floating] = np.empty(0, dtype=types[float])
     v: NDArray[T] = _empty_vector()
     conv: list[bool] = [False] * nroots
     w_prev = np.copy(w)

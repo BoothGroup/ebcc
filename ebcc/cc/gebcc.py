@@ -23,7 +23,7 @@ from ebcc.opt.gbrueckner import BruecknerGEBCC
 if TYPE_CHECKING:
     from typing import Any, Optional, TypeAlias, Union
 
-    from numpy import float64
+    from numpy import floating
     from numpy.typing import NDArray
     from pyscf.scf.ghf import GHF
     from pyscf.scf.hf import SCF
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
     from ebcc.cc.uebcc import UEBCC
     from ebcc.util import Namespace
 
-    T = float64
+    T = floating
 
     ERIsInputType: TypeAlias = Union[GERIs, NDArray[T]]
     SpinArrayType: TypeAlias = NDArray[T]

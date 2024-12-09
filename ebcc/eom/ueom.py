@@ -11,14 +11,14 @@ from ebcc.eom.base import BaseEA_EOM, BaseEE_EOM, BaseEOM, BaseIP_EOM
 if TYPE_CHECKING:
     from typing import Optional
 
-    from numpy import float64
+    from numpy import floating
     from numpy.typing import NDArray
 
     from ebcc.cc.uebcc import UEBCC, ERIsInputType, SpinArrayType
     from ebcc.ham.space import Space
     from ebcc.util import Namespace
 
-    T = float64
+    T = floating
 
 
 class UEOM(BaseEOM):

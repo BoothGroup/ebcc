@@ -15,14 +15,14 @@ from ebcc.opt.base import BaseBruecknerEBCC
 if TYPE_CHECKING:
     from typing import Optional
 
-    from numpy import float64
+    from numpy import floating
     from numpy.typing import NDArray
 
     from ebcc.cc.uebcc import UEBCC, SpinArrayType
     from ebcc.core.damping import BaseDamping
     from ebcc.util import Namespace
 
-    T = float64
+    T = floating
 
 
 class BruecknerUEBCC(BaseBruecknerEBCC):

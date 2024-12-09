@@ -8,10 +8,10 @@ from ebcc import numpy as np
 from ebcc.ham.base import BaseElectronBoson, BaseGHamiltonian, BaseRHamiltonian, BaseUHamiltonian
 
 if TYPE_CHECKING:
-    from numpy import float64
+    from numpy import floating
     from numpy.typing import NDArray
 
-    T = float64
+    T = floating
 
 
 class RElectronBoson(BaseElectronBoson, BaseRHamiltonian):

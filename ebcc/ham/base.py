@@ -17,7 +17,7 @@ from ebcc.util import Namespace
 if TYPE_CHECKING:
     from typing import Optional
 
-    from numpy import float64
+    from numpy import floating
     from numpy.typing import NDArray
     from pyscf.scf.hf import SCF
 
@@ -27,9 +27,9 @@ if TYPE_CHECKING:
     from ebcc.cc.uebcc import SpaceType as USpaceType
 
     CoeffType = Any
-    RCoeffType = NDArray[float64]
-    UCoeffType = tuple[NDArray[float64], NDArray[float64]]
-    GCoeffType = NDArray[float64]
+    RCoeffType = NDArray[floating]
+    UCoeffType = tuple[NDArray[floating], NDArray[floating]]
+    GCoeffType = NDArray[floating]
 
 
 class BaseHamiltonian(Namespace[Any], ABC):
@@ -145,7 +145,7 @@ class BaseFock(BaseHamiltonian):
         mo_coeff: Optional[tuple[CoeffType, ...]] = None,
         g: Optional[Namespace[Any]] = None,
         shift: Optional[bool] = None,
-        xi: Optional[NDArray[float64]] = None,
+        xi: Optional[NDArray[floating]] = None,
     ) -> None:
         """Initialise the Hamiltonian.
 
@@ -179,7 +179,7 @@ class BaseElectronBoson(BaseHamiltonian):
     def __init__(
         self,
         mf: SCF,
-        g: NDArray[float64],
+        g: NDArray[floating],
         space: tuple[SpaceType, ...],
         mo_coeff: Optional[tuple[CoeffType, ...]] = None,
     ) -> None:

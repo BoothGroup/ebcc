@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from types import ModuleType
     from typing import Union, TypeVar, Optional
 
-    from numpy import int64, generic
+    from numpy import integer, generic
     from numpy.typing import NDArray
 
     T = TypeVar("T", bound=generic)
@@ -106,7 +106,7 @@ def to_numpy(array: NDArray[T], dtype: Optional[type[generic]] = None) -> NDArra
 
 def _put(
     array: NDArray[T],
-    indices: Union[NDArray[int64], tuple[NDArray[int64], ...]],
+    indices: Union[NDArray[integer], tuple[NDArray[integer], ...]],
     values: NDArray[T],
 ) -> NDArray[T]:
     """Put values into an array at specified indices.
@@ -161,7 +161,7 @@ def _put(
 
 def _inflate(
     shape: tuple[int, ...],
-    indices: Union[NDArray[int64], tuple[NDArray[int64], ...]],
+    indices: Union[NDArray[integer], tuple[NDArray[integer], ...]],
     values: NDArray[T],
 ) -> NDArray[T]:
     """Inflate values into an array at specified indices.

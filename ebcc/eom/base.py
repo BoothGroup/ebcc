@@ -20,7 +20,7 @@ from ebcc.core.precision import types
 if TYPE_CHECKING:
     from typing import Any, Optional
 
-    from numpy import float64, int64
+    from numpy import floating, integer
     from numpy.typing import NDArray
 
     from ebcc.cc.base import BaseEBCC, ERIsInputType, SpaceType, SpinArrayType
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from ebcc.core.davidson import PickType
     from ebcc.util import Namespace
 
-    T = float64
+    T = floating
 
 # TODO Custom implementation
 
@@ -213,7 +213,7 @@ class BaseEOM(ABC):
                 v: NDArray[T],
                 nroots: int,
                 basis_vectors: Optional[NDArray[T]] = None,
-            ) -> tuple[NDArray[T], NDArray[T], NDArray[int64]]:
+            ) -> tuple[NDArray[T], NDArray[T], NDArray[integer]]:
                 """Pick the eigenvalues using the overlap with the guess vector."""
                 assert basis_vectors is not None
                 x0 = _outer_product_to_subspace(v, basis_vectors)

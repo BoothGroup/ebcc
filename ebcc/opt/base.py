@@ -19,14 +19,14 @@ from ebcc.util import _BaseOptions
 if TYPE_CHECKING:
     from typing import Any, Optional
 
-    from numpy import float64
+    from numpy import floating
     from numpy.typing import NDArray
 
     from ebcc.cc.base import BaseEBCC, SpinArrayType
     from ebcc.core.damping import BaseDamping
     from ebcc.util import Namespace
 
-    T = float64
+    T = floating
 
 # FIXME Custom versions of PySCF functions
 

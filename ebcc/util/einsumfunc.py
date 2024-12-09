@@ -14,10 +14,10 @@ from ebcc.core.precision import types
 if TYPE_CHECKING:
     from typing import Callable, Optional, TypeVar, Union
 
-    from numpy import complex128, float64
+    from numpy import floating, complexfloating
     from numpy.typing import NDArray
 
-    T = TypeVar("T", float64, complex128)
+    T = TypeVar("T", floating, complexfloating)
 
     OperandType = Union[str, tuple[int, ...], NDArray[T]]
     EinsumInput = tuple[str, str, list[NDArray[T]]]
@@ -415,7 +415,8 @@ def _contract_tblis(
     # If any dimension has size zero, return here
     if a.size == 0 or b.size == 0:
         if out is not None:
-            return np.reshape(out, shape_c) * beta
+            out_reshaped: NDArray[T] = np.reshape(out, shape_c)
+            return out_reshaped * beta
         else:
             return np.zeros(shape_c, dtype=dtype)
 
