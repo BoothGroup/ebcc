@@ -18,7 +18,7 @@ from ebcc.ham.elbos import GElectronBoson
 from ebcc.ham.eris import GERIs
 from ebcc.ham.fock import GFock
 from ebcc.ham.space import Space
-from ebcc.opt.gbrueckner import BruecknerGEBCC
+from ebcc.opt.gopt import BruecknerGEBCC, OptimisedGEBCC
 
 if TYPE_CHECKING:
     from typing import Any, Optional, TypeAlias, Union
@@ -47,6 +47,7 @@ class GEBCC(BaseEBCC):
     Fock = GFock
     ElectronBoson = GElectronBoson
     Brueckner = BruecknerGEBCC
+    Optimised = OptimisedGEBCC
     ExternalCorrection = ExternalCorrectionGEBCC
     Tailor = TailorGEBCC
 
