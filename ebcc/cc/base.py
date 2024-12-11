@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from ebcc.ext.eccc import BaseExternalCorrection
     from ebcc.ext.tcc import BaseTailor
     from ebcc.ham.base import BaseElectronBoson, BaseFock
-    from ebcc.opt.base import BaseBruecknerEBCC
+    from ebcc.opt.base import BaseBruecknerEBCC, BaseOptimisedEBCC
     from ebcc.util import Namespace
 
     T = floating
@@ -81,6 +81,7 @@ class BaseEBCC(ABC):
     CDERIs: type[BaseERIs]
     ElectronBoson: type[BaseElectronBoson]
     Brueckner: type[BaseBruecknerEBCC]
+    Optimised: type[BaseOptimisedEBCC]
     ExternalCorrection: type[BaseExternalCorrection]
     Tailor: type[BaseTailor]
 
@@ -294,11 +295,11 @@ class BaseEBCC(ABC):
                 converged = converged_e and converged_t
                 if converged:
                     self.log.debug("")
-                    self.log.output(f"{ANSI.g}Converged.{ANSI.R}")
+                    self.log.output(f"{ANSI.g}Converged{ANSI.R}.")
                     break
             else:
                 self.log.debug("")
-                self.log.warning(f"{ANSI.r}Failed to converge.{ANSI.R}")
+                self.log.warning(f"{ANSI.r}Failed to converge{ANSI.R}.")
 
             # Include perturbative correction if required:
             if self.ansatz.has_perturbative_correction:
@@ -385,11 +386,11 @@ class BaseEBCC(ABC):
             # Check for convergence:
             if converged:
                 self.log.debug("")
-                self.log.output(f"{ANSI.g}Converged.{ANSI.R}")
+                self.log.output(f"{ANSI.g}Converged{ANSI.R}.")
                 break
         else:
             self.log.debug("")
-            self.log.warning(f"{ANSI.r}Failed to converge.{ANSI.R}")
+            self.log.warning(f"{ANSI.r}Failed to converge{ANSI.R}.")
 
         self.log.debug("")
         self.log.debug("Time elapsed: %s", timer.format_time(timer()))
@@ -450,6 +451,21 @@ class BaseEBCC(ABC):
         """
         bcc = self.Brueckner(self, *args, **kwargs)
         return bcc.kernel()
+
+    def optimised(self, *args: Any, **kwargs: Any) -> float:
+        """Run an optimised coupled cluster calculation.
+
+        The coupled cluster object will be updated in-place.
+
+        Args:
+            *args: Arguments to pass to the optimised object.
+            **kwargs: Keyword arguments to pass to the optimised object.
+
+        Returns:
+            Correlation energy.
+        """
+        opt = self.Optimised(self, *args, **kwargs)
+        return opt.kernel()
 
     def external_correction(self, *args: Any, **kwargs: Any) -> float:
         """Run an externally corrected coupled cluster calculation.
@@ -625,7 +641,7 @@ class BaseEBCC(ABC):
             eris=eris,
             amplitudes=amplitudes,
         )
-        res: float = ensure_scalar(func(**kwargs)).real
+        res: float = np.real(ensure_scalar(func(**kwargs)))
         return astype(res, float)
 
     def energy_perturbative(
@@ -650,7 +666,7 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        res: float = ensure_scalar(func(**kwargs)).real
+        res: float = np.real(ensure_scalar(func(**kwargs)))
         return res
 
     @abstractmethod

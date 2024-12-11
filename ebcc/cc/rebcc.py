@@ -16,7 +16,7 @@ from ebcc.ham.elbos import RElectronBoson
 from ebcc.ham.eris import RERIs
 from ebcc.ham.fock import RFock
 from ebcc.ham.space import Space
-from ebcc.opt.rbrueckner import BruecknerREBCC
+from ebcc.opt.ropt import BruecknerREBCC, OptimisedREBCC
 
 if TYPE_CHECKING:
     from typing import Any, Optional, TypeAlias, Union
@@ -43,6 +43,7 @@ class REBCC(BaseEBCC):
     CDERIs = RCDERIs
     ElectronBoson = RElectronBoson
     Brueckner = BruecknerREBCC
+    Optimised = OptimisedREBCC
     ExternalCorrection = ExternalCorrectionREBCC
     Tailor = TailorREBCC
 

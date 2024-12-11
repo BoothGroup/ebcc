@@ -16,7 +16,7 @@ from ebcc.ham.elbos import UElectronBoson
 from ebcc.ham.eris import UERIs
 from ebcc.ham.fock import UFock
 from ebcc.ham.space import Space
-from ebcc.opt.ubrueckner import BruecknerUEBCC
+from ebcc.opt.uopt import BruecknerUEBCC, OptimisedUEBCC
 
 if TYPE_CHECKING:
     from typing import Any, Optional, TypeAlias, Union
@@ -45,6 +45,7 @@ class UEBCC(BaseEBCC):
     CDERIs = UCDERIs
     ElectronBoson = UElectronBoson
     Brueckner = BruecknerUEBCC
+    Optimised = OptimisedUEBCC
     ExternalCorrection = ExternalCorrectionUEBCC
     Tailor = TailorUEBCC
 

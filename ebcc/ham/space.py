@@ -168,6 +168,17 @@ class Space:
         """
         return self.mask(char)[self.virtual]
 
+    def xmask(self, char: str) -> NDArray[B]:
+        """Like `mask`, but returns only a mask into only the correlated sector.
+
+        Args:
+            char: Character to convert.
+
+        Returns:
+            Mask of the space.
+        """
+        return self.mask(char)[self.correlated]
+
     def oslice(self, char: str) -> _slice:
         """Like `slice`, but returns only a slice into only the occupied sector.
 
@@ -193,6 +204,19 @@ class Space:
         s = self.slice(char)
         nocc = self.nocc
         return slice(max(s.start, nocc) - nocc, s.stop - nocc)
+
+    def xslice(self, char: str) -> _slice:
+        """Like `slice`, but returns only a slice into only the correlated sector.
+
+        Args:
+            char: Character to convert.
+
+        Returns:
+            Slice of the space.
+        """
+        s = self.slice(char)
+        nfocc = self.nfocc
+        return slice(s.start - nfocc, s.stop - nfocc)
 
     # Full space:
 
