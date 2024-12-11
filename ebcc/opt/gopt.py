@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from numpy import floating
     from numpy.typing import NDArray
 
-    from ebcc.cc.gebcc import GEBCC, SpinArrayType, ERIsInputType
+    from ebcc.cc.gebcc import GEBCC, ERIsInputType, SpinArrayType
     from ebcc.core.damping import BaseDamping
     from ebcc.util import Namespace
 
