@@ -312,11 +312,11 @@ class BaseEOM(ABC):
         # Check for convergence:
         if all(converged):
             self.log.debug("")
-            self.log.output(f"{ANSI.g}Converged.{ANSI.R}")
+            self.log.output(f"{ANSI.g}Converged{ANSI.R}.")
         else:
             self.log.debug("")
             self.log.warning(
-                f"{ANSI.r}Failed to converge {sum(not c for c in converged)} roots.{ANSI.R}"
+                f"{ANSI.r}Failed to converge {sum(not c for c in converged)} roots{ANSI.R}."
             )
 
         # Update attributes:
