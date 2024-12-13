@@ -294,11 +294,11 @@ class BaseEBCC(ABC):
                 converged = converged_e and converged_t
                 if converged:
                     self.log.debug("")
-                    self.log.output(f"{ANSI.g}Converged.{ANSI.R}")
+                    self.log.output(f"{ANSI.g}Converged{ANSI.R}.")
                     break
             else:
                 self.log.debug("")
-                self.log.warning(f"{ANSI.r}Failed to converge.{ANSI.R}")
+                self.log.warning(f"{ANSI.r}Failed to converge{ANSI.R}.")
 
             # Include perturbative correction if required:
             if self.ansatz.has_perturbative_correction:
@@ -385,11 +385,11 @@ class BaseEBCC(ABC):
             # Check for convergence:
             if converged:
                 self.log.debug("")
-                self.log.output(f"{ANSI.g}Converged.{ANSI.R}")
+                self.log.output(f"{ANSI.g}Converged{ANSI.R}.")
                 break
         else:
             self.log.debug("")
-            self.log.warning(f"{ANSI.r}Failed to converge.{ANSI.R}")
+            self.log.warning(f"{ANSI.r}Failed to converge{ANSI.R}.")
 
         self.log.debug("")
         self.log.debug("Time elapsed: %s", timer.format_time(timer()))
@@ -625,7 +625,7 @@ class BaseEBCC(ABC):
             eris=eris,
             amplitudes=amplitudes,
         )
-        res: float = ensure_scalar(func(**kwargs)).real
+        res: float = np.real(ensure_scalar(func(**kwargs)))
         return astype(res, float)
 
     def energy_perturbative(
@@ -650,7 +650,7 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        res: float = ensure_scalar(func(**kwargs)).real
+        res: float = np.real(ensure_scalar(func(**kwargs)))
         return res
 
     @abstractmethod

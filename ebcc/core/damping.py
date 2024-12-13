@@ -5,9 +5,13 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
+import numpy
+
+from ebcc import BACKEND
 from ebcc import numpy as np
 from ebcc import util
 from ebcc.backend import _put, ensure_scalar
+from ebcc.core.precision import types
 
 if TYPE_CHECKING:
     from typing import Any, Optional
@@ -18,6 +22,9 @@ if TYPE_CHECKING:
     from ebcc.util import _BaseOptions
 
     T = floating
+
+"""The backend may be slow and unnecessary here for some applications."""
+USE_BACKEND = False
 
 
 class BaseDamping(ABC):
@@ -207,9 +214,13 @@ class DIIS(BaseDamping):
             The error norm.
         """
         if (i, j) not in self._norm_cache:
-            self._norm_cache[i, j] = ensure_scalar(
+            inner = ensure_scalar(
                 np.dot(np.conj(np.ravel(self._errors[i])), np.ravel(self._errors[j]))
             )
+            if not USE_BACKEND and BACKEND == "jax":
+                # Remove tracing
+                inner = types[float](inner.item())
+            self._norm_cache[i, j] = inner
             self._norm_cache[j, i] = self._norm_cache[i, j].conjugate()
         return self._norm_cache[i, j]
 
@@ -253,32 +264,42 @@ class DIIS(BaseDamping):
         if size < self.min_space:
             return self._arrays[-1]
 
+        # Get the backend
+        if USE_BACKEND:
+            backend = np
+        else:
+            backend = numpy
+
         # Build the error matrix
-        errors = np.array(
+        errors = backend.array(
             [
                 [self._error_norm(counter_i, counter_j) for counter_j in counters]
                 for counter_i in counters
             ]
         )
-        zeros = np.zeros((1, 1), dtype=errors.dtype)
-        ones = np.ones((size, 1), dtype=errors.dtype)
-        matrix = np.block([[errors, -ones], [-np.transpose(ones), zeros]])
+        zeros = backend.zeros((1, 1), dtype=errors.dtype)
+        ones = backend.ones((size, 1), dtype=errors.dtype)
+        matrix = backend.block([[errors, -ones], [-backend.transpose(ones), zeros]])
 
         # Build the right-hand side
-        zeros = np.zeros((size,), dtype=errors.dtype)
-        ones = np.ones((1,), dtype=errors.dtype)
-        residual = np.block([zeros, -ones])
+        zeros = backend.zeros((size,), dtype=errors.dtype)
+        ones = backend.ones((1,), dtype=errors.dtype)
+        residual = backend.block([zeros, -ones])
 
         # Solve the linear problem
         try:
-            c = np.linalg.solve(matrix, residual)
+            c = backend.linalg.solve(matrix, residual)
         except Exception:
-            w, v = np.linalg.eigh(matrix)
-            if np.any(np.abs(w) < 1e-14):
+            w, v = backend.linalg.eigh(matrix)
+            if backend.any(backend.abs(w) < 1e-14):
                 # avoiding fancy indexing for compatibility
                 for i in range(size + 1):
-                    if np.abs(w[i]) < 1e-14:
-                        _put(v, np.ix_(np.arange(size + 1), np.array([i])), np.zeros_like(v[:, i]))
+                    if backend.abs(w[i]) < 1e-14:
+                        _put(
+                            v,
+                            backend.ix_(backend.arange(size + 1), backend.array([i])),
+                            backend.zeros_like(v[:, i]),
+                        )
             c = util.einsum("pi,qi,i,q->p", v, np.conj(v), w**-1.0, residual)
 
         # Construct the new array

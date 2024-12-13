@@ -202,11 +202,11 @@ class BaseBruecknerEBCC(ABC):
             converged = converged_e and converged_t
             if converged:
                 self.log.debug("")
-                self.log.output(f"{ANSI.g}Converged.{ANSI.R}")
+                self.log.output(f"{ANSI.g}Converged{ANSI.R}.")
                 break
         else:
             self.log.debug("")
-            self.log.warning(f"{ANSI.r}Failed to converge.{ANSI.R}")
+            self.log.warning(f"{ANSI.r}Failed to converge{ANSI.R}.")
 
         self.cc.log.debug("")
         self.cc.log.output("E(corr) = %.10f", self.cc.e_corr)
