@@ -19,6 +19,8 @@ from __future__ import annotations
 import importlib
 from typing import TYPE_CHECKING
 
+import numpy
+
 from ebcc import BACKEND
 
 if TYPE_CHECKING:
@@ -92,7 +94,7 @@ def to_numpy(array: NDArray[T], dtype: Optional[type[generic]] = None) -> NDArra
     elif BACKEND == "cupy":
         ndarray = np.asnumpy(array)  # type: ignore
     elif BACKEND == "jax":
-        ndarray = np.array(array)  # type: ignore
+        ndarray = numpy.asarray(array)  # type: ignore
     elif BACKEND == "tensorflow":
         ndarray = array.numpy()  # type: ignore
     elif BACKEND in ("ctf", "cyclops"):
