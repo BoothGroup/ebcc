@@ -2,6 +2,7 @@
 Generate the ecCC code.
 """
 
+import itertools
 import sys
 
 import pdaggerq
@@ -195,6 +196,35 @@ with Stopwatch("C->T conversions"):
         for name, codegen in code_generators.items():
             codegen(
                 f"convert_c{n + 1}_to_t{n + 1}",
+                returns,
+                output_expr,
+                as_dict=True,
+            )
+
+with Stopwatch("T->C conversions"):
+    # Get the T amplitudes in albert format
+    eT = [[1.0, ["1"]]]
+    for n in range(4):
+        factor = 1 / factorial(n + 1)
+        for ts in itertools.product(["t1", "t2", "t3", "t4"], repeat=n + 1):
+            eT.append([factor, list(ts)])
+
+    for n in range(4):
+        # Get the T->C contractions in pdaggerq format
+        pq.clear()
+        pq.set_left_operators([[f"e{n + 1}({','.join('ijkl'[:n + 1]+''.join(reversed('abcd'[:n + 1])))})"]])
+        pq.set_right_operators([["1"]])
+        for term in eT:
+            pq.add_operator_product(term[0], term[1])
+        pq.simplify()
+        terms = pq.strings()
+
+        # Get the T->C contractions in albert format
+        output_expr, returns = get_amplitudes([terms], spin, strategy="exhaust" if (n, spin) != (4, "uhf") else "greedy", orders=[n + 1])
+
+        for name, codegen in code_generators.items():
+            codegen(
+                f"convert_t{n + 1}_to_c{n + 1}",
                 returns,
                 output_expr,
                 as_dict=True,
