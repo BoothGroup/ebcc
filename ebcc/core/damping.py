@@ -7,10 +7,11 @@ from typing import TYPE_CHECKING
 
 import numpy
 
+from ebcc import BACKEND
 from ebcc import numpy as np
-from ebcc import util, BACKEND
+from ebcc import util
+from ebcc.backend import _put, ensure_scalar
 from ebcc.core.precision import types
-from ebcc.backend import _put, ensure_scalar, to_numpy
 
 if TYPE_CHECKING:
     from typing import Any, Optional

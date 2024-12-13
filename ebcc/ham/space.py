@@ -170,6 +170,7 @@ class Space:
 
     def xmask(self, char: str) -> NDArray[B]:
         """Like `mask`, but returns only a mask into only the correlated sector.
+
         Args:
             char: Character to convert.
         Returns:
@@ -205,6 +206,7 @@ class Space:
 
     def xslice(self, char: str) -> _slice:
         """Like `slice`, but returns only a slice into only the correlated sector.
+
         Args:
             char: Character to convert.
         Returns:
