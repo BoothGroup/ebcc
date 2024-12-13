@@ -173,6 +173,7 @@ class Space:
 
         Args:
             char: Character to convert.
+
         Returns:
             Mask of the space.
         """
@@ -209,6 +210,7 @@ class Space:
 
         Args:
             char: Character to convert.
+
         Returns:
             Slice of the space.
         """
