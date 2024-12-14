@@ -6,7 +6,7 @@ import itertools
 import sys
 
 import pdaggerq
-from albert.qc._pdaggerq import remove_reference_energy, remove_reference_energy_eom
+from albert.qc._pdaggerq import remove_reference_energy, remove_reference_energy_eom, import_from_pdaggerq
 from albert.qc.spin import ghf_to_uhf, ghf_to_rhf, get_amplitude_spins
 from albert.qc import ghf, uhf, rhf
 from albert.tensor import Tensor
@@ -219,8 +219,28 @@ with Stopwatch("T->C conversions"):
         pq.simplify()
         terms = pq.strings()
 
-        # Get the T->C contractions in albert format
-        output_expr, returns = get_amplitudes([terms], spin, strategy="exhaust" if (n, spin) != (4, "uhf") else "greedy", orders=[n + 1])
+        ## Get the T->C contractions in albert format
+        #output_expr, returns = get_amplitudes([terms], spin, strategy="exhaust" if (n, spin) != (4, "uhf") else "greedy", orders=[n + 1])
+
+        output = []
+        expr = []
+        returns = []
+        for index_spins in get_amplitude_spins("ijkl"[: n + 1], "abcd"[: n + 1], spin):
+            expr_n = import_from_pdaggerq(terms, index_spins=index_spins)
+            expr_n = spin_integrate(expr_n, spin)
+            if spin == "rhf" and (n + 1) == 4 and len([s for s in index_spins.values() if s == "a"]) == 6:
+                name = "c4a"
+            else:
+                name = f"c{n + 1}"
+            output_n = [Tensor(*tuple(sorted(e.external_indices, key=lambda i: "ijklabcd".index(i.name))), name=name) for e in expr_n]
+            returns_n = (output_n[0],)
+            expr.extend(expr_n)
+            output.extend(output_n)
+            returns.extend(returns_n)
+
+        # Optimise and generate the code separately for each amplitude
+        output_expr = optimise(output, expr, strategy="exhaust" if n < 3 else "trav")
+        output_expr = [(o, e.apply(lambda tensor: tensor.canonicalise(), Tensor)) for o, e in output_expr]
 
         for name, codegen in code_generators.items():
             codegen(
