@@ -8,8 +8,9 @@ from pyscf.ci.cisd import tn_addrs_signs
 
 from ebcc import numpy as np
 from ebcc import util
+from ebcc.backend import _put
 from ebcc.codegen import RecCC, UecCC
-from ebcc.backend import _inflate
+from ebcc.core.precision import types
 
 if TYPE_CHECKING:
     from typing import Iterator, Union
@@ -18,7 +19,8 @@ if TYPE_CHECKING:
     from numpy.typing import NDArray
     from pyscf.fci import FCI
 
-    from ebcc.cc.rebcc import SpinArrayType
+    from ebcc.cc.rebcc import SpinArrayType as RSpinArrayType
+    from ebcc.cc.uebcc import SpinArrayType as USpinArrayType
     from ebcc.ham import Space
     from ebcc.util import Namespace
 
@@ -42,7 +44,7 @@ def _tn_addrs_signs(norb: int, nocc: int, order: int) -> tuple[NDArray[integer],
 
 def extract_amplitudes_restricted(
     fci: FCI, space: Space, max_order: int = 4
-) -> Namespace[SpinArrayType]:
+) -> Namespace[RSpinArrayType]:
     """Extract amplitudes from an FCI calculation with restricted symmetry.
 
     The FCI calculatiion should have been performed in the active space according to the given
@@ -61,7 +63,7 @@ def extract_amplitudes_restricted(
 
 def _extract_amplitudes_restricted(
     ci: NDArray[T], space: Space, max_order: int = 4
-) -> Namespace[SpinArrayType]:
+) -> Namespace[RSpinArrayType]:
     """Extract amplitudes from a CI vector with restricted symmetry.
 
     Args:
@@ -139,7 +141,7 @@ def _extract_amplitudes_restricted(
         c4a = _get_c("abaa")
 
     # Transform to T amplitudes
-    amps: Namespace[SpinArrayType] = util.Namespace()
+    amps: Namespace[RSpinArrayType] = util.Namespace()
     amps.t1 = RecCC.convert_c1_to_t1(c1=c1)["t1"]  # type: ignore
     if max_order > 1:
         amps.t2 = RecCC.convert_c2_to_t2(c2=c2, **dict(amps))["t2"]  # type: ignore
@@ -154,7 +156,7 @@ def _extract_amplitudes_restricted(
 
 
 def _pack_vector_restricted(
-    amps: Namespace[SpinArrayType], max_order: int = 4
+    amps: Namespace[RSpinArrayType], max_order: int = 4, normalise: bool = True
 ) -> NDArray[T]:
     """Pack the amplitudes into a CI vector with restricted symmetry.
 
@@ -162,35 +164,30 @@ def _pack_vector_restricted(
         amps: Cluster amplitudes.
         space: Space containing the frozen, correlated, and active fermionic spaces.
         max_order: Maximum order of the excitation.
+        normalise: Whether to normalise the CI vector. If the vector is not normalised, the
+            reference energy term (`ci[0, 0]`) will be `1.0`.
 
     Returns:
         CI vector.
     """
     if max_order > 4:
-        #TODO: Just to match extract_amplitudes_restricted
+        # TODO: Just to match extract_amplitudes_restricted
         raise NotImplementedError("Only up to 4th order amplitudes are supported.")
 
     # Get the adresses for each order
-    nocc = next(iter(amps.values())).shape[0]
-    nvir = next(iter(amps.values())).shape[-1]
+    nocc, nvir = amps.t1.shape
     addrs: dict[int, NDArray[integer]] = {}
     signs: dict[int, NDArray[integer]] = {}
     for order in range(1, max_order + 1):
         addrs[order], signs[order] = _tn_addrs_signs(nocc + nvir, nocc, order)
 
-    # TODO fix t4a
-
-    def _pack_vector(spins: str) -> (tuple[NDArray[integer], NDArray[integer]], NDArray[T]):
+    def _pack_vector(
+        spins: str, cn: NDArray[T]
+    ) -> tuple[tuple[Union[int, NDArray[integer]], Union[int, NDArray[integer]]], NDArray[T]]:
         """Get the CI vector for a given spin configuration and T amplitude.
 
         Also returns the indices for the given block of the CI vector.
         """
-        # Get the C amplitude
-        order = len(spins)
-        res = getattr(RecCC, f"convert_t{order}_to_c{order}")(**dict(amps))
-        cn = res[f"t{order}new"]  # TODO fix names
-        cn = getattr(cn, "o" * order + "v" * order)  # FIXME
-
         # Find the spins
         nalph = spins.count("a")
         nbeta = spins.count("b")
@@ -224,7 +221,7 @@ def _pack_vector_restricted(
 
         # Compress the axes
         cn = util.compress_axes(subscript, cn)
-        shape = (
+        shape: tuple[int, ...] = (
             util.get_compressed_size("".join([s for s in subscript if s in "ia"]), i=nocc, a=nvir),
             util.get_compressed_size("".join([s for s in subscript if s in "jb"]), j=nocc, b=nvir),
         )
@@ -240,38 +237,58 @@ def _pack_vector_restricted(
 
         return (addrsi, addrsj), cn.ravel()
 
+    # Get the C amplitudes
+    camps: Namespace[RSpinArrayType] = util.Namespace()
+    camps.update(RecCC.convert_t1_to_c1(**dict(amps)))  # type: ignore
+    if max_order > 1:
+        camps.update(RecCC.convert_t2_to_c2(**dict(amps)))  # type: ignore
+    if max_order > 2:
+        camps.update(RecCC.convert_t3_to_c3(**dict(amps)))  # type: ignore
+    if max_order > 3:
+        camps.update(RecCC.convert_t4_to_c4(**dict(amps)))  # type: ignore
+
     # Get the contributions to the CI vector
-    indices_i: list[NDArray[integer]] = []
-    indices_j: list[NDArray[integer]] = []
+    indices_i: list[Union[int, NDArray[integer]]] = []
+    indices_j: list[Union[int, NDArray[integer]]] = []
     values_ij: list[NDArray[T]] = []
     for order in range(1, max_order + 1):
         for spins in util.generate_spin_combinations(order, unique=True):
             # TODO: antisymmetry treatment?
-            ij, c = _pack_vector(spins[: order])
-            if isinstance(ij[0], int) and isinstance(ij[1], int):
-                indices_i.append(np.array([ij[0]]))
-                indices_j.append(np.array([ij[1]]))
-            elif isinstance(ij[0], int):
-                indices_i.append(np.full(len(ij[1]), ij[0]))
-                indices_j.append(ij[1])
-            elif isinstance(ij[1], int):
-                indices_i.append(ij[0])
-                indices_j.append(np.full(len(ij[0]), ij[1]))
+            nspins = (spins.count("a"), spins.count("b"))
+            cn = getattr(camps, f"c{order}{'a' if set(nspins) == {1, 3} else ''}")
+            ij, c = _pack_vector(spins[:order], cn)
+            indices_i.append(ij[0])
+            indices_j.append(ij[1])
             values_ij.append(c)
 
+    # Find the shape of the CI vector
+    shape = (
+        max([np.max(i) if np.asarray(i).size else 0 for i in indices_i]) + 1,
+        max([np.max(j) if np.asarray(j).size else 0 for j in indices_j]) + 1,
+    )
+
     # Build the CI vector
-    i = np.concatenate(indices_i)
-    j = np.concatenate(indices_j)
-    val = np.concatenate(values_ij)
-    shape = (np.max(i) + 1, np.max(j) + 1)
-    ci = _inflate(shape, np.ix_(i, j), val)
+    ci = np.zeros(shape, dtype=types[float])
+    for i, j, val in zip(indices_i, indices_j, values_ij):
+        ci = _put(
+            ci,
+            (i, j),  # type: ignore
+            val,
+        )
+
+    # Set to intermediate normalisation
+    ci[0, 0] = 1.0
+
+    # Normalise
+    if normalise:
+        ci /= np.linalg.norm(ci)
 
     return ci
 
 
 def extract_amplitudes_unrestricted(
     fci: FCI, space: tuple[Space, Space], max_order: int = 4
-) -> Namespace[SpinArrayType]:
+) -> Namespace[USpinArrayType]:
     """Extract amplitudes from an FCI calculation with unrestricted symmetry.
 
     The FCI calculatiion should have been performed in the active space according to the given
@@ -291,7 +308,7 @@ def extract_amplitudes_unrestricted(
 
 def _extract_amplitudes_unrestricted(
     ci: NDArray[T], space: tuple[Space, Space], max_order: int = 4
-) -> Namespace[SpinArrayType]:
+) -> Namespace[USpinArrayType]:
     """Extract amplitudes from a CI vector with unrestricted symmetry.
 
     Args:
@@ -339,7 +356,7 @@ def _extract_amplitudes_unrestricted(
             signsj = signsj[None, :]  # type: ignore
 
         # Get the amplitudes
-        cn = fci.ci[addrsi, addrsj] * signsi * signsj
+        cn = ci[addrsi, addrsj] * signsi * signsj
 
         # Decompress the axes
         shape = tuple(
@@ -359,7 +376,7 @@ def _extract_amplitudes_unrestricted(
         cn = np.transpose(cn, perm)
 
         # Scale by reference energy
-        cn /= fci.ci[0, 0]
+        cn /= ci[0, 0]
 
         return cn
 
@@ -378,7 +395,7 @@ def _extract_amplitudes_unrestricted(
         c4 = util.Namespace(**dict(_generator(4)))
 
     # Transform to T amplitudes
-    amps: Namespace[SpinArrayType] = util.Namespace()
+    amps: Namespace[USpinArrayType] = util.Namespace()
     amps.t1 = UecCC.convert_c1_to_t1(c1=c1)["t1"]  # type: ignore
     if max_order > 1:
         amps.t2 = UecCC.convert_c2_to_t2(c2=c2, **dict(amps))["t2"]  # type: ignore
@@ -393,3 +410,142 @@ def _extract_amplitudes_unrestricted(
     amps.t2.bbbb = (amps.t2.bbbb - amps.t2.bbbb.swapaxes(0, 1)) * 0.25  # type: ignore
 
     return amps
+
+
+def _pack_vector_unrestricted(
+    amps: Namespace[USpinArrayType], max_order: int = 4, normalise: bool = True
+) -> NDArray[T]:
+    """Pack the amplitudes into a CI vector with unrestricted symmetry.
+
+    Args:
+        amps: Cluster amplitudes.
+        max_order: Maximum order of the excitation.
+        normalise: Whether to normalise the CI vector. If the vector is not normalised, the
+            reference energy term (`ci[0, 0]`) will be `1.0`.
+
+    Returns:
+        CI vector.
+    """
+    if max_order > 4:
+        # TODO: Just to match extract_amplitudes_unrestricted
+        raise NotImplementedError("Only up to 4th order amplitudes are supported.")
+
+    # Get the adresses for each order
+    nocca, nvira = amps.t1.aa.shape
+    noccb, nvirb = amps.t1.bb.shape
+    nocc = (nocca, noccb)
+    nvir = (nvira, nvirb)
+    addrsa: dict[int, NDArray[integer]] = {}
+    signsa: dict[int, NDArray[integer]] = {}
+    addrsb: dict[int, NDArray[integer]] = {}
+    signsb: dict[int, NDArray[integer]] = {}
+    for order in range(1, max_order + 1):
+        addrsa[order], signsa[order] = _tn_addrs_signs(nocca + nvira, nocca, order)
+        addrsb[order], signsb[order] = _tn_addrs_signs(noccb + nvirb, noccb, order)
+
+    def _pack_vector(
+        spins: str, cn: NDArray[T]
+    ) -> tuple[tuple[Union[int, NDArray[integer]], Union[int, NDArray[integer]]], NDArray[T]]:
+        """Get the CI vector for a given spin configuration and T amplitude.
+
+        Also returns the indices for the given block of the CI vector.
+        """
+        # Find the spins
+        nalph = spins.count("a")
+        nbeta = spins.count("b")
+
+        # Get the addresses and signs
+        addrsi: Union[int, NDArray[integer]] = 0
+        addrsj: Union[int, NDArray[integer]] = 0
+        signsi: Union[int, NDArray[integer]] = 1
+        signsj: Union[int, NDArray[integer]] = 1
+        if nalph != 0:
+            addrsi = addrsa[nalph]
+            signsi = signsa[nalph]
+        if nbeta != 0:
+            addrsj = addrsb[nbeta]
+            signsj = signsb[nbeta]
+        if nalph != 0 and nbeta != 0:
+            addrsi, addrsj = np.ix_(addrsi, addrsj)  # type: ignore
+            signsi = signsi[:, None]  # type: ignore
+            signsj = signsj[None, :]  # type: ignore
+
+        # Transpose the axes
+        subscript = "i" * nalph + "a" * nalph + "j" * nbeta + "b" * nbeta
+        subscript_target = ""
+        for spin in spins:
+            subscript_target += "i" if spin == "a" else "j"
+        for spin in spins:
+            subscript_target += spin
+        perm = util.get_string_permutation(subscript, subscript_target)
+        perm = np.argsort(perm)
+        cn = np.transpose(cn, perm)
+
+        # Compress the axes
+        cn = util.compress_axes(subscript, cn)
+        shape: tuple[int, ...] = (
+            util.get_compressed_size(
+                "".join([s for s in subscript if s in "ia"]), i=nocc[0], a=nvir[0]
+            ),
+            util.get_compressed_size(
+                "".join([s for s in subscript if s in "jb"]), j=nocc[1], b=nvir[1]
+            ),
+        )
+        if "j" not in subscript and "b" not in subscript:
+            shape = shape[:-1]
+        if "i" not in subscript and "a" not in subscript:
+            shape = shape[1:]
+        cn = cn.reshape(shape)
+
+        # Scale by the signs
+        cn *= signsi
+        cn *= signsj
+
+        return (addrsi, addrsj), cn.ravel()
+
+    # Get the C amplitudes
+    camps: Namespace[USpinArrayType] = util.Namespace()
+    camps.update(UecCC.convert_t1_to_c1(**dict(amps)))  # type: ignore
+    if max_order > 1:
+        camps.update(UecCC.convert_t2_to_c2(**dict(amps)))  # type: ignore
+    if max_order > 2:
+        camps.update(UecCC.convert_t3_to_c3(**dict(amps)))  # type: ignore
+    if max_order > 3:
+        camps.update(UecCC.convert_t4_to_c4(**dict(amps)))  # type: ignore
+
+    # Get the contributions to the CI vector
+    indices_i: list[Union[int, NDArray[integer]]] = []
+    indices_j: list[Union[int, NDArray[integer]]] = []
+    values_ij: list[NDArray[T]] = []
+    for order in range(1, max_order + 1):
+        for spins in util.generate_spin_combinations(order, unique=True):
+            nspins = (spins.count("a"), spins.count("b"))
+            cn = getattr(getattr(camps, f"c{order}{'a' if set(nspins) == {1, 3} else ''}"), spins)
+            ij, c = _pack_vector(spins[:order], cn)
+            indices_i.append(ij[0])
+            indices_j.append(ij[1])
+            values_ij.append(c)
+
+    # Find the shape of the CI vector
+    shape = (
+        max([np.max(i) if np.asarray(i).size else 0 for i in indices_i]) + 1,
+        max([np.max(j) if np.asarray(j).size else 0 for j in indices_j]) + 1,
+    )
+
+    # Build the CI vector
+    ci = np.zeros(shape, dtype=types[float])
+    for i, j, val in zip(indices_i, indices_j, values_ij):
+        ci = _put(
+            ci,
+            (i, j),  # type: ignore
+            val,
+        )
+
+    # Set to intermediate normalisation
+    ci[0, 0] = 1.0
+
+    # Normalise
+    if normalise:
+        ci /= np.linalg.norm(ci)
+
+    return ci
