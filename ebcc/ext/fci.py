@@ -1,6 +1,7 @@
 """Tools for FCI solvers to get amplitudes."""
 
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 from pyscf.ci.cisd import tn_addrs_signs
