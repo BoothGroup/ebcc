@@ -27,6 +27,7 @@ from ebcc.util.permutations import (
     permutations_with_signs,
     permute_string,
     symmetrise,
+    symmetry_factor,
     tril_indices_ndim,
     unique,
 )

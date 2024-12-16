@@ -136,6 +136,11 @@ class UEBCC(BaseEBCC):
             amplitudes: Namespace[SpinArrayType] = util.Namespace()
 
             for name, key, n in ucc.ansatz.fermionic_cluster_ranks(spin_type=ucc.spin_type):
+                if n > 3:
+                    # FIXME: Need to handle different RHF spin cases
+                    raise util.ModelNotImplemented(
+                        "The conversion of amplitudes with n > 3 is not implemented."
+                    )
                 amplitudes[name] = util.Namespace()
                 for comb in util.generate_spin_combinations(n, unique=True):
                     subscript, _ = util.combine_subscripts(key, comb)
