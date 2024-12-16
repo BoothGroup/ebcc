@@ -91,10 +91,10 @@ def _coefficients_to_amplitudes_restricted(
     return amps
 
 
-def _ci_vector_to_amplitudes_restricted(
+def _ci_vector_to_coefficients_restricted(
     ci: NDArray[T], space: Space, max_order: int = 4
 ) -> Namespace[RSpinArrayType]:
-    """Extract amplitudes from a CI vector with restricted symmetry.
+    """Extract coefficient amplitudes from a CI vector with restricted symmetry.
 
     Args:
         ci: CI vector.
@@ -170,6 +170,25 @@ def _ci_vector_to_amplitudes_restricted(
     if max_order > 3:
         camps.c4 = _get_c("abab")
         camps.c4a = _get_c("abaa")
+
+    return camps
+
+
+def _ci_vector_to_amplitudes_restricted(
+    ci: NDArray[T], space: Space, max_order: int = 4
+) -> Namespace[RSpinArrayType]:
+    """Extract amplitudes from a CI vector with restricted symmetry.
+
+    Args:
+        ci: CI vector.
+        space: Space containing the frozen, correlated, and active fermionic spaces.
+        max_order: Maximum order of the excitation.
+
+    Returns:
+        Cluster amplitudes in the active space.
+    """
+    # Extract the C amplitudes
+    camps = _ci_vector_to_coefficients_restricted(ci, space, max_order=max_order)
 
     # Transform to T amplitudes
     amps = _coefficients_to_amplitudes_restricted(camps, max_order=max_order)
@@ -327,10 +346,10 @@ def _amplitudes_to_coefficients_unrestricted(
     return camps
 
 
-def _ci_vector_to_amplitudes_unrestricted(
+def _ci_vector_to_coefficients_unrestricted(
     ci: NDArray[T], space: tuple[Space, Space], max_order: int = 4
 ) -> Namespace[USpinArrayType]:
-    """Extract amplitudes from a CI vector with unrestricted symmetry.
+    """Extract coefficient amplitudes from a CI vector with unrestricted symmetry.
 
     Args:
         ci: CI vector.
@@ -415,6 +434,26 @@ def _ci_vector_to_amplitudes_unrestricted(
         camps.c3 = util.Namespace(**dict(_generator(3)))
     if max_order > 3:
         camps.c4 = util.Namespace(**dict(_generator(4)))
+
+    return camps
+
+
+def _ci_vector_to_amplitudes_unrestricted(
+    ci: NDArray[T], space: tuple[Space, Space], max_order: int = 4
+) -> Namespace[USpinArrayType]:
+    """Extract amplitudes from a CI vector with unrestricted symmetry.
+
+    Args:
+        ci: CI vector.
+        space: Space containing the frozen, correlated, and active fermionic spaces for each spin
+            channel.
+        max_order: Maximum order of the excitation.
+
+    Returns:
+        Cluster amplitudes in the active space.
+    """
+    # Extract the C amplitudes
+    camps = _ci_vector_to_coefficients_unrestricted(ci, space, max_order=max_order)
 
     # Transform to T amplitudes
     amps = _coefficients_to_amplitudes_unrestricted(camps, max_order=max_order)
