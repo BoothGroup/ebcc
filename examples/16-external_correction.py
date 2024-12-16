@@ -6,7 +6,7 @@ import numpy as np
 from pyscf import gto, scf, fci, ao2mo
 
 from ebcc import REBCC, Space
-from ebcc.ext.fci import extract_amplitudes_restricted
+from ebcc.ext.fci import fci_to_amplitudes_restricted
 
 # Define the molecule using PySCF
 mol = gto.Mole()
@@ -38,7 +38,7 @@ ci = fci.direct_spin1.FCI()
 ci.kernel(h1e, h2e, space.nact, space.naocc * 2)
 
 # Extract the amplitudes from the FCI calculation
-amplitudes = extract_amplitudes_restricted(ci, space)
+amplitudes = fci_to_amplitudes_restricted(ci, space)
 
 # Run an ecCC calculation
 eccc = REBCC(mf, ansatz="CCSD", space=space)

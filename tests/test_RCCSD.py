@@ -12,9 +12,14 @@ import pytest
 import scipy.linalg
 from pyscf import cc, dft, gto, lib, scf, fci
 
-from ebcc import REBCC, NullLogger, Space, BACKEND
+from ebcc import REBCC, NullLogger, Space, BACKEND, util
 from ebcc.ham.space import construct_fno_space
-from ebcc.ext.fci import extract_amplitudes_restricted
+from ebcc.ext.fci import (
+    fci_to_amplitudes_restricted,
+    _amplitudes_to_ci_vector_restricted,
+    _ci_vector_to_amplitudes_restricted,
+    _tn_addrs_signs,
+)
 
 
 @pytest.mark.reference
@@ -559,8 +564,32 @@ class RCCSD_ExtCorr_Tests(unittest.TestCase):
     def tearDownClass(cls):
         del cls.mf, cls.ci, cls.space
 
+    def test_conversion(self):
+        amps1 = _ci_vector_to_amplitudes_restricted(self.ci.ci, self.space, max_order=4)
+        ci = _amplitudes_to_ci_vector_restricted(amps1,  normalise=False, max_order=4)
+        amps2 = _ci_vector_to_amplitudes_restricted(ci, self.space, max_order=4)
+
+        for order in range(1, 5):
+            for spins in util.generate_spin_combinations(order, unique=True):
+                i, _ = _tn_addrs_signs(self.space.nact, self.space.naocc, spins.count("a") // 2)
+                j, _ = _tn_addrs_signs(self.space.nact, self.space.naocc, spins.count("b") // 2)
+                if spins.count("a") and spins.count("b"):
+                    i, j = np.ix_(i, j)
+                assert np.allclose(ci[i, j] * self.ci.ci[0, 0], self.ci.ci[i, j]), (order, spins)
+
+        with pytest.raises(AssertionError):
+            # Expect a fail since the excitation space goes beyond fourth order -- we have
+            # checked the individual orders above
+            assert np.allclose(ci * self.ci.ci[0, 0], self.ci.ci)
+
+        assert np.allclose(amps1.t1, amps2.t1)
+        assert np.allclose(amps1.t2, amps2.t2)
+        assert np.allclose(amps1.t3, amps2.t3)
+        assert np.allclose(amps1.t4, amps2.t4)
+        assert np.allclose(amps1.t4a, amps2.t4a)
+
     def test_external_correction(self):
-        amplitudes = extract_amplitudes_restricted(self.ci, self.space)
+        amplitudes = fci_to_amplitudes_restricted(self.ci, self.space)
         ccsd = REBCC(
             self.mf,
             ansatz="CCSD",
@@ -578,7 +607,7 @@ class RCCSD_ExtCorr_Tests(unittest.TestCase):
         self.assertAlmostEqual(a, b, 7)
 
     def test_tailor(self):
-        amplitudes = extract_amplitudes_restricted(self.ci, self.space, max_order=2)
+        amplitudes = fci_to_amplitudes_restricted(self.ci, self.space, max_order=2)
         ccsd = REBCC(
             self.mf,
             ansatz="CCSD",

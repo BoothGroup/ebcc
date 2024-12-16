@@ -230,6 +230,19 @@ def get_symmetry_factor(*numbers: int) -> float:
     return 1.0 / (2.0**ntot)
 
 
+def symmetry_factor(subscript: str) -> float:
+    """Get the symmetry factor for a given subscript.
+
+    Args:
+        subscript: Subscript to get the symmetry factor for.
+
+    Returns:
+        Symmetry factor.
+    """
+    counts = {char: subscript.count(char) for char in set(subscript)}
+    return get_symmetry_factor(*counts.values())
+
+
 def antisymmetrise_array(v: NDArray[T], axes: Optional[tuple[int, ...]] = None) -> NDArray[T]:
     """Antisymmetrise an array.
 
