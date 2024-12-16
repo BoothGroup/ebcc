@@ -89,16 +89,16 @@ with Stopwatch("T amplitudes"):
 
     output_expr = list(zip(new_output, new_expr))
 
-    if spin == "uhf":
-        # Why do we have to refactor these amplitudes? Is this a deficiency in albert?
-        def _refactor(tensor):
-            extra_factor = 1.0
-            if type(tensor) in (uhf.T1, uhf.T2, uhf.T3, uhf.T4):
-                spin = tuple(i.spin for i in tensor.external_indices[: tensor.rank // 2])
-                extra_factor /= factorial(sum(s == "a" for s in spin))
-                extra_factor /= factorial(sum(s == "b" for s in spin))
-            return tensor * Scalar(extra_factor)
-        output_expr = [(o, e.apply(_refactor, Tensor)) for o, e in output_expr]
+    #if spin == "uhf":
+    #    # Why do we have to refactor these amplitudes? Is this a deficiency in albert?
+    #    def _refactor(tensor):
+    #        extra_factor = 1.0
+    #        if type(tensor) in (uhf.T1, uhf.T2, uhf.T3, uhf.T4):
+    #            spin = tuple(i.spin for i in tensor.external_indices[: tensor.rank // 2])
+    #            extra_factor /= factorial(sum(s == "a" for s in spin))
+    #            extra_factor /= factorial(sum(s == "b" for s in spin))
+    #        return tensor * Scalar(extra_factor)
+    #    output_expr = [(o, e.apply(_refactor, Tensor)) for o, e in output_expr]
 
     # Separate the T3 and T4 dependnent parts
     output_expr_external = []
