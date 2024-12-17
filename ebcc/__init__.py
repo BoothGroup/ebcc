@@ -37,7 +37,7 @@ The implemented models are built upon the mean-field objects of
 from __future__ import annotations
 
 """Version of the package."""
-__version__ = "1.6.0"
+__version__ = "1.6.1"
 
 """List of supported ansatz types."""
 METHOD_TYPES = ["MP", "CC", "LCC", "QCI", "QCC", "DC"]
