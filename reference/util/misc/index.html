@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Miscellaneous - ebcc</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Miscellaneous";
+        var mkdocs_page_input_path = "reference/util/misc.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> ebcc
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../features/">Features</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Code Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" >Coupled cluster</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/rebcc/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/uebcc/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/gebcc/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Equation of motion</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/reom/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/ueom/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/geom/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Orbital optimisation</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" >Brueckner</a>
+    <ul>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/rbrueckner/">Restricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/ubrueckner/">Unrestricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/gbrueckner/">Generalised</a>
+                </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../opt/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Core</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/ansatz/">Ansatz</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/damping/">Damping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/dump/">Dumping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/logging/">Logging</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/precision/">Precision</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Hamiltonian</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/space/">Space</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/fock/">Fock</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/eris/">ERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/cderis/">CDERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/elbos/">Bosonic</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >Utility</a>
+    <ul class="current">
+                <li class="toctree-l2"><a class="reference internal" href="../permutations/">Permutations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../einsumfunc/">Einstein summations</a>
+                </li>
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">Miscellaneous</a>
+    <ul class="current">
+    </ul>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">ebcc</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Code Reference</li>
+          <li class="breadcrumb-item">Utility</li>
+      <li class="breadcrumb-item active">Miscellaneous</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="ebcc.util.misc"></a>
+    <div class="doc doc-contents first">
+
+        <p>Miscellaneous utilities.</p>
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.util.misc.Comparable" class="doc doc-heading">
+            <code>ebcc.util.misc.Comparable</code>
+
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="typing.Protocol">Protocol</span></code></p>
+
+
+        <p>Protocol for comparable objects.</p>
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.util.misc.Comparable.__lt__" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.misc.Comparable.__lt__(other)</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Check if the object is less than another.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+              <pre class="highlight"><code class="language-python">@abstractmethod
+def __lt__(self, other: C) -&gt; Any:
+    """Check if the object is less than another."""
+    pass</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.util.misc.InheritedType" class="doc doc-heading">
+            <code>ebcc.util.misc.InheritedType</code>
+
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+
+        <p>Type for an inherited variable.</p>
+
+
+
+
+
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.util.misc.ModelNotImplemented" class="doc doc-heading">
+            <code>ebcc.util.misc.ModelNotImplemented</code>
+
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code>NotImplementedError</code></p>
+
+
+        <p>Error for unsupported models.</p>
+
+
+
+
+
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.util.misc.Namespace" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.util.misc.Namespace(**kwargs)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="collections.abc.MutableMapping">MutableMapping</span>[str, <span title="ebcc.util.misc.T">T</span>]</code>, <code><span title="typing.Generic">Generic</span>[<span title="ebcc.util.misc.T">T</span>]</code></p>
+
+
+        <p>Namespace class.</p>
+<p>Replacement for SimpleNamespace, which does not trivially allow
+conversion to a dict for heterogenously nested objects.</p>
+<p>Attributes can be added and removed, using either string indexing or
+accessing the attribute directly.</p>
+
+        <p>Initialise the namespace.</p>
+
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(self, **kwargs: T):
+    """Initialise the namespace."""
+    self.__dict__["_members"] = {}
+    for key, val in kwargs.items():
+        self.__dict__["_members"][key] = val</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.util.misc.Namespace.__setitem__" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.misc.Namespace.__setitem__(key, val)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set an item.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def __setitem__(self, key: str, val: T) -&gt; None:
+    """Set an item."""
+    self.__dict__["_members"][key] = val</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.util.misc.Namespace.__setattr__" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.misc.Namespace.__setattr__(key, val)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Set an attribute.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def __setattr__(self, key: str, val: T) -&gt; None:
+    """Set an attribute."""
+    return self.__setitem__(key, val)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.util.misc.Namespace.__getitem__" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.misc.Namespace.__getitem__(key)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get an item.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def __getitem__(self, key: str) -&gt; T:
+    """Get an item."""
+    value: T = self.__dict__["_members"][key]
+    return value</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.util.misc.Namespace.__getattr__" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.misc.Namespace.__getattr__(key)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get an attribute.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def __getattr__(self, key: str) -&gt; T:
+    """Get an attribute."""
+    if key in self.__dict__:
+        return self.__dict__[key]  # type: ignore[no-any-return]
+    try:
+        return self.__getitem__(key)
+    except KeyError:
+        raise AttributeError(f"Namespace object has no attribute {key}")</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.util.misc.Namespace.__delitem__" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.misc.Namespace.__delitem__(key)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Delete an item.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def __delitem__(self, key: str) -&gt; None:
+    """Delete an item."""
+    self._members.pop(key)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.util.misc.Namespace.__delattr__" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.misc.Namespace.__delattr__(key)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Delete an attribute.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def __delattr__(self, key: str) -&gt; None:
+    """Delete an attribute."""
+    return self.__delitem__(key)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.util.misc.Namespace.__iter__" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.misc.Namespace.__iter__()</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Iterate over the namespace as a dictionary.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def __iter__(self) -&gt; Iterator[str]:
+    """Iterate over the namespace as a dictionary."""
+    yield from self._members</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.util.misc.Namespace.__eq__" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.misc.Namespace.__eq__(other)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Check equality.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def __eq__(self, other: Any) -&gt; bool:
+    """Check equality."""
+    if not isinstance(other, Namespace):
+        return False
+    return dict(self) == dict(other)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.util.misc.Namespace.__ne__" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.misc.Namespace.__ne__(other)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Check inequality.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def __ne__(self, other: Any) -&gt; bool:
+    """Check inequality."""
+    return not self == other</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.util.misc.Namespace.__contains__" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.misc.Namespace.__contains__(key)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Check if an attribute exists.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def __contains__(self, key: Any) -&gt; bool:
+    """Check if an attribute exists."""
+    return key in self._members</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.util.misc.Namespace.__len__" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.misc.Namespace.__len__()</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the number of attributes.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def __len__(self) -&gt; int:
+    """Get the number of attributes."""
+    return len(self._members)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.util.misc.Namespace.keys" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.misc.Namespace.keys()</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get keys of the namespace as a dictionary.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def keys(self) -&gt; KeysView[str]:
+    """Get keys of the namespace as a dictionary."""
+    return self._members.keys()</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.util.misc.Namespace.values" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.misc.Namespace.values()</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get values of the namespace as a dictionary.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def values(self) -&gt; ValuesView[T]:
+    """Get values of the namespace as a dictionary."""
+    return self._members.values()</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.util.misc.Namespace.items" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.misc.Namespace.items()</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get items of the namespace as a dictionary.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def items(self) -&gt; ItemsView[str, T]:
+    """Get items of the namespace as a dictionary."""
+    return self._members.items()</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.util.misc.Namespace.copy" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.misc.Namespace.copy()</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return a shallow copy.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def copy(self) -&gt; Namespace[T]:
+    """Return a shallow copy."""
+    return Namespace(**self._members)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.util.misc.Namespace.__repr__" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.misc.Namespace.__repr__()</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return a string representation.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def __repr__(self) -&gt; str:
+    """Return a string representation."""
+    return f"Namespace({self._members})"</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.util.misc.Timer" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.util.misc.Timer()</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+
+        <p>Timer class.</p>
+
+        <p>Initialise the timer.</p>
+
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(self) -&gt; None:
+    """Initialise the timer."""
+    self.t_init = time.perf_counter()
+    self.t_prev = time.perf_counter()
+    self.t_curr = time.perf_counter()</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.util.misc.Timer.lap" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.misc.Timer.lap()</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return the time since the last call to <code>lap</code>.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def lap(self) -&gt; float:
+    """Return the time since the last call to `lap`."""
+    self.t_prev, self.t_curr = self.t_curr, time.perf_counter()
+    return self.t_curr - self.t_prev</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.util.misc.Timer.total" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.misc.Timer.total()</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return the total time since initialization.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def total(self) -&gt; float:
+    """Return the total time since initialization."""
+    return time.perf_counter() - self.t_init</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.util.misc.Timer.format_time" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.misc.Timer.format_time(seconds, precision=2)</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return a formatted time.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+              <pre class="highlight"><code class="language-python">@staticmethod
+def format_time(seconds: float, precision: int = 2) -&gt; str:
+    """Return a formatted time."""
+
+    seconds, milliseconds = divmod(seconds, 1)
+    milliseconds *= 1000
+    minutes, seconds = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+
+    out = []
+    if hours:
+        out.append("%d h" % hours)
+    if minutes:
+        out.append("%d m" % minutes)
+    if seconds:
+        out.append("%d s" % seconds)
+    if milliseconds:
+        out.append("%d ms" % milliseconds)
+
+    return " ".join(out[-max(precision, len(out)) :])</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="ebcc.util.misc.prod" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.misc.prod(values)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return the product of values.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def prod(values: Union[list[int], tuple[int, ...]]) -&gt; int:
+    """Return the product of values."""
+    out = 1
+    for value in values:
+        out *= value
+    return out</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="ebcc.util.misc.argsort" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.misc.argsort(values)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Return the indices that would sort the values.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>values</code></b>
+                  (<code><span title="typing.Union">Union</span>[list[<span title="typing.Union">Union</span>[float, str]], <span title="numpy.typing.NDArray">NDArray</span>[<span title="numpy.generic">generic</span>]]</code>)
+              –
+              <div class="doc-md-description">
+                <p>The values to sort.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code>list[int]</code>
+              –
+              <div class="doc-md-description">
+                <p>The indices that would sort the values.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def argsort(values: Union[list[Union[float, str]], NDArray[generic]]) -&gt; list[int]:
+    """Return the indices that would sort the values.
+
+    Args:
+        values: The values to sort.
+
+    Returns:
+        The indices that would sort the values.
+    """
+    if isinstance(values, Sized):
+        size = len(values)
+    else:
+        size = values.size
+    return sorted(range(size), key=values.__getitem__)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="ebcc.util.misc.regularise_tuple" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.util.misc.regularise_tuple(*_items)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Regularise the input tuples.</p>
+<p>Allows input of the forms
+- <code>func((a, b, c))</code>
+- <code>func([a, b, c])</code>
+- <code>func(a, b, c)</code>
+- <code>func(a)</code></p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>_items</code></b>
+                  (<code><span title="typing.Union">Union</span>[<span title="typing.Any">Any</span>, tuple[<span title="typing.Any">Any</span>, ...], list[<span title="typing.Any">Any</span>]]</code>, default:
+                      <code>()</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>The input tuples.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code>tuple[<span title="typing.Any">Any</span>, ...]</code>
+              –
+              <div class="doc-md-description">
+                <p>The regularised tuple.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/util/misc.py</code></summary>
+              <pre class="highlight"><code class="language-python">def regularise_tuple(*_items: Union[Any, tuple[Any, ...], list[Any]]) -&gt; tuple[Any, ...]:
+    """Regularise the input tuples.
+
+    Allows input of the forms
+    - `func((a, b, c))`
+    - `func([a, b, c])`
+    - `func(a, b, c)`
+    - `func(a)`
+
+    Args:
+        _items: The input tuples.
+
+    Returns:
+        The regularised tuple.
+    """
+    if isinstance(_items[0], (tuple, list)):
+        if len(_items) &gt; 1:
+            raise ValueError("Only one tuple can be passed.")
+        items = _items[0]
+    else:
+        items = _items
+    return tuple(items)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../einsumfunc/" class="btn btn-neutral float-left" title="Einstein summations"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../einsumfunc/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

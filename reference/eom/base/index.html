@@ -1,0 +1,2602 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Base - ebcc</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Base";
+        var mkdocs_page_input_path = "reference/eom/base.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> ebcc
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../features/">Features</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Code Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" >Coupled cluster</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/rebcc/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/uebcc/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/gebcc/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >Equation of motion</a>
+    <ul class="current">
+                <li class="toctree-l2"><a class="reference internal" href="../reom/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../ueom/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../geom/">Generalised</a>
+                </li>
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">Base</a>
+    <ul class="current">
+    </ul>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Orbital optimisation</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" >Brueckner</a>
+    <ul>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/rbrueckner/">Restricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/ubrueckner/">Unrestricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/gbrueckner/">Generalised</a>
+                </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../opt/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Core</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/ansatz/">Ansatz</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/damping/">Damping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/dump/">Dumping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/logging/">Logging</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/precision/">Precision</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Hamiltonian</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/space/">Space</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/fock/">Fock</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/eris/">ERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/cderis/">CDERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/elbos/">Bosonic</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Utility</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/permutations/">Permutations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/einsumfunc/">Einstein summations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/misc/">Miscellaneous</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">ebcc</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Code Reference</li>
+          <li class="breadcrumb-item">Equation of motion</li>
+      <li class="breadcrumb-item active">Base</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="ebcc.eom.base"></a>
+    <div class="doc doc-contents first">
+
+        <p>Base classes for <code>ebcc.eom</code>.</p>
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.eom.base.BaseOptions" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.eom.base.BaseOptions(nroots=5, e_tol=1e-06, max_iter=100, max_space=12, koopmans=False, left=False)</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+
+        <p>Options for EOM calculations.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>nroots</code></b>
+                  (<code>int</code>, default:
+                      <code>5</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Number of roots to solver for.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>e_tol</code></b>
+                  (<code>float</code>, default:
+                      <code>1e-06</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Threshold for convergence in the eigenvalues.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>max_iter</code></b>
+                  (<code>int</code>, default:
+                      <code>100</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Maximum number of iterations.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>max_space</code></b>
+                  (<code>int</code>, default:
+                      <code>12</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Maximum size of the Lanczos vector space.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>koopmans</code></b>
+                  (<code>bool</code>, default:
+                      <code>False</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Whether to use a Koopmans'-like guess.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>left</code></b>
+                  (<code>bool</code>, default:
+                      <code>False</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Whether to apply the left-hand side of the Hamiltonian.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.eom.base.BaseEOM" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.eom.base.BaseEOM(ebcc, options=None, **kwargs)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="abc.ABC">ABC</span></code></p>
+
+
+        <p>Base class for equation-of-motion coupled cluster.</p>
+
+        <p>Initialise the EOM object.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>ebcc</code></b>
+                  (<code><a class="autorefs autorefs-internal" title="ebcc.cc.base.BaseEBCC" href="../../cc/base/#ebcc.cc.base.BaseEBCC">BaseEBCC</a></code>)
+              –
+              <div class="doc-md-description">
+                <p>Parent <code>EBCC</code> object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>options</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.eom.base.BaseOptions" href="#ebcc.eom.base.BaseOptions">BaseOptions</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Options for the EOM calculation.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>**kwargs</code></b>
+                  (<code><span title="typing.Any">Any</span></code>, default:
+                      <code>{}</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Additional keyword arguments used to update <code>options</code>.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/eom/base.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(
+    self,
+    ebcc: BaseEBCC,
+    options: Optional[BaseOptions] = None,
+    **kwargs: Any,
+) -&gt; None:
+    """Initialise the EOM object.
+
+    Args:
+        ebcc: Parent `EBCC` object.
+        options: Options for the EOM calculation.
+        **kwargs: Additional keyword arguments used to update `options`.
+    """
+    # Options:
+    if options is None:
+        options = self.Options()
+    self.options = options
+    for key, val in kwargs.items():
+        setattr(self.options, key, val)
+
+    # Parameters:
+    self.ebcc = ebcc
+    self.space = ebcc.space
+    self.ansatz = ebcc.ansatz
+    self.log = ebcc.log
+
+    # Attributes:
+    self.converged = False
+    self.e: NDArray[T] = np.zeros((0,), dtype=types[float])
+    self.v: NDArray[T] = np.zeros((0, 0), dtype=types[float])
+
+    # Logging:
+    self.log.info(f"\n{ANSI.B}{ANSI.U}{self.name}{ANSI.R}")
+    self.log.debug(f"{ANSI.B}{'*' * len(self.name)}{ANSI.R}")
+    self.log.debug("")
+    self.log.info(f"{ANSI.B}Options{ANSI.R}:")
+    self.log.info(f" &gt; nroots:  {ANSI.y}{self.options.nroots}{ANSI.R}")
+    self.log.info(f" &gt; e_tol:  {ANSI.y}{self.options.e_tol}{ANSI.R}")
+    self.log.info(f" &gt; max_iter:  {ANSI.y}{self.options.max_iter}{ANSI.R}")
+    self.log.info(f" &gt; max_space:  {ANSI.y}{self.options.max_space}{ANSI.R}")
+    self.log.debug("")</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.eom.base.BaseEOM.excitation_type" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.base.BaseEOM.excitation_type: str</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the type of excitation.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.eom.base.BaseEOM.spin_type" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.base.BaseEOM.spin_type: str</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the spin type.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.eom.base.BaseEOM.name" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.base.BaseEOM.name: str</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the name of the method.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.eom.base.BaseEOM.nmo" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.base.BaseEOM.nmo: Any</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the number of MOs.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.eom.base.BaseEOM.nocc" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.base.BaseEOM.nocc: Any</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the number of occupied MOs.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.eom.base.BaseEOM.nvir" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.base.BaseEOM.nvir: Any</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the number of virtual MOs.</p>
+    </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.eom.base.BaseEOM.amplitudes_to_vector" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.base.BaseEOM.amplitudes_to_vector(amplitudes)</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Construct a vector containing all of the amplitudes used in the given ansatz.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>amplitudes</code></b>
+                  (<code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<a class="autorefs autorefs-internal" title="ebcc.cc.base.SpinArrayType" href="../../cc/base/#ebcc.cc.base.SpinArrayType">SpinArrayType</a>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>Cluster amplitudes.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.base.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Cluster amplitudes as a vector.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/eom/base.py</code></summary>
+              <pre class="highlight"><code class="language-python">@abstractmethod
+def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -&gt; NDArray[T]:
+    """Construct a vector containing all of the amplitudes used in the given ansatz.
+
+    Args:
+        amplitudes: Cluster amplitudes.
+
+    Returns:
+        Cluster amplitudes as a vector.
+    """
+    pass</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.eom.base.BaseEOM.vector_to_amplitudes" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.base.BaseEOM.vector_to_amplitudes(vector)</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Construct amplitudes from a vector.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>vector</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.base.T">T</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>Cluster amplitudes as a vector.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<a class="autorefs autorefs-internal" title="ebcc.cc.base.SpinArrayType" href="../../cc/base/#ebcc.cc.base.SpinArrayType">SpinArrayType</a>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Cluster amplitudes.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/eom/base.py</code></summary>
+              <pre class="highlight"><code class="language-python">@abstractmethod
+def vector_to_amplitudes(self, vector: NDArray[T]) -&gt; Namespace[SpinArrayType]:
+    """Construct amplitudes from a vector.
+
+    Args:
+        vector: Cluster amplitudes as a vector.
+
+    Returns:
+        Cluster amplitudes.
+    """
+    pass</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.eom.base.BaseEOM.matvec" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.base.BaseEOM.matvec(vector, eris=None, ints=None, left=False)</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Apply the Hamiltonian to a vector.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>vector</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.base.T">T</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>State vector to apply the Hamiltonian to.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>eris</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.cc.base.ERIsInputType" href="../../cc/base/#ebcc.cc.base.ERIsInputType">ERIsInputType</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Electronic repulsion integrals.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>ints</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.base.T">T</span>]]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Intermediate products.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>left</code></b>
+                  (<code>bool</code>, default:
+                      <code>False</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Whether to apply the left-hand side of the Hamiltonian.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.base.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Resulting vector.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/eom/base.py</code></summary>
+              <pre class="highlight"><code class="language-python">@abstractmethod
+def matvec(
+    self,
+    vector: NDArray[T],
+    eris: Optional[ERIsInputType] = None,
+    ints: Optional[Namespace[NDArray[T]]] = None,
+    left: bool = False,
+) -&gt; NDArray[T]:
+    """Apply the Hamiltonian to a vector.
+
+    Args:
+        vector: State vector to apply the Hamiltonian to.
+        eris: Electronic repulsion integrals.
+        ints: Intermediate products.
+        left: Whether to apply the left-hand side of the Hamiltonian.
+
+    Returns:
+        Resulting vector.
+    """
+    pass</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.eom.base.BaseEOM.matvec_intermediates" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.base.BaseEOM.matvec_intermediates(eris=None, left=False)</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the intermediates for application of the Hamiltonian to a vector.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>eris</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.cc.base.ERIsInputType" href="../../cc/base/#ebcc.cc.base.ERIsInputType">ERIsInputType</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Electronic repulsion integrals.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>left</code></b>
+                  (<code>bool</code>, default:
+                      <code>False</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Whether to apply the left-hand side of the Hamiltonian.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.base.T">T</span>]]</code>
+              –
+              <div class="doc-md-description">
+                <p>Intermediate products.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/eom/base.py</code></summary>
+              <pre class="highlight"><code class="language-python">@abstractmethod
+def matvec_intermediates(
+    self, eris: Optional[ERIsInputType] = None, left: bool = False
+) -&gt; Namespace[NDArray[T]]:
+    """Get the intermediates for application of the Hamiltonian to a vector.
+
+    Args:
+        eris: Electronic repulsion integrals.
+        left: Whether to apply the left-hand side of the Hamiltonian.
+
+    Returns:
+        Intermediate products.
+    """
+    pass</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.eom.base.BaseEOM.diag" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.base.BaseEOM.diag(eris=None)</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the diagonal of the Hamiltonian.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>eris</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.cc.base.ERIsInputType" href="../../cc/base/#ebcc.cc.base.ERIsInputType">ERIsInputType</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Electronic repulsion integrals.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.base.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Diagonal of the Hamiltonian.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/eom/base.py</code></summary>
+              <pre class="highlight"><code class="language-python">@abstractmethod
+def diag(self, eris: Optional[ERIsInputType] = None) -&gt; NDArray[T]:
+    """Get the diagonal of the Hamiltonian.
+
+    Args:
+        eris: Electronic repulsion integrals.
+
+    Returns:
+        Diagonal of the Hamiltonian.
+    """
+    pass</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.eom.base.BaseEOM.get_pick" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.base.BaseEOM.get_pick(guesses=None)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the function to pick the eigenvalues matching the criteria.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>guesses</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.base.T">T</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Initial guesses for the roots.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="ebcc.core.davidson.PickType">PickType</span>[<span title="ebcc.eom.base.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Function to pick the eigenvalues.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/eom/base.py</code></summary>
+              <pre class="highlight"><code class="language-python">def get_pick(self, guesses: Optional[NDArray[T]] = None) -&gt; PickType[T]:
+    """Get the function to pick the eigenvalues matching the criteria.
+
+    Args:
+        guesses: Initial guesses for the roots.
+
+    Returns:
+        Function to pick the eigenvalues.
+    """
+
+    if self.options.koopmans:
+        assert guesses is not None
+
+        def pick(
+            w: NDArray[T],
+            v: NDArray[T],
+            nroots: int,
+            basis_vectors: Optional[NDArray[T]] = None,
+        ) -&gt; tuple[NDArray[T], NDArray[T], NDArray[integer]]:
+            """Pick the eigenvalues using the overlap with the guess vector."""
+            assert basis_vectors is not None
+            x0 = _outer_product_to_subspace(v, basis_vectors)
+            s = np.dot(np.conj(guesses), np.transpose(x0))
+            s = np.real(np.linalg.norm(s, axis=0))
+            idx = np.argsort(-s)[:nroots]
+            return make_eigenvectors_real(w, v, idx)
+
+    else:
+        pick = pick_real_eigenvalues
+
+    return pick</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.eom.base.BaseEOM.get_guesses" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.base.BaseEOM.get_guesses(diag=None)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the initial guesses vectors.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>diag</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.base.T">T</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Diagonal of the Hamiltonian.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.base.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Initial guesses.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/eom/base.py</code></summary>
+              <pre class="highlight"><code class="language-python">def get_guesses(self, diag: Optional[NDArray[T]] = None) -&gt; NDArray[T]:
+    """Get the initial guesses vectors.
+
+    Args:
+        diag: Diagonal of the Hamiltonian.
+
+    Returns:
+        Initial guesses.
+    """
+    if diag is None:
+        diag = self.diag()
+    arg = self._argsort_guesses(diag)
+
+    nroots = min(self.options.nroots, diag.size)
+    guesses: list[NDArray[T]] = []
+    for root, guess in enumerate(arg[:nroots]):
+        guesses.append(np.eye(1, diag.size, guess, dtype=types[float])[0])
+
+    return np.stack(guesses)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.eom.base.BaseEOM.callback" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.base.BaseEOM.callback(envs)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Callback function for the eigensolver.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/eom/base.py</code></summary>
+              <pre class="highlight"><code class="language-python">def callback(self, envs: dict[str, Any]) -&gt; None:  # noqa: B027
+    """Callback function for the eigensolver."""  # noqa: D401
+    pass</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.eom.base.BaseEOM.davidson" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.base.BaseEOM.davidson(eris=None, guesses=None)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Solve the EOM Hamiltonian using the Davidson solver.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>eris</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.cc.base.ERIsInputType" href="../../cc/base/#ebcc.cc.base.ERIsInputType">ERIsInputType</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Electronic repulsion integrals.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>guesses</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.base.T">T</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Initial guesses for the roots. Transposed with respect to the usual eigenvector
+convention (#FIXME).</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.base.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Energies of the roots.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/eom/base.py</code></summary>
+              <pre class="highlight"><code class="language-python">def davidson(
+    self,
+    eris: Optional[ERIsInputType] = None,
+    guesses: Optional[NDArray[T]] = None,
+) -&gt; NDArray[T]:
+    """Solve the EOM Hamiltonian using the Davidson solver.
+
+    Args:
+        eris: Electronic repulsion integrals.
+        guesses: Initial guesses for the roots. Transposed with respect to the usual eigenvector
+            convention (#FIXME).
+
+    Returns:
+        Energies of the roots.
+    """
+    timer = util.Timer()
+
+    # Get the ERIs:
+    eris = self.ebcc.get_eris(eris)
+
+    self.log.output(
+        "Solving for %s excitations using the Davidson solver.", self.excitation_type.upper()
+    )
+
+    # Get the matrix-vector products and the diagonal:
+    ints = self.matvec_intermediates(eris=eris, left=self.options.left)
+    matvec = lambda v: self.matvec(v, eris=eris, ints=ints, left=self.options.left)
+    diag = self.diag(eris=eris)
+
+    # Get the guesses:
+    if guesses is None:
+        guesses = self.get_guesses(diag=diag)
+
+    # Solve the EOM Hamiltonian:
+    nroots = min(guesses.shape[0], self.options.nroots)
+    pick = self.get_pick(guesses=guesses)
+    converged, e, v = davidson(
+        matvec,
+        guesses,
+        diag,
+        e_tol=self.options.e_tol,
+        nroots=nroots,
+        pick=pick,
+        max_iter=self.options.max_iter,
+        max_space=self.options.max_space,
+        callback=self.callback,
+    )
+
+    # Check for convergence:
+    if all(converged):
+        self.log.debug("")
+        self.log.output(f"{ANSI.g}Converged{ANSI.R}.")
+    else:
+        self.log.debug("")
+        self.log.warning(
+            f"{ANSI.r}Failed to converge {sum(not c for c in converged)} roots{ANSI.R}."
+        )
+
+    # Update attributes:
+    self.converged = all(converged)
+    self.e = np.asarray(np.real(e), dtype=types[float])
+    self.v = np.asarray(np.real(v), dtype=types[float])
+
+    self.log.debug("")
+    self.log.output(
+        f"{ANSI.B}{'Root':&gt;4s} {'Energy':&gt;16s} {'Weight':&gt;13s} {'Conv.':&gt;8s}{ANSI.R}"
+    )
+    for n, (en, vn, cn) in enumerate(zip(self.e, np.transpose(self.v), converged)):
+        r1n = self.vector_to_amplitudes(vn)["r1"]
+        qpwt = self._quasiparticle_weight(r1n)
+        self.log.output(
+            f"%4d %16.10f %13.5g {[ANSI.r, ANSI.g][bool(cn)]}%8s{ANSI.R}",
+            n,
+            np.ravel(en)[0],
+            qpwt,
+            bool(cn),
+        )
+
+    self.log.debug("")
+    self.log.debug("Time elapsed: %s", timer.format_time(timer()))
+    self.log.debug("")
+
+    return self.e</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.eom.base.BaseIP_EOM" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.eom.base.BaseIP_EOM(ebcc, options=None, **kwargs)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="ebcc.eom.base.BaseEOM" href="#ebcc.eom.base.BaseEOM">BaseEOM</a></code></p>
+
+
+        <p>Base class for ionisation-potential EOM-CC.</p>
+
+        <p>Initialise the EOM object.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>ebcc</code></b>
+                  (<code><a class="autorefs autorefs-internal" title="ebcc.cc.base.BaseEBCC" href="../../cc/base/#ebcc.cc.base.BaseEBCC">BaseEBCC</a></code>)
+              –
+              <div class="doc-md-description">
+                <p>Parent <code>EBCC</code> object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>options</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.eom.base.BaseOptions" href="#ebcc.eom.base.BaseOptions">BaseOptions</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Options for the EOM calculation.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>**kwargs</code></b>
+                  (<code><span title="typing.Any">Any</span></code>, default:
+                      <code>{}</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Additional keyword arguments used to update <code>options</code>.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/eom/base.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(
+    self,
+    ebcc: BaseEBCC,
+    options: Optional[BaseOptions] = None,
+    **kwargs: Any,
+) -&gt; None:
+    """Initialise the EOM object.
+
+    Args:
+        ebcc: Parent `EBCC` object.
+        options: Options for the EOM calculation.
+        **kwargs: Additional keyword arguments used to update `options`.
+    """
+    # Options:
+    if options is None:
+        options = self.Options()
+    self.options = options
+    for key, val in kwargs.items():
+        setattr(self.options, key, val)
+
+    # Parameters:
+    self.ebcc = ebcc
+    self.space = ebcc.space
+    self.ansatz = ebcc.ansatz
+    self.log = ebcc.log
+
+    # Attributes:
+    self.converged = False
+    self.e: NDArray[T] = np.zeros((0,), dtype=types[float])
+    self.v: NDArray[T] = np.zeros((0, 0), dtype=types[float])
+
+    # Logging:
+    self.log.info(f"\n{ANSI.B}{ANSI.U}{self.name}{ANSI.R}")
+    self.log.debug(f"{ANSI.B}{'*' * len(self.name)}{ANSI.R}")
+    self.log.debug("")
+    self.log.info(f"{ANSI.B}Options{ANSI.R}:")
+    self.log.info(f" &gt; nroots:  {ANSI.y}{self.options.nroots}{ANSI.R}")
+    self.log.info(f" &gt; e_tol:  {ANSI.y}{self.options.e_tol}{ANSI.R}")
+    self.log.info(f" &gt; max_iter:  {ANSI.y}{self.options.max_iter}{ANSI.R}")
+    self.log.info(f" &gt; max_space:  {ANSI.y}{self.options.max_space}{ANSI.R}")
+    self.log.debug("")</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.eom.base.BaseIP_EOM.excitation_type" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.base.BaseIP_EOM.excitation_type: str</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the type of excitation.</p>
+    </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.eom.base.BaseIP_EOM.matvec" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.base.BaseIP_EOM.matvec(vector, eris=None, ints=None, left=False)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Apply the Hamiltonian to a vector.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>vector</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.base.T">T</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>State vector to apply the Hamiltonian to.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>eris</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.cc.base.ERIsInputType" href="../../cc/base/#ebcc.cc.base.ERIsInputType">ERIsInputType</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Electronic repulsion integrals.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>ints</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.base.T">T</span>]]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Intermediate products.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>left</code></b>
+                  (<code>bool</code>, default:
+                      <code>False</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Whether to apply the left-hand side of the Hamiltonian.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.base.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Resulting vector.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/eom/base.py</code></summary>
+              <pre class="highlight"><code class="language-python">def matvec(
+    self,
+    vector: NDArray[T],
+    eris: Optional[ERIsInputType] = None,
+    ints: Optional[Namespace[NDArray[T]]] = None,
+    left: bool = False,
+) -&gt; NDArray[T]:
+    """Apply the Hamiltonian to a vector.
+
+    Args:
+        vector: State vector to apply the Hamiltonian to.
+        eris: Electronic repulsion integrals.
+        ints: Intermediate products.
+        left: Whether to apply the left-hand side of the Hamiltonian.
+
+    Returns:
+        Resulting vector.
+    """
+    if not ints:
+        ints = self.matvec_intermediates(eris=eris, left=left)
+    amplitudes = self.vector_to_amplitudes(vector)
+    func, kwargs = self.ebcc._load_function(
+        f"hbar_{'l' if left else ''}matvec_ip",
+        eris=eris,
+        ints=ints,
+        amplitudes=self.ebcc.amplitudes,
+        excitations=amplitudes,
+    )
+    res: Namespace[SpinArrayType] = func(**kwargs)
+    res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
+    return self.amplitudes_to_vector(res)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.eom.base.BaseIP_EOM.matvec_intermediates" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.base.BaseIP_EOM.matvec_intermediates(eris=None, left=False)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the intermediates for application of the Hamiltonian to a vector.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>eris</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.cc.base.ERIsInputType" href="../../cc/base/#ebcc.cc.base.ERIsInputType">ERIsInputType</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Electronic repulsion integrals.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>left</code></b>
+                  (<code>bool</code>, default:
+                      <code>False</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Whether to apply the left-hand side of the Hamiltonian.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.base.T">T</span>]]</code>
+              –
+              <div class="doc-md-description">
+                <p>Intermediate products.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/eom/base.py</code></summary>
+              <pre class="highlight"><code class="language-python">def matvec_intermediates(
+    self, eris: Optional[ERIsInputType] = None, left: bool = False
+) -&gt; Namespace[NDArray[T]]:
+    """Get the intermediates for application of the Hamiltonian to a vector.
+
+    Args:
+        eris: Electronic repulsion integrals.
+        left: Whether to apply the left-hand side of the Hamiltonian.
+
+    Returns:
+        Intermediate products.
+    """
+    func, kwargs = self.ebcc._load_function(
+        f"hbar_{'l' if left else ''}matvec_ip_intermediates",
+        eris=eris,
+        amplitudes=self.ebcc.amplitudes,
+    )
+    res: Namespace[NDArray[T]] = util.Namespace(**func(**kwargs))
+    return res</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.eom.base.BaseEA_EOM" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.eom.base.BaseEA_EOM(ebcc, options=None, **kwargs)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="ebcc.eom.base.BaseEOM" href="#ebcc.eom.base.BaseEOM">BaseEOM</a></code></p>
+
+
+        <p>Base class for electron-affinity EOM-CC.</p>
+
+        <p>Initialise the EOM object.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>ebcc</code></b>
+                  (<code><a class="autorefs autorefs-internal" title="ebcc.cc.base.BaseEBCC" href="../../cc/base/#ebcc.cc.base.BaseEBCC">BaseEBCC</a></code>)
+              –
+              <div class="doc-md-description">
+                <p>Parent <code>EBCC</code> object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>options</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.eom.base.BaseOptions" href="#ebcc.eom.base.BaseOptions">BaseOptions</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Options for the EOM calculation.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>**kwargs</code></b>
+                  (<code><span title="typing.Any">Any</span></code>, default:
+                      <code>{}</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Additional keyword arguments used to update <code>options</code>.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/eom/base.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(
+    self,
+    ebcc: BaseEBCC,
+    options: Optional[BaseOptions] = None,
+    **kwargs: Any,
+) -&gt; None:
+    """Initialise the EOM object.
+
+    Args:
+        ebcc: Parent `EBCC` object.
+        options: Options for the EOM calculation.
+        **kwargs: Additional keyword arguments used to update `options`.
+    """
+    # Options:
+    if options is None:
+        options = self.Options()
+    self.options = options
+    for key, val in kwargs.items():
+        setattr(self.options, key, val)
+
+    # Parameters:
+    self.ebcc = ebcc
+    self.space = ebcc.space
+    self.ansatz = ebcc.ansatz
+    self.log = ebcc.log
+
+    # Attributes:
+    self.converged = False
+    self.e: NDArray[T] = np.zeros((0,), dtype=types[float])
+    self.v: NDArray[T] = np.zeros((0, 0), dtype=types[float])
+
+    # Logging:
+    self.log.info(f"\n{ANSI.B}{ANSI.U}{self.name}{ANSI.R}")
+    self.log.debug(f"{ANSI.B}{'*' * len(self.name)}{ANSI.R}")
+    self.log.debug("")
+    self.log.info(f"{ANSI.B}Options{ANSI.R}:")
+    self.log.info(f" &gt; nroots:  {ANSI.y}{self.options.nroots}{ANSI.R}")
+    self.log.info(f" &gt; e_tol:  {ANSI.y}{self.options.e_tol}{ANSI.R}")
+    self.log.info(f" &gt; max_iter:  {ANSI.y}{self.options.max_iter}{ANSI.R}")
+    self.log.info(f" &gt; max_space:  {ANSI.y}{self.options.max_space}{ANSI.R}")
+    self.log.debug("")</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.eom.base.BaseEA_EOM.excitation_type" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.base.BaseEA_EOM.excitation_type: str</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the type of excitation.</p>
+    </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.eom.base.BaseEA_EOM.matvec" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.base.BaseEA_EOM.matvec(vector, eris=None, ints=None, left=False)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Apply the Hamiltonian to a vector.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>vector</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.base.T">T</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>State vector to apply the Hamiltonian to.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>eris</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.cc.base.ERIsInputType" href="../../cc/base/#ebcc.cc.base.ERIsInputType">ERIsInputType</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Electronic repulsion integrals.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>ints</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.base.T">T</span>]]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Intermediate products.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>left</code></b>
+                  (<code>bool</code>, default:
+                      <code>False</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Whether to apply the left-hand side of the Hamiltonian.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.base.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Resulting vector.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/eom/base.py</code></summary>
+              <pre class="highlight"><code class="language-python">def matvec(
+    self,
+    vector: NDArray[T],
+    eris: Optional[ERIsInputType] = None,
+    ints: Optional[Namespace[NDArray[T]]] = None,
+    left: bool = False,
+) -&gt; NDArray[T]:
+    """Apply the Hamiltonian to a vector.
+
+    Args:
+        vector: State vector to apply the Hamiltonian to.
+        eris: Electronic repulsion integrals.
+        ints: Intermediate products.
+        left: Whether to apply the left-hand side of the Hamiltonian.
+
+    Returns:
+        Resulting vector.
+    """
+    if not ints:
+        ints = self.matvec_intermediates(eris=eris, left=left)
+    amplitudes = self.vector_to_amplitudes(vector)
+    func, kwargs = self.ebcc._load_function(
+        f"hbar_{'l' if left else ''}matvec_ea",
+        eris=eris,
+        ints=ints,
+        amplitudes=self.ebcc.amplitudes,
+        excitations=amplitudes,
+    )
+    res: Namespace[SpinArrayType] = func(**kwargs)
+    res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
+    return self.amplitudes_to_vector(res)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.eom.base.BaseEA_EOM.matvec_intermediates" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.base.BaseEA_EOM.matvec_intermediates(eris=None, left=False)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the intermediates for application of the Hamiltonian to a vector.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>eris</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.cc.base.ERIsInputType" href="../../cc/base/#ebcc.cc.base.ERIsInputType">ERIsInputType</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Electronic repulsion integrals.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>left</code></b>
+                  (<code>bool</code>, default:
+                      <code>False</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Whether to apply the left-hand side of the Hamiltonian.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.base.T">T</span>]]</code>
+              –
+              <div class="doc-md-description">
+                <p>Intermediate products.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/eom/base.py</code></summary>
+              <pre class="highlight"><code class="language-python">def matvec_intermediates(
+    self, eris: Optional[ERIsInputType] = None, left: bool = False
+) -&gt; Namespace[NDArray[T]]:
+    """Get the intermediates for application of the Hamiltonian to a vector.
+
+    Args:
+        eris: Electronic repulsion integrals.
+        left: Whether to apply the left-hand side of the Hamiltonian.
+
+    Returns:
+        Intermediate products.
+    """
+    func, kwargs = self.ebcc._load_function(
+        f"hbar_{'l' if left else ''}matvec_ea_intermediates",
+        eris=eris,
+        amplitudes=self.ebcc.amplitudes,
+    )
+    res: Namespace[NDArray[T]] = util.Namespace(**func(**kwargs))
+    return res</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.eom.base.BaseEE_EOM" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.eom.base.BaseEE_EOM(ebcc, options=None, **kwargs)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="ebcc.eom.base.BaseEOM" href="#ebcc.eom.base.BaseEOM">BaseEOM</a></code></p>
+
+
+        <p>Base class for electron-electron EOM-CC.</p>
+
+        <p>Initialise the EOM object.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>ebcc</code></b>
+                  (<code><a class="autorefs autorefs-internal" title="ebcc.cc.base.BaseEBCC" href="../../cc/base/#ebcc.cc.base.BaseEBCC">BaseEBCC</a></code>)
+              –
+              <div class="doc-md-description">
+                <p>Parent <code>EBCC</code> object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>options</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.eom.base.BaseOptions" href="#ebcc.eom.base.BaseOptions">BaseOptions</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Options for the EOM calculation.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>**kwargs</code></b>
+                  (<code><span title="typing.Any">Any</span></code>, default:
+                      <code>{}</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Additional keyword arguments used to update <code>options</code>.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/eom/base.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(
+    self,
+    ebcc: BaseEBCC,
+    options: Optional[BaseOptions] = None,
+    **kwargs: Any,
+) -&gt; None:
+    """Initialise the EOM object.
+
+    Args:
+        ebcc: Parent `EBCC` object.
+        options: Options for the EOM calculation.
+        **kwargs: Additional keyword arguments used to update `options`.
+    """
+    # Options:
+    if options is None:
+        options = self.Options()
+    self.options = options
+    for key, val in kwargs.items():
+        setattr(self.options, key, val)
+
+    # Parameters:
+    self.ebcc = ebcc
+    self.space = ebcc.space
+    self.ansatz = ebcc.ansatz
+    self.log = ebcc.log
+
+    # Attributes:
+    self.converged = False
+    self.e: NDArray[T] = np.zeros((0,), dtype=types[float])
+    self.v: NDArray[T] = np.zeros((0, 0), dtype=types[float])
+
+    # Logging:
+    self.log.info(f"\n{ANSI.B}{ANSI.U}{self.name}{ANSI.R}")
+    self.log.debug(f"{ANSI.B}{'*' * len(self.name)}{ANSI.R}")
+    self.log.debug("")
+    self.log.info(f"{ANSI.B}Options{ANSI.R}:")
+    self.log.info(f" &gt; nroots:  {ANSI.y}{self.options.nroots}{ANSI.R}")
+    self.log.info(f" &gt; e_tol:  {ANSI.y}{self.options.e_tol}{ANSI.R}")
+    self.log.info(f" &gt; max_iter:  {ANSI.y}{self.options.max_iter}{ANSI.R}")
+    self.log.info(f" &gt; max_space:  {ANSI.y}{self.options.max_space}{ANSI.R}")
+    self.log.debug("")</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.eom.base.BaseEE_EOM.excitation_type" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.base.BaseEE_EOM.excitation_type: str</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the type of excitation.</p>
+    </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.eom.base.BaseEE_EOM.matvec" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.base.BaseEE_EOM.matvec(vector, eris=None, ints=None, left=False)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Apply the Hamiltonian to a vector.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>vector</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.base.T">T</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>State vector to apply the Hamiltonian to.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>eris</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.cc.base.ERIsInputType" href="../../cc/base/#ebcc.cc.base.ERIsInputType">ERIsInputType</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Electronic repulsion integrals.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>ints</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.base.T">T</span>]]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Intermediate products.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>left</code></b>
+                  (<code>bool</code>, default:
+                      <code>False</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Whether to apply the left-hand side of the Hamiltonian.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.base.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Resulting vector.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/eom/base.py</code></summary>
+              <pre class="highlight"><code class="language-python">def matvec(
+    self,
+    vector: NDArray[T],
+    eris: Optional[ERIsInputType] = None,
+    ints: Optional[Namespace[NDArray[T]]] = None,
+    left: bool = False,
+) -&gt; NDArray[T]:
+    """Apply the Hamiltonian to a vector.
+
+    Args:
+        vector: State vector to apply the Hamiltonian to.
+        eris: Electronic repulsion integrals.
+        ints: Intermediate products.
+        left: Whether to apply the left-hand side of the Hamiltonian.
+
+    Returns:
+        Resulting vector.
+    """
+    if not ints:
+        ints = self.matvec_intermediates(eris=eris, left=left)
+    amplitudes = self.vector_to_amplitudes(vector)
+    func, kwargs = self.ebcc._load_function(
+        f"hbar_{'l' if left else ''}matvec_ee",
+        eris=eris,
+        ints=ints,
+        amplitudes=self.ebcc.amplitudes,
+        excitations=amplitudes,
+    )
+    res: Namespace[SpinArrayType] = func(**kwargs)
+    res = util.Namespace(**{key.rstrip("new"): val for key, val in res.items()})
+    return self.amplitudes_to_vector(res)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.eom.base.BaseEE_EOM.matvec_intermediates" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.base.BaseEE_EOM.matvec_intermediates(eris=None, left=False)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the intermediates for application of the Hamiltonian to a vector.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>eris</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.cc.base.ERIsInputType" href="../../cc/base/#ebcc.cc.base.ERIsInputType">ERIsInputType</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Electronic repulsion integrals.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>left</code></b>
+                  (<code>bool</code>, default:
+                      <code>False</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Whether to apply the left-hand side of the Hamiltonian.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.base.T">T</span>]]</code>
+              –
+              <div class="doc-md-description">
+                <p>Intermediate products.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/eom/base.py</code></summary>
+              <pre class="highlight"><code class="language-python">def matvec_intermediates(
+    self, eris: Optional[ERIsInputType] = None, left: bool = False
+) -&gt; Namespace[NDArray[T]]:
+    """Get the intermediates for application of the Hamiltonian to a vector.
+
+    Args:
+        eris: Electronic repulsion integrals.
+        left: Whether to apply the left-hand side of the Hamiltonian.
+
+    Returns:
+        Intermediate products.
+    """
+    func, kwargs = self.ebcc._load_function(
+        f"hbar_{'l' if left else ''}matvec_ee_intermediates",
+        eris=eris,
+        amplitudes=self.ebcc.amplitudes,
+    )
+    res: Namespace[NDArray[T]] = util.Namespace(**func(**kwargs))
+    return res</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../geom/" class="btn btn-neutral float-left" title="Generalised"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../../opt/rbrueckner/" class="btn btn-neutral float-right" title="Restricted">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../geom/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../../opt/rbrueckner/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

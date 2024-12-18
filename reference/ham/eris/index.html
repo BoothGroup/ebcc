@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>ERIs - ebcc</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "ERIs";
+        var mkdocs_page_input_path = "reference/ham/eris.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> ebcc
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../features/">Features</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Code Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" >Coupled cluster</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/rebcc/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/uebcc/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/gebcc/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Equation of motion</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/reom/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/ueom/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/geom/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Orbital optimisation</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" >Brueckner</a>
+    <ul>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/rbrueckner/">Restricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/ubrueckner/">Unrestricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/gbrueckner/">Generalised</a>
+                </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../opt/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Core</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/ansatz/">Ansatz</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/damping/">Damping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/dump/">Dumping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/logging/">Logging</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/precision/">Precision</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >Hamiltonian</a>
+    <ul class="current">
+                <li class="toctree-l2"><a class="reference internal" href="../space/">Space</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../fock/">Fock</a>
+                </li>
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">ERIs</a>
+    <ul class="current">
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../cderis/">CDERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../elbos/">Bosonic</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Utility</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/permutations/">Permutations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/einsumfunc/">Einstein summations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/misc/">Miscellaneous</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">ebcc</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Code Reference</li>
+          <li class="breadcrumb-item">Hamiltonian</li>
+      <li class="breadcrumb-item active">ERIs</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="ebcc.ham.eris"></a>
+    <div class="doc doc-contents first">
+
+        <p>Electronic repulsion integral containers.</p>
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.ham.eris.RERIs" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.ham.eris.RERIs(mf, space, mo_coeff=None)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="ebcc.ham.base.BaseERIs" href="../base/#ebcc.ham.base.BaseERIs">BaseERIs</a></code>, <code><a class="autorefs autorefs-internal" title="ebcc.ham.base.BaseRHamiltonian" href="../base/#ebcc.ham.base.BaseRHamiltonian">BaseRHamiltonian</a></code></p>
+
+
+        <p>Restricted ERIs container class.</p>
+
+        <p>Initialise the Hamiltonian.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>mf</code></b>
+                  (<code><span title="pyscf.scf.hf.SCF">SCF</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Mean-field object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>space</code></b>
+                  (<code>tuple[<span title="ebcc.cc.base.SpaceType">SpaceType</span>, ...]</code>)
+              –
+              <div class="doc-md-description">
+                <p>Space object for each index.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>mo_coeff</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[tuple[<span title="ebcc.ham.base.CoeffType">CoeffType</span>, ...]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Molecular orbital coefficients for each index.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/ham/base.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(
+    self,
+    mf: SCF,
+    space: tuple[SpaceType, ...],
+    mo_coeff: Optional[tuple[CoeffType, ...]] = None,
+) -&gt; None:
+    """Initialise the Hamiltonian.
+
+    Args:
+        mf: Mean-field object.
+        space: Space object for each index.
+        mo_coeff: Molecular orbital coefficients for each index.
+    """
+    Namespace.__init__(self)
+
+    # Parameters:
+    self.__dict__["mf"] = mf
+    self.__dict__["space"] = space
+    self.__dict__["mo_coeff"] = mo_coeff if mo_coeff is not None else (mf.mo_coeff,) * 4</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.ham.eris.RERIs.__getitem__" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.eris.RERIs.__getitem__(key)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Just-in-time getter.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>key</code></b>
+                  (<code>str</code>)
+              –
+              <div class="doc-md-description">
+                <p>Key to get.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.ham.eris.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>ERIs for the given spaces.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/ham/eris.py</code></summary>
+              <pre class="highlight"><code class="language-python">def __getitem__(self, key: str) -&gt; NDArray[T]:
+    """Just-in-time getter.
+
+    Args:
+        key: Key to get.
+
+    Returns:
+        ERIs for the given spaces.
+    """
+    if key not in self._members.keys():
+        # Get the coefficients and shape
+        coeffs = self._get_coeffs(key)
+        coeffs = tuple(self._to_pyscf_backend(c) for c in coeffs)
+        shape = tuple(c.shape[-1] for c in coeffs)
+
+        # Transform the block
+        # TODO: Optimise for patially AO
+        if getattr(self.mf, "_eri", None) is not None:
+            block = pyscf.ao2mo.incore.general(self.mf._eri, coeffs, compact=False)
+        else:
+            block = pyscf.ao2mo.kernel(self.mf.mol, coeffs, compact=False)
+        block = np.reshape(block, shape)
+
+        # Store the block
+        self._members[key] = np.asarray(block, dtype=types[float])
+
+    return self._members[key]</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.ham.eris.UERIs" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.ham.eris.UERIs(mf, space, mo_coeff=None)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="ebcc.ham.base.BaseERIs" href="../base/#ebcc.ham.base.BaseERIs">BaseERIs</a></code>, <code><a class="autorefs autorefs-internal" title="ebcc.ham.base.BaseUHamiltonian" href="../base/#ebcc.ham.base.BaseUHamiltonian">BaseUHamiltonian</a></code></p>
+
+
+        <p>Unrestricted ERIs container class.</p>
+
+        <p>Initialise the Hamiltonian.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>mf</code></b>
+                  (<code><span title="pyscf.scf.hf.SCF">SCF</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Mean-field object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>space</code></b>
+                  (<code>tuple[<span title="ebcc.cc.base.SpaceType">SpaceType</span>, ...]</code>)
+              –
+              <div class="doc-md-description">
+                <p>Space object for each index.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>mo_coeff</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[tuple[<span title="ebcc.ham.base.CoeffType">CoeffType</span>, ...]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Molecular orbital coefficients for each index.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/ham/base.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(
+    self,
+    mf: SCF,
+    space: tuple[SpaceType, ...],
+    mo_coeff: Optional[tuple[CoeffType, ...]] = None,
+) -&gt; None:
+    """Initialise the Hamiltonian.
+
+    Args:
+        mf: Mean-field object.
+        space: Space object for each index.
+        mo_coeff: Molecular orbital coefficients for each index.
+    """
+    Namespace.__init__(self)
+
+    # Parameters:
+    self.__dict__["mf"] = mf
+    self.__dict__["space"] = space
+    self.__dict__["mo_coeff"] = mo_coeff if mo_coeff is not None else (mf.mo_coeff,) * 4</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.ham.eris.UERIs.__getitem__" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.eris.UERIs.__getitem__(key)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Just-in-time getter.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>key</code></b>
+                  (<code>str</code>)
+              –
+              <div class="doc-md-description">
+                <p>Key to get.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><a class="autorefs autorefs-internal" title="ebcc.ham.eris.RERIs" href="#ebcc.ham.eris.RERIs">RERIs</a></code>
+              –
+              <div class="doc-md-description">
+                <p>ERIs for the given spins.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/ham/eris.py</code></summary>
+              <pre class="highlight"><code class="language-python">def __getitem__(self, key: str) -&gt; RERIs:
+    """Just-in-time getter.
+
+    Args:
+        key: Key to get.
+
+    Returns:
+        ERIs for the given spins.
+    """
+    if key not in ("aaaa", "aabb", "bbaa", "bbbb"):
+        raise KeyError(f"Invalid key: {key}")
+
+    if key not in self._members:
+        i = "ab".index(key[0])
+        j = "ab".index(key[2])
+
+        self._members[key] = RERIs(
+            self.mf,
+            space=(self.space[0][i], self.space[1][i], self.space[2][j], self.space[3][j]),
+            mo_coeff=(
+                self.mo_coeff[0][i],
+                self.mo_coeff[1][i],
+                self.mo_coeff[2][j],
+                self.mo_coeff[3][j],
+            ),
+        )
+
+    return self._members[key]</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.ham.eris.GERIs" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.ham.eris.GERIs(*args, **kwargs)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="ebcc.ham.base.BaseERIs" href="../base/#ebcc.ham.base.BaseERIs">BaseERIs</a></code>, <code><a class="autorefs autorefs-internal" title="ebcc.ham.base.BaseGHamiltonian" href="../base/#ebcc.ham.base.BaseGHamiltonian">BaseGHamiltonian</a></code></p>
+
+
+        <p>Generalised ERIs container class.</p>
+
+        <p>Initialise the class.</p>
+
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/ham/eris.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(self, *args: Any, **kwargs: Any) -&gt; None:
+    """Initialise the class."""
+    super().__init__(*args, **kwargs)
+
+    # Get the coefficients and shape
+    mo_a = [self._to_pyscf_backend(mo[: self.mf.mol.nao]) for mo in self.mo_coeff]
+    mo_b = [self._to_pyscf_backend(mo[self.mf.mol.nao :]) for mo in self.mo_coeff]
+    shape = tuple(mo.shape[-1] for mo in self.mo_coeff)
+    if len(set(shape)) != 1:
+        raise ValueError(
+            "MO coefficients must have the same number of basis functions for "
+            f"{self.__class__.__name__}."
+        )
+    nmo = shape[0]
+
+    if getattr(self.mf, "_eri", None) is not None:
+        array = pyscf.ao2mo.incore.general(self.mf._eri, mo_a)
+        array += pyscf.ao2mo.incore.general(self.mf._eri, mo_b)
+        array += pyscf.ao2mo.incore.general(self.mf._eri, mo_a[:2] + mo_b[2:])
+        array += pyscf.ao2mo.incore.general(self.mf._eri, mo_b[:2] + mo_a[2:])
+    else:
+        array = pyscf.ao2mo.kernel(self.mf.mol, mo_a)
+        array += pyscf.ao2mo.kernel(self.mf.mol, mo_b)
+        array += pyscf.ao2mo.kernel(self.mf.mol, mo_a[:2] + mo_b[2:])
+        array += pyscf.ao2mo.kernel(self.mf.mol, mo_b[:2] + mo_a[2:])
+    array = pyscf.ao2mo.addons.restore(1, array, nmo)
+    array = np.reshape(array, shape)
+    array = self._to_ebcc_backend(array)
+
+    # Transform to antisymmetric Physicist's notation
+    array = np.transpose(array, (0, 2, 1, 3)) - np.transpose(array, (0, 2, 3, 1))
+
+    # Store the array
+    self.__dict__["_array"] = array</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.ham.eris.GERIs.__getitem__" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.eris.GERIs.__getitem__(key)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Just-in-time getter.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>key</code></b>
+                  (<code>str</code>)
+              –
+              <div class="doc-md-description">
+                <p>Key to get.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.ham.eris.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>ERIs for the given spaces.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/ham/eris.py</code></summary>
+              <pre class="highlight"><code class="language-python">def __getitem__(self, key: str) -&gt; NDArray[T]:
+    """Just-in-time getter.
+
+    Args:
+        key: Key to get.
+
+    Returns:
+        ERIs for the given spaces.
+    """
+    if "p" in key:
+        raise NotImplementedError(f"AO basis not supported in {self.__class__.__name__}.")
+    return self._array[self._get_slices(key)]</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../fock/" class="btn btn-neutral float-left" title="Fock"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../cderis/" class="btn btn-neutral float-right" title="CDERIs">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../fock/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../cderis/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

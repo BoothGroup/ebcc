@@ -1,0 +1,1667 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Unrestricted - ebcc</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Unrestricted";
+        var mkdocs_page_input_path = "reference/eom/ueom.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> ebcc
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../features/">Features</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Code Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" >Coupled cluster</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/rebcc/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/uebcc/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/gebcc/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >Equation of motion</a>
+    <ul class="current">
+                <li class="toctree-l2"><a class="reference internal" href="../reom/">Restricted</a>
+                </li>
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">Unrestricted</a>
+    <ul class="current">
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../geom/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Orbital optimisation</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" >Brueckner</a>
+    <ul>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/rbrueckner/">Restricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/ubrueckner/">Unrestricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/gbrueckner/">Generalised</a>
+                </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../opt/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Core</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/ansatz/">Ansatz</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/damping/">Damping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/dump/">Dumping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/logging/">Logging</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/precision/">Precision</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Hamiltonian</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/space/">Space</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/fock/">Fock</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/eris/">ERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/cderis/">CDERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/elbos/">Bosonic</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Utility</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/permutations/">Permutations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/einsumfunc/">Einstein summations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/misc/">Miscellaneous</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">ebcc</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Code Reference</li>
+          <li class="breadcrumb-item">Equation of motion</li>
+      <li class="breadcrumb-item active">Unrestricted</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="ebcc.eom.ueom"></a>
+    <div class="doc doc-contents first">
+
+        <p>Unrestricted equation-of-motion coupled cluster.</p>
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.eom.ueom.UEOM" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.eom.ueom.UEOM(ebcc, options=None, **kwargs)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="ebcc.eom.base.BaseEOM" href="../base/#ebcc.eom.base.BaseEOM">BaseEOM</a></code></p>
+
+
+        <p>Unrestricted equation-of-motion coupled cluster.</p>
+
+        <p>Initialise the EOM object.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>ebcc</code></b>
+                  (<code><a class="autorefs autorefs-internal" title="ebcc.cc.base.BaseEBCC" href="../../cc/base/#ebcc.cc.base.BaseEBCC">BaseEBCC</a></code>)
+              –
+              <div class="doc-md-description">
+                <p>Parent <code>EBCC</code> object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>options</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.eom.base.BaseOptions" href="../base/#ebcc.eom.base.BaseOptions">BaseOptions</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Options for the EOM calculation.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>**kwargs</code></b>
+                  (<code><span title="typing.Any">Any</span></code>, default:
+                      <code>{}</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Additional keyword arguments used to update <code>options</code>.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/eom/base.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(
+    self,
+    ebcc: BaseEBCC,
+    options: Optional[BaseOptions] = None,
+    **kwargs: Any,
+) -&gt; None:
+    """Initialise the EOM object.
+
+    Args:
+        ebcc: Parent `EBCC` object.
+        options: Options for the EOM calculation.
+        **kwargs: Additional keyword arguments used to update `options`.
+    """
+    # Options:
+    if options is None:
+        options = self.Options()
+    self.options = options
+    for key, val in kwargs.items():
+        setattr(self.options, key, val)
+
+    # Parameters:
+    self.ebcc = ebcc
+    self.space = ebcc.space
+    self.ansatz = ebcc.ansatz
+    self.log = ebcc.log
+
+    # Attributes:
+    self.converged = False
+    self.e: NDArray[T] = np.zeros((0,), dtype=types[float])
+    self.v: NDArray[T] = np.zeros((0, 0), dtype=types[float])
+
+    # Logging:
+    self.log.info(f"\n{ANSI.B}{ANSI.U}{self.name}{ANSI.R}")
+    self.log.debug(f"{ANSI.B}{'*' * len(self.name)}{ANSI.R}")
+    self.log.debug("")
+    self.log.info(f"{ANSI.B}Options{ANSI.R}:")
+    self.log.info(f" &gt; nroots:  {ANSI.y}{self.options.nroots}{ANSI.R}")
+    self.log.info(f" &gt; e_tol:  {ANSI.y}{self.options.e_tol}{ANSI.R}")
+    self.log.info(f" &gt; max_iter:  {ANSI.y}{self.options.max_iter}{ANSI.R}")
+    self.log.info(f" &gt; max_space:  {ANSI.y}{self.options.max_space}{ANSI.R}")
+    self.log.debug("")</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.eom.ueom.IP_UEOM" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.eom.ueom.IP_UEOM(ebcc, options=None, **kwargs)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="ebcc.eom.ueom.UEOM" href="#ebcc.eom.ueom.UEOM">UEOM</a></code>, <code><a class="autorefs autorefs-internal" title="ebcc.eom.base.BaseIP_EOM" href="../base/#ebcc.eom.base.BaseIP_EOM">BaseIP_EOM</a></code></p>
+
+
+        <p>Unrestricted ionisation potential equation-of-motion coupled cluster.</p>
+
+        <p>Initialise the EOM object.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>ebcc</code></b>
+                  (<code><a class="autorefs autorefs-internal" title="ebcc.cc.base.BaseEBCC" href="../../cc/base/#ebcc.cc.base.BaseEBCC">BaseEBCC</a></code>)
+              –
+              <div class="doc-md-description">
+                <p>Parent <code>EBCC</code> object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>options</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.eom.base.BaseOptions" href="../base/#ebcc.eom.base.BaseOptions">BaseOptions</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Options for the EOM calculation.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>**kwargs</code></b>
+                  (<code><span title="typing.Any">Any</span></code>, default:
+                      <code>{}</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Additional keyword arguments used to update <code>options</code>.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/eom/base.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(
+    self,
+    ebcc: BaseEBCC,
+    options: Optional[BaseOptions] = None,
+    **kwargs: Any,
+) -&gt; None:
+    """Initialise the EOM object.
+
+    Args:
+        ebcc: Parent `EBCC` object.
+        options: Options for the EOM calculation.
+        **kwargs: Additional keyword arguments used to update `options`.
+    """
+    # Options:
+    if options is None:
+        options = self.Options()
+    self.options = options
+    for key, val in kwargs.items():
+        setattr(self.options, key, val)
+
+    # Parameters:
+    self.ebcc = ebcc
+    self.space = ebcc.space
+    self.ansatz = ebcc.ansatz
+    self.log = ebcc.log
+
+    # Attributes:
+    self.converged = False
+    self.e: NDArray[T] = np.zeros((0,), dtype=types[float])
+    self.v: NDArray[T] = np.zeros((0, 0), dtype=types[float])
+
+    # Logging:
+    self.log.info(f"\n{ANSI.B}{ANSI.U}{self.name}{ANSI.R}")
+    self.log.debug(f"{ANSI.B}{'*' * len(self.name)}{ANSI.R}")
+    self.log.debug("")
+    self.log.info(f"{ANSI.B}Options{ANSI.R}:")
+    self.log.info(f" &gt; nroots:  {ANSI.y}{self.options.nroots}{ANSI.R}")
+    self.log.info(f" &gt; e_tol:  {ANSI.y}{self.options.e_tol}{ANSI.R}")
+    self.log.info(f" &gt; max_iter:  {ANSI.y}{self.options.max_iter}{ANSI.R}")
+    self.log.info(f" &gt; max_space:  {ANSI.y}{self.options.max_space}{ANSI.R}")
+    self.log.debug("")</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.eom.ueom.IP_UEOM.diag" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.ueom.IP_UEOM.diag(eris=None)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the diagonal of the Hamiltonian.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>eris</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="ebcc.cc.uebcc.ERIsInputType">ERIsInputType</span>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Electronic repulsion integrals.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.ueom.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Diagonal of the Hamiltonian.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/eom/ueom.py</code></summary>
+              <pre class="highlight"><code class="language-python">def diag(self, eris: Optional[ERIsInputType] = None) -&gt; NDArray[T]:
+    """Get the diagonal of the Hamiltonian.
+
+    Args:
+        eris: Electronic repulsion integrals.
+
+    Returns:
+        Diagonal of the Hamiltonian.
+    """
+    parts: Namespace[SpinArrayType] = util.Namespace()
+
+    for name, key, n in self.ansatz.fermionic_cluster_ranks(
+        spin_type=self.spin_type, which="ip"
+    ):
+        spin_part: SpinArrayType = util.Namespace()
+        for comb in util.generate_spin_combinations(n, excited=True):
+            spin_part[comb] = self.ebcc.energy_sum(key, comb)
+        parts[name] = spin_part
+
+    for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ip"):
+        raise util.ModelNotImplemented
+
+    return self.amplitudes_to_vector(parts)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.eom.ueom.IP_UEOM.amplitudes_to_vector" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.ueom.IP_UEOM.amplitudes_to_vector(amplitudes)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Construct a vector containing all of the IP-EOM amplitudes.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>amplitudes</code></b>
+                  (<code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.uebcc.SpinArrayType">SpinArrayType</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>IP-EOM amplitudes.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.ueom.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>IP-EOM amplitudes as a vector.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/eom/ueom.py</code></summary>
+              <pre class="highlight"><code class="language-python">def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -&gt; NDArray[T]:
+    """Construct a vector containing all of the IP-EOM amplitudes.
+
+    Args:
+        amplitudes: IP-EOM amplitudes.
+
+    Returns:
+        IP-EOM amplitudes as a vector.
+    """
+    vectors = []
+
+    for name, key, n in self.ansatz.fermionic_cluster_ranks(
+        spin_type=self.spin_type, which="ip"
+    ):
+        for spin in util.generate_spin_combinations(n, excited=True, unique=True):
+            vn = amplitudes[name][spin]
+            subscript, _ = util.combine_subscripts(key, spin)
+            vectors.append(np.ravel(util.compress_axes(subscript, vn)))
+
+    for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ip"):
+        raise util.ModelNotImplemented
+
+    for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+        spin_type=self.spin_type, which="ip"
+    ):
+        raise util.ModelNotImplemented
+
+    return np.concatenate(vectors)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.eom.ueom.IP_UEOM.vector_to_amplitudes" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.ueom.IP_UEOM.vector_to_amplitudes(vector)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Construct a namespace of IP-EOM amplitudes from a vector.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>vector</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.ueom.T">T</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>IP-EOM amplitudes as a vector.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.uebcc.SpinArrayType">SpinArrayType</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>IP-EOM amplitudes.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/eom/ueom.py</code></summary>
+              <pre class="highlight"><code class="language-python">def vector_to_amplitudes(self, vector: NDArray[T]) -&gt; Namespace[SpinArrayType]:
+    """Construct a namespace of IP-EOM amplitudes from a vector.
+
+    Args:
+        vector: IP-EOM amplitudes as a vector.
+
+    Returns:
+        IP-EOM amplitudes.
+    """
+    amplitudes: Namespace[SpinArrayType] = util.Namespace()
+    i0 = 0
+    sizes: dict[tuple[str, ...], int] = {
+        (o, s): self.space[i].size(o) for o in "ovOVia" for i, s in enumerate("ab")
+    }
+
+    for name, key, n in self.ansatz.fermionic_cluster_ranks(
+        spin_type=self.spin_type, which="ip"
+    ):
+        amp: SpinArrayType = util.Namespace()
+        for spin in util.generate_spin_combinations(n, excited=True, unique=True):
+            subscript, csizes = util.combine_subscripts(key, spin, sizes=sizes)
+            size = util.get_compressed_size(subscript, **csizes)
+            shape = tuple(self.space["ab".index(s)].size(k) for s, k in zip(spin, key))
+            vn_tril = vector[i0 : i0 + size]
+            factor = max(
+                spin[:n].count(s) for s in set(spin[:n])
+            )  # FIXME why? untested for n &gt; 2
+            vn = util.decompress_axes(subscript, vn_tril, shape=shape) / factor
+            amp[spin] = vn
+            i0 += size
+
+        amplitudes[name] = amp
+
+    for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ip"):
+        raise util.ModelNotImplemented
+
+    for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+        spin_type=self.spin_type, which="ip"
+    ):
+        raise util.ModelNotImplemented
+
+    assert i0 == len(vector)
+
+    return amplitudes</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.eom.ueom.EA_UEOM" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.eom.ueom.EA_UEOM(ebcc, options=None, **kwargs)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="ebcc.eom.ueom.UEOM" href="#ebcc.eom.ueom.UEOM">UEOM</a></code>, <code><a class="autorefs autorefs-internal" title="ebcc.eom.base.BaseEA_EOM" href="../base/#ebcc.eom.base.BaseEA_EOM">BaseEA_EOM</a></code></p>
+
+
+        <p>Unrestricted electron affinity equation-of-motion coupled cluster.</p>
+
+        <p>Initialise the EOM object.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>ebcc</code></b>
+                  (<code><a class="autorefs autorefs-internal" title="ebcc.cc.base.BaseEBCC" href="../../cc/base/#ebcc.cc.base.BaseEBCC">BaseEBCC</a></code>)
+              –
+              <div class="doc-md-description">
+                <p>Parent <code>EBCC</code> object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>options</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.eom.base.BaseOptions" href="../base/#ebcc.eom.base.BaseOptions">BaseOptions</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Options for the EOM calculation.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>**kwargs</code></b>
+                  (<code><span title="typing.Any">Any</span></code>, default:
+                      <code>{}</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Additional keyword arguments used to update <code>options</code>.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/eom/base.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(
+    self,
+    ebcc: BaseEBCC,
+    options: Optional[BaseOptions] = None,
+    **kwargs: Any,
+) -&gt; None:
+    """Initialise the EOM object.
+
+    Args:
+        ebcc: Parent `EBCC` object.
+        options: Options for the EOM calculation.
+        **kwargs: Additional keyword arguments used to update `options`.
+    """
+    # Options:
+    if options is None:
+        options = self.Options()
+    self.options = options
+    for key, val in kwargs.items():
+        setattr(self.options, key, val)
+
+    # Parameters:
+    self.ebcc = ebcc
+    self.space = ebcc.space
+    self.ansatz = ebcc.ansatz
+    self.log = ebcc.log
+
+    # Attributes:
+    self.converged = False
+    self.e: NDArray[T] = np.zeros((0,), dtype=types[float])
+    self.v: NDArray[T] = np.zeros((0, 0), dtype=types[float])
+
+    # Logging:
+    self.log.info(f"\n{ANSI.B}{ANSI.U}{self.name}{ANSI.R}")
+    self.log.debug(f"{ANSI.B}{'*' * len(self.name)}{ANSI.R}")
+    self.log.debug("")
+    self.log.info(f"{ANSI.B}Options{ANSI.R}:")
+    self.log.info(f" &gt; nroots:  {ANSI.y}{self.options.nroots}{ANSI.R}")
+    self.log.info(f" &gt; e_tol:  {ANSI.y}{self.options.e_tol}{ANSI.R}")
+    self.log.info(f" &gt; max_iter:  {ANSI.y}{self.options.max_iter}{ANSI.R}")
+    self.log.info(f" &gt; max_space:  {ANSI.y}{self.options.max_space}{ANSI.R}")
+    self.log.debug("")</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.eom.ueom.EA_UEOM.diag" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.ueom.EA_UEOM.diag(eris=None)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the diagonal of the Hamiltonian.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>eris</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="ebcc.cc.uebcc.ERIsInputType">ERIsInputType</span>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Electronic repulsion integrals.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.ueom.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Diagonal of the Hamiltonian.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/eom/ueom.py</code></summary>
+              <pre class="highlight"><code class="language-python">def diag(self, eris: Optional[ERIsInputType] = None) -&gt; NDArray[T]:
+    """Get the diagonal of the Hamiltonian.
+
+    Args:
+        eris: Electronic repulsion integrals.
+
+    Returns:
+        Diagonal of the Hamiltonian.
+    """
+    parts: Namespace[SpinArrayType] = util.Namespace()
+
+    for name, key, n in self.ansatz.fermionic_cluster_ranks(
+        spin_type=self.spin_type, which="ea"
+    ):
+        spin_part: SpinArrayType = util.Namespace()
+        for comb in util.generate_spin_combinations(n, excited=True):
+            spin_part[comb] = -self.ebcc.energy_sum(key, comb)
+        parts[name] = spin_part
+
+    for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ea"):
+        raise util.ModelNotImplemented
+
+    return self.amplitudes_to_vector(parts)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.eom.ueom.EA_UEOM.amplitudes_to_vector" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.ueom.EA_UEOM.amplitudes_to_vector(amplitudes)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Construct a vector containing all of the EA-EOM amplitudes.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>amplitudes</code></b>
+                  (<code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.uebcc.SpinArrayType">SpinArrayType</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>EA-EOM amplitudes.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.ueom.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>EA-EOM amplitudes as a vector.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/eom/ueom.py</code></summary>
+              <pre class="highlight"><code class="language-python">def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -&gt; NDArray[T]:
+    """Construct a vector containing all of the EA-EOM amplitudes.
+
+    Args:
+        amplitudes: EA-EOM amplitudes.
+
+    Returns:
+        EA-EOM amplitudes as a vector.
+    """
+    vectors = []
+
+    for name, key, n in self.ansatz.fermionic_cluster_ranks(
+        spin_type=self.spin_type, which="ea"
+    ):
+        for spin in util.generate_spin_combinations(n, excited=True, unique=True):
+            vn = amplitudes[name][spin]
+            subscript, _ = util.combine_subscripts(key, spin)
+            vectors.append(np.ravel(util.compress_axes(subscript, vn)))
+
+    for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ea"):
+        raise util.ModelNotImplemented
+
+    for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+        spin_type=self.spin_type, which="ea"
+    ):
+        raise util.ModelNotImplemented
+
+    return np.concatenate(vectors)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.eom.ueom.EA_UEOM.vector_to_amplitudes" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.ueom.EA_UEOM.vector_to_amplitudes(vector)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Construct a namespace of EA-EOM amplitudes from a vector.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>vector</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.ueom.T">T</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>EA-EOM amplitudes as a vector.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.uebcc.SpinArrayType">SpinArrayType</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>EA-EOM amplitudes.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/eom/ueom.py</code></summary>
+              <pre class="highlight"><code class="language-python">def vector_to_amplitudes(self, vector: NDArray[T]) -&gt; Namespace[SpinArrayType]:
+    """Construct a namespace of EA-EOM amplitudes from a vector.
+
+    Args:
+        vector: EA-EOM amplitudes as a vector.
+
+    Returns:
+        EA-EOM amplitudes.
+    """
+    amplitudes: Namespace[SpinArrayType] = util.Namespace()
+    i0 = 0
+    sizes: dict[tuple[str, ...], int] = {
+        (o, s): self.space[i].size(o) for o in "ovOVia" for i, s in enumerate("ab")
+    }
+
+    for name, key, n in self.ansatz.fermionic_cluster_ranks(
+        spin_type=self.spin_type, which="ea"
+    ):
+        amp: SpinArrayType = util.Namespace()
+        for spin in util.generate_spin_combinations(n, excited=True, unique=True):
+            subscript, csizes = util.combine_subscripts(key, spin, sizes=sizes)
+            size = util.get_compressed_size(subscript, **csizes)
+            shape = tuple(self.space["ab".index(s)].size(k) for s, k in zip(spin, key))
+            vn_tril = vector[i0 : i0 + size]
+            factor = max(
+                spin[:n].count(s) for s in set(spin[:n])
+            )  # FIXME why? untested for n &gt; 2
+            vn = util.decompress_axes(subscript, vn_tril, shape=shape) / factor
+            amp[spin] = vn
+            i0 += size
+
+        amplitudes[name] = amp
+
+    for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ea"):
+        raise util.ModelNotImplemented
+
+    for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+        spin_type=self.spin_type, which="ea"
+    ):
+        raise util.ModelNotImplemented
+
+    assert i0 == len(vector)
+
+    return amplitudes</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.eom.ueom.EE_UEOM" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.eom.ueom.EE_UEOM(ebcc, options=None, **kwargs)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="ebcc.eom.ueom.UEOM" href="#ebcc.eom.ueom.UEOM">UEOM</a></code>, <code><a class="autorefs autorefs-internal" title="ebcc.eom.base.BaseEE_EOM" href="../base/#ebcc.eom.base.BaseEE_EOM">BaseEE_EOM</a></code></p>
+
+
+        <p>Unrestricted electron-electron equation-of-motion coupled cluster.</p>
+
+        <p>Initialise the EOM object.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>ebcc</code></b>
+                  (<code><a class="autorefs autorefs-internal" title="ebcc.cc.base.BaseEBCC" href="../../cc/base/#ebcc.cc.base.BaseEBCC">BaseEBCC</a></code>)
+              –
+              <div class="doc-md-description">
+                <p>Parent <code>EBCC</code> object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>options</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.eom.base.BaseOptions" href="../base/#ebcc.eom.base.BaseOptions">BaseOptions</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Options for the EOM calculation.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>**kwargs</code></b>
+                  (<code><span title="typing.Any">Any</span></code>, default:
+                      <code>{}</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Additional keyword arguments used to update <code>options</code>.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/eom/base.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(
+    self,
+    ebcc: BaseEBCC,
+    options: Optional[BaseOptions] = None,
+    **kwargs: Any,
+) -&gt; None:
+    """Initialise the EOM object.
+
+    Args:
+        ebcc: Parent `EBCC` object.
+        options: Options for the EOM calculation.
+        **kwargs: Additional keyword arguments used to update `options`.
+    """
+    # Options:
+    if options is None:
+        options = self.Options()
+    self.options = options
+    for key, val in kwargs.items():
+        setattr(self.options, key, val)
+
+    # Parameters:
+    self.ebcc = ebcc
+    self.space = ebcc.space
+    self.ansatz = ebcc.ansatz
+    self.log = ebcc.log
+
+    # Attributes:
+    self.converged = False
+    self.e: NDArray[T] = np.zeros((0,), dtype=types[float])
+    self.v: NDArray[T] = np.zeros((0, 0), dtype=types[float])
+
+    # Logging:
+    self.log.info(f"\n{ANSI.B}{ANSI.U}{self.name}{ANSI.R}")
+    self.log.debug(f"{ANSI.B}{'*' * len(self.name)}{ANSI.R}")
+    self.log.debug("")
+    self.log.info(f"{ANSI.B}Options{ANSI.R}:")
+    self.log.info(f" &gt; nroots:  {ANSI.y}{self.options.nroots}{ANSI.R}")
+    self.log.info(f" &gt; e_tol:  {ANSI.y}{self.options.e_tol}{ANSI.R}")
+    self.log.info(f" &gt; max_iter:  {ANSI.y}{self.options.max_iter}{ANSI.R}")
+    self.log.info(f" &gt; max_space:  {ANSI.y}{self.options.max_space}{ANSI.R}")
+    self.log.debug("")</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.eom.ueom.EE_UEOM.diag" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.ueom.EE_UEOM.diag(eris=None)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the diagonal of the Hamiltonian.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>eris</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="ebcc.cc.uebcc.ERIsInputType">ERIsInputType</span>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Electronic repulsion integrals.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.ueom.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Diagonal of the Hamiltonian.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/eom/ueom.py</code></summary>
+              <pre class="highlight"><code class="language-python">def diag(self, eris: Optional[ERIsInputType] = None) -&gt; NDArray[T]:
+    """Get the diagonal of the Hamiltonian.
+
+    Args:
+        eris: Electronic repulsion integrals.
+
+    Returns:
+        Diagonal of the Hamiltonian.
+    """
+    parts: Namespace[SpinArrayType] = util.Namespace()
+
+    for name, key, n in self.ansatz.fermionic_cluster_ranks(
+        spin_type=self.spin_type, which="ee"
+    ):
+        spin_part: SpinArrayType = util.Namespace()
+        for comb in util.generate_spin_combinations(n, unique=True):
+            spin_part[comb] = self.ebcc.energy_sum(key, comb)
+        parts[name] = spin_part
+
+    for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ee"):
+        raise util.ModelNotImplemented
+
+    return self.amplitudes_to_vector(parts)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.eom.ueom.EE_UEOM.amplitudes_to_vector" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.ueom.EE_UEOM.amplitudes_to_vector(amplitudes)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Construct a vector containing all of the EE-EOM amplitudes.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>amplitudes</code></b>
+                  (<code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.uebcc.SpinArrayType">SpinArrayType</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>EE-EOM amplitudes.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.ueom.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>EE-EOM amplitudes as a vector.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/eom/ueom.py</code></summary>
+              <pre class="highlight"><code class="language-python">def amplitudes_to_vector(self, amplitudes: Namespace[SpinArrayType]) -&gt; NDArray[T]:
+    """Construct a vector containing all of the EE-EOM amplitudes.
+
+    Args:
+        amplitudes: EE-EOM amplitudes.
+
+    Returns:
+        EE-EOM amplitudes as a vector.
+    """
+    vectors = []
+
+    for name, key, n in self.ansatz.fermionic_cluster_ranks(
+        spin_type=self.spin_type, which="ee"
+    ):
+        for spin in util.generate_spin_combinations(n, unique=True):
+            vn = amplitudes[name][spin]
+            subscript, _ = util.combine_subscripts(key, spin)
+            vectors.append(np.ravel(util.compress_axes(subscript, vn)))
+
+    for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ee"):
+        raise util.ModelNotImplemented
+
+    for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+        spin_type=self.spin_type, which="ee"
+    ):
+        raise util.ModelNotImplemented
+
+    return np.concatenate(vectors)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.eom.ueom.EE_UEOM.vector_to_amplitudes" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.eom.ueom.EE_UEOM.vector_to_amplitudes(vector)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Construct a namespace of EE-EOM amplitudes from a vector.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>vector</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.eom.ueom.T">T</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>EE-EOM amplitudes as a vector.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<span title="ebcc.cc.uebcc.SpinArrayType">SpinArrayType</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>EE-EOM amplitudes.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/eom/ueom.py</code></summary>
+              <pre class="highlight"><code class="language-python">def vector_to_amplitudes(self, vector: NDArray[T]) -&gt; Namespace[SpinArrayType]:
+    """Construct a namespace of EE-EOM amplitudes from a vector.
+
+    Args:
+        vector: EE-EOM amplitudes as a vector.
+
+    Returns:
+        EE-EOM amplitudes.
+    """
+    amplitudes: Namespace[SpinArrayType] = util.Namespace()
+    i0 = 0
+    sizes: dict[tuple[str, ...], int] = {
+        (o, s): self.space[i].size(o) for o in "ovOVia" for i, s in enumerate("ab")
+    }
+
+    for name, key, n in self.ansatz.fermionic_cluster_ranks(
+        spin_type=self.spin_type, which="ee"
+    ):
+        amp: SpinArrayType = util.Namespace()
+        for spin in util.generate_spin_combinations(n, unique=True):
+            subscript, csizes = util.combine_subscripts(key, spin, sizes=sizes)
+            size = util.get_compressed_size(subscript, **csizes)
+            shape = tuple(self.space["ab".index(s)].size(k) for s, k in zip(spin, key))
+            vn_tril = vector[i0 : i0 + size]
+            factor = max(
+                spin[:n].count(s) for s in set(spin[:n])
+            )  # FIXME why? untested for n &gt; 2
+            vn = util.decompress_axes(subscript, vn_tril, shape=shape) / factor
+            amp[spin] = vn
+            i0 += size
+
+        amplitudes[name] = amp
+
+    for name, key, n in self.ansatz.bosonic_cluster_ranks(spin_type=self.spin_type, which="ee"):
+        raise util.ModelNotImplemented
+
+    for name, key, nf, nb in self.ansatz.coupling_cluster_ranks(
+        spin_type=self.spin_type, which="ee"
+    ):
+        raise util.ModelNotImplemented
+
+    assert i0 == len(vector)
+
+    return amplitudes</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../reom/" class="btn btn-neutral float-left" title="Restricted"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../geom/" class="btn btn-neutral float-right" title="Generalised">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../reom/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../geom/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

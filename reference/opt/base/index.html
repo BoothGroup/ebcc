@@ -1,0 +1,1252 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Base - ebcc</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Base";
+        var mkdocs_page_input_path = "reference/opt/base.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> ebcc
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../features/">Features</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Code Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" >Coupled cluster</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/rebcc/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/uebcc/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/gebcc/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Equation of motion</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/reom/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/ueom/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/geom/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >Orbital optimisation</a>
+    <ul class="current">
+                <li class="toctree-l2"><a class="reference internal" >Brueckner</a>
+    <ul>
+                <li class="toctree-l3"><a class="reference internal" href="../rbrueckner/">Restricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../ubrueckner/">Unrestricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../gbrueckner/">Generalised</a>
+                </li>
+    </ul>
+                </li>
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">Base</a>
+    <ul class="current">
+    </ul>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Core</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/ansatz/">Ansatz</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/damping/">Damping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/dump/">Dumping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/logging/">Logging</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/precision/">Precision</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Hamiltonian</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/space/">Space</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/fock/">Fock</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/eris/">ERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/cderis/">CDERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/elbos/">Bosonic</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Utility</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/permutations/">Permutations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/einsumfunc/">Einstein summations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/misc/">Miscellaneous</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">ebcc</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Code Reference</li>
+          <li class="breadcrumb-item">Orbital optimisation</li>
+      <li class="breadcrumb-item active">Base</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="ebcc.opt.base"></a>
+    <div class="doc doc-contents first">
+
+        <p>Base classes for <code>ebcc.opt</code>.</p>
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.opt.base.BaseOptions" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.opt.base.BaseOptions(e_tol=1e-08, t_tol=1e-08, max_iter=20, diis_space=9, diis_min_space=1, damping=0.0)</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="ebcc.util._BaseOptions">_BaseOptions</span></code></p>
+
+
+        <p>Options for Brueckner-orbital calculations.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>e_tol</code></b>
+                  (<code>float</code>, default:
+                      <code>1e-08</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Threshold for converged in the correlation energy.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>t_tol</code></b>
+                  (<code>float</code>, default:
+                      <code>1e-08</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Threshold for converged in the amplitude norm.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>max_iter</code></b>
+                  (<code>int</code>, default:
+                      <code>20</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Maximum number of iterations.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>diis_space</code></b>
+                  (<code>int</code>, default:
+                      <code>9</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Number of amplitudes to use in DIIS extrapolation.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>diis_min_space</code></b>
+                  (<code>int</code>, default:
+                      <code>1</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Minimum number of amplitudes to use in DIIS extrapolation.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>damping</code></b>
+                  (<code>float</code>, default:
+                      <code>0.0</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Damping factor for DIIS extrapolation.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.opt.base.BaseBruecknerEBCC" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.opt.base.BaseBruecknerEBCC(cc, options=None, **kwargs)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="abc.ABC">ABC</span></code></p>
+
+
+        <p>Base class for Brueckner-orbital coupled cluster.</p>
+
+        <p>Initialise the Brueckner EBCC object.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>cc</code></b>
+                  (<code><a class="autorefs autorefs-internal" title="ebcc.cc.base.BaseEBCC" href="../../cc/base/#ebcc.cc.base.BaseEBCC">BaseEBCC</a></code>)
+              –
+              <div class="doc-md-description">
+                <p>Parent <code>EBCC</code> object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>options</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.opt.base.BaseOptions" href="#ebcc.opt.base.BaseOptions">BaseOptions</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Options for the EOM calculation.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>**kwargs</code></b>
+                  (<code><span title="typing.Any">Any</span></code>, default:
+                      <code>{}</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Additional keyword arguments used to update <code>options</code>.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/opt/base.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(
+    self,
+    cc: BaseEBCC,
+    options: Optional[BaseOptions] = None,
+    **kwargs: Any,
+) -&gt; None:
+    r"""Initialise the Brueckner EBCC object.
+
+    Args:
+        cc: Parent `EBCC` object.
+        options: Options for the EOM calculation.
+        **kwargs: Additional keyword arguments used to update `options`.
+    """
+    # Options:
+    if options is None:
+        options = self.Options()
+    self.options = options
+    for key, val in kwargs.items():
+        setattr(self.options, key, val)
+
+    # Parameters:
+    self.cc = cc
+    self.mf = cc.mf
+    self.space = cc.space
+    self.log = cc.log
+
+    # Attributes:
+    self.converged = False
+
+    # Logging:
+    init_logging(cc.log)
+    cc.log.info(f"\n{ANSI.B}{ANSI.U}{self.name}{ANSI.R}")
+    cc.log.debug(f"{ANSI.B}{'*' * len(self.name)}{ANSI.R}")
+    cc.log.debug("")
+    cc.log.info(f"{ANSI.B}Options{ANSI.R}:")
+    cc.log.info(f" &gt; e_tol:  {ANSI.y}{self.options.e_tol}{ANSI.R}")
+    cc.log.info(f" &gt; t_tol:  {ANSI.y}{self.options.t_tol}{ANSI.R}")
+    cc.log.info(f" &gt; max_iter:  {ANSI.y}{self.options.max_iter}{ANSI.R}")
+    cc.log.info(f" &gt; diis_space:  {ANSI.y}{self.options.diis_space}{ANSI.R}")
+    cc.log.info(f" &gt; diis_min_space:  {ANSI.y}{self.options.diis_min_space}{ANSI.R}")
+    cc.log.info(f" &gt; damping:  {ANSI.y}{self.options.damping}{ANSI.R}")
+    cc.log.debug("")</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.opt.base.BaseBruecknerEBCC.spin_type" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.opt.base.BaseBruecknerEBCC.spin_type: str</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the spin type.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.opt.base.BaseBruecknerEBCC.name" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.opt.base.BaseBruecknerEBCC.name: str</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the name of the method.</p>
+    </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.opt.base.BaseBruecknerEBCC.kernel" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.opt.base.BaseBruecknerEBCC.kernel()</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Run the Bruckner-orbital coupled cluster calculation.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code>float</code>
+              –
+              <div class="doc-md-description">
+                <p>Correlation energy.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/opt/base.py</code></summary>
+              <pre class="highlight"><code class="language-python">def kernel(self) -&gt; float:
+    """Run the Bruckner-orbital coupled cluster calculation.
+
+    Returns:
+        Correlation energy.
+    """
+    timer = util.Timer()
+
+    # Make sure the initial CC calculation is converged:
+    if not self.cc.converged:
+        with lib.temporary_env(self.cc, log=NullLogger()):
+            self.cc.kernel()
+
+    # Set up DIIS:
+    damping = self.Damping(options=self.options)
+
+    # Initialise coefficients:
+    mo_coeff_new: NDArray[T] = np.copy(np.asarray(self.cc.mo_coeff, dtype=types[float]))
+    mo_coeff_ref: NDArray[T] = np.copy(np.asarray(self.cc.mo_coeff, dtype=types[float]))
+    mo_coeff_ref = self.mo_to_correlated(mo_coeff_ref)
+    u_tot = None
+
+    self.cc.log.output("Solving for Brueckner orbitals.")
+    self.cc.log.debug("")
+    self.log.info(
+        f"{ANSI.B}{'Iter':&gt;4s} {'Energy (corr.)':&gt;16s} {'Energy (tot.)':&gt;18s} "
+        f"{'Conv.':&gt;8s} {'Δ(Energy)':&gt;13s} {'|T1|':&gt;13s}{ANSI.R}"
+    )
+    self.log.info(
+        f"%4d %16.10f %18.10f {[ANSI.r, ANSI.g][self.cc.converged]}%8r{ANSI.R}",
+        0,
+        self.cc.e_corr,
+        self.cc.e_tot,
+        self.cc.converged,
+    )
+
+    converged = False
+    for niter in range(1, self.options.max_iter + 1):
+        # Update rotation matrix:
+        u, u_tot = self.get_rotation_matrix(u_tot=u_tot, damping=damping)
+
+        # Update MO coefficients:
+        mo_coeff_new = self.update_coefficients(u_tot, mo_coeff_new, mo_coeff_ref)
+
+        # Transform mean-field and amplitudes:
+        self.mf.mo_coeff = numpy.asarray(mo_coeff_new)
+        self.mf.e_tot = self.mf.energy_tot()
+        amplitudes = self.transform_amplitudes(u)
+
+        # Run CC calculation:
+        e_prev = self.cc.e_tot
+        with lib.temporary_env(self.cc, log=NullLogger()):
+            self.cc.__class__.__init__(
+                self.cc,
+                self.mf,
+                log=self.cc.log,
+                ansatz=self.cc.ansatz,
+                space=self.cc.space,
+                omega=self.cc.omega,
+                g=self.cc.bare_g,
+                G=self.cc.bare_G,
+                options=self.cc.options,
+            )
+            self.cc.amplitudes = amplitudes
+            self.cc.kernel()
+        de = abs(e_prev - self.cc.e_tot)
+        dt = self.get_t1_norm()
+
+        # Log the iteration:
+        converged_e = bool(de &lt; self.options.e_tol)
+        converged_t = bool(dt &lt; self.options.t_tol)
+        self.log.info(
+            f"%4s %16.10f %18.10f {[ANSI.r, ANSI.g][int(converged)]}%8r{ANSI.R}"
+            f" {[ANSI.r, ANSI.g][int(converged_e)]}%13.3e{ANSI.R}"
+            f" {[ANSI.r, ANSI.g][int(converged_t)]}%13.3e{ANSI.R}",
+            niter,
+            self.cc.e_corr,
+            self.cc.e_tot,
+            self.cc.converged,
+            de,
+            dt,
+        )
+
+        # Check for convergence:
+        converged = converged_e and converged_t
+        if converged:
+            self.log.debug("")
+            self.log.output(f"{ANSI.g}Converged{ANSI.R}.")
+            break
+    else:
+        self.log.debug("")
+        self.log.warning(f"{ANSI.r}Failed to converge{ANSI.R}.")
+
+    self.cc.log.debug("")
+    self.cc.log.output("E(corr) = %.10f", self.cc.e_corr)
+    self.cc.log.output("E(tot)  = %.10f", self.cc.e_tot)
+    self.cc.log.debug("")
+    self.cc.log.debug("Time elapsed: %s", timer.format_time(timer()))
+    self.cc.log.debug("")
+
+    return self.cc.e_corr</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.opt.base.BaseBruecknerEBCC.get_rotation_matrix" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.opt.base.BaseBruecknerEBCC.get_rotation_matrix(u_tot=None, damping=None, t1=None)</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Update the rotation matrix.</p>
+<p>Also returns the total rotation matrix.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>u_tot</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.cc.base.SpinArrayType" href="../../cc/base/#ebcc.cc.base.SpinArrayType">SpinArrayType</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Total rotation matrix.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>damping</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.core.damping.BaseDamping" href="../../core/damping/#ebcc.core.damping.BaseDamping">BaseDamping</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Damping object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>t1</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.cc.base.SpinArrayType" href="../../cc/base/#ebcc.cc.base.SpinArrayType">SpinArrayType</a>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>T1 amplitude.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code>tuple[<a class="autorefs autorefs-internal" title="ebcc.cc.base.SpinArrayType" href="../../cc/base/#ebcc.cc.base.SpinArrayType">SpinArrayType</a>, <a class="autorefs autorefs-internal" title="ebcc.cc.base.SpinArrayType" href="../../cc/base/#ebcc.cc.base.SpinArrayType">SpinArrayType</a>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Rotation matrix and total rotation matrix.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/opt/base.py</code></summary>
+              <pre class="highlight"><code class="language-python">@abstractmethod
+def get_rotation_matrix(
+    self,
+    u_tot: Optional[SpinArrayType] = None,
+    damping: Optional[BaseDamping] = None,
+    t1: Optional[SpinArrayType] = None,
+) -&gt; tuple[SpinArrayType, SpinArrayType]:
+    """Update the rotation matrix.
+
+    Also returns the total rotation matrix.
+
+    Args:
+        u_tot: Total rotation matrix.
+        damping: Damping object.
+        t1: T1 amplitude.
+
+    Returns:
+        Rotation matrix and total rotation matrix.
+    """
+    pass</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.opt.base.BaseBruecknerEBCC.transform_amplitudes" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.opt.base.BaseBruecknerEBCC.transform_amplitudes(u, amplitudes=None)</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Transform the amplitudes into the Brueckner orbital basis.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>u</code></b>
+                  (<code><a class="autorefs autorefs-internal" title="ebcc.cc.base.SpinArrayType" href="../../cc/base/#ebcc.cc.base.SpinArrayType">SpinArrayType</a></code>)
+              –
+              <div class="doc-md-description">
+                <p>Rotation matrix.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>amplitudes</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<a class="autorefs autorefs-internal" title="ebcc.cc.base.SpinArrayType" href="../../cc/base/#ebcc.cc.base.SpinArrayType">SpinArrayType</a>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Cluster amplitudes.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<a class="autorefs autorefs-internal" title="ebcc.cc.base.SpinArrayType" href="../../cc/base/#ebcc.cc.base.SpinArrayType">SpinArrayType</a>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Transformed cluster amplitudes.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/opt/base.py</code></summary>
+              <pre class="highlight"><code class="language-python">@abstractmethod
+def transform_amplitudes(
+    self, u: SpinArrayType, amplitudes: Optional[Namespace[SpinArrayType]] = None
+) -&gt; Namespace[SpinArrayType]:
+    """Transform the amplitudes into the Brueckner orbital basis.
+
+    Args:
+        u: Rotation matrix.
+        amplitudes: Cluster amplitudes.
+
+    Returns:
+        Transformed cluster amplitudes.
+    """
+    pass</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.opt.base.BaseBruecknerEBCC.get_t1_norm" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.opt.base.BaseBruecknerEBCC.get_t1_norm(amplitudes=None)</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the norm of the T1 amplitude.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>amplitudes</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<a class="autorefs autorefs-internal" title="ebcc.cc.base.SpinArrayType" href="../../cc/base/#ebcc.cc.base.SpinArrayType">SpinArrayType</a>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Cluster amplitudes.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="ebcc.opt.base.T">T</span></code>
+              –
+              <div class="doc-md-description">
+                <p>Norm of the T1 amplitude.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/opt/base.py</code></summary>
+              <pre class="highlight"><code class="language-python">@abstractmethod
+def get_t1_norm(self, amplitudes: Optional[Namespace[SpinArrayType]] = None) -&gt; T:
+    """Get the norm of the T1 amplitude.
+
+    Args:
+        amplitudes: Cluster amplitudes.
+
+    Returns:
+        Norm of the T1 amplitude.
+    """
+    pass</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.opt.base.BaseBruecknerEBCC.mo_to_correlated" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.opt.base.BaseBruecknerEBCC.mo_to_correlated(mo_coeff)</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Transform the MO coefficients into the correlated basis.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>mo_coeff</code></b>
+                  (<code><span title="typing.Any">Any</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>MO coefficients.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="typing.Any">Any</span></code>
+              –
+              <div class="doc-md-description">
+                <p>Correlated slice of MO coefficients.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/opt/base.py</code></summary>
+              <pre class="highlight"><code class="language-python">@abstractmethod
+def mo_to_correlated(self, mo_coeff: Any) -&gt; Any:
+    """Transform the MO coefficients into the correlated basis.
+
+    Args:
+        mo_coeff: MO coefficients.
+
+    Returns:
+        Correlated slice of MO coefficients.
+    """
+    pass</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.opt.base.BaseBruecknerEBCC.mo_update_correlated" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.opt.base.BaseBruecknerEBCC.mo_update_correlated(mo_coeff, mo_coeff_corr)</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Update the correlated slice of a set of MO coefficients.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>mo_coeff</code></b>
+                  (<code><span title="typing.Any">Any</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>MO coefficients.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>mo_coeff_corr</code></b>
+                  (<code><span title="typing.Any">Any</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Correlated slice of MO coefficients.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="typing.Any">Any</span></code>
+              –
+              <div class="doc-md-description">
+                <p>Updated MO coefficients.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/opt/base.py</code></summary>
+              <pre class="highlight"><code class="language-python">@abstractmethod
+def mo_update_correlated(self, mo_coeff: Any, mo_coeff_corr: Any) -&gt; Any:
+    """Update the correlated slice of a set of MO coefficients.
+
+    Args:
+        mo_coeff: MO coefficients.
+        mo_coeff_corr: Correlated slice of MO coefficients.
+
+    Returns:
+        Updated MO coefficients.
+    """
+    pass</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.opt.base.BaseBruecknerEBCC.update_coefficients" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.opt.base.BaseBruecknerEBCC.update_coefficients(u_tot, mo_coeff_new, mo_coeff_ref)</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Update the MO coefficients.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>u_tot</code></b>
+                  (<code><a class="autorefs autorefs-internal" title="ebcc.cc.base.SpinArrayType" href="../../cc/base/#ebcc.cc.base.SpinArrayType">SpinArrayType</a></code>)
+              –
+              <div class="doc-md-description">
+                <p>Total rotation matrix.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>mo_coeff_new</code></b>
+                  (<code><span title="typing.Any">Any</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>New MO coefficients.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>mo_coeff_ref</code></b>
+                  (<code><span title="typing.Any">Any</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>Reference MO coefficients.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="typing.Any">Any</span></code>
+              –
+              <div class="doc-md-description">
+                <p>Updated MO coefficients.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/opt/base.py</code></summary>
+              <pre class="highlight"><code class="language-python">@abstractmethod
+def update_coefficients(
+    self, u_tot: SpinArrayType, mo_coeff_new: Any, mo_coeff_ref: Any
+) -&gt; Any:
+    """Update the MO coefficients.
+
+    Args:
+        u_tot: Total rotation matrix.
+        mo_coeff_new: New MO coefficients.
+        mo_coeff_ref: Reference MO coefficients.
+
+    Returns:
+        Updated MO coefficients.
+    """
+    pass</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../gbrueckner/" class="btn btn-neutral float-left" title="Generalised"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../../core/ansatz/" class="btn btn-neutral float-right" title="Ansatz">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../gbrueckner/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../../core/ansatz/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

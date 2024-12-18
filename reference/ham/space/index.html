@@ -1,0 +1,2076 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Space - ebcc</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Space";
+        var mkdocs_page_input_path = "reference/ham/space.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> ebcc
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../features/">Features</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Code Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" >Coupled cluster</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/rebcc/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/uebcc/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/gebcc/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Equation of motion</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/reom/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/ueom/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/geom/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Orbital optimisation</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" >Brueckner</a>
+    <ul>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/rbrueckner/">Restricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/ubrueckner/">Unrestricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/gbrueckner/">Generalised</a>
+                </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../opt/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Core</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/ansatz/">Ansatz</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/damping/">Damping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/dump/">Dumping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/logging/">Logging</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../core/precision/">Precision</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >Hamiltonian</a>
+    <ul class="current">
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">Space</a>
+    <ul class="current">
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../fock/">Fock</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../eris/">ERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../cderis/">CDERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../elbos/">Bosonic</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Utility</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/permutations/">Permutations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/einsumfunc/">Einstein summations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/misc/">Miscellaneous</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">ebcc</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Code Reference</li>
+          <li class="breadcrumb-item">Hamiltonian</li>
+      <li class="breadcrumb-item active">Space</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="ebcc.ham.space"></a>
+    <div class="doc doc-contents first">
+
+        <p>Space definition.</p>
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.ham.space.Space" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.ham.space.Space(occupied, frozen, active)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+
+        <p>Space class.</p>
+<p>.. code-block:: none</p>
+<pre><code>        ─┬─ ┌──────────┐
+         │  │  frozen  │
+         │  ├──────────┤ ─┬─
+ virtual │  │  active  │  │
+         │  ├──────────┤  │ correlated
+         │  │ inactive │  │
+        ─┼─ ├══════════┤ ─┼─
+         │  │ inactive │  │
+         │  ├──────────┤  │ correlated
+occupied │  │  active  │  │
+         │  ├──────────┤ ─┴─
+         │  │  frozen  │
+        ─┴─ └──────────┘
+</code></pre>
+
+        <p>Initialise the space.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>occupied</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.ham.space.B">B</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>Array containing boolean flags indicating whether or not each orbital is
+occupied.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>frozen</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.ham.space.B">B</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>Array containing boolean flags indicating whether or not each orbital is frozen.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>active</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.ham.space.B">B</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>Array containing boolean flags indicating whether or not each orbital is active.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/ham/space.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(
+    self,
+    occupied: NDArray[B],
+    frozen: NDArray[B],
+    active: NDArray[B],
+) -&gt; None:
+    """Initialise the space.
+
+    Args:
+        occupied: Array containing boolean flags indicating whether or not each orbital is
+            occupied.
+        frozen: Array containing boolean flags indicating whether or not each orbital is frozen.
+        active: Array containing boolean flags indicating whether or not each orbital is active.
+    """
+    self._occupied = np.asarray(occupied, dtype=np.bool_)
+    self._frozen = np.asarray(frozen, dtype=np.bool_)
+    self._active = np.asarray(active, dtype=np.bool_)
+
+    # Checks:
+    if not (self._occupied.size == self._frozen.size == self._active.size):
+        raise ValueError("The sizes of the space arrays must match.")
+    if np.any(np.bitwise_and(self._frozen, self._active)):
+        raise ValueError("Frozen and active orbitals must be mutually exclusive.")</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.occupied" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.occupied: NDArray[B]</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get a boolean mask of occupied orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.virtual" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.virtual: NDArray[B]</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get a boolean mask of virtual orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.nmo" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.nmo: int</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the number of orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.nocc" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.nocc: int</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the number of occupied orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.nvir" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.nvir: int</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the number of virtual orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.correlated" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.correlated: NDArray[B]</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get a boolean mask of correlated orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.correlated_occupied" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.correlated_occupied: NDArray[B]</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get a boolean mask of occupied correlated orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.correlated_virtual" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.correlated_virtual: NDArray[B]</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get a boolean mask of virtual correlated orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.ncorr" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.ncorr: int</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the number of correlated orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.ncocc" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.ncocc: int</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the number of occupied correlated orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.ncvir" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.ncvir: int</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the number of virtual correlated orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.inactive" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.inactive: NDArray[B]</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get a boolean mask of inactive orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.inactive_occupied" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.inactive_occupied: NDArray[B]</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get a boolean mask of occupied inactive orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.inactive_virtual" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.inactive_virtual: NDArray[B]</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get a boolean mask of virtual inactive orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.ninact" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.ninact: int</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the number of inactive orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.niocc" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.niocc: int</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the number of occupied inactive orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.nivir" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.nivir: int</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the number of virtual inactive orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.frozen" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.frozen: NDArray[B]</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get a boolean mask of frozen orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.frozen_occupied" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.frozen_occupied: NDArray[B]</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get a boolean mask of occupied frozen orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.frozen_virtual" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.frozen_virtual: NDArray[B]</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get a boolean mask of virtual frozen orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.nfroz" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.nfroz: int</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the number of frozen orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.nfocc" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.nfocc: int</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the number of occupied frozen orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.nfvir" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.nfvir: int</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the number of virtual frozen orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.active" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.active: NDArray[B]</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get a boolean mask of active orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.active_occupied" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.active_occupied: NDArray[B]</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get a boolean mask of occupied active orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.active_virtual" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.active_virtual: NDArray[B]</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get a boolean mask of virtual active orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.nact" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.nact: int</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the number of active orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.naocc" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.naocc: int</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the number of occupied active orbitals.</p>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="ebcc.ham.space.Space.navir" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.navir: int</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the number of virtual active orbitals.</p>
+    </div>
+
+</div>
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.ham.space.Space.__repr__" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.__repr__()</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get a string representation of the space.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/ham/space.py</code></summary>
+              <pre class="highlight"><code class="language-python">def __repr__(self) -&gt; str:
+    """Get a string representation of the space."""
+    out = "(%do, %dv)" % (self.nocc, self.nvir)
+    parts = []
+    if self.nfroz:
+        parts.append("(%do, %dv) frozen" % (self.nfocc, self.nfvir))
+    if self.nact:
+        parts.append("(%do, %dv) active" % (self.naocc, self.navir))
+    if len(parts):
+        out += " [" + ", ".join(parts) + "]"
+    return out</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.ham.space.Space.size" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.size(char)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Convert a character corresponding to a space to the size of that space.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>char</code></b>
+                  (<code>str</code>)
+              –
+              <div class="doc-md-description">
+                <p>Character to convert.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code>int</code>
+              –
+              <div class="doc-md-description">
+                <p>Size of the space.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/ham/space.py</code></summary>
+              <pre class="highlight"><code class="language-python">def size(self, char: str) -&gt; int:
+    """Convert a character corresponding to a space to the size of that space.
+
+    Args:
+        char: Character to convert.
+
+    Returns:
+        Size of the space.
+    """
+    return {
+        "x": self.ncorr,
+        "o": self.ncocc,
+        "O": self.naocc,
+        "i": self.niocc,
+        "v": self.ncvir,
+        "V": self.navir,
+        "a": self.nivir,
+    }[char]</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.ham.space.Space.mask" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.mask(char)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Convert a character corresponding to a space to a mask of that space.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>char</code></b>
+                  (<code>str</code>)
+              –
+              <div class="doc-md-description">
+                <p>Character to convert.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.ham.space.B">B</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Mask of the space.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/ham/space.py</code></summary>
+              <pre class="highlight"><code class="language-python">def mask(self, char: str) -&gt; NDArray[B]:
+    """Convert a character corresponding to a space to a mask of that space.
+
+    Args:
+        char: Character to convert.
+
+    Returns:
+        Mask of the space.
+    """
+    return {
+        "x": self.correlated,
+        "o": self.correlated_occupied,
+        "O": self.active_occupied,
+        "i": self.inactive_occupied,
+        "v": self.correlated_virtual,
+        "V": self.active_virtual,
+        "a": self.inactive_virtual,
+    }[char]</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.ham.space.Space.slice" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.slice(char)</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-cached"><code>cached</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Convert a character corresponding to a space to a slice of that space.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>char</code></b>
+                  (<code>str</code>)
+              –
+              <div class="doc-md-description">
+                <p>Character to convert.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="ebcc.ham.space._slice">_slice</span></code>
+              –
+              <div class="doc-md-description">
+                <p>Slice of the space.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/ham/space.py</code></summary>
+              <pre class="highlight"><code class="language-python">@functools.lru_cache(maxsize=128)  # noqa: B019
+def slice(self, char: str) -&gt; _slice:
+    """Convert a character corresponding to a space to a slice of that space.
+
+    Args:
+        char: Character to convert.
+
+    Returns:
+        Slice of the space.
+    """
+    # Check that the respective mask is contiguous
+    mask = self.mask(char)
+    first = np.argmax(mask)
+    size = self.size(char)
+    if not np.all(mask[first : first + size]):
+        raise ValueError(
+            f"Space '{char}' is not contiguous. In order to slice into this space, "
+            "the `mask` method must be used. If you see this error internally, it is "
+            "likely that you have constructed a disjoint space. Please reorder the "
+            "orbitals in the space."
+        )
+    return slice(first, first + size)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.ham.space.Space.omask" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.omask(char)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Like <code>mask</code>, but returns only a mask into only the occupied sector.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>char</code></b>
+                  (<code>str</code>)
+              –
+              <div class="doc-md-description">
+                <p>Character to convert.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.ham.space.B">B</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Mask of the space.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/ham/space.py</code></summary>
+              <pre class="highlight"><code class="language-python">def omask(self, char: str) -&gt; NDArray[B]:
+    """Like `mask`, but returns only a mask into only the occupied sector.
+
+    Args:
+        char: Character to convert.
+
+    Returns:
+        Mask of the space.
+    """
+    return self.mask(char)[self.occupied]</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.ham.space.Space.vmask" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.vmask(char)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Like <code>mask</code>, but returns only a mask into only the virtual sector.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>char</code></b>
+                  (<code>str</code>)
+              –
+              <div class="doc-md-description">
+                <p>Character to convert.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.ham.space.B">B</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Mask of the space.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/ham/space.py</code></summary>
+              <pre class="highlight"><code class="language-python">def vmask(self, char: str) -&gt; NDArray[B]:
+    """Like `mask`, but returns only a mask into only the virtual sector.
+
+    Args:
+        char: Character to convert.
+
+    Returns:
+        Mask of the space.
+    """
+    return self.mask(char)[self.virtual]</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.ham.space.Space.xmask" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.xmask(char)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Like <code>mask</code>, but returns only a mask into only the correlated sector.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>char</code></b>
+                  (<code>str</code>)
+              –
+              <div class="doc-md-description">
+                <p>Character to convert.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.ham.space.B">B</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>Mask of the space.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/ham/space.py</code></summary>
+              <pre class="highlight"><code class="language-python">def xmask(self, char: str) -&gt; NDArray[B]:
+    """Like `mask`, but returns only a mask into only the correlated sector.
+
+    Args:
+        char: Character to convert.
+
+    Returns:
+        Mask of the space.
+    """
+    return self.mask(char)[self.correlated]</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.ham.space.Space.oslice" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.oslice(char)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Like <code>slice</code>, but returns only a slice into only the occupied sector.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>char</code></b>
+                  (<code>str</code>)
+              –
+              <div class="doc-md-description">
+                <p>Character to convert.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="ebcc.ham.space._slice">_slice</span></code>
+              –
+              <div class="doc-md-description">
+                <p>Slice of the space.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/ham/space.py</code></summary>
+              <pre class="highlight"><code class="language-python">def oslice(self, char: str) -&gt; _slice:
+    """Like `slice`, but returns only a slice into only the occupied sector.
+
+    Args:
+        char: Character to convert.
+
+    Returns:
+        Slice of the space.
+    """
+    s = self.slice(char)
+    nocc = self.nocc
+    return slice(s.start, min(s.stop, nocc))</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.ham.space.Space.vslice" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.vslice(char)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Like <code>slice</code>, but returns only a slice into only the virtual sector.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>char</code></b>
+                  (<code>str</code>)
+              –
+              <div class="doc-md-description">
+                <p>Character to convert.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="ebcc.ham.space._slice">_slice</span></code>
+              –
+              <div class="doc-md-description">
+                <p>Slice of the space.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/ham/space.py</code></summary>
+              <pre class="highlight"><code class="language-python">def vslice(self, char: str) -&gt; _slice:
+    """Like `slice`, but returns only a slice into only the virtual sector.
+
+    Args:
+        char: Character to convert.
+
+    Returns:
+        Slice of the space.
+    """
+    s = self.slice(char)
+    nocc = self.nocc
+    return slice(max(s.start, nocc) - nocc, s.stop - nocc)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.ham.space.Space.xslice" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.Space.xslice(char)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Like <code>slice</code>, but returns only a slice into only the correlated sector.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>char</code></b>
+                  (<code>str</code>)
+              –
+              <div class="doc-md-description">
+                <p>Character to convert.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="ebcc.ham.space._slice">_slice</span></code>
+              –
+              <div class="doc-md-description">
+                <p>Slice of the space.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/ham/space.py</code></summary>
+              <pre class="highlight"><code class="language-python">def xslice(self, char: str) -&gt; _slice:
+    """Like `slice`, but returns only a slice into only the correlated sector.
+
+    Args:
+        char: Character to convert.
+
+    Returns:
+        Slice of the space.
+    """
+    s = self.slice(char)
+    nfocc = self.nfocc
+    return slice(s.start - nfocc, s.stop - nfocc)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="ebcc.ham.space.construct_default_space" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.construct_default_space(mf)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Construct a default space.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>mf</code></b>
+                  (<code><span title="pyscf.scf.hf.SCF">SCF</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>PySCF mean-field object.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="typing.Union">Union</span>[<span title="ebcc.ham.space.RConstructSpaceReturnType">RConstructSpaceReturnType</span>, <span title="ebcc.ham.space.UConstructSpaceReturnType">UConstructSpaceReturnType</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>The molecular orbital coefficients, the molecular orbital occupation numbers, and the</p>
+              </div>
+            </li>
+            <li>
+                  <code><span title="typing.Union">Union</span>[<span title="ebcc.ham.space.RConstructSpaceReturnType">RConstructSpaceReturnType</span>, <span title="ebcc.ham.space.UConstructSpaceReturnType">UConstructSpaceReturnType</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>default space.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/ham/space.py</code></summary>
+              <pre class="highlight"><code class="language-python">def construct_default_space(mf: SCF) -&gt; Union[RConstructSpaceReturnType, UConstructSpaceReturnType]:
+    """Construct a default space.
+
+    Args:
+        mf: PySCF mean-field object.
+
+    Returns:
+        The molecular orbital coefficients, the molecular orbital occupation numbers, and the
+        default space.
+    """
+
+    def _construct(mo_occ: NDArray[T]) -&gt; Space:
+        """Build the default space."""
+        frozen = np.zeros(mo_occ.shape, dtype=np.bool_)
+        active = np.zeros(mo_occ.shape, dtype=np.bool_)
+        space = Space(
+            occupied=mo_occ &gt; 0,
+            frozen=frozen,
+            active=active,
+        )
+        return space
+
+    # Construct the default space
+    if mf.mo_occ.ndim == 2:
+        space_a = _construct(mf.mo_occ[0])
+        space_b = _construct(mf.mo_occ[1])
+        return mf.mo_coeff, mf.mo_occ, (space_a, space_b)
+    else:
+        return mf.mo_coeff, mf.mo_occ, _construct(mf.mo_occ)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="ebcc.ham.space.construct_fno_space" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.ham.space.construct_fno_space(mf, occ_tol=1e-05, occ_frac=None, amplitudes=None)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Construct a frozen natural orbital space.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>mf</code></b>
+                  (<code><span title="pyscf.scf.hf.SCF">SCF</span></code>)
+              –
+              <div class="doc-md-description">
+                <p>PySCF mean-field object.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>occ_tol</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[float]</code>, default:
+                      <code>1e-05</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Threshold in the natural orbital occupation numbers.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>occ_frac</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[float]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Fraction of the natural orbital occupation numbers to be retained. Overrides
+<code>occ_tol</code> if both are specified.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>amplitudes</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" title="ebcc.util.Namespace" href="../../util/misc/#ebcc.util.misc.Namespace">Namespace</a>[<a class="autorefs autorefs-internal" title="ebcc.cc.base.SpinArrayType" href="../../cc/base/#ebcc.cc.base.SpinArrayType">SpinArrayType</a>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Cluster amplitudes. If provided, use these amplitudes when calculating the MP2
+1RDM.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="typing.Union">Union</span>[<span title="ebcc.ham.space.RConstructSpaceReturnType">RConstructSpaceReturnType</span>, <span title="ebcc.ham.space.UConstructSpaceReturnType">UConstructSpaceReturnType</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>The natural orbital coefficients, the natural orbital occupation numbers, and the frozen</p>
+              </div>
+            </li>
+            <li>
+                  <code><span title="typing.Union">Union</span>[<span title="ebcc.ham.space.RConstructSpaceReturnType">RConstructSpaceReturnType</span>, <span title="ebcc.ham.space.UConstructSpaceReturnType">UConstructSpaceReturnType</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>natural orbital space.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/ham/space.py</code></summary>
+              <pre class="highlight"><code class="language-python">def construct_fno_space(
+    mf: SCF,
+    occ_tol: Optional[float] = 1e-5,
+    occ_frac: Optional[float] = None,
+    amplitudes: Optional[Namespace[SpinArrayType]] = None,
+) -&gt; Union[RConstructSpaceReturnType, UConstructSpaceReturnType]:
+    """Construct a frozen natural orbital space.
+
+    Args:
+        mf: PySCF mean-field object.
+        occ_tol: Threshold in the natural orbital occupation numbers.
+        occ_frac: Fraction of the natural orbital occupation numbers to be retained. Overrides
+            `occ_tol` if both are specified.
+        amplitudes: Cluster amplitudes. If provided, use these amplitudes when calculating the MP2
+            1RDM.
+
+    Returns:
+        The natural orbital coefficients, the natural orbital occupation numbers, and the frozen
+        natural orbital space.
+    """
+    # Get the MP2 1RDM
+    solver = pyscf.mp.mp2.MP2(mf)
+    dm1: NDArray[T]
+    if not amplitudes:
+        solver.kernel()
+        dm1 = np.asarray(solver.make_rdm1(), dtype=types[float])
+    else:
+        if isinstance(amplitudes.t2, util.Namespace):
+            t2 = (amplitudes.t2.aaaa, amplitudes.t2.abab, amplitudes.t2.bbbb)
+            dm1 = np.asarray(solver.make_rdm1(t2=t2), dtype=types[float])
+        else:
+            dm1 = np.asarray(solver.make_rdm1(t2=amplitudes.t2), dtype=types[float])
+
+    # def _construct(dm1, mo_energy, mo_coeff, mo_occ):
+    def _construct(
+        dm1: NDArray[T],
+        mo_energy: NDArray[T],
+        mo_coeff: NDArray[T],
+        mo_occ: NDArray[T],
+    ) -&gt; RConstructSpaceReturnType:
+        # Get the number of occupied orbitals
+        nocc = np.count_nonzero(mo_occ &gt; 0)
+
+        # Calculate the natural orbitals
+        n, c = np.linalg.eigh(dm1[nocc:, nocc:])
+        n, c = n[::-1], c[:, ::-1]
+
+        # Truncate the natural orbitals
+        if occ_frac is None:
+            active_vir = n &gt; occ_tol
+        else:
+            active_vir = np.cumsum(n / np.sum(n)) &lt;= occ_frac
+        num_active_vir = np.count_nonzero(active_vir)
+
+        # Canonicalise the natural orbitals
+        fock_vv = np.diag(mo_energy[nocc:])
+        fock_vv = util.einsum("ab,au,bv-&gt;uv", fock_vv, c, c)
+        _, c_can = np.linalg.eigh(fock_vv[active_vir][:, active_vir])
+
+        # Transform the natural orbitals
+        no_coeff_avir = util.einsum(
+            "pi,iq,qj-&gt;pj", mo_coeff[:, nocc:], c[:, :num_active_vir], c_can
+        )
+        no_coeff_fvir = mo_coeff[:, nocc:] @ c[:, num_active_vir:]
+        no_coeff_occ = mo_coeff[:, :nocc]
+        no_coeff = np.concatenate((no_coeff_occ, no_coeff_avir, no_coeff_fvir), axis=1)
+
+        # Build the natural orbital space
+        active = np.zeros(mo_occ.shape, dtype=np.bool_)
+        frozen = np.concatenate(
+            (
+                np.zeros((nocc + num_active_vir,), dtype=np.bool_),
+                np.ones((mo_occ.size - nocc - num_active_vir,), dtype=np.bool_),
+            )
+        )
+        no_space = Space(
+            occupied=mo_occ &gt; 0,
+            frozen=frozen,
+            active=active,
+        )
+
+        return no_coeff, mo_occ, no_space
+
+    # Construct the natural orbitals
+    if mf.mo_occ.ndim == 2:
+        coeff_a, occ_a, space_a = _construct(
+            np.asarray(dm1[0], dtype=types[float]),
+            np.asarray(mf.mo_energy[0], dtype=types[float]),
+            np.asarray(mf.mo_coeff[0], dtype=types[float]),
+            np.asarray(mf.mo_occ[0], dtype=types[float]),
+        )
+        coeff_b, occ_b, space_b = _construct(
+            np.asarray(dm1[1], dtype=types[float]),
+            np.asarray(mf.mo_energy[1], dtype=types[float]),
+            np.asarray(mf.mo_coeff[1], dtype=types[float]),
+            np.asarray(mf.mo_occ[1], dtype=types[float]),
+        )
+        return (coeff_a, coeff_b), (occ_a, occ_b), (space_a, space_b)
+    else:
+        return _construct(
+            np.asarray(dm1, dtype=types[float]),
+            np.asarray(mf.mo_energy, dtype=types[float]),
+            np.asarray(mf.mo_coeff, dtype=types[float]),
+            np.asarray(mf.mo_occ, dtype=types[float]),
+        )</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../../core/precision/" class="btn btn-neutral float-left" title="Precision"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../fock/" class="btn btn-neutral float-right" title="Fock">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../../core/precision/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../fock/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
