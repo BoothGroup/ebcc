@@ -18,8 +18,7 @@ The following table summarises the available methods and routines for the ansatz
 | CCSD        |  RUG  |  RUG  |  RUG  |  RUG  |  RUG  |   G   |  RUG  |  RUG  |   -   |
 | CCSDT       |  RUG  |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |   -   |
 | CCSDTQ      |   g   |   g   |       |       |       |       |       |       |   -   |
-| CCSD(T)     |  RuG  |  RuG  |       |       |       |       |       |       |   -   |
-| CCSDt       |  RG   |  RG   |       |       |       |       |       |       |   -   |
+| CCSD(T)     |  RUG  |  RUG  |       |       |       |       |       |       |   -   |
 | CCSDt'      |  RUG  |  RUG  |       |       |       |       |       |       |   -   |
 | CC2         |  RUG  |  RUG  |  RUG  |  RUG  |  RUG  |   G   |  RUG  |  RUG  |   -   |
 | CC3         |  RUG  |  RUG  |       |       |       |       |       |       |   -   |
@@ -31,6 +30,8 @@ The following table summarises the available methods and routines for the ansatz
 | DF-CCD      |  RU   |  RU   |  RU   |  RU   |  RU   |       |  RU   |  RU   |   -   |
 | DF-CCSD     |  RU   |  RU   |  RU   |  RU   |  RU   |       |  RU   |  RU   |   -   |
 | DF-CC2      |  RU   |  RU   |  RU   |  RU   |  RU   |       |  RU   |  RU   |   -   |
+| DF-LCCD     |  RU   |  RU   |       |       |       |       |       |       |   -   |
+| DF-LCCSD    |  RU   |  RU   |       |       |       |       |       |       |   -   |
 | DF-QCISD    |  RU   |  RU   |       |       |       |       |       |       |   -   |
 | DF-DCD      |  RU   |  RU   |       |       |       |       |       |       |   -   |
 | DF-DCSD     |  RU   |  RU   |       |       |       |       |       |       |   -   |
