@@ -10,38 +10,43 @@
 
 The following table summarises the available methods and routines for the ansatz currently treated by code generation, in the three spin cases:
 
-| Ansatz      |   E   |   T   |   Λ   |  IP   |  EA   |  EE   |  DM1  |  DM2  |  BDM  |
-| :---------: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| MP2         |  RUG  |   -   |   -   |  RUG  |  RUG  |   G   |  RUG  |  RUG  |   -   |
-| MP3         |  RUG  |       |       |       |       |       |       |       |   -   |
-| CCD         |  RUG  |  RUG  |  RUG  |  RUG  |  RUG  |   G   |  RUG  |  RUG  |   -   |
-| CCSD        |  RUG  |  RUG  |  RUG  |  RUG  |  RUG  |   G   |  RUG  |  RUG  |   -   |
-| CCSDT       |  RUG  |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |   -   |
-| CCSDTQ      |   g   |   g   |       |       |       |       |       |       |   -   |
-| CCSD(T)     |  RUG  |  RUG  |       |       |       |       |       |       |   -   |
-| CCSDt'      |  RUG  |  RUG  |       |       |       |       |       |       |   -   |
-| CC2         |  RUG  |  RUG  |  RUG  |  RUG  |  RUG  |   G   |  RUG  |  RUG  |   -   |
-| CC3         |  RUG  |  RUG  |       |       |       |       |       |       |   -   |
-| LCCD        |  RUG  |  RUG  |       |       |       |       |       |       |   -   |
-| LCCSD       |  RUG  |  RUG  |       |       |       |       |       |       |   -   |
-| QCISD       |  RUG  |  RUG  |       |       |       |       |       |       |   -   |
-| DCD         |  RU   |  RU   |       |       |       |       |       |       |   -   |
-| DCSD        |  RU   |  RU   |       |       |       |       |       |       |   -   |
-| rCCD        |  RUG  |  RUG  |       |       |       |       |       |       |   -   |
-| drCCD       |  RUG  |  RUG  |       |       |       |       |       |       |   -   |
-| DF-CCD      |  RU   |  RU   |  RU   |  RU   |  RU   |       |  RU   |  RU   |   -   |
-| DF-CCSD     |  RU   |  RU   |  RU   |  RU   |  RU   |       |  RU   |  RU   |   -   |
-| DF-CC2      |  RU   |  RU   |  RU   |  RU   |  RU   |       |  RU   |  RU   |   -   |
-| DF-LCCD     |  RU   |  RU   |       |       |       |       |       |       |   -   |
-| DF-LCCSD    |  RU   |  RU   |       |       |       |       |       |       |   -   |
-| DF-QCISD    |  RU   |  RU   |       |       |       |       |       |       |   -   |
-| DF-DCD      |  RU   |  RU   |       |       |       |       |       |       |   -   |
-| DF-DCSD     |  RU   |  RU   |       |       |       |       |       |       |   -   |
-| DF-rCCD     |  RU   |  RU   |       |       |       |       |       |       |   -   |
-| DF-drCCD    |  RU   |  RU   |       |       |       |       |       |       |   -   |
-| CCSD-S-1-1  |  RUG  |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |  RUG  |
-| CCSD-SD-1-1 |  RUG  |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |  RUG  |
-| CCSD-SD-1-2 |  RUG  |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |  RUG  |
+| Ansatz          |   E   |   T   |   Λ   |  IP   |  EA   |  EE   |  DM1  |  DM2  |  BDM  |
+| :-------------: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| MP2             |  RUG  |   -   |   -   |  RUG  |  RUG  |   G   |  RUG  |  RUG  |   -   |
+| MP3             |  RUG  |       |       |       |       |       |       |       |   -   |
+| CCD             |  RUG  |  RUG  |  RUG  |  RUG  |  RUG  |   G   |  RUG  |  RUG  |   -   |
+| CCSD            |  RUG  |  RUG  |  RUG  |  RUG  |  RUG  |   G   |  RUG  |  RUG  |   -   |
+| CCSDT           |  RUG  |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |   -   |
+| CCSDTQ          |   g   |   g   |       |       |       |       |       |       |   -   |
+| CCSD(T)         |  RUG  |  RUG  |       |       |       |       |       |       |   -   |
+| CCSDt'[^1]      |  RUG  |  RUG  |       |       |       |       |       |       |   -   |
+| CC2             |  RUG  |  RUG  |  RUG  |  RUG  |  RUG  |   G   |  RUG  |  RUG  |   -   |
+| CC3             |  RUG  |  RUG  |       |       |       |       |       |       |   -   |
+| LCCD            |  RUG  |  RUG  |       |       |       |       |       |       |   -   |
+| LCCSD           |  RUG  |  RUG  |       |       |       |       |       |       |   -   |
+| QCISD           |  RUG  |  RUG  |       |       |       |       |       |       |   -   |
+| DCD[^2]         |  RU   |  RU   |       |       |       |       |       |       |   -   |
+| DCSD[^2]        |  RU   |  RU   |       |       |       |       |       |       |   -   |
+| rCCD[^3]        |  RUG  |  RUG  |       |       |       |       |       |       |   -   |
+| drCCD[^3]       |  RUG  |  RUG  |       |       |       |       |       |       |   -   |
+| DF-CCD          |  RU   |  RU   |  RU   |  RU   |  RU   |       |  RU   |  RU   |   -   |
+| DF-CCSD         |  RU   |  RU   |  RU   |  RU   |  RU   |       |  RU   |  RU   |   -   |
+| DF-CC2          |  RU   |  RU   |  RU   |  RU   |  RU   |       |  RU   |  RU   |   -   |
+| DF-LCCD         |  RU   |  RU   |       |       |       |       |       |       |   -   |
+| DF-LCCSD        |  RU   |  RU   |       |       |       |       |       |       |   -   |
+| DF-QCISD        |  RU   |  RU   |       |       |       |       |       |       |   -   |
+| DF-DCD[^2]      |  RU   |  RU   |       |       |       |       |       |       |   -   |
+| DF-DCSD[^2]     |  RU   |  RU   |       |       |       |       |       |       |   -   |
+| DF-rCCD[^3]     |  RU   |  RU   |       |       |       |       |       |       |   -   |
+| DF-drCCD[^3]    |  RU   |  RU   |       |       |       |       |       |       |   -   |
+| CCSD-S-1-1[^4]  |  RUG  |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |  RUG  |
+| CCSD-SD-1-1[^4] |  RUG  |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |  RUG  |
+| CCSD-SD-1-2[^4] |  RUG  |  RUG  |  RUG  |       |       |       |  RUG  |  RUG  |  RUG  |
+
+[^1]: Third order amplitudes in an active space ([10.1063/1.478517](https://doi.org/10.1063/1.478517))
+[^2]: Distinguishable cluster approaches ([10.1063/1.4944087](https://doi.org/10.1063/1.4944087))
+[^3]: Standard and direct ring-CCD approaches, equivalent to RPA and dRPA ([10.1063/1.5032314](https://doi.org/10.1063/1.5032314))
+[^4]: Electron-boson coupled cluster approaches ([10.1063/5.0033132](https://doi.org/10.1063/5.0033132))
 
 - R, U, G indicate availability of restricted, unrestricted, and generalised codes.
 - Capital letters (R rather than r) indicates that the expressions are optimised for contraction order and subexpression elimination.
