@@ -19,14 +19,14 @@ from ebcc.util import _BaseOptions
 if TYPE_CHECKING:
     from typing import Any, Optional
 
-    from numpy import float64
+    from numpy import floating
     from numpy.typing import NDArray
 
     from ebcc.cc.base import BaseEBCC, SpinArrayType
     from ebcc.core.damping import BaseDamping
     from ebcc.util import Namespace
 
-    T = float64
+    T = floating
 
 # FIXME Custom versions of PySCF functions
 
@@ -94,6 +94,8 @@ class BaseBruecknerEBCC(ABC):
         # Logging:
         init_logging(cc.log)
         cc.log.info(f"\n{ANSI.B}{ANSI.U}{self.name}{ANSI.R}")
+        cc.log.debug(f"{ANSI.B}{'*' * len(self.name)}{ANSI.R}")
+        cc.log.debug("")
         cc.log.info(f"{ANSI.B}Options{ANSI.R}:")
         cc.log.info(f" > e_tol:  {ANSI.y}{self.options.e_tol}{ANSI.R}")
         cc.log.info(f" > t_tol:  {ANSI.y}{self.options.t_tol}{ANSI.R}")
@@ -142,8 +144,11 @@ class BaseBruecknerEBCC(ABC):
             f"{'Conv.':>8s} {'Δ(Energy)':>13s} {'|T1|':>13s}{ANSI.R}"
         )
         self.log.info(
-            f"{0:4d} {self.cc.e_corr:16.10f} {self.cc.e_tot:18.10f} "
-            f"{[ANSI.r, ANSI.g][self.cc.converged]}{self.cc.converged!r:>8}{ANSI.R}"
+            f"%4d %16.10f %18.10f {[ANSI.r, ANSI.g][self.cc.converged]}%8r{ANSI.R}",
+            0,
+            self.cc.e_corr,
+            self.cc.e_tot,
+            self.cc.converged,
         )
 
         converged = False
@@ -182,21 +187,26 @@ class BaseBruecknerEBCC(ABC):
             converged_e = bool(de < self.options.e_tol)
             converged_t = bool(dt < self.options.t_tol)
             self.log.info(
-                f"{niter:4d} {self.cc.e_corr:16.10f} {self.cc.e_tot:18.10f}"
-                f" {[ANSI.r, ANSI.g][int(self.cc.converged)]}{self.cc.converged!r:>8}{ANSI.R}"
-                f" {[ANSI.r, ANSI.g][int(converged_e)]}{de:13.3e}{ANSI.R}"
-                f" {[ANSI.r, ANSI.g][int(converged_t)]}{dt:13.3e}{ANSI.R}"
+                f"%4s %16.10f %18.10f {[ANSI.r, ANSI.g][int(converged)]}%8r{ANSI.R}"
+                f" {[ANSI.r, ANSI.g][int(converged_e)]}%13.3e{ANSI.R}"
+                f" {[ANSI.r, ANSI.g][int(converged_t)]}%13.3e{ANSI.R}",
+                niter,
+                self.cc.e_corr,
+                self.cc.e_tot,
+                self.cc.converged,
+                de,
+                dt,
             )
 
             # Check for convergence:
             converged = converged_e and converged_t
             if converged:
                 self.log.debug("")
-                self.log.output(f"{ANSI.g}Converged.{ANSI.R}")
+                self.log.output(f"{ANSI.g}Converged{ANSI.R}.")
                 break
         else:
             self.log.debug("")
-            self.log.warning(f"{ANSI.r}Failed to converge.{ANSI.R}")
+            self.log.warning(f"{ANSI.r}Failed to converge{ANSI.R}.")
 
         self.cc.log.debug("")
         self.cc.log.output("E(corr) = %.10f", self.cc.e_corr)

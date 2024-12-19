@@ -10,9 +10,15 @@ import unittest
 import numpy as np
 import pytest
 import scipy.linalg
-from pyscf import cc, gto, scf
+from pyscf import cc, gto, scf, fci
 
-from ebcc import REBCC, UEBCC, GEBCC, NullLogger, Space, BACKEND
+from ebcc import REBCC, UEBCC, GEBCC, NullLogger, Space, BACKEND, util
+from ebcc.ext.fci import (
+    fci_to_amplitudes_unrestricted,
+    _amplitudes_to_ci_vector_unrestricted,
+    _ci_vector_to_amplitudes_unrestricted,
+    _tn_addrs_signs,
+)
 
 
 @pytest.mark.reference
@@ -480,6 +486,114 @@ class UCCSD_Dump_Tests(UCCSD_PySCF_Tests):
         file = "%s/ebcc.h5" % tempfile.gettempdir()
         cls.ccsd.write(file)
         cls.ccsd = cls.ccsd.__class__.read(file, log=cls.ccsd.log)
+
+
+class UCCSD_ExtCorr_Tests(unittest.TestCase):
+    """Test UCCSD with external correction.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        mol = gto.Mole()
+        mol.atom = "Ne 0 0 0"
+        mol.basis = "6-31g"
+        mol.verbose = 0
+        mol.build()
+
+        mf = scf.UHF(mol)
+        mf.conv_tol = 1e-12
+        mf.kernel()
+
+        space = (
+            Space(
+                mf.mo_occ[0] > 0,
+                np.zeros_like(mf.mo_occ[0]),
+                np.ones_like(mf.mo_occ[0]),
+            ),
+            Space(
+                mf.mo_occ[1] > 0,
+                np.zeros_like(mf.mo_occ[1]),
+                np.ones_like(mf.mo_occ[1]),
+            ),
+        )
+
+        ci = fci.FCI(mf, mo=(mf.mo_coeff[0][:, space[0].active], mf.mo_coeff[1][:, space[1].active]))
+        ci.conv_tol = 1e-12
+        ci.kernel()
+
+        cls.mf, cls.ci, cls.space = mf, ci, space
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.mf, cls.ci, cls.space
+
+    def test_conversion(self):
+        amps1 = _ci_vector_to_amplitudes_unrestricted(self.ci.ci, self.space, max_order=4)
+        ci = _amplitudes_to_ci_vector_unrestricted(amps1, normalise=False, max_order=4)
+        amps2 = _ci_vector_to_amplitudes_unrestricted(ci, self.space, max_order=4)
+
+        for order in range(1, 5):
+            for spins in util.generate_spin_combinations(order, unique=True):
+                i, _ = _tn_addrs_signs(self.space[0].nact, self.space[0].naocc, spins.count("a") // 2)
+                j, _ = _tn_addrs_signs(self.space[1].nact, self.space[1].naocc, spins.count("b") // 2)
+                if spins.count("a") and spins.count("b"):
+                    i, j = np.ix_(i, j)
+                assert np.allclose(ci[i, j] * self.ci.ci[0, 0], self.ci.ci[i, j]), (order, spins)
+
+        with pytest.raises(AssertionError):
+            # Expect a fail since the excitation space goes beyond fourth order -- we have
+            # checked the individual orders above
+            assert np.allclose(ci * self.ci.ci[0, 0], self.ci.ci)
+
+        assert np.allclose(amps1.t1.aa, amps2.t1.aa)
+        assert np.allclose(amps1.t1.bb, amps2.t1.bb)
+        assert np.allclose(amps1.t2.aaaa, amps2.t2.aaaa)
+        assert np.allclose(amps1.t2.abab, amps2.t2.abab)
+        assert np.allclose(amps1.t2.bbbb, amps2.t2.bbbb)
+        assert np.allclose(amps1.t3.aaaaaa, amps2.t3.aaaaaa)
+        assert np.allclose(amps1.t3.abaaba, amps2.t3.abaaba)
+        assert np.allclose(amps1.t3.babbab, amps2.t3.babbab)
+        assert np.allclose(amps1.t3.bbbbbb, amps2.t3.bbbbbb)
+        assert np.allclose(amps1.t4.aaaaaaaa, amps2.t4.aaaaaaaa)
+        assert np.allclose(amps1.t4.aaabaaab, amps2.t4.aaabaaab)
+        assert np.allclose(amps1.t4.abababab, amps2.t4.abababab)
+        assert np.allclose(amps1.t4.abbbabbb, amps2.t4.abbbabbb)
+        assert np.allclose(amps1.t4.bbbbbbbb, amps2.t4.bbbbbbbb)
+
+    def test_external_correction(self):
+        amplitudes = fci_to_amplitudes_unrestricted(self.ci, self.space)
+        ccsd = UEBCC(
+            self.mf,
+            ansatz="CCSD",
+            space=self.space,
+            log=NullLogger(),
+        )
+        ccsd.options.e_tol = 1e-10
+        ccsd.external_correction(amplitudes, mixed_term_strategy="update")
+
+        self.assertTrue(ccsd.converged)
+
+        a = self.ci.e_tot
+        b = ccsd.e_tot
+        self.assertAlmostEqual(a, b, 7)
+
+    def test_tailor(self):
+        amplitudes = fci_to_amplitudes_unrestricted(self.ci, self.space, max_order=2)
+        ccsd = UEBCC(
+            self.mf,
+            ansatz="CCSD",
+            space=self.space,
+            log=NullLogger(),
+        )
+        ccsd.options.e_tol = 1e-10
+        ccsd.options.t_tol = 1e-8
+        ccsd.tailor(amplitudes)
+
+        self.assertTrue(ccsd.converged)
+
+        a = self.ci.e_tot
+        b = ccsd.e_tot
+        self.assertAlmostEqual(a, b, 7)
 
 
 if __name__ == "__main__":

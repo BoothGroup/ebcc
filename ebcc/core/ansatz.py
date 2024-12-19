@@ -21,6 +21,8 @@ named_ansatzes = {
     "CCSD(T)": ("CCSD(T)", "", 0, 0),
     "CC2": ("CC2", "", 0, 0),
     "CC3": ("CC3", "", 0, 0),
+    "LCCD": ("LCCD", "", 0, 0),
+    "LCCSD": ("LCCSD", "", 0, 0),
     "QCISD": ("QCISD", "", 0, 0),
     "DCD": ("DCD", "", 0, 0),
     "DCSD": ("DCSD", "", 0, 0),
@@ -59,7 +61,7 @@ def name_to_identifier(name: str) -> str:
     return iden
 
 
-def identifity_to_name(iden: str) -> str:
+def identifier_to_name(iden: str) -> str:
     """Convert an ansatz identifier to a name.
 
     Inverse operation of `name_to_identifier`.

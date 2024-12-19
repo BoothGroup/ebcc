@@ -15,22 +15,25 @@ from ebcc.core.damping import DIIS
 from ebcc.core.dump import Dump
 from ebcc.core.logging import ANSI
 from ebcc.core.precision import astype, types
+from ebcc.ham.base import BaseERIs
 from ebcc.util import _BaseOptions
 
 if TYPE_CHECKING:
     from typing import Any, Callable, Literal, Optional, Union
 
-    from numpy import float64
+    from numpy import floating
     from numpy.typing import NDArray
     from pyscf.scf.hf import SCF
 
     from ebcc.core.damping import BaseDamping
     from ebcc.core.logging import Logger
-    from ebcc.ham.base import BaseElectronBoson, BaseERIs, BaseFock
+    from ebcc.ext.eccc import BaseExternalCorrection
+    from ebcc.ext.tcc import BaseTailor
+    from ebcc.ham.base import BaseElectronBoson, BaseFock
     from ebcc.opt.base import BaseBruecknerEBCC
     from ebcc.util import Namespace
 
-    T = float64
+    T = floating
 
     """Defines the type for the `eris` argument in functions."""
     ERIsInputType = Any
@@ -78,6 +81,8 @@ class BaseEBCC(ABC):
     CDERIs: type[BaseERIs]
     ElectronBoson: type[BaseElectronBoson]
     Brueckner: type[BaseBruecknerEBCC]
+    ExternalCorrection: type[BaseExternalCorrection]
+    Tailor: type[BaseTailor]
 
     # Attributes
     space: SpaceType
@@ -169,8 +174,6 @@ class BaseEBCC(ABC):
         if self.boson_ansatz != "":
             self.g = self.get_g()
             self.G = self.get_mean_field_G()
-            if self.options.shift:
-                self.log.info(" > Energy shift due to polaritonic basis:  %.10f", self.const)
         else:
             assert self.nbos == 0
             self.options.shift = False
@@ -207,6 +210,10 @@ class BaseEBCC(ABC):
         self.log.debug("")
         self.log.info(f"{ANSI.B}Space{ANSI.R}: {ANSI.m}{self.space}{ANSI.R}")
         self.log.debug("")
+        if self.boson_ansatz != "":
+            self.log.info(f"{ANSI.B}Bosons{ANSI.R}: {ANSI.m}{self.nbos}{ANSI.R}")
+            self.log.info(" > Energy shift due to polaritonic basis:  %.10f", self.const)
+            self.log.debug("")
 
     @property
     @abstractmethod
@@ -247,7 +254,7 @@ class BaseEBCC(ABC):
             f"{ANSI.B}{'Iter':>4s} {'Energy (corr.)':>16s} {'Energy (tot.)':>18s} "
             f"{'Δ(Energy)':>13s} {'Δ(Ampl.)':>13s}{ANSI.R}"
         )
-        self.log.info(f"{0:4d} {e_cc:16.10f} {e_cc + self.mf.e_tot:18.10f}")
+        self.log.info("%4d %16.10f %18.10f", 0, e_cc, e_cc + self.mf.e_tot)
 
         if not self.ansatz.is_one_shot:
             # Set up damping:
@@ -274,20 +281,24 @@ class BaseEBCC(ABC):
                 converged_e = bool(de < self.options.e_tol)
                 converged_t = bool(dt < self.options.t_tol)
                 self.log.info(
-                    f"{niter:4d} {e_cc:16.10f} {e_cc + self.mf.e_tot:18.10f}"
-                    f" {[ANSI.r, ANSI.g][bool(converged_e)]}{de:13.3e}{ANSI.R}"
-                    f" {[ANSI.r, ANSI.g][bool(converged_t)]}{dt:13.3e}{ANSI.R}"
+                    f"%4d %16.10f %18.10f {[ANSI.r, ANSI.g][int(converged_e)]}%13.3e{ANSI.R}"
+                    f" {[ANSI.r, ANSI.g][int(converged_t)]}%13.3e{ANSI.R}",
+                    niter,
+                    e_cc,
+                    e_cc + self.mf.e_tot,
+                    de,
+                    dt,
                 )
 
                 # Check for convergence:
                 converged = converged_e and converged_t
                 if converged:
                     self.log.debug("")
-                    self.log.output(f"{ANSI.g}Converged.{ANSI.R}")
+                    self.log.output(f"{ANSI.g}Converged{ANSI.R}.")
                     break
             else:
                 self.log.debug("")
-                self.log.warning(f"{ANSI.r}Failed to converge.{ANSI.R}")
+                self.log.warning(f"{ANSI.r}Failed to converge{ANSI.R}.")
 
             # Include perturbative correction if required:
             if self.ansatz.has_perturbative_correction:
@@ -295,7 +306,7 @@ class BaseEBCC(ABC):
                 self.log.info("Computing perturbative energy correction.")
                 e_pert = self.energy_perturbative(amplitudes=amplitudes, eris=eris)
                 e_cc += e_pert
-                self.log.info(f"E(pert) = {e_pert:.10f}")
+                self.log.info("E(pert) = %.10f", e_pert)
 
         else:
             converged = True
@@ -306,8 +317,8 @@ class BaseEBCC(ABC):
         self.converged = converged
 
         self.log.debug("")
-        self.log.output(f"E(corr) = {self.e_corr:.10f}")
-        self.log.output(f"E(tot)  = {self.e_tot:.10f}")
+        self.log.output("E(corr) = %.10f", self.e_corr)
+        self.log.output("E(tot)  = %.10f", self.e_corr + self.mf.e_tot)
         self.log.debug("")
         self.log.debug("Time elapsed: %s", timer.format_time(timer()))
         self.log.debug("")
@@ -369,16 +380,16 @@ class BaseEBCC(ABC):
 
             # Log the iteration:
             converged = bool(dl < self.options.t_tol)
-            self.log.info(f"{niter:4d} {[ANSI.r, ANSI.g][converged]}{dl:13.3e}{ANSI.R}")
+            self.log.info(f"%4d {[ANSI.r, ANSI.g][int(converged)]}%13.3e{ANSI.R}", niter, dl)
 
             # Check for convergence:
             if converged:
                 self.log.debug("")
-                self.log.output(f"{ANSI.g}Converged.{ANSI.R}")
+                self.log.output(f"{ANSI.g}Converged{ANSI.R}.")
                 break
         else:
             self.log.debug("")
-            self.log.warning(f"{ANSI.r}Failed to converge.{ANSI.R}")
+            self.log.warning(f"{ANSI.r}Failed to converge{ANSI.R}.")
 
         self.log.debug("")
         self.log.debug("Time elapsed: %s", timer.format_time(timer()))
@@ -428,7 +439,7 @@ class BaseEBCC(ABC):
     def brueckner(self, *args: Any, **kwargs: Any) -> float:
         """Run a Brueckner orbital coupled cluster calculation.
 
-        The coupled cluster object will be update in-place.
+        The coupled cluster object will be updated in-place.
 
         Args:
             *args: Arguments to pass to the Brueckner object.
@@ -439,6 +450,32 @@ class BaseEBCC(ABC):
         """
         bcc = self.Brueckner(self, *args, **kwargs)
         return bcc.kernel()
+
+    def external_correction(self, *args: Any, **kwargs: Any) -> float:
+        """Run an externally corrected coupled cluster calculation.
+
+        Args:
+            *args: Arguments to pass to the external correction object.
+            **kwargs: Keyword arguments to pass to the external correction object.
+
+        Returns:
+            Correlation energy.
+        """
+        with self.ExternalCorrection(self, *args, **kwargs):
+            return self.kernel()
+
+    def tailor(self, *args: Any, **kwargs: Any) -> float:
+        """Run a tailored coupled cluster calculation.
+
+        Args:
+            *args: Arguments to pass to the tailored object.
+            **kwargs: Keyword arguments to pass to the tailored object.
+
+        Returns:
+            Correlation energy.
+        """
+        with self.Tailor(self, *args, **kwargs):
+            return self.kernel()
 
     def write(self, file: str) -> None:
         """Write the EBCC object to a file.
@@ -588,7 +625,7 @@ class BaseEBCC(ABC):
             eris=eris,
             amplitudes=amplitudes,
         )
-        res: float = ensure_scalar(func(**kwargs)).real
+        res: float = np.real(ensure_scalar(func(**kwargs)))
         return astype(res, float)
 
     def energy_perturbative(
@@ -613,7 +650,7 @@ class BaseEBCC(ABC):
             amplitudes=amplitudes,
             lambdas=lambdas,
         )
-        res: float = ensure_scalar(func(**kwargs)).real
+        res: float = np.real(ensure_scalar(func(**kwargs)))
         return res
 
     @abstractmethod
@@ -885,16 +922,21 @@ class BaseEBCC(ABC):
         """
         pass
 
-    @abstractmethod
     def get_fock(self) -> BaseFock:
         """Get the Fock matrix.
 
         Returns:
             Fock matrix.
         """
-        pass
+        return self.Fock(
+            self.mf,
+            space=(self.space, self.space),
+            mo_coeff=(self.mo_coeff, self.mo_coeff),
+            g=self.g,
+            shift=self.options.shift,
+            xi=self.xi if self.boson_ansatz else None,
+        )
 
-    @abstractmethod
     def get_eris(self, eris: Optional[ERIsInputType] = None) -> BaseERIs:
         """Get the electron repulsion integrals.
 
@@ -904,7 +946,23 @@ class BaseEBCC(ABC):
         Returns:
             Electron repulsion integrals.
         """
-        pass
+        use_df = getattr(self.mf, "with_df", None) is not None
+        if isinstance(eris, BaseERIs):
+            return eris
+        elif eris is not None:
+            raise TypeError(f"`eris` must be an `BaseERIs` object, got {eris.__class__.__name__}.")
+        elif use_df:
+            return self.CDERIs(
+                self.mf,
+                space=(self.space, self.space, self.space, self.space),
+                mo_coeff=(self.mo_coeff, self.mo_coeff, self.mo_coeff, self.mo_coeff),
+            )
+        else:
+            return self.ERIs(
+                self.mf,
+                space=(self.space, self.space, self.space, self.space),
+                mo_coeff=(self.mo_coeff, self.mo_coeff, self.mo_coeff, self.mo_coeff),
+            )
 
     def get_g(self) -> BaseElectronBoson:
         """Get the blocks of the electron-boson coupling matrix.
@@ -914,7 +972,14 @@ class BaseEBCC(ABC):
         Returns:
             Electron-boson coupling matrix.
         """
-        return self.ElectronBoson(self, array=self.bare_g)
+        if self.bare_g is None:
+            raise ValueError("Bare electron-boson coupling matrix not provided.")
+        return self.ElectronBoson(
+            self.mf,
+            self.bare_g,
+            (self.space, self.space),
+            (self.mo_coeff, self.mo_coeff),
+        )
 
     @abstractmethod
     def get_mean_field_G(self) -> Any:
@@ -922,18 +987,6 @@ class BaseEBCC(ABC):
 
         Returns:
             Mean-field boson non-conserving term.
-        """
-        pass
-
-    @property
-    @abstractmethod
-    def bare_fock(self) -> Any:
-        """Get the mean-field Fock matrix in the MO basis, including frozen parts.
-
-        Returns an array and not a `BaseFock` object.
-
-        Returns:
-            Mean-field Fock matrix.
         """
         pass
 

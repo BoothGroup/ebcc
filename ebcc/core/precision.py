@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from ebcc import BACKEND
+
 if TYPE_CHECKING:
     from collections.abc import Iterator
     from typing import Type, TypeVar
@@ -37,8 +39,12 @@ def astype(value: T, dtype: Type[T]) -> T:
     Returns:
         The value cast to the current floating point type.
     """
-    out: T = types[dtype](value)
-    return out
+    if BACKEND == "jax" and not TYPE_CHECKING:
+        # Value may be traced, can't cast directly to the type
+        return value.astype(types[dtype])  # type: ignore
+    else:
+        out: T = types[dtype](value)
+        return out
 
 
 def set_precision(**kwargs: type) -> None:

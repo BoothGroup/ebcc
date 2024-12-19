@@ -1,6 +1,6 @@
 [project]
 name = "ebcc"
-version = "1.5.0"
+version = "1.6.1"
 description = "Coupled cluster calculations on electron-boson systems"
 keywords = [
     "quantum", "chemistry",
@@ -38,6 +38,9 @@ requires = [
 ]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+include = ["ebcc*"]
+
 [project.optional-dependencies]
 numpy = []
 tensorflow = [
@@ -47,6 +50,7 @@ tensorflow = [
 jax = [
     "jax>=0.2.0",
     "opt_einsum>=3.3.0",
+    "pyscfad>=0.1.8",
 ]
 cupy = [
     "cupy>=9.0.0",
@@ -60,6 +64,7 @@ dev = [
     "flake8-bugbear>=23.0.0",
     "flake8-docstrings>=1.6.0",
     "mypy>=1.8.0",
+    "mypy_extensions>=0.4.3",
     "coverage[toml]>=5.5.0",
     "pytest>=6.2.4",
     "pytest-cov>=4.0.0",
@@ -186,6 +191,10 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = "ctf.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "pyscfad.*"
 ignore_missing_imports = true
 
 [tool.coverage.run]

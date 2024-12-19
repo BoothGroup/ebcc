@@ -19,13 +19,15 @@ from __future__ import annotations
 import importlib
 from typing import TYPE_CHECKING
 
+import numpy
+
 from ebcc import BACKEND
 
 if TYPE_CHECKING:
     from types import ModuleType
     from typing import Union, TypeVar, Optional
 
-    from numpy import int64, generic
+    from numpy import integer, generic
     from numpy.typing import NDArray
 
     T = TypeVar("T", bound=generic)
@@ -58,8 +60,10 @@ def ensure_scalar(obj: Union[T, NDArray[T]]) -> T:
     Returns:
         Scalar object.
     """
-    if BACKEND in ("numpy", "cupy", "jax"):
+    if BACKEND in ("numpy", "cupy"):
         return np.asarray(obj).item()  # type: ignore
+    elif BACKEND == "jax":
+        return np.ravel(obj)[0]  # type: ignore
     elif BACKEND == "tensorflow":
         if isinstance(obj, tf.Tensor):
             return obj.numpy().item()  # type: ignore
@@ -90,7 +94,7 @@ def to_numpy(array: NDArray[T], dtype: Optional[type[generic]] = None) -> NDArra
     elif BACKEND == "cupy":
         ndarray = np.asnumpy(array)  # type: ignore
     elif BACKEND == "jax":
-        ndarray = np.array(array)  # type: ignore
+        ndarray = numpy.asarray(array)  # type: ignore
     elif BACKEND == "tensorflow":
         ndarray = array.numpy()  # type: ignore
     elif BACKEND in ("ctf", "cyclops"):
@@ -104,7 +108,7 @@ def to_numpy(array: NDArray[T], dtype: Optional[type[generic]] = None) -> NDArra
 
 def _put(
     array: NDArray[T],
-    indices: Union[NDArray[int64], tuple[NDArray[int64], ...]],
+    indices: Union[NDArray[integer], tuple[NDArray[integer], ...]],
     values: NDArray[T],
 ) -> NDArray[T]:
     """Put values into an array at specified indices.
@@ -141,6 +145,8 @@ def _put(
         else:
             indices = tf.cast(tf.convert_to_tensor(indices), tf.int32)
             indices = tf.expand_dims(indices, axis=-1)
+        if np.iscomplexobj(array) and not np.iscomplexobj(values):
+            values = values + 0j  # type: ignore
         values = np.ravel(tf.convert_to_tensor(values, dtype=array.dtype))
         return tf.tensor_scatter_nd_update(array, indices, values)  # type: ignore
     elif BACKEND in ("ctf", "cyclops"):
@@ -157,7 +163,7 @@ def _put(
 
 def _inflate(
     shape: tuple[int, ...],
-    indices: Union[NDArray[int64], tuple[NDArray[int64], ...]],
+    indices: Union[NDArray[integer], tuple[NDArray[integer], ...]],
     values: NDArray[T],
 ) -> NDArray[T]:
     """Inflate values into an array at specified indices.

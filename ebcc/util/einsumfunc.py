@@ -5,21 +5,22 @@ from __future__ import annotations
 import ctypes
 from typing import TYPE_CHECKING
 
-from pyscf.lib import dot  # noqa: F401
+import scipy.linalg
 
 from ebcc import BACKEND
 from ebcc import numpy as np
 from ebcc.core.precision import types
 
 if TYPE_CHECKING:
-    from typing import Callable, Optional, Union
+    from typing import Callable, Optional, TypeVar, Union
 
-    from numpy import float64
+    from numpy import complexfloating, floating
     from numpy.typing import NDArray
 
-    T = float64
+    T = TypeVar("T", floating, complexfloating)
 
     OperandType = Union[str, tuple[int, ...], NDArray[T]]
+    EinsumInput = tuple[str, str, list[NDArray[T]]]
 
 # Try to import TBLIS
 try:
@@ -51,7 +52,7 @@ class EinsumOperandError(ValueError):
     pass
 
 
-def _parse_einsum_input(operands: list[OperandType]) -> tuple[str, str, list[NDArray[T]]]:
+def _parse_einsum_input(operands: list[OperandType[T]]) -> EinsumInput[T]:
     """Parse the input for an einsum contraction.
 
     Args:
@@ -250,7 +251,8 @@ def _contract_ttgt(
         return _fallback()
 
     # Get the characters for each input and output
-    inp, outs, operands = _parse_einsum_input([subscript, a, b])
+    einsum_input: EinsumInput[T] = _parse_einsum_input([subscript, a, b])
+    inp, outs, operands = einsum_input
     inp_a, inp_b = inps = inp.split(",")
     assert len(inps) == len(operands) == 2
     assert all(len(inp) == arg.ndim for inp, arg in zip(inps, operands))
@@ -332,7 +334,7 @@ def _contract_ttgt(
     # Perform the contraction
     ct: NDArray[T]
     if BACKEND == "numpy":
-        ct = dot(at, bt, alpha=alpha, beta=beta, c=out)
+        ct = scipy.linalg.blas.dgemm(alpha, at, bt, beta=beta, c=out)
     else:
         ct = np.dot(at, bt) * alpha
         if out is not None:
@@ -371,7 +373,8 @@ def _contract_tblis(
         return _fallback()
 
     # Get the characters for each input and output
-    inp, outs, operands = _parse_einsum_input([subscript, a, b])
+    einsum_input: EinsumInput[T] = _parse_einsum_input([subscript, a, b])
+    inp, outs, operands = einsum_input
     inp_a, inp_b = inps = inp.split(",")
     assert len(inps) == len(operands) == 2
     assert all(len(inp) == arg.ndim for inp, arg in zip(inps, operands))
@@ -412,7 +415,8 @@ def _contract_tblis(
     # If any dimension has size zero, return here
     if a.size == 0 or b.size == 0:
         if out is not None:
-            return np.reshape(out, shape_c) * beta
+            out_reshaped: NDArray[T] = np.reshape(out, shape_c)
+            return out_reshaped * beta
         else:
             return np.zeros(shape_c, dtype=dtype)
 
@@ -450,7 +454,7 @@ def _contract_tblis(
 
 
 def einsum(
-    *operands: OperandType,
+    *operands: OperandType[T],
     alpha: T = 1.0,  # type: ignore[assignment]
     beta: T = 0.0,  # type: ignore[assignment]
     out: Optional[NDArray[T]] = None,
@@ -518,11 +522,13 @@ def einsum(
                 res = _transpose_backend(
                     einsum_str, a, alpha=types[float](1.0), beta=types[float](0.0), out=None
                 )
-            else:
+            elif len(contraction_args) == 2:
                 a, b = contraction_args
                 res = contract(
                     einsum_str, a, b, alpha=types[float](1.0), beta=types[float](0.0), out=None
                 )
+            else:
+                res = np.einsum(einsum_str, *contraction_args, optimize=True)
             args.append(res)
 
     return res

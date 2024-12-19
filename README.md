@@ -38,6 +38,8 @@ ccsd = EBCC(mf, ansatz="CCSD")
 ccsd.kernel()
 ```
 
+Many ansatzes for both fermionic and electron-boson coupled cluster calculations are available. For more details see the `tutorials` and `examples` directories.
+
 ### Code generation
 
 The models implemented are generated algorithmically from expressions over second quantized operators. The scripts for generating these models are found in the `codegen` directory on the `bootstrap` branch.

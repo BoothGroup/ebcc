@@ -37,7 +37,7 @@ The implemented models are built upon the mean-field objects of
 from __future__ import annotations
 
 """Version of the package."""
-__version__ = "1.5.0"
+__version__ = "1.6.1"
 
 """List of supported ansatz types."""
 METHOD_TYPES = ["MP", "CC", "LCC", "QCI", "QCC", "DC"]
@@ -55,6 +55,26 @@ if TYPE_CHECKING:
     import numpy
 else:
     numpy = importlib.import_module(f"ebcc.backend._{BACKEND}")
+
+if BACKEND == "jax" and not TYPE_CHECKING:
+    # Try to import pyscfad if JAX is used so we can use automatic differentiation
+    try:
+        import pyscfad as pyscf
+
+        # See https://github.com/fishjojo/pyscfad/issues/60
+        from pyscfad import scf, ao2mo, mp
+        from pyscfad.ao2mo import _ao2mo, addons
+
+        pyscf.scf = scf
+        pyscf.ao2mo = ao2mo
+        pyscf.ao2mo._ao2mo = _ao2mo
+        pyscf.ao2mo.addons = addons
+        pyscf.mp = mp
+
+    except ImportError:
+        import pyscf
+else:
+    import pyscf
 
 from ebcc.core.logging import NullLogger, default_log, init_logging
 from ebcc.cc import GEBCC, REBCC, UEBCC
@@ -123,6 +143,8 @@ def available_models(
     path = os.path.join(cd, "codegen")
     _, _, files = list(os.walk(path))[0]
 
+    from ebcc.core.ansatz import identifier_to_name
+
     rhf = []
     uhf = []
     ghf = []
@@ -131,11 +153,12 @@ def available_models(
         if f.endswith(".py"):
             f = f.rstrip(".py")
             f = f.replace("_", "-")
-            if f.startswith("RCC"):
+            f = identifier_to_name(f)
+            if f.startswith("R"):
                 rhf.append(f)
-            elif f.startswith("UCC"):
+            elif f.startswith("U"):
                 uhf.append(f)
-            elif f.startswith("GCC"):
+            elif f.startswith("G"):
                 ghf.append(f)
 
     rhf = sorted(rhf)

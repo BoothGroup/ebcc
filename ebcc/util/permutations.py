@@ -13,10 +13,10 @@ from ebcc.backend import _put
 if TYPE_CHECKING:
     from typing import Any, Generator, Hashable, Iterable, Optional
 
-    from numpy import float64, int64
+    from numpy import floating, integer
     from numpy.typing import NDArray
 
-    T = float64
+    T = floating
 
 
 def factorial(n: int) -> int:
@@ -44,9 +44,38 @@ def permute_string(string: str, permutation: tuple[int, ...]) -> str:
     return "".join([string[i] for i in permutation])
 
 
+def get_string_permutation(string: str, target: str) -> tuple[int, ...]:
+    """Get the permutation to transform one string into another.
+
+    Args:
+        string: Initial string.
+        target: Target string.
+
+    Returns:
+        Permutation to transform `string` into `target`.
+
+    Examples:
+        >>> get_string_permutation("abcd", "cbda")
+        (2, 0, 3, 1)
+        >>> get_string_permutation("iijj", "jjii")
+        (2, 3, 0, 1)
+    """
+    # Find the indices of each character in the string
+    indices: dict[str, list[int]] = {char: [] for char in set(string)}
+    for i, char in enumerate(string):
+        indices[char].append(i)
+
+    # Get the permutation
+    perm: list[int] = []
+    for char in target:
+        perm.append(indices[char].pop(0))
+
+    return tuple(perm)
+
+
 def tril_indices_ndim(
     n: int, dims: int, include_diagonal: Optional[bool] = False
-) -> tuple[NDArray[int64], ...]:
+) -> tuple[NDArray[integer], ...]:
     """Return lower triangular indices for a multidimensional array.
 
     Args:
@@ -199,6 +228,19 @@ def get_symmetry_factor(*numbers: int) -> float:
     for n in numbers:
         ntot += max(0, n - 1)
     return 1.0 / (2.0**ntot)
+
+
+def symmetry_factor(subscript: str) -> float:
+    """Get the symmetry factor for a given subscript.
+
+    Args:
+        subscript: Subscript to get the symmetry factor for.
+
+    Returns:
+        Symmetry factor.
+    """
+    counts = {char: subscript.count(char) for char in set(subscript)}
+    return get_symmetry_factor(*counts.values())
 
 
 def antisymmetrise_array(v: NDArray[T], axes: Optional[tuple[int, ...]] = None) -> NDArray[T]:

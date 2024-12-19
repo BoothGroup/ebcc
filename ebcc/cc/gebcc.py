@@ -12,6 +12,8 @@ from ebcc.backend import _put
 from ebcc.cc.base import BaseEBCC
 from ebcc.core.precision import types
 from ebcc.eom import EA_GEOM, EE_GEOM, IP_GEOM
+from ebcc.ext.eccc import ExternalCorrectionGEBCC
+from ebcc.ext.tcc import TailorGEBCC
 from ebcc.ham.elbos import GElectronBoson
 from ebcc.ham.eris import GERIs
 from ebcc.ham.fock import GFock
@@ -21,7 +23,7 @@ from ebcc.opt.gbrueckner import BruecknerGEBCC
 if TYPE_CHECKING:
     from typing import Any, Optional, TypeAlias, Union
 
-    from numpy import float64
+    from numpy import floating
     from numpy.typing import NDArray
     from pyscf.scf.ghf import GHF
     from pyscf.scf.hf import SCF
@@ -30,7 +32,7 @@ if TYPE_CHECKING:
     from ebcc.cc.uebcc import UEBCC
     from ebcc.util import Namespace
 
-    T = float64
+    T = floating
 
     ERIsInputType: TypeAlias = Union[GERIs, NDArray[T]]
     SpinArrayType: TypeAlias = NDArray[T]
@@ -45,6 +47,8 @@ class GEBCC(BaseEBCC):
     Fock = GFock
     ElectronBoson = GElectronBoson
     Brueckner = BruecknerGEBCC
+    ExternalCorrection = ExternalCorrectionGEBCC
+    Tailor = TailorGEBCC
 
     # Attributes
     space: SpaceType
@@ -857,19 +861,6 @@ class GEBCC(BaseEBCC):
         return val
 
     @property
-    def bare_fock(self) -> NDArray[T]:
-        """Get the mean-field Fock matrix in the MO basis, including frozen parts.
-
-        Returns an array and not a `BaseFock` object.
-
-        Returns:
-            Mean-field Fock matrix.
-        """
-        fock_ao: NDArray[T] = np.asarray(self.mf.get_fock(), dtype=types[float])
-        fock = util.einsum("pq,pi,qj->ij", fock_ao, self.mo_coeff, self.mo_coeff)
-        return fock
-
-    @property
     def xi(self) -> NDArray[T]:
         """Get the shift in the bosonic operators to diagonalise the photon Hamiltonian.
 
@@ -887,28 +878,6 @@ class GEBCC(BaseEBCC):
         else:
             xi = np.zeros(self.omega.shape)
         return xi
-
-    def get_fock(self) -> GFock:
-        """Get the Fock matrix.
-
-        Returns:
-            Fock matrix.
-        """
-        return self.Fock(self, array=self.bare_fock, g=self.g)
-
-    def get_eris(self, eris: Optional[ERIsInputType] = None) -> GERIs:
-        """Get the electron repulsion integrals.
-
-        Args:
-            eris: Input electron repulsion integrals.
-
-        Returns:
-            Electron repulsion integrals.
-        """
-        if isinstance(eris, GERIs):
-            return eris
-        else:
-            return self.ERIs(self, array=eris)
 
     @property
     def nmo(self) -> int:

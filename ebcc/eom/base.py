@@ -6,31 +6,29 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-import numpy
-from pyscf import lib
-
 from ebcc import numpy as np
 from ebcc import util
-from ebcc.backend import to_numpy
+from ebcc.core.davidson import (
+    _outer_product_to_subspace,
+    davidson,
+    make_eigenvectors_real,
+    pick_real_eigenvalues,
+)
 from ebcc.core.logging import ANSI
 from ebcc.core.precision import types
 
 if TYPE_CHECKING:
-    from typing import Any, Callable, Optional
+    from typing import Any, Optional
 
-    from numpy import float64
+    from numpy import floating, integer
     from numpy.typing import NDArray
 
     from ebcc.cc.base import BaseEBCC, ERIsInputType, SpaceType, SpinArrayType
     from ebcc.core.ansatz import Ansatz
+    from ebcc.core.davidson import PickType
     from ebcc.util import Namespace
 
-    T = float64
-
-    PickFunctionType = Callable[
-        [NDArray[T], NDArray[T], int, dict[str, Any]],
-        tuple[NDArray[T], NDArray[T], int],
-    ]
+    T = floating
 
 # TODO Custom implementation
 
@@ -197,14 +195,11 @@ class BaseEOM(ABC):
         """
         pass
 
-    def get_pick(
-        self, guesses: Optional[NDArray[T]] = None, real_system: bool = True
-    ) -> PickFunctionType:
+    def get_pick(self, guesses: Optional[NDArray[T]] = None) -> PickType[T]:
         """Get the function to pick the eigenvalues matching the criteria.
 
         Args:
             guesses: Initial guesses for the roots.
-            real_system: Whether the system is real-valued.
 
         Returns:
             Function to pick the eigenvalues.
@@ -214,35 +209,21 @@ class BaseEOM(ABC):
             assert guesses is not None
 
             def pick(
-                w: NDArray[T], v: NDArray[T], nroots: int, env: dict[str, Any]
-            ) -> tuple[NDArray[T], NDArray[T], int]:
-                """Pick the eigenvalues."""
-                x0 = to_numpy(lib.linalg_helper._gen_x0(env["v"], env["xs"]))
-                s = to_numpy(guesses).conj() @ x0.T
-                s = numpy.einsum("pi,pi->i", s.conj(), s)
-                arg = numpy.argsort(-s)[:nroots]
-                w, v, idx = lib.linalg_helper._eigs_cmplx2real(
-                    to_numpy(w),
-                    to_numpy(v),
-                    arg,
-                    real_system,
-                )
-                return w, v, idx
+                w: NDArray[T],
+                v: NDArray[T],
+                nroots: int,
+                basis_vectors: Optional[NDArray[T]] = None,
+            ) -> tuple[NDArray[T], NDArray[T], NDArray[integer]]:
+                """Pick the eigenvalues using the overlap with the guess vector."""
+                assert basis_vectors is not None
+                x0 = _outer_product_to_subspace(v, basis_vectors)
+                s = np.dot(np.conj(guesses), np.transpose(x0))
+                s = np.real(np.linalg.norm(s, axis=0))
+                idx = np.argsort(-s)[:nroots]
+                return make_eigenvectors_real(w, v, idx)
 
         else:
-
-            def pick(
-                w: NDArray[T], v: NDArray[T], nroots: int, env: dict[str, Any]
-            ) -> tuple[NDArray[T], NDArray[T], int]:
-                """Pick the eigenvalues."""
-                real_idx = numpy.where(abs(numpy.imag(w)) < 1e-3)[0]
-                w, v, idx = lib.linalg_helper._eigs_cmplx2real(
-                    to_numpy(w),
-                    to_numpy(v),
-                    real_idx,
-                    real_system,
-                )
-                return w, v, idx
+            pick = pick_real_eigenvalues
 
         return pick
 
@@ -256,7 +237,7 @@ class BaseEOM(ABC):
         """Get the quasiparticle weight."""
         pass
 
-    def get_guesses(self, diag: Optional[NDArray[T]] = None) -> list[NDArray[T]]:
+    def get_guesses(self, diag: Optional[NDArray[T]] = None) -> NDArray[T]:
         """Get the initial guesses vectors.
 
         Args:
@@ -274,7 +255,7 @@ class BaseEOM(ABC):
         for root, guess in enumerate(arg[:nroots]):
             guesses.append(np.eye(1, diag.size, guess, dtype=types[float])[0])
 
-        return guesses
+        return np.stack(guesses)
 
     def callback(self, envs: dict[str, Any]) -> None:  # noqa: B027
         """Callback function for the eigensolver."""  # noqa: D401
@@ -283,13 +264,14 @@ class BaseEOM(ABC):
     def davidson(
         self,
         eris: Optional[ERIsInputType] = None,
-        guesses: Optional[list[NDArray[T]]] = None,
+        guesses: Optional[NDArray[T]] = None,
     ) -> NDArray[T]:
         """Solve the EOM Hamiltonian using the Davidson solver.
 
         Args:
             eris: Electronic repulsion integrals.
-            guesses: Initial guesses for the roots.
+            guesses: Initial guesses for the roots. Transposed with respect to the usual eigenvector
+                convention (#FIXME).
 
         Returns:
             Energies of the roots.
@@ -305,10 +287,7 @@ class BaseEOM(ABC):
 
         # Get the matrix-vector products and the diagonal:
         ints = self.matvec_intermediates(eris=eris, left=self.options.left)
-        matvecs = lambda vs: [
-            to_numpy(self.matvec(np.asarray(v), eris=eris, ints=ints, left=self.options.left))
-            for v in vs
-        ]
+        matvec = lambda v: self.matvec(v, eris=eris, ints=ints, left=self.options.left)
         diag = self.diag(eris=eris)
 
         # Get the guesses:
@@ -316,37 +295,34 @@ class BaseEOM(ABC):
             guesses = self.get_guesses(diag=diag)
 
         # Solve the EOM Hamiltonian:
-        nroots = min(len(guesses), self.options.nroots)
-        pick = self.get_pick(guesses=np.stack(guesses))
-        converged, e, v = lib.davidson_nosym1(
-            matvecs,
-            [to_numpy(g) for g in guesses],
-            to_numpy(diag),
-            tol=self.options.e_tol,
+        nroots = min(guesses.shape[0], self.options.nroots)
+        pick = self.get_pick(guesses=guesses)
+        converged, e, v = davidson(
+            matvec,
+            guesses,
+            diag,
+            e_tol=self.options.e_tol,
             nroots=nroots,
             pick=pick,
-            max_cycle=self.options.max_iter,
+            max_iter=self.options.max_iter,
             max_space=self.options.max_space,
             callback=self.callback,
-            verbose=0,
         )
-        e = np.asarray(e)
-        v = np.asarray(v)
 
         # Check for convergence:
         if all(converged):
             self.log.debug("")
-            self.log.output(f"{ANSI.g}Converged.{ANSI.R}")
+            self.log.output(f"{ANSI.g}Converged{ANSI.R}.")
         else:
             self.log.debug("")
             self.log.warning(
-                f"{ANSI.r}Failed to converge {sum(not c for c in converged)} roots.{ANSI.R}"
+                f"{ANSI.r}Failed to converge {sum(not c for c in converged)} roots{ANSI.R}."
             )
 
         # Update attributes:
-        self.converged = converged
-        self.e = np.asarray(e, dtype=types[float])
-        self.v = np.transpose(np.asarray(v, dtype=types[float]))
+        self.converged = all(converged)
+        self.e = np.asarray(np.real(e), dtype=types[float])
+        self.v = np.asarray(np.real(v), dtype=types[float])
 
         self.log.debug("")
         self.log.output(
@@ -356,8 +332,11 @@ class BaseEOM(ABC):
             r1n = self.vector_to_amplitudes(vn)["r1"]
             qpwt = self._quasiparticle_weight(r1n)
             self.log.output(
-                f"{n:>4d} {np.ravel(en)[0]:>16.10f} {qpwt:>13.5g} "
-                f"{[ANSI.r, ANSI.g][bool(cn)]}{cn!r:>8s}{ANSI.R}"
+                f"%4d %16.10f %13.5g {[ANSI.r, ANSI.g][bool(cn)]}%8s{ANSI.R}",
+                n,
+                np.ravel(en)[0],
+                qpwt,
+                bool(cn),
             )
 
         self.log.debug("")
