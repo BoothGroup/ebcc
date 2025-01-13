@@ -40,6 +40,14 @@ ccsd.kernel()
 
 Many ansatzes for both fermionic and electron-boson coupled cluster calculations are available. For more details see the `tutorials` and `examples` directories.
 
+### Backends
+
+By default, the tensor backend uses `numpy` for all array classes and contraction routines.
+A number of alternative backends are supported, offering varied frameworks such as parallelism, GPU acceleration, and automatic differentation.
+For more details, see the [corresponding tutorial](https://github.com/BoothGroup/ebcc/blob/master/tutorials/05-Backend.ipynb).
+
+Additionally, mixed precision calculations are supported, which is also detailed in [the following tutorial](https://github.com/BoothGroup/ebcc/blob/master/tutorials/04-Precision.ipynb).
+
 ### Code generation
 
 The models implemented are generated algorithmically from expressions over second quantized operators. The scripts for generating these models are found in the `codegen` directory on the `bootstrap` branch.
