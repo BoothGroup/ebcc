@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Damping - ebcc</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Damping";
+        var mkdocs_page_input_path = "reference/core/damping.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> ebcc
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../features/">Features</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Code Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" >Coupled cluster</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/rebcc/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/uebcc/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/gebcc/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Equation of motion</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/reom/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/ueom/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/geom/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Orbital optimisation</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" >Brueckner</a>
+    <ul>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/rbrueckner/">Restricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/ubrueckner/">Unrestricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/gbrueckner/">Generalised</a>
+                </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../opt/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >Core</a>
+    <ul class="current">
+                <li class="toctree-l2"><a class="reference internal" href="../ansatz/">Ansatz</a>
+                </li>
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">Damping</a>
+    <ul class="current">
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../dump/">Dumping</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../logging/">Logging</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../precision/">Precision</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Hamiltonian</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/space/">Space</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/fock/">Fock</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/eris/">ERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/cderis/">CDERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/elbos/">Bosonic</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Utility</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/permutations/">Permutations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/einsumfunc/">Einstein summations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/misc/">Miscellaneous</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">ebcc</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Code Reference</li>
+          <li class="breadcrumb-item">Core</li>
+      <li class="breadcrumb-item active">Damping</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="ebcc.core.damping"></a>
+    <div class="doc doc-contents first">
+
+        <p>Damping and DIIS control.</p>
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.core.damping.BaseDamping" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.core.damping.BaseDamping(*args, options=None, **kwargs)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><span title="abc.ABC">ABC</span></code></p>
+
+
+        <p>Base class for damping.</p>
+
+        <p>Initialise the damping object.</p>
+
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/core/damping.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(self, *args: Any, options: Optional[_BaseOptions] = None, **kwargs: Any) -&gt; None:
+    """Initialise the damping object."""
+    self._arrays = {}
+    self._errors = {}
+    self._counter = 0</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.core.damping.BaseDamping.__call__" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.damping.BaseDamping.__call__(array, error=None)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Apply damping to the array.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>array</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.core.damping.T">T</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>The array to damp.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>error</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.core.damping.T">T</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>The error array.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.core.damping.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>The damped array.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/core/damping.py</code></summary>
+              <pre class="highlight"><code class="language-python">def __call__(self, array: NDArray[T], error: Optional[NDArray[T]] = None) -&gt; NDArray[T]:
+    """Apply damping to the array.
+
+    Args:
+        array: The array to damp.
+        error: The error array.
+
+    Returns:
+        The damped array.
+    """
+    self.push(array, error=error)
+    return self.extrapolate()</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.core.damping.BaseDamping.push" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.damping.BaseDamping.push(array, error=None)</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Push the array and error into the damping object.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>array</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.core.damping.T">T</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>The array to push.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>error</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.core.damping.T">T</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>The error array to push.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/core/damping.py</code></summary>
+              <pre class="highlight"><code class="language-python">@abstractmethod
+def push(self, array: NDArray[T], error: Optional[NDArray[T]] = None) -&gt; None:
+    """Push the array and error into the damping object.
+
+    Args:
+        array: The array to push.
+        error: The error array to push.
+    """
+    pass</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.core.damping.BaseDamping.extrapolate" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.damping.BaseDamping.extrapolate()</code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-abstractmethod"><code>abstractmethod</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Extrapolate the next array.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.core.damping.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>The extrapolated array.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/core/damping.py</code></summary>
+              <pre class="highlight"><code class="language-python">@abstractmethod
+def extrapolate(self) -&gt; NDArray[T]:
+    """Extrapolate the next array.
+
+    Returns:
+        The extrapolated array.
+    """
+    pass</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.core.damping.BaseDamping.reset" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.damping.BaseDamping.reset()</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Reset the damping object.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/core/damping.py</code></summary>
+              <pre class="highlight"><code class="language-python">def reset(self) -&gt; None:
+    """Reset the damping object."""
+    self._arrays = {}
+    self._errors = {}
+    self._counter = 0</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.core.damping.BaseDamping.__len__" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.damping.BaseDamping.__len__()</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Get the number of arrays stored in the damping object.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/core/damping.py</code></summary>
+              <pre class="highlight"><code class="language-python">def __len__(self) -&gt; int:
+    """Get the number of arrays stored in the damping object."""
+    return len(self._arrays)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.core.damping.NoDamping" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.core.damping.NoDamping(*args, options=None, **kwargs)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="ebcc.core.damping.BaseDamping" href="#ebcc.core.damping.BaseDamping">BaseDamping</a></code></p>
+
+
+        <p>No damping.</p>
+
+        <p>Apply damping to the array.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>array</code></b>
+              –
+              <div class="doc-md-description">
+                <p>The array to damp.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>error</code></b>
+              –
+              <div class="doc-md-description">
+                <p>The error array.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code>None</code>
+              –
+              <div class="doc-md-description">
+                <p>The damped array.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/core/damping.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(self, *args: Any, options: Optional[_BaseOptions] = None, **kwargs: Any) -&gt; None:
+    """Apply damping to the array.
+
+    Args:
+        array: The array to damp.
+        error: The error array.
+
+    Returns:
+        The damped array.
+    """
+    pass</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.core.damping.NoDamping.__call__" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.damping.NoDamping.__call__(array, error=None)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Apply damping to the array.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>array</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.core.damping.T">T</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>The array to damp.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>error</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.core.damping.T">T</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>The error array.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.core.damping.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>The damped array.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/core/damping.py</code></summary>
+              <pre class="highlight"><code class="language-python">def __call__(self, array: NDArray[T], error: Optional[NDArray[T]] = None) -&gt; NDArray[T]:
+    """Apply damping to the array.
+
+    Args:
+        array: The array to damp.
+        error: The error array.
+
+    Returns:
+        The damped array.
+    """
+    return array</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.core.damping.NoDamping.push" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.damping.NoDamping.push(array, error=None)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Push the array and error into the damping object.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>array</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.core.damping.T">T</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>The array to push.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>error</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.core.damping.T">T</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>The error array to push.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/core/damping.py</code></summary>
+              <pre class="highlight"><code class="language-python">def push(self, array: NDArray[T], error: Optional[NDArray[T]] = None) -&gt; None:
+    """Push the array and error into the damping object.
+
+    Args:
+        array: The array to push.
+        error: The error array to push.
+    """
+    raise NotImplementedError</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.core.damping.NoDamping.extrapolate" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.damping.NoDamping.extrapolate()</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Extrapolate the next array.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.core.damping.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>The extrapolated array.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/core/damping.py</code></summary>
+              <pre class="highlight"><code class="language-python">def extrapolate(self) -&gt; NDArray[T]:
+    """Extrapolate the next array.
+
+    Returns:
+        The extrapolated array.
+    """
+    raise NotImplementedError</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.core.damping.LinearDamping" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.core.damping.LinearDamping(*args, factor=None, options=None)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="ebcc.core.damping.BaseDamping" href="#ebcc.core.damping.BaseDamping">BaseDamping</a></code></p>
+
+
+        <p>Linear damping.</p>
+
+        <p>Initialise the damping object.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>factor</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[float]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>The damping factor. If <code>None</code>, use <code>options.damping</code>, if available. Otherwise,
+use <code>0.5</code>.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>options</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="ebcc.util._BaseOptions">_BaseOptions</span>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>The options object.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/core/damping.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(
+    self, *args: Any, factor: Optional[float] = None, options: Optional[_BaseOptions] = None
+) -&gt; None:
+    """Initialise the damping object.
+
+    Args:
+        factor: The damping factor. If `None`, use `options.damping`, if available. Otherwise,
+            use `0.5`.
+        options: The options object.
+    """
+    super().__init__()
+    if factor is None:
+        factor = getattr(options, "damping", 0.5)
+    self.factor = factor</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.core.damping.LinearDamping.push" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.damping.LinearDamping.push(array, error=None)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Push the array and error into the damping object.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>array</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.core.damping.T">T</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>The array to push.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>error</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.core.damping.T">T</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>The error array to push.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/core/damping.py</code></summary>
+              <pre class="highlight"><code class="language-python">def push(self, array: NDArray[T], error: Optional[NDArray[T]] = None) -&gt; None:
+    """Push the array and error into the damping object.
+
+    Args:
+        array: The array to push.
+        error: The error array to push.
+    """
+    if len(self) == 2:
+        self._arrays.pop(min(self._arrays.keys()))
+    self._arrays[self._counter] = array
+    self._counter += 1</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.core.damping.LinearDamping.extrapolate" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.damping.LinearDamping.extrapolate()</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Extrapolate the next array.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.core.damping.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>The extrapolated array.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/core/damping.py</code></summary>
+              <pre class="highlight"><code class="language-python">def extrapolate(self) -&gt; NDArray[T]:
+    """Extrapolate the next array.
+
+    Returns:
+        The extrapolated array.
+    """
+    if len(self) &lt; 2:
+        return next(iter(self._arrays.values()))
+    (_, previous), (_, current) = sorted(self._arrays.items())
+    return current * (1.0 - self.factor) + previous * self.factor</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.core.damping.DIIS" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.core.damping.DIIS(space=None, min_space=None, factor=None, options=None)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+            <p class="doc doc-class-bases">
+              Bases: <code><a class="autorefs autorefs-internal" title="ebcc.core.damping.BaseDamping" href="#ebcc.core.damping.BaseDamping">BaseDamping</a></code></p>
+
+
+        <p>Direct inversion in the iterative subspace.</p>
+
+        <p>Initialize the DIIS object.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>space</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[int]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>The number of vectors to store in the DIIS space. If <code>None</code>, use
+<code>options.diis_space</code>, if available. Otherwise, use <code>6</code>.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>min_space</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[int]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>The minimum number of vectors to store in the DIIS space. If <code>None</code>, use
+<code>options.diis_min_space</code>, if available. Otherwise, use <code>1</code>.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>factor</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[float]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>The damping factor. If <code>None</code>, use <code>options.damping</code>, if available. Otherwise,
+use <code>0.5</code>.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>options</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="ebcc.util._BaseOptions">_BaseOptions</span>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>The options object.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/core/damping.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(
+    self,
+    space: Optional[int] = None,
+    min_space: Optional[int] = None,
+    factor: Optional[float] = None,
+    options: Optional[_BaseOptions] = None,
+) -&gt; None:
+    """Initialize the DIIS object.
+
+    Args:
+        space: The number of vectors to store in the DIIS space. If `None`, use
+            `options.diis_space`, if available. Otherwise, use `6`.
+        min_space: The minimum number of vectors to store in the DIIS space. If `None`, use
+            `options.diis_min_space`, if available. Otherwise, use `1`.
+        factor: The damping factor. If `None`, use `options.damping`, if available. Otherwise,
+            use `0.5`.
+        options: The options object.
+    """
+    super().__init__()
+    if space is None:
+        space = getattr(options, "diis_space", 6)
+    if min_space is None:
+        min_space = getattr(options, "diis_min_space", 1)
+    if factor is None:
+        factor = getattr(options, "damping", 0.5)
+    self.space = space
+    self.min_space = min_space
+    self.factor = factor
+    self._norm_cache: dict[tuple[int, int], T] = {}</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.core.damping.DIIS.push" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.damping.DIIS.push(array, error=None)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Push the array and error into the damping object.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>array</code></b>
+                  (<code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.core.damping.T">T</span>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>The array to push.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>error</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.core.damping.T">T</span>]]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>The error array to push.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/core/damping.py</code></summary>
+              <pre class="highlight"><code class="language-python">def push(self, array: NDArray[T], error: Optional[NDArray[T]] = None) -&gt; None:
+    """Push the array and error into the damping object.
+
+    Args:
+        array: The array to push.
+        error: The error array to push.
+    """
+    # Get the error if not provided
+    if error is None and -1 in self._arrays:
+        error = array - self._arrays[-1]
+    elif error is None or len(self) == 0:
+        self._arrays[-1] = array
+        return
+
+    # Push the array and error into the DIIS subspace
+    self._arrays[self._counter] = array
+    self._errors[self._counter] = error
+    self._counter += 1
+
+    # Remove an array if the space is exceeded
+    if len(self) &gt; self.space:
+        errors = {
+            counter: self._error_norm(counter, counter) for counter in self._errors.keys()
+        }
+        counter = max(errors, key=errors.__getitem__)  # type: ignore[arg-type]
+        self._arrays.pop(counter)
+        self._errors.pop(counter)</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.core.damping.DIIS.extrapolate" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.damping.DIIS.extrapolate()</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Extrapolate the next array.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><span title="numpy.typing.NDArray">NDArray</span>[<span title="ebcc.core.damping.T">T</span>]</code>
+              –
+              <div class="doc-md-description">
+                <p>The extrapolated array.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/core/damping.py</code></summary>
+              <pre class="highlight"><code class="language-python">def extrapolate(self) -&gt; NDArray[T]:
+    """Extrapolate the next array.
+
+    Returns:
+        The extrapolated array.
+    """
+    # Return the last array if the space is less than the minimum space
+    counters = sorted(self._errors.keys())
+    size = len(counters)
+    if size &lt; self.min_space:
+        return self._arrays[-1]
+
+    # Get the backend
+    if USE_BACKEND:
+        backend = np
+    else:
+        backend = numpy
+
+    # Build the error matrix
+    errors = backend.array(
+        [
+            [self._error_norm(counter_i, counter_j) for counter_j in counters]
+            for counter_i in counters
+        ]
+    )
+    zeros = backend.zeros((1, 1), dtype=errors.dtype)
+    ones = backend.ones((size, 1), dtype=errors.dtype)
+    matrix = backend.block([[errors, -ones], [-backend.transpose(ones), zeros]])
+
+    # Build the right-hand side
+    zeros = backend.zeros((size,), dtype=errors.dtype)
+    ones = backend.ones((1,), dtype=errors.dtype)
+    residual = backend.block([zeros, -ones])
+
+    # Solve the linear problem
+    try:
+        c = backend.linalg.solve(matrix, residual)
+    except Exception:
+        w, v = backend.linalg.eigh(matrix)
+        if backend.any(backend.abs(w) &lt; 1e-14):
+            # avoiding fancy indexing for compatibility
+            for i in range(size + 1):
+                if backend.abs(w[i]) &lt; 1e-14:
+                    _put(
+                        v,
+                        backend.ix_(backend.arange(size + 1), backend.array([i])),
+                        backend.zeros_like(v[:, i]),
+                    )
+        c = util.einsum("pi,qi,i,q-&gt;p", v, np.conj(v), w**-1.0, residual)
+
+    # Construct the new array
+    array = np.zeros_like(self._arrays[next(iter(self._arrays))])
+    for counter, coefficient in zip(counters, c):
+        array += self._arrays[counter] * coefficient
+    error = np.zeros_like(self._errors[next(iter(self._errors))])
+    for counter, coefficient in zip(counters, c):
+        error += self._errors[counter] * coefficient
+
+    # Apply the damping factor
+    if self.factor:
+        array = array * (1.0 - self.factor) + self._arrays[-1] * self.factor
+
+    # Replace the previous array with the extrapolated array
+    self._arrays[-1] = array
+    self._arrays[self._counter] = array
+    self._errors[self._counter] = error
+
+    return array</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.core.damping.DIIS.reset" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.damping.DIIS.reset()</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Reset the damping object.</p>
+
+            <details class="quote">
+              <summary>Source code in <code>ebcc/core/damping.py</code></summary>
+              <pre class="highlight"><code class="language-python">def reset(self) -&gt; None:
+    """Reset the damping object."""
+    super().reset()
+    self._norm_cache = {}</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../ansatz/" class="btn btn-neutral float-left" title="Ansatz"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../dump/" class="btn btn-neutral float-right" title="Dumping">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../ansatz/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../dump/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>

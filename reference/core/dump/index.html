@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <link rel="shortcut icon" href="../../../img/favicon.ico" />
+    <title>Dumping - ebcc</title>
+    <link rel="stylesheet" href="../../../css/theme.css" />
+    <link rel="stylesheet" href="../../../css/theme_extra.css" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" />
+        <link href="../../../assets/_mkdocstrings.css" rel="stylesheet" />
+    
+      <script>
+        // Current page data
+        var mkdocs_page_name = "Dumping";
+        var mkdocs_page_input_path = "reference/core/dump.md";
+        var mkdocs_page_url = null;
+      </script>
+    
+    <!--[if lt IE 9]>
+      <script src="../../../js/html5shiv.min.js"></script>
+    <![endif]-->
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+      <script>hljs.highlightAll();</script> 
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side stickynav">
+    <div class="wy-side-scroll">
+      <div class="wy-side-nav-search">
+          <a href="../../.." class="icon icon-home"> ebcc
+        </a><div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+      <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" title="Type search term here" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../..">Home</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="../../../features/">Features</a>
+                </li>
+              </ul>
+              <p class="caption"><span class="caption-text">Code Reference</span></p>
+              <ul class="current">
+                  <li class="toctree-l1"><a class="reference internal" >Coupled cluster</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/rebcc/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/uebcc/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/gebcc/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../cc/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Equation of motion</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/reom/">Restricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/ueom/">Unrestricted</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/geom/">Generalised</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../eom/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Orbital optimisation</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" >Brueckner</a>
+    <ul>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/rbrueckner/">Restricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/ubrueckner/">Unrestricted</a>
+                </li>
+                <li class="toctree-l3"><a class="reference internal" href="../../opt/gbrueckner/">Generalised</a>
+                </li>
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../opt/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1 current"><a class="reference internal current" >Core</a>
+    <ul class="current">
+                <li class="toctree-l2"><a class="reference internal" href="../ansatz/">Ansatz</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../damping/">Damping</a>
+                </li>
+                <li class="toctree-l2 current"><a class="reference internal current" href="#">Dumping</a>
+    <ul class="current">
+    </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../logging/">Logging</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../precision/">Precision</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Hamiltonian</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/space/">Space</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/fock/">Fock</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/eris/">ERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/cderis/">CDERIs</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/elbos/">Bosonic</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../ham/base/">Base</a>
+                </li>
+    </ul>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" >Utility</a>
+    <ul>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/permutations/">Permutations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/einsumfunc/">Einstein summations</a>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="../../util/misc/">Miscellaneous</a>
+                </li>
+    </ul>
+                  </li>
+              </ul>
+      </div>
+    </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" role="navigation" aria-label="Mobile navigation menu">
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../..">ebcc</a>
+        
+      </nav>
+      <div class="wy-nav-content">
+        <div class="rst-content"><div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../.." class="icon icon-home" aria-label="Docs"></a></li>
+          <li class="breadcrumb-item">Code Reference</li>
+          <li class="breadcrumb-item">Core</li>
+      <li class="breadcrumb-item active">Dumping</li>
+    <li class="wy-breadcrumbs-aside">
+    </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div class="section" itemprop="articleBody">
+              
+                <div class="doc doc-object doc-module">
+
+
+
+<a id="ebcc.core.dump"></a>
+    <div class="doc doc-contents first">
+
+        <p>File dumping and reading functionality.</p>
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="ebcc.core.dump.Dump" class="doc doc-heading">
+              <code class="highlight language-python">ebcc.core.dump.Dump(name)</code>
+
+</h2>
+
+
+    <div class="doc doc-contents ">
+
+
+        <p>File handler for reading and writing EBCC calculations.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>name</code></b>
+                  (<code>str</code>)
+              –
+              <div class="doc-md-description">
+                <p>The name of the file.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+        <p>Initialise the file handler.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>name</code></b>
+                  (<code>str</code>)
+              –
+              <div class="doc-md-description">
+                <p>The name of the file.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+
+                  <details class="quote">
+                    <summary>Source code in <code>ebcc/core/dump.py</code></summary>
+                    <pre class="highlight"><code class="language-python">def __init__(self, name: str) -&gt; None:
+    """Initialise the file handler.
+
+    Args:
+        name: The name of the file.
+    """
+    self.name = name</code></pre>
+                  </details>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.core.dump.Dump.write" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.dump.Dump.write(ebcc)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Write the EBCC object to the file.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>ebcc</code></b>
+                  (<code><a class="autorefs autorefs-internal" title="ebcc.cc.base.BaseEBCC" href="../../cc/base/#ebcc.cc.base.BaseEBCC">BaseEBCC</a></code>)
+              –
+              <div class="doc-md-description">
+                <p>The EBCC object to write.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/core/dump.py</code></summary>
+              <pre class="highlight"><code class="language-python">def write(self, ebcc: BaseEBCC) -&gt; None:
+    """Write the EBCC object to the file.
+
+    Args:
+        ebcc: The EBCC object to write.
+    """
+    # Write the options
+    dic = {}
+    for key, val in ebcc.options.__dict__.items():
+        if val is not None:
+            dic[key] = val
+    dump(self.name, "options", dic)
+
+    # Write the mean-field data
+    dic = {
+        "e_tot": ebcc.mf.e_tot,
+        "mo_energy": ebcc.mf.mo_energy,
+        "mo_coeff": ebcc.mf.mo_coeff,
+        "mo_occ": ebcc.mf.mo_occ,
+    }
+    dump_mol(ebcc.mf.mol, self.name)
+    dump(self.name, "mean-field", dic)
+
+    # Write the MOs used
+    dic = {
+        "mo_coeff": ebcc.mo_coeff,
+        "mo_occ": ebcc.mo_occ,
+    }
+    dump(self.name, "mo", dic)
+
+    # Write the ansatz
+    dic = {
+        "fermion_ansatz": ebcc.ansatz.fermion_ansatz,
+        "boson_ansatz": ebcc.ansatz.boson_ansatz,
+        "fermion_coupling_rank": ebcc.ansatz.fermion_coupling_rank,
+        "boson_coupling_rank": ebcc.ansatz.boson_coupling_rank,
+    }
+    if ebcc.ansatz.module_name is not None:
+        dic["module_name"] = ebcc.ansatz.module_name
+    dump(self.name, "ansatz", dic)
+
+    # Write the space
+    if ebcc.spin_type == "U":
+        dic = {
+            "occupied": (ebcc.space[0]._occupied, ebcc.space[1]._occupied),
+            "frozen": (ebcc.space[0]._frozen, ebcc.space[1]._frozen),
+            "active": (ebcc.space[0]._active, ebcc.space[1]._active),
+        }
+    else:
+        dic = {
+            "occupied": ebcc.space._occupied,
+            "frozen": ebcc.space._frozen,
+            "active": ebcc.space._active,
+        }
+    dump(self.name, "space", dic)
+
+    # Write the bosonic parameters
+    dic = {}
+    if ebcc.omega is not None:
+        dic["omega"] = ebcc.omega
+    if ebcc.bare_g is not None:
+        dic["bare_g"] = ebcc.bare_g
+    if ebcc.bare_G is not None:
+        dic["bare_G"] = ebcc.bare_G
+    dump(self.name, "bosons", dic)
+
+    # Write the Fock matrix
+    # TODO write the Fock matrix class instead
+
+    # Write miscellaneous data
+    kwargs: dict[str, Any] = {
+        "spin_type": ebcc.spin_type,
+    }
+    if ebcc.e_corr is not None:
+        kwargs["e_corr"] = ebcc.e_corr
+    if ebcc.converged is not None:
+        kwargs["converged"] = ebcc.converged
+    if ebcc.converged_lambda is not None:
+        kwargs["converged_lambda"] = ebcc.converged_lambda
+    dump(self.name, "misc", kwargs)
+
+    # Write the amplitudes
+    if ebcc.spin_type == "U":
+        if ebcc.amplitudes is not None:
+            dump(
+                self.name,
+                "amplitudes",
+                {
+                    key: ({**val} if isinstance(val, (util.Namespace, dict)) else val)
+                    for key, val in ebcc.amplitudes.items()
+                },
+            )
+        if ebcc.lambdas is not None:
+            dump(
+                self.name,
+                "lambdas",
+                {
+                    key: ({**val} if isinstance(val, (util.Namespace, dict)) else val)
+                    for key, val in ebcc.lambdas.items()
+                },
+            )
+    else:
+        if ebcc.amplitudes is not None:
+            dump(self.name, "amplitudes", {**ebcc.amplitudes})
+        if ebcc.lambdas is not None:
+            dump(self.name, "lambdas", {**ebcc.lambdas})</code></pre>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="ebcc.core.dump.Dump.read" class="doc doc-heading">
+            <code class="highlight language-python">ebcc.core.dump.Dump.read(cls, log=None)</code>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Load the file to an EBCC object.</p>
+
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Parameters:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+              <b><code>cls</code></b>
+                  (<code>type[<a class="autorefs autorefs-internal" title="ebcc.cc.base.BaseEBCC" href="../../cc/base/#ebcc.cc.base.BaseEBCC">BaseEBCC</a>]</code>)
+              –
+              <div class="doc-md-description">
+                <p>EBCC class to load the file to.</p>
+              </div>
+            </li>
+            <li>
+              <b><code>log</code></b>
+                  (<code><span title="typing.Optional">Optional</span>[<span title="ebcc.space.logging.Logger">Logger</span>]</code>, default:
+                      <code>None</code>
+)
+              –
+              <div class="doc-md-description">
+                <p>Logger to assign to the EBCC object.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<table class="field-list">
+  <colgroup>
+    <col class="field-name" />
+    <col class="field-body" />
+  </colgroup>
+  <tbody valign="top">
+    <tr class="field">
+      <th class="field-name">Returns:</th>
+      <td class="field-body">
+        <ul class="first simple">
+            <li>
+                  <code><a class="autorefs autorefs-internal" title="ebcc.cc.base.BaseEBCC" href="../../cc/base/#ebcc.cc.base.BaseEBCC">BaseEBCC</a></code>
+              –
+              <div class="doc-md-description">
+                <p>The EBCC object loaded from the file.</p>
+              </div>
+            </li>
+        </ul>
+      </td>
+    </tr>
+  </tbody>
+</table>
+            <details class="quote">
+              <summary>Source code in <code>ebcc/core/dump.py</code></summary>
+              <pre class="highlight"><code class="language-python">def read(self, cls: type[BaseEBCC], log: Optional[Logger] = None) -&gt; BaseEBCC:
+    """Load the file to an EBCC object.
+
+    Args:
+        cls: EBCC class to load the file to.
+        log: Logger to assign to the EBCC object.
+
+    Returns:
+        The EBCC object loaded from the file.
+    """
+    # Load the options
+    dic = load(self.name, "options")
+    options = cls.Options()
+    for key, val in dic.items():
+        setattr(options, key, val)
+
+    # Load the miscellaneous data
+    misc = load(self.name, "misc")
+    spin_type = misc.pop("spin_type").decode("ascii")
+
+    # Load the mean-field data
+    mf_cls = {"G": scf.GHF, "U": scf.UHF, "R": scf.RHF}[spin_type]
+    mol = load_mol(self.name)
+    dic = load(self.name, "mean-field")
+    mf = mf_cls(mol)
+    mf.__dict__.update(dic)
+
+    # Load the MOs used
+    dic = load(self.name, "mo")
+    mo_coeff = dic.get("mo_coeff", None)
+    mo_occ = dic.get("mo_occ", None)
+
+    # Load the ansatz
+    dic = load(self.name, "ansatz")
+    module_name = dic.get("module_name", None)
+    if isinstance(module_name, str):
+        module_name = module_name.encode("ascii")
+    ansatz = Ansatz(
+        dic.get("fermion_ansatz", b"CCSD").decode("ascii"),
+        dic.get("boson_ansatz", b"").decode("ascii"),
+        dic.get("fermion_coupling_rank", 0),
+        dic.get("boson_coupling_rank", 0),
+        module_name,
+    )
+
+    # Load the space
+    dic = load(self.name, "space")
+    space: Union[Space, tuple[Space, Space]]
+    if spin_type == "U":
+        space = (
+            Space(
+                dic.get("occupied", None)[0],
+                dic.get("frozen", None)[0],
+                dic.get("active", None)[0],
+            ),
+            Space(
+                dic.get("occupied", None)[1],
+                dic.get("frozen", None)[1],
+                dic.get("active", None)[1],
+            ),
+        )
+    else:
+        space = Space(
+            dic.get("occupied", None),
+            dic.get("frozen", None),
+            dic.get("active", None),
+        )
+
+    # Load the bosonic parameters
+    dic = load(self.name, "bosons")
+    omega = dic.get("omega", None)
+    bare_g = dic.get("bare_g", None)
+    bare_G = dic.get("bare_G", None)
+
+    # Load the Fock matrix
+    # TODO load the Fock matrix class instead
+
+    # Load the amplitudes
+    amplitudes = load(self.name, "amplitudes")
+    lambdas = load(self.name, "lambdas")
+    if spin_type == "U":
+        if amplitudes is not None:
+            amplitudes = {
+                key: (util.Namespace(**val) if isinstance(val, dict) else val)
+                for key, val in amplitudes.items()
+            }
+            amplitudes = util.Namespace(**amplitudes)
+        if lambdas is not None:
+            lambdas = {
+                key: (util.Namespace(**val) if isinstance(val, dict) else val)
+                for key, val in lambdas.items()
+            }
+            lambdas = util.Namespace(**lambdas)
+    else:
+        if amplitudes is not None:
+            amplitudes = util.Namespace(**amplitudes)
+        if lambdas is not None:
+            lambdas = util.Namespace(**lambdas)
+
+    # Initialise the EBCC object
+    cc = cls(
+        mf,
+        log=log,
+        ansatz=ansatz,
+        space=space,
+        omega=omega,
+        g=bare_g,
+        G=bare_G,
+        mo_coeff=mo_coeff,
+        mo_occ=mo_occ,
+        # fock=fock,
+        options=options,
+    )
+    cc.__dict__.update(misc)
+    cc.amplitudes = amplitudes
+    cc.lambdas = lambdas
+
+    return cc</code></pre>
+            </details>
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+              
+            </div>
+          </div><footer>
+    <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
+        <a href="../damping/" class="btn btn-neutral float-left" title="Damping"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../logging/" class="btn btn-neutral float-right" title="Logging">Next <span class="icon icon-circle-arrow-right"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <!-- Copyright etc -->
+  </div>
+
+  Built with <a href="https://www.mkdocs.org/">MkDocs</a> using a <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>.
+</footer>
+          
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <div class="rst-versions" role="note" aria-label="Versions">
+  <span class="rst-current-version" data-toggle="rst-current-version">
+    
+    
+      <span><a href="../damping/" style="color: #fcfcfc">&laquo; Previous</a></span>
+    
+    
+      <span><a href="../logging/" style="color: #fcfcfc">Next &raquo;</a></span>
+    
+  </span>
+</div>
+    <script src="../../../js/jquery-3.6.0.min.js"></script>
+    <script>var base_url = "../../..";</script>
+    <script src="../../../js/theme_extra.js"></script>
+    <script src="../../../js/theme.js"></script>
+      <script src="../../../search/main.js"></script>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+</html>
