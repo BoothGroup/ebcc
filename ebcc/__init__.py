@@ -40,7 +40,7 @@ from __future__ import annotations
 __version__ = "1.6.1"
 
 """List of supported ansatz types."""
-METHOD_TYPES = ["MP", "CC", "LCC", "QCI", "QCC", "DC"]
+METHOD_TYPES = ["MP", "CC", "LCC", "QCI", "QCC", "DC", "rCC", "drCC"]
 
 import importlib
 import os
