@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from pyscf.ci.cisd import tn_addrs_signs
+from pyscf.fci.addons import cistring
 
 from ebcc import numpy as np
 from ebcc import util
@@ -197,7 +198,7 @@ def _ci_vector_to_amplitudes_restricted(
 
 
 def _amplitudes_to_ci_vector_restricted(
-    amps: Namespace[RSpinArrayType], max_order: int = 4, normalise: bool = True
+    amps: Namespace[RSpinArrayType], max_order: int = 4, normalise: bool = True, full: bool = False
 ) -> NDArray[T]:
     """Pack the amplitudes into a CI vector with restricted symmetry.
 
@@ -207,6 +208,8 @@ def _amplitudes_to_ci_vector_restricted(
         max_order: Maximum order of the excitation.
         normalise: Whether to normalise the CI vector. If the vector is not normalised, the
             reference energy term (`ci[0, 0]`) will be `1.0`.
+        full: Whether to build the full CI vector, spanning all excitations orders, regardless
+            of whether the order is reached by `max_order`.
 
     Returns:
         CI vector.
@@ -263,7 +266,9 @@ def _amplitudes_to_ci_vector_restricted(
             bbbbbbbb=t4_aaaa,
         )
 
-    return _amplitudes_to_ci_vector_unrestricted(amps_uhf, max_order=max_order, normalise=normalise)
+    return _amplitudes_to_ci_vector_unrestricted(
+        amps_uhf, max_order=max_order, normalise=normalise, full=full
+    )
 
 
 def fci_to_amplitudes_unrestricted(
@@ -462,7 +467,7 @@ def _ci_vector_to_amplitudes_unrestricted(
 
 
 def _amplitudes_to_ci_vector_unrestricted(
-    amps: Namespace[USpinArrayType], max_order: int = 4, normalise: bool = True
+    amps: Namespace[USpinArrayType], max_order: int = 4, normalise: bool = True, full: bool = False
 ) -> NDArray[T]:
     """Pack the amplitudes into a CI vector with unrestricted symmetry.
 
@@ -471,6 +476,8 @@ def _amplitudes_to_ci_vector_unrestricted(
         max_order: Maximum order of the excitation.
         normalise: Whether to normalise the CI vector. If the vector is not normalised, the
             reference energy term (`ci[0, 0]`) will be `1.0`.
+        full: Whether to build the full CI vector, spanning all excitations orders, regardless
+            of whether the order is reached by `max_order`.
 
     Returns:
         CI vector.
@@ -567,10 +574,16 @@ def _amplitudes_to_ci_vector_unrestricted(
             values_ij.append(c)
 
     # Find the shape of the CI vector
-    shape = (
-        max([np.max(i) if np.asarray(i).size else 0 for i in indices_i]) + 1,
-        max([np.max(j) if np.asarray(j).size else 0 for j in indices_j]) + 1,
-    )
+    if not full:
+        shape = (
+            max([np.max(i) if np.asarray(i).size else 0 for i in indices_i]) + 1,
+            max([np.max(j) if np.asarray(j).size else 0 for j in indices_j]) + 1,
+        )
+    else:
+        shape = (
+            cistring.num_strings(nocca + nvira, nocca),
+            cistring.num_strings(noccb + nvirb, noccb),
+        )
 
     # Build the CI vector
     ci = np.zeros(shape, dtype=types[float])
