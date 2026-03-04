@@ -513,7 +513,14 @@ def einsum(
         path_kwargs = dict(optimize=optimize, einsum_call=True)
         contractions = np.einsum_path(subscript, *args, **path_kwargs)[1]
         for contraction in contractions:
-            inds, idx_rm, einsum_str, remain = list(contraction[:4])
+            
+            if len(contraction) == 3:
+                # numpy>=2.4.0
+                inds, einsum_str = list(contraction[:2])
+            else:
+                # numpy<2.4.0
+                inds, idx_rm, einsum_str, remain = list(contraction[:4])
+            
             contraction_args = [args.pop(x) for x in inds]  # type: ignore
             if alpha != 1.0 or beta != 0.0:
                 raise NotImplementedError("Scaling factors not supported for >2 arguments")
