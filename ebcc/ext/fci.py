@@ -399,11 +399,13 @@ def _ci_vector_to_coefficients_unrestricted(
         cn = ci[addrsi, addrsj] * signsi * signsj
 
         # Decompress the axes
+        spins_full = spins + spins
+        spins_full = spins_full[::2] + spins_full[1::2]
         shape = tuple(
             space["ab".index(s)].size(char)
-            for char, s in zip("O" * nalph + "O" * nbeta + "V" * nalph + "V" * nbeta, spins + spins)
+            for char, s in zip("O" * nalph + "V" * nalph + "O" * nbeta + "V" * nbeta, spins_full)
         )
-        subscript = "i" * nalph + "j" * nbeta + "a" * nalph + "b" * nbeta
+        subscript = "i" * nalph + "a" * nalph + "j" * nbeta + "b" * nbeta
         cn = util.decompress_axes(subscript, cn, shape=shape)
 
         # Transpose the axes
