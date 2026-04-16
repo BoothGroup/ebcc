@@ -511,7 +511,7 @@ def einsum(
         # If it's a chain of contractions, use the path optimizer
         args = list(args)
         path_kwargs = dict(optimize=optimize, einsum_call=True)
-        contractions = np.einsum_path(subscript, *args, **path_kwargs)[1]
+        contractions = np.einsum_path(subscript, *args, **path_kwargs)[1]  # type: ignore[arg-type]
         for contraction in contractions:
             inds, idx_rm, einsum_str, remain = list(contraction[:4])
             contraction_args = [args.pop(x) for x in inds]  # type: ignore
