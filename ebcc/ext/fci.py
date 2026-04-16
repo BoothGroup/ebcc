@@ -401,9 +401,9 @@ def _ci_vector_to_coefficients_unrestricted(
         # Decompress the axes
         shape = tuple(
             space["ab".index(s)].size(char)
-            for char, s in zip("O" * nalph + "V" * nalph + "O" * nbeta + "V" * nbeta, spins + spins)
+            for char, s in zip("O" * nalph + "O" * nbeta + "V" * nalph + "V" * nbeta, spins + spins)
         )
-        subscript = "i" * nalph + "a" * nalph + "j" * nbeta + "b" * nbeta
+        subscript = "i" * nalph + "j" * nbeta + "a" * nalph + "b" * nbeta
         cn = util.decompress_axes(subscript, cn, shape=shape)
 
         # Transpose the axes
